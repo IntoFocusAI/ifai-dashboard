@@ -7,7 +7,84 @@
 import type { PieDiscData } from "@/lib/ai-search/citation-pies";
 import type { NodeStatus } from "@/lib/canvas-sdk/types";
 import { formatInt, formatPct, formatRatio, pendingLabel } from "@/lib/fender-canvas/format";
-import type { CanvasMetricsRow } from "@/lib/fender-canvas/types";
+import { MISSING_FIELD_SHARE_UNAVAILABLE } from "@/lib/fender-canvas/spec-missing-fields";
+import type { CanvasMetricsRow, CanvasSpecReadinessRow } from "@/lib/fender-canvas/types";
+
+export type AmazonFieldTotals = { found: number; expected: number };
+
+/**
+ * Sum filled and expected Amazon attribute fields on Amazon-checked listings.
+ * Skips unchecked rows and rows without a positive expected count.
+ * Never invents totals from the average percent times listing count.
+ */
+export function sumAmazonFieldTotals(
+  rows: ReadonlyArray<
+    Pick<CanvasSpecReadinessRow, "amazon_checked" | "amazon_fields_found" | "amazon_fields_expected">
+  >,
+): AmazonFieldTotals | null {
+  let found = 0;
+  let expected = 0;
+  let any = false;
+  for (const row of rows) {
+    if (row.amazon_checked !== true) continue;
+    const f = row.amazon_fields_found;
+    const e = row.amazon_fields_expected;
+    if (typeof e !== "number" || !Number.isFinite(e) || e <= 0) continue;
+    if (typeof f !== "number" || !Number.isFinite(f) || f < 0) continue;
+    found += f;
+    expected += e;
+    any = true;
+  }
+  return any ? { found, expected } : null;
+}
+
+/** Prefer metrics-row field totals when both are stored and the count fits. */
+export function resolveAmazonFieldTotals(
+  m: CanvasMetricsRow,
+  fromRows: AmazonFieldTotals | null = null,
+): AmazonFieldTotals | null {
+  const found = m.spec_amazon_fields_found;
+  const expected = m.spec_amazon_fields_expected;
+  if (
+    typeof found === "number" &&
+    Number.isFinite(found) &&
+    found >= 0 &&
+    typeof expected === "number" &&
+    Number.isFinite(expected) &&
+    expected > 0 &&
+    found <= expected
+  ) {
+    return { found, expected };
+  }
+  return fromRows;
+}
+
+/**
+ * Field-total share for the Amazon completeness hero: "N of M (P%)".
+ * P% is the stored average when present; otherwise the share of the field totals.
+ * Missing or mismatched totals stay Not available* (never invent from avg × listings).
+ */
+export function presentAmazonCompletenessFieldShare(
+  found: number | null | undefined,
+  expected: number | null | undefined,
+  avgPct: number | null | undefined,
+):
+  | { kind: "share"; label: string; ratio: string; percent: string }
+  | { kind: "unavailable"; label: typeof MISSING_FIELD_SHARE_UNAVAILABLE } {
+  const n =
+    typeof found === "number" && Number.isFinite(found) && found >= 0 ? found : null;
+  const d =
+    typeof expected === "number" && Number.isFinite(expected) && expected > 0 ? expected : null;
+  if (n == null || d == null || n > d) {
+    return { kind: "unavailable", label: MISSING_FIELD_SHARE_UNAVAILABLE };
+  }
+  const ratio = formatRatio(n, d);
+  const percent =
+    typeof avgPct === "number" && Number.isFinite(avgPct)
+      ? formatPct(avgPct)
+      : formatPct((100 * n) / d);
+  return { kind: "share", label: `${ratio} (${percent})`, ratio, percent };
+}
 
 /** Same bands as metrics-from-live toneFromPct(spec_avg_amazon_pct, 85, 92). */
 export const AMAZON_COMPLETENESS_BANDS = { dangerBelow: 85, warnBelow: 92 } as const;
@@ -150,18 +227,30 @@ export function pageFoundHero(m: CanvasMetricsRow): AiReadinessHeroModel {
   };
 }
 
-export function amazonCompletenessHero(m: CanvasMetricsRow): AiReadinessHeroModel {
+export function amazonCompletenessHero(
+  m: CanvasMetricsRow,
+  fieldTotals: AmazonFieldTotals | null = null,
+): AiReadinessHeroModel {
   const checked = m.spec_checked;
   const pct = m.spec_avg_amazon_pct;
   const tone = amazonCompletenessTone(pct);
   const ready = pct != null && !Number.isNaN(pct);
+  const totals = resolveAmazonFieldTotals(m, fieldTotals);
+  const share = presentAmazonCompletenessFieldShare(
+    totals?.found,
+    totals?.expected,
+    ready ? pct : null,
+  );
+  const checkedPhrase =
+    typeof checked === "number" && Number.isFinite(checked) && checked > 0
+      ? ` (across ${formatInt(checked)} checked SKUs)`
+      : "";
   return {
     id: "amazon_completeness",
     label: "Amazon attribute completeness",
-    definition:
-      "Average Amazon attribute completeness across the checked SKUs in this catalog spec read. This is an average, not a count of listings at 100%.",
+    definition: `Average of filled Amazon attribute fields over expected fields on the Amazon-checked listings in this catalog spec read${checkedPhrase}. This is an average, not a count of listings at 100%.`,
     percent: ready ? formatPct(pct) : pendingLabel(),
-    ratio: averageAcrossRatio(checked != null && checked > 0 ? checked : null, "checked SKUs"),
+    ratio: share.label,
     color: tone ? TONE_COLOR[tone] : null,
     pie: averagePercentPie("ai-readiness-amazon-completeness", "Amazon attribute completeness", pct),
     tip: ready ? formatPct(pct) : null,
@@ -216,8 +305,11 @@ export function missingAdditionalPropertyHero(m: CanvasMetricsRow): AiReadinessH
  * Page-found stays on the AI Readiness bubble and Findability.
  * Brand-site completeness and missing-spec counts live on Brand-Site Specs.
  */
-export function amazonSpecsHeroes(m: CanvasMetricsRow): AiReadinessHeroModel[] {
-  return [amazonCompletenessHero(m)];
+export function amazonSpecsHeroes(
+  m: CanvasMetricsRow,
+  fieldTotals: AmazonFieldTotals | null = null,
+): AiReadinessHeroModel[] {
+  return [amazonCompletenessHero(m, fieldTotals)];
 }
 
 /** @deprecated Prefer amazonSpecsHeroes for the Amazon Specs tab. */

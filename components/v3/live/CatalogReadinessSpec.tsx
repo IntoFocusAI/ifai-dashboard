@@ -5,7 +5,7 @@ import { FenderSpecPanel, MissingFieldList } from "@/components/v3/live/FenderSp
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
 
 /**
- * Amazon Specs tab: completeness hero beside Top missing Amazon fields,
+ * Amazon Specs tab: content-sized completeness hero beside Top missing Amazon fields,
  * then the full-width Amazon listings table (same band pattern as Brand-Site Specs).
  */
 export function CatalogReadinessSpec({ bundle }: { bundle: CanvasBundle }) {
@@ -18,9 +18,9 @@ export function CatalogReadinessSpec({ bundle }: { bundle: CanvasBundle }) {
         <div
           data-amazon-specs-hero-col=""
           style={{
-            flex: "1 1 42%",
-            maxWidth: "50%",
-            minWidth: "max-content",
+            flex: "0 0 auto",
+            width: "max-content",
+            maxWidth: "100%",
             display: "flex",
             flexWrap: "wrap",
             gap: 12,

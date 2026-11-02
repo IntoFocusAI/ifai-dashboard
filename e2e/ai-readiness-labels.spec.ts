@@ -154,10 +154,15 @@ test("Amazon Specs shows Amazon completeness only, with no fender.com page-found
   await expect(page.locator("[data-ai-readiness-hero]")).toHaveCount(1);
   const amazon = page.locator("[data-ai-readiness-hero='amazon_completeness']");
   await expect(amazon.locator("[data-ai-readiness-hero-percent]")).toHaveText("48.8%");
-  await expect(amazon.locator("[data-ai-readiness-hero-ratio]")).toHaveText("Across 4 checked SKUs");
+  await expect(amazon.locator("[data-ai-readiness-hero-ratio]")).toHaveText("26 of 52 (48.8%)");
+  await expect(amazon.locator("[data-ai-readiness-hero-ratio]")).not.toContainText(/Across/i);
   await expect(amazon.locator("span.ifai-term")).toHaveAttribute(
     "data-ifai-tooltip-desc",
-    /Average Amazon attribute completeness across the checked SKUs/,
+    /across 4 checked SKUs/i,
+  );
+  await expect(amazon.locator("span.ifai-term")).toHaveAttribute(
+    "data-ifai-tooltip-desc",
+    /average, not a count of listings at 100%/i,
   );
 
   await expect(page.locator("[data-ai-readiness-hero='page_found']")).toHaveCount(0);
@@ -222,7 +227,9 @@ test("Amazon Specs puts Top missing fields beside the completeness hero", async 
       tableBelow: t.top >= Math.max(h.bottom, f.bottom) - 2,
       // Pie beside the percentage: pie top must not sit below the percent bottom.
       pieBesidePercent: pie.top < percent.bottom && pie.left >= percent.left,
-      hasAcross: /Across\s+\d+\s+checked SKUs/i.test(heroEl.textContent ?? ""),
+      ratioText: heroEl.querySelector("[data-ai-readiness-hero-ratio]")?.textContent ?? "",
+      pieHeight: pie.height,
+      heroHeight: h.height,
     };
   });
   expect(desktop).not.toBeNull();
@@ -230,10 +237,14 @@ test("Amazon Specs puts Top missing fields beside the completeness hero", async 
   expect(desktop!.tableBelow).toBe(true);
   expect(desktop!.fieldsLeft).toBeGreaterThan(desktop!.heroRight - 2);
   expect(desktop!.pieBesidePercent).toBe(true);
-  expect(desktop!.hasAcross).toBe(true);
-  // Hero takes a clear share of the band (not max-content skinny, not full page).
-  expect(desktop!.heroWidth).toBeGreaterThan(desktop!.bandWidth * 0.35);
-  expect(desktop!.heroWidth).toBeLessThanOrEqual(desktop!.bandWidth * 0.52);
+  expect(desktop!.ratioText).toMatch(/^\d[\d,]* of \d[\d,]* \(/);
+  expect(desktop!.ratioText).not.toMatch(/^Across\b/);
+  // Content-sized hero; missing-fields box is the wider of the two.
+  expect(desktop!.heroWidth).toBeLessThan(desktop!.fieldsWidth);
+  expect(desktop!.heroWidth).toBeLessThan(desktop!.bandWidth * 0.55);
+  // Pie nearly as tall as the card (padding leaves a small margin).
+  expect(desktop!.pieHeight).toBeGreaterThanOrEqual(70);
+  expect(desktop!.pieHeight).toBeGreaterThan(desktop!.heroHeight * 0.45);
   // Missing-field bar track is shorter than the fields box.
   expect(desktop!.barWidth).toBeLessThanOrEqual(180);
   expect(desktop!.barWidth).toBeLessThan(desktop!.fieldsWidth * 0.6);
