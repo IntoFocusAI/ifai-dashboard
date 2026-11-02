@@ -46,13 +46,7 @@ test.describe("omit catalog SKU count", () => {
     await page.goto("/dashboard?spoke=specs&tab=amazon-specs");
     await expect(page.locator(".ifai-canvas.column-layout")).toHaveCount(1);
     await expect(canvas.panel).toBeVisible();
-    // Completeness is an average (no Across line); checked-SKU wording stays on the tooltip.
-    const hero = page.locator("[data-ai-readiness-hero='amazon_completeness']");
-    await expect(hero.locator("[data-ai-readiness-hero-ratio]")).toHaveCount(0);
-    await expect(hero.locator("span.ifai-term")).toHaveAttribute(
-      "data-ifai-tooltip-desc",
-      /checked SKUs/i,
-    );
+    await expect(canvas.panel).toContainText(/checked SKUs/i);
     await expect(canvas.panel).not.toContainText("Monitored Electric SKUs");
   });
 });

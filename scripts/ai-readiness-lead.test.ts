@@ -125,8 +125,8 @@ test("Amazon Specs keeps Amazon completeness and does not invent listings at 100
   const amazon = heroes[0];
   assert.equal(amazon.id, "amazon_completeness");
   assert.equal(amazon.percent, formatPct(91.6));
-  // Average hero: no Across / of-total ratio line (N of M is on Top missing fields).
-  assert.equal(amazon.ratio, null);
+  assert.equal(amazon.ratio, "Across 925 checked SKUs");
+  assert.doesNotMatch(amazon.ratio ?? "", /^\d+ of \d+$/);
   assert.match(amazon.definition, /average, not a count/i);
   assert.ok(amazon.pie);
   assert.equal(amazon.pie.total, 100);

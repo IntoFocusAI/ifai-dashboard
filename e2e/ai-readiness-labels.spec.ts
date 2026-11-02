@@ -154,10 +154,7 @@ test("Amazon Specs shows Amazon completeness only, with no fender.com page-found
   await expect(page.locator("[data-ai-readiness-hero]")).toHaveCount(1);
   const amazon = page.locator("[data-ai-readiness-hero='amazon_completeness']");
   await expect(amazon.locator("[data-ai-readiness-hero-percent]")).toHaveText("48.8%");
-  // Average hero: no Across / of-total ratio line.
-  await expect(amazon.locator("[data-ai-readiness-hero-ratio]")).toHaveCount(0);
-  await expect(amazon).not.toContainText(/Across/i);
-  await expect(amazon).not.toContainText(/\d+ of \d+/);
+  await expect(amazon.locator("[data-ai-readiness-hero-ratio]")).toHaveText("Across 4 checked SKUs");
   await expect(amazon.locator("span.ifai-term")).toHaveAttribute(
     "data-ifai-tooltip-desc",
     /Average Amazon attribute completeness across the checked SKUs/,
@@ -225,8 +222,7 @@ test("Amazon Specs puts Top missing fields beside the completeness hero", async 
       tableBelow: t.top >= Math.max(h.bottom, f.bottom) - 2,
       // Pie beside the percentage: pie top must not sit below the percent bottom.
       pieBesidePercent: pie.top < percent.bottom && pie.left >= percent.left,
-      noAcross: !/Across/i.test(heroEl.textContent ?? ""),
-      noOfTotal: !/\d+\s+of\s+\d+/.test(heroEl.textContent ?? ""),
+      hasAcross: /Across\s+\d+\s+checked SKUs/i.test(heroEl.textContent ?? ""),
     };
   });
   expect(desktop).not.toBeNull();
@@ -234,8 +230,7 @@ test("Amazon Specs puts Top missing fields beside the completeness hero", async 
   expect(desktop!.tableBelow).toBe(true);
   expect(desktop!.fieldsLeft).toBeGreaterThan(desktop!.heroRight - 2);
   expect(desktop!.pieBesidePercent).toBe(true);
-  expect(desktop!.noAcross).toBe(true);
-  expect(desktop!.noOfTotal).toBe(true);
+  expect(desktop!.hasAcross).toBe(true);
   // Hero takes a clear share of the band (not max-content skinny, not full page).
   expect(desktop!.heroWidth).toBeGreaterThan(desktop!.bandWidth * 0.35);
   expect(desktop!.heroWidth).toBeLessThanOrEqual(desktop!.bandWidth * 0.52);
