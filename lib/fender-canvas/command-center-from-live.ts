@@ -1,3 +1,4 @@
+import { FMIC_CLIENT_KEY } from "@/lib/set-aside/keys";
 import type { CommandCenterSpec } from "@/lib/canvas-sdk/types";
 import { aiCommandSummary, aiPriorityItems } from "@/lib/ai-search/canvas-surfaces";
 import type { AiSearchRead } from "@/lib/ai-search/types";
@@ -65,6 +66,7 @@ export function buildLiveCommandCenter(
     summary: summaryParts.join(" "),
     openByDefault: true,
     storageKey: "ifai:fender:command-center",
+    setAsideClientKey: FMIC_CLIENT_KEY,
     items: [
       {
         id: "buybox-suppression",

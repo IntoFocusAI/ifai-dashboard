@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { clientColumn, ResizableTable } from "@/components/v3/live/ResizableTable";
+import { Fragment, useEffect, useState } from "react";
+import { clientColumn, ResizableTable, type RetailColumn } from "@/components/v3/live/ResizableTable";
 import { useFullPopulationSort } from "@/components/v3/live/useFullPopulationSort";
 import { specRowsQuery } from "@/lib/canvasData";
 import { CLIENT_TABLE_PAGE_SIZE, loadFilteredPages } from "@/lib/fender-canvas/full-result-sort";
@@ -13,6 +13,9 @@ import {
 } from "@/lib/fender-canvas/types";
 import { formatInt, formatPct } from "@/lib/fender-canvas/format";
 import { presentMissingAmazonFields } from "@/lib/fender-canvas/spec-missing-fields";
+import { FMIC_CLIENT_KEY, SET_ASIDE_CHECKS } from "@/lib/set-aside/keys";
+import { ReopenForm, SetAsideForm } from "@/lib/set-aside/SetAsideForm";
+import { formatSetAsideDate, useSetAsides, type SetAsideRow } from "@/lib/set-aside/set-aside";
 
 const SPEC_COLUMNS = [
   clientColumn("asin", "ASIN", "text", 118, 100, "asin-col"),
@@ -20,6 +23,19 @@ const SPEC_COLUMNS = [
   clientColumn("amazon", "Amazon completeness", "number", 140, 110),
   clientColumn("missing", "Missing Amazon fields", "text", 240, 160),
 ];
+
+const SPEC_CHECK = SET_ASIDE_CHECKS.amazonSpecs;
+
+/** Not sortable: set-asides are a per-check overlay, not a field on the spec read. */
+const SET_ASIDE_COLUMN: RetailColumn = {
+  id: "setaside",
+  name: "Set aside",
+  label: "Set aside",
+  width: 150,
+  minWidth: 110,
+};
+
+const SPEC_TABLE_COLUMNS = [...SPEC_COLUMNS, SET_ASIDE_COLUMN];
 
 /** First-visit viewport; page size stays 50. Shorter heroes leave more room for this table. */
 const SPEC_TABLE_MAX_HEIGHT = 420;
@@ -123,6 +139,8 @@ function CatalogSpecReadiness({ missing }: { missing: CanvasSpecMissingRow[] }) 
   const [rows, setRows] = useState<CanvasSpecReadinessRow[]>([]);
   const [total, setTotal] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const setAsides = useSetAsides(FMIC_CLIENT_KEY, SPEC_CHECK);
+  const [formFor, setFormFor] = useState<string | null>(null);
   const population = useFullPopulationSort(
     rows,
     SPEC_COLUMNS,
@@ -176,7 +194,7 @@ function CatalogSpecReadiness({ missing }: { missing: CanvasSpecMissingRow[] }) 
         </div>
         <ResizableTable
           tableId="spec-readiness"
-          columns={SPEC_COLUMNS}
+          columns={SPEC_TABLE_COLUMNS}
           freezeHeader
           maxHeight={SPEC_TABLE_MAX_HEIGHT}
           fillColumnId="missing"
@@ -187,12 +205,12 @@ function CatalogSpecReadiness({ missing }: { missing: CanvasSpecMissingRow[] }) 
           <tbody>
               {loading && rows.length === 0 ? (
                 <tr>
-                  <td colSpan={4}>Loading…</td>
+                  <td colSpan={SPEC_TABLE_COLUMNS.length}>Loading…</td>
                 </tr>
               ) : null}
               {!loading && rows.length === 0 ? (
                 <tr>
-                  <td colSpan={4}>No spec rows in this read.</td>
+                  <td colSpan={SPEC_TABLE_COLUMNS.length}>No spec rows in this read.</td>
                 </tr>
               ) : null}
               {population.pageRows.map((row) => {
@@ -200,8 +218,10 @@ function CatalogSpecReadiness({ missing }: { missing: CanvasSpecMissingRow[] }) 
                   row.amazon_missing_fields,
                   row.amazon_completeness_pct,
                 );
+                const setAside = setAsides.active.get(row.asin);
                 return (
-                  <tr key={row.asin}>
+                  <Fragment key={row.asin}>
+                  <tr data-set-aside-row={setAside ? "active" : undefined}>
                     <td>
                       <span className="asin-chip">{row.asin}</span>
                     </td>
@@ -216,7 +236,49 @@ function CatalogSpecReadiness({ missing }: { missing: CanvasSpecMissingRow[] }) 
                           ))
                         : missingFields.label}
                     </td>
+                    <td>
+                      {setAside ? (
+                        <span
+                          className="tag-badge tag-neutral set-aside-chip"
+                          title={setAsideTitle(setAside)}
+                          data-spec-set-aside-chip={row.asin}
+                        >
+                          Set aside · {setAside.reason_label}
+                        </span>
+                      ) : missingFields.kind === "fields" ? (
+                        <button
+                          type="button"
+                          className="cc-undo-btn"
+                          aria-expanded={formFor === row.asin}
+                          data-spec-set-aside={row.asin}
+                          onClick={() => setFormFor((asin) => (asin === row.asin ? null : row.asin))}
+                        >
+                          Set aside
+                        </button>
+                      ) : null}
+                    </td>
                   </tr>
+                  {formFor === row.asin && !setAside ? (
+                    <tr className="set-aside-form-row">
+                      <td colSpan={SPEC_TABLE_COLUMNS.length}>
+                        <SetAsideForm
+                          checkKey={SPEC_CHECK}
+                          subject={`${row.asin} on Amazon Specs`}
+                          onCancel={() => setFormFor(null)}
+                          onSubmit={async (input) => {
+                            const result = await setAsides.setAside({
+                              ...input,
+                              entityKey: row.asin,
+                              entityLabel: specModelTitle(row.title) || null,
+                            });
+                            if (result.ok) setFormFor(null);
+                            return result;
+                          }}
+                        />
+                      </td>
+                    </tr>
+                  ) : null}
+                  </Fragment>
                 );
               })}
             </tbody>
@@ -243,6 +305,85 @@ function CatalogSpecReadiness({ missing }: { missing: CanvasSpecMissingRow[] }) 
           </button>
         </div>
       </div>
+
+      <SetAsideHistory
+        rows={setAsides.rows}
+        error={setAsides.error}
+        onReopen={setAsides.reopen}
+      />
     </>
+  );
+}
+
+function setAsideTitle(row: SetAsideRow): string {
+  const note = row.note ? ` · ${row.note}` : "";
+  return `${row.reason_label}${note}. Set aside by ${row.set_by_name}, ${formatSetAsideDate(row.set_at)}.`;
+}
+
+/** Every Amazon Specs set-aside, active first, with Reopen on the active ones. */
+function SetAsideHistory({
+  rows,
+  error,
+  onReopen,
+}: {
+  rows: SetAsideRow[];
+  error: string | null;
+  onReopen: ReturnType<typeof useSetAsides>["reopen"];
+}) {
+  const [reopenFor, setReopenFor] = useState<string | null>(null);
+  if (!rows.length && !error) return null;
+  const active = rows.filter((row) => row.status === "active");
+  const reopened = rows.filter((row) => row.status === "reopened");
+
+  return (
+    <details className="content-box cc-cleared" style={{ marginTop: 12 }} data-spec-set-aside-history="">
+      <summary>
+        Set aside on Amazon Specs: {formatInt(active.length)}
+        {reopened.length ? ` · ${formatInt(reopened.length)} reopened` : ""}
+      </summary>
+      {error ? <p className="set-aside-error">Set-asides could not load: {error}</p> : null}
+      <p className="set-aside-form-hint">
+        Set-aside listings stay in the table and in the completeness figures above. They are marked so the team knows
+        they were reviewed.
+      </p>
+      {[...active, ...reopened].map((row) => (
+        <div key={row.id} className="cc-cleared-entry">
+          <div className="cc-cleared-row">
+            <span className="cc-cleared-text">
+              <span>
+                <span className="asin-chip">{row.entity_key}</span> {row.entity_label ?? ""}
+              </span>
+              <span className="cc-cleared-meta">
+                {row.status === "reopened"
+                  ? `Reopened by ${row.reopened_by_name}, ${formatSetAsideDate(row.reopened_at)}${row.reopen_note ? ` · ${row.reopen_note}` : ""}. Was: `
+                  : ""}
+                {setAsideTitle(row)}
+              </span>
+            </span>
+            {row.status === "active" ? (
+              <button
+                type="button"
+                className="cc-undo-btn"
+                data-spec-reopen={row.entity_key}
+                onClick={() => setReopenFor((id) => (id === row.id ? null : row.id))}
+              >
+                Reopen
+              </button>
+            ) : null}
+          </div>
+          {reopenFor === row.id ? (
+            <ReopenForm
+              subject={`${row.entity_key} on Amazon Specs`}
+              onCancel={() => setReopenFor(null)}
+              onSubmit={async (name, note) => {
+                const result = await onReopen(row, name, note);
+                if (result.ok) setReopenFor(null);
+                return result;
+              }}
+            />
+          ) : null}
+        </div>
+      ))}
+    </details>
   );
 }

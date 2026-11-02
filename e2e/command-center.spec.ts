@@ -1,4 +1,13 @@
-import { expect, test } from "./fixtures";
+import { expect, test, type Locator } from "./fixtures";
+
+async function setAside(item: Locator, reason: string, note: string, name: string) {
+  await item.locator("[data-cc-set-aside]").click();
+  const form = item.locator("[data-set-aside-form]");
+  await form.locator("[data-set-aside-reason]").selectOption(reason);
+  if (note) await form.locator("[data-set-aside-note]").fill(note);
+  await form.locator("[data-set-aside-name]").fill(name);
+  await form.locator("[data-set-aside-save]").click();
+}
 
 /* The "what do I need to worry about" queue: opens from Priorities, assignable,
    and every row a route into the detail behind it. */
@@ -35,20 +44,63 @@ test.describe("command center", () => {
     await expect(quadrants.nth(1)).toContainText("5");
     await expect(quadrants.nth(0)).toContainText("1"); // critical
 
-    await canvas.priority("Buy Box withheld").locator(".cc-done-btn").click();
+    await setAside(canvas.priority("Buy Box withheld"), "discontinued", "", "Test Person");
     await expect(canvas.priorities).toHaveCount(4);
     await expect(quadrants.nth(1)).toContainText("4");
-    await expect(page.locator(".cc-cleared summary")).toContainText("1 cleared");
+    await expect(page.locator(".cc-cleared summary")).toContainText("1 set aside");
   });
 
-  test("a cleared item can be reopened", async ({ canvas, page }) => {
+  test("set aside needs a reason and a name, and is stored server-side", async ({ canvas, page, setAsides }) => {
     await canvas.openCommandCenter();
-    await canvas.priorities.first().locator(".cc-done-btn").click();
+    const item = canvas.priority("Buy Box withheld");
+    await item.locator("[data-cc-set-aside]").click();
+    const form = item.locator("[data-set-aside-form]");
+    await form.locator("[data-set-aside-save]").click();
+    await expect(form.locator(".set-aside-error")).toHaveText("Pick a reason.");
+
+    await form.locator("[data-set-aside-reason]").selectOption("other");
+    await form.locator("[data-set-aside-name]").fill("Test Person");
+    await form.locator("[data-set-aside-save]").click();
+    await expect(form.locator(".set-aside-error")).toContainText("needs a note");
+    expect(setAsides.calls).toHaveLength(0);
+
+    await form.locator("[data-set-aside-note]").fill("Handled on the retailer side");
+    await form.locator("[data-set-aside-save]").click();
+    await expect(canvas.priorities).toHaveCount(4);
+    expect(setAsides.calls[0]).toMatchObject({
+      fn: "set_aside_issue",
+      body: {
+        p_client_key: "fmic",
+        p_check_key: "command_center_queue",
+        p_entity_key: "buybox-suppression",
+        p_reason_code: "other",
+        p_name: "Test Person",
+        p_note: "Handled on the retailer side",
+      },
+    });
+
+    await page.locator(".cc-cleared summary").click();
+    await expect(page.locator(".cc-cleared")).toContainText("Other · Handled on the retailer side — Test Person");
+  });
+
+  test("reopen updates the same set-aside row", async ({ canvas, page, setAsides }) => {
+    await canvas.openCommandCenter();
+    await setAside(canvas.priorities.first(), "discontinued", "", "Test Person");
     await expect(canvas.priorities).toHaveCount(4);
 
     await page.locator(".cc-cleared summary").click();
-    await page.locator(".cc-undo-btn").first().click();
+    await page.locator("[data-cc-reopen]").first().click();
+    // The name is remembered from the set-aside.
+    await expect(page.locator("[data-reopen-form] [data-set-aside-name]")).toHaveValue("Test Person");
+    await page.locator("[data-reopen-save]").click();
     await expect(canvas.priorities).toHaveCount(5);
+    await expect(page.locator(".cc-cleared summary")).toContainText("0 set aside · 1 reopened");
+    expect(setAsides.rows).toHaveLength(1);
+    expect(setAsides.rows[0].status).toBe("reopened");
+
+    await setAside(canvas.priorities.first(), "discontinued", "", "Test Person");
+    expect(setAsides.rows).toHaveLength(1);
+    expect(setAsides.rows[0].status).toBe("active");
   });
 
   test("work can be assigned and survives a reload", async ({ canvas }) => {
