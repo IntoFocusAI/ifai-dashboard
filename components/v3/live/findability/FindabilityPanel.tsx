@@ -134,7 +134,7 @@ export function FindabilityPanel() {
 
   return (
     <div className="findability-panel" data-findability-shape={shape} data-findability-total={counts!.total}>
-      <FindabilityLead counts={counts!} />
+      <FindabilityLead counts={counts!} rows={read.rows} />
       <p className="findability-note" style={{ marginTop: 12 }}>
         Each listing is one outcome. {FAMILY_IS_NOT_EXACT} Open a count to see the listings, titles,
         and official pages behind it.
