@@ -171,12 +171,16 @@ test("Findability panel leads with five outcome heroes and drops the count sente
   assert.match(hero, /citation-pie-disc-findability/);
   assert.match(hero, /data-findability-lead-pct/);
   assert.match(hero, /data-findability-lead-ratio/);
+  assert.match(hero, /data-findability-last-checked/);
+  assert.match(hero, /newestCheckedAttemptAt/);
+  assert.match(panel, /FindabilityLead counts=\{counts!\} rows=\{read\.rows\}/);
   assert.match(lead, /outcomeLeadPie/);
   assert.match(lead, /outcomeShareFigure/);
   assert.match(lead, /formatPct/);
   assert.match(lead, /OUTCOME_LABEL/);
   assert.match(css, /\.citation-pie-disc-findability\s*\{[^}]*width:\s*62px/s);
   assert.match(css, /\.citation-pie-disc-accuracy\s*\{[^}]*width:\s*48px/s);
+  assert.match(css, /\.findability-last-checked/);
   assert.match(panel, /Each listing is one outcome/);
   assert.doesNotMatch(hero, /\u2014/);
   assert.doesNotMatch(hero, /\stitle=/);

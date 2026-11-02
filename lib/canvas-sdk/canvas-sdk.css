@@ -4186,6 +4186,14 @@
       align-items: stretch;
     }
 
+    /* Official-page read freshness under the hero band (X-12). */
+    .findability-last-checked {
+      font-size: 13px;
+      line-height: 1.45;
+      color: var(--text-muted);
+      margin: 10px 0 0;
+    }
+
     .findability-lead-card {
       flex: 1 1 160px;
       min-width: 148px;

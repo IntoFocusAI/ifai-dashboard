@@ -164,6 +164,12 @@ test("the five outcome counts stay distinct and open the listings behind them", 
   await expect(page.locator("[data-findability-lead-outcome='ambiguous_candidate']")).toBeVisible();
   await expect(page.locator("[data-findability-lead-outcome='not_checked']")).toBeVisible();
 
+  const lastChecked = page.locator("[data-findability-last-checked]");
+  await expect(lastChecked).toBeVisible();
+  await expect(lastChecked).toHaveAttribute("data-findability-last-checked", "2026-10-12T20:27:46.000Z");
+  await expect(lastChecked).toHaveText("Last checked Oct 12, 2026, 8:27 PM UTC.");
+  await expect(page.locator("#findability-listings")).toHaveCount(0);
+
   const outcomeTips: Array<{ outcome: string; title: string; desc: string }> = [
     {
       outcome: "exact_official_product",
@@ -193,14 +199,14 @@ test("the five outcome counts stay distinct and open the listings behind them", 
   ];
   for (const { outcome, title, desc } of outcomeTips) {
     const leadTerm = page.locator(
-      `[data-findability-lead-outcome='${outcome}'] .ifai-term[data-ifai-tooltip-title='${title}']`,
+      `[data-findability-lead-outcome='${outcome}'] span.ifai-term[data-ifai-tooltip-title='${title}']`,
     );
     await expect(leadTerm).toHaveAttribute("data-ifai-tooltip-desc", desc);
     await expect(leadTerm).toHaveAttribute("tabindex", "0");
     await expect(leadTerm).not.toHaveAttribute("title");
 
     const countTerm = page.locator(
-      `[data-findability-outcome='${outcome}'] .ifai-term[data-ifai-tooltip-title='${title}']`,
+      `[data-findability-outcome='${outcome}'] span.ifai-term[data-ifai-tooltip-title='${title}']`,
     );
     await expect(countTerm).toHaveAttribute("data-ifai-tooltip-desc", desc);
     await expect(countTerm).not.toHaveAttribute("title");
@@ -269,6 +275,30 @@ test("the five outcome counts stay distinct and open the listings behind them", 
   await expect(table.locator("[data-findability-address='unchecked']")).not.toContainText("no defensible page");
   await expect(table.locator("[data-findability-row='not_checked']")).not.toContainText("unsuccessful");
   await expect(table.locator("[data-findability-row='not_checked']")).toContainText("None");
+});
+
+test("last checked shows Not available* when checked rows have no attempt time", async ({ page }) => {
+  await mockCanvasRead(page, {
+    findability: ROWS.map((row) =>
+      row.latest_state === "not_checked" ? row : { ...row, latest_attempt_at: null },
+    ),
+  });
+  await openFindability(page);
+
+  await expect(page.locator("[data-findability-lead-outcome]")).toHaveCount(5);
+  const lastChecked = page.locator("[data-findability-last-checked]");
+  await expect(lastChecked).toBeVisible();
+  await expect(lastChecked).toHaveAttribute("data-findability-last-checked", "");
+  await expect(lastChecked).toContainText("Not available*");
+  const tip = lastChecked.locator(".ifai-term");
+  await expect(tip).toHaveAttribute("data-ifai-tooltip-title", "Last checked");
+  await expect(tip).toHaveAttribute(
+    "data-ifai-tooltip-desc",
+    "This official-page read has no stored check time.",
+  );
+  await expect(tip).toHaveAttribute("tabindex", "0");
+  await expect(tip).not.toHaveAttribute("title");
+  await expect(page.locator("#findability-listings")).toHaveCount(0);
 });
 
 test("an empty official-page read does not describe unchecked as a finished search", async ({ page }) => {
