@@ -7,6 +7,7 @@ import {
   AMAZON_COMPLETENESS_BANDS,
   FENDER_COMPLETENESS_BANDS,
   PAGE_FOUND_BANDS,
+  amazonCompletenessHero,
   amazonSpecsHeroes,
   averageAcrossRatio,
   averagePercentPie,
@@ -14,10 +15,13 @@ import {
   missingAdditionalPropertyHero,
   pageFoundHero,
   pageFoundTone,
+  presentAmazonCompletenessFieldShare,
   shareCountPie,
+  sumAmazonFieldTotals,
   toneColor,
 } from "../lib/fender-canvas/ai-readiness-lead.ts";
 import { formatPct, formatRatio } from "../lib/fender-canvas/format.ts";
+import { MISSING_FIELD_SHARE_UNAVAILABLE } from "../lib/fender-canvas/spec-missing-fields.ts";
 import type { CanvasMetricsRow } from "../lib/fender-canvas/types.ts";
 
 const root = new URL("..", import.meta.url).pathname;
@@ -120,13 +124,21 @@ test("fender completeness bands: under 95 red, 95 and 98 yellow, above 98 green"
 });
 
 test("Amazon Specs keeps Amazon completeness and does not invent listings at 100%", () => {
-  const heroes = amazonSpecsHeroes(metrics({}));
+  const heroes = amazonSpecsHeroes(
+    metrics({
+      spec_amazon_fields_found: 11_050,
+      spec_amazon_fields_expected: 12_025,
+    }),
+  );
   assert.equal(heroes.length, 1);
   const amazon = heroes[0];
   assert.equal(amazon.id, "amazon_completeness");
   assert.equal(amazon.percent, formatPct(91.6));
-  assert.equal(amazon.ratio, "Across 925 checked SKUs");
-  assert.doesNotMatch(amazon.ratio ?? "", /^\d+ of \d+$/);
+  assert.equal(amazon.ratio, `${formatRatio(11_050, 12_025)} (${formatPct(91.6)})`);
+  assert.match(amazon.ratio ?? "", /^\d/);
+  assert.doesNotMatch(amazon.ratio ?? "", /^Across\b/);
+  assert.match(amazon.definition, /across 925 checked SKUs/i);
+  assert.match(amazon.definition, /average, not a count/i);
   assert.ok(amazon.pie);
   assert.equal(amazon.pie.total, 100);
   const filled = amazon.pie.slices.find((slice) => slice.key === "matched");
@@ -135,6 +147,51 @@ test("Amazon Specs keeps Amazon completeness and does not invent listings at 100
   assert.equal(AMAZON_COMPLETENESS_BANDS.dangerBelow, 85);
   assert.equal(AMAZON_COMPLETENESS_BANDS.warnBelow, 92);
   assert.equal(amazon.color, "var(--warning-amber)");
+});
+
+test("Amazon completeness share uses stored field totals, not avg times listing count", () => {
+  // avg 50% × 10 listings × 13 expected fields = 65. Stored found is 40.
+  const invented = Math.round((50 / 100) * 10 * 13);
+  assert.equal(invented, 65);
+  const share = presentAmazonCompletenessFieldShare(40, 130, 50);
+  assert.equal(share.kind, "share");
+  if (share.kind !== "share") return;
+  assert.equal(share.ratio, formatRatio(40, 130));
+  assert.equal(share.label, `${formatRatio(40, 130)} (${formatPct(50)})`);
+  assert.notEqual(share.ratio, formatRatio(invented, 130));
+
+  const hero = amazonCompletenessHero(
+    metrics({
+      spec_checked: 10,
+      spec_avg_amazon_pct: 50,
+      spec_amazon_fields_found: 40,
+      spec_amazon_fields_expected: 130,
+    }),
+  );
+  assert.equal(hero.ratio, `${formatRatio(40, 130)} (${formatPct(50)})`);
+  assert.doesNotMatch(hero.ratio ?? "", /Across/);
+  assert.match(hero.definition, /across 10 checked SKUs/i);
+});
+
+test("Amazon completeness share is Not available* when field totals are missing", () => {
+  const share = presentAmazonCompletenessFieldShare(null, null, 89.6);
+  assert.equal(share.kind, "unavailable");
+  assert.equal(share.label, MISSING_FIELD_SHARE_UNAVAILABLE);
+
+  const hero = amazonCompletenessHero(metrics({ spec_avg_amazon_pct: 89.6 }));
+  assert.equal(hero.percent, formatPct(89.6));
+  assert.equal(hero.ratio, MISSING_FIELD_SHARE_UNAVAILABLE);
+  assert.doesNotMatch(hero.ratio ?? "", /Across/);
+});
+
+test("sumAmazonFieldTotals adds checked rows and ignores unchecked ones", () => {
+  const totals = sumAmazonFieldTotals([
+    { amazon_checked: true, amazon_fields_found: 10, amazon_fields_expected: 13 },
+    { amazon_checked: false, amazon_fields_found: 13, amazon_fields_expected: 13 },
+    { amazon_checked: true, amazon_fields_found: 5, amazon_fields_expected: 13 },
+    { amazon_checked: true, amazon_fields_found: null, amazon_fields_expected: 13 },
+  ]);
+  assert.deepEqual(totals, { found: 15, expected: 26 });
 });
 
 test("page-found and fender completeness helpers stay available for the bubble and Findability", () => {
