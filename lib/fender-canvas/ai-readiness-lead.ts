@@ -151,7 +151,6 @@ export function pageFoundHero(m: CanvasMetricsRow): AiReadinessHeroModel {
 }
 
 export function amazonCompletenessHero(m: CanvasMetricsRow): AiReadinessHeroModel {
-  const checked = m.spec_checked;
   const pct = m.spec_avg_amazon_pct;
   const tone = amazonCompletenessTone(pct);
   const ready = pct != null && !Number.isNaN(pct);
@@ -161,7 +160,8 @@ export function amazonCompletenessHero(m: CanvasMetricsRow): AiReadinessHeroMode
     definition:
       "Average Amazon attribute completeness across the checked SKUs in this catalog spec read. This is an average, not a count of listings at 100%.",
     percent: ready ? formatPct(pct) : pendingLabel(),
-    ratio: averageAcrossRatio(checked != null && checked > 0 ? checked : null, "checked SKUs"),
+    // Average hero: no "Across N checked SKUs" line. N of M lives on Top missing fields.
+    ratio: null,
     color: tone ? TONE_COLOR[tone] : null,
     pie: averagePercentPie("ai-readiness-amazon-completeness", "Amazon attribute completeness", pct),
     tip: ready ? formatPct(pct) : null,

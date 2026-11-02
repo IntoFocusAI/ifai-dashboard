@@ -15,7 +15,18 @@ export function CatalogReadinessSpec({ bundle }: { bundle: CanvasBundle }) {
         data-amazon-specs-band=""
         style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "flex-start" }}
       >
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "stretch" }}>
+        <div
+          data-amazon-specs-hero-col=""
+          style={{
+            flex: "1 1 42%",
+            maxWidth: "50%",
+            minWidth: "max-content",
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 12,
+            alignItems: "stretch",
+          }}
+        >
           <AiReadinessLead bundle={bundle} />
         </div>
         <MissingFieldList missing={bundle.missing} specChecked={bundle.m.spec_checked} />

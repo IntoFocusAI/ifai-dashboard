@@ -154,7 +154,14 @@ test("Amazon Specs shows Amazon completeness only, with no fender.com page-found
   await expect(page.locator("[data-ai-readiness-hero]")).toHaveCount(1);
   const amazon = page.locator("[data-ai-readiness-hero='amazon_completeness']");
   await expect(amazon.locator("[data-ai-readiness-hero-percent]")).toHaveText("48.8%");
-  await expect(amazon.locator("[data-ai-readiness-hero-ratio]")).toHaveText("Across 4 checked SKUs");
+  // Average hero: no Across / of-total ratio line.
+  await expect(amazon.locator("[data-ai-readiness-hero-ratio]")).toHaveCount(0);
+  await expect(amazon).not.toContainText(/Across/i);
+  await expect(amazon).not.toContainText(/\d+ of \d+/);
+  await expect(amazon.locator("span.ifai-term")).toHaveAttribute(
+    "data-ifai-tooltip-desc",
+    /Average Amazon attribute completeness across the checked SKUs/,
+  );
 
   await expect(page.locator("[data-ai-readiness-hero='page_found']")).toHaveCount(0);
   await expect(page.locator("[data-ai-readiness-hero='fender_completeness']")).toHaveCount(0);
@@ -187,20 +194,28 @@ test("Amazon Specs puts Top missing fields beside the completeness hero", async 
   await expect(fieldsBox.locator("[data-spec-missing-count]").first()).toHaveText("3 of 4 (75.0%)");
 
   const desktop = await page.evaluate(() => {
+    const bandEl = document.querySelector("[data-amazon-specs-band]");
     const heroEl = document.querySelector("[data-ai-readiness-hero='amazon_completeness']");
     const fieldsEl = document.querySelector("[data-spec-missing-fields-box]");
     const tableEl = document.querySelector("#spec-readiness-by-asin");
     const percentEl = heroEl?.querySelector("[data-ai-readiness-hero-percent]");
     const pieEl = heroEl?.querySelector(".citation-pie-disc");
-    if (!heroEl || !fieldsEl || !tableEl || !percentEl || !pieEl) return null;
+    const barEl = fieldsEl?.querySelector(".readiness-progress-bar");
+    if (!bandEl || !heroEl || !fieldsEl || !tableEl || !percentEl || !pieEl || !barEl) return null;
+    const band = bandEl.getBoundingClientRect();
     const h = heroEl.getBoundingClientRect();
     const f = fieldsEl.getBoundingClientRect();
     const t = tableEl.getBoundingClientRect();
     const percent = percentEl.getBoundingClientRect();
     const pie = pieEl.getBoundingClientRect();
+    const bar = barEl.getBoundingClientRect();
     return {
       heroRight: h.right,
+      heroWidth: h.width,
+      bandWidth: band.width,
       fieldsLeft: f.left,
+      fieldsWidth: f.width,
+      barWidth: bar.width,
       heroTop: h.top,
       heroBottom: h.bottom,
       fieldsTop: f.top,
@@ -210,6 +225,8 @@ test("Amazon Specs puts Top missing fields beside the completeness hero", async 
       tableBelow: t.top >= Math.max(h.bottom, f.bottom) - 2,
       // Pie beside the percentage: pie top must not sit below the percent bottom.
       pieBesidePercent: pie.top < percent.bottom && pie.left >= percent.left,
+      noAcross: !/Across/i.test(heroEl.textContent ?? ""),
+      noOfTotal: !/\d+\s+of\s+\d+/.test(heroEl.textContent ?? ""),
     };
   });
   expect(desktop).not.toBeNull();
@@ -217,6 +234,14 @@ test("Amazon Specs puts Top missing fields beside the completeness hero", async 
   expect(desktop!.tableBelow).toBe(true);
   expect(desktop!.fieldsLeft).toBeGreaterThan(desktop!.heroRight - 2);
   expect(desktop!.pieBesidePercent).toBe(true);
+  expect(desktop!.noAcross).toBe(true);
+  expect(desktop!.noOfTotal).toBe(true);
+  // Hero takes a clear share of the band (not max-content skinny, not full page).
+  expect(desktop!.heroWidth).toBeGreaterThan(desktop!.bandWidth * 0.35);
+  expect(desktop!.heroWidth).toBeLessThanOrEqual(desktop!.bandWidth * 0.52);
+  // Missing-field bar track is shorter than the fields box.
+  expect(desktop!.barWidth).toBeLessThanOrEqual(180);
+  expect(desktop!.barWidth).toBeLessThan(desktop!.fieldsWidth * 0.6);
 
   // The drilldown panel keeps a wide floor when the viewport shrinks. Constrain the
   // band itself to prove flex-wrap stacks the fields under the hero without overlap.
