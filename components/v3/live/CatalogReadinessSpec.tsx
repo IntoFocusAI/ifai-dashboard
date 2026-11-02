@@ -1,19 +1,26 @@
 "use client";
 
 import { AiReadinessLead } from "@/components/v3/live/AiReadinessLead";
-import { FenderSpecPanel } from "@/components/v3/live/FenderSpecPanel";
+import { FenderSpecPanel, MissingFieldList } from "@/components/v3/live/FenderSpecPanel";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
 
-/** Amazon Specs tab: Amazon completeness, missing Amazon fields, and per-listing table. */
+/**
+ * Amazon Specs tab: completeness hero beside Top missing Amazon fields,
+ * then the full-width Amazon listings table (same band pattern as Brand-Site Specs).
+ */
 export function CatalogReadinessSpec({ bundle }: { bundle: CanvasBundle }) {
   return (
     <div className="readiness-surface" data-amazon-specs="">
-      <AiReadinessLead bundle={bundle} />
-      <FenderSpecPanel
-        missing={bundle.missing}
-        specChecked={bundle.m.spec_checked}
-        catalogReadiness
-      />
+      <div
+        data-amazon-specs-band=""
+        style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "flex-start" }}
+      >
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "stretch" }}>
+          <AiReadinessLead bundle={bundle} />
+        </div>
+        <MissingFieldList missing={bundle.missing} specChecked={bundle.m.spec_checked} />
+      </div>
+      <FenderSpecPanel catalogReadiness />
     </div>
   );
 }

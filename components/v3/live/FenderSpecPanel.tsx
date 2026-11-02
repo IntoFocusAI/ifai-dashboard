@@ -90,7 +90,8 @@ function MissingFieldRow({
   );
 }
 
-function MissingFieldList({
+/** Top missing Amazon fields; sits beside the completeness hero on Amazon Specs. */
+export function MissingFieldList({
   missing,
   specChecked,
 }: {
@@ -106,7 +107,11 @@ function MissingFieldList({
   if (amazonOnly.length === 0) return null;
 
   return (
-    <div className="content-box spec-missing-fields-box" style={{ marginTop: 12 }}>
+    <div
+      className="content-box spec-missing-fields-box"
+      data-spec-missing-fields-box=""
+      style={{ flex: "1 1 240px", minWidth: 200 }}
+    >
       <div className="content-box-title spec-missing-fields-title">
         <span>Top missing Amazon fields</span>
         {rest > 0 ? (
@@ -140,27 +145,16 @@ function MissingFieldList({
 }
 
 export function FenderSpecPanel({
-  missing,
-  specChecked = null,
   catalogReadiness = false,
 }: {
-  missing: CanvasSpecMissingRow[];
-  /** canvas_metrics.spec_checked for the same canvas read. */
-  specChecked?: number | null;
   /** Amazon Specs passes this. Brand-Site Specs has its own page panel. */
   catalogReadiness?: boolean;
 }) {
   if (!catalogReadiness) return null;
-  return <CatalogSpecReadiness missing={missing} specChecked={specChecked} />;
+  return <CatalogSpecReadiness />;
 }
 
-function CatalogSpecReadiness({
-  missing,
-  specChecked,
-}: {
-  missing: CanvasSpecMissingRow[];
-  specChecked: number | null;
-}) {
+function CatalogSpecReadiness() {
   const [rows, setRows] = useState<CanvasSpecReadinessRow[]>([]);
   const [total, setTotal] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
@@ -206,8 +200,6 @@ function CatalogSpecReadiness({
 
   return (
     <>
-      <MissingFieldList missing={missing} specChecked={specChecked} />
-
       <div className="content-box" style={{ marginTop: 12 }} id="spec-readiness-by-asin">
         <div className="content-box-title">
           <span>Amazon listings</span>

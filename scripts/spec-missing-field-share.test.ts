@@ -72,3 +72,29 @@ test("Amazon Specs wires spec_checked into the missing-field rows and bars", () 
   assert.doesNotMatch(panel, /formatInt\(row\.sku_count\)\} SKUs/);
   assert.match(catalog, /specChecked=\{bundle\.m\.spec_checked\}/);
 });
+
+test("Amazon Specs puts Top missing fields beside the completeness hero", () => {
+  const catalog = read("components/v3/live/CatalogReadinessSpec.tsx");
+  const panel = read("components/v3/live/FenderSpecPanel.tsx");
+  const brandSite = read("components/v3/live/MachineReadabilityPanel.tsx");
+  const css = read("lib/canvas-sdk/canvas-sdk.css");
+
+  assert.match(catalog, /data-amazon-specs-band/);
+  assert.match(catalog, /display:\s*"flex"/);
+  assert.match(catalog, /flexWrap:\s*"wrap"/);
+  assert.match(catalog, /alignItems:\s*"flex-start"/);
+  assert.match(catalog, /MissingFieldList/);
+  assert.match(catalog, /AiReadinessLead/);
+  assert.match(panel, /export function MissingFieldList/);
+  assert.match(panel, /flex:\s*"1 1 240px"/);
+  assert.match(panel, /minWidth:\s*200/);
+  assert.match(
+    panel,
+    /className="content-box spec-missing-fields-box"[\s\S]*?style=\{\{\s*flex:\s*"1 1 240px",\s*minWidth:\s*200\s*\}\}/,
+  );
+  // Same horizontal-band idea as Brand-Site Specs (hero/explainer row, table below).
+  assert.match(brandSite, /alignItems:\s*"flex-start"/);
+  assert.match(brandSite, /flex:\s*"1 1 240px"/);
+  assert.match(css, /\[data-amazon-specs-band\]\s*\.findability-lead-card/);
+  assert.match(css, /flex:\s*0 1 200px/);
+});

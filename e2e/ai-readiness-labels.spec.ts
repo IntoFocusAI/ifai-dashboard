@@ -172,6 +172,78 @@ test("Amazon Specs shows Amazon completeness only, with no fender.com page-found
   await expect(catalog.getByRole("columnheader", { name: "Missing Amazon fields" })).toHaveCount(1);
 });
 
+test("Amazon Specs puts Top missing fields beside the completeness hero", async ({ page }) => {
+  await mockCanvasRead(page);
+  await openAmazonSpecs(page);
+
+  const band = page.locator("[data-amazon-specs-band]");
+  const hero = page.locator("[data-ai-readiness-hero='amazon_completeness']");
+  const fieldsBox = page.locator("[data-spec-missing-fields-box]");
+  const table = page.locator("#spec-readiness-by-asin");
+
+  await expect(band).toBeVisible();
+  await expect(hero).toBeVisible();
+  await expect(fieldsBox).toBeVisible();
+  await expect(fieldsBox.locator("[data-spec-missing-count]").first()).toHaveText("3 of 4 (75.0%)");
+
+  const desktop = await page.evaluate(() => {
+    const heroEl = document.querySelector("[data-ai-readiness-hero='amazon_completeness']");
+    const fieldsEl = document.querySelector("[data-spec-missing-fields-box]");
+    const tableEl = document.querySelector("#spec-readiness-by-asin");
+    if (!heroEl || !fieldsEl || !tableEl) return null;
+    const h = heroEl.getBoundingClientRect();
+    const f = fieldsEl.getBoundingClientRect();
+    const t = tableEl.getBoundingClientRect();
+    return {
+      heroRight: h.right,
+      fieldsLeft: f.left,
+      heroTop: h.top,
+      heroBottom: h.bottom,
+      fieldsTop: f.top,
+      fieldsBottom: f.bottom,
+      tableTop: t.top,
+      sideBySide: f.left >= h.right - 2 && f.top < h.bottom && h.top < f.bottom,
+      tableBelow: t.top >= Math.max(h.bottom, f.bottom) - 2,
+    };
+  });
+  expect(desktop).not.toBeNull();
+  expect(desktop!.sideBySide).toBe(true);
+  expect(desktop!.tableBelow).toBe(true);
+  expect(desktop!.fieldsLeft).toBeGreaterThan(desktop!.heroRight - 2);
+
+  // The drilldown panel keeps a wide floor when the viewport shrinks. Constrain the
+  // band itself to prove flex-wrap stacks the fields under the hero without overlap.
+  await page.evaluate(() => {
+    const band = document.querySelector<HTMLElement>("[data-amazon-specs-band]");
+    if (!band) return;
+    band.style.width = "360px";
+    band.style.maxWidth = "360px";
+  });
+  const narrow = await page.evaluate(() => {
+    const heroEl = document.querySelector("[data-ai-readiness-hero='amazon_completeness']");
+    const fieldsEl = document.querySelector("[data-spec-missing-fields-box]");
+    const tableEl = document.querySelector("#spec-readiness-by-asin");
+    if (!heroEl || !fieldsEl || !tableEl) return null;
+    const h = heroEl.getBoundingClientRect();
+    const f = fieldsEl.getBoundingClientRect();
+    const t = tableEl.getBoundingClientRect();
+    return {
+      wrapped: f.top >= h.bottom - 2,
+      noOverlap: f.top >= h.bottom - 2,
+      tableBelow: t.top >= Math.max(h.bottom, f.bottom) - 2,
+      tableWidth: t.width,
+      fieldsWidth: f.width,
+    };
+  });
+  expect(narrow).not.toBeNull();
+  expect(narrow!.wrapped).toBe(true);
+  expect(narrow!.noOverlap).toBe(true);
+  expect(narrow!.tableBelow).toBe(true);
+  expect(narrow!.tableWidth).toBeGreaterThan(200);
+  expect(narrow!.fieldsWidth).toBeLessThanOrEqual(360);
+  await expect(table).toBeVisible();
+});
+
 test("Brand-Site Specs leads with missing machine-readable specs and no Amazon percentage", async ({
   page,
 }) => {
