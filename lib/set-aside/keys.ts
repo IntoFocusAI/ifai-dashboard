@@ -5,4 +5,9 @@ export const FMIC_CLIENT_KEY = "fmic";
 export const SET_ASIDE_CHECKS = {
   commandCenterQueue: "command_center_queue",
   amazonSpecs: "amazon_specs",
+  brandSiteSpecs: "brand_site_specs",
+  listingContent: "listing_content",
+  buyboxSuppression: "buybox_suppression",
+  mapPricing: "map_pricing",
+  outOfStock: "out_of_stock",
 } as const;

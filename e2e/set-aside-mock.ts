@@ -19,6 +19,10 @@ export const MOCK_REASONS = [
 const CHECK_LABELS: Record<string, string> = {
   command_center_queue: "Command Center priority",
   amazon_specs: "Amazon Specs: missing Amazon fields",
+  brand_site_specs: "Brand-Site Specs: missing page fields",
+  listing_content: "Listing content gaps",
+  buybox_suppression: "Buy Box suppression",
+  map_pricing: "MAP pricing below floor",
 };
 
 export type SetAsideMock = { rows: Row[]; calls: { fn: string; body: Record<string, unknown> }[] };
@@ -67,7 +71,12 @@ export async function mockSetAsides(page: Page): Promise<SetAsideMock> {
       client_key: body.p_client_key,
       check_key: String(body.p_check_key),
       check_label: CHECK_LABELS[String(body.p_check_key)] ?? body.p_check_key,
-      entity_type: body.p_check_key === "command_center_queue" ? "queue_item" : "asin",
+      entity_type:
+        body.p_check_key === "command_center_queue"
+          ? "queue_item"
+          : body.p_check_key === "brand_site_specs"
+            ? "url"
+            : "asin",
       entity_key: String(body.p_entity_key),
       entity_label: body.p_entity_label,
       reopened_by_name: null,
