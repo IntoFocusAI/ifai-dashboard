@@ -11,6 +11,7 @@ import {
   OUTCOME_LABEL,
   presentExplanation,
   readinessFindabilityFace,
+  uncheckedReason,
 } from "../lib/findability/copy.ts";
 import { orderFullResult } from "../lib/fender-canvas/full-result-sort.ts";
 import {
@@ -126,8 +127,13 @@ test("the five outcomes stay distinct and sum to the stored row count", () => {
   );
   assert.equal(
     OUTCOME_DEFINITION.not_checked,
-    "We have not looked at this listing yet. A blank result is not a missing page.",
+    "This listing was not checked and should be opened for that reason. A blank result is not a missing page.",
   );
+  assert.match(OUTCOME_DEFINITION.not_checked, /was not checked/);
+  assert.match(OUTCOME_DEFINITION.not_checked, /opened for that reason/);
+  assert.match(OUTCOME_DEFINITION.not_checked, /blank result is not a missing page/);
+  assert.doesNotMatch(OUTCOME_DEFINITION.not_checked, /\byet\b/i);
+  assert.doesNotMatch(OUTCOME_DEFINITION.not_checked, /still running|in progress|this pass/i);
   assert.doesNotMatch(headline, /finished search(?:es)? with no defensible page/i);
   assert.doesNotMatch(headline, /Finished search, no defensible page/);
   assert.match(headline, /8 ambiguous matches/);
@@ -408,6 +414,7 @@ test("findability listing cells stay short and drop the count column", () => {
     explanation: null,
   });
   assert.equal(presentExplanation(unchecked), "None");
+  assert.equal(uncheckedReason(unchecked), "Reason not recorded");
   assert.equal(presentExplanation(row({
     asin: "B00EXACT",
     latest_state: "exact_official_product",
@@ -416,6 +423,72 @@ test("findability listing cells stay short and drop the count column", () => {
   assert.equal(dealerBundleLabel(true), "Yes");
   assert.equal(dealerBundleLabel(false), "No");
   assert.equal(dealerBundleLabel(null), "Not in this read");
+});
+
+test("unchecked reason uses the first matching flag, then the stored explanation", () => {
+  const base = {
+    asin: "B00REASON",
+    latest_state: "not_checked" as const,
+    counts_as_unchecked: true,
+    explanation: "  Stored explanation.  ",
+  };
+  assert.equal(
+    uncheckedReason(row({
+      ...base,
+      counts_as_blocked: true,
+      counts_as_timeout: true,
+      counts_as_parse_failure: true,
+      counts_as_unsupported: true,
+    })),
+    "Blocked",
+  );
+  assert.equal(
+    uncheckedReason(row({
+      ...base,
+      counts_as_timeout: true,
+      counts_as_parse_failure: true,
+      counts_as_unsupported: true,
+    })),
+    "Timeout",
+  );
+  assert.equal(
+    uncheckedReason(row({
+      ...base,
+      counts_as_parse_failure: true,
+      counts_as_unsupported: true,
+    })),
+    "Parse failure",
+  );
+  assert.equal(
+    uncheckedReason(row({ ...base, counts_as_unsupported: true })),
+    "Unsupported",
+  );
+  assert.equal(uncheckedReason(row(base)), "Stored explanation.");
+  assert.equal(findabilitySortValue(row({ ...base, counts_as_blocked: true }), "reason"), "Blocked");
+
+  for (const explanation of [null, "", "   ", "None", " None "]) {
+    assert.equal(
+      uncheckedReason(row({ ...base, explanation })),
+      "Reason not recorded",
+    );
+  }
+  assert.equal(
+    uncheckedReason(row({ ...base, explanation: "None recorded" })),
+    "None recorded",
+  );
+
+  const root = new URL("..", import.meta.url);
+  const table = readFileSync(new URL("components/v3/live/findability/FindabilityTable.tsx", root), "utf8");
+  const shared = table.slice(table.indexOf("const COLUMNS"), table.indexOf("const UNCHECKED_COLUMNS"));
+  const unchecked = table.slice(table.indexOf("const UNCHECKED_COLUMNS"), table.indexOf("function columnsFor"));
+  assert.match(shared, /Official page/);
+  assert.match(shared, /HTTP status/);
+  assert.match(shared, /"Checked"/);
+  assert.match(shared, /"Outcome"/);
+  assert.doesNotMatch(shared, /"Reason"/);
+  assert.match(unchecked, /"Reason"/);
+  assert.doesNotMatch(unchecked, /Official page|HTTP status|"Checked"|"Outcome"/);
+  assert.match(table, /outcome === "not_checked" \? UNCHECKED_COLUMNS : COLUMNS/);
 });
 
 test("the readiness face uses outcome counts instead of the older found percentage", () => {

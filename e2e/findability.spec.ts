@@ -194,7 +194,7 @@ test("the five outcome counts stay distinct and open the listings behind them", 
     {
       outcome: "not_checked",
       title: "Unchecked",
-      desc: "We have not looked at this listing yet. A blank result is not a missing page.",
+      desc: "This listing was not checked and should be opened for that reason. A blank result is not a missing page.",
     },
   ];
   for (const { outcome, title, desc } of outcomeTips) {
@@ -233,7 +233,11 @@ test("the five outcome counts stay distinct and open the listings behind them", 
   await expect(table).toContainText("B00ALPHA");
   await expect(table).not.toContainText("B00FAMILY");
   await expect(table.locator("thead")).toContainText("Listing");
-  await expect(table.locator("thead")).toContainText("Official page");
+  await expect(table.locator("thead th[data-col-id='outcome']")).toHaveCount(1);
+  await expect(table.locator("thead th[data-col-id='page']")).toContainText("Official page");
+  await expect(table.locator("thead th[data-col-id='http']")).toContainText("HTTP status");
+  await expect(table.locator("thead th[data-col-id='checked']")).toContainText("Checked");
+  await expect(table.locator("thead th[data-col-id='reason']")).toHaveCount(0);
 
   const link = table.locator("[data-findability-official-url]").first();
   await expect(link).toHaveAttribute("href", /brand\.example/);
@@ -271,10 +275,26 @@ test("the five outcome counts stay distinct and open the listings behind them", 
 
   await page.locator("[data-findability-outcome='not_checked'] [data-findability-count]").click();
   await expect(table).toContainText("B00UNCHECKED");
-  await expect(table.locator("[data-findability-address='unchecked']")).toHaveText("not checked");
-  await expect(table.locator("[data-findability-address='unchecked']")).not.toContainText("no defensible page");
+  await expect(table.locator("thead th").nth(0)).toHaveAttribute("data-col-id", "asin");
+  await expect(table.locator("thead th").nth(1)).toHaveAttribute("data-col-id", "title");
+  await expect(table.locator("thead th").nth(2)).toHaveAttribute("data-col-id", "reason");
+  await expect(table.locator("thead th[data-col-id='page']")).toHaveCount(0);
+  await expect(table.locator("thead th[data-col-id='http']")).toHaveCount(0);
+  await expect(table.locator("thead th[data-col-id='checked']")).toHaveCount(0);
+  await expect(table.locator("thead th[data-col-id='outcome']")).toHaveCount(0);
+  await expect(table.locator("[data-findability-address='unchecked']")).toHaveCount(0);
+  await expect(table.locator("[data-findability-reason]")).toHaveText("Reason not recorded");
   await expect(table.locator("[data-findability-row='not_checked']")).not.toContainText("unsuccessful");
+  await expect(table.locator("[data-findability-row='not_checked']")).not.toContainText("Not checked yet");
   await expect(table.locator("[data-findability-row='not_checked']")).toContainText("None");
+
+  await page.locator("[data-findability-outcome='exact_official_product'] [data-findability-count]").click();
+  await expect(table.locator("thead th[data-col-id='page']")).toContainText("Official page");
+  await expect(table.locator("thead th[data-col-id='http']")).toContainText("HTTP status");
+  await expect(table.locator("thead th[data-col-id='checked']")).toContainText("Checked");
+  await expect(table.locator("thead th[data-col-id='outcome']")).toContainText("Outcome");
+  await expect(table.locator("thead th[data-col-id='reason']")).toHaveCount(0);
+  await expect(table.locator("[data-findability-official-url]").first()).toHaveAttribute("href", /brand\.example/);
 });
 
 test("last checked shows Not available* when checked rows have no attempt time", async ({ page }) => {
@@ -325,6 +345,11 @@ test("an empty official-page read does not describe unchecked as a finished sear
   await page.locator("[data-findability-outcome='not_checked'] [data-findability-count]").click();
   const table = page.locator("#findability-listings");
   await expect(table).toContainText("No listings in this outcome.");
+  await expect(table.locator("thead th[data-col-id='reason']")).toHaveCount(1);
+  await expect(table.locator("thead th[data-col-id='page']")).toHaveCount(0);
+  await expect(table.locator("thead th[data-col-id='http']")).toHaveCount(0);
+  await expect(table.locator("thead th[data-col-id='checked']")).toHaveCount(0);
+  await expect(table.locator("thead th[data-col-id='outcome']")).toHaveCount(0);
   await expect(table).not.toContainText("no defensible page");
   await expect(table).not.toContainText("unsuccessful");
 });
@@ -464,4 +489,9 @@ test("a stored other outcome uses the same chevron", async ({ page }) => {
   await expectOutcomeChevron(page, "other", true);
   await expect(page.locator(".content-box-title .tag-badge")).toHaveText("1 listings");
   await expect(page.locator("#findability-listings")).toContainText("B00BLOCK");
+  await expect(page.locator("#findability-listings thead th[data-col-id='page']")).toContainText("Official page");
+  await expect(page.locator("#findability-listings thead th[data-col-id='http']")).toContainText("HTTP status");
+  await expect(page.locator("#findability-listings thead th[data-col-id='checked']")).toContainText("Checked");
+  await expect(page.locator("#findability-listings thead th[data-col-id='outcome']")).toContainText("Outcome");
+  await expect(page.locator("#findability-listings thead th[data-col-id='reason']")).toHaveCount(0);
 });
