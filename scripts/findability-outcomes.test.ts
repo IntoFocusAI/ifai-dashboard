@@ -485,9 +485,17 @@ test("unchecked reason uses the first matching flag, then the stored explanation
   assert.match(shared, /HTTP status/);
   assert.match(shared, /"Checked"/);
   assert.match(shared, /"Outcome"/);
+  assert.match(shared, /VARIANT_SKU_COLUMN/);
+  assert.match(shared, /"Confidence"/);
+  assert.match(shared, /How it was matched/);
   assert.doesNotMatch(shared, /"Reason"/);
   assert.match(unchecked, /"Reason"/);
+  assert.match(unchecked, /"Category"/);
+  assert.match(unchecked, /Product kind/);
+  assert.match(unchecked, /"Explanation"/);
+  assert.match(unchecked, /Dealer bundle/);
   assert.doesNotMatch(unchecked, /Official page|HTTP status|"Checked"|"Outcome"/);
+  assert.doesNotMatch(unchecked, /Variant SKU|"Confidence"|How it was matched/);
   assert.match(table, /outcome === "not_checked" \? UNCHECKED_COLUMNS : COLUMNS/);
 });
 

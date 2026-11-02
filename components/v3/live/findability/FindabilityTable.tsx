@@ -57,9 +57,6 @@ const UNCHECKED_COLUMNS: readonly RetailColumn[] = [
   clientColumn("reason", "Reason", "text", 280, 180),
   clientColumn("category", "Category", "text", 150, 110),
   clientColumn("kind", "Product kind", "text", 130, 110),
-  VARIANT_SKU_COLUMN,
-  clientColumn("confidence", "Confidence", "text", 150, 120),
-  clientColumn("source", "How it was matched", "text", 170, 130),
   clientColumn("explanation", "Explanation", "text", 320, 200),
   clientColumn("bundle", "Dealer bundle", "text", 150, 120),
 ];
