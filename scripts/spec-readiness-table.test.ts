@@ -40,12 +40,11 @@ test("Yes with an http(s) URL can link; No, blank, and Yes without a URL stay pl
   assert.equal(schemaPageHref(null), null);
   assert.equal(schemaPageHref(""), null);
 
+  // Amazon Specs keeps Amazon fields only; fender.com found lives on Brand-Site Specs / Findability.
   const panel = read("components/v3/live/FenderSpecPanel.tsx");
-  assert.match(panel, /function FenderFoundCell/);
-  assert.match(panel, /schemaPageHref/);
-  assert.match(panel, /className="listing-link"/);
-  assert.match(panel, /target="_blank"/);
-  assert.match(panel, /rel="noopener noreferrer"/);
+  assert.doesNotMatch(panel, /function FenderFoundCell/);
+  assert.doesNotMatch(panel, /schemaPageHref/);
+  assert.doesNotMatch(panel, /fender\.com found/);
   assert.match(panel, /SPEC_TABLE_MAX_HEIGHT = 420/);
   assert.match(panel, /fillColumnId="missing"/);
   assert.match(panel, /wrapColumnIds=\{\["model"\]\}/);
@@ -54,6 +53,7 @@ test("Yes with an http(s) URL can link; No, blank, and Yes without a URL stay pl
   assert.match(panel, /CLIENT_TABLE_PAGE_SIZE/);
   assert.match(panel, /data-spec-missing-fields-toggle/);
   assert.match(panel, /retail-explore-chevron/);
+  assert.match(panel, /presentMissingFieldShare/);
   assert.doesNotMatch(panel, /Show all \$\{formatInt\(missing\.length\)\} fields/);
   assert.doesNotMatch(panel, /Show fewer fields/);
 });

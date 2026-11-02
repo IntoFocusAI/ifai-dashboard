@@ -28,6 +28,10 @@ export type CanvasMetricsRow = {
   bundle_reviews: number | null;
   spec_checked: number | null;
   spec_avg_amazon_pct: number | null;
+  /** Sum of amazon_fields_found on Amazon-checked listings (spec_amazon_completeness numerator). */
+  spec_amazon_fields_found?: number | null;
+  /** Sum of amazon_fields_expected on Amazon-checked listings (spec_amazon_completeness denominator). */
+  spec_amazon_fields_expected?: number | null;
   spec_fender_found: number | null;
   spec_fender_found_pct: number | null;
   spec_avg_fender_pct: number | null;
@@ -149,6 +153,9 @@ export type CanvasSpecReadinessRow = {
   asin: string;
   title: string | null;
   amazon_completeness_pct: number | null;
+  amazon_checked?: boolean | null;
+  amazon_fields_found?: number | null;
+  amazon_fields_expected?: number | null;
   fender_completeness_pct: number | null;
   fender_found: boolean | null;
   fender_url: string | null;

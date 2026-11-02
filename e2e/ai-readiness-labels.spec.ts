@@ -106,7 +106,16 @@ test("Amazon Specs opens on Amazon fields and the title chevron reveals the rest
   await expect(fields).toHaveCount(2);
   await expect(fields.first()).toContainText("scale_length");
   await expect(fields.nth(1)).toContainText("neck_material");
+  // sku_count is of the same checked listings as METRICS.spec_checked (4).
+  await expect(fields.first().locator("[data-spec-missing-count]")).toHaveText("3 of 4 (75.0%)");
+  await expect(fields.nth(1).locator("[data-spec-missing-count]")).toHaveText("2 of 4 (50.0%)");
+  await expect(fields.first()).toHaveAttribute("data-spec-missing-share", "share");
+  await expect(fields.first().locator(".readiness-progress-fill")).toHaveAttribute(
+    "style",
+    /width:\s*75%/,
+  );
   await expect(page.locator("#spec-missing-fields")).not.toContainText("additionalProperty");
+  await expect(page.locator("#spec-missing-fields")).not.toContainText("SKUs");
   await expect(page.locator("#spec-missing-fields")).toHaveClass(/spec-missing-fields-preview/);
   await expect(page.getByText(/Show all/)).toHaveCount(0);
 
@@ -121,6 +130,7 @@ test("Amazon Specs opens on Amazon fields and the title chevron reveals the rest
   await expect(page.locator("#spec-missing-fields")).not.toHaveClass(/spec-missing-fields-preview/);
   await expect(fields).toHaveCount(amazonFieldCount);
   await expect(fields.last()).toContainText("pickup_configuration");
+  await expect(fields.last().locator("[data-spec-missing-count]")).toHaveText("1 of 4 (25.0%)");
 
   await reveal.click();
   await expect(reveal).toHaveAttribute("aria-expanded", "false");
@@ -144,7 +154,16 @@ test("Amazon Specs shows Amazon completeness only, with no fender.com page-found
   await expect(page.locator("[data-ai-readiness-hero]")).toHaveCount(1);
   const amazon = page.locator("[data-ai-readiness-hero='amazon_completeness']");
   await expect(amazon.locator("[data-ai-readiness-hero-percent]")).toHaveText("48.8%");
-  await expect(amazon.locator("[data-ai-readiness-hero-ratio]")).toHaveText("Across 4 checked SKUs");
+  await expect(amazon.locator("[data-ai-readiness-hero-ratio]")).toHaveText("26 of 52 (48.8%)");
+  await expect(amazon.locator("[data-ai-readiness-hero-ratio]")).not.toContainText(/Across/i);
+  await expect(amazon.locator("span.ifai-term")).toHaveAttribute(
+    "data-ifai-tooltip-desc",
+    /across 4 checked SKUs/i,
+  );
+  await expect(amazon.locator("span.ifai-term")).toHaveAttribute(
+    "data-ifai-tooltip-desc",
+    /average, not a count of listings at 100%/i,
+  );
 
   await expect(page.locator("[data-ai-readiness-hero='page_found']")).toHaveCount(0);
   await expect(page.locator("[data-ai-readiness-hero='fender_completeness']")).toHaveCount(0);
@@ -160,6 +179,113 @@ test("Amazon Specs shows Amazon completeness only, with no fender.com page-found
   await expect(catalog.getByRole("columnheader", { name: "fender.com found" })).toHaveCount(0);
   await expect(catalog.getByRole("columnheader", { name: "Amazon completeness" })).toHaveCount(1);
   await expect(catalog.getByRole("columnheader", { name: "Missing Amazon fields" })).toHaveCount(1);
+});
+
+test("Amazon Specs puts Top missing fields beside the completeness hero", async ({ page }) => {
+  await mockCanvasRead(page);
+  await openAmazonSpecs(page);
+
+  const band = page.locator("[data-amazon-specs-band]");
+  const hero = page.locator("[data-ai-readiness-hero='amazon_completeness']");
+  const fieldsBox = page.locator("[data-spec-missing-fields-box]");
+  const table = page.locator("#spec-readiness-by-asin");
+
+  await expect(band).toBeVisible();
+  await expect(hero).toBeVisible();
+  await expect(fieldsBox).toBeVisible();
+  await expect(fieldsBox.locator("[data-spec-missing-count]").first()).toHaveText("3 of 4 (75.0%)");
+
+  const desktop = await page.evaluate(() => {
+    const bandEl = document.querySelector("[data-amazon-specs-band]");
+    const heroEl = document.querySelector("[data-ai-readiness-hero='amazon_completeness']");
+    const fieldsEl = document.querySelector("[data-spec-missing-fields-box]");
+    const tableEl = document.querySelector("#spec-readiness-by-asin");
+    const percentEl = heroEl?.querySelector("[data-ai-readiness-hero-percent]");
+    const pieEl = heroEl?.querySelector(".citation-pie-disc");
+    const barEl = fieldsEl?.querySelector(".readiness-progress-bar");
+    if (!bandEl || !heroEl || !fieldsEl || !tableEl || !percentEl || !pieEl || !barEl) return null;
+    const band = bandEl.getBoundingClientRect();
+    const h = heroEl.getBoundingClientRect();
+    const f = fieldsEl.getBoundingClientRect();
+    const t = tableEl.getBoundingClientRect();
+    const percent = percentEl.getBoundingClientRect();
+    const pie = pieEl.getBoundingClientRect();
+    const bar = barEl.getBoundingClientRect();
+    return {
+      heroRight: h.right,
+      heroWidth: h.width,
+      bandWidth: band.width,
+      fieldsLeft: f.left,
+      fieldsWidth: f.width,
+      barWidth: bar.width,
+      heroTop: h.top,
+      heroBottom: h.bottom,
+      fieldsTop: f.top,
+      fieldsBottom: f.bottom,
+      tableTop: t.top,
+      sideBySide: f.left >= h.right - 2 && f.top < h.bottom && h.top < f.bottom,
+      tableBelow: t.top >= Math.max(h.bottom, f.bottom) - 2,
+      // Pie beside the percentage: pie top must not sit below the percent bottom.
+      pieBesidePercent: pie.top < percent.bottom && pie.left >= percent.left,
+      ratioText: heroEl.querySelector("[data-ai-readiness-hero-ratio]")?.textContent ?? "",
+      pieHeight: pie.height,
+      heroHeight: h.height,
+    };
+  });
+  expect(desktop).not.toBeNull();
+  expect(desktop!.sideBySide).toBe(true);
+  expect(desktop!.tableBelow).toBe(true);
+  expect(desktop!.fieldsLeft).toBeGreaterThan(desktop!.heroRight - 2);
+  expect(desktop!.pieBesidePercent).toBe(true);
+  expect(desktop!.ratioText).toMatch(/^\d[\d,]* of \d[\d,]* \(/);
+  expect(desktop!.ratioText).not.toMatch(/^Across\b/);
+  // Content-sized hero; missing-fields box is the wider of the two.
+  expect(desktop!.heroWidth).toBeLessThan(desktop!.fieldsWidth);
+  expect(desktop!.heroWidth).toBeLessThan(desktop!.bandWidth * 0.55);
+  // Pie nearly as tall as the card (padding leaves a small margin).
+  expect(desktop!.pieHeight).toBeGreaterThanOrEqual(70);
+  expect(desktop!.pieHeight).toBeGreaterThan(desktop!.heroHeight * 0.45);
+  // Missing-field bar track is shorter than the fields box.
+  expect(desktop!.barWidth).toBeLessThanOrEqual(180);
+  expect(desktop!.barWidth).toBeLessThan(desktop!.fieldsWidth * 0.6);
+
+  // The drilldown panel keeps a wide floor when the viewport shrinks. Constrain the
+  // band itself to prove flex-wrap stacks the fields under the hero without overlap.
+  await page.evaluate(() => {
+    const band = document.querySelector<HTMLElement>("[data-amazon-specs-band]");
+    if (!band) return;
+    band.style.width = "360px";
+    band.style.maxWidth = "360px";
+  });
+  const narrow = await page.evaluate(() => {
+    const heroEl = document.querySelector("[data-ai-readiness-hero='amazon_completeness']");
+    const fieldsEl = document.querySelector("[data-spec-missing-fields-box]");
+    const tableEl = document.querySelector("#spec-readiness-by-asin");
+    const percentEl = heroEl?.querySelector("[data-ai-readiness-hero-percent]");
+    const pieEl = heroEl?.querySelector(".citation-pie-disc");
+    if (!heroEl || !fieldsEl || !tableEl || !percentEl || !pieEl) return null;
+    const h = heroEl.getBoundingClientRect();
+    const f = fieldsEl.getBoundingClientRect();
+    const t = tableEl.getBoundingClientRect();
+    const percent = percentEl.getBoundingClientRect();
+    const pie = pieEl.getBoundingClientRect();
+    return {
+      wrapped: f.top >= h.bottom - 2,
+      noOverlap: f.top >= h.bottom - 2,
+      tableBelow: t.top >= Math.max(h.bottom, f.bottom) - 2,
+      tableWidth: t.width,
+      fieldsWidth: f.width,
+      pieBesidePercent: pie.top < percent.bottom && pie.left >= percent.left,
+    };
+  });
+  expect(narrow).not.toBeNull();
+  expect(narrow!.wrapped).toBe(true);
+  expect(narrow!.noOverlap).toBe(true);
+  expect(narrow!.tableBelow).toBe(true);
+  expect(narrow!.tableWidth).toBeGreaterThan(200);
+  expect(narrow!.fieldsWidth).toBeLessThanOrEqual(360);
+  expect(narrow!.pieBesidePercent).toBe(true);
+  await expect(table).toBeVisible();
 });
 
 test("Brand-Site Specs leads with missing machine-readable specs and no Amazon percentage", async ({

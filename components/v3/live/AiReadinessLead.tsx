@@ -1,13 +1,19 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { CitationPieDisc } from "@/components/v3/live/ai-search/CitationPieDisc";
+import { specRowsQuery } from "@/lib/canvasData";
 import {
   amazonSpecsHeroes,
+  resolveAmazonFieldTotals,
+  sumAmazonFieldTotals,
   type AiReadinessHeroModel,
+  type AmazonFieldTotals,
 } from "@/lib/fender-canvas/ai-readiness-lead";
-import type { CanvasBundle } from "@/lib/fender-canvas/types";
+import { loadFilteredPages } from "@/lib/fender-canvas/full-result-sort";
+import type { CanvasBundle, CanvasSpecReadinessRow } from "@/lib/fender-canvas/types";
 
-const PIE_SIZE = "citation-pie-disc citation-pie-disc-findability";
+const PIE_SIZE = "citation-pie-disc citation-pie-disc-amazon-specs";
 
 function ReadinessHero({ hero }: { hero: AiReadinessHeroModel }) {
   return (
@@ -57,9 +63,47 @@ function ReadinessHero({ hero }: { hero: AiReadinessHeroModel }) {
 /**
  * Amazon Specs lead: Amazon attribute completeness only.
  * Page-found and brand-site figures live on the bubble / Brand-Site Specs.
+ * Field totals come from the metrics row when stored; otherwise from the spec read.
  */
 export function AiReadinessLead({ bundle }: { bundle: CanvasBundle }) {
-  const heroes = amazonSpecsHeroes(bundle.m);
+  const metricsTotals = resolveAmazonFieldTotals(bundle.m, null);
+  const hasMetricsTotals = metricsTotals != null;
+  const [rowTotals, setRowTotals] = useState<AmazonFieldTotals | null>(null);
+  const metricsFound = bundle.m.spec_amazon_fields_found;
+  const metricsExpected = bundle.m.spec_amazon_fields_expected;
+
+  useEffect(() => {
+    if (hasMetricsTotals) {
+      setRowTotals(null);
+      return;
+    }
+    let cancelled = false;
+    void loadFilteredPages(async (page, size) => {
+      const result = await specRowsQuery(page, size);
+      return {
+        data: (result.data ?? []) as CanvasSpecReadinessRow[],
+        error: result.error,
+        count: result.count,
+      };
+    }).then(
+      (result) => {
+        if (cancelled) return;
+        if (result.error) {
+          setRowTotals(null);
+          return;
+        }
+        setRowTotals(sumAmazonFieldTotals(result.rows));
+      },
+      () => {
+        if (!cancelled) setRowTotals(null);
+      },
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [hasMetricsTotals, metricsFound, metricsExpected]);
+
+  const heroes = amazonSpecsHeroes(bundle.m, metricsTotals ?? rowTotals);
 
   return (
     <div className="ai-readiness-lead" data-ai-readiness-lead="" data-amazon-specs-lead="">

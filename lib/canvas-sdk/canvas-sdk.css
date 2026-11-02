@@ -2595,6 +2595,44 @@
       gap: 8px;
     }
 
+    /*
+     * Amazon Specs band: completeness card sizes to its content (no empty band
+     * beside the pie). Top missing fields takes the remaining width.
+     * Findability's shared .findability-lead-row still wraps its five heroes.
+     */
+    [data-amazon-specs-band] .ai-readiness-lead,
+    [data-amazon-specs-band] .findability-leads {
+      width: max-content;
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+
+    [data-amazon-specs-band] .findability-lead-card {
+      flex: 0 0 auto;
+      width: max-content;
+      max-width: 100%;
+      min-width: 0;
+      box-sizing: border-box;
+    }
+
+    [data-amazon-specs-hero] .findability-lead-row {
+      flex-wrap: nowrap;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Nearly the inner height of the completeness card; sits beside the figures. */
+    [data-amazon-specs-hero] .citation-pie-disc-amazon-specs {
+      width: 76px;
+      height: 76px;
+    }
+
+    /* Scrunch the missing-field bar track; name and N of M stay on the row above. */
+    [data-spec-missing-fields-box] .readiness-progress-bar {
+      width: 100%;
+      max-width: 180px;
+    }
+
     .spec-missing-fields-title {
       display: flex;
       align-items: center;
@@ -4270,6 +4308,14 @@
       flex-wrap: wrap;
       gap: 10px;
       align-items: stretch;
+    }
+
+    /* Official-page read freshness under the hero band (X-12). */
+    .findability-last-checked {
+      font-size: 13px;
+      line-height: 1.45;
+      color: var(--text-muted);
+      margin: 10px 0 0;
     }
 
     .findability-lead-card {

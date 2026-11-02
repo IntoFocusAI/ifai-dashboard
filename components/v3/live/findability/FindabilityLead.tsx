@@ -9,10 +9,50 @@ import {
   outcomeShareColor,
   outcomeShareFigure,
 } from "@/lib/findability/lead";
+import {
+  findabilityLastCheckedSentence,
+  LAST_CHECKED_UNAVAILABLE_DESC,
+  LAST_CHECKED_UNAVAILABLE_LABEL,
+  LAST_CHECKED_UNAVAILABLE_TITLE,
+  newestCheckedAttemptAt,
+} from "@/lib/findability/last-checked";
 import { OUTCOME_DEFINITION, OUTCOME_LABEL, bucketLabel } from "@/lib/findability/copy";
-import type { FindabilityBucket, OutcomeCounts } from "@/lib/findability/outcomes";
+import type {
+  FindabilityBucket,
+  FindabilityRow,
+  OutcomeCounts,
+} from "@/lib/findability/outcomes";
 
 const FINDABILITY_PIE_SIZE = "citation-pie-disc citation-pie-disc-findability";
+
+/** One freshness line for the whole official-page read (X-12). Visible with the heroes. */
+function LastCheckedLine({ rows }: { rows: readonly FindabilityRow[] }) {
+  const iso = newestCheckedAttemptAt(rows);
+  const sentence = findabilityLastCheckedSentence(iso);
+  return (
+    <p
+      className="findability-last-checked"
+      data-findability-last-checked={iso ?? ""}
+    >
+      {sentence ? (
+        sentence
+      ) : (
+        <>
+          Last checked{" "}
+          <span
+            className="ifai-term"
+            data-ifai-tooltip-title={LAST_CHECKED_UNAVAILABLE_TITLE}
+            data-ifai-tooltip-desc={LAST_CHECKED_UNAVAILABLE_DESC}
+            tabIndex={0}
+            aria-label={`${LAST_CHECKED_UNAVAILABLE_TITLE}: ${LAST_CHECKED_UNAVAILABLE_DESC}`}
+          >
+            {LAST_CHECKED_UNAVAILABLE_LABEL}
+          </span>
+        </>
+      )}
+    </p>
+  );
+}
 
 function outcomeLabel(bucket: FindabilityBucket): string {
   return bucket === "other" ? bucketLabel("other") : OUTCOME_LABEL[bucket];
@@ -96,19 +136,29 @@ function OutcomeHero({
 
 /**
  * Findability tab heroes: one bubble per outcome (and Other when present).
- * Each shows share of this read, N of M, and a disc. Prose and count cards stay below.
+ * Each shows share of this read, N of M, and a disc. Freshness sits under the
+ * hero row so five heroes stay in one band. Prose and count cards stay below.
  */
-export function FindabilityLead({ counts }: { counts: OutcomeCounts }) {
+export function FindabilityLead({
+  counts,
+  rows,
+}: {
+  counts: OutcomeCounts;
+  rows: readonly FindabilityRow[];
+}) {
   if (counts.total <= 0) {
     return (
-      <div className="content-box" data-findability-lead="">
-        <span
-          className="ai-lead-figure"
-          data-findability-lead-figure=""
-          data-findability-empty=""
-        >
-          This official-page read has no listings.
-        </span>
+      <div data-findability-lead="">
+        <div className="content-box">
+          <span
+            className="ai-lead-figure"
+            data-findability-lead-figure=""
+            data-findability-empty=""
+          >
+            This official-page read has no listings.
+          </span>
+        </div>
+        <LastCheckedLine rows={rows} />
       </div>
     );
   }
@@ -116,10 +166,13 @@ export function FindabilityLead({ counts }: { counts: OutcomeCounts }) {
   const buckets = findabilityLeadBuckets(counts);
 
   return (
-    <div className="findability-leads" data-findability-lead="">
-      {buckets.map((bucket) => (
-        <OutcomeHero key={bucket} counts={counts} bucket={bucket} />
-      ))}
+    <div data-findability-lead="">
+      <div className="findability-leads">
+        {buckets.map((bucket) => (
+          <OutcomeHero key={bucket} counts={counts} bucket={bucket} />
+        ))}
+      </div>
+      <LastCheckedLine rows={rows} />
     </div>
   );
 }
