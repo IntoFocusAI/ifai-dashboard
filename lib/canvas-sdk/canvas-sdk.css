@@ -5178,6 +5178,16 @@
       cursor: help;
     }
 
+    /* One 12-month figure per sales source, with its 90- and 30-day figures beneath. */
+    .stock-loss-hero-source {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .stock-loss-row .stock-loss-offer-chip {
+      margin-left: 6px;
+    }
+
     .stock-loss-row {
       cursor: pointer;
     }
