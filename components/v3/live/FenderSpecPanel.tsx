@@ -12,7 +12,10 @@ import {
   type CanvasSpecReadinessRow,
 } from "@/lib/fender-canvas/types";
 import { formatInt, formatPct } from "@/lib/fender-canvas/format";
-import { presentMissingAmazonFields } from "@/lib/fender-canvas/spec-missing-fields";
+import {
+  presentMissingAmazonFields,
+  presentMissingFieldShare,
+} from "@/lib/fender-canvas/spec-missing-fields";
 
 const SPEC_COLUMNS = [
   clientColumn("asin", "ASIN", "text", 118, 100, "asin-col"),
@@ -52,10 +55,50 @@ function FieldsChevron() {
   );
 }
 
-function MissingFieldList({ missing }: { missing: CanvasSpecMissingRow[] }) {
+function MissingFieldRow({
+  row,
+  specChecked,
+}: {
+  row: CanvasSpecMissingRow;
+  specChecked: number | null;
+}) {
+  const share = presentMissingFieldShare(row.sku_count, specChecked);
+  const countLabel =
+    share.kind === "share" ? share.label : `${share.label} · ${share.shareLabel}`;
+
+  return (
+    <div
+      className="spec-missing-field-row"
+      data-spec-missing-field={row.field}
+      data-spec-missing-share={share.kind}
+      data-spec-missing-bar={share.barPct == null ? "" : String(share.barPct)}
+    >
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: 11 }}>
+        <span>{row.field}</span>
+        <span data-spec-missing-count="">{countLabel}</span>
+      </div>
+      {share.barPct != null ? (
+        <div className="readiness-progress-bar" aria-hidden="true">
+          <div className="readiness-progress-fill" style={{ width: `${share.barPct}%` }} />
+        </div>
+      ) : (
+        <div className="readiness-progress-bar" aria-hidden="true" data-spec-missing-bar-empty="">
+          <div className="readiness-progress-fill" style={{ width: "0%" }} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MissingFieldList({
+  missing,
+  specChecked,
+}: {
+  missing: CanvasSpecMissingRow[];
+  specChecked: number | null;
+}) {
   const [showAll, setShowAll] = useState(false);
   const amazonOnly = amazonMissingRows(missing);
-  const maxCount = amazonOnly.reduce((max, row) => Math.max(max, row.sku_count ?? 0), 0) || 1;
   const shown = showAll ? amazonOnly : amazonOnly.slice(0, MISSING_FIELD_PREVIEW);
   const rest = amazonOnly.length - MISSING_FIELD_PREVIEW;
   const collapsed = rest > 0 && !showAll;
@@ -89,18 +132,7 @@ function MissingFieldList({ missing }: { missing: CanvasSpecMissingRow[] }) {
         className={collapsed ? "spec-missing-fields-preview" : undefined}
       >
         {shown.map((row) => (
-          <div key={`${row.source}-${row.field}`} className="spec-missing-field-row">
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11 }}>
-              <span>{row.field}</span>
-              <span>{formatInt(row.sku_count)} SKUs</span>
-            </div>
-            <div className="readiness-progress-bar">
-              <div
-                className="readiness-progress-fill"
-                style={{ width: `${((row.sku_count ?? 0) / maxCount) * 100}%` }}
-              />
-            </div>
-          </div>
+          <MissingFieldRow key={`${row.source}-${row.field}`} row={row} specChecked={specChecked} />
         ))}
       </div>
     </div>
@@ -109,17 +141,26 @@ function MissingFieldList({ missing }: { missing: CanvasSpecMissingRow[] }) {
 
 export function FenderSpecPanel({
   missing,
+  specChecked = null,
   catalogReadiness = false,
 }: {
   missing: CanvasSpecMissingRow[];
+  /** canvas_metrics.spec_checked for the same canvas read. */
+  specChecked?: number | null;
   /** Amazon Specs passes this. Brand-Site Specs has its own page panel. */
   catalogReadiness?: boolean;
 }) {
   if (!catalogReadiness) return null;
-  return <CatalogSpecReadiness missing={missing} />;
+  return <CatalogSpecReadiness missing={missing} specChecked={specChecked} />;
 }
 
-function CatalogSpecReadiness({ missing }: { missing: CanvasSpecMissingRow[] }) {
+function CatalogSpecReadiness({
+  missing,
+  specChecked,
+}: {
+  missing: CanvasSpecMissingRow[];
+  specChecked: number | null;
+}) {
   const [rows, setRows] = useState<CanvasSpecReadinessRow[]>([]);
   const [total, setTotal] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
@@ -165,7 +206,7 @@ function CatalogSpecReadiness({ missing }: { missing: CanvasSpecMissingRow[] }) 
 
   return (
     <>
-      <MissingFieldList missing={missing} />
+      <MissingFieldList missing={missing} specChecked={specChecked} />
 
       <div className="content-box" style={{ marginTop: 12 }} id="spec-readiness-by-asin">
         <div className="content-box-title">

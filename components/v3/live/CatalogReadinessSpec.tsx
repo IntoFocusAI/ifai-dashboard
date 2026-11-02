@@ -9,7 +9,11 @@ export function CatalogReadinessSpec({ bundle }: { bundle: CanvasBundle }) {
   return (
     <div className="readiness-surface" data-amazon-specs="">
       <AiReadinessLead bundle={bundle} />
-      <FenderSpecPanel missing={bundle.missing} catalogReadiness />
+      <FenderSpecPanel
+        missing={bundle.missing}
+        specChecked={bundle.m.spec_checked}
+        catalogReadiness
+      />
     </div>
   );
 }

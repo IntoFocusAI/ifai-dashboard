@@ -106,7 +106,16 @@ test("Amazon Specs opens on Amazon fields and the title chevron reveals the rest
   await expect(fields).toHaveCount(2);
   await expect(fields.first()).toContainText("scale_length");
   await expect(fields.nth(1)).toContainText("neck_material");
+  // sku_count is of the same checked listings as METRICS.spec_checked (4).
+  await expect(fields.first().locator("[data-spec-missing-count]")).toHaveText("3 of 4 (75.0%)");
+  await expect(fields.nth(1).locator("[data-spec-missing-count]")).toHaveText("2 of 4 (50.0%)");
+  await expect(fields.first()).toHaveAttribute("data-spec-missing-share", "share");
+  await expect(fields.first().locator(".readiness-progress-fill")).toHaveAttribute(
+    "style",
+    /width:\s*75%/,
+  );
   await expect(page.locator("#spec-missing-fields")).not.toContainText("additionalProperty");
+  await expect(page.locator("#spec-missing-fields")).not.toContainText("SKUs");
   await expect(page.locator("#spec-missing-fields")).toHaveClass(/spec-missing-fields-preview/);
   await expect(page.getByText(/Show all/)).toHaveCount(0);
 
@@ -121,6 +130,7 @@ test("Amazon Specs opens on Amazon fields and the title chevron reveals the rest
   await expect(page.locator("#spec-missing-fields")).not.toHaveClass(/spec-missing-fields-preview/);
   await expect(fields).toHaveCount(amazonFieldCount);
   await expect(fields.last()).toContainText("pickup_configuration");
+  await expect(fields.last().locator("[data-spec-missing-count]")).toHaveText("1 of 4 (25.0%)");
 
   await reveal.click();
   await expect(reveal).toHaveAttribute("aria-expanded", "false");
