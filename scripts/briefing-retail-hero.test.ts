@@ -331,17 +331,38 @@ test("a missing stored count shows Not available* without inventing zero", () =>
   assert.equal(lead.findings[4].percent, BRIEFING_COUNT_MISSING);
 });
 
-test("hub Briefing override leads with the five-finding hero before the essay", () => {
+test("hub Briefing override leads with the consensus result, then the five-finding hero, then the essay", () => {
   const spokes = read("components/v3/build-live-spokes.tsx");
   const hero = read("components/v3/live/BriefingRetailHero.tsx");
   const lead = read("lib/fender-canvas/briefing-retail-lead.ts");
+  const consensusLead = read("components/v3/live/BriefingConsensusLead.tsx");
   const briefingHtml = JSON.parse(read("data/fender-v3-spec.json")).spokes.hub.tabTemplates[0] as string;
+  assert.match(spokes, /BriefingConsensusLead/);
   assert.match(spokes, /BriefingRetailHero/);
   assert.match(
     spokes,
-    /0:\s*\([^)]*\)\s*=>\s*\(\s*<>\s*<BriefingRetailHero[\s\S]*?htmlBlock\(bindCopy\(HUB_BRIEFING_HTML/,
-    "essay HTML stays under the hero",
+    /0:\s*\([^)]*\)\s*=>\s*\(\s*<>\s*<BriefingConsensusLead[\s\S]*?<BriefingRetailHero[\s\S]*?htmlBlock\(bindCopy\(HUB_BRIEFING_HTML/,
+    "consensus sentence and score, then the findings hero, then the essay",
   );
+  assert.match(consensusLead, /consensusFromLive\(/);
+  assert.match(consensusLead, /briefingConsensusSentence\(/);
+  assert.match(consensusLead, /<ScoreHeroCard[\s\S]*id="consensus"[\s\S]*label="AI Consensus"/);
+  assert.doesNotMatch(
+    consensusLead,
+    /ConsensusLeadBand|ActuationHeroCard|CONSENSUS_EXPLAINER|FenderDivisionsTable|why it matters|Featured Offer/,
+  );
+  assert.doesNotMatch(consensusLead, /\stitle=/);
+  const hub = spokes.slice(spokes.indexOf("\n  hub:"), spokes.indexOf("\n  ecommerce:"));
+  const tab0 = hub.slice(hub.indexOf("\n    0:"), hub.indexOf("\n    1:"));
+  const tab1 = hub.slice(hub.indexOf("\n    1:"));
+  assert.match(tab0, /BriefingConsensusLead/);
+  assert.match(tab0, /BriefingRetailHero/);
+  assert.doesNotMatch(tab0, /FenderDivisionsTable|ConsensusScoresPanel|ConsensusLeadBand/);
+  assert.match(
+    tab1,
+    /<ConsensusScoresPanel bundle=\{bundle\} retail=\{retail\} \/>\s*<FenderDivisionsTable divisions=\{bundle\.divisions\} \/>/,
+  );
+  assert.doesNotMatch(tab1, /BriefingConsensusLead|BriefingRetailHero/);
   const card = read("components/v3/live/BriefingFindingCard.tsx");
   assert.match(hero, /briefingFindingsLead/);
   assert.match(hero, /data-briefing-findings/);

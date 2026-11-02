@@ -10,6 +10,7 @@ import { CompetitorsSpokeDescription } from "@/components/v3/live/ai-search/Comp
 import { RunHistoryControl } from "@/components/v3/live/ai-search/RunHistoryControl";
 import { RunSummaryPanel } from "@/components/v3/live/ai-search/RunSummaryPanel";
 import { SimulationsExplorer } from "@/components/v3/live/ai-search/SimulationsExplorer";
+import { BriefingConsensusLead } from "@/components/v3/live/BriefingConsensusLead";
 import { BriefingRetailHero } from "@/components/v3/live/BriefingRetailHero";
 import { ConsensusScoresPanel } from "@/components/v3/live/ConsensusScoresPanel";
 import { CurrentFindingsPanel } from "@/components/v3/live/CurrentFindingsPanel";
@@ -58,8 +59,9 @@ const TAB_OVERRIDES: Partial<
   Record<SpokeId, Partial<Record<number, TabOverride>>>
 > = {
   hub: {
-    0: (_bundle, vars, retail) => (
+    0: (bundle, vars, retail) => (
       <>
+        <BriefingConsensusLead bundle={bundle} retail={retail} />
         <BriefingRetailHero read={retail} />
         {htmlBlock(bindCopy(HUB_BRIEFING_HTML, vars))}
       </>

@@ -3576,7 +3576,23 @@
       line-height: 1.35;
     }
 
-    /* Summary Briefing: five executive findings in one short row. */
+    /* Summary Briefing: Consensus result, then five executive findings. */
+    .briefing-consensus-lead {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .briefing-consensus-sentence {
+      margin: 0;
+      max-width: 40rem;
+      color: var(--text-main);
+      font-size: 16px;
+      line-height: 1.45;
+    }
+
     .briefing-findings {
       display: flex;
       flex-wrap: wrap;
