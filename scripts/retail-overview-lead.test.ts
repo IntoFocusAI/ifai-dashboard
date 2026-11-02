@@ -219,7 +219,10 @@ test("Retail Overview places three heroes before the essay and drops the stacked
   const readings = read("components/v3/live/FeaturedOfferReadings.tsx");
 
   assert.match(overview, /CommerceConsensusPanel/);
-  assert.match(overview, /Seller type: Partner-led/);
+  assert.match(overview, /Seller type: \{RETAIL_SELLER_TYPE\}/);
+  assert.match(overview, /const RETAIL_SELLER_TYPE = "Partner-led"/);
+  assert.match(overview, /authorizedSellerControlOffered\(RETAIL_SELLER_TYPE\)/);
+  assert.match(overview, /AuthorizedSellersControl/);
   assert.match(overview, /How do these retail findings change AI search\?/);
   assert.match(overview, /FeaturedOfferReadings/);
   assert.doesNotMatch(overview, /RetailFindingVisual/);

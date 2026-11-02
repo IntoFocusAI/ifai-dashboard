@@ -3,6 +3,8 @@
 import { useAiSearch } from "@/components/v3/live/ai-search/AiSearchContext";
 import { ConsensusLeadBand } from "@/components/v3/live/ConsensusScoreView";
 import { useFindability } from "@/components/v3/live/findability/FindabilityContext";
+import { authorizedPartnersFromSave } from "@/lib/fender-canvas/authorized-sellers";
+import { useAuthorizedSellers } from "@/lib/fender-canvas/authorized-sellers-store";
 import { consensusFromLive } from "@/lib/fender-canvas/consensus-scores-from-live";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
@@ -20,6 +22,8 @@ export function ConsensusScoresPanel({
 }) {
   const findability = useFindability();
   const ai = useAiSearch();
+  const [saved] = useAuthorizedSellers();
+  const authorizedPartners = authorizedPartnersFromSave(saved);
 
   if (retail.phase === "loading" || findability.phase === "loading" || ai.phase === "loading") {
     return <p className="retail-missing">Loading AI Consensus scores…</p>;
@@ -30,6 +34,7 @@ export function ConsensusScoresPanel({
     specPages: bundle.specPages,
     retail,
     ai,
+    authorizedPartners,
   });
 
   if (!consensus) {

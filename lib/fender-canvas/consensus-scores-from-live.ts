@@ -8,8 +8,10 @@ import type { AiSearchRead } from "@/lib/ai-search/types";
 import {
   consensusScore,
   controlledBuyBoxFinding,
+  controlledBuyBoxFromCensus,
   requiredMarketplaceSpecShare,
   type CommerceInputs,
+  type CommerceScoreOptions,
   type ConsensusScore,
   type FoundationInputs,
   type ShareInput,
@@ -75,8 +77,15 @@ export function foundationInputsFromLive(args: {
   };
 }
 
-export function commerceInputsFromSnapshot(snapshot: PortfolioRetailSnapshot): CommerceInputs {
-  const buyBox = snapshot.controlledBuyBox ?? null;
+export function commerceInputsFromSnapshot(
+  snapshot: PortfolioRetailSnapshot,
+  authorizedPartners: readonly string[] | null = null,
+): CommerceInputs {
+  const recomputed =
+    authorizedPartners != null && snapshot.buyBoxSellers
+      ? controlledBuyBoxFromCensus(snapshot.buyBoxSellers, authorizedPartners)
+      : null;
+  const buyBox = recomputed ?? snapshot.controlledBuyBox ?? null;
   const controlledBuyBox =
     buyBox && buyBox.known > 0 ? share(buyBox.controlled, buyBox.known) : null;
 
@@ -109,9 +118,12 @@ export function commerceInputsFromSnapshot(snapshot: PortfolioRetailSnapshot): C
   };
 }
 
-export function commerceInputsFromLive(retail: RetailCanvasRead): CommerceInputs | null {
+export function commerceInputsFromLive(
+  retail: RetailCanvasRead,
+  authorizedPartners: readonly string[] | null = null,
+): CommerceInputs | null {
   if (retail.phase !== "ready") return null;
-  return commerceInputsFromSnapshot(retail.snapshot);
+  return commerceInputsFromSnapshot(retail.snapshot, authorizedPartners);
 }
 
 export function consensusFromLive(args: {
@@ -119,13 +131,13 @@ export function consensusFromLive(args: {
   specPages: SpecPageSummary | null | undefined;
   retail: RetailCanvasRead;
   ai: AiSearchRead;
+  authorizedPartners?: readonly string[] | null;
 }): ConsensusScore | null {
-  const commerce = commerceInputsFromLive(args.retail);
+  const authorizedPartners = args.authorizedPartners ?? null;
+  const commerce = commerceInputsFromLive(args.retail, authorizedPartners);
   if (!commerce) return null;
-  return consensusScore(
-    foundationInputsFromLive(args),
-    commerce,
-  );
+  const options: CommerceScoreOptions = { authorizedPartners };
+  return consensusScore(foundationInputsFromLive(args), commerce, options);
 }
 
 /** Re-export for callers that compute Controlled Buy Box outside the snapshot. */
