@@ -2596,13 +2596,18 @@
     }
 
     /*
-     * Amazon Specs band: one completeness card stays compact; Top missing fields
-     * fills the rest of the row (Brand-Site Specs lead pattern). Do not grow the
-     * single findability-lead-card across the full panel width.
+     * Amazon Specs band: completeness card sizes to its content so the label and
+     * figure+pie row stay on one line; Top missing fields fills the rest.
+     * Findability's shared .findability-lead-row still wraps its five heroes.
      */
     [data-amazon-specs-band] .findability-lead-card {
-      flex: 0 1 200px;
-      max-width: 280px;
+      flex: 0 0 auto;
+      width: max-content;
+      max-width: none;
+    }
+
+    [data-amazon-specs-hero] .findability-lead-row {
+      flex-wrap: nowrap;
     }
 
     .spec-missing-fields-title {

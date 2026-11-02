@@ -96,5 +96,8 @@ test("Amazon Specs puts Top missing fields beside the completeness hero", () => 
   assert.match(brandSite, /alignItems:\s*"flex-start"/);
   assert.match(brandSite, /flex:\s*"1 1 240px"/);
   assert.match(css, /\[data-amazon-specs-band\]\s*\.findability-lead-card/);
-  assert.match(css, /flex:\s*0 1 200px/);
+  assert.match(css, /width:\s*max-content/);
+  assert.match(css, /flex:\s*0 0 auto/);
+  assert.doesNotMatch(css, /\[data-amazon-specs-band\][^{]*\{[^}]*max-width:\s*280px/);
+  assert.match(css, /\[data-amazon-specs-hero\]\s*\.findability-lead-row\s*\{[^}]*flex-wrap:\s*nowrap/);
 });

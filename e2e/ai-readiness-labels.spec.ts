@@ -190,10 +190,14 @@ test("Amazon Specs puts Top missing fields beside the completeness hero", async 
     const heroEl = document.querySelector("[data-ai-readiness-hero='amazon_completeness']");
     const fieldsEl = document.querySelector("[data-spec-missing-fields-box]");
     const tableEl = document.querySelector("#spec-readiness-by-asin");
-    if (!heroEl || !fieldsEl || !tableEl) return null;
+    const percentEl = heroEl?.querySelector("[data-ai-readiness-hero-percent]");
+    const pieEl = heroEl?.querySelector(".citation-pie-disc");
+    if (!heroEl || !fieldsEl || !tableEl || !percentEl || !pieEl) return null;
     const h = heroEl.getBoundingClientRect();
     const f = fieldsEl.getBoundingClientRect();
     const t = tableEl.getBoundingClientRect();
+    const percent = percentEl.getBoundingClientRect();
+    const pie = pieEl.getBoundingClientRect();
     return {
       heroRight: h.right,
       fieldsLeft: f.left,
@@ -204,12 +208,15 @@ test("Amazon Specs puts Top missing fields beside the completeness hero", async 
       tableTop: t.top,
       sideBySide: f.left >= h.right - 2 && f.top < h.bottom && h.top < f.bottom,
       tableBelow: t.top >= Math.max(h.bottom, f.bottom) - 2,
+      // Pie beside the percentage: pie top must not sit below the percent bottom.
+      pieBesidePercent: pie.top < percent.bottom && pie.left >= percent.left,
     };
   });
   expect(desktop).not.toBeNull();
   expect(desktop!.sideBySide).toBe(true);
   expect(desktop!.tableBelow).toBe(true);
   expect(desktop!.fieldsLeft).toBeGreaterThan(desktop!.heroRight - 2);
+  expect(desktop!.pieBesidePercent).toBe(true);
 
   // The drilldown panel keeps a wide floor when the viewport shrinks. Constrain the
   // band itself to prove flex-wrap stacks the fields under the hero without overlap.
@@ -223,16 +230,21 @@ test("Amazon Specs puts Top missing fields beside the completeness hero", async 
     const heroEl = document.querySelector("[data-ai-readiness-hero='amazon_completeness']");
     const fieldsEl = document.querySelector("[data-spec-missing-fields-box]");
     const tableEl = document.querySelector("#spec-readiness-by-asin");
-    if (!heroEl || !fieldsEl || !tableEl) return null;
+    const percentEl = heroEl?.querySelector("[data-ai-readiness-hero-percent]");
+    const pieEl = heroEl?.querySelector(".citation-pie-disc");
+    if (!heroEl || !fieldsEl || !tableEl || !percentEl || !pieEl) return null;
     const h = heroEl.getBoundingClientRect();
     const f = fieldsEl.getBoundingClientRect();
     const t = tableEl.getBoundingClientRect();
+    const percent = percentEl.getBoundingClientRect();
+    const pie = pieEl.getBoundingClientRect();
     return {
       wrapped: f.top >= h.bottom - 2,
       noOverlap: f.top >= h.bottom - 2,
       tableBelow: t.top >= Math.max(h.bottom, f.bottom) - 2,
       tableWidth: t.width,
       fieldsWidth: f.width,
+      pieBesidePercent: pie.top < percent.bottom && pie.left >= percent.left,
     };
   });
   expect(narrow).not.toBeNull();
@@ -241,6 +253,7 @@ test("Amazon Specs puts Top missing fields beside the completeness hero", async 
   expect(narrow!.tableBelow).toBe(true);
   expect(narrow!.tableWidth).toBeGreaterThan(200);
   expect(narrow!.fieldsWidth).toBeLessThanOrEqual(360);
+  expect(narrow!.pieBesidePercent).toBe(true);
   await expect(table).toBeVisible();
 });
 
