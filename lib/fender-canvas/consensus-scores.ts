@@ -223,21 +223,39 @@ export function isAmazonRetailSeller(row: {
   return seller === "amazon" || seller === "amazon.com";
 }
 
-/** Named authorized partners for the Controlled Buy Box placeholder set. */
-export function isAuthorizedBuyBoxPartner(row: {
-  buybox_seller_name?: string | null;
-}): boolean {
-  const seller = text(row.buybox_seller_name)?.toLowerCase();
-  if (!seller) return false;
-  return AUTHORIZED_BUY_BOX_PARTNERS.some((name) => name.toLowerCase() === seller);
+/**
+ * Partner names used for a Controlled Buy Box count.
+ * Omit the argument, or pass null, to keep AUTHORIZED_BUY_BOX_PARTNERS.
+ * An array, including an empty one, replaces that placeholder set.
+ */
+function partnerNames(partners?: readonly string[] | null): readonly string[] {
+  return partners == null ? AUTHORIZED_BUY_BOX_PARTNERS : partners;
 }
 
-/** Controlled = Amazon Retail or a named authorized partner. */
-export function isControlledBuyBoxSeller(row: {
-  buybox_status?: string | null;
-  buybox_seller_name?: string | null;
-}): boolean {
-  return isAmazonRetailSeller(row) || isAuthorizedBuyBoxPartner(row);
+/**
+ * Named authorized partner.
+ * The default is the placeholder set. A saved list replaces it. An empty list matches nobody.
+ */
+export function isAuthorizedBuyBoxPartner(
+  row: {
+    buybox_seller_name?: string | null;
+  },
+  partners?: readonly string[] | null,
+): boolean {
+  const seller = text(row.buybox_seller_name)?.toLowerCase();
+  if (!seller) return false;
+  return partnerNames(partners).some((name) => name.trim().toLowerCase() === seller);
+}
+
+/** Controlled = Amazon Retail or a named authorized partner. Amazon Retail still counts when the saved list is empty. */
+export function isControlledBuyBoxSeller(
+  row: {
+    buybox_status?: string | null;
+    buybox_seller_name?: string | null;
+  },
+  partners?: readonly string[] | null,
+): boolean {
+  return isAmazonRetailSeller(row) || isAuthorizedBuyBoxPartner(row, partners);
 }
 
 /**
@@ -264,6 +282,7 @@ export function controlledBuyBoxFinding(
     buybox_status?: string | null;
     buybox_seller_name?: string | null;
   }> | null,
+  partners?: readonly string[] | null,
 ): ControlledBuyBoxDetail | null {
   if (rows == null) return null;
   let controlled = 0;
@@ -271,9 +290,76 @@ export function controlledBuyBoxFinding(
   for (const row of rows) {
     if (!hasKnownBuyBoxSeller(row)) continue;
     known += 1;
-    if (isControlledBuyBoxSeller(row)) controlled += 1;
+    if (isControlledBuyBoxSeller(row, partners)) controlled += 1;
   }
   return { controlled, known, population: rows.length };
+}
+
+/** One non-Amazon seller name present in the Buy Box read, and how many known listings it holds. */
+export type BuyBoxSellerChoice = {
+  name: string;
+  listings: number;
+};
+
+/**
+ * Seller tally from the Buy Box read.
+ * Amazon Retail is a count, not a checkbox name. Unknown sellers are omitted.
+ */
+export type BuyBoxSellerCensus = {
+  amazonRetail: number;
+  sellers: BuyBoxSellerChoice[];
+  known: number;
+  population: number;
+};
+
+/** Distinct non-Amazon seller names in the Buy Box read, with listing counts. Null when the read did not load. */
+export function buyBoxSellerCensus(
+  rows: Array<{
+    buybox_status?: string | null;
+    buybox_seller_name?: string | null;
+  }> | null,
+): BuyBoxSellerCensus | null {
+  if (rows == null) return null;
+  const byKey = new Map<string, BuyBoxSellerChoice>();
+  let amazonRetail = 0;
+  let known = 0;
+  for (const row of rows) {
+    if (!hasKnownBuyBoxSeller(row)) continue;
+    known += 1;
+    if (isAmazonRetailSeller(row)) {
+      amazonRetail += 1;
+      continue;
+    }
+    const name = text(row.buybox_seller_name);
+    if (!name) continue;
+    const key = name.toLowerCase();
+    const found = byKey.get(key);
+    if (found) found.listings += 1;
+    else byKey.set(key, { name, listings: 1 });
+  }
+  return {
+    amazonRetail,
+    sellers: [...byKey.values()].sort((a, b) => a.name.localeCompare(b.name)),
+    known,
+    population: rows.length,
+  };
+}
+
+/** Same Controlled Buy Box count as the row walk, from the stored seller tally. */
+export function controlledBuyBoxFromCensus(
+  census: BuyBoxSellerCensus,
+  partners?: readonly string[] | null,
+): ControlledBuyBoxDetail {
+  const allowed = new Set(partnerNames(partners).map((name) => name.trim().toLowerCase()));
+  let partnerListings = 0;
+  for (const seller of census.sellers) {
+    if (allowed.has(seller.name.toLowerCase())) partnerListings += seller.listings;
+  }
+  return {
+    controlled: census.amazonRetail + partnerListings,
+    known: census.known,
+    population: census.population,
+  };
 }
 
 /**
@@ -418,9 +504,32 @@ export function foundationScore(inputs: FoundationInputs): PillarScore {
   });
 }
 
-/** AI Commerce (SC-02). Partner-led weights for Fender. */
-export function commerceScore(inputs: CommerceInputs): PillarScore {
-  return pillarFromComponents("commerce", "AI Commerce", 40, COMMERCE_COMPONENT_SPECS, {
+export type CommerceScoreOptions = {
+  /**
+   * Null keeps AUTHORIZED_BUY_BOX_PARTNERS and the Controlled Buy Box placeholder mark.
+   * An array replaces that set. An empty array counts Amazon Retail only and clears the mark.
+   */
+  authorizedPartners?: readonly string[] | null;
+};
+
+function commerceSpecs(authorizedPartners: readonly string[] | null): ScoreComponentSpec[] {
+  if (authorizedPartners == null) return COMMERCE_COMPONENT_SPECS;
+  return COMMERCE_COMPONENT_SPECS.map((spec) =>
+    spec.id === "controlled_buy_box"
+      ? {
+          ...spec,
+          placeholder: false,
+          placeholderTitle: undefined,
+          placeholderTooltip: undefined,
+        }
+      : spec,
+  );
+}
+
+/** AI Commerce (SC-02). Partner-led weights for Fender. Other seller-type weights are unchanged. */
+export function commerceScore(inputs: CommerceInputs, options?: CommerceScoreOptions): PillarScore {
+  const authorizedPartners = options?.authorizedPartners ?? null;
+  return pillarFromComponents("commerce", "AI Commerce", 40, commerceSpecs(authorizedPartners), {
     controlled_buy_box: inputs.controlledBuyBox,
     not_suppressed: inputs.notSuppressed,
     active_products_available: inputs.activeProductsAvailable,
@@ -451,9 +560,10 @@ export function actuationScore(): PillarScore {
 export function consensusScore(
   foundationInputs: FoundationInputs,
   commerceInputs: CommerceInputs,
+  options?: CommerceScoreOptions,
 ): ConsensusScore {
   const foundation = foundationScore(foundationInputs);
-  const commerce = commerceScore(commerceInputs);
+  const commerce = commerceScore(commerceInputs, options);
   const actuation = actuationScore();
 
   const pillars = [foundation, commerce, actuation];

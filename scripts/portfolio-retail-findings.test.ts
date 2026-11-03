@@ -564,3 +564,50 @@ test("page reads stop at a short page and report a full final page as truncated"
   const broken = await readPages(async () => ({ data: null, error: { message: "relation is missing" } }));
   assert.deepEqual(broken, { ok: false });
 });
+
+test("the Buy Box read keeps seller names and still scores the placeholder partners", async () => {
+  const snapshot = await loadPortfolioRetailSnapshot({
+    suppressionRows: async () => ({ ok: true, rows: [present()], truncated: false }),
+    mapRows: async () => ({ ok: true, rows: [], truncated: false }),
+    catalogRows: async () => ({
+      ok: true,
+      rows: [
+        bundle({
+          asin: "B000000001",
+          is_bundle: false,
+          buybox_status: "Amazon 1P",
+          buybox_seller_name: null,
+        }),
+        bundle({
+          asin: "B000000002",
+          is_bundle: false,
+          buybox_status: "3P Confirmed",
+          buybox_seller_name: "Austin Bazaar",
+        }),
+        bundle({
+          asin: "B000000003",
+          is_bundle: false,
+          buybox_status: "3P Confirmed",
+          buybox_seller_name: "Amazon.com",
+        }),
+        bundle({
+          asin: "B000000004",
+          is_bundle: false,
+          buybox_status: "Unknown/Not Harvested",
+          buybox_seller_name: null,
+        }),
+      ],
+      truncated: false,
+    }),
+    catalogBundleCount: async () => null,
+    specRows: async () => ({ ok: true, rows: [], truncated: false }),
+  });
+
+  assert.deepEqual(snapshot.buyBoxSellers, {
+    amazonRetail: 2,
+    sellers: [{ name: "Austin Bazaar", listings: 1 }],
+    known: 3,
+    population: 4,
+  });
+  assert.deepEqual(snapshot.controlledBuyBox, { controlled: 3, known: 3, population: 4 });
+});

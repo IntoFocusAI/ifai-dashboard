@@ -6,7 +6,9 @@
 
 import { tabSlug } from "../canvas-sdk/canvas-url-state";
 import {
+  buyBoxSellerCensus,
   controlledBuyBoxFinding,
+  type BuyBoxSellerCensus,
   type ControlledBuyBoxDetail,
 } from "./consensus-scores";
 import {
@@ -579,11 +581,19 @@ export type PortfolioRetailFindings = {
   unnestedBundles: RetailReading<UnnestedBundleDetail | null>;
   amazonSpecGaps: RetailReading<AmazonSpecGapDetail | null>;
   /**
-   * Controlled Buy Box among known sellers (Amazon Retail + Austin Bazaar + GearTree).
+   * Controlled Buy Box among known sellers, using the placeholder partner set
+   * (Amazon Retail + Austin Bazaar + GearTree).
    * Null when the catalog governance read did not load. Unknown sellers are omitted.
    * Optional on older test fixtures; the live loader always sets it.
+   * A saved partner list replaces this count on the client, using buyBoxSellers.
    */
   controlledBuyBox?: ControlledBuyBoxDetail | null;
+  /**
+   * Seller names in the Buy Box read, with listing counts.
+   * Amazon Retail is a count, not a partner name. Null when that read did not load.
+   * Optional on older fixtures; the live loader always sets it.
+   */
+  buyBoxSellers?: BuyBoxSellerCensus | null;
 };
 
 /**
@@ -670,6 +680,7 @@ export async function loadPortfolioRetailSnapshot(
     source.specRows(),
   ]);
 
+  const catalogRows = catalog.ok ? catalog.rows : null;
   const findings: PortfolioRetailFindings = {
     suppressedListings: suppressedListingsFinding(suppression.ok ? suppression.rows : null, {
       truncated: suppression.ok ? suppression.truncated : false,
@@ -677,14 +688,15 @@ export async function loadPortfolioRetailSnapshot(
     mapLeakage: mapLeakageFinding(mapRows.ok ? mapRows.rows : null, {
       truncated: mapRows.ok ? mapRows.truncated : false,
     }),
-    unnestedBundles: unnestedBundlesFinding(catalog.ok ? catalog.rows : null, {
+    unnestedBundles: unnestedBundlesFinding(catalogRows, {
       truncated: catalog.ok ? catalog.truncated : false,
       catalogBundleCount,
     }),
     amazonSpecGaps: amazonSpecGapsFinding(spec.ok ? spec.rows : null, {
       truncated: spec.ok ? spec.truncated : false,
     }),
-    controlledBuyBox: controlledBuyBoxFinding(catalog.ok ? catalog.rows : null),
+    controlledBuyBox: controlledBuyBoxFinding(catalogRows),
+    buyBoxSellers: buyBoxSellerCensus(catalogRows),
   };
 
   return {
