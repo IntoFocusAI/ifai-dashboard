@@ -7,11 +7,8 @@ import { CommandCenter } from "@/lib/canvas-sdk/CommandCenter";
 import { HubSlots } from "@/lib/canvas-sdk/HubSlots";
 import { MetricWidgets } from "@/lib/canvas-sdk/MetricWidgets";
 import { usePanelInteractions } from "@/lib/canvas-sdk/panel-interactions";
-import type {
-  CanvasRenderContext,
-  CanvasSpec,
-  TickerIcon,
-} from "@/lib/canvas-sdk/types";
+import type { CanvasRenderContext, TickerIcon } from "@/lib/canvas-sdk/types";
+import { MinimalView, ViewModeSwitch, useCanvasViewMode, type CanvasSpecWithViews } from "@/lib/canvas-sdk/canvas-views";
 import { SHOW_HEADER_TICKERS } from "@/lib/canvas-sdk/canvas-chrome-flags";
 import { IOM_GRAPH_RAIL_PX } from "@/lib/canvas-sdk/column-layout";
 import {
@@ -80,7 +77,7 @@ type TooltipState = {
 };
 
 type Props = {
-  spec: CanvasSpec;
+  spec: CanvasSpecWithViews;
   children: ReactNode | ((ctx: CanvasRenderContext) => ReactNode);
 };
 
@@ -96,6 +93,7 @@ export function CanvasShell({ spec, children }: Props) {
   const focusScale = spec.focusScale ?? DEFAULT_FOCUS_SCALE;
   const tourSteps = useMemo(() => spec.tour ?? [], [spec.tour]);
   const commandCenter = spec.commandCenter;
+  const views = useCanvasViewMode(spec.minimalView);
   const legend = spec.legend ?? [
     { status: "danger" as const, label: "Critical" },
     { status: "warning" as const, label: "At Risk" },
@@ -1072,7 +1070,7 @@ export function CanvasShell({ spec, children }: Props) {
   return (
     <div
       ref={rootRef}
-      className={`ifai-canvas${iom ? " theme-iom" : ""}${lightTheme ? " light-theme" : ""}${graphColumnLayout ? " column-layout" : ""}${iomMapExiting ? " iom-map-exiting" : ""}${iomMapEntering ? " iom-map-entering" : ""}${iomPanelClosing ? " iom-panel-closing" : ""}${panelOpen && panelLayout !== "hidden" && !tourOverlayVisible ? " panel-open" : ""}${(columnLayout || (panelLayout === "wide" && !tourOverlayVisible)) ? " panel-expanded" : ""}${panelLayout === "hidden" && !tourOverlayVisible ? " panel-hidden" : ""}${tourOverlayVisible ? " tour-running" : ""}`}
+      className={`ifai-canvas${iom ? " theme-iom" : ""}${lightTheme ? " light-theme" : ""}${graphColumnLayout ? " column-layout" : ""}${iomMapExiting ? " iom-map-exiting" : ""}${iomMapEntering ? " iom-map-entering" : ""}${iomPanelClosing ? " iom-panel-closing" : ""}${panelOpen && panelLayout !== "hidden" && !tourOverlayVisible ? " panel-open" : ""}${(columnLayout || (panelLayout === "wide" && !tourOverlayVisible)) ? " panel-expanded" : ""}${panelLayout === "hidden" && !tourOverlayVisible ? " panel-hidden" : ""}${tourOverlayVisible ? " tour-running" : ""}${views.isMinimal ? " view-minimal" : ""}`}
       style={
         {
           "--drilldown-width": `${drilldownWidth}px`,
@@ -1151,6 +1149,7 @@ export function CanvasShell({ spec, children }: Props) {
           ) : null}
 
           <div className="header-controls">
+            <ViewModeSwitch views={views} />
             {spec.headerSlot}
 
             {spec.search ? (
@@ -1285,9 +1284,10 @@ export function CanvasShell({ spec, children }: Props) {
             onOpenMetric={focusNode}
           />
         ) : null}
+        <MinimalView views={views} spokes={spec.spokes} onOpenMetric={focusNode} />
 
         <TourLauncher
-          open={tourLauncherOpen}
+          open={tourLauncherOpen && !views.isMinimal}
           exiting={tourLauncherExiting}
           onExitComplete={onOverviewChromePartExitComplete}
           label={tourLauncherLabel}
@@ -1295,7 +1295,7 @@ export function CanvasShell({ spec, children }: Props) {
         />
 
         <CanvasHudZoomControls
-          open={overviewChromeOpen}
+          open={overviewChromeOpen && !views.isMinimal}
           exiting={tourLauncherExiting}
           onExitComplete={onOverviewChromePartExitComplete}
           onZoomIn={() => zoomBy(1.2)}
