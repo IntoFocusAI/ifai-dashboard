@@ -436,6 +436,7 @@ test("the action is the first Priorities item that opens the bubble, with its st
   assert.equal(aiAction.figure, "None");
   assert.match(aiAction.rule, /^No Priorities item opens AI Search Visibility today/);
   assert.equal(aiAction.countedOutOf.text, "0 of 4 open priorities");
+  assert.deepEqual([aiAction.chart?.part, aiAction.chart?.total], [0, 4]);
 
   const [, , summaryAction] = slots(feeds.hub);
   assert.equal(summaryAction.label, ITEMS[0].title);

@@ -129,7 +129,9 @@ export function pickAction(items: PriorityItem[], book: CheckBook, reads: SlotRe
       note: "",
       tone: "neutral",
       statusWord: "None open",
-      chart: null,
+      chart: items.length > 0
+        ? { part: 0, total: items.length, partLabel: `open ${scope.bubble}`, restLabel: "open other areas" }
+        : null,
       target: { text: NO_TARGET_SET },
       countedOutOf: { text: `0 of ${formatInt(items.length)} open priorities` },
       lastChecked: lastCheckedLine(scope.fallbackTimes, `${scope.bubble} reads`),
