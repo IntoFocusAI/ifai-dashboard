@@ -66,6 +66,41 @@
   color: var(--citation-cited-ink);
 }
 
+.citation-figure-main {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: flex-start;
+  white-space: nowrap;
+}
+
+/* Asterisk on a figure that counts one category. Its tooltip names the category. */
+.citation-figure-tile .citation-figure-filtered.ifai-term {
+  margin-left: 2px;
+  padding: 0 2px;
+  border-bottom: 0;
+  border-radius: 4px;
+  color: var(--text-main);
+  font-family: var(--font-mono);
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.citation-figure-tile .citation-figure-owned + .citation-figure-filtered.ifai-term {
+  color: var(--citation-owned-ink);
+}
+
+.citation-figure-tile .citation-figure-cited + .citation-figure-filtered.ifai-term {
+  color: var(--citation-cited-ink);
+}
+
+.citation-figure-tile .citation-figure-filtered.ifai-term:hover,
+.citation-figure-tile .citation-figure-filtered.ifai-term:focus-visible {
+  color: var(--accent-purple);
+  outline: 2px solid var(--accent-purple);
+  outline-offset: 1px;
+}
+
 .citation-figure-unit {
   color: var(--text-muted);
   font-family: var(--font-sans);

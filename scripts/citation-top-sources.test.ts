@@ -237,15 +237,33 @@ test("Citation Ecosystem opens with figure tiles, one control row, then the char
   const tiles = read("components/v3/live/ai-search/CitationFigureTiles.tsx");
   assert.ok(tiles.indexOf("<CitationLeadFigure") < tiles.indexOf("data-ai-cited-answers"));
   assert.ok(tiles.indexOf("data-ai-cited-answers") < tiles.indexOf("data-ai-cited-links"));
-  assert.match(
-    panel,
-    /owned: fender\.length,\s+total: read\.rows\.length,\s+within: category \? citationCategoryLabel\(category\) : null/,
-    "the lead figure counts the chosen category and names it",
-  );
+  assert.match(panel, /lead=\{\{ owned: fender\.length, total: read\.rows\.length \}\}/, "the lead counts the filtered rows");
+  assert.match(glance, /<CitationFigureTiles[^>]*category=\{category \? citationCategoryLabel\(category\) : null\}/s);
   assert.ok(panel.split("\n").length - 1 <= 400);
 });
 
-test("the Fender-owned lead follows the category and says which one", () => {
+test("with a category picked, each figure tile carries an asterisk whose tooltip names it", () => {
+  const mark = read("components/v3/live/ai-search/CitationFilteredMark.tsx").replace(/\s+/g, " ");
+  assert.match(mark, /if \(!category\) return null;/, "clearing the category removes the asterisk");
+  assert.match(mark, /const description = `\$\{category\} only\. Clear the category to see all categories\.`;/);
+  assert.match(mark, /className="ifai-term citation-figure-filtered"/);
+  assert.match(mark, /data-ifai-tooltip-desc=\{description\}/);
+  assert.match(mark, /tabIndex=\{0\}/);
+  assert.match(mark, /aria-label=\{`Category filter: \$\{description\}`\}/);
+  assert.match(mark, /> \* <\/span>/);
+  assert.doesNotMatch(mark, /\stitle=/);
+  const tiles = read("components/v3/live/ai-search/CitationFigureTiles.tsx");
+  const lead = read("components/v3/live/ai-search/CitationLeadFigure.tsx");
+  assert.match(tiles, /<CitationLeadFigure [^>]*category=\{category\}/);
+  assert.equal(tiles.match(/<CitationFilteredMark category=\{category\} \/>/g)?.length, 2, "answers and total tiles");
+  assert.match(lead, /<CitationFilteredMark category=\{category\} \/>/, "lead tile");
+  for (const text of [tiles, lead]) assert.doesNotMatch(text, /` in \$\{|\bwithin\b/, "no on-screen \"in Amps\" wording");
+  assert.match(lead, /<AiTerm term="Fender-owned">Fender-owned<\/AiTerm> links\s*<\/span>/);
+  const notAvailable = tiles.slice(tiles.indexOf(") : ("), tiles.indexOf("Not available*"));
+  assert.doesNotMatch(notAvailable, /CitationFilteredMark/, "Not available* keeps its own asterisk only");
+});
+
+test("the Fender-owned lead follows the category", () => {
   const electrics = snapshotInCategory(snapshot, "electrics");
   const narrowed = citationEvidence(electrics.calls, electrics.citations, "commercial");
   const owned = narrowed.rows.filter((row) => row.sourceClass === "fender_owned").length;
@@ -256,8 +274,6 @@ test("the Fender-owned lead follows the category and says which one", () => {
     [3, 9],
     "clearing restores every category",
   );
-  const lead = read("components/v3/live/ai-search/CitationLeadFigure.tsx");
-  assert.match(lead, /links\{within \? ` in \$\{within\}` : ""\}/);
   assert.equal(citationCategoryLabel("amps"), "Amps");
 });
 
@@ -320,6 +336,7 @@ test("the ranking rule is one plain sentence in a custom tooltip, and the copy c
     "components/v3/live/ai-search/CitationExecutiveGrid.tsx",
     "components/v3/live/ai-search/CitationGapsCard.tsx",
     "components/v3/live/ai-search/CitationLeadFigure.tsx",
+    "components/v3/live/ai-search/CitationFilteredMark.tsx",
   ];
   for (const path of files) {
     const text = read(path);

@@ -116,11 +116,7 @@ function Ecosystem({
               scope={scope}
               scopeNoun={scopeNoun}
               showSmallSample={singleRun}
-              lead={{
-                owned: fender.length,
-                total: read.rows.length,
-                within: category ? citationCategoryLabel(category) : null,
-              }}
+              lead={{ owned: fender.length, total: read.rows.length }}
               note={copy}
               categories={citationCategoryOptions(snapshot.calls, scope)}
               category={category}

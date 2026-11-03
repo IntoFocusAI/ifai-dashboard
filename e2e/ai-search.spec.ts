@@ -151,6 +151,21 @@ test.describe("AI Search Visibility", () => {
       .evaluateAll((els) => els.map((el) => Number(el.getAttribute("data-top-source-links"))));
     expect(linkCounts).toEqual([...linkCounts].sort((a, b) => b - a));
     await page.locator("[data-citation-top-measure='answers']").click();
+    const marks = page.locator("[data-citation-figures] [data-citation-filtered]");
+    await expect(marks).toHaveCount(0);
+    const chip = page.locator("[data-citation-category]:not([data-citation-category='all'])").first();
+    if (await chip.count()) {
+      const label = (await chip.innerText()).trim();
+      await chip.click();
+      await expect(marks.first()).toBeVisible();
+      const descs = await marks.evaluateAll((els) => els.map((el) => el.getAttribute("data-ifai-tooltip-desc")));
+      expect(descs.length).toBeLessThanOrEqual(3);
+      for (const desc of descs) expect(desc).toBe(`${label} only. Clear the category to see all categories.`);
+      await expect(marks.first()).not.toHaveAttribute("title", /./);
+      await expect(page.locator("[data-citation-figures]")).not.toContainText(` in ${label}`);
+      await page.locator("[data-citation-category-clear]").click();
+      await expect(marks).toHaveCount(0);
+    }
     const domain = page.locator("[data-citation-top-source]").first();
     const picked = (await domain.getAttribute("data-citation-top-source"))!;
     await domain.click();

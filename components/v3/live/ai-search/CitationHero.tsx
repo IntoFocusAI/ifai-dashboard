@@ -18,7 +18,7 @@ import {
 } from "@/lib/ai-search/citation-insights";
 import type { CitationPick } from "@/lib/ai-search/citation-pick";
 import { citationPies, unbrandedAnswerPie, unbrandedBrandPie } from "@/lib/ai-search/citation-pies";
-import type { CitationCategoryOption } from "@/lib/ai-search/citation-top-sources";
+import { citationCategoryLabel, type CitationCategoryOption } from "@/lib/ai-search/citation-top-sources";
 import type { CitationRead, CitationScope } from "@/lib/ai-search/citations";
 import { engineLabel } from "@/lib/ai-search/run-metrics";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
@@ -84,7 +84,14 @@ export function CitationHero({
 
   return (
     <div className="citation-hero citation-glance" data-citation-hero>
-      <CitationFigureTiles lead={lead} read={read} scopeNoun={scopeNoun} engines={engines} note={note} />
+      <CitationFigureTiles
+        lead={lead}
+        read={read}
+        scopeNoun={scopeNoun}
+        engines={engines}
+        note={note}
+        category={category ? citationCategoryLabel(category) : null}
+      />
       <div className="citation-control-row" data-citation-control-row>
         <CitationControlsStrip scope={scope} onScope={onScope} />
         <CitationCategoryFilter options={categories} value={category} scopeNoun={scopeNoun} onChange={onCategory} />
