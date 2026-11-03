@@ -2,6 +2,8 @@
  * Which rows an AI Search drill-down should open on. Kept in the `evidence`
  * query parameter so a copied link reopens the same rows.
  * Format: `<field>:<value>`, for example `sim:1161`, `domain:fender.com`, `competitor:Yamaha`.
+ * A filtered tab can narrow the same rows with trailing qualifiers, for example
+ * `category:acoustics,engine:chatgpt` or `role:unbranded_discovery/resolved,category:amps,engine:gemini`.
  */
 
 export const EVIDENCE_PARAM = "evidence";
@@ -22,20 +24,43 @@ export const EVIDENCE_FIELDS = [
 
 export type EvidenceField = (typeof EVIDENCE_FIELDS)[number];
 
-export type EvidenceFocus = { field: EvidenceField; value: string };
+/** Narrows a focus to one category and/or one engine. */
+export type EvidenceScope = { category?: string; engine?: string };
+
+export type EvidenceFocus = { field: EvidenceField; value: string } & EvidenceScope;
+
+const SCOPE_KEYS = ["category", "engine"] as const;
+const SCOPE_SUFFIX = /,(category|engine):([^,:]+)$/;
 
 export function parseEvidence(raw: string | null | undefined): EvidenceFocus | null {
   if (!raw) return null;
-  const index = raw.indexOf(":");
+  let rest = raw;
+  const scope: EvidenceScope = {};
+  for (let match = rest.match(SCOPE_SUFFIX); match; match = rest.match(SCOPE_SUFFIX)) {
+    scope[match[1] as keyof EvidenceScope] ??= match[2].trim();
+    rest = rest.slice(0, match.index);
+  }
+  const index = rest.indexOf(":");
   if (index <= 0) return null;
-  const field = raw.slice(0, index) as EvidenceField;
-  const value = raw.slice(index + 1).trim();
+  const field = rest.slice(0, index) as EvidenceField;
+  const value = rest.slice(index + 1).trim();
   if (!EVIDENCE_FIELDS.includes(field) || !value) return null;
-  return { field, value };
+  return { field, value, ...scope };
 }
 
 export function formatEvidence(focus: EvidenceFocus): string {
-  return `${focus.field}:${focus.value}`;
+  const scope = SCOPE_KEYS.filter((key) => focus[key]).map((key) => `,${key}:${focus[key]}`);
+  return `${focus.field}:${focus.value}${scope.join("")}`;
+}
+
+/** The same focus, narrowed by a tab's scope. An empty scope returns the focus unchanged. */
+export function scopeEvidence(focus: EvidenceFocus, scope: EvidenceScope | undefined): EvidenceFocus {
+  if (!scope?.category && !scope?.engine) return focus;
+  return {
+    ...focus,
+    ...(scope.category ? { category: scope.category } : {}),
+    ...(scope.engine ? { engine: scope.engine } : {}),
+  };
 }
 
 type Listener = () => void;

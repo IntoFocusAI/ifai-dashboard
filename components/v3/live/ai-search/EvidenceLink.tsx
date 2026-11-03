@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { setEvidenceFocus, type EvidenceFocus } from "@/lib/ai-search/evidence-focus";
+import { formatEvidence, setEvidenceFocus, type EvidenceFocus } from "@/lib/ai-search/evidence-focus";
 
 /**
  * Opens the rows behind a figure. `data-ifai-open` lets the panel's delegated
@@ -26,7 +26,7 @@ export function EvidenceLink({
       className="ifai-evidence-link"
       data-ifai-open={tab ? (spokeId ?? "aeo") : undefined}
       data-ifai-tab={tab}
-      data-ifai-evidence={focus ? `${focus.field}:${focus.value}` : "all"}
+      data-ifai-evidence={focus ? formatEvidence(focus) : "all"}
       aria-label={label}
       onClickCapture={() => setEvidenceFocus(focus)}
       style={{
