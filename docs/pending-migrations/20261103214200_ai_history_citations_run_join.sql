@@ -15,7 +15,7 @@
 -- Same rows: on 3 Nov 2026 a read-only check found 0 citations whose run differs from their
 -- simulation's run and 0 citations without a simulation.
 -- Without this change the dashboard can read public.canvas_ai_history_citations_by_run instead
--- (supabase/migrations/20261103214100_ai_history_citations_by_run.sql).
+-- (supabase/migrations/20261103214459_ai_history_citations_by_run.sql).
 --
 -- Undo (restores the current definition from 20261014190000_ai_search_history_views.sql):
 --   CREATE OR REPLACE VIEW public.canvas_ai_history_citations WITH (security_invoker = false) AS

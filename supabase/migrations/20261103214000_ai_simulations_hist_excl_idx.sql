@@ -16,7 +16,15 @@
 -- undo and apply this file again.
 --
 -- Approved: Brian Magazu, 3 Nov 2026.
--- Applied: not yet
+-- Applied: 3 Nov 2026 (UTC) by AEO_Product_Research-FenderTest, through execute_sql on its own
+-- (apply_migration wraps a transaction).
+--   prod     started about 21:43:58, valid by 21:44:58
+--   sandbox  between 21:45:00 and 21:45:57
+--   mirror   between 21:45:00 and 21:45:57
+--   claude   not applied (not connected to that agent)
+-- indisvalid and indisready are true on prod, sandbox, and mirror.
+-- Not recorded in supabase_migrations.schema_migrations on prod because it ran outside a
+-- transaction. Before any supabase db push, run: supabase migration repair --status applied 20261103214000
 
 CREATE INDEX CONCURRENTLY IF NOT EXISTS fmic_ai_simulations_hist_excl_idx
   ON command.fmic_ai_simulations (audit_run_id)

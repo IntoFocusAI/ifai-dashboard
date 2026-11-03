@@ -20,7 +20,12 @@
 --   NOTIFY pgrst, 'reload schema';
 --
 -- Approved: Brian Magazu, 3 Nov 2026.
--- Applied: not yet
+-- Applied: 3 Nov 2026 (UTC) by AEO_Product_Research-FenderTest.
+--   prod     21:44:59, recorded in migration history as version 20261103214459
+--   mirror   21:45:57, same version row added
+--   sandbox  not applied (sandbox has no canvas_private.ai_history_calls)
+--   claude   not applied (not connected to that agent)
+-- Owner postgres. anon and authenticated have SELECT only.
 
 CREATE VIEW public.canvas_ai_history_citations_by_run AS
  SELECT ci.audit_run_id, ci.sim_id, ci.simulation_id, s.prompt_key, s.prompt_kind, s.category,
