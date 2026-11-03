@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { CitationControlsStrip } from "@/components/v3/live/ai-search/CitationControlsStrip";
 import { CitationDomainsMix } from "@/components/v3/live/ai-search/CitationDomainsMix";
 import { CitationExecutiveGrid, GapsCard } from "@/components/v3/live/ai-search/CitationExecutiveGrid";
@@ -13,16 +13,13 @@ import {
   type RoleOwnedGroup,
   type RoleOwnedPresence,
 } from "@/lib/ai-search/citation-insights";
+import type { CitationPick } from "@/lib/ai-search/citation-pick";
 import { citationPies, unbrandedAnswerPie, unbrandedBrandPie } from "@/lib/ai-search/citation-pies";
 import type { CitationRead, CitationScope } from "@/lib/ai-search/citations";
 import { groupCitations } from "@/lib/ai-search/citations";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
 
-export type CitationPick =
-  | { field: "domain" | "class" | "engine" | "category"; value: string }
-  | { field: "gap"; value: string; simulationIds: string[] }
-  | { field: "role_owned"; value: string; simulationIds: string[] }
-  | null;
+export type { CitationPick } from "@/lib/ai-search/citation-pick";
 
 export function CitationHero({
   snapshot,
@@ -32,6 +29,7 @@ export function CitationHero({
   onScope,
   onPick,
   showSmallSample,
+  intro,
 }: {
   snapshot: AiSearchSnapshot;
   read: CitationRead;
@@ -41,6 +39,8 @@ export function CitationHero({
   onPick: (pick: CitationPick) => void;
   /** A single run still marks a thin lead-rate group. A month total does not. */
   showSmallSample: boolean;
+  /** Sits under the scope buttons, before the executive cards. */
+  intro?: ReactNode;
 }) {
   const [showAllGaps, setShowAllGaps] = useState(false);
   const presence = ownedPresence(read);
@@ -76,6 +76,7 @@ export function CitationHero({
         scopeNoun={scopeNoun}
         part="scopes"
       />
+      {intro}
       {pies == null ? (
         <p data-citation-reconcile>
           The charts are hidden because their slices do not match the table totals.

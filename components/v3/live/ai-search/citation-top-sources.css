@@ -1,0 +1,179 @@
+/* Citation Ecosystem: category filter and the top cited sites list. Follows the canvas theme variables. */
+
+.citation-top-sources-block {
+  margin: 0 0 16px;
+}
+
+.citation-category-filter {
+  margin: 0 0 12px;
+}
+
+.citation-category-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+
+.citation-category-label {
+  margin-right: 6px;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.citation-category-chips .segmented-btn {
+  border: 1px solid var(--border-color);
+}
+
+.citation-category-chips .segmented-btn.active {
+  border-color: var(--accent-purple);
+}
+
+.citation-category-chips .segmented-btn:focus-visible,
+.citation-category-clear:focus-visible,
+.citation-top-source:focus-visible {
+  outline: 2px solid #38bdf8;
+  outline-offset: 2px;
+}
+
+.citation-category-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  margin: 8px 0 0;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.citation-category-status strong {
+  color: var(--text-main);
+}
+
+.citation-category-clear {
+  padding: 2px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  background: none;
+  color: var(--text-main);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.citation-category-clear:hover {
+  border-color: color-mix(in srgb, #38bdf8 50%, var(--border-color));
+}
+
+.citation-top-source-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.citation-top-source {
+  display: grid;
+  grid-template-columns: 2.2ch minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--bg-surface) 80%, transparent);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.citation-top-source:hover,
+.citation-top-source.active {
+  border-color: color-mix(in srgb, #38bdf8 50%, var(--border-color));
+}
+
+.citation-top-source.active {
+  background: color-mix(in srgb, #38bdf8 10%, var(--bg-surface));
+}
+
+.citation-top-source-rank {
+  color: var(--text-main);
+  font-size: 20px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  text-align: right;
+}
+
+.citation-top-source-body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.citation-top-source-domain {
+  overflow-wrap: anywhere;
+  color: var(--text-main);
+  font-size: 14px;
+}
+
+.citation-top-source-count {
+  color: var(--text-main);
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.citation-top-source-track {
+  display: block;
+  width: 100%;
+  height: 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--border-color) 70%, transparent);
+  overflow: hidden;
+}
+
+.citation-top-source-fill {
+  display: block;
+  height: 100%;
+  min-width: 3px;
+  border-radius: inherit;
+}
+
+.citation-top-source-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+  text-align: right;
+}
+
+.citation-top-source-owner {
+  padding: 2px 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.citation-top-source-owner.owned {
+  border-color: #38bdf8;
+  background: color-mix(in srgb, #38bdf8 16%, transparent);
+  color: var(--text-main);
+}
+
+.citation-top-source-links {
+  color: var(--text-muted);
+  font-size: 11.5px;
+  white-space: nowrap;
+}

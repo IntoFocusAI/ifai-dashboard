@@ -26,6 +26,8 @@ export const AI_DEFINITIONS = {
   association:
     "A stored answer and a page that answer cited, shown together. The link records that the engine cited the page. It does not show that the page caused the engine to name another brand.",
   "Fender-owned": "A cited site controlled by Fender or another FMIC brand, classified by IntoFocus.",
+  "top cited sites":
+    "Each site is ranked by how many answers in the selected period cite it at least once, and ties go to the site with more cited links.",
   "partial run":
     "The run was published with some calls unanswered. Every figure covers the answered calls only, and the unanswered calls are listed.",
   "published run":
