@@ -10,9 +10,15 @@ import {
   outcomeShareFigure,
 } from "@/lib/findability/lead";
 import { countFindability, type FindabilityBucket, type OutcomeCounts } from "@/lib/findability/outcomes";
-import { amazonCompletenessHero, presentAmazonCompletenessFieldShare, resolveAmazonFieldTotals } from "@/lib/fender-canvas/ai-readiness-lead";
+import {
+  amazonCompletenessHero,
+  PAGE_FOUND_LABEL,
+  presentAmazonCompletenessFieldShare,
+  resolveAmazonFieldTotals,
+} from "@/lib/fender-canvas/ai-readiness-lead";
 import { listingContentHeroes } from "@/lib/fender-canvas/listing-content";
 import { machineReadabilityHeroes } from "@/lib/fender-canvas/machine-readability";
+import { brandSitePageFoundHero } from "@/lib/fender-canvas/page-found-hero";
 import {
   bubbleEntry,
   cached,
@@ -104,6 +110,16 @@ export const READINESS_ENTRIES: MinimalEntry[] = [
       };
     },
   },
+  bubbleEntry({
+    id: "spoke-specs",
+    spokeId: "specs",
+    label: PAGE_FOUND_LABEL,
+    tab: "Brand-Site Specs",
+    read: (ctx) => {
+      const hero = brandSitePageFoundHero(ctx.bundle.m);
+      return counted(hero.ratio, "checked SKUs", hero.pie, hero.tip, hero.figureTip ?? hero.explainer);
+    },
+  }),
   bubbleEntry({
     id: "sat-schema",
     spokeId: "specs",

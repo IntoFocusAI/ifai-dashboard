@@ -73,6 +73,33 @@ test.describe("Minimal / Balanced view switch", () => {
     await expect(canvas.activeTab).toContainText("Category Battlecards");
   });
 
+  test("fender.com page found matches the AI Readiness bubble and opens Brand-Site Specs at its hero", async ({ canvas, page }) => {
+    const bubbleFace = page.locator("[data-graph-node-id='spoke-specs'] .node-hero-value");
+    await expect.poll(async () => heroText(await bubbleFace.allTextContents())).toMatch(/%/);
+    const bubbleValue = heroText(await bubbleFace.allTextContents());
+
+    await page.locator("[data-view-mode='minimal']").click();
+    await page.getByRole("button", { name: "Add metric to large slot 1" }).click();
+    const dialog = page.getByRole("dialog", { name: "Choose metric for large slot 1" });
+    const readiness = dialog.locator(".metric-widget-group").filter({ has: page.locator("h3", { hasText: "AI Readiness" }) });
+    const option = readiness.locator("[data-metric-option='spoke-specs']");
+    await expect(option).toContainText("fender.com page found");
+    await option.click();
+
+    const slot = page.locator(".large-metric-body[data-metric-id='spoke-specs']");
+    await expect(slot.locator("[data-large-metric-value]")).toHaveText(bubbleValue);
+    await expect(slot.locator("[data-large-metric-ratio]")).toHaveText(/^\d[\d,]* of \d[\d,]* checked SKUs$/);
+    await expect(slot.locator("[data-citation-pie-disc='brand-site-page-found']")).toBeVisible();
+    const ratio = (await slot.locator("[data-large-metric-ratio]").textContent())!.replace(" checked SKUs", "");
+
+    await slot.click();
+    await expect(canvas.activeTab).toContainText("Brand-Site Specs");
+    const hero = page.locator("#brand-site-page-found[data-machine-hero='page_found']");
+    await expect(hero).toBeInViewport({ ratio: 1 });
+    await expect(hero.locator("[data-hero-percent]")).toHaveText(bubbleValue);
+    await expect(hero.locator("[data-hero-ratio]")).toHaveText(ratio);
+  });
+
   test("a picked metric matches the map, opens its tab, and is remembered", async ({ canvas, page }) => {
     const mapFace = page.locator("[data-graph-node-id='sat-map'] .node-hero-value");
     await expect.poll(async () => heroText(await mapFace.allTextContents())).toMatch(/%|Not available/);
