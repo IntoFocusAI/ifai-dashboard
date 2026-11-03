@@ -8,6 +8,7 @@
     "build:pages": "node scripts/prepare-static-export.mjs stash && NEXT_PUBLIC_STATIC_EXPORT=1 next build && node scripts/prepare-static-export.mjs restore",
     "start": "next start",
     "lint": "eslint",
+    "test": "node --experimental-strip-types --import ./scripts/register-alias.mjs --import ./scripts/register-ts-extensions.mjs --test scripts/*.test.ts",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:report": "playwright show-report",
