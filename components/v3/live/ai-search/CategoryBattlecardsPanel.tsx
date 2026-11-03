@@ -15,12 +15,12 @@ import { KeptOutNote, RoleCount, largestResolved, roleColumn, roleRateSort } fro
 import { AI_TABS } from "@/lib/ai-search/canvas-surfaces";
 import { scopeEvidence } from "@/lib/ai-search/evidence-focus";
 import {
+  BATTLE_COLUMN_NOTES,
   battlecardEngines,
   callsForEngine,
   categoryLeads,
   categoryLeadSummary,
   effectiveBattlecardFilter,
-  heroScope,
   leadMatches,
   NO_BATTLECARD_FILTER,
   type BattlecardFilter,
@@ -36,14 +36,18 @@ import type { SortInput } from "@/lib/fender-canvas/table-sort";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
 import { hasMixedScoringMethods, isWindowHistoryKind, MIXED_SCORING_NOTE } from "@/lib/ai-search/window-display";
 
+function notedColumn(id: keyof typeof BATTLE_COLUMN_NOTES, name: string, sort: "text" | "number", width: number, min: number) {
+  return { ...clientColumn(id, name, sort, width, min), headerTooltip: { title: name, description: BATTLE_COLUMN_NOTES[id] } };
+}
+
 const COLUMNS = [
   clientColumn("category", "Category", "text", 160, 110),
   roleColumn("unbranded_discovery"),
   roleColumn("branded_consideration"),
-  clientColumn("competitor", "Top competitor", "text", 170, 120),
-  clientColumn("leads", "Competitor leads", "number", 150, 110),
-  clientColumn("leader", "No leader", "number", 110, 80),
-  clientColumn("errors", "Errors", "number", 90, 72),
+  notedColumn("competitor", "Top competitor", "text", 170, 120),
+  notedColumn("leads", "Competitor leads", "number", 150, 110),
+  notedColumn("leader", "No leader", "number", 110, 80),
+  notedColumn("errors", "Errors", "number", 90, 72),
 ];
 
 function battleSortValue(
@@ -96,7 +100,6 @@ function Battlecards({ snapshot }: { snapshot: AiSearchSnapshot }) {
         <CategoryBattleHeroes
           snapshot={scoped}
           summary={categoryLeadSummary(leads)}
-          scope={heroScope(engineName, filter.lead !== "all")}
           engineScope={engineScope}
           engineName={engineName}
         />
@@ -185,13 +188,7 @@ function Battlecards({ snapshot }: { snapshot: AiSearchSnapshot }) {
             })}
           </tbody>
         </ResizableTable>
-        <p className="ai-role-footnote">
-          On track, Tied, Behind, and Competitor leads count inside{" "}
-          <AiTerm term="unbranded discovery">unbranded discovery</AiTerm> only. Branded consideration stays in its
-          Fender-lead column and is not part of either. A competitor win on a question kept out below does not appear in
-          these columns.
-        </p>
-        <KeptOutNote snapshot={scoped} />
+        <KeptOutNote snapshot={scoped} inlineCaveats={false} />
       </div>
 
       <div className="ceo-callout" style={{ marginTop: 12 }}>
@@ -205,8 +202,7 @@ function Battlecards({ snapshot }: { snapshot: AiSearchSnapshot }) {
           Fender-lead rates, unbranded discovery and{" "}
           <AiTerm term="branded consideration">branded consideration</AiTerm>. A <AiTerm term="Fender lead" /> means
           Fender or Squier was named more than any other brand. Squier counts with Fender because it is Fender&apos;s
-          entry-level line against Yamaha and Ibanez. The top competitor and Competitor leads columns use unbranded
-          discovery only.
+          entry-level line against Yamaha and Ibanez.
         </div>
       </div>
     </div>

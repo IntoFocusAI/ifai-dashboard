@@ -273,6 +273,22 @@ test.describe("Competitive Radar", () => {
       .locator("[data-citation-pie-disc]")
       .evaluateAll((els) => els.map((el) => Math.round(el.getBoundingClientRect().top)));
     expect(new Set(discTops).size, "the three hero pies share one row").toBe(1);
+    await expect(heroes.locator("[data-ai-on-track-hero] .ifai-term").first()).toHaveAttribute(
+      "data-ifai-tooltip-desc",
+      /The pie counts every category, including any the Who leads chip hides\./,
+    );
+    const tab = page.locator("[data-ai-battlecards-tab]");
+    for (const gone of [
+      "not inside unbranded discovery",
+      "Not in either rate above",
+      "stay out of both denominators",
+      "No filter is on",
+      "count inside",
+      "unbranded discovery only",
+    ]) {
+      await expect(tab).not.toContainText(gone);
+    }
+    const onTrack = await heroes.locator("[data-ai-ontrack-figure]").innerText();
 
     const rows = cards.locator("[data-ai-on-track-category]");
     await expect(rows).not.toHaveCount(0);
@@ -298,11 +314,12 @@ test.describe("Competitive Radar", () => {
       expect(status).toBe("behind");
     }
     await expect(cards.locator("[data-ai-battle-active-chip]")).toHaveText("Another brand leads");
+    await expect(heroes.locator("[data-ai-ontrack-figure]"), "the hero pie still counts every category").toHaveText(onTrack);
 
     const engine = cards.locator("[data-ai-battle-chip^='engine:']:not([data-ai-battle-chip='engine:all'])").first();
     await engine.click();
     await expect(engine).toHaveAttribute("aria-pressed", "true");
-    await expect(cards.locator("[data-ai-battle-rates-scope]")).toContainText(/The pies and the table cover \w+ answers/);
+    await expect(cards.locator("[data-ai-battle-rates-scope]")).toHaveCount(0);
 
     await cards.locator("[data-ai-battle-clear]").first().click();
     await expect(rows).toHaveCount(total);

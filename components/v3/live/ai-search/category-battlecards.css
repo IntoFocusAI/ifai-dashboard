@@ -55,11 +55,6 @@
   font-weight: 700;
 }
 
-.ai-battle-heroes > .ai-battle-rates-scope {
-  grid-column: 1 / -1;
-  margin-top: 6px;
-}
-
 @container (max-width: 620px) {
   .ai-battle-heroes {
     grid-template-columns: minmax(0, 1fr);
@@ -89,16 +84,6 @@
   .ai-battle-heroes > [data-ai-battle-role-total="branded_consideration"] {
     order: 6;
   }
-
-  .ai-battle-heroes > .ai-battle-rates-scope {
-    order: 7;
-  }
-}
-
-.ai-battle-rates-scope {
-  margin: 0;
-  font-size: 13px;
-  color: var(--text-muted);
 }
 
 /* Category pies */

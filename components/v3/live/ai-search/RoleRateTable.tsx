@@ -176,8 +176,19 @@ function keptOut(tally: OutcomeTally): string {
 }
 
 /** What stays out of the two rates, in the same words as the Run Summary cards. */
-export function KeptOutNote({ snapshot }: { snapshot: AiSearchSnapshot }) {
+export function KeptOutNote({
+  snapshot,
+  inlineCaveats = true,
+}: {
+  snapshot: AiSearchSnapshot;
+  /**
+   * False leaves each caveat to its term's tooltip, which already says it, and drops the
+   * denominator line. Only for a tab that shows the resolved term beside its rates.
+   */
+  inlineCaveats?: boolean;
+}) {
   const s = summarizeRun(snapshot);
+  const caveat = (text: string) => (inlineCaveats ? `. ${text}` : ".");
   return (
     <ul className="ai-role-footnote">
       <li>
@@ -185,21 +196,21 @@ export function KeptOutNote({ snapshot }: { snapshot: AiSearchSnapshot }) {
         <EvidenceLink focus={{ field: "role", value: "brand_associated_discovery/resolved" }} tab={SIM}>
           {keptOut(s.roles.associated)}
         </EvidenceLink>
-        . Counted on its own, not inside unbranded discovery.
+        {caveat("Counted on its own, not inside unbranded discovery.")}
       </li>
       <li>
         <AiTerm term="shopping guidance">Shopping guidance</AiTerm>:{" "}
         <EvidenceLink focus={{ field: "role", value: "shopping_guidance" }} tab={SIM}>
           {keptOut(s.roles.guidance)}
         </EvidenceLink>
-        . Not in either rate above.
+        {caveat("Not in either rate above.")}
       </li>
       <li>
         <AiTerm term="product-fact question">Product-fact questions</AiTerm>:{" "}
         <EvidenceLink focus={{ field: "role", value: "product_fact" }} tab={SIM}>
           {keptOut(s.roles.productFact)}
         </EvidenceLink>
-        . These are still stored as shopping prompts, and they are not in either rate above.
+        {caveat("These are still stored as shopping prompts, and they are not in either rate above.")}
       </li>
       <li>
         <EvidenceLink focus={{ field: "kind", value: "probe" }} tab={SIM}>
@@ -207,10 +218,12 @@ export function KeptOutNote({ snapshot }: { snapshot: AiSearchSnapshot }) {
         </EvidenceLink>{" "}
         <AiTerm term="product fact check">product fact checks</AiTerm> stay on their own tab.
       </li>
-      <li>
-        Answers with <AiTerm term="no clear leader">no clear leader</AiTerm> and{" "}
-        <AiTerm term="provider error">provider errors</AiTerm> stay out of both denominators.
-      </li>
+      {inlineCaveats ? (
+        <li>
+          Answers with <AiTerm term="no clear leader">no clear leader</AiTerm> and{" "}
+          <AiTerm term="provider error">provider errors</AiTerm> stay out of both denominators.
+        </li>
+      ) : null}
     </ul>
   );
 }

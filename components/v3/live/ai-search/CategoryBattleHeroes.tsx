@@ -5,8 +5,14 @@ import { EvidenceLink } from "@/components/v3/live/ai-search/EvidenceLink";
 import { EngineMark, Term } from "@/components/v3/live/ai-search/CategoryLeadPies";
 import { RunDetailsLead } from "@/components/v3/live/ai-search/RunDetailsLead";
 import { AI_TABS } from "@/lib/ai-search/canvas-surfaces";
-import { ON_TRACK_DEFINITION, onTrackPie, type CategoryLeadSummary } from "@/lib/ai-search/category-on-track";
+import {
+  HERO_RATES_NOTE,
+  ON_TRACK_DEFINITION,
+  onTrackPie,
+  type CategoryLeadSummary,
+} from "@/lib/ai-search/category-on-track";
 import { joinBrands } from "@/lib/ai-search/competitors";
+import { AI_DEFINITIONS } from "@/lib/ai-search/definitions";
 import { scopeEvidence, type EvidenceScope } from "@/lib/ai-search/evidence-focus";
 import type { RoleTally } from "@/lib/ai-search/question-role";
 import { summarizeRun } from "@/lib/ai-search/summary";
@@ -14,6 +20,8 @@ import type { AiSearchSnapshot } from "@/lib/ai-search/types";
 
 const NO_LEADS_DESC =
   "No unbranded discovery answer had a clear leader in this selection, so no category can be marked on track, tied, or behind.";
+
+const RESOLVED_DESC = `${AI_DEFINITIONS.resolved} ${HERO_RATES_NOTE}`;
 
 const ROLE_NAMES = {
   unbranded_discovery: "Unbranded discovery",
@@ -82,8 +90,10 @@ function RateCaption({
       <EvidenceLink focus={focus("resolved")} tab={AI_TABS.simulations} label={`${name}: resolved answers`}>
         {tally.resolved}
       </EvidenceLink>
-      <EngineMark engineName={engineName} />
-      {" resolved answers"}
+      <EngineMark engineName={engineName} />{" "}
+      <Term name="Resolved answers" desc={RESOLVED_DESC}>
+        resolved answers
+      </Term>
       {showCompetitors ? (
         <span className="ai-battle-hero-caption-line" data-ai-battle-competitor-led="">
           {"Competitors led "}
@@ -109,13 +119,11 @@ function RateCaption({
 export function CategoryBattleHeroes({
   snapshot,
   summary,
-  scope,
   engineScope,
   engineName,
 }: {
   snapshot: AiSearchSnapshot;
   summary: CategoryLeadSummary;
-  scope: string | null;
 } & EngineView) {
   const roles = summarizeRun(snapshot).roles;
   return (
@@ -133,11 +141,6 @@ export function CategoryBattleHeroes({
         engineName={engineName}
       />
       <RateCaption role="branded_consideration" tally={roles.branded} engineScope={engineScope} engineName={engineName} />
-      {scope ? (
-        <p className="ai-battle-rates-scope" data-ai-battle-rates-scope="">
-          {scope}
-        </p>
-      ) : null}
     </div>
   );
 }

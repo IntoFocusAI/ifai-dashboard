@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { test } from "node:test";
 import {
+  BATTLE_COLUMN_NOTES,
   battlecardEngines,
   callsForEngine,
   categoryLeadPie,
@@ -12,7 +13,7 @@ import {
   categoryLeadSummary,
   effectiveBattlecardFilter,
   engineOnlyNote,
-  heroScope,
+  HERO_RATES_NOTE,
   isBattlecardFiltered,
   leadMatches,
   leadSentence,
@@ -23,6 +24,7 @@ import {
   restLeads,
 } from "../lib/ai-search/category-on-track.ts";
 import { competitorsSpokeLead } from "../lib/ai-search/canvas-surfaces.ts";
+import { AI_DEFINITIONS } from "../lib/ai-search/definitions.ts";
 import { explorerFilterFor } from "../lib/ai-search/evidence-filter.ts";
 import { formatEvidence, parseEvidence, scopeEvidence } from "../lib/ai-search/evidence-focus.ts";
 import { applyExplorerFilter } from "../lib/ai-search/explorer-filter.ts";
@@ -250,11 +252,46 @@ test("each category pie splits resolved answers into Fender/Squier, the top riva
   assert.equal(categoryLeadPie(squier), null, "a category with no data gets Not available*, not an empty pie");
 });
 
-test("the scope line says which chips narrow the hero pies", () => {
-  assert.equal(heroScope(null, false), null);
-  assert.equal(heroScope("ChatGPT", false), "The pies and the table cover ChatGPT answers only.");
-  assert.match(heroScope(null, true) ?? "", /top three pies count every category/);
-  assert.match(heroScope("Gemini", true) ?? "", /^The pies and the table cover Gemini answers\. The top three pies also count/);
+test("caveats on this tab sit in tooltips, and the screen shows no line saying what a figure is not", () => {
+  assert.match(ON_TRACK_DEFINITION, /The pie counts every category, including any the Who leads chip hides\.$/);
+  assert.match(HERO_RATES_NOTE, /every category, including any the Who leads chip hides/);
+  assert.match(AI_DEFINITIONS.resolved, /no clear leader and provider errors are not in the denominator/);
+  assert.match(AI_DEFINITIONS["brand-associated discovery"], /not inside unbranded discovery/);
+  assert.match(AI_DEFINITIONS["shopping guidance"], /left out of the discovery and consideration rates/);
+  assert.match(AI_DEFINITIONS["product-fact question"], /stored with the shopping prompts, and they are left out/);
+  for (const key of ["competitor", "leads"] as const) {
+    assert.match(BATTLE_COLUMN_NOTES[key], /unbranded discovery answers/);
+    assert.match(BATTLE_COLUMN_NOTES[key], /Branded consideration and the questions listed under the table are not counted\./);
+  }
+  for (const key of ["leader", "errors"] as const) {
+    assert.match(BATTLE_COLUMN_NOTES[key], /They stay out of both Fender-lead rates\./);
+  }
+
+  const lib = read("lib/ai-search/category-on-track.ts");
+  assert.doesNotMatch(lib, /heroScope/);
+  const heroes = read("components/v3/live/ai-search/CategoryBattleHeroes.tsx");
+  assert.doesNotMatch(heroes, /data-ai-battle-rates-scope|scope: string/);
+  assert.match(heroes, /const RESOLVED_DESC = `\$\{AI_DEFINITIONS\.resolved\} \$\{HERO_RATES_NOTE\}`;/);
+  assert.match(heroes, /<Term name="Resolved answers" desc=\{RESOLVED_DESC\}>/);
+  assert.doesNotMatch(read("components/v3/live/ai-search/category-battlecards.css"), /ai-battle-rates-scope/);
+
+  const panel = read("components/v3/live/ai-search/CategoryBattlecardsPanel.tsx");
+  for (const gone of [/count inside/, /is not part of either/, /does not appear in/, /use unbranded\s+discovery only/]) {
+    assert.doesNotMatch(panel, gone);
+  }
+  for (const key of ["competitor", "leads", "leader", "errors"]) {
+    assert.match(panel, new RegExp(`notedColumn\\("${key}",`), key);
+  }
+  assert.match(panel, /headerTooltip: \{ title: name, description: BATTLE_COLUMN_NOTES\[id\] \}/);
+  assert.match(panel, /<KeptOutNote snapshot=\{scoped\} inlineCaveats=\{false\} \/>/);
+  assert.doesNotMatch(read("components/v3/live/ai-search/CategoryBattleChips.tsx"), /No filter is on/);
+
+  const shared = read("components/v3/live/ai-search/RoleRateTable.tsx");
+  assert.match(shared, /inlineCaveats = true,/, "Run Summary and Engine Comparison keep the inline wording");
+  assert.match(shared, /caveat\("Counted on its own, not inside unbranded discovery\."\)/);
+  for (const other of ["RunSummaryPanel.tsx", "EngineComparisonPanel.tsx"]) {
+    assert.doesNotMatch(read(`components/v3/live/ai-search/${other}`), /inlineCaveats/, other);
+  }
 });
 
 test("Category Battlecards opens on the hero pie row, then the chips, the category pies, and the table", () => {

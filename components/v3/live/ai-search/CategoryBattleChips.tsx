@@ -128,9 +128,7 @@ export function CategoryBattleChips({
               Clear filters
             </button>
           </>
-        ) : (
-          <span>No filter is on.</span>
-        )}
+        ) : null}
       </div>
     </div>
   );

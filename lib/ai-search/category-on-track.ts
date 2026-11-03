@@ -86,7 +86,22 @@ export function categoryLeads(groups: readonly RoleGroupTally[], calls: readonly
 }
 
 export const ON_TRACK_DEFINITION =
-  "A category is on track when Fender or Squier is named most in more of its resolved unbranded discovery answers than any single other brand. Level with the top other brand reads Tied. Branded consideration is not part of this test.";
+  "A category is on track when Fender or Squier is named most in more of its resolved unbranded discovery answers than any single other brand. Level with the top other brand reads Tied. Branded consideration is not part of this test. The pie counts every category, including any the Who leads chip hides.";
+
+/** The two hero rates ignore the Who leads chip, like the on-track pie. */
+export const HERO_RATES_NOTE = "These count every category, including any the Who leads chip hides.";
+
+/** Battlecard table caveats. They sit in each column header's tooltip, not on screen. */
+export const BATTLE_COLUMN_NOTES = {
+  competitor:
+    "The other brand named most in the most of this category's resolved unbranded discovery answers, and how many it led. Branded consideration and the questions listed under the table are not counted.",
+  leads:
+    "Resolved unbranded discovery answers in this category where another brand was named most. Branded consideration and the questions listed under the table are not counted.",
+  leader:
+    "Unbranded discovery and branded consideration answers in this category where no brand was named most. They stay out of both Fender-lead rates.",
+  errors:
+    "Unbranded discovery and branded consideration calls in this category where the AI engine returned no answer. They stay out of both Fender-lead rates.",
+} as const;
 
 export type CategoryLeadSummary = {
   /** Categories with at least one resolved unbranded discovery answer. */
@@ -205,14 +220,4 @@ export function isBattlecardFiltered(filter: BattlecardFilter): boolean {
 /** Tooltip on the asterisk an engine chip puts on each figure it narrows. */
 export function engineOnlyNote(engineName: string): string {
   return `${engineName} only. Clear the engine to see all engines.`;
-}
-
-/** The engine chip narrows every pie; the who-leads chip only narrows the category pies and the table. */
-export function heroScope(engineName: string | null, leadFiltered: boolean): string | null {
-  if (engineName && leadFiltered) {
-    return `The pies and the table cover ${engineName} answers. The top three pies also count categories the filter hides.`;
-  }
-  if (engineName) return `The pies and the table cover ${engineName} answers only.`;
-  if (leadFiltered) return "The top three pies count every category, including any the filter hides.";
-  return null;
 }
