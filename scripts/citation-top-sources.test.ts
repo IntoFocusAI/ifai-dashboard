@@ -230,8 +230,28 @@ test("Citation Ecosystem opens with figure tiles, one control row, then the char
   const tiles = read("components/v3/live/ai-search/CitationFigureTiles.tsx");
   assert.ok(tiles.indexOf("<CitationLeadFigure") < tiles.indexOf("data-ai-cited-answers"));
   assert.ok(tiles.indexOf("data-ai-cited-answers") < tiles.indexOf("data-ai-cited-links"));
-  assert.match(panel, /owned: leadOwned, total: full\.rows\.length/, "the lead figure ignores the category");
+  assert.match(
+    panel,
+    /owned: fender\.length,\s+total: read\.rows\.length,\s+within: category \? citationCategoryLabel\(category\) : null/,
+    "the lead figure counts the chosen category and names it",
+  );
   assert.ok(panel.split("\n").length - 1 <= 400);
+});
+
+test("the Fender-owned lead follows the category and says which one", () => {
+  const electrics = snapshotInCategory(snapshot, "electrics");
+  const narrowed = citationEvidence(electrics.calls, electrics.citations, "commercial");
+  const owned = narrowed.rows.filter((row) => row.sourceClass === "fender_owned").length;
+  assert.deepEqual([owned, narrowed.rows.length], [2, 6], "electrics: fender 2 of 6 links");
+  const all = citationEvidence(snapshot.calls, snapshot.citations, "commercial");
+  assert.deepEqual(
+    [all.rows.filter((row) => row.sourceClass === "fender_owned").length, all.rows.length],
+    [3, 9],
+    "clearing restores every category",
+  );
+  const lead = read("components/v3/live/ai-search/CitationLeadFigure.tsx");
+  assert.match(lead, /links\{within \? ` in \$\{within\}` : ""\}/);
+  assert.equal(citationCategoryLabel("amps"), "Amps");
 });
 
 test("bars scale to the largest count shown, and N of M sits beside each bar", () => {

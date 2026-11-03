@@ -75,13 +75,12 @@ function Ecosystem({
     () => citationEvidence(snapshot.calls, snapshot.citations, scope),
     [snapshot, scope],
   );
-  // The lead figure stays on every category. Every other figure, chart, and table narrows.
+  // Every figure, chart, and table follows the category filter, the Fender-owned lead included.
   const view = useMemo(() => snapshotInCategory(snapshot, category), [snapshot, category]);
   const read = useMemo(
     () => (category == null ? full : citationEvidence(view.calls, view.citations, scope)),
     [full, view, scope, category],
   );
-  const leadOwned = full.rows.filter((row) => row.sourceClass === "fender_owned").length;
   const fender = read.rows.filter((row) => row.sourceClass === "fender_owned");
   const fenderAnswers = new Set(fender.map((row) => row.simulationId)).size;
   const byEngine = citedAnswers(view.calls, read.rows, scope, (call) =>
@@ -117,7 +116,11 @@ function Ecosystem({
               scope={scope}
               scopeNoun={scopeNoun}
               showSmallSample={singleRun}
-              lead={{ owned: leadOwned, total: full.rows.length, within: category ? "all categories" : null }}
+              lead={{
+                owned: fender.length,
+                total: read.rows.length,
+                within: category ? citationCategoryLabel(category) : null,
+              }}
               note={copy}
               categories={citationCategoryOptions(snapshot.calls, scope)}
               category={category}
