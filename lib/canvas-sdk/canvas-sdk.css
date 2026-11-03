@@ -3438,6 +3438,12 @@
       white-space: nowrap;
     }
 
+    .set-aside-buttons {
+      display: inline-flex;
+      gap: 6px;
+      white-space: nowrap;
+    }
+
     tr[data-set-aside-row="active"] td {
       opacity: 0.72;
     }

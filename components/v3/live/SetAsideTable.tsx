@@ -4,53 +4,61 @@ import { useState } from "react";
 import type { RetailColumn } from "@/components/v3/live/ResizableTable";
 import { formatInt } from "@/lib/fender-canvas/format";
 import { FMIC_CLIENT_KEY } from "@/lib/set-aside/keys";
-import { ReopenForm, SetAsideForm } from "@/lib/set-aside/SetAsideForm";
-import { formatSetAsideDate, useSetAsides, type SetAsideRow } from "@/lib/set-aside/set-aside";
+import { DoneForm, ReopenForm, SetAsideForm } from "@/lib/set-aside/SetAsideForm";
+import { formatSetAsideDate, outcomeLabel, useSetAsides, type SetAsideRow } from "@/lib/set-aside/set-aside";
 
-/* Listing-level set-aside for any check table (worker 18.5).
+/* Listing-level Done and Set aside for any check table (worker 18.5).
 
    A table adds SET_ASIDE_COLUMN, renders <SetAsideCell> as its last cell and
    <SetAsideFormRow> after the row, and puts <SetAsideHistory> under the table.
-   Set-aside rows stay in the table and in every count: the chip says they were
-   reviewed. They are not removed from the figures. */
+   Done and set-aside rows stay in the table and in every count: the chip says
+   what the team decided. They are not removed from the figures, because the
+   data still flags them until the next refresh shows otherwise. */
 
 /** Not sortable: a set-aside is an overlay on the check, not a field of its read. */
 export const SET_ASIDE_COLUMN: RetailColumn = {
   id: "setaside",
-  name: "Set aside",
-  label: "Set aside",
-  width: 150,
-  minWidth: 110,
+  name: "Status",
+  label: "Status",
+  width: 190,
+  minWidth: 150,
 };
+
+export type FormMode = "done" | "set_aside";
 
 export type CheckSetAsides = ReturnType<typeof useSetAsides> & {
   checkKey: string;
   /** Plain name of the check for form headings, e.g. "Amazon Specs". */
   checkName: string;
-  formFor: string | null;
-  toggleForm: (entityKey: string) => void;
+  formFor: { key: string; mode: FormMode } | null;
+  toggleForm: (entityKey: string, mode: FormMode) => void;
   closeForm: () => void;
 };
 
 export function useCheckSetAsides(checkKey: string, checkName: string): CheckSetAsides {
   const setAsides = useSetAsides(FMIC_CLIENT_KEY, checkKey);
-  const [formFor, setFormFor] = useState<string | null>(null);
+  const [formFor, setFormFor] = useState<{ key: string; mode: FormMode } | null>(null);
   return {
     ...setAsides,
     checkKey,
     checkName,
     formFor,
-    toggleForm: (entityKey) => setFormFor((current) => (current === entityKey ? null : entityKey)),
+    toggleForm: (entityKey, mode) =>
+      setFormFor((current) =>
+        current?.key === entityKey && current.mode === mode ? null : { key: entityKey, mode },
+      ),
     closeForm: () => setFormFor(null),
   };
 }
 
 export function setAsideTitle(row: SetAsideRow): string {
   const note = row.note ? ` · ${row.note}` : "";
-  return `${row.reason_label}${note}. Set aside by ${row.set_by_name}, ${formatSetAsideDate(row.set_at)}.`;
+  const who = `${row.set_by_name}, ${formatSetAsideDate(row.set_at)}.`;
+  if (row.outcome === "done") return `Done${note}. Marked done by ${who}`;
+  return `${row.reason_label ?? "Set aside"}${note}. Set aside by ${who}`;
 }
 
-/** The last cell of a check row: a chip when set aside, otherwise the button. */
+/** The last cell of a check row: a chip when done or set aside, otherwise the two buttons. */
 export function SetAsideCell({
   ctl,
   entityKey,
@@ -66,22 +74,34 @@ export function SetAsideCell({
     <td>
       {active ? (
         <span
-          className="tag-badge tag-neutral set-aside-chip"
+          className={`tag-badge ${active.outcome === "done" ? "tag-success" : "tag-neutral"} set-aside-chip`}
           title={setAsideTitle(active)}
           data-set-aside-chip={entityKey}
+          data-outcome={active.outcome}
         >
-          Set aside · {active.reason_label}
+          {outcomeLabel(active)}
         </span>
       ) : canSetAside && ctl.enabled ? (
-        <button
-          type="button"
-          className="cc-undo-btn"
-          aria-expanded={ctl.formFor === entityKey}
-          data-set-aside-open={entityKey}
-          onClick={() => ctl.toggleForm(entityKey)}
-        >
-          Set aside
-        </button>
+        <span className="set-aside-buttons">
+          <button
+            type="button"
+            className="cc-undo-btn"
+            aria-expanded={ctl.formFor?.key === entityKey && ctl.formFor.mode === "done"}
+            data-done-open={entityKey}
+            onClick={() => ctl.toggleForm(entityKey, "done")}
+          >
+            Done
+          </button>
+          <button
+            type="button"
+            className="cc-undo-btn"
+            aria-expanded={ctl.formFor?.key === entityKey && ctl.formFor.mode === "set_aside"}
+            data-set-aside-open={entityKey}
+            onClick={() => ctl.toggleForm(entityKey, "set_aside")}
+          >
+            Set aside
+          </button>
+        </span>
       ) : null}
     </td>
   );
@@ -99,20 +119,33 @@ export function SetAsideFormRow({
   entityLabel?: string | null;
   colSpan: number;
 }) {
-  if (ctl.formFor !== entityKey || ctl.active.has(entityKey)) return null;
+  if (ctl.formFor?.key !== entityKey || ctl.active.has(entityKey)) return null;
+  const subject = `${entityLabel || entityKey} on ${ctl.checkName}`;
   return (
     <tr className="set-aside-form-row">
       <td colSpan={colSpan}>
-        <SetAsideForm
-          checkKey={ctl.checkKey}
-          subject={`${entityLabel || entityKey} on ${ctl.checkName}`}
-          onCancel={ctl.closeForm}
-          onSubmit={async (input) => {
-            const result = await ctl.setAside({ ...input, entityKey, entityLabel: entityLabel ?? null });
-            if (result.ok) ctl.closeForm();
-            return result;
-          }}
-        />
+        {ctl.formFor.mode === "done" ? (
+          <DoneForm
+            subject={subject}
+            onCancel={ctl.closeForm}
+            onSubmit={async (input) => {
+              const result = await ctl.markDone({ ...input, entityKey, entityLabel: entityLabel ?? null });
+              if (result.ok) ctl.closeForm();
+              return result;
+            }}
+          />
+        ) : (
+          <SetAsideForm
+            checkKey={ctl.checkKey}
+            subject={subject}
+            onCancel={ctl.closeForm}
+            onSubmit={async (input) => {
+              const result = await ctl.setAside({ ...input, entityKey, entityLabel: entityLabel ?? null });
+              if (result.ok) ctl.closeForm();
+              return result;
+            }}
+          />
+        )}
       </td>
     </tr>
   );
@@ -139,11 +172,13 @@ function entityDisplay(row: SetAsideRow) {
   return <>{row.entity_label ?? row.entity_key}</>;
 }
 
-/** Every set-aside on this check, active first, with Reopen on the active ones. */
+/** Every Done and set-aside on this check, active first, with Reopen on the active ones. */
 export function SetAsideHistory({ ctl }: { ctl: CheckSetAsides }) {
   const [reopenFor, setReopenFor] = useState<string | null>(null);
   if (!ctl.rows.length && !ctl.error) return null;
   const active = ctl.rows.filter((row) => row.status === "active");
+  const done = active.filter((row) => row.outcome === "done");
+  const setAside = active.filter((row) => row.outcome !== "done");
   const reopened = ctl.rows.filter((row) => row.status === "reopened");
 
   return (
@@ -153,15 +188,16 @@ export function SetAsideHistory({ ctl }: { ctl: CheckSetAsides }) {
       data-set-aside-history={ctl.checkKey}
     >
       <summary>
-        Set aside on {ctl.checkName}: {formatInt(active.length)}
+        Done and set aside on {ctl.checkName}: {formatInt(done.length)} done · {formatInt(setAside.length)} set
+        aside
         {reopened.length ? ` · ${formatInt(reopened.length)} reopened` : ""}
       </summary>
-      {ctl.error ? <p className="set-aside-error">Set-asides could not load: {ctl.error}</p> : null}
+      {ctl.error ? <p className="set-aside-error">Statuses could not load: {ctl.error}</p> : null}
       <p className="set-aside-form-hint">
-        Set-aside rows stay in the table and in the figures above. They are marked so the team knows they were
-        reviewed.
+        Done and set-aside rows stay in the table and in the figures above until the data stops flagging them. They
+        are marked so the team knows what was decided.
       </p>
-      {[...active, ...reopened].map((row) => (
+      {[...setAside, ...done, ...reopened].map((row) => (
         <div key={row.id} className="cc-cleared-entry">
           <div className="cc-cleared-row">
             <span className="cc-cleared-text">

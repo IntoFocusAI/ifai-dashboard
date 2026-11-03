@@ -47,7 +47,7 @@ test.describe("command center", () => {
     await setAside(canvas.priority("Buy Box withheld"), "discontinued", "", "Test Person");
     await expect(canvas.priorities).toHaveCount(4);
     await expect(quadrants.nth(1)).toContainText("4");
-    await expect(page.locator(".cc-cleared summary")).toContainText("1 set aside");
+    await expect(page.locator(".cc-cleared summary")).toContainText("0 done · 1 set aside");
   });
 
   test("set aside needs a reason and a name, and is stored server-side", async ({ canvas, page, setAsides }) => {
@@ -83,6 +83,24 @@ test.describe("command center", () => {
     await expect(page.locator(".cc-cleared")).toContainText("Other · Handled on the retailer side — Test Person");
   });
 
+  test("done needs only a name and is counted apart from set aside", async ({ canvas, page, setAsides }) => {
+    await canvas.openCommandCenter();
+    const item = canvas.priority("Buy Box withheld");
+    await item.locator("[data-cc-done]").click();
+    const form = item.locator("[data-done-form]");
+    await form.locator("[data-set-aside-name]").fill("Test Person");
+    await form.locator("[data-set-aside-note]").fill("Walmart price fixed");
+    await form.locator("[data-done-save]").click();
+    await expect(canvas.priorities).toHaveCount(4);
+    expect(setAsides.calls[0]).toMatchObject({
+      fn: "mark_issue_done",
+      body: { p_check_key: "command_center_queue", p_entity_key: "buybox-suppression", p_name: "Test Person" },
+    });
+    await expect(page.locator(".cc-cleared summary")).toContainText("1 done · 0 set aside");
+    await page.locator(".cc-cleared summary").click();
+    await expect(page.locator(".cc-cleared")).toContainText("Done · Walmart price fixed — Test Person");
+  });
+
   test("reopen updates the same set-aside row", async ({ canvas, page, setAsides }) => {
     await canvas.openCommandCenter();
     await setAside(canvas.priorities.first(), "discontinued", "", "Test Person");
@@ -94,7 +112,7 @@ test.describe("command center", () => {
     await expect(page.locator("[data-reopen-form] [data-set-aside-name]")).toHaveValue("Test Person");
     await page.locator("[data-reopen-save]").click();
     await expect(canvas.priorities).toHaveCount(5);
-    await expect(page.locator(".cc-cleared summary")).toContainText("0 set aside · 1 reopened");
+    await expect(page.locator(".cc-cleared summary")).toContainText("0 done · 0 set aside · 1 reopened");
     expect(setAsides.rows).toHaveLength(1);
     expect(setAsides.rows[0].status).toBe("reopened");
 

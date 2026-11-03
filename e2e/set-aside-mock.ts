@@ -1,7 +1,7 @@
 import type { Page, Route } from "@playwright/test";
 
 /**
- * In-memory stand-in for the set-aside endpoints (worker 18.5).
+ * In-memory stand-in for the Done and Set aside endpoints (worker 18.5).
  *
  * Every write to the real functions lands a permanent row in public.audit_log,
  * so specs never call them. The fixture installs this before the first
@@ -55,6 +55,7 @@ export async function mockSetAsides(page: Page): Promise<SetAsideMock> {
     );
     const patch = {
       status: "active",
+      outcome: "set_aside",
       reason_code: reason.reason_code,
       reason_label: reason.label,
       note: body.p_note,
@@ -88,11 +89,56 @@ export async function mockSetAsides(page: Page): Promise<SetAsideMock> {
     return json(route, row);
   });
 
+  await page.route("**/rest/v1/rpc/mark_issue_done", (route) => {
+    const body = route.request().postDataJSON() as Record<string, string | null>;
+    state.calls.push({ fn: "mark_issue_done", body });
+    const name = String(body.p_name ?? "").trim();
+    if (name.length < 2) return json(route, { message: "Enter your name (2 to 80 characters)." }, 400);
+    const now = new Date().toISOString();
+    const patch = {
+      status: "active",
+      outcome: "done",
+      reason_code: null,
+      reason_label: null,
+      note: body.p_note,
+      set_by_name: body.p_name,
+      set_at: now,
+      updated_at: now,
+    };
+    const existing = state.rows.find(
+      (row) => row.check_key === body.p_check_key && row.entity_key === body.p_entity_key,
+    );
+    if (existing) {
+      Object.assign(existing, patch);
+      return json(route, existing);
+    }
+    const row: Row = {
+      id: `00000000-0000-4000-8000-${String(next++).padStart(12, "0")}`,
+      client_key: body.p_client_key,
+      check_key: String(body.p_check_key),
+      check_label: CHECK_LABELS[String(body.p_check_key)] ?? body.p_check_key,
+      entity_type:
+        body.p_check_key === "command_center_queue"
+          ? "queue_item"
+          : body.p_check_key === "brand_site_specs"
+            ? "url"
+            : "asin",
+      entity_key: String(body.p_entity_key),
+      entity_label: body.p_entity_label,
+      reopened_by_name: null,
+      reopened_at: null,
+      reopen_note: null,
+      ...patch,
+    };
+    state.rows.push(row);
+    return json(route, row);
+  });
+
   await page.route("**/rest/v1/rpc/reopen_set_aside", (route) => {
     const body = route.request().postDataJSON() as Record<string, string | null>;
     state.calls.push({ fn: "reopen_set_aside", body });
     const row = state.rows.find((entry) => entry.id === body.p_id && entry.status === "active");
-    if (!row) return json(route, { message: "That set-aside is not active." }, 400);
+    if (!row) return json(route, { message: "That item is not done or set aside." }, 400);
     Object.assign(row, {
       status: "reopened",
       reopened_by_name: body.p_name,

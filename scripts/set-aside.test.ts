@@ -2,7 +2,9 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
+  outcomeLabel,
   reasonsForCheck,
+  validateDone,
   validateSetAside,
   type SetAsideReason,
 } from "../lib/set-aside/set-aside.ts";
@@ -48,5 +50,16 @@ test("reasons that require a note reject a blank one", () => {
   assert.match(
     validateSetAside({ reasonCode: "other", note: "x".repeat(501), name: "Brian" }, other) ?? "",
     /500/,
+  );
+});
+
+test("done needs only a name; its label never shows a reason", () => {
+  assert.equal(validateDone({ note: "", name: " " }), "Enter your name.");
+  assert.equal(validateDone({ note: "", name: "Brian" }), null);
+  assert.match(validateDone({ note: "x".repeat(501), name: "Brian" }) ?? "", /500/);
+  assert.equal(outcomeLabel({ outcome: "done", reason_label: null }), "Done");
+  assert.equal(
+    outcomeLabel({ outcome: "set_aside", reason_label: "Come back to review" }),
+    "Set aside · Come back to review",
   );
 });

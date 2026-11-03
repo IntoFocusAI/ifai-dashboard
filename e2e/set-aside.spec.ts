@@ -37,7 +37,7 @@ test("an Amazon Specs listing can be set aside and reopened", async ({ canvas, p
   await history.locator("[data-reopen-save]").click();
 
   await expect(table.locator(`[data-set-aside-open="${asin}"]`)).toBeVisible();
-  await expect(history.locator("summary")).toContainText("0 · 1 reopened");
+  await expect(history.locator("summary")).toContainText("0 done · 0 set aside · 1 reopened");
   expect(setAsides.rows).toHaveLength(1);
 });
 
@@ -61,4 +61,29 @@ test("a MAP approved exception needs a note and stays on the MAP check", async (
   await form.locator("[data-set-aside-save]").click();
   await expect(table.locator("[data-set-aside-chip]")).toHaveCount(1);
   expect(setAsides.rows.map((row) => row.check_key)).toEqual(["map_pricing"]);
+});
+
+test("an Amazon Specs listing can be marked done with just a name", async ({ canvas, page, setAsides }) => {
+  await expect(async () => {
+    await page.locator(".graph-node").filter({ hasText: /AI\s*Readiness/i }).click({ force: true });
+    await expect(page.locator(".ifai-canvas.column-layout")).toHaveCount(1, { timeout: 2000 });
+  }).toPass({ timeout: 20_000 });
+  await canvas.openTab("Amazon Specs");
+
+  const table = page.locator("#spec-readiness-by-asin");
+  const button = table.locator("[data-done-open]").first();
+  const asin = String(await button.getAttribute("data-done-open"));
+  await button.click();
+  const form = table.locator("[data-done-form]");
+  await expect(form.locator("[data-set-aside-reason]")).toHaveCount(0);
+  await form.locator("[data-set-aside-name]").fill("Test Person");
+  await form.locator("[data-done-save]").click();
+
+  await expect(table.locator(`[data-set-aside-chip="${asin}"]`)).toHaveText("Done");
+  expect(setAsides.calls[0]).toMatchObject({
+    fn: "mark_issue_done",
+    body: { p_check_key: "amazon_specs", p_entity_key: asin, p_name: "Test Person" },
+  });
+  const history = page.locator('[data-set-aside-history="amazon_specs"]');
+  await expect(history.locator("summary")).toContainText("1 done · 0 set aside");
 });

@@ -3,7 +3,11 @@
 import { useCallback, useEffect, useMemo, useSyncExternalStore } from "react";
 import { getCanvasSupabase } from "@/lib/supabase/canvas-client";
 
-/* Server-side set-asides (worker 18.5).
+/* Server-side Done and Set aside (worker 18.5).
+
+   Done means the issue was fixed or handled. Set aside means come back to
+   review it, or ignore it on purpose for a stated reason. Both are one row per
+   (client, check, entity) with an outcome column, and both can be reopened.
 
    A set-aside clears one issue for one check on one entity: a Command Center
    queue item, an ASIN, or a page URL. Rows live in public.issue_set_asides,
@@ -16,6 +20,9 @@ import { getCanvasSupabase } from "@/lib/supabase/canvas-client";
 
 export type SetAsideStatus = "active" | "reopened";
 
+/** Done = fixed or handled. Set aside = review later, or ignored on purpose for a reason. */
+export type SetAsideOutcome = "set_aside" | "done";
+
 export type SetAsideRow = {
   id: string;
   client_key: string;
@@ -25,8 +32,10 @@ export type SetAsideRow = {
   entity_key: string;
   entity_label: string | null;
   status: SetAsideStatus;
-  reason_code: string;
-  reason_label: string;
+  outcome: SetAsideOutcome;
+  /** Null on Done rows. */
+  reason_code: string | null;
+  reason_label: string | null;
   note: string | null;
   set_by_name: string;
   set_at: string;
@@ -49,6 +58,13 @@ export type SetAsideInput = {
   entityKey: string;
   entityLabel?: string | null;
   reasonCode: string;
+  note?: string | null;
+  name: string;
+};
+
+export type DoneInput = {
+  entityKey: string;
+  entityLabel?: string | null;
   note?: string | null;
   name: string;
 };
@@ -122,6 +138,19 @@ export function reasonsForCheck(
   return reasons
     .filter((reason) => !reason.check_keys || reason.check_keys.includes(checkKey))
     .sort((a, b) => a.sort_order - b.sort_order);
+}
+
+export function validateDone(input: Pick<DoneInput, "note" | "name">): string | null {
+  const name = input.name.trim();
+  if (name.length < 2 || name.length > 80) return "Enter your name.";
+  if ((input.note ?? "").trim().length > 500) return "Keep the note under 500 characters.";
+  return null;
+}
+
+/** "Done" or "Set aside · <reason>". */
+export function outcomeLabel(row: Pick<SetAsideRow, "outcome" | "reason_label">): string {
+  if (row.outcome === "done") return "Done";
+  return row.reason_label ? `Set aside · ${row.reason_label}` : "Set aside";
 }
 
 function errorText(error: { message?: string } | null | undefined): string {
@@ -244,6 +273,25 @@ export function useSetAsides(clientKey: string | null | undefined, checkKey: str
     [clientKey, checkKey, store],
   );
 
+  const markDone = useCallback(
+    async (input: DoneInput): Promise<SetAsideResult> => {
+      if (!clientKey || !store) return { ok: false, error: "Done is not available here." };
+      const { error } = await getCanvasSupabase().rpc("mark_issue_done", {
+        p_client_key: clientKey,
+        p_check_key: checkKey,
+        p_entity_key: input.entityKey,
+        p_name: input.name.trim(),
+        p_note: input.note?.trim() || null,
+        p_entity_label: input.entityLabel ?? null,
+      });
+      if (error) return { ok: false, error: errorText(error) };
+      rememberViewerName(input.name);
+      await load(clientKey, checkKey);
+      return { ok: true };
+    },
+    [clientKey, checkKey, store],
+  );
+
   const reopen = useCallback(
     async (row: SetAsideRow, name: string, note?: string | null): Promise<SetAsideResult> => {
       if (!clientKey || !store) return { ok: false, error: "Set-aside is not available here." };
@@ -274,6 +322,7 @@ export function useSetAsides(clientKey: string | null | undefined, checkKey: str
     rows: state.rows,
     active,
     setAside,
+    markDone,
     reopen,
   };
 }
