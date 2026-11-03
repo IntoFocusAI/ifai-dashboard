@@ -112,7 +112,7 @@ const TAB_OVERRIDES: Partial<
   specs: {
     0: () => <FindabilityPanel />,
     1: (bundle) => <CatalogReadinessSpec bundle={bundle} />,
-    2: (bundle) => <MachineReadabilityPanel summary={bundle.specPages ?? null} />,
+    2: (bundle) => <MachineReadabilityPanel summary={bundle.specPages ?? null} metrics={bundle.m} />,
     3: (bundle) => <AplusMatrixPanel summary={bundle.listingContent ?? null} />,
   },
   competitors: {
