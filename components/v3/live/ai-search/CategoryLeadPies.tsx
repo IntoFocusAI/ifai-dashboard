@@ -124,7 +124,11 @@ function CategoryPie({ lead, small }: { lead: CategoryLead; small: boolean }) {
         ) : lead.status !== "not_available" ? (
           <span className="ai-battle-pie-rival">No other brand leads</span>
         ) : null}
-        {small ? <AiTerm term="small sample">{SMALL_SAMPLE_LABEL}</AiTerm> : null}
+        {small ? (
+          <span className="ai-battle-pie-rival">
+            <AiTerm term="small sample">{SMALL_SAMPLE_LABEL}</AiTerm>
+          </span>
+        ) : null}
       </div>
     </li>
   );
