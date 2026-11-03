@@ -331,7 +331,7 @@
 
 /* Too narrow for the chart beside the tiles: the chart takes the full width as
    two short columns of ranks (1 to 5, 6 to 10), and the tiles sit under it. */
-@container citation-glance (max-width: 1000px) {
+@container citation-glance (max-width: 1060px) {
   .citation-glance-grid {
     grid-template-columns: minmax(0, 1fr);
   }
