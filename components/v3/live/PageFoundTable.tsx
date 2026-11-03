@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { useFindability } from "@/components/v3/live/findability/FindabilityContext";
+import { ALL_REASONS, NotFoundReasonCell, ReasonFilter } from "@/components/v3/live/PageFoundReason";
 import { ResizableTable, type RetailColumn } from "@/components/v3/live/ResizableTable";
 import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
 import type { PageFoundRead } from "@/components/v3/live/usePageFoundEvidence";
@@ -12,6 +14,12 @@ import {
   type PageFoundRow,
 } from "@/lib/fender-canvas/page-found-evidence";
 import type { PageFoundHeroModel } from "@/lib/fender-canvas/page-found-hero";
+import {
+  notFoundReasons,
+  REASON_COLUMN_TOOLTIP,
+  reasonGroups,
+  type NotFoundReason,
+} from "@/lib/fender-canvas/page-found-reasons";
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
 import "@/components/v3/live/page-found.css";
 
@@ -23,18 +31,28 @@ const COLUMNS: RetailColumn[] = [
   { id: "asin", name: "Amazon listing", label: "Amazon listing", width: 130, minWidth: 110, sort: "text", className: "asin-col" },
   { id: "model", name: "Model", label: "Model", width: 280, minWidth: 140, sort: "text" },
   { id: "status", name: "Page found", label: "Page found", width: 120, minWidth: 100, sort: "text" },
-  { id: "evidence", name: "fender.com page or reason", label: "fender.com page or reason", width: 320, minWidth: 180, sort: "text" },
+  {
+    id: "evidence",
+    name: "fender.com page or reason",
+    label: "fender.com page or reason",
+    width: 320,
+    minWidth: 180,
+    sort: "text",
+    headerTooltip: REASON_COLUMN_TOOLTIP,
+  },
   { id: "checked", name: "Checked", label: "Checked", width: 170, minWidth: 130, sort: "date" },
 ];
 
 const MISMATCH_TIP =
   "This list and the headline figure were read at different moments, so their counts differ. Reload to read both again.";
 
-function sortValue(row: PageFoundRow, columnId: string): SortInput {
+type Reasons = ReadonlyMap<string, NotFoundReason>;
+
+function sortValue(row: PageFoundRow, columnId: string, reasons: Reasons): SortInput {
   if (columnId === "asin") return row.asin;
   if (columnId === "model") return row.model || null;
   if (columnId === "status") return row.found ? "Found" : "Not found";
-  if (columnId === "evidence") return row.pageHref ?? row.reason;
+  if (columnId === "evidence") return row.pageHref ?? reasons.get(row.asin)?.group ?? null;
   if (columnId === "checked") return row.checkedAt;
   return null;
 }
@@ -43,20 +61,18 @@ function amazonHref(asin: string): string | null {
   return /^[A-Z0-9]{10}$/.test(asin) ? `https://www.amazon.com/dp/${asin}` : null;
 }
 
-function rowsFor(evidence: PageFoundEvidence, filter: Filter): PageFoundRow[] {
+function rowsFor(evidence: PageFoundEvidence, filter: Filter, reason: string, reasons: Reasons): PageFoundRow[] {
   if (filter === "found") return evidence.rows.filter((row) => row.found);
-  if (filter === "not_found") return evidence.rows.filter((row) => !row.found);
+  if (filter === "not_found") {
+    return evidence.rows.filter(
+      (row) => !row.found && (reason === ALL_REASONS || reasons.get(row.asin)?.group === reason),
+    );
+  }
   return evidence.rows;
 }
 
-function Evidence({ row }: { row: PageFoundRow }) {
-  if (!row.found) {
-    return (
-      <span className="page-found-reason" data-page-found-reason="">
-        {row.reason}
-      </span>
-    );
-  }
+function Evidence({ row, reason }: { row: PageFoundRow; reason: NotFoundReason | undefined }) {
+  if (!row.found) return reason ? <NotFoundReasonCell reason={reason} /> : null;
   if (!row.pageHref) return <span className="page-found-reason">Page address not recorded</span>;
   return (
     <a
@@ -71,7 +87,7 @@ function Evidence({ row }: { row: PageFoundRow }) {
   );
 }
 
-function SkuRow({ row }: { row: PageFoundRow }) {
+function SkuRow({ row, reason }: { row: PageFoundRow; reason: NotFoundReason | undefined }) {
   const amazon = amazonHref(row.asin);
   return (
     <tr data-page-found-row={row.found ? "found" : "not_found"} data-asin={row.asin}>
@@ -93,7 +109,7 @@ function SkuRow({ row }: { row: PageFoundRow }) {
         </span>
       </td>
       <td>
-        <Evidence row={row} />
+        <Evidence row={row} reason={reason} />
       </td>
       <td>{formatCheckedAt(row.checkedAt) ?? ""}</td>
     </tr>
@@ -153,7 +169,10 @@ function Pager({ page, total, onPage }: { page: number; total: number; onPage: (
   );
 }
 
-/** Every checked SKU behind the page-found hero: found rows link to fender.com, not-found rows name the stored reason. */
+/**
+ * Every checked SKU behind the page-found hero: found rows link to fender.com, not-found
+ * rows name the stored reason and the listing's Findability result.
+ */
 export function PageFoundTable({
   read,
   hero,
@@ -163,11 +182,23 @@ export function PageFoundTable({
   hero: PageFoundHeroModel;
   tableId: string;
 }) {
+  const findability = useFindability();
   const [filter, setFilter] = useState<Filter>("all");
+  const [reasonFilter, setReasonFilter] = useState<string>(ALL_REASONS);
   const [page, setPage] = useState(0);
   const evidence = read.phase === "ready" ? read.evidence : null;
-  const rows = evidence ? rowsFor(evidence, filter) : [];
-  const sorted = useClientTableSort(rows, COLUMNS, sortValue);
+  const reasons = useMemo(
+    () => notFoundReasons(evidence?.rows ?? [], findability),
+    [evidence, findability],
+  );
+  const groups = useMemo(() => reasonGroups(reasons.values()), [reasons]);
+  const activeReason = groups.some((group) => group.key === reasonFilter) ? reasonFilter : ALL_REASONS;
+  const rows = evidence ? rowsFor(evidence, filter, activeReason, reasons) : [];
+  const value = useCallback(
+    (row: PageFoundRow, columnId: string) => sortValue(row, columnId, reasons),
+    [reasons],
+  );
+  const sorted = useClientTableSort(rows, COLUMNS, value);
   const slice = sorted.rows.slice(page * PAGE, page * PAGE + PAGE);
   const matches = evidence ? evidenceMatchesHero(evidence, hero) : true;
 
@@ -209,6 +240,18 @@ export function PageFoundTable({
           filter={filter}
           onFilter={(next) => {
             setFilter(next);
+            setReasonFilter(ALL_REASONS);
+            setPage(0);
+          }}
+        />
+      ) : null}
+      {evidence && filter === "not_found" && findability.phase !== "loading" ? (
+        <ReasonFilter
+          groups={groups}
+          total={evidence.notFound}
+          value={activeReason}
+          onChange={(next) => {
+            setReasonFilter(next);
             setPage(0);
           }}
         />
@@ -243,7 +286,7 @@ export function PageFoundTable({
             </tr>
           ) : null}
           {slice.map((row) => (
-            <SkuRow key={row.asin} row={row} />
+            <SkuRow key={row.asin} row={row} reason={reasons.get(row.asin)} />
           ))}
         </tbody>
       </ResizableTable>

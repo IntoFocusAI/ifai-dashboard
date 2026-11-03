@@ -60,7 +60,7 @@ test("found and not-found rows add up to the checked count and match the hero's 
   assert.equal(evidenceMatchesHero({ found: 2, checked: 6 }, hero), false);
 });
 
-test("a found row links to its stored fender.com page; a not-found row names a stored reason or none", () => {
+test("a found row links to its stored fender.com page; a not-found row keeps its stored reason or none", () => {
   const evidence = buildPageFoundEvidence([
     row("B0FOUND001", true, STRAT, "additionalProperty"),
     row("B0FOUNDBAD", true, "not a url"),
@@ -70,14 +70,15 @@ test("a found row links to its stored fender.com page; a not-found row names a s
   ]);
   const byAsin = new Map(evidence.rows.map((item) => [item.asin, item]));
   assert.equal(byAsin.get("B0FOUND001")?.pageHref, STRAT);
-  assert.equal(byAsin.get("B0FOUND001")?.reason, null);
+  assert.equal(byAsin.get("B0FOUND001")?.storedReason, null);
   assert.equal(byAsin.get("B0FOUNDBAD")?.found, true);
   assert.equal(byAsin.get("B0FOUNDBAD")?.pageHref, null);
-  assert.equal(byAsin.get("B0MISSING1")?.reason, REASON_NOT_RECORDED);
+  assert.equal(byAsin.get("B0MISSING1")?.storedReason, null);
   assert.equal(byAsin.get("B0MISSING1")?.pageHref, null);
-  assert.equal(byAsin.get("B0MISSING2")?.reason, "Not found on fender.com");
+  assert.equal(byAsin.get("B0MISSING2")?.storedReason, "Not found on fender.com");
   assert.equal(byAsin.get("B0NULLFLAG")?.found, false);
-  assert.equal(byAsin.get("B0NULLFLAG")?.reason, REASON_NOT_RECORDED);
+  assert.equal(byAsin.get("B0NULLFLAG")?.storedReason, null);
+  assert.equal(REASON_NOT_RECORDED, "Reason not recorded");
   // Not-found rows lead so the gap is the first thing in the list.
   assert.deepEqual(
     evidence.rows.map((item) => item.found),
@@ -136,7 +137,7 @@ test("the evidence table opens from the page-found hero with custom tooltips and
   assert.match(table, /import "@\/components\/v3\/live\/page-found\.css"/);
   assert.match(table, /target="_blank"/);
   assert.match(table, /rel="noopener noreferrer"/);
-  assert.match(table, /data-page-found-reason/);
+  assert.match(table, /<NotFoundReasonCell reason=\{reason\} \/>/);
   assert.match(table, /className="ifai-term page-found-mismatch"/);
   assert.match(table, /data-ifai-tooltip-desc=\{MISMATCH_TIP\}/);
   for (const source of [panel, table]) {

@@ -31,8 +31,8 @@ export type PageFoundRow = {
   found: boolean;
   /** The stored fender.com page on a found row. Null when that address is not a web link. */
   pageHref: string | null;
-  /** The stored reason on a not-found row, or REASON_NOT_RECORDED. Null on a found row. */
-  reason: string | null;
+  /** The reason this spec read stored on a not-found row. Null on a found row or when none is stored. */
+  storedReason: string | null;
   checkedAt: string | null;
 };
 
@@ -72,7 +72,7 @@ export function pageFoundRow(row: PageFoundSourceRow): PageFoundRow {
     model: specModelTitle(row.title),
     found,
     pageHref: found ? schemaPageHref(row.fender_url) : null,
-    reason: found ? null : (storedNotFoundReason(row.fender_missing_fields) ?? REASON_NOT_RECORDED),
+    storedReason: found ? null : storedNotFoundReason(row.fender_missing_fields),
     checkedAt: row.checked_at,
   };
 }

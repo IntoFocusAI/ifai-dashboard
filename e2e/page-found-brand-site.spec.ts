@@ -5,8 +5,14 @@ import { mockCanvasRead } from "./spec-read-mock";
 /**
  * Brand-Site Specs leads with fender.com page found (the AI Readiness bubble's figure)
  * and opens every checked SKU behind it. The mock has 2 of 4 found: one false row and
- * one null flag are not found, and neither stores a reason.
+ * one null flag are not found, and neither stores a reason. Findability has a row for
+ * the false one only.
  */
+
+const FINDABILITY = [
+  { asin: "B00MISSING", title: "Missing Page Guitar", latest_state: "completed_not_found", counts_as_completed_not_found: true },
+  { asin: "B00FOUND01", title: "Found Strat", latest_state: "official_family_page", counts_as_confirmed: true },
+];
 
 async function openAiReadiness(page: Page, canvas: Canvas) {
   await canvas.open();
@@ -17,7 +23,7 @@ async function openAiReadiness(page: Page, canvas: Canvas) {
 }
 
 test("Brand-Site Specs shows the page-found hero and opens its checked SKUs", async ({ page }) => {
-  await mockCanvasRead(page);
+  await mockCanvasRead(page, { findability: FINDABILITY });
   const canvas = new Canvas(page);
   await openAiReadiness(page, canvas);
   await expect(canvas.activeTab).toContainText("Brand-Site Specs");
@@ -48,13 +54,34 @@ test("Brand-Site Specs shows the page-found hero and opens its checked SKUs", as
     await expect(link).toHaveAttribute("target", "_blank");
   }
   const notFound = table.locator("[data-page-found-row='not_found']");
-  await expect(notFound.locator("[data-page-found-reason]")).toHaveText([
-    "Reason not recorded",
-    "Reason not recorded",
-  ]);
+  await expect(notFound).toHaveCount(2);
+  const noPage = table.locator("[data-page-found-row='not_found'][data-asin='B00MISSING']");
+  await expect(noPage.locator("[data-page-found-reason]")).toHaveAttribute("data-page-found-reason", "No Defensible Page");
+  await expect(noPage.locator("[data-page-found-findability='completed_not_found']")).toHaveText(
+    /^Findability:\s*No Defensible Page$/,
+  );
+  const term = noPage.locator("[data-page-found-findability] span.ifai-term");
+  await expect(term).toHaveAttribute("data-ifai-tooltip-title", "No Defensible Page");
+  await expect(term).toHaveAttribute("data-ifai-tooltip-desc", /finished looking and did not accept a page/);
+  await expect(term).not.toHaveAttribute("title");
+  const noRow = table.locator("[data-page-found-row='not_found'][data-asin='B00NULLFLG']");
+  await expect(noRow.locator("[data-page-found-reason]")).toHaveText("Reason not recorded");
+
+  const header = table.locator("th span.ifai-term", { hasText: "fender.com page or reason" });
+  await expect(header).toHaveAttribute("data-ifai-tooltip-desc", /separate official-page check/);
+  await expect(table.locator("tbody")).not.toContainText("separate official-page check");
 
   await table.locator("[data-page-found-filter='not_found']").click();
   await expect(table.locator("[data-page-found-row]")).toHaveCount(2);
+  const reasons = table.locator("[data-page-found-reason-filter]");
+  await expect(reasons).toHaveText(["All reasons 2", "No Defensible Page 1", "Reason not recorded 1"]);
+  await table.locator("[data-page-found-reason-filter='No Defensible Page']").click();
+  await expect(table.locator("[data-page-found-row]")).toHaveCount(1);
+  await expect(table.locator("[data-page-found-row]")).toHaveAttribute("data-asin", "B00MISSING");
+  await table.locator("[data-page-found-reason-filter='all']").click();
+  await expect(table.locator("[data-page-found-row]")).toHaveCount(2);
+  await expect(table).toHaveAttribute("data-page-found-not-found", "2");
+  await expect(hero.locator("[data-hero-ratio]")).toHaveText("2 of 4");
   await expect(page.locator("#machine-readability-pages")).toHaveCount(0);
 });
 
