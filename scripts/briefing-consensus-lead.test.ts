@@ -124,44 +124,59 @@ test("the live score feeds the Briefing sentence, including when that score is m
   );
 });
 
-test("Briefing renders the consensus sentence and score before the findings hero", () => {
+test("Briefing keeps the consensus sentence on the title tooltip inside the findings row", () => {
   const spokes = read("components/v3/build-live-spokes.tsx");
+  const hero = read("components/v3/live/BriefingRetailHero.tsx");
   const lead = read("components/v3/live/BriefingConsensusLead.tsx");
-  const card = read("components/v3/live/ConsensusScoreView.tsx");
+  const findingCard = read("components/v3/live/BriefingFindingCard.tsx");
+  const performanceCard = read("components/v3/live/ConsensusScoreView.tsx");
+  const css = read("lib/canvas-sdk/canvas-sdk.css");
   const hub = spokes.slice(spokes.indexOf("\n  hub:"), spokes.indexOf("\n  ecommerce:"));
   const tab0 = hub.slice(hub.indexOf("\n    0:"), hub.indexOf("\n    1:"));
   const tab1 = hub.slice(hub.indexOf("\n    1:"));
 
-  const consensusAt = tab0.indexOf("<BriefingConsensusLead");
-  const heroAt = tab0.indexOf("<BriefingRetailHero");
-  const essayAt = tab0.indexOf("htmlBlock(bindCopy(HUB_BRIEFING_HTML");
-  assert.ok(consensusAt >= 0 && heroAt > consensusAt && essayAt > heroAt);
+  assert.match(tab0, /<BriefingRetailHero/);
+  assert.equal(tab0.includes("BriefingConsensusLead"), false);
   assert.equal(tab0.includes("FenderDivisionsTable"), false);
   assert.equal(tab0.includes("ConsensusLeadBand"), false);
+  assert.match(hero, /className="briefing-findings"[\s\S]*<BriefingConsensusLead[\s\S]*<BriefingFindingCard/);
+  assert.doesNotMatch(hero, /briefing-consensus-lead|briefing-buy-box-cluster/);
+  assert.doesNotMatch(css, /briefing-consensus-lead|briefing-consensus-sentence|briefing-buy-box-cluster/);
 
   const scoresAt = tab1.indexOf("<ConsensusScoresPanel");
   const divisionsAt = tab1.indexOf("<FenderDivisionsTable");
   assert.ok(scoresAt >= 0 && divisionsAt > scoresAt);
-  assert.equal(tab1.includes("BriefingConsensusLead"), false);
   assert.match(
     tab1,
     /<ConsensusScoresPanel bundle=\{bundle\} retail=\{retail\} \/>\s*<FenderDivisionsTable divisions=\{bundle\.divisions\} \/>/,
   );
 
-  const sentenceAt = lead.indexOf("briefingConsensusSentence(consensus)");
-  const cardAt = lead.indexOf("<ScoreHeroCard");
-  assert.ok(sentenceAt >= 0 && cardAt > sentenceAt);
   assert.match(lead, /consensusFromLive\(/);
-  assert.match(lead, /id="consensus"/);
-  assert.match(lead, /label="AI Consensus"/);
-  assert.match(lead, /score=\{consensus\?\.score \?\? null\}/);
-  assert.match(lead, /coverage=\{consensus\?\.coverage \?\? null\}/);
+  assert.match(lead, /const sentence = loading \? null : briefingConsensusSentence\(consensus\)/);
+  assert.match(lead, /data-ifai-tooltip-title="AI Consensus"/);
+  assert.match(lead, /data-ifai-tooltip-desc=\{sentence\}/);
+  assert.match(lead, /className="metric-card-label ifai-term"/);
+  assert.match(lead, /tabIndex=\{0\}/);
+  assert.match(lead, /aria-label=\{`AI Consensus: \$\{sentence\}`\}/);
+  assert.doesNotMatch(lead, /<p[\s>]|className="briefing-consensus-sentence"|className="briefing-consensus-lead"/);
+  assert.doesNotMatch(lead, /dominant|ScoreHeroCard|fontSize:\s*dominant|clamp\(34px/);
   assert.doesNotMatch(lead, /consensusScore\(|foundationScore\(|commerceScore\(/);
   assert.doesNotMatch(
     lead,
     /ConsensusLeadBand|ActuationHeroCard|CONSENSUS_EXPLAINER|FenderDivisionsTable|why it matters|Featured Offer|\stitle=/,
   );
-  assert.match(card, /function ScoreHeroCard/);
-  assert.match(card, /scoreToneColor\(score\)/);
+
+  const buttonAt = findingCard.indexOf("<button");
+  assert.ok(buttonAt > findingCard.indexOf("data-ifai-tooltip-desc={finding.explainer}"));
+  assert.match(findingCard, /data-ifai-tooltip-title=\{finding\.label\}/);
+  assert.doesNotMatch(findingCard, /metric-card-sub|data-briefing-finding-explainer/);
+  assert.doesNotMatch(findingCard.slice(buttonAt), /tabIndex=\{0\}/);
+  assert.match(hero, /data-ifai-tooltip-desc=\{placeholder\.explainer\}/);
+  assert.doesNotMatch(hero, /metric-card-sub/);
+
+  assert.match(performanceCard, /id="consensus"[\s\S]*?dominant/);
+  assert.doesNotMatch(performanceCard, /briefingConsensusSentence|data-ifai-tooltip-desc/);
+  assert.doesNotMatch(read("components/v3/live/CurrentFindingsPanel.tsx"), /BriefingConsensusLead/);
+  assert.doesNotMatch(read("components/v3/live/RoadmapFindingsPanel.tsx"), /BriefingConsensusLead/);
   assert.doesNotMatch(read("lib/fender-canvas/briefing-consensus-sentence.ts"), /CONSENSUS_EXPLAINER_BODY/);
 });

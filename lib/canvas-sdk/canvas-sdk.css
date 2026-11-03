@@ -3576,23 +3576,7 @@
       line-height: 1.35;
     }
 
-    /* Summary Briefing: Consensus result, then five executive findings. */
-    .briefing-consensus-lead {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 10px;
-      margin-bottom: 16px;
-    }
-
-    .briefing-consensus-sentence {
-      margin: 0;
-      max-width: 40rem;
-      color: var(--text-main);
-      font-size: 16px;
-      line-height: 1.45;
-    }
-
+    /* Summary Briefing: one row of equal bubbles. Narrow widths may wrap. */
     .briefing-findings {
       display: flex;
       flex-wrap: wrap;
@@ -3601,28 +3585,22 @@
       margin-bottom: 12px;
     }
 
-    .briefing-buy-box-cluster {
-      flex: 1.4 1 220px;
-      min-width: 200px;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      align-items: stretch;
+    .briefing-findings > .briefing-finding,
+    .briefing-findings > .briefing-revenue-placeholder {
+      flex: 1 1 120px;
+      min-width: min(120px, 100%);
+      max-width: 100%;
     }
 
-    .briefing-buy-box-cluster > .briefing-finding {
-      flex: 1 1 140px;
-      min-width: 130px;
+    .briefing-consensus {
+      cursor: default;
     }
 
-    .briefing-findings > .briefing-finding {
-      flex: 1 1 148px;
-      min-width: 136px;
+    .briefing-finding > .retail-finding-hit {
+      flex: 1 1 auto;
     }
 
     .briefing-revenue-placeholder {
-      flex: 1 1 120px;
-      min-width: 110px;
       box-sizing: border-box;
       background: var(--bg-card);
       border: 1px dashed var(--border-color);
@@ -3637,11 +3615,6 @@
       font-size: clamp(20px, 2vw, 26px);
       line-height: 1.05;
       color: var(--text-muted);
-    }
-
-    .briefing-revenue-placeholder .metric-card-sub {
-      margin: 0;
-      line-height: 1.35;
     }
 
     /* Featured Offer readings. Unchecked and failed share one card, still as two counts. */
