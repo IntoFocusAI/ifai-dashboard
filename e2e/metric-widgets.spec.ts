@@ -17,7 +17,7 @@ test.describe("bubble signal slots", () => {
       await page.setViewportSize(viewport);
       await page.locator("[data-graph-node-id='spoke-retail']").focus();
       await expect(page.locator("[data-hub-slot-source]")).toHaveText("Catalog Health");
-      await expect(page.locator("[data-hub-slot='gap'] [data-hub-slot-status]")).not.toHaveText("");
+      await expect(page.locator("[data-hub-slot='gap'] [data-hub-slot-status]")).not.toHaveText(/^(Loading)?$/);
       const figure = page.locator("[data-hub-slot='gap'] [data-hub-slot-figure]");
       const box = await figure.boundingBox();
       expect(box && box.height).toBeGreaterThan(20);
@@ -70,7 +70,12 @@ test.describe("bubble signal slots", () => {
 
     await page.locator("[data-graph-node-id='spoke-retail']").focus();
     await page.locator("[data-hub-slot='gap'] [data-hub-slot-rule] .ifai-term").focus();
-    await expect(page.locator(".node-tooltip-definition, .node-tooltip")).toBeVisible();
+    const tooltip = page.locator(".node-tooltip.node-tooltip-definition.visible");
+    await expect(tooltip).toBeVisible();
     await expect(page.locator("[data-hub-slots]")).toHaveCount(1);
+    // The column sits on the left edge, so the definition opens beside it, fully on screen.
+    const column = await page.locator("[data-hub-slots]").boundingBox();
+    const tip = await tooltip.boundingBox();
+    expect(tip && column && tip.x >= column.x + column.width && tip.y >= 0).toBe(true);
   });
 });

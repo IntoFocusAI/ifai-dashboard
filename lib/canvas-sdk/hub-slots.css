@@ -73,6 +73,25 @@
   border-radius: 4px;
 }
 
+/*
+ * The shared definition tooltip centres itself above its term, which pushes it off
+ * the left and top edges for terms in this column. Open it beside the column instead.
+ * Transform is not transitioned here, so the tooltip never slides in from the edge.
+ */
+.ifai-canvas:has([data-hub-slots] .ifai-term:is(:hover, :focus)) .node-tooltip.node-tooltip-definition {
+  left: 298px !important;
+  transform: translate(0, -4px) scale(0.96);
+  transition: opacity 0.22s ease, visibility 0.22s ease;
+}
+
+.ifai-canvas:has([data-hub-slots] .ifai-term:is(:hover, :focus)) .node-tooltip.node-tooltip-definition.visible {
+  transform: translate(0, -4px) scale(1);
+}
+
+.ifai-canvas:has([data-hub-slots]) .node-tooltip.node-tooltip-definition:not(.visible) {
+  transition: none;
+}
+
 /* Keeps all three slots on screen on an 800px-tall laptop. */
 @media (max-height: 840px) {
   .hub-evidence-hero .hub-slot-figure {
