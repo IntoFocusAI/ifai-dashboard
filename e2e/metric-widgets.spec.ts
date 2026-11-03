@@ -62,7 +62,7 @@ test.describe("bubble signal slots", () => {
         await expect(slot.locator("[data-hub-slot-checked]")).toHaveText(/^(Last checked .+|Loading)$/);
         await expect(slot.locator("[data-hub-slot-link]")).toHaveText(/^Open .+/);
         const rule = slot.locator("[data-hub-slot-rule] .ifai-term");
-        await expect(rule).toHaveAttribute("data-ifai-tooltip-desc", /^[A-Z].+\.$/);
+        await expect(rule).toHaveAttribute("data-ifai-tooltip-desc", /^[A-Z](?:(?!\.\s+[A-Z]).)+\.$/);
         await expect(rule).toHaveAttribute("tabindex", "0");
         await expect(rule).not.toHaveAttribute("title");
       }

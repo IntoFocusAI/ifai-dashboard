@@ -300,6 +300,7 @@ test("every slot names its rule, target, N of M, last check, and the tab that op
       );
       for (const slot of slots(feed)) {
         assert.match(slot.rule, /^[A-Z].+\.$/, `${id} ${slot.role} rule is one plain sentence`);
+        assert.doesNotMatch(slot.rule, /\.\s+[A-Z]/, `${id} ${slot.role} rule has no second sentence`);
         assert.ok(slot.figure.trim(), `${id} ${slot.role} figure`);
         assert.ok(slot.statusWord.trim(), `${id} ${slot.role} has a status word, so color is never alone`);
         assert.match(slot.target.text, /^(Target: .+ \(now .+\)|No target set|Loading)$/);
@@ -440,7 +441,11 @@ test("the action is the first Priorities item that opens the bubble, with its st
 
   const [, , summaryAction] = slots(feeds.hub);
   assert.equal(summaryAction.label, ITEMS[0].title);
-  assert.match(summaryAction.rule, /^This is the first item in Priorities\. Priorities lists critical items first/);
+  assert.equal(summaryAction.rule, "This is the first item in Priorities, which lists critical items first, then high, then moderate.");
+  assert.equal(
+    retailAction.rule,
+    "This is the first item that opens Catalog Health in Priorities, which lists critical items first, then high, then moderate.",
+  );
 });
 
 test("the Phase 1 dollar figure stays an analyst estimate with no invented inputs", () => {

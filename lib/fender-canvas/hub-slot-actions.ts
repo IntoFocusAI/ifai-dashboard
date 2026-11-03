@@ -116,7 +116,7 @@ export type ActionScope = {
 
 export function pickAction(items: PriorityItem[], book: CheckBook, reads: SlotReads, scope: ActionScope): HubEvidenceSlot {
   const item = scope.spokeId ? items.find((row) => row.spokeId === scope.spokeId) : items[0];
-  const order = "Priorities lists critical items first, then high, then moderate.";
+  const order = "which lists critical items first, then high, then moderate.";
   if (!item) {
     const rule = scope.spokeId
       ? `No Priorities item opens ${scope.bubble} today, so this slot opens the full action list.`
@@ -141,8 +141,8 @@ export function pickAction(items: PriorityItem[], book: CheckBook, reads: SlotRe
   }
 
   const rule = scope.spokeId
-    ? `This is the first Priorities item that opens ${scope.bubble}. ${order}`
-    : `This is the first item in Priorities. ${order}`;
+    ? `This is the first item that opens ${scope.bubble} in Priorities, ${order}`
+    : `This is the first item in Priorities, ${order}`;
   const { check, pending } = actionCount(item, book, reads);
   const link = itemTab(item, check);
   if (pending) return loadingSlot("action", item.title, rule, link.spokeId, link.subTab);

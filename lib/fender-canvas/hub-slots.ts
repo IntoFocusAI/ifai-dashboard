@@ -102,7 +102,7 @@ function times(book: CheckBook, ids: CheckId[]): Array<string | null | undefined
 function estimateOpportunity(input: HubSlotInput): HubEvidenceSlot {
   return evidenceSlot({
     role: "opportunity",
-    rule: "The Phase 1 lift is the only dollar opportunity stored for Action Items. It is an analyst estimate, and its inputs are not open yet.",
+    rule: "The Phase 1 lift is the only dollar opportunity stored for Action Items, and it is an analyst estimate whose inputs are not open yet.",
     figure: input.phaseOneValue,
     label: `Recoverable Revenue: ${input.phaseOneDetail}`,
     note: "Analyst estimate.",
