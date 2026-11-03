@@ -9,6 +9,8 @@ import {
   type MachineHeroId,
   type SpecPageSummary,
 } from "@/lib/fender-canvas/machine-readability";
+import { brandSitePageFoundHero, PAGE_FOUND_ANCHOR } from "@/lib/fender-canvas/page-found-hero";
+import type { CanvasMetricsRow } from "@/lib/fender-canvas/types";
 
 const PAGES_TABLE_ID = "machine-readability-pages";
 
@@ -38,12 +40,19 @@ function BrandSiteSpecsNotes({ summary }: { summary: SpecPageSummary | null }) {
 }
 
 /**
- * Brand-Site Specs: found fender.com pages only.
- * Lead matches Amazon A+ Matrix: hero cards in one row, explainer to the right.
+ * Brand-Site Specs. The page-found hero leads with checked SKUs; the heroes after it
+ * count found fender.com pages only. Hero cards in one row, explainer to the right.
  */
-export function MachineReadabilityPanel({ summary }: { summary: SpecPageSummary | null }) {
+export function MachineReadabilityPanel({
+  summary,
+  metrics,
+}: {
+  summary: SpecPageSummary | null;
+  metrics: CanvasMetricsRow | null;
+}) {
   const [openTable, setOpenTable] = useState<OpenTable>("missing_specs");
   const heroes = machineReadabilityHeroes(summary);
+  const pageFound = brandSitePageFoundHero(metrics);
 
   function toggle(which: MachineHeroId) {
     setOpenTable((prev) => (prev === which ? "closed" : which));
@@ -57,6 +66,13 @@ export function MachineReadabilityPanel({ summary }: { summary: SpecPageSummary 
         style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "flex-start" }}
       >
         <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "stretch" }}>
+          <ShareHeroCard
+            hero={pageFound}
+            dataAttr="data-machine-hero"
+            open={false}
+            controls={PAGES_TABLE_ID}
+            anchorId={PAGE_FOUND_ANCHOR}
+          />
           {heroes.map((hero) => (
             <ShareHeroCard
               key={hero.id}
