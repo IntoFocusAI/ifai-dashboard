@@ -100,7 +100,7 @@ test.describe("primary spoke map", () => {
     const text = (await hero.textContent()) ?? "";
     expect(text.length).toBeGreaterThan(0);
     expect(text).not.toMatch(/out of stock/i);
-    await expect(retail.locator(".node-hero-label")).toContainText(/Buy Box withheld/i);
+    await expect(retail.locator(".node-hero-label")).toContainText(/Buy\s*Box\s*withheld/i);
     await expect(retail.locator(".node-stat-pill")).toHaveCount(0);
   });
 });
