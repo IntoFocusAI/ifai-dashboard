@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useTableRowLimit } from "@/components/v3/live/TableRowLimit";
 import {
   columnWidthStorageKey,
   fitResizableColumnWidths,
@@ -208,6 +209,7 @@ export function ResizableTable({
   children: ReactNode;
 }) {
   const { widths, setWidth, signature } = useColumnWidths(tableId, columns);
+  const rowLimit = useTableRowLimit(children);
   const tableRef = useRef<HTMLTableElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
@@ -287,7 +289,7 @@ export function ResizableTable({
     tableRef.current?.closest(".ifai-canvas")?.classList.toggle("col-resize-active", active);
   };
 
-  return (
+  const scroller = (
     <div
       ref={scrollRef}
       className={tableScrollClass(freezeHeader)}
@@ -357,8 +359,16 @@ export function ResizableTable({
             })}
           </tr>
         </thead>
-        {children}
+        {rowLimit.children}
       </table>
     </div>
+  );
+
+  // Always the same fragment, so the table is not remounted when the footer appears or goes.
+  return (
+    <>
+      {scroller}
+      {rowLimit.footer}
+    </>
   );
 }

@@ -252,6 +252,10 @@ test.describe("AI Search Visibility", () => {
     await expect(canvas.activeTab).toHaveText("Run Details");
     await expect(canvas.simulations.first()).toBeVisible({ timeout: 60_000 });
     await canvas.filterChip("All calls").click();
+    // The table draws 25 rows at first; this test reads every row.
+    const showAll = page.locator("#ai-simulation-list [data-table-show-all]");
+    if (await showAll.count()) await showAll.click();
+    await expect(page.locator("#ai-simulation-list [data-table-row-limit]")).toHaveCount(0);
     const factCells = (kind: string) =>
       page
         .locator(`#ai-simulation-list .ai-sim-row${kind} td:nth-child(6)`)
@@ -269,6 +273,22 @@ test.describe("AI Search Visibility", () => {
     await expect(canvas.simulations.first()).toBeVisible();
     const kinds = await canvas.simulations.evaluateAll((rows) => rows.map((row) => row.getAttribute("data-kind")));
     for (const kind of kinds) expect(kind).toBe("probe");
+  });
+
+  test("Run Details draws the first 25 rows, then 25 more, then every row", async ({ canvas, page }) => {
+    test.slow();
+    await page.goto("/dashboard?spoke=aeo&tab=run-details");
+    await expect(canvas.simulations.first()).toBeVisible({ timeout: 60_000 });
+    const footer = page.locator("#ai-simulation-list [data-table-row-limit]");
+    await expect(canvas.simulations).toHaveCount(25);
+    const total = Number(await footer.getAttribute("data-rows-total"));
+    expect(total).toBeGreaterThan(25);
+    await expect(footer).toContainText(`Showing 25 of ${total.toLocaleString("en-US")} rows`);
+    await footer.locator("[data-table-show-more]").click();
+    await expect(canvas.simulations).toHaveCount(Math.min(50, total));
+    await footer.locator("[data-table-show-all]").click();
+    await expect(canvas.simulations).toHaveCount(total);
+    await expect(footer).toHaveCount(0);
   });
 
   test("a question with no verified fact says so", async ({ canvas, page }) => {

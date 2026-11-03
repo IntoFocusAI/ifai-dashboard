@@ -5,9 +5,13 @@ import {
   type SortKind,
   type TableSort,
 } from "@/lib/fender-canvas/table-sort";
+import { TABLE_ROW_STEP } from "@/lib/fender-canvas/table-row-limit";
 
-/** Rows shown at once. The filtered population is loaded before this slice. */
-export const CLIENT_TABLE_PAGE_SIZE = 50;
+/**
+ * Rows shown at once. The filtered population is loaded before this slice.
+ * Same as the shared table row step, so a paged table never also gets "Show more" inside a page.
+ */
+export const CLIENT_TABLE_PAGE_SIZE = TABLE_ROW_STEP;
 
 const FETCH_PAGE_SIZE = 1000;
 const MAX_FETCH_PAGES = 40;
