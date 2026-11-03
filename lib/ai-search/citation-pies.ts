@@ -6,6 +6,8 @@ export type CitationPieSlice = {
   key: string;
   label: string;
   count: number;
+  /** Slice counts Fender-owned links, so bar charts draw it in Fender blue. */
+  owned?: boolean;
 };
 
 /** Structural pie shape for CitationPieDisc. Citation views keep a closed id union below. */
@@ -89,6 +91,7 @@ export function unbrandedBrandPie(calls: AiCallRow[], read: CitationRead): Citat
       key: slice.brand.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
       label: slice.brand,
       count: slice.links,
+      owned: slice.fenderOwned,
     })),
   };
 }

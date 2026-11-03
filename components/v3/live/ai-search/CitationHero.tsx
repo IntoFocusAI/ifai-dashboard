@@ -1,29 +1,31 @@
 "use client";
 
+import "@/components/v3/live/ai-search/citation-glance.css";
 import { useState } from "react";
+import { CitationCategoryFilter } from "@/components/v3/live/ai-search/CitationCategoryFilter";
+import { CitationChain, type CitationLeadInput } from "@/components/v3/live/ai-search/CitationChain";
 import { CitationControlsStrip } from "@/components/v3/live/ai-search/CitationControlsStrip";
-import { CitationDomainsMix } from "@/components/v3/live/ai-search/CitationDomainsMix";
-import { CitationExecutiveGrid, GapsCard } from "@/components/v3/live/ai-search/CitationExecutiveGrid";
+import { CitationExecutiveGrid } from "@/components/v3/live/ai-search/CitationExecutiveGrid";
+import { GapsCard } from "@/components/v3/live/ai-search/CitationGapsCard";
+import { CitationTopSources } from "@/components/v3/live/ai-search/CitationTopSources";
 import {
   citationGaps,
   ownedByQuestionType,
   ownedPresence,
-  topDomainBars,
   type CitationGap,
   type RoleOwnedGroup,
   type RoleOwnedPresence,
 } from "@/lib/ai-search/citation-insights";
+import type { CitationPick } from "@/lib/ai-search/citation-pick";
 import { citationPies, unbrandedAnswerPie, unbrandedBrandPie } from "@/lib/ai-search/citation-pies";
+import { citationCategoryLabel, type CitationCategoryOption } from "@/lib/ai-search/citation-top-sources";
 import type { CitationRead, CitationScope } from "@/lib/ai-search/citations";
-import { groupCitations } from "@/lib/ai-search/citations";
+import { engineLabel } from "@/lib/ai-search/run-metrics";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
 
-export type CitationPick =
-  | { field: "domain" | "class" | "engine" | "category"; value: string }
-  | { field: "gap"; value: string; simulationIds: string[] }
-  | { field: "role_owned"; value: string; simulationIds: string[] }
-  | null;
+export type { CitationPick } from "@/lib/ai-search/citation-pick";
 
+/** First screen of Citation Ecosystem: the headline chain, one control row, then the chart beside the tiles. */
 export function CitationHero({
   snapshot,
   read,
@@ -32,6 +34,12 @@ export function CitationHero({
   onScope,
   onPick,
   showSmallSample,
+  lead,
+  note,
+  categories,
+  category,
+  onCategory,
+  activeDomain,
 }: {
   snapshot: AiSearchSnapshot;
   read: CitationRead;
@@ -41,18 +49,26 @@ export function CitationHero({
   onPick: (pick: CitationPick) => void;
   /** A single run still marks a thin lead-rate group. A month total does not. */
   showSmallSample: boolean;
+  lead: CitationLeadInput;
+  /** Window note, e.g. runs left out because citations were not stored. */
+  note: string;
+  categories: CitationCategoryOption[];
+  category: string | null;
+  onCategory: (category: string | null) => void;
+  activeDomain: string | null;
 }) {
   const [showAllGaps, setShowAllGaps] = useState(false);
   const presence = ownedPresence(read);
   const pies = citationPies(read);
   const mixPie = pies?.find((pie) => pie.id === "classes") ?? null;
   const byQuestionType = ownedByQuestionType(snapshot.calls, read, scope);
-  const unbrandedPie = unbrandedAnswerPie(byQuestionType);
-  const brandPie = unbrandedBrandPie(snapshot.calls, read);
   const gapResult = citationGaps(snapshot.calls, read, scope);
-  const domains = groupCitations(read.rows, (row) => row.domain);
-  const bars = topDomainBars(read, 10);
   const shoppingScope = scope !== "probe";
+  const engines = [
+    ...new Set(
+      snapshot.calls.filter((call) => call.call_status === "answered").map((call) => engineLabel(call.engine)),
+    ),
+  ].sort();
 
   const onPickGap = (gap: CitationGap) => {
     onPick({ field: "gap", value: gap.category, simulationIds: gap.simulationIds });
@@ -67,54 +83,54 @@ export function CitationHero({
   };
 
   return (
-    <div className="citation-hero" data-citation-hero>
-      <CitationControlsStrip
-        snapshot={snapshot}
+    <div className="citation-hero citation-glance" data-citation-hero>
+      <CitationChain
+        lead={lead}
         read={read}
-        scope={scope}
-        onScope={onScope}
         scopeNoun={scopeNoun}
-        part="scopes"
+        engines={engines}
+        note={note}
+        category={category ? citationCategoryLabel(category) : null}
       />
+      <div className="citation-control-row" data-citation-control-row>
+        <CitationControlsStrip scope={scope} onScope={onScope} />
+        <CitationCategoryFilter options={categories} value={category} scopeNoun={scopeNoun} onChange={onCategory} />
+      </div>
       {pies == null ? (
         <p data-citation-reconcile>
           The charts are hidden because their slices do not match the table totals.
         </p>
       ) : null}
-      <CitationExecutiveGrid
-        presence={presence}
-        scopeNoun={scopeNoun}
-        unbrandedPie={unbrandedPie}
-        mixPie={mixPie}
-        brandPie={brandPie}
-        byQuestionType={byQuestionType}
-        rolesApplicable={shoppingScope}
-        showSmallSample={showSmallSample}
-        onPickRoleGroup={onPickRoleGroup}
-      />
-      <CitationControlsStrip
-        snapshot={snapshot}
-        read={read}
-        scope={scope}
-        onScope={onScope}
-        scopeNoun={scopeNoun}
-        part="meta"
-      />
-      <div className="citation-row-domains">
-        <CitationDomainsMix
-          bars={bars}
-          totalDomains={domains.length}
+      <div className="citation-glance-grid">
+        <CitationTopSources
+          read={read}
+          scopeNoun={scopeNoun}
+          category={category}
+          activeDomain={activeDomain}
           onPickDomain={(domain) => onPick({ field: "domain", value: domain })}
-          onShowAllDomains={() => onPick(null)}
+          onShowAll={() => onPick(null)}
         />
-        <GapsCard
-          gaps={gapResult?.gaps ?? []}
-          ok={gapResult?.ok ?? false}
-          applicable={shoppingScope}
-          showAll={showAllGaps}
-          onToggleAll={() => setShowAllGaps((value) => !value)}
-          onPickGap={onPickGap}
-        />
+        <CitationExecutiveGrid
+          presence={presence}
+          scopeNoun={scopeNoun}
+          unbrandedPie={unbrandedAnswerPie(byQuestionType)}
+          mixPie={mixPie}
+          brandPie={unbrandedBrandPie(snapshot.calls, read)}
+          byQuestionType={byQuestionType}
+          rolesApplicable={shoppingScope}
+          showSmallSample={showSmallSample}
+          onPickRoleGroup={onPickRoleGroup}
+          onPickClass={(key) => onPick({ field: "class", value: key })}
+        >
+          <GapsCard
+            gaps={gapResult?.gaps ?? []}
+            ok={gapResult?.ok ?? false}
+            applicable={shoppingScope}
+            showAll={showAllGaps}
+            onToggleAll={() => setShowAllGaps((value) => !value)}
+            onPickGap={onPickGap}
+          />
+        </CitationExecutiveGrid>
       </div>
     </div>
   );

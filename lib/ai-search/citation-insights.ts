@@ -366,7 +366,7 @@ function brandFromDomain(domain: string): string | null {
 export function unbrandedBrandSites(
   calls: AiCallRow[],
   read: CitationRead,
-): { total: number; slices: Array<{ brand: string; links: number }>; ok: boolean } | null {
+): { total: number; slices: Array<{ brand: string; links: number; fenderOwned: boolean }>; ok: boolean } | null {
   const unbrandedIds = new Set(
     calls
       .filter(
@@ -378,6 +378,7 @@ export function unbrandedBrandSites(
       .map((call) => call.id),
   );
   const counts = new Map<string, number>();
+  const owned = new Set<string>();
   let seen = 0;
   for (const row of read.rows) {
     if (!unbrandedIds.has(row.simulationId)) continue;
@@ -386,9 +387,10 @@ export function unbrandedBrandSites(
     if (!brand) continue;
     seen += 1;
     counts.set(brand, (counts.get(brand) ?? 0) + 1);
+    if (row.sourceClass === "fender_owned") owned.add(brand);
   }
   const slices = [...counts.entries()]
-    .map(([brand, links]) => ({ brand, links }))
+    .map(([brand, links]) => ({ brand, links, fenderOwned: owned.has(brand) }))
     .sort((a, b) => b.links - a.links || a.brand.localeCompare(b.brand));
   const total = slices.reduce((sum, slice) => sum + slice.links, 0);
   if (total !== seen) return null;

@@ -162,18 +162,31 @@ test("the fact-check evidence view runs question, fact, source, answer, result",
 });
 
 test("citation copy separates answers from links and avoids causal claims", () => {
-  const panel = read("components/v3/live/ai-search/CitationEcosystemPanel.tsx");
-  assert.match(panel, /cited web sources/);
-  assert.match(panel, /Those answers contained \{read\.rows\.length\}/);
-  const flatPanel = flat("components/v3/live/ai-search/CitationEcosystemPanel.tsx");
-  assert.match(flatPanel, /Answers and links are separate counts/);
-  assert.match(flatPanel, /does not measure whether the page caused the recommendation/);
-  assert.match(flatPanel, /not an endorsement/);
-  for (const path of [
-    "components/v3/live/ai-search/CitationEcosystemPanel.tsx",
-    "components/v3/live/ai-search/CitationEvidenceTable.tsx",
-    "components/v3/live/ai-search/CitationRoleNote.tsx",
-  ]) {
+  // JSX spacing ({" "}) collapsed too, so the rendered sentence can be matched whole.
+  const prose = (path: string) => flat(path).replace(/\{" "\}\s*/g, " ");
+  // The headline chain counts answers, then the answers that showed sources, then the links they listed.
+  const chain = prose("components/v3/live/ai-search/CitationChain.tsx");
+  assert.match(chain, /= citationChain\(read, lead\);/);
+  assert.match(flat("lib/ai-search/citation-lead.ts"), /const \{ answered, answersWithCitation: showed \} = read;/);
+  assert.match(chain, /data-ai-cited-answers> \{count\(showed\)\} of \{count\(answered\)\} \{scopeNoun\} showed sources </);
+  assert.match(chain, /data-ai-cited-links> \{count\(links\)\} <\/span>/);
+  assert.match(chain, /links: "Every web page those answers listed\. One answer can list several\."/);
+  const steps = ["answers", "showed", "links", "owned"].map((step) => chain.indexOf(`data-citation-chain-step="${step}"`));
+  assert.ok(steps.every((at, index) => at >= 0 && (index === 0 || at > steps[index - 1])), `chain order ${steps}`);
+  assert.doesNotMatch(chain, /cited web sources|answers citing|cited links/i, "the chain uses the plain names");
+  const panel = prose("components/v3/live/ai-search/CitationEcosystemPanel.tsx");
+  const notes = panel.slice(panel.indexOf("<summary>How these counts work</summary>"));
+  assert.ok(notes.length < panel.length, "the counts note is on the panel");
+  assert.match(notes, /Answers and links are separate counts/);
+  assert.match(
+    notes,
+    /\{read\.answersWithCitation\} \{scopeNoun\} produced \{read\.rows\.length\} links, so one answer can cite several pages/,
+  );
+  assert.match(notes, /does not measure whether the page caused the recommendation/);
+  assert.match(notes, /a citation is not an endorsement/);
+  const citationFiles = files("components/v3/live/ai-search", ".tsx").filter((path) => /\/Citation\w*\.tsx$/.test(path));
+  assert.ok(citationFiles.length >= 10, "every Citation Ecosystem component is checked");
+  for (const path of citationFiles) {
     assert.doesNotMatch(read(path), /valid link|valid cited/, path);
   }
   const note = flat("components/v3/live/ai-search/CitationRoleNote.tsx");
@@ -182,6 +195,15 @@ test("citation copy separates answers from links and avoids causal claims", () =
   assert.match(note, /independent authority/);
   assert.match(note, /less control over the facts/);
   assert.match(note, /A low count does not prove a source had no influence/);
+  assert.match(note, /export const CITED_LINK_COUNT_CAVEAT = "A low count does not prove a source had no influence/);
+  const callout = note.slice(note.indexOf("export function CitationRoleNote"));
+  assert.doesNotMatch(callout, /A low count|not a worse outcome/, "the callout keeps no qualifier on screen");
+  for (const title of ["Links", "Fender-owned links"]) {
+    const tooltip = new RegExp(`headerTooltip: \\{ title: "${title}", description: \`[^\`]*\\$\\{CITED_LINK_COUNT_CAVEAT\\}\``);
+    assert.match(panel, tooltip, `the low-count caveat sits in the ${title} column tooltip`);
+  }
+  assert.match(panel, /columns=\{ENGINE_COLUMNS\}/);
+  assert.match(panel, /const ENGINE_COLUMNS = \[ [^\]]*\.\.\.LINK_COLUMNS, \]/);
 });
 
 test("the old authored citation percentages stay retired", () => {
