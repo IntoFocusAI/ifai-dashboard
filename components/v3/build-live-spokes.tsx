@@ -58,9 +58,9 @@ const TAB_OVERRIDES: Partial<
   Record<SpokeId, Partial<Record<number, TabOverride>>>
 > = {
   hub: {
-    0: (_bundle, vars, retail) => (
+    0: (bundle, vars, retail) => (
       <>
-        <BriefingRetailHero read={retail} />
+        <BriefingRetailHero bundle={bundle} read={retail} />
         {htmlBlock(bindCopy(HUB_BRIEFING_HTML, vars))}
       </>
     ),
