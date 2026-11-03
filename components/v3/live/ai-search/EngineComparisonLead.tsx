@@ -3,6 +3,7 @@
 import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
 import { CitationPieDisc, type PieDiscInput } from "@/components/v3/live/ai-search/CitationPieDisc";
 import { EvidenceLink } from "@/components/v3/live/ai-search/EvidenceLink";
+import { MixedScoringTip } from "@/components/v3/live/ai-search/MixedScoringTip";
 import { AI_TABS } from "@/lib/ai-search/canvas-surfaces";
 import type { AiTermKey } from "@/lib/ai-search/definitions";
 import {
@@ -50,7 +51,7 @@ function ratePie(id: string, title: string, tally: Pick<OutcomeTally, "fenderWin
   };
 }
 
-function RateSide({ role, tally }: { role: HeadlineRole; tally: OutcomeTally }) {
+function RateSide({ role, tally, mixed }: { role: HeadlineRole; tally: OutcomeTally; mixed: boolean }) {
   const lead = roleRateLead(tally, ROLE_BANDS[role]);
   const title = ROLE_TITLES[role];
   const name = ROLE_LABELS[role];
@@ -68,7 +69,7 @@ function RateSide({ role, tally }: { role: HeadlineRole; tally: OutcomeTally }) 
               data-ai-win-rate={role}
               data-ai-lead-figure={role}
             >
-              {lead.rate}
+              <MixedScoringTip mixed={mixed}>{lead.rate}</MixedScoringTip>
             </span>
             <CitationPieDisc
               pie={ratePie(`engine-${role}`, title, tally)}
@@ -96,11 +97,11 @@ function RateSide({ role, tally }: { role: HeadlineRole; tally: OutcomeTally }) 
 }
 
 /** Selection totals for the two rates, same numbers the engine table rows add up to. */
-export function EngineComparisonLead({ engines }: { engines: readonly RoleGroupTally[] }) {
+export function EngineComparisonLead({ engines, mixed }: { engines: readonly RoleGroupTally[]; mixed: boolean }) {
   return (
     <div className="metric-grid-2" data-ai-engine-comparison-lead="">
       {HEADLINE_ROLES.map((role) => (
-        <RateSide key={role} role={role} tally={sumRoleTallies(engines, role)} />
+        <RateSide key={role} role={role} tally={sumRoleTallies(engines, role)} mixed={mixed} />
       ))}
     </div>
   );

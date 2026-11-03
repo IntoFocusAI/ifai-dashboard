@@ -1,7 +1,7 @@
 "use client";
 
-import { mutedText } from "@/components/v3/live/ai-search/AiReadGate";
 import { CitationPieDisc, sliceColor } from "@/components/v3/live/ai-search/CitationPieDisc";
+import { MixedScoringTip } from "@/components/v3/live/ai-search/MixedScoringTip";
 import { competitorTallies } from "@/lib/ai-search/competitors";
 import {
   competitorLeadPie,
@@ -10,7 +10,6 @@ import {
 import { headlineCompetitorWins } from "@/lib/ai-search/question-role";
 import { summarizeRun } from "@/lib/ai-search/summary";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
-import { MIXED_SCORING_NOTE } from "@/lib/ai-search/window-display";
 
 function brandKey(brand: string): string {
   return brand.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "other";
@@ -21,6 +20,8 @@ function HeroFigure({ snapshot, mixed }: { snapshot: AiSearchSnapshot; mixed: bo
   const competitorWins = summary.competitorWins;
   const resolved = summary.roles.unbranded.resolved;
   const figure = competitorWinsFigure(competitorWins, resolved);
+  const count = `${competitorWins} of ${resolved}`;
+  const at = figure.indexOf(count);
   const pie = competitorLeadPie(competitorWins, resolved);
   const tip = pie
     ? `${competitorWins} competitor led. ${resolved - competitorWins} Fender/Squier led. Total ${resolved} resolved unbranded discovery answers.`
@@ -39,7 +40,15 @@ function HeroFigure({ snapshot, mixed }: { snapshot: AiSearchSnapshot; mixed: bo
         }}
       >
         <span className="ai-lead-figure" data-ai-competitor-lead-figure="">
-          {figure}
+          {at < 0 ? (
+            <MixedScoringTip mixed={mixed}>{figure}</MixedScoringTip>
+          ) : (
+            <>
+              {figure.slice(0, at)}
+              <MixedScoringTip mixed={mixed}>{count}</MixedScoringTip>
+              {figure.slice(at + count.length)}
+            </>
+          )}
         </span>
         {pie ? (
           <CitationPieDisc
@@ -49,11 +58,6 @@ function HeroFigure({ snapshot, mixed }: { snapshot: AiSearchSnapshot; mixed: bo
           />
         ) : null}
       </div>
-      {mixed ? (
-        <p style={{ ...mutedText, margin: "8px 0 0" }} data-ai-mixed-scoring>
-          {MIXED_SCORING_NOTE}
-        </p>
-      ) : null}
     </div>
   );
 }

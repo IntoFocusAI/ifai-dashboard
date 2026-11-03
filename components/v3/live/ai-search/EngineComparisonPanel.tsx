@@ -20,7 +20,7 @@ import {
 import { categoryLabel, engineLabel } from "@/lib/ai-search/run-metrics";
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
 import type { AiCallRow, AiSearchSnapshot } from "@/lib/ai-search/types";
-import { hasMixedScoringMethods, isWindowHistoryKind, MIXED_SCORING_NOTE } from "@/lib/ai-search/window-display";
+import { hasMixedScoringMethods, isWindowHistoryKind } from "@/lib/ai-search/window-display";
 
 function brandId(brand: string): string {
   return `brand:${brand}`;
@@ -110,13 +110,8 @@ function Comparison({ snapshot }: { snapshot: AiSearchSnapshot }) {
   return (
     <>
       <div className="content-box ai-engine-comparison ai-role-rates">
-        <EngineComparisonLead engines={engines} />
+        <EngineComparisonLead engines={engines} mixed={mixed} />
         <EngineUnbrandedGraph engines={engines} showSmallSample={showSmallSample} />
-        {mixed ? (
-          <p className="ai-role-footnote" data-ai-mixed-scoring>
-            {MIXED_SCORING_NOTE}
-          </p>
-        ) : null}
         <div className="content-box-title">Commercial outcomes by engine</div>
         <ResizableTable
           tableId="engine-comparison"

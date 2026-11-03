@@ -6,6 +6,7 @@ import { useAiHistoryOptional } from "@/components/v3/live/ai-search/AiHistoryCo
 import { AiReadGate, mutedText } from "@/components/v3/live/ai-search/AiReadGate";
 import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
 import { EvidenceLink } from "@/components/v3/live/ai-search/EvidenceLink";
+import { MixedScoringTip } from "@/components/v3/live/ai-search/MixedScoringTip";
 import { RunCompletenessCard } from "@/components/v3/live/ai-search/RunCompletenessCard";
 import { KeptOutNote, RoleCount, RoleSumLine, largestResolved, roleColumn, roleRateSort } from "@/components/v3/live/ai-search/RoleRateTable";
 import { AI_TABS } from "@/lib/ai-search/canvas-surfaces";
@@ -14,7 +15,7 @@ import { categoryLabel, engineLabel } from "@/lib/ai-search/run-metrics";
 import { pct, resolvedPhrase, summarizeRun } from "@/lib/ai-search/summary";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
-import { hasMixedScoringMethods, isWindowHistoryKind, MIXED_SCORING_NOTE } from "@/lib/ai-search/window-display";
+import { hasMixedScoringMethods, isWindowHistoryKind } from "@/lib/ai-search/window-display";
 
 const ENGINE_COLUMNS = [
   clientColumn("engine", "Engine", "text", 140, 100),
@@ -54,16 +55,22 @@ function RoleRate({
   tally,
   term,
   unit,
+  mixed,
 }: {
   tally: RoleTally;
   term: "unbranded discovery" | "branded consideration";
   unit: "run" | "selection";
+  mixed: boolean;
 }) {
   const rate = tally.resolved > 0 ? pct(tally.fenderWins, tally.resolved) : "No resolved answers";
   return (
     <div className="metric-card-sm" data-ai-role={tally.role}>
       <div className="metric-card-val" data-ai-lead-figure={tally.role}>
-        {tally.resolved > 0 ? `${tally.fenderWins} of ${tally.resolved}` : "No resolved answers"}
+        {tally.resolved > 0 ? (
+          <MixedScoringTip mixed={mixed}>{`${tally.fenderWins} of ${tally.resolved}`}</MixedScoringTip>
+        ) : (
+          "No resolved answers"
+        )}
       </div>
       <span className="metric-card-label"><AiTerm term={term}>{ROLE_LABELS[tally.role]}</AiTerm></span>
       <span className="metric-card-sub">
@@ -98,14 +105,9 @@ function WinCard({ snapshot, unit, mixed }: { snapshot: AiSearchSnapshot; unit: 
   return (
     <div className="content-box ai-win-card">
       <div className="metric-grid-2">
-        <RoleRate tally={s.roles.unbranded} term="unbranded discovery" unit={unit} />
-        <RoleRate tally={s.roles.branded} term="branded consideration" unit={unit} />
+        <RoleRate tally={s.roles.unbranded} term="unbranded discovery" unit={unit} mixed={mixed} />
+        <RoleRate tally={s.roles.branded} term="branded consideration" unit={unit} mixed={mixed} />
       </div>
-      {mixed ? (
-        <p style={{ ...mutedText, margin: "10px 0 0" }} data-ai-mixed-scoring>
-          {MIXED_SCORING_NOTE}
-        </p>
-      ) : null}
       <div className="content-box-title">
         <span>How often Fender/Squier is named, by the kind of question</span>
       </div>

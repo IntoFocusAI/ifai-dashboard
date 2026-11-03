@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import { readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import { test } from "node:test";
 import {
   OCTOBER_11_RUN_ID,
@@ -11,11 +13,16 @@ import {
   hasMixedScoringMethods,
   isWindowHistoryKind,
   MIXED_SCORING_NOTE,
+  MIXED_SCORING_TITLE,
   scoringMethodsInSnapshot,
 } from "../lib/ai-search/window-display.ts";
 import { applyExplorerFilter, filterFromEvidence } from "../lib/ai-search/explorer-filter.ts";
 import { driftRead } from "../lib/ai-search/drift.ts";
 import { aiSpokeHeaderChips } from "../lib/ai-search/canvas-surfaces.ts";
+
+const root = new URL("..", import.meta.url).pathname;
+const AI_DIR = "components/v3/live/ai-search";
+const source = (path: string) => readFileSync(join(root, path), "utf8");
 
 function run(id: string, completedAt: string): AiCurrentRun {
   return {
@@ -94,13 +101,32 @@ test("mixed scoring methods across October 11 and later runs", () => {
   };
   assert.deepEqual(scoringMethodsInSnapshot(mixed), ["mention_share", "original_winner"]);
   assert.equal(hasMixedScoringMethods(mixed), true);
-  assert.match(MIXED_SCORING_NOTE, /named the leader in different ways/);
 
   const single: AiSearchSnapshot = {
     ...mixed,
     calls: [call("b", PUBLISHED_OCTOBER_12_RUN_ID, "2026-10-12T17:00:00Z")],
   };
   assert.equal(hasMixedScoringMethods(single), false);
+});
+
+test("the mixed scoring note is a tooltip on the lead figure, never a line on screen", () => {
+  assert.equal(MIXED_SCORING_TITLE, "Mixed scoring");
+  assert.match(MIXED_SCORING_NOTE, /named the leader in different ways/);
+  const tip = source(`${AI_DIR}/MixedScoringTip.tsx`).replace(/\s+/g, " ");
+  assert.match(tip, /<CopyTip label=\{MIXED_SCORING_TITLE\} description=\{MIXED_SCORING_NOTE\}> \{children\} <\/CopyTip>/);
+  assert.doesNotMatch(tip, /\btitle=/);
+
+  // Run Details and Category Battlecards both lead with RunDetailsLead.
+  for (const file of ["RunDetailsLead.tsx", "EngineComparisonLead.tsx", "RunSummaryPanel.tsx", "CompetitorWinsHero.tsx"]) {
+    assert.match(source(`${AI_DIR}/${file}`), /<MixedScoringTip mixed=\{mixed\}>/, file);
+  }
+  assert.match(source(`${AI_DIR}/RunDetailsLead.tsx`), /<MixedScoringTip mixed=\{mixed\}>\{lead\.rate\}<\/MixedScoringTip>/);
+  assert.match(source(`${AI_DIR}/EngineComparisonPanel.tsx`), /<EngineComparisonLead engines=\{engines\} mixed=\{mixed\} \/>/);
+
+  const onScreen = readdirSync(join(root, AI_DIR))
+    .filter((name) => name.endsWith(".tsx") && name !== "MixedScoringTip.tsx")
+    .filter((name) => /MIXED_SCORING_NOTE/.test(source(`${AI_DIR}/${name}`)));
+  assert.deepEqual(onScreen, []);
 });
 
 test("header chips omit single-run state on window modes and do not restate the pill", () => {

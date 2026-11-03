@@ -19,7 +19,7 @@ import {
 import { categoryLabel } from "@/lib/ai-search/run-metrics";
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
-import { hasMixedScoringMethods, isWindowHistoryKind, MIXED_SCORING_NOTE } from "@/lib/ai-search/window-display";
+import { isWindowHistoryKind } from "@/lib/ai-search/window-display";
 
 const COLUMNS = [
   clientColumn("category", "Category", "text", 160, 110),
@@ -50,7 +50,6 @@ function battleSortValue(
 function Battlecards({ snapshot }: { snapshot: AiSearchSnapshot }) {
   const history = useAiHistoryOptional();
   const showSmallSample = !isWindowHistoryKind(history?.mode.kind);
-  const mixed = hasMixedScoringMethods(snapshot);
   const battles = [...categoryRoleTallies(snapshot.calls)].sort((a, b) => {
     const wins = (row: RoleGroupTally) => headlineAside(row).competitorWins;
     return wins(b) - wins(a) || a.key.localeCompare(b.key);
@@ -70,11 +69,6 @@ function Battlecards({ snapshot }: { snapshot: AiSearchSnapshot }) {
       <div className="content-box ai-battlecards">
         <RunDetailsLead snapshot={snapshot} />
         <CategoryCompetitorLeadGraph groups={battles} />
-        {mixed ? (
-          <p className="ai-role-footnote" data-ai-mixed-scoring>
-            {MIXED_SCORING_NOTE}
-          </p>
-        ) : null}
         <div className="content-box-title">Category battlecards</div>
         <ResizableTable
           tableId="category-battlecards"

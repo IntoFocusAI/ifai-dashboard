@@ -2,6 +2,7 @@
 
 import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
 import { CitationPieDisc, type PieDiscInput } from "@/components/v3/live/ai-search/CitationPieDisc";
+import { MixedScoringTip } from "@/components/v3/live/ai-search/MixedScoringTip";
 import type { AiTermKey } from "@/lib/ai-search/definitions";
 import {
   BRANDED_RATE_BANDS,
@@ -11,6 +12,7 @@ import {
 } from "@/lib/ai-search/summary";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
 import type { RoleTally } from "@/lib/ai-search/question-role";
+import { hasMixedScoringMethods } from "@/lib/ai-search/window-display";
 
 function ratePie(
   id: string,
@@ -37,6 +39,7 @@ function RateSide({
   tally,
   bands,
   pieId,
+  mixed,
 }: {
   role: "unbranded_discovery" | "branded_consideration";
   term: AiTermKey;
@@ -44,6 +47,7 @@ function RateSide({
   tally: RoleTally;
   bands: { redBelow: number; greenAbove: number };
   pieId: string;
+  mixed: boolean;
 }) {
   const lead = roleRateLead(tally, bands);
   return (
@@ -59,7 +63,7 @@ function RateSide({
             data-ai-win-rate={role}
             data-ai-lead-figure={role}
           >
-            {lead.rate}
+            <MixedScoringTip mixed={mixed}>{lead.rate}</MixedScoringTip>
           </span>
           <CitationPieDisc
             pie={ratePie(pieId, label, tally)}
@@ -78,6 +82,7 @@ function RateSide({
 /** Two lead rates for the tab snapshot: Unbranded Discovery and Branded Consideration. */
 export function RunDetailsLead({ snapshot }: { snapshot: AiSearchSnapshot }) {
   const roles = summarizeRun(snapshot).roles;
+  const mixed = hasMixedScoringMethods(snapshot);
   return (
     <div className="metric-grid-2" data-ai-run-details-lead="">
       <RateSide
@@ -87,6 +92,7 @@ export function RunDetailsLead({ snapshot }: { snapshot: AiSearchSnapshot }) {
         tally={roles.unbranded}
         bands={UNBRANDED_RATE_BANDS}
         pieId="role-unbranded"
+        mixed={mixed}
       />
       <RateSide
         role="branded_consideration"
@@ -95,6 +101,7 @@ export function RunDetailsLead({ snapshot }: { snapshot: AiSearchSnapshot }) {
         tally={roles.branded}
         bands={BRANDED_RATE_BANDS}
         pieId="role-branded"
+        mixed={mixed}
       />
     </div>
   );
