@@ -7,6 +7,11 @@ const FACT = (n: number) => `${n} Fender product fact${n === 1 ? "" : "s"}`;
 const ANSWER = (n: number) => `${n} answer${n === 1 ? "" : "s"}`;
 const CALL = (n: number) => `${n} fact-check call${n === 1 ? "" : "s"}`;
 
+/** "1 contradiction", "2 contradictions". */
+export function contradictionCount(n: number): string {
+  return `${n} contradiction${n === 1 ? "" : "s"}`;
+}
+
 /** Same bands as the Fact Checks satellite: red below 95, green above 98, yellow on the closed interval. */
 export type FactCheckAccuracyTone = "danger" | "warning" | "success";
 
@@ -78,7 +83,7 @@ export function factCheckAccuracyPie(c: FactCheckCoverage): PieDiscData | null {
 
 export function factCheckAccuracyPieTip(c: FactCheckCoverage): string {
   const matched = Math.max(0, c.answersChecked - c.contradictions);
-  return `${matched} answers matched the verified fact. ${c.contradictions} answers contradicted it.`;
+  return `${ANSWER(matched)} matched the verified fact. ${ANSWER(c.contradictions)} contradicted it.`;
 }
 
 /** The business result, first: what was checked, on which engines, and what came back. */
@@ -174,7 +179,7 @@ export function factCheckShortLine(c: FactCheckCoverage): string {
   if (c.answersChecked === 0) return "No product fact check completed";
   return c.contradictions === 0
     ? `No contradictions in ${ANSWER(c.answersChecked)}`
-    : `${c.contradictions} contradictions in ${ANSWER(c.answersChecked)}`;
+    : `${contradictionCount(c.contradictions)} in ${ANSWER(c.answersChecked)}`;
 }
 
 export function factsCheckedLine(c: FactCheckCoverage): string {

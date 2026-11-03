@@ -12,8 +12,11 @@ import { AI_DEFINITIONS } from "../lib/ai-search/definitions.ts";
 import {
   FACT_CHECK_SCOPE_LINE,
   UNVERIFIED_FLAG_TIP,
+  contradictionCount,
   factCheckAccuracyLead,
+  factCheckAccuracyPieTip,
   factCheckMethodLine,
+  factCheckShortLine,
   factCheckPickTip,
   factCheckScopeTip,
 } from "../lib/ai-search/fact-check-copy.ts";
@@ -184,6 +187,22 @@ test("fact-check 'not' qualifiers sit in tooltips, never as on-screen sentences"
   for (const tip of [factCheckScopeTip(), UNVERIFIED_FLAG_TIP, factCheckPickTip(5)]) {
     assert.doesNotMatch(tip, /\u2014|representative|random/i);
   }
+});
+
+test("one contradiction reads singular on the badge, the map line, and the pie tooltip", () => {
+  assert.equal(contradictionCount(1), "1 contradiction");
+  assert.equal(contradictionCount(2), "2 contradictions");
+  const rows = publishedShape();
+  rows[0] = { ...rows[0], material_hallucination: "confirmed", hallucination_evidence: "says 12 inches" };
+  const one = driftRead([], rows).coverage;
+  assert.equal(one.contradictions, 1);
+  assert.equal(factCheckShortLine(one), "1 contradiction in 8 answers");
+  assert.equal(factCheckAccuracyPieTip(one), "7 answers matched the verified fact. 1 answer contradicted it.");
+  rows[1] = { ...rows[1], material_hallucination: "confirmed", hallucination_evidence: "says 10 inches" };
+  assert.equal(factCheckShortLine(driftRead([], rows).coverage), "2 contradictions in 8 answers");
+  const panel = readFileSync("components/v3/live/ai-search/AiDriftPanel.tsx", "utf8");
+  assert.match(panel, /coverage\.contradictions \? contradictionCount\(coverage\.contradictions\) : "No contradictions found"/);
+  assert.doesNotMatch(panel, /\$\{coverage\.contradictions\} contradictions/);
 });
 
 test("a fact-check result filter never returns a non-fact-check row", () => {

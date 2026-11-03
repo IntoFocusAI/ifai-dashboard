@@ -228,6 +228,8 @@ test.describe("AI Search Visibility", () => {
     await page.goto("/dashboard?spoke=aeo&tab=product-fact-checks");
     await expect(canvas.activeTab).toHaveText("Product Fact Checks");
     await expect(page.locator("[data-ai-accuracy-figure]")).toHaveText(/\d+\.\d% Accuracy/, { timeout: 60_000 });
+    const badge = page.locator("[data-ai-fact-result]");
+    await expect(badge).toHaveText(/^(No contradictions found|1 contradiction|([2-9]|\d{2,}) contradictions)$/);
     const method = page.locator("[data-ai-accuracy-lead] [data-ai-fact-method]");
     await expect(method).toHaveText(/^\d+ products? checked · \d+ with a verified fact$/);
     const term = method.locator(".ifai-term").first();

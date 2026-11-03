@@ -12,6 +12,7 @@ import {
   FACT_CHECK_SCOPE_LINE,
   FACT_CHECK_SCOPE_TITLE,
   UNVERIFIED_FLAG_TIP,
+  contradictionCount,
   factCheckAccuracyColor,
   factCheckAccuracyLead,
   factCheckAccuracyPie,
@@ -50,7 +51,7 @@ function FactChecks({ snapshot }: { snapshot: AiSearchSnapshot }) {
           className={`tag-badge ${coverage.contradictions ? "tag-danger" : "tag-success"}`}
           data-ai-fact-result
         >
-          {coverage.contradictions ? `${coverage.contradictions} contradictions` : "No contradictions found"}
+          {coverage.contradictions ? contradictionCount(coverage.contradictions) : "No contradictions found"}
         </span>
       </div>
       <p style={{ fontSize: 13, lineHeight: 1.5, margin: "0 0 6px" }} data-ai-fact-headline>
