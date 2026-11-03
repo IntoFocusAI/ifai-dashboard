@@ -41,6 +41,18 @@ Keep this section **outside** the Next.js block above. Cursor agents also load `
 
 Prefer clarity of the ecommerce ↔ AEO story and evidence trails over generic analytics chrome. Every headline metric should have a path to source assumptions and raw inputs.
 
+## Let the data speak
+
+Do not put qualifiers on screen that say what a figure is not, such as "not a random sample" or "not proof of cause." Show the figure with its N of M and let it speak. If a caveat is truly needed, put it in the figure's tooltip. Required labels stay visible: "analyst estimate," "Not available*," and the asterisk on a partial or filtered figure.
+
+## Database changes
+
+The live dashboard reads the production Supabase database. In cloud agent environments, `SUPABASE_DB_URL` connects to it as a limited user (`cursor_map_writer`) that can read two catalog tables and update the MAP price columns on `command.fmic_retail_buybox_map`. It cannot read the dashboard views or create views, tables, or indexes, so schema changes are applied by an agent or person with owner access. Every database change starts as a migration file in `supabase/migrations`, committed with its pull request, so there is a log to revert from. Each file says what it changes and how to undo it.
+
+- **Additive changes** (a new view, table, column, or function that leaves existing objects and data as they are) may be applied to production by an agent after Brian Magazu approves. The pull request records when the change was applied and by whom.
+- **Anything that alters or deletes existing data, tables, columns, views, or permissions** waits for Brian Watson, who applies it.
+- Never run other writes against the production database.
+
 ## Client commercial terms
 
 The client portal never discusses IntoFocus fees, retainers, monthly charges, or whether the brand's estimated lift justifies IntoFocus's price. Do not show a service-fee multiple.
