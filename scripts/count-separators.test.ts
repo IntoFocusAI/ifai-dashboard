@@ -59,3 +59,18 @@ test("Run Summary counts use the shared formatter", () => {
   assert.match(card, /formatInt\(run\.answered_calls\)/);
   assert.match(card, /formatInt\(run\.missing_calls\)/);
 });
+
+test("the Category Battlecards hero reads 1,064 of 1,788 and Competitors led 724 of 1,788", () => {
+  const heroes = flat("components/v3/live/ai-search/CategoryBattleHeroes.tsx");
+  assert.match(heroes, /\{formatInt\(summary\.onTrack\)\} of \{formatInt\(summary\.measured\)\}/);
+  assert.match(heroes, /label=\{`\$\{name\}: Fender\/Squier leads`\}> \{formatInt\(tally\.fenderWins\)\} <\/EvidenceLink>/);
+  assert.match(heroes, /label=\{`\$\{name\}: resolved answers`\}> \{formatInt\(tally\.resolved\)\} <\/EvidenceLink>/);
+  assert.match(heroes, /label=\{`\$\{name\}: competitors lead`\}> \{formatInt\(tally\.competitorWins\)\} <\/EvidenceLink>/);
+  assert.match(heroes, /\{` of \$\{formatInt\(tally\.resolved\)\}`\}/);
+  assert.match(heroes, /tip=\{`\$\{formatInt\(summary\.onTrack\)\} on track\./);
+  for (const raw of [/\{tally\.fenderWins\}/, /\{tally\.resolved\}/, /\{tally\.competitorWins\}/, /\{summary\.onTrack\} of/, /of \$\{tally\.resolved\}/]) {
+    assert.doesNotMatch(heroes, raw);
+  }
+  const lead = flat("components/v3/live/ai-search/RunDetailsLead.tsx");
+  assert.match(lead, /tip=\{`\$\{formatInt\(tally\.fenderWins\)\} Fender\/Squier leads\. \$\{formatInt\(tally\.resolved - tally\.fenderWins\)\} rest of resolved answers\. Total \$\{formatInt\(tally\.resolved\)\} resolved answers\.`\}/);
+});

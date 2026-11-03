@@ -13,6 +13,7 @@ import {
 } from "@/lib/ai-search/summary";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
 import type { RoleTally } from "@/lib/ai-search/question-role";
+import { formatInt } from "@/lib/fender-canvas/format";
 import { hasMixedScoringMethods } from "@/lib/ai-search/window-display";
 
 function ratePie(
@@ -70,7 +71,7 @@ function RateSide({
           </span>
           <CitationPieDisc
             pie={ratePie(pieId, label, tally)}
-            tip={`${tally.fenderWins} Fender/Squier leads. ${tally.resolved - tally.fenderWins} rest of resolved answers. Total ${tally.resolved} resolved answers.`}
+            tip={`${formatInt(tally.fenderWins)} Fender/Squier leads. ${formatInt(tally.resolved - tally.fenderWins)} rest of resolved answers. Total ${formatInt(tally.resolved)} resolved answers.`}
           />
         </div>
       ) : (

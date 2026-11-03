@@ -17,6 +17,7 @@ import { scopeEvidence, type EvidenceScope } from "@/lib/ai-search/evidence-focu
 import type { RoleTally } from "@/lib/ai-search/question-role";
 import { summarizeRun } from "@/lib/ai-search/summary";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
+import { formatInt } from "@/lib/fender-canvas/format";
 
 const NO_LEADS_DESC =
   "No unbranded discovery answer had a clear leader in this selection, so no category can be marked on track, tied, or behind.";
@@ -42,12 +43,12 @@ function OnTrackHero({ summary, engineName }: { summary: CategoryLeadSummary; en
       {pie ? (
         <div className="ai-battle-hero-row">
           <span className="ai-lead-figure" data-ai-ontrack-figure="">
-            {summary.onTrack} of {summary.measured}
+            {formatInt(summary.onTrack)} of {formatInt(summary.measured)}
             <EngineMark engineName={engineName} />
           </span>
           <CitationPieDisc
             pie={pie}
-            tip={`${summary.onTrack} on track. ${summary.tied.length} tied. ${summary.behind.length} behind. Total ${summary.measured} categories with resolved unbranded discovery answers.`}
+            tip={`${formatInt(summary.onTrack)} on track. ${formatInt(summary.tied.length)} tied. ${formatInt(summary.behind.length)} behind. Total ${formatInt(summary.measured)} categories with resolved unbranded discovery answers.`}
           />
         </div>
       ) : (
@@ -84,11 +85,11 @@ function RateCaption({
   return (
     <p className="ai-battle-hero-caption" data-ai-battle-role-total={role}>
       <EvidenceLink focus={focus("fender_win")} tab={AI_TABS.simulations} label={`${name}: Fender/Squier leads`}>
-        {tally.fenderWins}
+        {formatInt(tally.fenderWins)}
       </EvidenceLink>
       {" of "}
       <EvidenceLink focus={focus("resolved")} tab={AI_TABS.simulations} label={`${name}: resolved answers`}>
-        {tally.resolved}
+        {formatInt(tally.resolved)}
       </EvidenceLink>
       <EngineMark engineName={engineName} />{" "}
       <Term name="Resolved answers" desc={RESOLVED_DESC}>
@@ -99,12 +100,12 @@ function RateCaption({
           {"Competitors led "}
           {tally.competitorWins > 0 ? (
             <EvidenceLink focus={focus("competitor_win")} tab={AI_TABS.simulations} label={`${name}: competitors lead`}>
-              {tally.competitorWins}
+              {formatInt(tally.competitorWins)}
             </EvidenceLink>
           ) : (
             0
           )}
-          {` of ${tally.resolved}`}
+          {` of ${formatInt(tally.resolved)}`}
           <EngineMark engineName={engineName} />
         </span>
       ) : null}

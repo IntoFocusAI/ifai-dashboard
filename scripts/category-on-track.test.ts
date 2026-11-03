@@ -394,7 +394,7 @@ test("Category Battlecards drops the Competitive Radar sentence and keeps its co
   assert.doesNotMatch(heroes, /role="branded_consideration"[^>]*showCompetitors/);
   assert.match(heroes, /"Competitors led "/);
   assert.match(heroes, /focus\("competitor_win"\)/, "the competitor count opens those answers");
-  assert.match(heroes, /` of \$\{tally\.resolved\}`/);
+  assert.match(heroes, /` of \$\{formatInt\(tally\.resolved\)\}`/);
 });
 
 test("a table row's rate counts open that row's category, with or without an engine chip", () => {
