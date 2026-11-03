@@ -91,15 +91,13 @@ test("zero competitor leads yields an empty mark list (no fake zero chart)", () 
   );
 });
 
-test("Category Battlecards leads with RunDetailsLead and the competitor-lead graph", () => {
+test("Category Battlecards keeps the two rates and marks the categories another brand leads", () => {
   const panel = read("components/v3/live/ai-search/CategoryBattlecardsPanel.tsx");
   assert.match(panel, /RunDetailsLead/);
-  assert.match(panel, /CategoryCompetitorLeadGraph/);
+  assert.match(panel, /CategoryOnTrackVisual/);
   assert.doesNotMatch(panel, /RoleSumLine/);
-  const leadAt = panel.indexOf("<RunDetailsLead");
-  const graphAt = panel.indexOf("<CategoryCompetitorLeadGraph");
-  const tableAt = panel.indexOf("Category battlecards");
-  assert.ok(leadAt >= 0 && graphAt > leadAt && tableAt > graphAt);
+  const visual = read("components/v3/live/ai-search/CategoryOnTrackVisual.tsx");
+  assert.match(visual, /data-ai-battle-lead-graph/);
 });
 
 test("graph and panel copy have no em dash and no native title tooltips", () => {
