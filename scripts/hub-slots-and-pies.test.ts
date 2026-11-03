@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { test } from "node:test";
 import { citationEvidence } from "../lib/ai-search/citations.ts";
 import { citationPies } from "../lib/ai-search/citation-pies.ts";
-import type { AiCallRow, AiCitationRow, AiSearchRead } from "../lib/ai-search/types.ts";
+import type { AiCallRow, AiCitationRow, AiProbeRow, AiSearchRead } from "../lib/ai-search/types.ts";
 import { isHubEvidenceSlot, type HubEvidenceSlot } from "../lib/canvas-sdk/hub-slot-types.ts";
 import type { HubSlotFeed, PriorityItem } from "../lib/canvas-sdk/types.ts";
 import { buildCheckBook } from "../lib/fender-canvas/hub-slot-checks.ts";
@@ -385,6 +385,77 @@ test("specs complete uses its approved band and stays on the AI Readiness bubble
   assert.deepEqual([specsGap.spokeId, specsGap.subTab], ["specs", "Amazon Specs"]);
   assert.equal(specsGap.tone, "danger");
   assert.equal(specsGap.statusWord, "Needs attention");
+});
+
+function probe(index: number, contradicts: boolean): AiProbeRow {
+  return {
+    audit_run_id: "run",
+    sim_id: 500 + index,
+    prompt_key: `fact-${index % 5}`,
+    prompt: "What pickups does the Player Stratocaster have",
+    engine: "chatgpt",
+    model: null,
+    call_status: "answered",
+    material_hallucination: contradicts ? "confirmed" : "none",
+    hallucination_evidence: contradicts ? "The answer names humbuckers." : null,
+    verified_claim: "Three single-coil pickups",
+    verified_source_url: "https://www.fender.com/en-US/electric-guitars/stratocaster/player-stratocaster",
+    verified_at: "2026-10-01T00:00:00.000Z",
+    created_at: "2026-10-18T12:01:00.000Z",
+  };
+}
+
+/** 100 checked fact-check answers, `contradictions` of them contradicting the verified fact. */
+function aiWithFactChecks(contradictions: number, calls: AiCallRow[] = categoryCalls()): AiSearchRead {
+  const ai = readyAi(calls);
+  if (ai.phase !== "ready") throw new Error("ready");
+  const probes = Array.from({ length: 100 }, (_, index) => probe(index, index < contradictions));
+  return { ...ai, snapshot: { ...ai.snapshot, probes } };
+}
+
+test("fact-check accuracy reads its approved target, above 98%, with the Fact Checks bands", () => {
+  const bands = [
+    { contradictions: 6, now: "94.0%", tone: "danger", word: "Needs attention" },
+    { contradictions: 5, now: "95.0%", tone: "warning", word: "Watch" },
+    { contradictions: 2, now: "98.0%", tone: "warning", word: "Watch" },
+    { contradictions: 1, now: "99.0%", tone: "success", word: "On target" },
+  ];
+  for (const band of bands) {
+    const check = buildCheckBook({ ...input(), ai: aiWithFactChecks(band.contradictions) }).checks.fact_checks;
+    assert.ok(check);
+    assert.deepEqual(check.target, { text: "Fact-check accuracy above 98%", now: band.now, tone: band.tone });
+    const slot = gapSlot(check, "Rule.");
+    assert.equal(slot.target.text, `Target: Fact-check accuracy above 98% (now ${band.now})`);
+    assert.equal(slot.statusWord, band.word, `${band.now} reads ${band.word}`);
+    assert.equal(slot.tone, band.tone);
+  }
+
+  const allLed = categoryCalls().map((row) => ({ ...row, outcome: "fender_win" as const, primary_brand: "Fender/Squier" }));
+  const contradiction: PriorityItem = {
+    id: "ai-confirmed-contradiction",
+    title: "6 AI answers contradict a verified Fender fact",
+    why: "6 of 101 checked answers stated something an official Fender page contradicts.",
+    severity: "critical",
+    spokeId: "aeo",
+    subTab: "Product Fact Checks",
+  };
+  // One checked commercial answer joins the Priorities count, so the action's accuracy uses its own 101.
+  const calls = [{ ...allLed[0], material_hallucination: "none" }, ...allLed.slice(1)];
+  const feeds = buildHubSlots(input({ ai: aiWithFactChecks(6, calls), commandItems: [contradiction] }));
+  const [aiGap, aiOpportunity, aiAction] = slots(feeds["spoke-aeo"]);
+  assert.equal(aiGap.label, "Checked answers that contradict a verified fact");
+  assert.equal(aiGap.figure, "6.0%");
+  assert.equal(aiGap.countedOutOf.text, "6 of 100 answers checked against a verified fact");
+  assert.equal(aiGap.target.text, "Target: Fact-check accuracy above 98% (now 94.0%)");
+  assert.equal(aiGap.statusWord, "Needs attention");
+  assert.deepEqual([aiGap.spokeId, aiGap.subTab], ["aeo", "Product Fact Checks"]);
+
+  assert.match(aiOpportunity.target.text, /^Target: AI Foundation above 70 \(now /);
+
+  assert.equal(aiAction.label, contradiction.title);
+  assert.equal(aiAction.countedOutOf.text, "6 of 101 answers checked against a verified fact");
+  assert.equal(aiAction.target.text, "Target: Fact-check accuracy above 98% (now 94.1%)");
+  assert.equal(aiAction.statusWord, "Critical");
 });
 
 test("the opportunity adds the most score points by the approved weights", () => {

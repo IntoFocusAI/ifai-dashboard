@@ -8,7 +8,7 @@ import { summarizeRun } from "@/lib/ai-search/summary";
 import type { HubEvidenceSlot } from "@/lib/canvas-sdk/hub-slot-types";
 import type { NodeStatus, PriorityItem } from "@/lib/canvas-sdk/types";
 import { formatInt } from "@/lib/fender-canvas/format";
-import type { CheckBook, CheckId, SlotCheck, SlotReads } from "@/lib/fender-canvas/hub-slot-checks";
+import { factCheckTarget, type CheckBook, type CheckId, type SlotCheck, type SlotReads } from "@/lib/fender-canvas/hub-slot-checks";
 import {
   checkChart,
   countLine,
@@ -69,7 +69,7 @@ function contradictionCount(reads: SlotReads): ActionCount {
       population: "answers checked against a verified fact",
       failLabel: "Contradicts",
       passLabel: "No contradiction",
-      target: null,
+      target: factCheckTarget({ ...drift.coverage, answersChecked: drift.totalChecked, contradictions: drift.totalConfirmed }),
       checkedAt: [reads.ai.snapshot.run.completed_at],
       source: "The published AI run",
       spokeId: "aeo",

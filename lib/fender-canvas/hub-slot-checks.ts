@@ -2,10 +2,12 @@
  * The checks the hover slots choose from (FDD X-22). Each check is a stored count that
  * falls short, out of its own population, with the tab that lists those rows.
  * A read that is still loading is pending. A read with no population is left out, never zero.
- * Only FDD-approved thresholds become a target. Every other check reads No target set.
+ * Only approved thresholds become a target. Every other check reads No target set.
  */
 
 import { categoryBattles } from "@/lib/ai-search/competitors";
+import type { FactCheckCoverage } from "@/lib/ai-search/drift";
+import { factCheckAccuracyLead } from "@/lib/ai-search/fact-check-copy";
 import { categoryLabel } from "@/lib/ai-search/run-metrics";
 import { summarizeRun } from "@/lib/ai-search/summary";
 import type { AiSearchRead } from "@/lib/ai-search/types";
@@ -258,6 +260,13 @@ function findabilityCheck(read: FindabilityRead): SlotCheck | null {
   });
 }
 
+/** Fact-check accuracy is above 98% to be on target, with the Fact Checks satellite's bands. */
+export function factCheckTarget(coverage: FactCheckCoverage): CheckTarget | null {
+  const lead = factCheckAccuracyLead(coverage);
+  if (!lead.rate || !lead.tone) return null;
+  return { text: "Fact-check accuracy above 98%", now: lead.rate, tone: lead.tone };
+}
+
 function aiChecks(ai: AiSearchRead): { checks: SlotCheck[]; categories: CategoryCheck[] } {
   if (ai.phase !== "ready") return { checks: [], categories: [] };
   const summary = summarizeRun(ai.snapshot);
@@ -288,6 +297,7 @@ function aiChecks(ai: AiSearchRead): { checks: SlotCheck[]; categories: Category
     }),
     measured("fact_checks", coverage.contradictions, coverage.answersChecked, {
       ...run,
+      target: factCheckTarget(coverage),
       label: "Checked answers that contradict a verified fact",
       population: "answers checked against a verified fact",
       failLabel: "Contradicts",
