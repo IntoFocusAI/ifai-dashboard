@@ -139,7 +139,11 @@ test.describe("AI Search stored-run copy", () => {
     await expect(page.locator(".drilldown-desc")).not.toContainText("Historical run");
     await page.locator(".drilldown-tab-btn", { hasText: "Citation Ecosystem" }).click();
     await expect(page.locator("[data-ai-citation-count]")).toContainText("468 citation rows");
-    await expect(page.locator("[data-ai-citation-count]")).toContainText("not read as a change in the citation ecosystem");
+    await expect(page.locator("[data-ai-citation-count]")).toContainText("Not available*");
+    await expect(page.locator("[data-ai-citation-count] [data-citation-not-available]")).toHaveAttribute(
+      "data-ifai-tooltip-desc",
+      /not read as a change in the citation ecosystem/,
+    );
     await expect(page.getByText("No answer in this view returned a cited link.")).toHaveCount(0);
     await returnToLast30Days(page);
     await expect(page.locator("[data-ai-history-banner]")).toHaveCount(0);
@@ -192,8 +196,10 @@ test.describe("AI Search stored-run copy", () => {
     await page.getByRole("button", { name: "Previous run" }).click();
     await expect(page.locator("[data-ai-win-rate='unbranded_discovery']")).toHaveText("65.0%");
     await page.locator(".drilldown-tab-btn", { hasText: "Citation Ecosystem" }).click();
-    await expect(page.locator("[data-ai-citation-caution]")).toContainText(
-      "These 2 stored citations are not evidence that the citation ecosystem changed.",
+    await expect(page.locator("[data-ai-citation-caution]")).toContainText("Not available*");
+    await expect(page.locator("[data-ai-citation-caution] [data-citation-not-available]")).toHaveAttribute(
+      "data-ifai-tooltip-desc",
+      /These 2 stored citations are not evidence that the citation ecosystem changed\./,
     );
     await returnToLast30Days(page);
     await page.locator(".drilldown-tab-btn", { hasText: "Run Summary" }).click();

@@ -137,10 +137,35 @@ test.describe("AI Search Visibility", () => {
     await expect(body).toContainText("Answers and links are separate counts");
     await expect(body).toContainText("Why this matters");
     await expect(body).toContainText("canonical product facts");
-    await expect(body).toContainText("An association, not proof of cause");
     await expect(page.locator(".drilldown-desc")).not.toContainText("\u2014");
-    await expect(page.locator("[data-ai-citation-interpretation]")).toContainText(
+    for (const caveat of [
+      "An association, not proof of cause",
+      "does not show that the site caused",
       "A low count does not prove a source had no influence",
+      "not a worse outcome",
+    ]) {
+      await expect(body).not.toContainText(caveat);
+    }
+    await expect(page.locator("[data-citation-role] .citation-role-track").first()).toHaveAttribute(
+      "data-ifai-tooltip-desc",
+      /An association, not proof of cause\.$/,
+    );
+    await expect(page.locator("[data-citation-role-lead] .ifai-term").first()).toHaveAttribute(
+      "data-ifai-tooltip-desc",
+      /An association, not proof of cause\.$/,
+    );
+    await expect(page.locator(".citation-top-source-list > li").first()).toHaveAttribute(
+      "data-ifai-tooltip-desc",
+      /does not show that the site caused what the answer said\.$/,
+    );
+    await expect(page.locator("[data-citation-pie='classes'] .citation-pie-disc")).toHaveAttribute(
+      "data-ifai-tooltip-desc",
+      /not a worse outcome than a Fender page/,
+    );
+    await expect(page.locator("[data-ai-citation-interpretation]")).toHaveCount(0);
+    await expect(page.locator("[data-table-id='citation-engines'] th[data-col-id='links'] .ifai-term")).toHaveAttribute(
+      "data-ifai-tooltip-desc",
+      /A low count does not prove a source had no influence/,
     );
     await expect(body).not.toContainText("valid link");
     await expect(page.locator("[data-citation-top-sources]")).toHaveCount(1);

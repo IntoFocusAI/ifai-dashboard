@@ -18,6 +18,10 @@ const MEASURES: Array<[TopSitesMeasure, string]> = [
   ["links", "Cited links"],
 ];
 
+/** Shown in each site's tooltip and spoken with its row. */
+export const TOP_SITE_ASSOCIATION =
+  "Each count is an association: the answer cited the site. It does not show that the site caused what the answer said.";
+
 function scrollToEvidence() {
   document.querySelector(".ai-citation-evidence")?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
@@ -40,8 +44,14 @@ function SourceRow({
 }) {
   const owner = source.fenderOwned ? "Fender-owned" : "Not Fender-owned";
   const [n, m] = measure === "links" ? [source.links, source.linksTotal] : [source.answers, source.answered];
+  const counts = `Cited in ${source.answers} of ${source.answered} ${scopeNoun}, ${source.links} of ${source.linksTotal} cited links.`;
   return (
-    <li>
+    // The tooltip sits on the row so the button keeps its own border; focusing the button shows it too.
+    <li
+      className="citation-chart-tip ifai-term"
+      data-ifai-tooltip-title={source.domain}
+      data-ifai-tooltip-desc={`${counts} ${TOP_SITE_ASSOCIATION}`}
+    >
       <button
         type="button"
         className={`citation-top-source${active ? " active" : ""}`}
@@ -52,7 +62,7 @@ function SourceRow({
         data-top-source-m={source.answered}
         data-top-source-links={source.links}
         data-fender-owned={source.fenderOwned ? "yes" : "no"}
-        aria-label={`${source.rank}. ${source.domain}: cited in ${source.answers} of ${source.answered} ${scopeNoun}, ${source.links} of ${source.linksTotal} cited links. ${owner}, ${source.classLabel}. Opens its cited links.`}
+        aria-label={`${source.rank}. ${source.domain}: ${counts} ${owner}, ${source.classLabel}. ${TOP_SITE_ASSOCIATION} Opens its cited links.`}
         onClick={() => {
           onPick(source.domain);
           scrollToEvidence();
@@ -151,12 +161,8 @@ export function CitationTopSources({
           ))}
         </ol>
       )}
-      <div className="citation-top-sites-foot">
-        <p className="citation-card-caveat">
-          Each count is an <AiTerm term="association">association</AiTerm>: the answer cited the site. It
-          does not show that the site caused what the answer said.
-        </p>
-        {sites > 0 ? (
+      {sites > 0 ? (
+        <div className="citation-top-sites-foot">
           <button
             type="button"
             className="citation-top-sites-more"
@@ -168,8 +174,8 @@ export function CitationTopSources({
           >
             See all {sites} sites in the cited links table
           </button>
-        ) : null}
-      </div>
+        </div>
+      ) : null}
     </section>
   );
 }

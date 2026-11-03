@@ -337,6 +337,8 @@ test("the ranking rule is one plain sentence in a custom tooltip, and the copy c
     "components/v3/live/ai-search/CitationGapsCard.tsx",
     "components/v3/live/ai-search/CitationLeadFigure.tsx",
     "components/v3/live/ai-search/CitationFilteredMark.tsx",
+    "components/v3/live/ai-search/CitationNotAvailable.tsx",
+    "components/v3/live/ai-search/CitationRoleNote.tsx",
   ];
   for (const path of files) {
     const text = read(path);
@@ -347,4 +349,55 @@ test("the ranking rule is one plain sentence in a custom tooltip, and the copy c
     assert.doesNotMatch(text, /\bfees?\b|retainer/i, path);
   }
   assert.match(read(files[0]), /does not show that the site caused what the answer said/);
+});
+
+/** Text a reader sees between tags, without comments, code, or attribute strings. */
+function onScreenText(source: string): string[] {
+  const code = source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+  return [...code.matchAll(/[>}]([^<>{}]*)</g)]
+    .map((match) => match[1].replace(/\s+/g, " ").trim())
+    .filter((text) => text && !/["`]|=>|\b(const|import|export|return)\b/.test(text));
+}
+
+test("on-screen Citation copy says what each figure is, and its caveats sit in that figure's tooltip", () => {
+  const dir = "components/v3/live/ai-search";
+  // Required labels and error states stay on screen. "How these counts work" keeps its sentences.
+  const kept = [/^Not available\*$/, /hidden because .+ do not match/];
+  for (const name of readdirSync(join(root, dir)).filter((file) => /^Citation\w*\.tsx$/.test(file))) {
+    let source = read(join(dir, name));
+    if (name === "CitationEcosystemPanel.tsx") {
+      const notes = source.slice(source.indexOf('<details className="citation-method-notes">'), source.indexOf("</details>"));
+      assert.match(notes, /Fender does not control/);
+      assert.match(notes, /does not measure whether the page\s+caused the recommendation/);
+      source = source.replace(notes, "");
+    }
+    for (const text of onScreenText(source).filter((line) => /\bnot\b|n't\b/i.test(line))) {
+      assert.ok(kept.some((rule) => rule.test(text)), `${name}: "${text}" belongs in a tooltip`);
+    }
+  }
+
+  const grid = read(join(dir, "CitationExecutiveGrid.tsx"));
+  assert.match(grid, /export const ROLE_ASSOCIATION_CAVEAT = "An association, not proof of cause\.";/);
+  assert.equal(grid.match(/did not\. \$\{ROLE_ASSOCIATION_CAVEAT\}`/g)?.length, 2, "role bar tooltip and its spoken label");
+  assert.match(grid, /const desc = `\$\{led\} [^`]*\$\{ROLE_ASSOCIATION_CAVEAT\}`;/, "each lead count's tooltip");
+  assert.match(grid, /data-ifai-tooltip-desc=\{desc\}\s+tabIndex=\{0\}\s+aria-label=\{`\$\{role\.roleLabel\}: \$\{desc\}`\}/);
+  assert.match(grid, /\{showSmallSample \? \(\s*<p className="citation-card-caveat" data-citation-small-sample>\s*Counts from one run\./);
+  assert.match(grid, /tip=\{`Source mix of \$\{pie\.total\} cited links\. .*\$\{SOURCE_MIX_CAVEAT\}`\}/);
+  const note = read(join(dir, "CitationRoleNote.tsx"));
+  assert.match(note, /export const SOURCE_MIX_CAVEAT =\s+"A useful authorized retailer citation is not a worse outcome than a Fender page/);
+
+  const chart = read(join(dir, "CitationTopSources.tsx"));
+  assert.match(chart, /<li\s+className="citation-chart-tip ifai-term"\s+data-ifai-tooltip-title=\{source\.domain\}\s+data-ifai-tooltip-desc=\{`\$\{counts\} \$\{TOP_SITE_ASSOCIATION\}`\}/);
+  assert.match(chart, /\$\{TOP_SITE_ASSOCIATION\} Opens its cited links\.`\}/, "the row button says it too");
+  assert.doesNotMatch(chart, /citation-card-caveat/);
+
+  const panel = read(join(dir, "CitationEcosystemPanel.tsx"));
+  assert.match(panel, /data-ai-citation-count>[\s\S]*?Cited sites:\{" "\}\s*<CitationNotAvailable description="This copy does not list each URL, so these rows are not read as a change in the citation ecosystem\." \/>/);
+  assert.match(panel, /data-ai-citation-caution>\s*Cited sites for this run: <CitationNotAvailable description=\{caution\} \/>/);
+  const mark = read(join(dir, "CitationNotAvailable.tsx"));
+  assert.match(mark, /className="ifai-term"/);
+  assert.match(mark, /data-ifai-tooltip-desc=\{description\}/);
+  assert.match(mark, /tabIndex=\{0\}/);
+  assert.match(mark, />\s*Not available\*\s*</);
+  assert.match(read(join(dir, "CitationFigureTiles.tsx")), />\s*Not available\*\s*</, "required label stays visible");
 });

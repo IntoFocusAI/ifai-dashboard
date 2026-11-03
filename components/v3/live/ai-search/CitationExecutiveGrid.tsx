@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
 import { CitationPieDisc, CitationPieLegend } from "@/components/v3/live/ai-search/CitationPieDisc";
+import { SOURCE_MIX_CAVEAT } from "@/components/v3/live/ai-search/CitationRoleNote";
 import type { CitationPie } from "@/lib/ai-search/citation-pies";
 import type {
   OwnedByQuestionType,
@@ -12,6 +13,9 @@ import type {
 } from "@/lib/ai-search/citation-insights";
 import type { HeadlineRole } from "@/lib/ai-search/question-role";
 import { SMALL_SAMPLE_LABEL, pct } from "@/lib/ai-search/summary";
+
+/** Caveat on the question-type counts. Shown in their tooltips. */
+export const ROLE_ASSOCIATION_CAVEAT = "An association, not proof of cause.";
 
 const ROLE_TERMS: Partial<Record<HeadlineRole, "unbranded discovery" | "branded consideration">> = {
   unbranded_discovery: "unbranded discovery",
@@ -124,7 +128,7 @@ function SourceMixCard({ pie }: { pie: CitationPie | null }) {
           <CitationPieDisc
             pie={pie}
             sizeClass="citation-pie-disc citation-tile-pie citation-tile-pie-lg"
-            tip={`Source mix of ${pie.total} cited links. ${pie.slices.map((slice) => `${slice.label} ${slice.count}`).join(". ")}.`}
+            tip={`Source mix of ${pie.total} cited links. ${pie.slices.map((slice) => `${slice.label} ${slice.count}`).join(". ")}. ${SOURCE_MIX_CAVEAT}`}
           />
           <figcaption>
             <CitationPieLegend pie={pie} />
@@ -185,8 +189,7 @@ function RoleOwnedCard({
       <section className="citation-card citation-tile" data-citation-association>
         {kicker}
         <p className="citation-card-note">
-          Lead rates apply to shopping answers. Product fact checks do not name a brand leader, so this
-          comparison is not shown for this scope.
+          Lead rates come from shopping answers. Choose Shopping answers or All answers to see them.
         </p>
       </section>
     );
@@ -224,8 +227,8 @@ function RoleOwnedCard({
                 role="img"
                 tabIndex={0}
                 data-ifai-tooltip-title={role.roleLabel}
-                data-ifai-tooltip-desc={`${role.withOwned} of ${role.resolved} ${role.roleLabel} answers cited a Fender-owned page. ${role.withoutOwned} did not.`}
-                aria-label={`${role.roleLabel}: ${role.withOwned} of ${role.resolved} resolved answers cited a Fender-owned page. ${role.withoutOwned} did not.`}
+                data-ifai-tooltip-desc={`${role.withOwned} of ${role.resolved} ${role.roleLabel} answers cited a Fender-owned page. ${role.withoutOwned} did not. ${ROLE_ASSOCIATION_CAVEAT}`}
+                aria-label={`${role.roleLabel}: ${role.withOwned} of ${role.resolved} resolved answers cited a Fender-owned page. ${role.withoutOwned} did not. ${ROLE_ASSOCIATION_CAVEAT}`}
               >
                 <RoleGroupButton
                   role={role}
@@ -241,22 +244,36 @@ function RoleOwnedCard({
                 />
               </div>
               <ul className="citation-role-leads">
-                {role.groups.map((group) =>
-                  group.resolved > 0 ? (
+                {role.groups.map((group) => {
+                  if (group.resolved <= 0) return null;
+                  const led = `Fender led ${group.fenderLed} of ${group.resolved}`;
+                  const desc = `${led} ${role.roleLabel.toLowerCase()} answers that ${group.key === "cited_owned" ? "cited a Fender-owned page" : "cited no Fender-owned page"}. ${ROLE_ASSOCIATION_CAVEAT}`;
+                  return (
                     <li key={group.key} data-citation-role-lead={`${role.role}:${group.key}`}>
-                      {group.label}: Fender led {group.fenderLed} of {group.resolved}
+                      {group.label}:{" "}
+                      <span
+                        className="ifai-term"
+                        data-ifai-tooltip-title={role.roleLabel}
+                        data-ifai-tooltip-desc={desc}
+                        tabIndex={0}
+                        aria-label={`${role.roleLabel}: ${desc}`}
+                      >
+                        {led}
+                      </span>
                       {showSmallSample && group.smallSample ? ` · ${SMALL_SAMPLE_LABEL}` : ""}
                     </li>
-                  ) : null,
-                )}
+                  );
+                })}
               </ul>
             </li>
           );
         })}
       </ul>
-      <p className="citation-card-caveat" data-citation-assoc-caveat>
-        {showSmallSample ? "Counts from one run. " : ""}An association, not proof of cause.
-      </p>
+      {showSmallSample ? (
+        <p className="citation-card-caveat" data-citation-small-sample>
+          Counts from one run.
+        </p>
+      ) : null}
     </section>
   );
 }

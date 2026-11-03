@@ -25,7 +25,7 @@ export function GapsCard({
       <section className="citation-card citation-tile citation-card-gaps" data-citation-gaps>
         {KICKER}
         <p className="citation-card-note">
-          Gap ranking uses competitor-led shopping answers. It is not shown for product fact checks.
+          Gap ranking uses competitor-led shopping answers. Choose Shopping answers or All answers to see it.
         </p>
       </section>
     );

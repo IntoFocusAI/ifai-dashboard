@@ -8,11 +8,9 @@ import { useCitationAggregate } from "@/components/v3/live/ai-search/useCitation
 import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
 import { CountTable, PickButton } from "@/components/v3/live/ai-search/CitationCountTable";
 import { CitationEvidenceTable } from "@/components/v3/live/ai-search/CitationEvidenceTable";
-import {
-  CitationInterpretationNote,
-  CitationRoleNote,
-} from "@/components/v3/live/ai-search/CitationRoleNote";
+import { CITED_LINK_COUNT_CAVEAT, CitationRoleNote } from "@/components/v3/live/ai-search/CitationRoleNote";
 import { CitationHero } from "@/components/v3/live/ai-search/CitationHero";
+import { CitationNotAvailable } from "@/components/v3/live/ai-search/CitationNotAvailable";
 import { useEvidenceFocus } from "@/components/v3/live/ai-search/useEvidenceFocus";
 import {
   citationPickLabel,
@@ -31,18 +29,33 @@ import { engineLabel } from "@/lib/ai-search/run-metrics";
 import { citationStorageCaution } from "@/lib/ai-search/review-runs";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
 
+const LINK_COLUMNS = [
+  {
+    ...clientColumn("links", "Links", "number", 90, 72),
+    headerTooltip: {
+      title: "Links",
+      description: `Explicit links the engines returned with these answers. ${CITED_LINK_COUNT_CAVEAT}`,
+    },
+  },
+  {
+    ...clientColumn("owned", "Fender-owned", "number", 130, 100),
+    headerTooltip: {
+      title: "Fender-owned links",
+      description: `Links to sites controlled by Fender or another FMIC brand. ${CITED_LINK_COUNT_CAVEAT}`,
+    },
+  },
+];
+
 const ENGINE_COLUMNS = [
   clientColumn("engine", "Engine", "text", 140, 100),
   clientColumn("cited", "Cited answers", "number", 140, 110),
-  clientColumn("links", "Links", "number", 90, 72),
-  clientColumn("owned", "Fender-owned", "number", 130, 100),
+  ...LINK_COLUMNS,
 ];
 
 const CATEGORY_COLUMNS = [
   clientColumn("category", "Category", "text", 180, 120),
   clientColumn("cited", "Cited answers", "number", 140, 110),
-  clientColumn("links", "Links", "number", 90, 72),
-  clientColumn("owned", "Fender-owned", "number", 130, 100),
+  ...LINK_COLUMNS,
 ];
 
 function Ecosystem({
@@ -106,7 +119,7 @@ function Ecosystem({
       <div className="content-box ai-citation-summary">
         {caution ? (
           <p style={{ fontSize: 13, lineHeight: 1.5, margin: "0 0 6px" }} data-ai-citation-caution>
-            {caution}
+            Cited sites for this run: <CitationNotAvailable description={caution} />
           </p>
         ) : citationUrlsLoaded ? (
           <>
@@ -165,8 +178,8 @@ function Ecosystem({
           </>
         ) : (
           <p style={{ fontSize: 13, lineHeight: 1.5, margin: "0 0 6px" }} data-ai-citation-count>
-            This run stores {declaredCitations} citation rows. This copy does not list each URL, so those
-            rows are not read as a change in the citation ecosystem.
+            This run stores {declaredCitations} citation rows. Cited sites:{" "}
+            <CitationNotAvailable description="This copy does not list each URL, so these rows are not read as a change in the citation ecosystem." />
           </p>
         )}
       </div>
@@ -183,7 +196,6 @@ function Ecosystem({
             <div className="content-box-title">
               <span>By engine</span>
             </div>
-            <CitationInterpretationNote />
             <CountTable
               tableId="citation-engines"
               columns={ENGINE_COLUMNS}
@@ -277,7 +289,7 @@ function CitationAggregateBody() {
   if (aggregate.phase === "loading") {
     return (
       <RangeNotice heading="Adding the runs in this selection" tone="loading">
-        Reading each stored run. Figures appear when those runs load. They are added together, not shown as one snapshot.
+        Reading each stored run. Figures appear when those runs load and add every run together.
       </RangeNotice>
     );
   }

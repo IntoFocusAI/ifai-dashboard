@@ -191,6 +191,15 @@ test("citation copy separates answers from links and avoids causal claims", () =
   assert.match(note, /independent authority/);
   assert.match(note, /less control over the facts/);
   assert.match(note, /A low count does not prove a source had no influence/);
+  assert.match(note, /export const CITED_LINK_COUNT_CAVEAT = "A low count does not prove a source had no influence/);
+  const callout = note.slice(note.indexOf("export function CitationRoleNote"));
+  assert.doesNotMatch(callout, /A low count|not a worse outcome/, "the callout keeps no qualifier on screen");
+  for (const title of ["Links", "Fender-owned links"]) {
+    const tooltip = new RegExp(`headerTooltip: \\{ title: "${title}", description: \`[^\`]*\\$\\{CITED_LINK_COUNT_CAVEAT\\}\``);
+    assert.match(panel, tooltip, `the low-count caveat sits in the ${title} column tooltip`);
+  }
+  assert.match(panel, /columns=\{ENGINE_COLUMNS\}/);
+  assert.match(panel, /const ENGINE_COLUMNS = \[ [^\]]*\.\.\.LINK_COLUMNS, \]/);
 });
 
 test("the old authored citation percentages stay retired", () => {

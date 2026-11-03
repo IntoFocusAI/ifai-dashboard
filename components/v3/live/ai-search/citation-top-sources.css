@@ -234,9 +234,12 @@
   padding-top: 8px;
 }
 
-.citation-top-sites-foot .citation-card-caveat {
-  margin: 0;
-  padding: 0;
+/* Each row carries its site's tooltip. The row button already shows hover and focus. */
+.citation-top-source-list > li.citation-chart-tip.ifai-term,
+.citation-top-source-list > li.citation-chart-tip.ifai-term:hover {
+  min-width: 0;
+  outline: none;
+  cursor: default;
 }
 
 .citation-top-sites-more {
