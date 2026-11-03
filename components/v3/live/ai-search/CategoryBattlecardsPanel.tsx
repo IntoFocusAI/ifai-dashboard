@@ -199,5 +199,9 @@ function Battlecards({ snapshot }: { snapshot: AiSearchSnapshot }) {
 }
 
 export function CategoryBattlecardsPanel() {
-  return <AiReadGate>{(snapshot) => <Battlecards snapshot={snapshot} />}</AiReadGate>;
+  return (
+    <div className="ai-battlecards-tab" data-ai-battlecards-tab="">
+      <AiReadGate>{(snapshot) => <Battlecards snapshot={snapshot} />}</AiReadGate>
+    </div>
+  );
 }

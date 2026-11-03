@@ -21,8 +21,10 @@ import {
   onTrackPie,
   restLeads,
 } from "../lib/ai-search/category-on-track.ts";
+import { competitorsSpokeLead } from "../lib/ai-search/canvas-surfaces.ts";
 import { categoryRoleTallies } from "../lib/ai-search/question-role.ts";
-import type { AiCallRow } from "../lib/ai-search/types.ts";
+import { summarizeRun } from "../lib/ai-search/summary.ts";
+import type { AiCallRow, AiSearchSnapshot } from "../lib/ai-search/types.ts";
 
 const root = new URL("..", import.meta.url).pathname;
 const read = (path: string) => readFileSync(join(root, path), "utf8");
@@ -286,6 +288,63 @@ test("Category Battlecards opens on the hero pie row, then the chips, the catego
   assert.match(chips, /aria-pressed=\{pressed\}/);
   assert.match(chips, /Clear filters/);
   assert.match(chips, /onChange\(NO_BATTLECARD_FILTER\)/);
+});
+
+test("Category Battlecards drops the Competitive Radar sentence and keeps its count under the Unbranded Discovery pie", () => {
+  const calls = [
+    ...times(3, {}),
+    ...times(2, yamaha),
+    call(taylor),
+    call({ material_hallucination: "confirmed" }),
+    call({ prompt: BRANDED, outcome: "competitor_win", primary_brand: "Gibson" }),
+  ];
+  const snapshot: AiSearchSnapshot = {
+    run: {
+      audit_run_id: "run-a",
+      run_state: "completed",
+      collector_version: "v11",
+      prompt_set_hash: null,
+      expected_calls: calls.length,
+      attempted_calls: calls.length,
+      answered_calls: calls.length,
+      error_calls: 0,
+      started_at: "2026-10-20T00:00:00Z",
+      completed_at: "2026-10-20T01:00:00Z",
+      published_at: "2026-10-20T01:00:00Z",
+      missing_calls: 0,
+    },
+    calls,
+    probes: [],
+    citations: [],
+  };
+  const unbranded = summarizeRun(snapshot).roles.unbranded;
+  assert.deepEqual([unbranded.competitorWins, unbranded.resolved], [3, 7]);
+  assert.equal(
+    competitorsSpokeLead({ phase: "ready", snapshot }).figure,
+    `Competitors led ${unbranded.competitorWins} of ${unbranded.resolved} resolved unbranded discovery answers.`,
+    "the caption's N of M is the sentence's N of M",
+  );
+  assert.notEqual(unbranded.resolved - unbranded.fenderWins, unbranded.competitorWins, "a product error is not a competitor lead");
+
+  const panel = read("components/v3/live/ai-search/CategoryBattlecardsPanel.tsx");
+  assert.match(panel, /data-ai-battlecards-tab=""/);
+  const css = read("components/v3/live/ai-search/category-battlecards.css");
+  assert.match(
+    css,
+    /\.drilldown-panel:has\(\[data-ai-battlecards-tab\]\) \.drilldown-desc:has\(> \[data-ai-competitor-desc\]\) \{\s*display: none;/,
+  );
+  for (const other of ["CompetitorWinsPanel.tsx", "EngineComparisonPanel.tsx"]) {
+    assert.doesNotMatch(read(`components/v3/live/ai-search/${other}`), /data-ai-battlecards-tab/, `${other} keeps the sentence`);
+  }
+  assert.match(read("components/v3/live/ai-search/CompetitorsSpokeDescription.tsx"), /data-ai-competitor-desc=""/);
+  assert.match(read("components/v3/build-live-spokes.tsx"), /descSlot: <CompetitorsSpokeDescription \/>/);
+
+  const heroes = read("components/v3/live/ai-search/CategoryBattleHeroes.tsx");
+  assert.match(heroes, /<RateCaption role="unbranded_discovery" tally=\{roles\.unbranded\} showCompetitors \/>/);
+  assert.match(heroes, /<RateCaption role="branded_consideration" tally=\{roles\.branded\} \/>/);
+  assert.match(heroes, /"Competitors led "/);
+  assert.match(heroes, /\$\{role\}\/competitor_win/, "the competitor count opens those answers");
+  assert.match(heroes, /` of \$\{tally\.resolved\}`/);
 });
 
 test("battlecard copy has no em dash and no native title tooltips", () => {

@@ -249,7 +249,7 @@ test.describe("Competitive Radar", () => {
     await expect(page.locator(".ai-engine-comparison tbody tr")).not.toHaveCount(0);
   });
 
-  test("category battlecards open on a row of pies, and chips filter in place", async ({ page }) => {
+  test("category battlecards open on a row of pies with no header sentence, and chips filter in place", async ({ page }) => {
     test.slow();
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/dashboard?spoke=competitors&tab=category-battlecards");
@@ -258,6 +258,13 @@ test.describe("Competitive Radar", () => {
     await expect(cards).toBeVisible({ timeout: 90_000 });
     const heroes = cards.locator(":scope > *").first();
     await expect(heroes).toHaveAttribute("data-ai-battle-heroes", "");
+    const desc = page.locator(".drilldown-desc");
+    await expect(desc).toBeHidden();
+    const sentence = (await desc.textContent())?.match(/Competitors led (\d+) of (\d+) resolved unbranded discovery answers/);
+    expect(sentence).not.toBeNull();
+    await expect(heroes.locator("[data-ai-battle-competitor-led]")).toHaveText(
+      `Competitors led ${sentence?.[1]} of ${sentence?.[2]}`,
+    );
     await expect(heroes.locator("[data-ai-ontrack-figure]")).toContainText(/^\d+ of \d+$/);
     await expect(heroes.locator("[data-ai-win-rate='unbranded_discovery']")).toContainText(/\d+\.\d%/);
     await expect(heroes.locator("[data-ai-win-rate='branded_consideration']")).toContainText(/\d+\.\d%/);
@@ -302,6 +309,10 @@ test.describe("Competitive Radar", () => {
     await expect(cards.locator("[data-ai-battle-chip='engine:all']")).toHaveAttribute("aria-pressed", "true");
     await expect(cards.locator("[data-ai-battle-active-chip]")).toHaveCount(0);
     expect(page.url()).toBe(url);
+
+    await page.locator(".drilldown-tab-btn", { hasText: "Competitor Wins" }).click();
+    await expect(desc).toBeVisible();
+    await expect(desc).toContainText(/Competitors led \d+ of \d+ resolved unbranded discovery answers/);
   });
 
   test("engine comparison shows the two rates, not one pooled commercial win rate", async ({ canvas, page }) => {

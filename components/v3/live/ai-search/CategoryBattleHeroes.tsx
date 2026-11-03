@@ -55,7 +55,15 @@ function onTrackCaption(summary: CategoryLeadSummary): string {
   return summary.tied.length ? `${behind} Tied in ${joinBrands(summary.tied)}.` : behind;
 }
 
-function RateCaption({ role, tally }: { role: keyof typeof ROLE_NAMES; tally: RoleTally }) {
+function RateCaption({
+  role,
+  tally,
+  showCompetitors = false,
+}: {
+  role: keyof typeof ROLE_NAMES;
+  tally: RoleTally;
+  showCompetitors?: boolean;
+}) {
   if (tally.resolved <= 0) return <p className="ai-battle-hero-caption" data-ai-battle-role-total={role} />;
   const name = ROLE_NAMES[role];
   return (
@@ -68,6 +76,23 @@ function RateCaption({ role, tally }: { role: keyof typeof ROLE_NAMES; tally: Ro
         {tally.resolved}
       </EvidenceLink>
       {" resolved answers"}
+      {showCompetitors ? (
+        <span className="ai-battle-hero-caption-line" data-ai-battle-competitor-led="">
+          {"Competitors led "}
+          {tally.competitorWins > 0 ? (
+            <EvidenceLink
+              focus={{ field: "role", value: `${role}/competitor_win` }}
+              tab={AI_TABS.simulations}
+              label={`${name}: competitors lead`}
+            >
+              {tally.competitorWins}
+            </EvidenceLink>
+          ) : (
+            0
+          )}
+          {` of ${tally.resolved}`}
+        </span>
+      ) : null}
     </p>
   );
 }
@@ -93,7 +118,7 @@ export function CategoryBattleHeroes({
       <p className="ai-battle-hero-caption" data-ai-on-track-caption="">
         {onTrackCaption(summary)}
       </p>
-      <RateCaption role="unbranded_discovery" tally={roles.unbranded} />
+      <RateCaption role="unbranded_discovery" tally={roles.unbranded} showCompetitors />
       <RateCaption role="branded_consideration" tally={roles.branded} />
       {scope ? (
         <p className="ai-battle-rates-scope" data-ai-battle-rates-scope="">

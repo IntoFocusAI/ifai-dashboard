@@ -1,5 +1,14 @@
 /* Category Battlecards: hero pie row, category pies, and the filter chips (FDD C-03, X-03). */
 
+.ai-battlecards-tab {
+  display: contents;
+}
+
+/* The shell draws the Competitive Radar sentence above every tab. This tab opens on its hero pies instead. */
+.drilldown-panel:has([data-ai-battlecards-tab]) .drilldown-desc:has(> [data-ai-competitor-desc]) {
+  display: none;
+}
+
 .ai-battlecards {
   container-type: inline-size;
 }
@@ -35,6 +44,10 @@
   font-size: 13px;
   line-height: 1.4;
   color: var(--text-muted);
+}
+
+.ai-battle-hero-caption-line {
+  display: block;
 }
 
 .ai-battle-heroes > .ai-battle-rates-scope {
