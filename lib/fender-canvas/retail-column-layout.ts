@@ -38,6 +38,23 @@ export function mergeColumnWidths(
   return next;
 }
 
+/**
+ * Raises each column's minimum, and its default width, to the header floor, so a fit or a
+ * saved width never breaks a header inside a word. A saved width above the floor is kept.
+ */
+export function withHeaderFloors<T extends ColumnWidthSpec>(
+  columns: readonly T[],
+  floors: Readonly<Record<string, number>>,
+): T[] {
+  return columns.map((column) => {
+    const floor = floors[column.id];
+    if (typeof floor !== "number" || !Number.isFinite(floor)) return column;
+    const minWidth = Math.ceil(floor);
+    if (minWidth <= (column.minWidth ?? 72)) return column;
+    return { ...column, minWidth, width: Math.max(column.width, minWidth) };
+  });
+}
+
 function hasStoredWidth(columns: readonly ColumnWidthSpec[], raw: unknown): boolean {
   if (!raw || typeof raw !== "object") return false;
   const stored = raw as Record<string, unknown>;

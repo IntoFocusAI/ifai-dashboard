@@ -1,12 +1,15 @@
 "use client";
 
+import "@/components/v3/live/resizable-table.css";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { useTableRowLimit } from "@/components/v3/live/TableRowLimit";
+import { useHeaderFloors } from "@/components/v3/live/useHeaderFloors";
 import {
   columnWidthStorageKey,
   fitResizableColumnWidths,
   mergeColumnWidths,
   pickFillColumnId,
+  withHeaderFloors,
   type ColumnWidthSpec,
 } from "@/lib/fender-canvas/retail-column-layout";
 import { measureColumnOneLineMins } from "@/lib/fender-canvas/table-column-measure";
@@ -254,9 +257,11 @@ export function ResizableTable({
     return () => observer.disconnect();
   }, [manual, fillId, signature, wrapSignature, containerWidth]);
 
+  const headerFloors = useHeaderFloors(tableRef, signature, containerWidth);
+  const floored = withHeaderFloors(columns, headerFloors);
   const displayWidths = manual
-    ? widths
-    : fitResizableColumnWidths(columns, containerWidth, {
+    ? mergeColumnWidths(floored, widths)
+    : fitResizableColumnWidths(floored, containerWidth, {
         fillColumnId: fillId,
         contentMins,
       });
@@ -314,7 +319,7 @@ export function ResizableTable({
         </colgroup>
         <thead>
           <tr>
-            {columns.map((column) => {
+            {floored.map((column) => {
               const width = displayWidths[column.id] ?? column.width;
               return (
                 <th
