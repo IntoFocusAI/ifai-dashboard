@@ -19,11 +19,9 @@ import {
   categoryLeads,
   categoryLeadSummary,
   effectiveBattlecardFilter,
-  LEAD_STATUS_LABELS,
   leadMatches,
   NO_BATTLECARD_FILTER,
   type BattlecardFilter,
-  type CategoryLead,
 } from "@/lib/ai-search/category-on-track";
 import {
   categoryRoleTallies,
@@ -38,7 +36,6 @@ import { hasMixedScoringMethods, isWindowHistoryKind, MIXED_SCORING_NOTE } from 
 
 const COLUMNS = [
   clientColumn("category", "Category", "text", 160, 110),
-  clientColumn("status", "Who leads", "text", 150, 120),
   roleColumn("unbranded_discovery"),
   roleColumn("branded_consideration"),
   clientColumn("competitor", "Top competitor", "text", 170, 120),
@@ -51,12 +48,10 @@ function battleSortValue(
   row: RoleGroupTally,
   columnId: string,
   top: { brand: string; wins: number } | undefined,
-  lead: CategoryLead | undefined,
   largest: { unbranded: number; branded: number },
 ): SortInput {
   const aside = headlineAside(row);
   if (columnId === "category") return categoryLabel(row.key);
-  if (columnId === "status") return lead ? LEAD_STATUS_LABELS[lead.status] : null;
   if (columnId === "unbranded_discovery") return roleRateSort(row.roles.unbranded_discovery, largest.unbranded);
   if (columnId === "branded_consideration") return roleRateSort(row.roles.branded_consideration, largest.branded);
   if (columnId === "competitor") return top ? `${top.brand} (${top.wins})` : "None";
@@ -97,7 +92,7 @@ function Battlecards({ snapshot }: { snapshot: AiSearchSnapshot }) {
   const leadersFor = (category: string) =>
     headlineCompetitorWins(calls.filter((row) => (row.category ?? "") === category));
   const sorted = useClientTableSort(battles, COLUMNS, (row, columnId) =>
-    battleSortValue(row, columnId, leadersFor(row.key)[0], leadByKey.get(row.key), largest),
+    battleSortValue(row, columnId, leadersFor(row.key)[0], largest),
   );
   const scope = ratesScope(engineName, filter.lead !== "all");
 
@@ -157,8 +152,12 @@ function Battlecards({ snapshot }: { snapshot: AiSearchSnapshot }) {
                     <EvidenceLink focus={{ field: "category", value: battle.key }} tab={AI_TABS.simulations}>
                       {categoryLabel(battle.key)}
                     </EvidenceLink>
+                    {lead ? (
+                      <div className="ai-battle-row-status">
+                        <LeadStatusBadge lead={lead} />
+                      </div>
+                    ) : null}
                   </td>
-                  <td>{lead ? <LeadStatusBadge lead={lead} /> : null}</td>
                   <td>
                     <RoleCount
                       role="unbranded_discovery"
@@ -185,9 +184,10 @@ function Battlecards({ snapshot }: { snapshot: AiSearchSnapshot }) {
           </tbody>
         </ResizableTable>
         <p className="ai-role-footnote">
-          Who leads and Competitor leads count inside <AiTerm term="unbranded discovery">unbranded discovery</AiTerm>{" "}
-          only. Branded consideration stays in its Fender-lead column and is not part of either. A competitor win on a
-          question kept out below does not appear in these columns.
+          On track, Behind, and Competitor leads count inside{" "}
+          <AiTerm term="unbranded discovery">unbranded discovery</AiTerm> only. Branded consideration stays in its
+          Fender-lead column and is not part of either. A competitor win on a question kept out below does not appear in
+          these columns.
         </p>
         <KeptOutNote snapshot={scoped} />
       </div>
