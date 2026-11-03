@@ -56,7 +56,7 @@ export function MetricWidgets({ config, spokes, onOpenMetric }: Props) {
                 <span className="metric-widget-category">{category}</span>
                 <span className="metric-widget-label">{metric.label}</span>
                 <strong
-                  className={`metric-widget-value tone-${metric.tone ?? "neutral"}${missing ? " ifai-term" : ""}`}
+                  className={`metric-widget-value tone-${metric.tone ?? "neutral"}${metric.value.length > 14 ? " is-longer" : ""}${missing ? " ifai-term" : ""}`}
                   {...(missing
                     ? { "data-ifai-tooltip-title": metric.value, "data-ifai-tooltip-desc": missing }
                     : {})}

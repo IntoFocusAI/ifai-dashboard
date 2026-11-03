@@ -26,6 +26,7 @@ function LargeMetricBody({
 }) {
   const { reading } = metric;
   const tab = metric.subTab ?? category;
+  const length = metric.value.length > 14 ? " is-longer" : metric.value.length > 7 ? " is-long" : "";
   return (
     <button
       type="button"
@@ -39,7 +40,7 @@ function LargeMetricBody({
       <span className="large-metric-row">
         <span className="large-metric-figures">
           <strong
-            className={`large-metric-value tone-${metric.tone ?? "neutral"}${metric.value.length > 7 ? " is-long" : ""}${reading.missing ? " ifai-term" : ""}`}
+            className={`large-metric-value tone-${metric.tone ?? "neutral"}${length}${reading.missing ? " ifai-term" : ""}`}
             data-large-metric-value=""
             {...(reading.missing
               ? { "data-ifai-tooltip-title": metric.value, "data-ifai-tooltip-desc": reading.missing }

@@ -175,8 +175,8 @@ test("the fallback catalog opens a current tab for every widget", () => {
   assert.equal(findabilityMetric?.value, "Unavailable");
   assert.match(findabilityMetric?.detail ?? "", /not available/);
   assert.doesNotMatch(`${findabilityMetric?.value} ${findabilityMetric?.detail}`, /%|29\.2|pages found|13\.3/);
-  assert.equal(fenderWidgetMetrics.find((metric) => metric.id === "phase-one-lift")?.value, "+$680K");
-  assert.equal(fenderWidgetMetrics.find((metric) => metric.id === "enterprise-potential")?.value, "+$38M to $62M");
+  assert.equal(fenderWidgetMetrics.find((metric) => metric.id === "phase-one-lift")?.value, "+$680K est.");
+  assert.equal(fenderWidgetMetrics.find((metric) => metric.id === "enterprise-potential")?.value, "+$38M to $62M est.");
   assert.equal(fenderWidgetMetrics.find((metric) => metric.id === "prioritized-fixes")?.provenance, "estimate");
   assert.equal(fenderWidgetMetrics.find((metric) => metric.id === "flagged-asins")?.label, "MAP violations");
 });
@@ -188,9 +188,9 @@ test("the picker list, including live overrides, opens the named tab", () => {
   assert.equal(live.beginnerAiWinRate.value, "41.2%");
   assert.equal(live.flaggedAsins.label, "MAP violations");
   assert.equal(live.flaggedAsins.value, "Loading");
-  assert.equal(live.phaseOneLift.value, "+$680K");
+  assert.equal(live.phaseOneLift.value, "+$680K est.");
   assert.equal(live.phaseOneLift.provenance, "estimate");
-  assert.equal(live.enterprisePotential.value, "+$38M to $62M");
+  assert.equal(live.enterprisePotential.value, "+$38M to $62M est.");
   assert.equal(live.enterprisePotential.provenance, "estimate");
   assert.equal(live.prioritizedFixes.value, "Estimates");
   assert.equal(live.prioritizedFixes.provenance, "estimate");

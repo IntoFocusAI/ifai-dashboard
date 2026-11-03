@@ -117,6 +117,10 @@
   max-width: 180px;
 }
 
+.ifai-canvas .minimal-view .metric-widget-value.is-longer {
+  font-size: 18px;
+}
+
 /* Semi-transparent "+" placeholders until a metric is picked. */
 .ifai-canvas .minimal-view .canvas-metric-widget.is-empty,
 .large-metric-slot.is-empty {
@@ -266,6 +270,10 @@
   font-size: 28px;
 }
 
+.large-metric-value.is-longer {
+  font-size: 22px;
+}
+
 .large-metric-value.tone-danger { color: var(--danger-text); }
 .large-metric-value.tone-warning { color: var(--warning-text); }
 .large-metric-value.tone-success { color: var(--success-text); }
@@ -308,6 +316,10 @@
 
   .large-metric-value.is-long {
     font-size: 24px;
+  }
+
+  .large-metric-value.is-longer {
+    font-size: 19px;
   }
 
   .citation-pie-disc.large-metric-disc {

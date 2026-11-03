@@ -399,9 +399,12 @@ test("a missing input reads Not available* or the bubble's waiting word, with a 
 });
 
 test("Phase 1 stays an analyst estimate and nothing mentions fees", () => {
-  const { slots } = build(retailReady(), aiReady());
+  const { nodes, slots } = build(retailReady(), aiReady());
   const phaseOne = slots.find((slot) => slot.id === "spoke-fixes");
   assert.ok(phaseOne);
+  assert.deepEqual(nodeById(nodes, "spoke-fixes").heroValue, { value: "+$680K est.", label: "Phase 1 lift" });
+  assert.equal(phaseOne.value, "+$680K est.");
+  assert.equal(slotById(slots, "enterprise-potential").value, "+$38M to $62M est.");
   assert.equal(phaseOne.provenance, "estimate");
   assert.match(phaseOne.detail, /^Analyst estimate\./);
   assert.equal(phaseOne.subTab, "Revenue Estimates");
