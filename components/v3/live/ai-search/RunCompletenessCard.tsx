@@ -14,6 +14,7 @@ import {
 } from "@/lib/ai-search/summary";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
 import { distinctCallRunIds, isWindowHistoryKind } from "@/lib/ai-search/window-display";
+import { formatInt } from "@/lib/fender-canvas/format";
 
 const SIM = AI_TABS.simulations;
 
@@ -38,8 +39,8 @@ function SingleRunCard({ snapshot }: { snapshot: AiSearchSnapshot }) {
           <tr><td>Started</td><td>{formatRunTime(run.started_at)}</td></tr>
           <tr><td>Completed</td><td>{formatRunTime(run.completed_at)}</td></tr>
           <tr><td>Published</td><td>{formatRunTime(run.published_at)}</td></tr>
-          <tr><td>Expected calls</td><td>{run.expected_calls ?? "Not recorded"}</td></tr>
-          <tr><td>Answered calls</td><td>{run.answered_calls ?? "Not recorded"}</td></tr>
+          <tr><td>Expected calls</td><td>{run.expected_calls == null ? "Not recorded" : formatInt(run.expected_calls)}</td></tr>
+          <tr><td>Answered calls</td><td>{run.answered_calls == null ? "Not recorded" : formatInt(run.answered_calls)}</td></tr>
           <tr>
             <td>Provider errors</td>
             <td>
@@ -48,7 +49,7 @@ function SingleRunCard({ snapshot }: { snapshot: AiSearchSnapshot }) {
               </EvidenceLink>
             </td>
           </tr>
-          <tr><td>Missing answers</td><td>{run.missing_calls ?? "Not recorded"}</td></tr>
+          <tr><td>Missing answers</td><td>{run.missing_calls == null ? "Not recorded" : formatInt(run.missing_calls)}</td></tr>
           <tr><td>Engines and models</td><td>{engineModelLine(s.enginesAndModels)}</td></tr>
         </tbody>
       </table>
@@ -59,7 +60,7 @@ function SingleRunCard({ snapshot }: { snapshot: AiSearchSnapshot }) {
       ) : null}
       {rowsShort ? (
         <p style={{ ...mutedText, marginTop: 8, color: "var(--warning-text)" }}>
-          The read returned {s.completeness.rowsRead} call rows for {s.completeness.expected} expected calls.
+          The read returned {formatInt(s.completeness.rowsRead)} call rows for {formatInt(s.completeness.expected)} expected calls.
         </p>
       ) : null}
     </div>

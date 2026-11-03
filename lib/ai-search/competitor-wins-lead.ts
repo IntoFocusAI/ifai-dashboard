@@ -1,8 +1,14 @@
 import type { PieDiscData } from "@/lib/ai-search/citation-pies";
+import { formatInt } from "@/lib/fender-canvas/format";
+
+/** "1,064 of 1,788": the N-of-M clause the hero and the Competitive Radar sentence share. */
+export function competitorWinsCount(competitorWins: number, resolved: number): string {
+  return `${formatInt(competitorWins)} of ${formatInt(resolved)}`;
+}
 
 /** Same words as the Competitive Radar spoke sentence for this snapshot. */
 export function competitorWinsFigure(competitorWins: number, resolved: number): string {
-  return `Competitors led ${competitorWins} of ${resolved} resolved unbranded discovery answers.`;
+  return `Competitors led ${competitorWinsCount(competitorWins, resolved)} resolved unbranded discovery answers.`;
 }
 
 /** Disc of competitor-led versus Fender/Squier-led among resolved unbranded discovery. */

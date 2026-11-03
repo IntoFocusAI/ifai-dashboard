@@ -5,11 +5,13 @@ import { MixedScoringTip } from "@/components/v3/live/ai-search/MixedScoringTip"
 import { competitorTallies } from "@/lib/ai-search/competitors";
 import {
   competitorLeadPie,
+  competitorWinsCount,
   competitorWinsFigure,
 } from "@/lib/ai-search/competitor-wins-lead";
 import { headlineCompetitorWins } from "@/lib/ai-search/question-role";
 import { summarizeRun } from "@/lib/ai-search/summary";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
+import { formatInt } from "@/lib/fender-canvas/format";
 
 function brandKey(brand: string): string {
   return brand.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "other";
@@ -20,11 +22,11 @@ function HeroFigure({ snapshot, mixed }: { snapshot: AiSearchSnapshot; mixed: bo
   const competitorWins = summary.competitorWins;
   const resolved = summary.roles.unbranded.resolved;
   const figure = competitorWinsFigure(competitorWins, resolved);
-  const count = `${competitorWins} of ${resolved}`;
+  const count = competitorWinsCount(competitorWins, resolved);
   const at = figure.indexOf(count);
   const pie = competitorLeadPie(competitorWins, resolved);
   const tip = pie
-    ? `${competitorWins} competitor led. ${resolved - competitorWins} Fender/Squier led. Total ${resolved} resolved unbranded discovery answers.`
+    ? `${formatInt(competitorWins)} competitor led. ${formatInt(resolved - competitorWins)} Fender/Squier led. Total ${formatInt(resolved)} resolved unbranded discovery answers.`
     : undefined;
 
   return (
@@ -79,13 +81,13 @@ function WinsGraph({ snapshot }: { snapshot: AiSearchSnapshot }) {
             <div className="ai-competitor-win-meta">
               <strong>{mark.brand}</strong>
               <span>
-                {mark.wins} {mark.wins === 1 ? "win" : "wins"}
+                {formatInt(mark.wins)} {mark.wins === 1 ? "win" : "wins"}
               </span>
             </div>
             <span
               className="ai-competitor-win-track"
               role="img"
-              aria-label={`${mark.brand}: ${mark.wins} wins`}
+              aria-label={`${mark.brand}: ${formatInt(mark.wins)} wins`}
             >
               <span
                 className="ai-competitor-win-fill"

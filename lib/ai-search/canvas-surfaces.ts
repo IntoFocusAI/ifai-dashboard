@@ -6,6 +6,7 @@ import {
   joinBrands,
   type CategoryBattle,
 } from "@/lib/ai-search/competitors";
+import { competitorWinsFigure } from "@/lib/ai-search/competitor-wins-lead";
 import {
   factCheckHeadline,
   factCheckShortLine,
@@ -406,7 +407,7 @@ export function competitorsSpokeLead(read: AiSearchRead): { figure: string; expl
   if (read.phase !== "ready") return { figure: aiSpokeDesc(read), explainer: "" };
   const s = summarizeRun(read.snapshot);
   return {
-    figure: `Competitors led ${s.competitorWins} of ${s.roles.unbranded.resolved} resolved unbranded discovery answers.`,
+    figure: competitorWinsFigure(s.competitorWins, s.roles.unbranded.resolved),
     explainer:
       "Which brands AI engines name over Fender/Squier on unbranded discovery prompts. Branded consideration, product fact checks, provider errors, and answers with no clear leader are left out.",
   };

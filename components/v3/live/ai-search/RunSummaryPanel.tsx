@@ -14,6 +14,7 @@ import { categoryRoleTallies, engineResultRoleTallies, headlineAside, ROLE_LABEL
 import { categoryLabel, engineLabel } from "@/lib/ai-search/run-metrics";
 import { pct, resolvedPhrase, summarizeRun } from "@/lib/ai-search/summary";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
+import { formatInt } from "@/lib/fender-canvas/format";
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
 import { hasMixedScoringMethods, isWindowHistoryKind } from "@/lib/ai-search/window-display";
 
@@ -67,7 +68,7 @@ function RoleRate({
     <div className="metric-card-sm" data-ai-role={tally.role}>
       <div className="metric-card-val" data-ai-lead-figure={tally.role}>
         {tally.resolved > 0 ? (
-          <MixedScoringTip mixed={mixed}>{`${tally.fenderWins} of ${tally.resolved}`}</MixedScoringTip>
+          <MixedScoringTip mixed={mixed}>{`${formatInt(tally.fenderWins)} of ${formatInt(tally.resolved)}`}</MixedScoringTip>
         ) : (
           "No resolved answers"
         )}
@@ -77,11 +78,11 @@ function RoleRate({
         {tally.resolved > 0 ? (
           <>
             <EvidenceLink focus={{ field: "role", value: `${tally.role}/fender_win` }} tab={SIM}>
-              {tally.fenderWins} Fender/Squier leads
+              {formatInt(tally.fenderWins)} Fender/Squier leads
             </EvidenceLink>{" "}
             of{" "}
             <EvidenceLink focus={{ field: "role", value: `${tally.role}/resolved` }} tab={SIM}>
-              {tally.resolved}
+              {formatInt(tally.resolved)}
             </EvidenceLink>{" "}
             <AiTerm term="resolved" /> answers (<span data-ai-win-rate={tally.role}>{rate}</span>)
           </>
@@ -95,8 +96,8 @@ function RoleRate({
 
 function keptOut(tally: RoleTally): string {
   const parts = [resolvedPhrase(tally)];
-  if (tally.unresolved > 0) parts.push(`${tally.unresolved} with no clear leader`);
-  if (tally.errors > 0) parts.push(`${tally.errors} provider errors`);
+  if (tally.unresolved > 0) parts.push(`${formatInt(tally.unresolved)} with no clear leader`);
+  if (tally.errors > 0) parts.push(`${formatInt(tally.errors)} provider errors`);
   return parts.join(", ");
 }
 
@@ -135,13 +136,13 @@ function WinCard({ snapshot, unit, mixed }: { snapshot: AiSearchSnapshot; unit: 
         </li>
         <li>
           <EvidenceLink focus={{ field: "kind", value: "probe" }} tab={SIM}>
-            {s.probesAnswered} answered
+            {formatInt(s.probesAnswered)} answered
           </EvidenceLink>{" "}
           <AiTerm term="product fact check">product fact checks</AiTerm> stay on their own tab.
         </li>
         {s.commercial.disqualified > 0 ? (
           <li>
-            {s.commercial.disqualified} Fender leads with a <AiTerm term="confirmed contradiction" />, not counted as wins
+            {formatInt(s.commercial.disqualified)} Fender leads with a <AiTerm term="confirmed contradiction" />, not counted as wins
           </li>
         ) : null}
       </ul>
@@ -197,8 +198,8 @@ function EngineTable({ snapshot, showSmallSample }: { snapshot: AiSearchSnapshot
                     showSmallSample={showSmallSample}
                   />
                 </td>
-                <td>{aside.unresolved}</td>
-                <td>{aside.errors}</td>
+                <td>{formatInt(aside.unresolved)}</td>
+                <td>{formatInt(aside.errors)}</td>
               </tr>
             );
           })}
@@ -255,8 +256,8 @@ function CategoryTable({ snapshot, showSmallSample }: { snapshot: AiSearchSnapsh
                     showSmallSample={showSmallSample}
                   />
                 </td>
-                <td>{aside.unresolved}</td>
-                <td>{aside.errors}</td>
+                <td>{formatInt(aside.unresolved)}</td>
+                <td>{formatInt(aside.errors)}</td>
               </tr>
             );
           })}
