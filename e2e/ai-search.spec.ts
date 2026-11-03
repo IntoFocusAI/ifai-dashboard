@@ -240,10 +240,15 @@ test.describe("AI Search Visibility", () => {
     await expect(term).not.toHaveAttribute("title");
     await term.focus();
     await expect(page.locator(".node-tooltip-definition, .node-tooltip")).toContainText("picked");
-    const scope = page.locator("[data-ai-fact-scope] .ifai-term");
-    await expect(scope).toHaveText("These checks cover the selected facts only.");
-    await expect(scope).toHaveAttribute("data-ifai-tooltip-desc", /do not prove every statement/);
+    const accuracy = page.locator("[data-ai-accuracy-figure] .ifai-term");
+    await expect(accuracy).toHaveAttribute("data-ifai-tooltip-title", "Accuracy");
+    await expect(accuracy).toHaveAttribute(
+      "data-ifai-tooltip-desc",
+      /^[\d,]+ of [\d,]+ answers matched\. These checks cover the selected facts only\. They do not prove every statement/,
+    );
+    await expect(page.locator("[data-ai-fact-scope]")).toHaveCount(0);
     const body = page.locator(".drilldown-body");
+    await expect(body).not.toContainText("These checks cover the selected facts only");
     for (const qualifier of ["does not cover", "clean bill of health", "is not a buying prompt", "so they are not reported"]) {
       await expect(body).not.toContainText(qualifier);
     }

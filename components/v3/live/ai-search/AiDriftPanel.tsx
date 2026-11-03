@@ -10,9 +10,8 @@ import { ExternalLink } from "@/components/v3/live/ai-search/ExternalLink";
 import { FactCheckTable } from "@/components/v3/live/ai-search/FactCheckTable";
 import { driftRead } from "@/lib/ai-search/drift";
 import {
+  FACT_CHECK_ACCURACY_TITLE,
   FACT_CHECK_METHOD_TITLE,
-  FACT_CHECK_SCOPE_LINE,
-  FACT_CHECK_SCOPE_TITLE,
   UNVERIFIED_FLAG_TIP,
   amazonMismatchNote,
   contradictionCount,
@@ -20,11 +19,11 @@ import {
   factCheckAccuracyLead,
   factCheckAccuracyPie,
   factCheckAccuracyPieTip,
+  factCheckAccuracyTip,
   factCheckCoverageNote,
   factCheckHeadline,
   factCheckMethodLine,
   factCheckPendingNote,
-  factCheckScopeTip,
 } from "@/lib/ai-search/fact-check-copy";
 import { engineLabel, formatRunTime, modelLabel } from "@/lib/ai-search/run-metrics";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
@@ -69,11 +68,6 @@ function FactChecks({ snapshot }: { snapshot: AiSearchSnapshot }) {
           · {method.verified}
         </p>
       ) : null}
-      <p style={{ ...mutedText, margin: 0 }} data-ai-fact-scope>
-        <CopyTip label={FACT_CHECK_SCOPE_TITLE} description={factCheckScopeTip(windowed)}>
-          {FACT_CHECK_SCOPE_LINE}
-        </CopyTip>
-      </p>
     </div>
   );
 
@@ -111,7 +105,9 @@ function FactChecks({ snapshot }: { snapshot: AiSearchSnapshot }) {
                   lineHeight: 1.05,
                 }}
               >
-                {accuracy.rate} Accuracy
+                <CopyTip label={FACT_CHECK_ACCURACY_TITLE} description={factCheckAccuracyTip(coverage, windowed)}>
+                  {accuracy.rate} Accuracy
+                </CopyTip>
               </span>
               <CitationPieDisc
                 pie={pie}

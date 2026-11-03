@@ -1,6 +1,7 @@
 import type { FactCheckCoverage } from "@/lib/ai-search/drift";
 import type { PieDiscData } from "@/lib/ai-search/citation-pies";
 import { joinBrands } from "@/lib/ai-search/competitors";
+import { formatInt } from "@/lib/fender-canvas/format";
 import { rotationSummary, type RotationSummary } from "@/lib/ai-search/probe-catalog";
 import { pct } from "@/lib/ai-search/summary";
 import type { ProbeRotation } from "@/lib/ai-search/types";
@@ -201,11 +202,17 @@ export const FACT_CHECK_SHOPPING_SCOPE =
 export const FACT_CHECK_SHOPPING_SCOPE_WINDOW =
   "This selection checked selected product facts, not every factual claim in the shopping answers.";
 
-export const FACT_CHECK_SCOPE_TITLE = "Fact-check scope";
+export const FACT_CHECK_ACCURACY_TITLE = "Accuracy";
 
-/** Scope qualifiers live in the tooltip on the scope line, never as on-screen sentences. */
+/** Scope qualifiers live in the Accuracy figure's tooltip, never as on-screen sentences. */
 export function factCheckScopeTip(windowed = false): string {
   return `${FACT_CHECK_SCOPE} ${windowed ? FACT_CHECK_SHOPPING_SCOPE_WINDOW : FACT_CHECK_SHOPPING_SCOPE}`;
+}
+
+/** Tooltip on the Accuracy figure: its N of M, then the scope of the checks. */
+export function factCheckAccuracyTip(c: FactCheckCoverage, windowed = false): string {
+  const matched = Math.max(0, c.answersChecked - c.contradictions);
+  return `${formatInt(matched)} of ${formatInt(c.answersChecked)} answers matched. ${factCheckScopeTip(windowed)}`;
 }
 
 export const UNVERIFIED_FLAG_TIP =

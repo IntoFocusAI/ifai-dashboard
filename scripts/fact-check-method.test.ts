@@ -10,11 +10,13 @@ import {
 } from "../lib/ai-search/explorer-filter.ts";
 import { AI_DEFINITIONS } from "../lib/ai-search/definitions.ts";
 import {
+  FACT_CHECK_ACCURACY_TITLE,
   FACT_CHECK_SCOPE_LINE,
   UNVERIFIED_FLAG_TIP,
   contradictionCount,
   factCheckAccuracyLead,
   factCheckAccuracyPieTip,
+  factCheckAccuracyTip,
   factCheckMethodLine,
   factCheckShortLine,
   factCheckPickTip,
@@ -167,9 +169,24 @@ test("fact-check 'not' qualifiers sit in tooltips, never as on-screen sentences"
   for (const source of [panel, drawer, explorer]) {
     for (const phrase of removed) assert.doesNotMatch(source, phrase);
   }
-  // The scope line stays visible as the dotted trigger; its qualifiers are the tooltip.
+  // The scope sentence is off screen: it follows the N of M in the Accuracy figure's tooltip.
   assert.equal(FACT_CHECK_SCOPE_LINE, "These checks cover the selected facts only.");
-  assert.match(panel, /<CopyTip label=\{FACT_CHECK_SCOPE_TITLE\} description=\{factCheckScopeTip\(windowed\)\}> \{FACT_CHECK_SCOPE_LINE\} <\/CopyTip>/);
+  assert.doesNotMatch(panel, /FACT_CHECK_SCOPE_LINE|data-ai-fact-scope|These checks cover/);
+  assert.match(
+    panel,
+    /<CopyTip label=\{FACT_CHECK_ACCURACY_TITLE\} description=\{factCheckAccuracyTip\(coverage, windowed\)\}> \{accuracy\.rate\} Accuracy <\/CopyTip>/,
+  );
+  assert.equal(FACT_CHECK_ACCURACY_TITLE, "Accuracy");
+  const shape = driftRead([], publishedShape()).coverage;
+  assert.equal(
+    factCheckAccuracyTip(shape),
+    "8 of 8 answers matched. These checks cover the selected facts only. They do not prove every statement in each answer is accurate. This run checked selected product facts, not every factual claim in the shopping answers.",
+  );
+  assert.match(factCheckAccuracyTip(shape, true), /^8 of 8 answers matched\. These checks cover .+ This selection checked selected product facts/);
+  assert.match(
+    factCheckAccuracyTip({ ...shape, answersChecked: 1250, contradictions: 12 }),
+    /^1,238 of 1,250 answers matched\./,
+  );
   assert.match(factCheckScopeTip(), /do not prove every statement in each answer is accurate\. This run checked selected product facts, not every factual claim/);
   assert.match(factCheckScopeTip(true), /This selection checked selected product facts/);
   assert.match(panel, /<CopyTip label="Unverified flag" description=\{UNVERIFIED_FLAG_TIP\}> unverified flag <\/CopyTip>/);
@@ -184,7 +201,7 @@ test("fact-check 'not' qualifiers sit in tooltips, never as on-screen sentences"
     "Each fact-check question names one Fender product. How these 5 products were picked, and what part of Fender's catalog they stand for, is not recorded.",
   );
   assert.match(factCheckPickTip(1), /^This fact-check question names one Fender product\. How it was picked/);
-  for (const tip of [factCheckScopeTip(), UNVERIFIED_FLAG_TIP, factCheckPickTip(5)]) {
+  for (const tip of [factCheckScopeTip(), factCheckAccuracyTip(shape), UNVERIFIED_FLAG_TIP, factCheckPickTip(5)]) {
     assert.doesNotMatch(tip, /\u2014|representative|random/i);
   }
 });
