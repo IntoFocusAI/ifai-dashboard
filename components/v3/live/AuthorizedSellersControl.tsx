@@ -45,12 +45,7 @@ export function AuthorizedSellersFields({
   const partners = authorizedPartnersFromSave(saved);
 
   return (
-    <fieldset
-      className="authorized-sellers"
-      data-authorized-sellers=""
-      data-authorized-sellers-saved={saved ? "true" : "false"}
-    >
-      <legend>Authorized sellers</legend>
+    <div className="authorized-sellers-body" id="authorized-sellers-panel">
       <p className="metric-card-sub" style={{ margin: 0 }}>
         {AUTHORIZED_SELLERS_MARK_LINE}
       </p>
@@ -123,17 +118,59 @@ export function AuthorizedSellersFields({
       >
         {AUTHORIZED_SELLERS_SAVE_LABEL}
       </button>
-    </fieldset>
+    </div>
+  );
+}
+
+function SellersChevron() {
+  return (
+    <svg
+      className="retail-explore-chevron"
+      viewBox="0 0 12 12"
+      width="12"
+      height="12"
+      aria-hidden="true"
+    >
+      <path
+        d="M2.2 4.2 6 8l3.8-3.8"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
   );
 }
 
 export function AuthorizedSellersControl({ read }: { read: RetailCanvasRead }) {
   const [saved, setSaved] = useAuthorizedSellers();
+  const [open, setOpen] = useState(false);
+
   return (
-    <AuthorizedSellersFields
-      read={read}
-      saved={saved}
-      onSave={(sellers) => setSaved({ sellers })}
-    />
+    <div
+      className="content-box authorized-sellers"
+      data-authorized-sellers=""
+      data-authorized-sellers-open={open ? "true" : "false"}
+      data-authorized-sellers-saved={saved ? "true" : "false"}
+    >
+      <button
+        type="button"
+        className="retail-explore authorized-sellers-toggle"
+        aria-expanded={open}
+        aria-controls="authorized-sellers-panel"
+        onClick={() => setOpen((value) => !value)}
+      >
+        Authorized sellers
+        <SellersChevron />
+      </button>
+      {open ? (
+        <AuthorizedSellersFields
+          read={read}
+          saved={saved}
+          onSave={(sellers) => setSaved({ sellers })}
+        />
+      ) : null}
+    </div>
   );
 }

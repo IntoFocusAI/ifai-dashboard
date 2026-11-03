@@ -105,6 +105,30 @@ test("visible copy names a saved list for this browser and keeps the placeholder
   assert.doesNotMatch(AUTHORIZED_SELLERS_BROWSER_LINE, /permanent|company/i);
 });
 
+test("the authorized sellers bubble starts closed and reveals the list only when opened", () => {
+  const control = read("components/v3/live/AuthorizedSellersControl.tsx");
+  const controlRender = control.slice(control.indexOf("export function AuthorizedSellersControl"));
+  const fields = control.slice(0, control.indexOf("export function AuthorizedSellersControl"));
+
+  assert.match(controlRender, /const \[open, setOpen\] = useState\(false\)/);
+  assert.doesNotMatch(controlRender, /useState\(true\)/);
+  assert.match(controlRender, /aria-expanded=\{open\}/);
+  assert.match(controlRender, /className="retail-explore authorized-sellers-toggle"/);
+  assert.match(controlRender, />\s*Authorized sellers\s*<SellersChevron/);
+  assert.match(
+    controlRender,
+    /\{open \? \(\s*<AuthorizedSellersFields[\s\S]*\) : null\}/,
+  );
+  assert.doesNotMatch(control, /localStorage|sessionStorage/);
+
+  assert.match(fields, /data-authorized-seller=\{choice\.name\}/);
+  assert.match(fields, /data-authorized-sellers-save=""/);
+  assert.match(fields, /AUTHORIZED_SELLERS_MARK_LINE/);
+  assert.match(fields, /AMAZON_RETAIL_ALWAYS_INCLUDED/);
+  assert.match(fields, /AUTHORIZED_SELLERS_BROWSER_LINE/);
+  assert.doesNotMatch(controlRender, /data-authorized-sellers-save=""|data-authorized-seller=\{choice/);
+});
+
 test("Retail Overview offers the control from the Buy Box read and stores it in this browser", () => {
   const overview = read("components/v3/live/RetailOverview.tsx");
   const control = read("components/v3/live/AuthorizedSellersControl.tsx");
