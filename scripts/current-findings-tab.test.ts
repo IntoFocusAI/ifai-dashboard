@@ -27,9 +27,9 @@ test("Action Items replaces Interactive ROI with Current findings", () => {
   assert.equal(joined.includes("segmented-btn"), false);
 
   const revenue = spec.spokes.suggestions.tabTemplates[1] ?? "";
-  assert.match(revenue, /\$680,000/);
-  assert.match(revenue, /\$38M to \$62M/);
-  assert.match(revenue, /\$50,000,000/);
+  assert.match(revenue, /\{phase_one_lift\}/);
+  assert.match(revenue, /\{enterprise_potential\}/);
+  assert.match(revenue, /\$50M midpoint/);
   assert.doesNotMatch(revenue, /Monthly potential lost brand revenue|since last time|what changed/i);
 });
 

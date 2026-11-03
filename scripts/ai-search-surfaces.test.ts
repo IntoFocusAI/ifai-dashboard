@@ -146,7 +146,7 @@ test("protected surfaces are unchanged", () => {
   assert.match(spokes, /<SuppressedListingsPanel read=\{retail\}/);
   assert.match(spokes, /<MapChannelPanel/);
   const roi = JSON.stringify(spec.spokes.suggestions);
-  for (const figure of ["$680,000", "$38M to $62M", "$50,000,000"]) assert.ok(roi.includes(figure), figure);
+  for (const figure of ["{phase_one_lift}", "{enterprise_potential}", "$50M midpoint"]) assert.ok(roi.includes(figure), figure);
   assert.doesNotMatch(roi, /Reddit \/r\/Guitar Community|largest SOV gaps/);
 });
 

@@ -1,8 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { ResizableTable, type RetailColumn } from "@/components/v3/live/ResizableTable";
 import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
+import {
+  SET_ASIDE_COLUMN,
+  SetAsideCell,
+  SetAsideFormRow,
+  SetAsideHistory,
+  useCheckSetAsides,
+} from "@/components/v3/live/SetAsideTable";
+import { SET_ASIDE_CHECKS } from "@/lib/set-aside/keys";
 import { formatInt } from "@/lib/fender-canvas/format";
 import {
   contentGapRows,
@@ -23,6 +31,8 @@ const COLUMNS: RetailColumn[] = [
   { id: "aplus", name: "A+", label: "A+", width: 120, minWidth: 96, sort: "text" },
   { id: "video", name: "Video", label: "Video", width: 120, minWidth: 96, sort: "text" },
 ];
+
+const TABLE_COLUMNS = [...COLUMNS, SET_ASIDE_COLUMN];
 
 const FILTER_TITLE: Record<ContentHeroId, string> = {
   bullets: "Listings with fewer than five bullets",
@@ -92,6 +102,7 @@ export function ListingContentTable({
   const rows = contentGapRows(summary, filter);
   const sorted = useClientTableSort(rows, COLUMNS, sortValue);
   const slice = sorted.rows.slice(page * PAGE, page * PAGE + PAGE);
+  const setAsides = useCheckSetAsides(SET_ASIDE_CHECKS.listingContent, "Listing Content");
 
   return (
     <div className="content-box" style={{ marginTop: 12 }} id={tableId} data-content-table={filter}>
@@ -103,7 +114,7 @@ export function ListingContentTable({
       </div>
       <ResizableTable
         tableId="aplus-matrix-listings"
-        columns={COLUMNS}
+        columns={TABLE_COLUMNS}
         fillColumnId="listing"
         freezeHeader
         maxHeight={520}
@@ -116,13 +127,14 @@ export function ListingContentTable({
         <tbody>
           {slice.length === 0 ? (
             <tr>
-              <td colSpan={COLUMNS.length}>{FILTER_EMPTY[filter]}</td>
+              <td colSpan={TABLE_COLUMNS.length}>{FILTER_EMPTY[filter]}</td>
             </tr>
           ) : (
             slice.map((row) => {
               const href = amazonHref(row.asin);
               return (
-                <tr key={row.asin} data-content-row={row.asin}>
+                <Fragment key={row.asin}>
+                <tr data-content-row={row.asin}>
                   <td>
                     <strong>{row.title?.trim() || "Listing"}</strong>
                   </td>
@@ -144,13 +156,22 @@ export function ListingContentTable({
                   <td>{row.image_count == null ? "" : formatInt(row.image_count)}</td>
                   <td>{contentStateLabel(row.aplus_state)}</td>
                   <td>{contentStateLabel(row.video_state)}</td>
+                  <SetAsideCell ctl={setAsides} entityKey={row.asin} canSetAside={Boolean(href)} />
                 </tr>
+                <SetAsideFormRow
+                  ctl={setAsides}
+                  entityKey={row.asin}
+                  entityLabel={row.title?.trim() || null}
+                  colSpan={TABLE_COLUMNS.length}
+                />
+                </Fragment>
               );
             })
           )}
         </tbody>
       </ResizableTable>
       <Pager page={page} total={rows.length} onPage={setPage} />
+      <SetAsideHistory ctl={setAsides} />
     </div>
   );
 }

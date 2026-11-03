@@ -1,7 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { clientColumn, ResizableTable } from "@/components/v3/live/ResizableTable";
+import {
+  SET_ASIDE_COLUMN,
+  SetAsideCell,
+  SetAsideFormRow,
+  SetAsideHistory,
+  useCheckSetAsides,
+} from "@/components/v3/live/SetAsideTable";
 import { useFullPopulationSort } from "@/components/v3/live/useFullPopulationSort";
 import { specRowsQuery } from "@/lib/canvasData";
 import { CLIENT_TABLE_PAGE_SIZE, loadFilteredPages } from "@/lib/fender-canvas/full-result-sort";
@@ -16,6 +23,7 @@ import {
   presentMissingAmazonFields,
   presentMissingFieldShare,
 } from "@/lib/fender-canvas/spec-missing-fields";
+import { SET_ASIDE_CHECKS } from "@/lib/set-aside/keys";
 
 const SPEC_COLUMNS = [
   clientColumn("asin", "ASIN", "text", 118, 100, "asin-col"),
@@ -23,6 +31,8 @@ const SPEC_COLUMNS = [
   clientColumn("amazon", "Amazon completeness", "number", 140, 110),
   clientColumn("missing", "Missing Amazon fields", "text", 240, 160),
 ];
+
+const SPEC_TABLE_COLUMNS = [...SPEC_COLUMNS, SET_ASIDE_COLUMN];
 
 /** First-visit viewport; page size stays 50. Shorter heroes leave more room for this table. */
 const SPEC_TABLE_MAX_HEIGHT = 420;
@@ -158,6 +168,7 @@ function CatalogSpecReadiness() {
   const [rows, setRows] = useState<CanvasSpecReadinessRow[]>([]);
   const [total, setTotal] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const setAsides = useCheckSetAsides(SET_ASIDE_CHECKS.amazonSpecs, "Amazon Specs");
   const population = useFullPopulationSort(
     rows,
     SPEC_COLUMNS,
@@ -209,7 +220,7 @@ function CatalogSpecReadiness() {
         </div>
         <ResizableTable
           tableId="spec-readiness"
-          columns={SPEC_COLUMNS}
+          columns={SPEC_TABLE_COLUMNS}
           freezeHeader
           maxHeight={SPEC_TABLE_MAX_HEIGHT}
           fillColumnId="missing"
@@ -220,12 +231,12 @@ function CatalogSpecReadiness() {
           <tbody>
               {loading && rows.length === 0 ? (
                 <tr>
-                  <td colSpan={4}>Loading…</td>
+                  <td colSpan={SPEC_TABLE_COLUMNS.length}>Loading…</td>
                 </tr>
               ) : null}
               {!loading && rows.length === 0 ? (
                 <tr>
-                  <td colSpan={4}>No spec rows in this read.</td>
+                  <td colSpan={SPEC_TABLE_COLUMNS.length}>No spec rows in this read.</td>
                 </tr>
               ) : null}
               {population.pageRows.map((row) => {
@@ -233,8 +244,10 @@ function CatalogSpecReadiness() {
                   row.amazon_missing_fields,
                   row.amazon_completeness_pct,
                 );
+                const setAside = setAsides.active.get(row.asin);
                 return (
-                  <tr key={row.asin}>
+                  <Fragment key={row.asin}>
+                  <tr data-set-aside-row={setAside ? "active" : undefined}>
                     <td>
                       <span className="asin-chip">{row.asin}</span>
                     </td>
@@ -249,7 +262,19 @@ function CatalogSpecReadiness() {
                           ))
                         : missingFields.label}
                     </td>
+                    <SetAsideCell
+                      ctl={setAsides}
+                      entityKey={row.asin}
+                      canSetAside={missingFields.kind === "fields"}
+                    />
                   </tr>
+                  <SetAsideFormRow
+                    ctl={setAsides}
+                    entityKey={row.asin}
+                    entityLabel={specModelTitle(row.title) || null}
+                    colSpan={SPEC_TABLE_COLUMNS.length}
+                  />
+                  </Fragment>
                 );
               })}
             </tbody>
@@ -276,6 +301,9 @@ function CatalogSpecReadiness() {
           </button>
         </div>
       </div>
+
+      <SetAsideHistory ctl={setAsides} />
     </>
   );
 }
+

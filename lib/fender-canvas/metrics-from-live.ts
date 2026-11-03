@@ -1,4 +1,5 @@
 import type { CanvasMetric } from "@/lib/canvas-sdk/types";
+import { ENTERPRISE_POTENTIAL_ESTIMATE, PHASE_ONE_LIFT_ESTIMATE } from "@/lib/fender-canvas/analyst-estimates";
 import { beginnerSovLine } from "@/lib/fender-canvas/beginner-sov";
 import { MAP_PRICES_NOT_STORED } from "@/lib/fender-canvas/portfolio-retail";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
@@ -306,7 +307,7 @@ export function buildLiveMetrics(
       id: "phase-one-lift",
       spokeId: "suggestions",
       label: "Recoverable Revenue",
-      value: "+$680K",
+      value: PHASE_ONE_LIFT_ESTIMATE,
       detail: "Phase 1 annual estimate",
       tone: "success",
       subTab: "Revenue Estimates",
@@ -316,7 +317,7 @@ export function buildLiveMetrics(
       id: "enterprise-potential",
       spokeId: "suggestions",
       label: "Enterprise GMV Potential",
-      value: "+$38M to $62M",
+      value: ENTERPRISE_POTENTIAL_ESTIMATE,
       detail: "Annual estimate · full portfolio",
       tone: "success",
       subTab: "Revenue Estimates",

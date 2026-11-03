@@ -12,11 +12,11 @@ import { SimulationFilters } from "@/components/v3/live/ai-search/SimulationFilt
 import { useEvidenceFocus } from "@/components/v3/live/ai-search/useEvidenceFocus";
 import { citationEvidence, type CitationEvidence } from "@/lib/ai-search/citations";
 import { driftRead } from "@/lib/ai-search/drift";
+import { explorerFilterFor } from "@/lib/ai-search/evidence-filter";
 import { setEvidenceFocus } from "@/lib/ai-search/evidence-focus";
 import {
   applyExplorerFilter,
   factCheckColumnLabel,
-  filterFromEvidence,
   sortExplorerRows,
   type ExplorerFilter,
 } from "@/lib/ai-search/explorer-filter";
@@ -78,7 +78,7 @@ function Explorer({ snapshot }: { snapshot: AiSearchSnapshot }) {
   const history = useAiHistoryOptional();
   const unit = isWindowHistoryKind(history?.mode.kind) ? "selection" : "run";
   const focus = useEvidenceFocus();
-  const [filter, setFilter] = useState<ExplorerFilter>(() => filterFromEvidence(focus));
+  const [filter, setFilter] = useState<ExplorerFilter>(() => explorerFilterFor(focus));
   const openFromFilter = (next: ExplorerFilter): string | null => {
     if (next.callId != null) {
       return snapshot.calls.some((call) => call.id === next.callId) ? next.callId : null;
@@ -89,13 +89,13 @@ function Explorer({ snapshot }: { snapshot: AiSearchSnapshot }) {
     return null;
   };
 
-  const [openId, setOpenId] = useState<string | null>(() => openFromFilter(filterFromEvidence(focus)));
+  const [openId, setOpenId] = useState<string | null>(() => openFromFilter(explorerFilterFor(focus)));
 
   const [appliedFocus, setAppliedFocus] = useState(focus);
   if (focus !== appliedFocus) {
     setAppliedFocus(focus);
     if (focus) {
-      const next = filterFromEvidence(focus);
+      const next = explorerFilterFor(focus);
       setFilter(next);
       setOpenId(openFromFilter(next));
     }

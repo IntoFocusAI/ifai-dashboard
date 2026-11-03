@@ -1,8 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { ResizableTable, type RetailColumn } from "@/components/v3/live/ResizableTable";
 import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
+import {
+  SET_ASIDE_COLUMN,
+  SetAsideCell,
+  SetAsideFormRow,
+  SetAsideHistory,
+  useCheckSetAsides,
+} from "@/components/v3/live/SetAsideTable";
+import { SET_ASIDE_CHECKS } from "@/lib/set-aside/keys";
 import { formatCheckedAt } from "@/lib/fender-canvas/featured-offer-copy";
 import { formatInt } from "@/lib/fender-canvas/format";
 import {
@@ -23,6 +31,8 @@ const COLUMNS: RetailColumn[] = [
   { id: "missing", name: "Missing", label: "Missing", width: 160, minWidth: 110, sort: "text" },
   { id: "checked", name: "Checked", label: "Checked", width: 170, minWidth: 130, sort: "text" },
 ];
+
+const TABLE_COLUMNS = [...COLUMNS, SET_ASIDE_COLUMN];
 
 const FILTER_TITLE: Record<MachineHeroId, string> = {
   missing_specs: "Pages missing machine-readable specs",
@@ -120,6 +130,7 @@ export function MachineReadabilityPageTable({
   const rows = summary.pages.filter((row) => matches(row, filter));
   const sorted = useClientTableSort(rows, COLUMNS, sortValue);
   const slice = sorted.rows.slice(page * PAGE, page * PAGE + PAGE);
+  const setAsides = useCheckSetAsides(SET_ASIDE_CHECKS.brandSiteSpecs, "Brand-Site Specs");
 
   return (
     <div
@@ -136,7 +147,7 @@ export function MachineReadabilityPageTable({
       </div>
       <ResizableTable
         tableId="machine-readability-pages"
-        columns={COLUMNS}
+        columns={TABLE_COLUMNS}
         fillColumnId="page"
         freezeHeader
         maxHeight={520}
@@ -149,13 +160,14 @@ export function MachineReadabilityPageTable({
         <tbody>
           {slice.length === 0 ? (
             <tr>
-              <td colSpan={4}>{FILTER_EMPTY[filter]}</td>
+              <td colSpan={TABLE_COLUMNS.length}>{FILTER_EMPTY[filter]}</td>
             </tr>
           ) : (
             slice.map((row) => {
               const href = schemaPageHref(row.url);
               return (
-                <tr key={row.url} data-machine-page={row.url}>
+                <Fragment key={row.url}>
+                <tr data-machine-page={row.url}>
                   <td>
                     <strong>{row.model || "fender.com page"}</strong>
                     <br />
@@ -178,13 +190,22 @@ export function MachineReadabilityPageTable({
                     ))}
                   </td>
                   <td>{formatCheckedAt(row.checkedAt) ?? ""}</td>
+                  <SetAsideCell ctl={setAsides} entityKey={row.url} canSetAside={Boolean(href)} />
                 </tr>
+                <SetAsideFormRow
+                  ctl={setAsides}
+                  entityKey={row.url}
+                  entityLabel={row.model || null}
+                  colSpan={TABLE_COLUMNS.length}
+                />
+                </Fragment>
               );
             })
           )}
         </tbody>
       </ResizableTable>
       <Pager page={page} total={rows.length} onPage={setPage} />
+      <SetAsideHistory ctl={setAsides} />
     </div>
   );
 }

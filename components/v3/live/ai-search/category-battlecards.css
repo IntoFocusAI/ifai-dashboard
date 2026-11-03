@@ -1,0 +1,337 @@
+/* Category Battlecards: hero pie row, category pies, and the filter chips (FDD C-03, X-03). */
+
+.ai-battlecards-tab {
+  display: contents;
+}
+
+/* The shell draws the Competitive Radar sentence above every tab. This tab opens on its hero pies instead. */
+.drilldown-panel:has([data-ai-battlecards-tab]) .drilldown-desc:has(> [data-ai-competitor-desc]) {
+  display: none;
+}
+
+.ai-battlecards {
+  container-type: inline-size;
+}
+
+/* Three hero pies in one row. RunDetailsLead's two-column grid joins this one. */
+.ai-battle-heroes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  column-gap: 16px;
+  row-gap: 2px;
+  align-items: start;
+}
+
+.ai-battle-heroes > [data-ai-run-details-lead] {
+  display: contents;
+}
+
+/* Retail Overview and Findability hero disc size. */
+.ai-battle-heroes .citation-pie-disc {
+  width: 62px;
+  height: 62px;
+}
+
+.ai-battle-hero-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.ai-battle-hero-caption {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
+.ai-battle-hero-caption-line {
+  display: block;
+}
+
+.ai-battle-engine-mark {
+  margin-left: 1px;
+  font-weight: 700;
+}
+
+@container (max-width: 620px) {
+  .ai-battle-heroes {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 6px;
+  }
+
+  .ai-battle-heroes > [data-ai-on-track-hero] {
+    order: 1;
+  }
+
+  .ai-battle-heroes > [data-ai-on-track-caption] {
+    order: 2;
+  }
+
+  .ai-battle-heroes [data-ai-role="unbranded_discovery"] {
+    order: 3;
+  }
+
+  .ai-battle-heroes > [data-ai-battle-role-total="unbranded_discovery"] {
+    order: 4;
+  }
+
+  .ai-battle-heroes [data-ai-role="branded_consideration"] {
+    order: 5;
+  }
+
+  .ai-battle-heroes > [data-ai-battle-role-total="branded_consideration"] {
+    order: 6;
+  }
+}
+
+/* Category pies */
+.ai-battle-pies-head {
+  flex-wrap: wrap;
+  gap: 6px 16px;
+}
+
+.ai-battle-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.ai-battle-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ai-battle-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+}
+
+/* Six across from about 900px wide, so every category pie shares one row at 1280 by 720. */
+.ai-battle-pies {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(max(140px, calc((100% - 30px) / 6)), 1fr));
+  gap: 6px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ai-battle-pie {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  padding: 7px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+}
+
+.ai-battle-pie[data-ai-on-track-status="not_available"] {
+  border-style: dashed;
+}
+
+.ai-battle-pie-tip {
+  display: inline-flex;
+  flex: 0 0 auto;
+  border-radius: 50%;
+}
+
+.ai-battle-pie-tip .ifai-evidence-link {
+  display: inline-flex;
+  border-radius: 50%;
+}
+
+.ai-battle-pie-tip .ifai-evidence-link:focus-visible {
+  outline: 2px solid #38bdf8;
+  outline-offset: 2px;
+}
+
+.ai-battle-pie .ai-battle-pie-disc,
+.ai-battle-pie .ai-battle-pie-empty {
+  width: 40px;
+  height: 40px;
+  box-sizing: border-box;
+}
+
+.ai-battle-pie .ai-battle-pie-empty {
+  border: 2px dashed var(--border-dark);
+  border-radius: 50%;
+}
+
+.ai-battle-pie-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  min-width: 0;
+}
+
+.ai-battle-pie-name {
+  font-size: 14px;
+  line-height: 1.25;
+}
+
+.ai-battle-pie-rival {
+  font-size: 11.5px;
+  line-height: 1.3;
+  color: var(--text-muted);
+}
+
+.ai-ontrack-badge.tag-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  box-sizing: border-box;
+  padding: 3px 8px;
+  font-size: 11.5px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.ai-ontrack-badge svg {
+  flex: 0 0 auto;
+}
+
+/* Six tiles across leave "Not available*" too little room on one line. */
+.ai-battle-pie .ai-ontrack-badge.tag-badge {
+  max-width: 100%;
+  padding: 3px 6px;
+  gap: 4px;
+  white-space: normal;
+  line-height: 1.2;
+}
+
+.ai-battle-row-status {
+  margin-top: 6px;
+}
+
+.ai-ontrack-empty {
+  margin: 4px 0 0;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+/* Filter chips: the engine and who-leads groups share one row at 1280 wide, the status line sits under them. */
+.ai-battle-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 16px;
+  padding: 7px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--border-color) 22%, transparent);
+}
+
+.ai-battle-chip-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+}
+
+.ai-battle-chip-group-label {
+  margin-right: 2px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.ai-battle-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 24px;
+  box-sizing: border-box;
+  padding: 3px 9px;
+  border: 1px solid var(--border-dark);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.3;
+  cursor: pointer;
+  transition:
+    color 0.15s ease,
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.ai-battle-chip:hover {
+  color: var(--text-main);
+  border-color: var(--accent-purple);
+}
+
+.ai-battle-chip[aria-pressed="true"],
+.ai-battle-chip[aria-pressed="true"]:hover {
+  color: #ffffff;
+  background: var(--accent-purple);
+  border-color: var(--accent-purple);
+}
+
+.ifai-canvas.theme-iom .ai-battle-chip[aria-pressed="true"],
+.ifai-canvas.theme-iom .ai-battle-chip[aria-pressed="true"]:hover {
+  background: #0284c7;
+  border-color: #0284c7;
+}
+
+.ai-battle-chip:focus-visible,
+.ai-battle-clear:focus-visible,
+.ai-battle-active-chip:focus-visible {
+  outline: 2px solid #38bdf8;
+  outline-offset: 2px;
+}
+
+.ai-battle-active {
+  flex-basis: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  min-height: 24px;
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+
+.ai-battle-active-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 24px;
+  box-sizing: border-box;
+  padding: 2px 7px 2px 9px;
+  border: 1px solid var(--accent-purple);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent-purple) 16%, transparent);
+  color: var(--text-main);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ai-battle-clear {
+  padding: 2px 4px;
+  border: 0;
+  background: none;
+  color: var(--text-main);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
