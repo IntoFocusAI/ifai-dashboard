@@ -12,7 +12,7 @@ export type CitationLeadInput = { owned: number; total: number };
 /** One-line definitions on the chain's labels. */
 export const CHAIN_DEFINITIONS = {
   showed: "Answers that listed web pages as sources. The sites and shares on this tab come from these answers.",
-  none: "Answers given without listing any web page, so they add no sites to this tab.",
+  none: "Answers given without showing a web page. These rely on what the model already knows.",
   links: "Every web page those answers listed. One answer can list several.",
   owned: "Links that lead to fender.com and other Fender-owned sites.",
   other: "Links to every other site, such as retailers, editorial and review sites, forums, and competitor brands.",

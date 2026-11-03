@@ -249,7 +249,7 @@ test.describe("AI Search Visibility", () => {
     await canvas.openTab("Citation Ecosystem");
     for (const [label, fragment] of [
       ["Showed sources", "listed web pages as sources"],
-      ["No sources", "without listing any web page"],
+      ["No sources", "without showing a web page"],
       ["Links", "One answer can list several"],
       ["To Fender-owned sites", "fender.com and other Fender-owned sites"],
       ["Fender-owned", "controlled by Fender or another FMIC brand"],

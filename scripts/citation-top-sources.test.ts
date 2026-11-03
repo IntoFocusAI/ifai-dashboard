@@ -247,7 +247,7 @@ test("each chain step has a one-line definition in a custom tooltip, and the spl
   const chain = read("components/v3/live/ai-search/CitationChain.tsx").replace(/\s+/g, " ");
   const definitions = {
     showed: "Answers that listed web pages as sources. The sites and shares on this tab come from these answers.",
-    none: "Answers given without listing any web page, so they add no sites to this tab.",
+    none: "Answers given without showing a web page. These rely on what the model already knows.",
     links: "Every web page those answers listed. One answer can list several.",
     owned: "Links that lead to fender.com and other Fender-owned sites.",
   };
