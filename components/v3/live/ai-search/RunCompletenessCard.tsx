@@ -5,7 +5,13 @@ import { EvidenceLink } from "@/components/v3/live/ai-search/EvidenceLink";
 import { mutedText } from "@/components/v3/live/ai-search/AiReadGate";
 import { AI_TABS } from "@/lib/ai-search/canvas-surfaces";
 import { formatRunTime } from "@/lib/ai-search/run-metrics";
-import { engineModelLine, errorLine, runStateLabel, summarizeRun } from "@/lib/ai-search/summary";
+import {
+  answeredOfCallsLine,
+  engineModelLine,
+  errorLine,
+  runStateLabel,
+  summarizeRun,
+} from "@/lib/ai-search/summary";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
 import { distinctCallRunIds, isWindowHistoryKind } from "@/lib/ai-search/window-display";
 
@@ -84,7 +90,10 @@ function WindowCard({ snapshot }: { snapshot: AiSearchSnapshot }) {
             </td>
           </tr>
           <tr><td>Engines and models</td><td>{engineModelLine(s.enginesAndModels)}</td></tr>
-          <tr><td>Answered call rows</td><td>{s.completeness.rowsRead}</td></tr>
+          <tr>
+            <td>Calls in this selection</td>
+            <td data-ai-window-calls>{answeredOfCallsLine(s.completeness)}</td>
+          </tr>
         </tbody>
       </table>
     </div>

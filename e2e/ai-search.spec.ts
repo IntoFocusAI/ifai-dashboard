@@ -31,6 +31,7 @@ test.describe("AI Search Visibility", () => {
     await expect(page.locator(".ai-engine-table tbody tr")).not.toHaveCount(0);
     await expect(page.locator(".ai-category-table [data-category='hallucinations']")).toHaveCount(0);
     await expect(page.locator("[data-ai-window-completeness]")).toContainText("Runs in this selection");
+    await expect(page.locator("[data-ai-window-calls]")).toHaveText(/^[\d,]+ answered of [\d,]+ calls?$/);
     await expect(page.locator(".ai-run-card")).not.toContainText("Expected calls");
   });
 

@@ -185,6 +185,12 @@ export function errorLine(summary: AiRunSummary): string {
   return `${total} ${noun} (${engines.map((e) => `${e.errors} ${engineLabel(e.engine)}`).join(", ")})`;
 }
 
+/** "4,601 answered of 6,628 calls", both counts from the call rows this read returned. */
+export function answeredOfCallsLine(c: RunCompleteness): string {
+  const count = (n: number) => n.toLocaleString("en-US");
+  return `${count(c.answeredRows)} answered of ${count(c.rowsRead)} ${c.rowsRead === 1 ? "call" : "calls"}`;
+}
+
 export function runStateLabel(state: string): string {
   if (state === "completed") return "Complete";
   if (state === "partial") return "Partial";
