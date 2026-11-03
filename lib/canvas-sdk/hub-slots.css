@@ -1,0 +1,109 @@
+/* Evidence hover slots (FDD X-22). Loaded after canvas-sdk.css, so equal specificity wins here. */
+
+.hub-slot.hub-evidence-slot {
+  gap: 2px;
+  padding: 8px 12px 8px 14px;
+}
+
+.hub-evidence-head,
+.hub-evidence-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+}
+
+.hub-evidence-head .ifai-term {
+  cursor: help;
+}
+
+.hub-evidence-hero .hub-slot-figure {
+  font-size: 28px;
+  overflow-wrap: anywhere;
+}
+
+.hub-slot-pie.hub-evidence-pie {
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+}
+
+.hub-slot-label.hub-evidence-label {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.hub-evidence-line,
+.hub-evidence-note {
+  color: var(--text-muted);
+  font-size: 11.5px;
+  line-height: 1.25;
+}
+
+.hub-evidence-line.hub-evidence-target {
+  color: var(--text-main);
+}
+
+.hub-evidence-note {
+  font-size: 11px;
+}
+
+.hub-evidence-link {
+  margin-top: 2px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent-cyan);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.hub-evidence-link:focus-visible {
+  outline: 2px solid var(--accent-cyan);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/*
+ * The shared definition tooltip centres itself above its term, which pushes it off
+ * the left and top edges for terms in this column. Open it beside the column instead.
+ * Transform is not transitioned here, so the tooltip never slides in from the edge.
+ */
+.ifai-canvas:has([data-hub-slots] .ifai-term:is(:hover, :focus)) .node-tooltip.node-tooltip-definition {
+  left: 298px !important;
+  transform: translate(0, -4px) scale(0.96);
+  transition: opacity 0.22s ease, visibility 0.22s ease;
+}
+
+.ifai-canvas:has([data-hub-slots] .ifai-term:is(:hover, :focus)) .node-tooltip.node-tooltip-definition.visible {
+  transform: translate(0, -4px) scale(1);
+}
+
+.ifai-canvas:has([data-hub-slots]) .node-tooltip.node-tooltip-definition:not(.visible) {
+  transition: none;
+}
+
+/* Keeps all three slots on screen on an 800px-tall laptop. */
+@media (max-height: 840px) {
+  .hub-evidence-hero .hub-slot-figure {
+    font-size: 26px;
+  }
+
+  .hub-slot-pie.hub-evidence-pie {
+    width: 28px;
+    height: 28px;
+  }
+
+  .hub-slot-label.hub-evidence-label {
+    line-height: 1.22;
+  }
+}

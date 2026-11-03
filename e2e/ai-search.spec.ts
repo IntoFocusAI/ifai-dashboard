@@ -44,7 +44,7 @@ test.describe("AI Search Visibility", () => {
 
     await page.locator("[data-graph-node-id='spoke-aeo']").focus();
     const slots = page.locator("[data-hub-slots]");
-    await expect(slots.locator("[data-hub-slot='gap']")).toContainText(/Fender led \d+ of \d+/);
+    await expect(slots.locator("[data-hub-slot='gap'] [data-hub-slot-count]")).toHaveText(/^[\d,]+ of [\d,]+ /);
     await expect(slots).not.toContainText("Overall AI Win Rate");
   });
 
