@@ -499,6 +499,41 @@ test("unchecked reason uses the first matching flag, then the stored explanation
   assert.match(table, /outcome === "not_checked" \? UNCHECKED_COLUMNS : COLUMNS/);
 });
 
+test("a 10-character ASIN links to its Amazon page and every other value stays text", () => {
+  const root = new URL("..", import.meta.url);
+  const table = readFileSync(new URL("components/v3/live/findability/FindabilityTable.tsx", root), "utf8");
+  const returnLine = table.match(
+    /return (\/\^\[A-Z0-9\]\{10\}\$\/\.test\(asin\) \? `https:\/\/www\.amazon\.com\/dp\/\$\{asin\}` : null);/,
+  );
+  assert.ok(returnLine?.[1]);
+  const amazonHref = new Function("asin", `return ${returnLine[1]}`) as (asin: string) => string | null;
+
+  assert.equal(amazonHref("B0EXACT001"), "https://www.amazon.com/dp/B0EXACT001");
+  assert.equal(amazonHref("B00BUNDLE1"), "https://www.amazon.com/dp/B00BUNDLE1");
+  assert.equal(amazonHref("0140000001"), "https://www.amazon.com/dp/0140000001");
+  assert.equal(amazonHref("B0VARSKU01"), "https://www.amazon.com/dp/B0VARSKU01");
+  assert.equal(amazonHref("b0exact001"), null);
+  assert.equal(amazonHref("B00ZEBRA"), null);
+  assert.equal(amazonHref("B00FAMILY"), null);
+  assert.equal(amazonHref("B00UNCHECKED"), null);
+  assert.equal(amazonHref("B0-NOPAGE1"), null);
+  assert.equal(amazonHref("B0EXACT001 "), null);
+  assert.equal(amazonHref(""), null);
+
+  const asinCell = table.slice(table.indexOf('case "asin"'), table.indexOf('case "title"'));
+  assert.match(asinCell, /amazonHref\(row\.asin\)/);
+  assert.match(asinCell, /className="listing-link"/);
+  assert.match(asinCell, /target="_blank"/);
+  assert.match(asinCell, /rel="noopener noreferrer"/);
+  assert.match(asinCell, /<span className="asin-chip">\{row\.asin\}<\/span>/);
+  assert.equal(asinCell.match(/<span className="asin-chip">\{row\.asin\}<\/span>/g)?.length, 2);
+
+  const skuCell = table.slice(table.indexOf('case "sku"'), table.indexOf('case "confidence"'));
+  assert.match(skuCell, /latest_variant_sku/);
+  assert.doesNotMatch(skuCell, /amazonHref|<a |amazon\.com/);
+  assert.equal(table.match(/case "asin"/g)?.length, 1);
+});
+
 test("the readiness face uses outcome counts instead of the older found percentage", () => {
   const rows = [
     ...repeat("exact_official_product", 89),

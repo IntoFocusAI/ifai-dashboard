@@ -65,6 +65,10 @@ function columnsFor(outcome: FindabilityBucket): readonly RetailColumn[] {
   return outcome === "not_checked" ? UNCHECKED_COLUMNS : COLUMNS;
 }
 
+function amazonHref(asin: string): string | null {
+  return /^[A-Z0-9]{10}$/.test(asin) ? `https://www.amazon.com/dp/${asin}` : null;
+}
+
 function OfficialPageCell({ row }: { row: FindabilityRow }) {
   const address = presentOfficialAddress(row);
   if (address.kind === "link") {
@@ -95,12 +99,20 @@ function ListingCell({
   bucket: FindabilityBucket;
 }) {
   switch (columnId) {
-    case "asin":
+    case "asin": {
+      const href = amazonHref(row.asin);
       return (
         <td className="asin-col">
-          <span className="asin-chip">{row.asin}</span>
+          {href ? (
+            <a className="listing-link" href={href} target="_blank" rel="noopener noreferrer">
+              <span className="asin-chip">{row.asin}</span>
+            </a>
+          ) : (
+            <span className="asin-chip">{row.asin}</span>
+          )}
         </td>
       );
+    }
     case "title":
       return (
         <td>
