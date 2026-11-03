@@ -306,6 +306,7 @@ test("Category Battlecards opens on the hero pie row, then the chips, the catego
   assert.match(panel, /sorted\.rows\.map/);
   assert.match(panel, /callsForEngine\(snapshot\.calls, filter\.engine\)/, "numbers come from the date pill's snapshot");
   assert.doesNotMatch(panel, /CategoryOnTrackVisual|leadSentence/, "the table already lists each category's figures");
+  assert.doesNotMatch(panel, /RoleSumLine|CategoryCompetitorLeadGraph|category-competitor-lead-marks/, "the pies replace the old lead graph");
 
   const heroes = read("components/v3/live/ai-search/CategoryBattleHeroes.tsx");
   const onTrackAt = heroes.indexOf("<OnTrackHero");
@@ -322,6 +323,7 @@ test("Category Battlecards opens on the hero pie row, then the chips, the catego
 
   const pies = read("components/v3/live/ai-search/CategoryLeadPies.tsx");
   assert.match(pies, /data-ai-battle-lead-graph=""/);
+  assert.match(pies, /AiTerm term="unbranded discovery"/);
   assert.match(pies, /data-ai-on-track-status=\{lead\.status\}/);
   assert.match(pies, /LEAD_STATUS_ICONS\[lead\.status\]/, "an icon and a word carry each status, not color alone");
   assert.match(pies, /<EvidenceLink focus=\{focus\} tab=\{AI_TABS\.simulations\}/, "a pie opens its table row's evidence");
