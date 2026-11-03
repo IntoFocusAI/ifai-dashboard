@@ -5,6 +5,7 @@ import { useMemo, useRef } from "react";
 import { CitationPieDisc } from "@/components/v3/live/ai-search/CitationPieDisc";
 import { MetricPicker } from "@/lib/canvas-sdk/MetricPicker";
 import { EMPTY_METRIC_SLOTS, useMetricSlots } from "@/lib/canvas-sdk/metric-slots";
+import { metricTermAttrs } from "@/lib/canvas-sdk/metric-term";
 import type { CanvasMinimalMetric } from "@/lib/canvas-sdk/minimal-view-types";
 import type { SpokeContent } from "@/lib/canvas-sdk/types";
 
@@ -17,34 +18,37 @@ type Props = {
 
 function LargeMetricBody({
   metric,
-  category,
+  spokeLabel,
   onOpen,
 }: {
   metric: CanvasMinimalMetric;
-  category: string | undefined;
+  spokeLabel: string | undefined;
   onOpen: () => void;
 }) {
-  const { reading } = metric;
-  const tab = metric.subTab ?? category;
+  const { reading, definition } = metric;
+  const tab = metric.subTab ?? spokeLabel;
   const length = metric.value.length > 14 ? " is-longer" : metric.value.length > 7 ? " is-long" : "";
+  const notes = [definition, reading.missing].filter(Boolean).join(" ");
   return (
     <button
       type="button"
       className="large-metric-body"
       onClick={onOpen}
-      aria-label={`Open ${metric.label} in ${category}${reading.missing ? `. ${reading.missing}` : ""}`}
+      aria-label={`Open ${metric.label} in ${spokeLabel}${notes ? `. ${notes}` : ""}`}
       data-metric-id={metric.id}
     >
-      <span className="metric-widget-category">{category}</span>
-      <span className="large-metric-label">{metric.label}</span>
+      <span className="metric-widget-category">{metric.area ?? spokeLabel}</span>
+      <span className="large-metric-label">
+        <span className={definition ? "ifai-term" : undefined} {...metricTermAttrs(metric.label, definition)}>
+          {metric.label}
+        </span>
+      </span>
       <span className="large-metric-row">
         <span className="large-metric-figures">
           <strong
             className={`large-metric-value tone-${metric.tone ?? "neutral"}${length}${reading.missing ? " ifai-term" : ""}`}
             data-large-metric-value=""
-            {...(reading.missing
-              ? { "data-ifai-tooltip-title": metric.value, "data-ifai-tooltip-desc": reading.missing }
-              : {})}
+            {...metricTermAttrs(metric.value, reading.missing)}
           >
             {metric.value}
           </strong>
@@ -88,7 +92,7 @@ export function LargeMetricSlots({ metrics, storageKey, spokes, onOpenMetric }: 
       {slots.map((metricId, slotIndex) => {
         const metric = metricId ? metricsById.get(metricId) : undefined;
         const spoke = metric ? spokes[metric.spokeId] : undefined;
-        const category = spoke?.navLabel ?? spoke?.title;
+        const spokeLabel = spoke?.navLabel ?? spoke?.title;
         const pickerOpen = activeSlot === slotIndex;
         const slotName = `large slot ${slotIndex + 1}`;
 
@@ -101,7 +105,7 @@ export function LargeMetricSlots({ metrics, storageKey, spokes, onOpenMetric }: 
             {metric ? (
               <LargeMetricBody
                 metric={metric}
-                category={category}
+                spokeLabel={spokeLabel}
                 onOpen={() => onOpenMetric(metric.spokeId, metric.subTab)}
               />
             ) : (

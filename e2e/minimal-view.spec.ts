@@ -28,6 +28,7 @@ test.describe("Minimal / Balanced view switch", () => {
       "AI Readiness",
       "Competitive Radar",
       "Action Items",
+      "Other",
     ]);
     await expect.poll(() => dialog.locator("[data-metric-option]").count()).toBeGreaterThanOrEqual(38);
     await expect(dialog.locator("[data-metric-option='suppressed-buy-box-withheld']")).toBeVisible();
@@ -42,6 +43,34 @@ test.describe("Minimal / Balanced view switch", () => {
     await expect(slot).toBeVisible();
     await slot.click();
     await expect(canvas.activeTab).toContainText("MAP");
+  });
+
+  test("each question category and each Other figure is an option that opens its tab", async ({ canvas, page }) => {
+    await page.locator("[data-view-mode='minimal']").click();
+    await page.getByRole("button", { name: "Add metric to large slot 1" }).click();
+    let dialog = page.getByRole("dialog", { name: "Choose metric for large slot 1" });
+    for (const category of ["electrics", "acoustics", "amps", "basses", "squier", "beginner"]) {
+      await expect(dialog.locator(`[data-metric-option='battlecards-${category}-unbranded']`)).toBeVisible();
+    }
+    const other = dialog.locator(".metric-widget-group").last();
+    await expect(other.locator("h3")).toHaveText("Other");
+    await expect(other.locator("[data-metric-option]")).toHaveCount(8);
+    const actuation = other.locator("[data-metric-option='ai-actuation']");
+    await expect(actuation.locator("small.ifai-term")).toHaveText("Not available*");
+    await expect(actuation.locator("strong .ifai-term")).toHaveAttribute("data-ifai-tooltip-desc", /No tab shows/);
+    await actuation.click();
+    const slot = page.locator(".large-metric-body[data-metric-id='ai-actuation']");
+    await expect(slot.locator(".metric-widget-category")).toHaveText("Other");
+    await expect(slot.locator("[data-large-metric-value]")).toHaveText("Not available*");
+    await slot.click();
+    await expect(canvas.activeTab).toContainText("Performance");
+    await page.locator(".drilldown-hide-btn").click();
+
+    await page.getByRole("button", { name: "Add metric to large slot 2" }).click();
+    dialog = page.getByRole("dialog", { name: "Choose metric for large slot 2" });
+    await dialog.locator("[data-metric-option='battlecards-electrics-unbranded']").click();
+    await page.locator(".large-metric-body[data-metric-id='battlecards-electrics-unbranded']").click();
+    await expect(canvas.activeTab).toContainText("Category Battlecards");
   });
 
   test("a picked metric matches the map, opens its tab, and is remembered", async ({ canvas, page }) => {

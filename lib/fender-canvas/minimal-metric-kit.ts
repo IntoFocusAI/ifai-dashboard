@@ -6,7 +6,7 @@
 import type { PieDiscData } from "@/lib/ai-search/citation-pies";
 import { roleRateLead, summarizeRun, type AiRunSummary } from "@/lib/ai-search/summary";
 import type { AiSearchRead, AiSearchSnapshot } from "@/lib/ai-search/types";
-import type { CanvasMetricReading } from "@/lib/canvas-sdk/minimal-view-types";
+import type { CanvasMetricPlacement, CanvasMetricReading } from "@/lib/canvas-sdk/minimal-view-types";
 import type { CanvasMetric, CanvasNode, NodeStatus } from "@/lib/canvas-sdk/types";
 import type { FindabilityRead } from "@/lib/findability/copy";
 import type { AmazonFieldTotals } from "@/lib/fender-canvas/ai-readiness-lead";
@@ -59,6 +59,8 @@ export type MinimalEntry = {
   tab: string;
   label: string | ((ctx: MinimalContext) => string);
   provenance?: "live" | "estimate";
+  area?: CanvasMetricPlacement["area"];
+  definition?: string;
   /** False leaves the option out of the picker, e.g. a sales source with no listings. */
   offered?: (ctx: MinimalContext) => boolean;
   read: (ctx: MinimalContext) => MinimalFigure;

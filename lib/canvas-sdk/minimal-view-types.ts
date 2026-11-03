@@ -15,7 +15,15 @@ export type CanvasMetricReading = {
   missing: string | null;
 };
 
-export type CanvasMinimalMetric = CanvasMetric & { reading: CanvasMetricReading };
+/** Set on a figure no tab shows yet. */
+export type CanvasMetricPlacement = {
+  /** Picker group and slot overline, listed after the map areas. The slot still opens `spokeId`. */
+  area?: "Other";
+  /** Where the figure comes from. Shown as the tooltip on its label. */
+  definition?: string;
+};
+
+export type CanvasMinimalMetric = CanvasMetric & CanvasMetricPlacement & { reading: CanvasMetricReading };
 
 export type CanvasMinimalView = {
   /** Both slot sizes pick from this list. */

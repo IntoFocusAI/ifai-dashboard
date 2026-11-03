@@ -2,12 +2,13 @@
  * Metrics the Minimal view slots pick from: the headline figures each tab leads with, grouped
  * by area in map order. A map bubble's entry reads the same figure as the bubble. Every other
  * entry reads its tab's own hero model, so the value, the N of M, and the disc match that tab.
- * A new figure is one entry in its area's list.
+ * Figures no tab shows yet come last, under Other. A new figure is one entry in its area's list.
  */
 
 import type { CanvasMetricReading, CanvasMinimalMetric } from "@/lib/canvas-sdk/minimal-view-types";
 import type { CanvasNode } from "@/lib/canvas-sdk/types";
 import { AI_SEARCH_ENTRIES, COMPETITIVE_ENTRIES } from "@/lib/fender-canvas/minimal-metrics-ai";
+import { OTHER_ENTRIES } from "@/lib/fender-canvas/minimal-metrics-other";
 import { READINESS_ENTRIES } from "@/lib/fender-canvas/minimal-metrics-readiness";
 import { RETAIL_ENTRIES } from "@/lib/fender-canvas/minimal-metrics-retail";
 import { ACTION_ITEM_ENTRIES, SUMMARY_ENTRIES } from "@/lib/fender-canvas/minimal-metrics-summary";
@@ -15,7 +16,7 @@ import type { MinimalContext, MinimalListItem, MinimalMetricInput } from "@/lib/
 
 export { NOT_AVAILABLE, type MinimalMetricInput, type StockLossRead } from "@/lib/fender-canvas/minimal-metric-kit";
 
-/** Summary, Catalog Health, AI Search Visibility, AI Readiness, Competitive Radar, Action Items. */
+/** Summary, Catalog Health, AI Search Visibility, AI Readiness, Competitive Radar, Action Items, then Other. */
 export const MINIMAL_ENTRIES: readonly MinimalListItem[] = [
   ...SUMMARY_ENTRIES,
   ...RETAIL_ENTRIES,
@@ -23,6 +24,7 @@ export const MINIMAL_ENTRIES: readonly MinimalListItem[] = [
   ...READINESS_ENTRIES,
   ...COMPETITIVE_ENTRIES,
   ...ACTION_ITEM_ENTRIES,
+  ...OTHER_ENTRIES,
 ];
 
 /** A value that already reads "N of M" keeps only the noun on the line under it. */
@@ -56,6 +58,8 @@ export function buildMinimalMetrics(nodes: CanvasNode[], input: MinimalMetricInp
         subTab: entry.tab,
         provenance,
         reading,
+        ...(entry.area ? { area: entry.area } : {}),
+        ...(entry.definition ? { definition: entry.definition } : {}),
       },
     ];
   });

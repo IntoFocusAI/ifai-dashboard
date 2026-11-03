@@ -239,10 +239,14 @@ test("the list offers most headline figures, grouped by area, and each opens a t
   assert.equal(new Set(ids).size, ids.length, "each option once");
   const keys = MINIMAL_ENTRIES.map((item) => ("family" in item ? item.family : item.id));
   assert.equal(new Set(keys).size, keys.length, "entry ids are unique");
-  const areas = slots.map((slot) => AREA_ORDER.indexOf(slot.spokeId));
+  const firstOther = slots.findIndex((slot) => slot.area === "Other");
+  assert.ok(firstOther > 0, "Other has options");
+  assert.ok(slots.slice(firstOther).every((slot) => slot.area === "Other"), "Other comes last");
+  const mapped = slots.slice(0, firstOther);
+  const areas = mapped.map((slot) => AREA_ORDER.indexOf(slot.spokeId));
   assert.ok(areas.every((area) => area >= 0), "every option sits in one of the six areas");
   assert.deepEqual([...areas].sort((a, b) => a - b), areas, "areas run Summary through Action Items");
-  assert.deepEqual([...new Set(slots.map((slot) => slot.spokeId))], AREA_ORDER, "every area has options");
+  assert.deepEqual([...new Set(mapped.map((slot) => slot.spokeId))], AREA_ORDER, "every area has options");
   for (const slot of slots) {
     const tab = openedTab(slot.spokeId, slot.subTab);
     assert.ok(tab, `${slot.id} subTab "${slot.subTab}" opens no tab`);
@@ -329,6 +333,88 @@ test("Category Battlecards offers one option per question category, each with it
   for (const id of ids) assert.equal(slotById(loading, id).value, "Loading", `${id} waits for the run`);
 });
 
+const OTHER: Record<string, [spokeId: string, tab: string]> = {
+  "buy-box-retention": ["ecommerce", "Retail Overview"],
+  "seller-data-coverage": ["ecommerce", "Retail Overview"],
+  "stranded-reviews": ["ecommerce", "Catalog Governance"],
+  "beginner-sov-gap": ["competitors", "Category Battlecards"],
+  "strongest-category-sov": ["competitors", "Category Battlecards"],
+  "resolved-simulations": ["aeo", "Run Summary"],
+  "ai-actuation": ["hub", "Performance"],
+  "day-90-buy-box-target": ["roadmap", "30-60-90 Day Milestones"],
+};
+
+function storedBundle(): CanvasBundle {
+  const b = bundle();
+  return {
+    ...b,
+    m: { ...b.m, catalog_skus: 3718, bb_1p: 79, bb_total: 1107, bb_1p_pct: 7.1, seller_harvested: 1108, seller_harvested_pct: 29.8, bundle_reviews: null },
+  };
+}
+
+test("Other lists the figures no tab shows, last, each opening its closest tab with a definition", () => {
+  const { slots } = build(retailReady(), aiReady(), findability, { b: storedBundle() });
+  const others = slots.filter((slot) => slot.area === "Other");
+  assert.deepEqual(others.map((slot) => slot.id), Object.keys(OTHER), "in the order PM20 listed them");
+  for (const slot of others) {
+    const [spokeId, tab] = OTHER[slot.id];
+    assert.equal(slot.spokeId, spokeId, `${slot.id} spoke`);
+    assert.equal(openedTab(slot.spokeId, slot.subTab), tab, `${slot.id} opens ${tab}`);
+    assert.match(slot.definition ?? "", /No tab shows/, `${slot.id} says no tab shows it yet`);
+    assert.doesNotMatch(slot.definition ?? "", /\u2014/);
+    if (slot.value === NOT_AVAILABLE) assert.ok(slot.reading.missing, `${slot.id} explains the missing input`);
+  }
+  assert.equal(slots.filter((slot) => slot.area !== "Other").some((slot) => slot.definition), false, "only Other carries a definition");
+
+  const share = slotById(slots, "buy-box-retention");
+  assert.equal(share.label, "Amazon 1P Buy Box share");
+  assert.equal(share.value, "7.1%");
+  assert.equal(share.reading.ratio, "79 of 1,107 listings in the stored Buy Box count");
+  assert.equal(share.tone, "danger");
+  const sellers = slotById(slots, "seller-data-coverage");
+  assert.equal(sellers.value, "29.8%");
+  assert.equal(sellers.reading.ratio, "1,108 of 3,718 catalog listings");
+  const reviews = slotById(slots, "stranded-reviews");
+  assert.equal(reviews.value, NOT_AVAILABLE);
+  assert.equal(reviews.reading.missing, "The catalog metrics row does not store a stranded review count.");
+
+  const gap = slotById(slots, "beginner-sov-gap");
+  assert.equal(gap.value, "+100.0 pts");
+  assert.equal(gap.reading.ratio, "Fender/Squier 2 of 2 resolved Beginner unbranded discovery answers. No competitor led one.");
+  const best = slotById(slots, "strongest-category-sov");
+  assert.equal(best.label, "Strongest category: Amps");
+  assert.equal(best.value, slotById(slots, "battlecards-amps-unbranded").value, "reads the category's own option");
+  assert.equal(best.reading.ratio, slotById(slots, "battlecards-amps-unbranded").reading.ratio);
+  const answered = slotById(slots, "resolved-simulations");
+  assert.match(answered.value, /^\d[\d,]* of \d[\d,]*$/);
+  assert.equal(answered.reading.ratio, "calls answered", "the count is not repeated under the value");
+  const actuation = slotById(slots, "ai-actuation");
+  assert.equal(actuation.value, NOT_AVAILABLE, "AI Actuation has no records yet");
+  assert.equal(actuation.reading.missing, "No owner, evidence, or dated records yet.");
+  const plan = slotById(slots, "day-90-buy-box-target");
+  assert.equal(plan.value, "3 phases", "reads the Strategy Roadmap bubble");
+  assert.equal(plan.reading.ratio, "MAP, catalog nesting, and estimated lift");
+  assert.match(plan.definition ?? "", /a plan, not a measured result/);
+
+  const unstored = build(retailReady(), { phase: "error", message: "down" }).slots;
+  for (const id of ["buy-box-retention", "seller-data-coverage", "beginner-sov-gap", "strongest-category-sov", "resolved-simulations"]) {
+    const slot = slotById(unstored, id);
+    assert.equal(slot.value, NOT_AVAILABLE, `${id} without its input`);
+    assert.ok(slot.reading.missing, `${id} explains the missing input`);
+  }
+  assert.equal(slotById(unstored, "strongest-category-sov").label, "Strongest category");
+
+  const picker = read("lib/canvas-sdk/MetricPicker.tsx");
+  assert.match(picker, /\.\.\.areas, \.\.\.extra/, "Other follows the map areas");
+  assert.match(picker, /metricTermAttrs\(option\.label, option\.definition\)/, "the definition is the label's tooltip");
+  assert.match(picker, /metricTermAttrs\(option\.value, option\.reading\?\.missing\)/, "Not available* carries its reason");
+  for (const file of ["lib/canvas-sdk/LargeMetricSlots.tsx", "lib/canvas-sdk/MetricWidgets.tsx"]) {
+    const source = read(file);
+    assert.match(source, /area \?\? spokeLabel/, `${file} shows Other as the overline`);
+    assert.match(source, /metricTermAttrs\(metric\.label, definition\)/, `${file} puts the definition on the label`);
+  }
+});
+
 test("the AI Consensus and AI Commerce options match Performance and Retail Overview with the viewer's authorized sellers", () => {
   const retail = retailReady();
   const ai = aiReady();
@@ -375,10 +461,11 @@ test("each live figure says N of M and the larger slots carry the tab's disc", (
     "battlecards-branded", "battlecards-electrics-unbranded", "battlecards-acoustics-unbranded",
     "battlecards-amps-unbranded", "battlecards-basses-unbranded", "battlecards-beginner-unbranded", "sat-taylor", "sat-amps", "engines-unbranded",
     "engines-branded", "summary-ai-consensus", "summary-ai-foundation", "summary-ai-commerce",
+    "beginner-sov-gap", "strongest-category-sov", "resolved-simulations",
   ];
   const averages = ["map-average-gap"];
   for (const slot of slots) {
-    if (slot.provenance === "estimate") continue;
+    if (slot.provenance === "estimate" || slot.id === "day-90-buy-box-target") continue;
     if (averages.includes(slot.id)) {
       assert.equal(slot.value, "-$20.00");
       assert.equal(slot.reading.ratio, "Across 1 listing below MAP");
@@ -434,8 +521,9 @@ test("a missing input reads Not available* or the bubble's waiting word, with a 
   assert.equal(slotById(slots, "briefing-amazon-buy-box").value, NOT_AVAILABLE, "no offer split in this fixture");
   assert.equal(slotById(slots, "amazon-specs-completeness").value, NOT_AVAILABLE, "no completeness average in this fixture");
   const source = read("lib/canvas-sdk/LargeMetricSlots.tsx") + read("lib/canvas-sdk/MetricWidgets.tsx");
-  assert.match(source, /data-ifai-tooltip-desc/);
+  assert.match(source, /metricTermAttrs\(metric\.value, (reading\.)?missing\)/);
   assert.match(source, /ifai-term/);
+  assert.match(read("lib/canvas-sdk/metric-term.ts"), /"data-ifai-tooltip-desc": desc/);
 });
 
 test("Phase 1 stays an analyst estimate and nothing mentions fees", () => {
@@ -456,7 +544,9 @@ test("Phase 1 stays an analyst estimate and nothing mentions fees", () => {
   for (const slot of slots.filter((item) => /\$/.test(item.value) && item.id !== measuredPriceGap)) {
     assert.equal(slot.provenance, "estimate", `${slot.id} dollar figure stays an analyst estimate`);
   }
-  const copy = slots.flatMap((slot) => [slot.label, slot.detail, slot.reading.ratio ?? "", slot.reading.missing ?? ""]).join("\n");
+  const copy = slots
+    .flatMap((slot) => [slot.label, slot.detail, slot.reading.ratio ?? "", slot.reading.missing ?? "", slot.definition ?? ""])
+    .join("\n");
   assert.doesNotMatch(copy, /\bfees?\b|retainer|monthly charge|service-fee|\bROI\b/i);
   assert.doesNotMatch(copy, /\u2014/, "no em dash in client copy");
 });
@@ -474,6 +564,8 @@ test("the switch offers only Minimal and Balanced and the shell wiring stays min
     "lib/fender-canvas/minimal-metrics-retail.ts",
     "lib/fender-canvas/minimal-metrics-ai.ts",
     "lib/fender-canvas/minimal-metrics-readiness.ts",
+    "lib/fender-canvas/minimal-metrics-other.ts",
+    "lib/canvas-sdk/metric-term.ts",
     "components/v3/live/useMinimalMetricReads.ts",
   ];
   for (const file of files) {

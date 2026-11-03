@@ -4,6 +4,7 @@ import { Plus, Wrench } from "lucide-react";
 import { useMemo, useRef } from "react";
 import { MetricPicker } from "@/lib/canvas-sdk/MetricPicker";
 import { useMetricSlots, type MetricSlotIds } from "@/lib/canvas-sdk/metric-slots";
+import { metricTermAttrs } from "@/lib/canvas-sdk/metric-term";
 import type { CanvasMinimalMetric } from "@/lib/canvas-sdk/minimal-view-types";
 import type { CanvasMetricWidgets, SpokeContent } from "@/lib/canvas-sdk/types";
 
@@ -35,9 +36,12 @@ export function MetricWidgets({ config, spokes, onOpenMetric }: Props) {
       {slots.map((metricId, slotIndex) => {
         const metric = metricId ? metricsById.get(metricId) : undefined;
         const spoke = metric ? spokes[metric.spokeId] : undefined;
-        const category = spoke?.navLabel ?? spoke?.title;
+        const spokeLabel = spoke?.navLabel ?? spoke?.title;
         const pickerOpen = activeSlot === slotIndex;
-        const missing = (metric as Partial<CanvasMinimalMetric> | undefined)?.reading?.missing ?? null;
+        const minimal = metric as Partial<CanvasMinimalMetric> | undefined;
+        const missing = minimal?.reading?.missing ?? null;
+        const definition = minimal?.definition;
+        const notes = [definition, missing].filter(Boolean).join(" ");
 
         return (
           <div
@@ -50,16 +54,22 @@ export function MetricWidgets({ config, spokes, onOpenMetric }: Props) {
                 type="button"
                 className="metric-widget-body"
                 onClick={() => onOpenMetric(metric.spokeId, metric.subTab)}
-                aria-label={`Open ${metric.label} in ${category}${missing ? `. ${missing}` : ""}`}
+                aria-label={`Open ${metric.label} in ${spokeLabel}${notes ? `. ${notes}` : ""}`}
                 data-metric-id={metric.id}
               >
-                <span className="metric-widget-category">{category}</span>
-                <span className="metric-widget-label">{metric.label}</span>
+                <span className="metric-widget-category">{minimal?.area ?? spokeLabel}</span>
+                <span className="metric-widget-label">
+                  {definition ? (
+                    <span className="ifai-term" {...metricTermAttrs(metric.label, definition)}>
+                      {metric.label}
+                    </span>
+                  ) : (
+                    metric.label
+                  )}
+                </span>
                 <strong
                   className={`metric-widget-value tone-${metric.tone ?? "neutral"}${metric.value.length > 14 ? " is-longer" : ""}${missing ? " ifai-term" : ""}`}
-                  {...(missing
-                    ? { "data-ifai-tooltip-title": metric.value, "data-ifai-tooltip-desc": missing }
-                    : {})}
+                  {...metricTermAttrs(metric.value, missing)}
                 >
                   {metric.value}
                 </strong>

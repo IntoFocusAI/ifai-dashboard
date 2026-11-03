@@ -26,6 +26,7 @@ import {
   type MinimalContext,
   type MinimalEntry,
   type MinimalEntryFamily,
+  type MinimalFigure,
   type MinimalListItem,
 } from "@/lib/fender-canvas/minimal-metric-kit";
 
@@ -115,30 +116,33 @@ function categoryId(category: string): string {
 }
 
 /** One category's unbranded rate, as its Category Battlecards row reads it, small-sample mark included. */
-function categoryUnbrandedEntry(category: string): MinimalEntry {
+export function categoryUnbrandedFigure(ctx: MinimalContext, category: string): MinimalFigure {
   const name = categoryLabel(category);
+  return aiFigure(ctx, () => {
+    const all = categoryRows(ctx);
+    const row = all.find((item) => item.key === category);
+    if (!row) return missingFigure(`The published run asked no ${name} questions.`);
+    const tally = row.roles.unbranded_discovery;
+    const figure = rateFigure(
+      tally,
+      UNBRANDED_RATE_BANDS,
+      `resolved ${name} unbranded discovery answers`,
+      null,
+      `The published run has no resolved ${name} unbranded discovery answers.`,
+    );
+    const largest = Math.max(0, ...all.map((item) => item.roles.unbranded_discovery.resolved));
+    if (!figure.ratio || !isSmallSample(tally.resolved, largest)) return figure;
+    return { ...figure, ratio: `${figure.ratio} · ${SMALL_SAMPLE_LABEL}` };
+  });
+}
+
+function categoryUnbrandedEntry(category: string): MinimalEntry {
   return {
     id: categoryId(category),
     spokeId: "competitors",
     tab: "Category Battlecards",
-    label: `${name}: Fender leads in unbranded discovery`,
-    read: (ctx) =>
-      aiFigure(ctx, () => {
-        const all = categoryRows(ctx);
-        const row = all.find((item) => item.key === category);
-        if (!row) return missingFigure(`The published run asked no ${name} questions.`);
-        const tally = row.roles.unbranded_discovery;
-        const figure = rateFigure(
-          tally,
-          UNBRANDED_RATE_BANDS,
-          `resolved ${name} unbranded discovery answers`,
-          null,
-          `The published run has no resolved ${name} unbranded discovery answers.`,
-        );
-        const largest = Math.max(0, ...all.map((item) => item.roles.unbranded_discovery.resolved));
-        if (!figure.ratio || !isSmallSample(tally.resolved, largest)) return figure;
-        return { ...figure, ratio: `${figure.ratio} · ${SMALL_SAMPLE_LABEL}` };
-      }),
+    label: `${categoryLabel(category)}: Fender leads in unbranded discovery`,
+    read: (ctx) => categoryUnbrandedFigure(ctx, category),
   };
 }
 
