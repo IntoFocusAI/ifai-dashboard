@@ -390,7 +390,8 @@ function onScreenText(source: string): string[] {
 test("on-screen Citation copy says what each figure is, and its caveats sit in that figure's tooltip", () => {
   const dir = "components/v3/live/ai-search";
   // Required labels and error states stay on screen. "How these counts work" keeps its sentences.
-  const kept = [/^Not available\*$/, /hidden because .+ do not match/];
+  // "did not load" is the read-failure status; its database error is that phrase's tooltip.
+  const kept = [/^Not available\*$/, /hidden because .+ do not match/, /^did not load$/];
   for (const name of readdirSync(join(root, dir)).filter((file) => /^Citation\w*\.tsx$/.test(file))) {
     let source = read(join(dir, name));
     if (name === "CitationEcosystemPanel.tsx") {
