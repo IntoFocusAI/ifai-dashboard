@@ -18,14 +18,17 @@ const HISTORY_CITATION_COLUMNS =
   "audit_run_id,sim_id,simulation_id,prompt_key,prompt_kind,category,engine,position,url,domain,title";
 
 const PAGE = 1000;
+/** A full run is about 2,000 calls and 8,000 citations. Past this cap the read fails instead of truncating. */
+const RUN_MAX_PAGES = 50;
 
 type DbError = { message: string; code?: string } | null;
 
-type ListQuery = PromiseLike<{ data: unknown; error: DbError }> & {
-  order: (column: string, options?: { ascending?: boolean }) => {
-    range: (from: number, to: number) => PromiseLike<{ data: unknown; error: DbError }>;
-  };
-  eq: (column: string, value: string) => PromiseLike<{ data: unknown; error: DbError }>;
+type ReadResult = { data: unknown; error: DbError };
+
+type ListQuery = PromiseLike<ReadResult> & {
+  eq: (column: string, value: string) => ListQuery;
+  order: (column: string, options?: { ascending?: boolean }) => ListQuery;
+  range: (from: number, to: number) => PromiseLike<ReadResult>;
 };
 
 /** The slice of the browser client the history reads use. */
@@ -81,6 +84,35 @@ export async function loadHistoryCatalog(
   }
 }
 
+/**
+ * Every row one run has in a history view. The server returns at most 1,000 rows
+ * per request, so the read pages. The order columns must be unique within a run,
+ * or offset pages can repeat some rows and skip others.
+ */
+export async function readRunPages<T>(
+  client: HistoryReadClient,
+  view: string,
+  columns: string,
+  runId: string,
+  order: readonly string[],
+): Promise<{ rows: T[]; error: DbError }> {
+  const rows: T[] = [];
+  for (let page = 0; page < RUN_MAX_PAGES; page += 1) {
+    const from = page * PAGE;
+    let query = client.from(view).select(columns).eq("audit_run_id", runId);
+    for (const column of order) query = query.order(column, { ascending: true });
+    const { data, error } = await query.range(from, from + PAGE - 1);
+    if (error) return { rows, error };
+    const batch = (data ?? []) as T[];
+    rows.push(...batch);
+    if (batch.length < PAGE) return { rows, error: null };
+  }
+  return {
+    rows,
+    error: { message: `${view} has more than ${RUN_MAX_PAGES * PAGE} rows for this run, so the read stopped.` },
+  };
+}
+
 function keepRun<T extends { audit_run_id: string }>(rows: T[], runId: string): T[] {
   return rows.filter((row) => row.audit_run_id === runId);
 }
@@ -102,10 +134,20 @@ export async function loadHistorySnapshot(client: HistoryReadClient, runId: stri
   }
 
   try {
+    // sim_id is unique within a run, and position is unique within a call's citations.
     const [calls, probes, citations] = await Promise.all([
-      client.from("canvas_ai_history_calls").select(HISTORY_CALL_COLUMNS).eq("audit_run_id", runId),
-      client.from("canvas_ai_history_probes").select(HISTORY_PROBE_COLUMNS).eq("audit_run_id", runId),
-      client.from("canvas_ai_history_citations").select(HISTORY_CITATION_COLUMNS).eq("audit_run_id", runId),
+      readRunPages<AiCallRow>(client, "canvas_ai_history_calls", HISTORY_CALL_COLUMNS, runId, ["sim_id", "id"]),
+      readRunPages<AiProbeRow & { answer_text?: string | null }>(
+        client,
+        "canvas_ai_history_probes",
+        HISTORY_PROBE_COLUMNS,
+        runId,
+        ["sim_id"],
+      ),
+      readRunPages<AiCitationRow>(client, "canvas_ai_history_citations", HISTORY_CITATION_COLUMNS, runId, [
+        "sim_id",
+        "position",
+      ]),
     ]);
     for (const result of [calls, probes, citations]) {
       if (result.error) {
@@ -114,8 +156,8 @@ export async function loadHistorySnapshot(client: HistoryReadClient, runId: stri
           : { phase: "error", message: result.error.message };
       }
     }
-    const callRows = keepRun((calls.data ?? []) as AiCallRow[], runId);
-    const probeRows = keepRun((probes.data ?? []) as Array<AiProbeRow & { answer_text?: string | null }>, runId).map(
+    const callRows = keepRun(calls.rows, runId);
+    const probeRows = keepRun(probes.rows, runId).map(
       (probe) => {
         const call = callRows.find((row) => row.sim_id === probe.sim_id);
         if (call && probe.answer_text !== undefined && call.answer_text === undefined) call.answer_text = probe.answer_text;
@@ -144,7 +186,7 @@ export async function loadHistorySnapshot(client: HistoryReadClient, runId: stri
         run: current,
         calls: callRows,
         probes: probeRows,
-        citations: keepRun((citations.data ?? []) as AiCitationRow[], runId),
+        citations: keepRun(citations.rows, runId),
       },
     };
   } catch (error) {
