@@ -390,6 +390,15 @@ test("outcome buttons carry the explore chevron on the button", () => {
   );
 });
 
+test("Findability opens with the Exact official product page outcome selected", () => {
+  const root = new URL("..", import.meta.url);
+  const panel = readFileSync(new URL("components/v3/live/findability/FindabilityPanel.tsx", root), "utf8");
+  assert.match(panel, /useState<FindabilityBucket \| null>\("exact_official_product"\)/);
+  assert.doesNotMatch(panel, /useState<FindabilityBucket \| null>\(null\)/);
+  assert.match(panel, /if \(read\.phase !== "ready" \|\| !selected\) return \[\]/);
+  assert.match(panel, /\{selected \? \(/);
+});
+
 test("findability listing cells stay short and drop the count column", () => {
   const root = new URL("..", import.meta.url);
   const table = readFileSync(new URL("components/v3/live/findability/FindabilityTable.tsx", root), "utf8");

@@ -100,7 +100,7 @@ function OutcomeCount({
 
 export function FindabilityPanel() {
   const read = useFindability();
-  const [selected, setSelected] = useState<FindabilityBucket | null>(null);
+  const [selected, setSelected] = useState<FindabilityBucket | null>("exact_official_product");
 
   const counts = useMemo(
     () => (read.phase === "ready" ? countFindability(read.rows) : null),
