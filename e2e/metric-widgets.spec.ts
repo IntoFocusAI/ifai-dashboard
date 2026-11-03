@@ -48,4 +48,29 @@ test.describe("bubble signal slots", () => {
     await page.mouse.click(10, 90);
     await expect(page.locator("[data-hub-slots]")).toHaveCount(0);
   });
+
+  test("each slot states its target, count, last check, and evidence link, and its rule is a definition", async ({ page }) => {
+    for (const id of ["hub", "spoke-retail", "spoke-aeo", "spoke-specs", "spoke-competitors", "spoke-fixes", "spoke-roadmap"]) {
+      await page.locator(`[data-graph-node-id='${id}']`).focus();
+      const slots = page.locator("[data-hub-slot]");
+      await expect(slots).toHaveCount(3);
+      for (let index = 0; index < 3; index += 1) {
+        const slot = slots.nth(index);
+        await expect(slot.locator("[data-hub-slot-status]")).not.toHaveText("");
+        await expect(slot.locator("[data-hub-slot-target]")).toHaveText(/^(Target: .+ \(now .+\)|No target set|Loading)$/);
+        await expect(slot.locator("[data-hub-slot-count]")).not.toHaveText("");
+        await expect(slot.locator("[data-hub-slot-checked]")).toHaveText(/^(Last checked .+|Loading)$/);
+        await expect(slot.locator("[data-hub-slot-link]")).toHaveText(/^Open .+/);
+        const rule = slot.locator("[data-hub-slot-rule] .ifai-term");
+        await expect(rule).toHaveAttribute("data-ifai-tooltip-desc", /^[A-Z].+\.$/);
+        await expect(rule).toHaveAttribute("tabindex", "0");
+        await expect(rule).not.toHaveAttribute("title");
+      }
+    }
+
+    await page.locator("[data-graph-node-id='spoke-retail']").focus();
+    await page.locator("[data-hub-slot='gap'] [data-hub-slot-rule] .ifai-term").focus();
+    await expect(page.locator(".node-tooltip-definition, .node-tooltip")).toBeVisible();
+    await expect(page.locator("[data-hub-slots]")).toHaveCount(1);
+  });
 });

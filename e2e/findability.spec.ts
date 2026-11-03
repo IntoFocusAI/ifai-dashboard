@@ -473,17 +473,15 @@ const OUTCOME_LISTINGS: Array<[string, string, string]> = [
 
 async function openFindabilityFromBubble(page: Page) {
   await page.locator("[data-graph-node-id='spoke-specs']").focus();
-  const slot = page.locator("[data-hub-slot='opportunity']");
-  await expect(slot.locator("[data-hub-slot-figure]")).toHaveText("2");
-  await expect(slot).toContainText("1 family page");
-  await expect(slot).toContainText("1 No Defensible Page");
-  await expect(slot).toContainText("1 ambiguous match");
-  await expect(slot).toContainText("1 unchecked listing");
-  await expect(slot).not.toContainText("%");
-  await expect(slot).not.toContainText("50.0%");
-  await expect(slot).not.toContainText("29.2%");
+  const slot = page.locator("[data-hub-slot='gap']");
+  await expect(slot).toHaveAttribute("data-hub-slot-tab", "Findability");
+  await expect(slot.locator("[data-hub-slot-figure]")).toHaveText("66.7%");
+  await expect(slot).toContainText("Listings without an exact official page");
+  await expect(slot.locator("[data-hub-slot-count]")).toHaveText("4 of 6 listings in the official-page read");
+  await expect(slot.locator("[data-hub-slot-target]")).toHaveText("No target set");
+  await expect(slot.locator("[data-hub-slot-checked]")).toHaveText("Last checked Oct 12, 2026");
   await expect(slot).not.toContainText("pages found");
-  await slot.click();
+  await slot.locator("[data-hub-slot-link]").click();
 }
 
 async function chevronAngle(button: ReturnType<Page["locator"]>) {

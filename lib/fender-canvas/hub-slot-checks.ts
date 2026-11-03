@@ -308,7 +308,7 @@ function aiChecks(ai: AiSearchRead): { checks: SlotCheck[]; categories: Category
         passLabel: "Not led by another brand",
         spokeId: "competitors",
         subTab: "Category Battlecards",
-        note: "Unbranded discovery only.",
+        note: "",
       });
       return check ? { ...check, category: battle.category, competitorWins: battle.competitorWins } : null;
     })
