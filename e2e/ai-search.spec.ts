@@ -300,6 +300,17 @@ test.describe("Competitive Radar", () => {
       .locator("[data-ai-battle-lead-graph]")
       .evaluate((el) => el.getBoundingClientRect().bottom);
     expect(piesBottom, "hero row and category pies fit a 1440 by 900 window").toBeLessThanOrEqual(900);
+    const theadTop = await cards.locator("thead").evaluate((el) => el.getBoundingClientRect().top);
+    expect(theadTop, "the table header starts inside a 1440 by 900 window").toBeLessThan(900);
+
+    await page.setViewportSize({ width: 1280, height: 720 });
+    const groupTops = await cards
+      .locator(".ai-battle-chip-group")
+      .evaluateAll((els) => els.map((el) => Math.round(el.getBoundingClientRect().top)));
+    expect(new Set(groupTops).size, "both chip groups share one row at 1280 wide").toBe(1);
+    const tileBottoms = await rows.evaluateAll((els) => els.map((el) => el.getBoundingClientRect().bottom));
+    expect(Math.max(...tileBottoms), "every category pie fits a 1280 by 720 window").toBeLessThanOrEqual(720);
+    await page.setViewportSize({ width: 1440, height: 900 });
     const total = await rows.count();
     const url = page.url();
 

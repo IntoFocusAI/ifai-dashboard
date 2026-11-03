@@ -117,10 +117,11 @@
   flex: 0 0 auto;
 }
 
+/* Six across from about 900px wide, so every category pie shares one row at 1280 by 720. */
 .ai-battle-pies {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(auto-fill, minmax(max(140px, calc((100% - 30px) / 6)), 1fr));
+  gap: 6px;
   margin: 8px 0 0;
   padding: 0;
   list-style: none;
@@ -129,9 +130,9 @@
 .ai-battle-pie {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 7px;
   min-width: 0;
-  padding: 8px;
+  padding: 7px;
   border: 1px solid var(--border-color);
   border-radius: 12px;
 }
@@ -158,8 +159,8 @@
 
 .ai-battle-pie .ai-battle-pie-disc,
 .ai-battle-pie .ai-battle-pie-empty {
-  width: 44px;
-  height: 44px;
+  width: 40px;
+  height: 40px;
   box-sizing: border-box;
 }
 
@@ -202,6 +203,15 @@
   flex: 0 0 auto;
 }
 
+/* Six tiles across leave "Not available*" too little room on one line. */
+.ai-battle-pie .ai-ontrack-badge.tag-badge {
+  max-width: 100%;
+  padding: 3px 6px;
+  gap: 4px;
+  white-space: normal;
+  line-height: 1.2;
+}
+
 .ai-battle-row-status {
   margin-top: 6px;
 }
@@ -212,13 +222,13 @@
   color: var(--text-muted);
 }
 
-/* Filter chips */
+/* Filter chips: the engine and who-leads groups share one row at 1280 wide, the status line sits under them. */
 .ai-battle-chips {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px 18px;
-  padding: 10px 12px;
+  gap: 6px 16px;
+  padding: 7px 10px;
   border: 1px solid var(--border-color);
   border-radius: 12px;
   background: color-mix(in srgb, var(--border-color) 22%, transparent);
@@ -228,7 +238,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
 }
 
 .ai-battle-chip-group-label {
@@ -241,14 +251,16 @@
 .ai-battle-chip {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 5px 12px;
+  gap: 4px;
+  min-height: 24px;
+  box-sizing: border-box;
+  padding: 3px 9px;
   border: 1px solid var(--border-dark);
   border-radius: 999px;
   background: transparent;
   color: var(--text-muted);
   font: inherit;
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   line-height: 1.3;
   cursor: pointer;
@@ -288,8 +300,9 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px 10px;
-  font-size: 13px;
+  gap: 4px 8px;
+  min-height: 24px;
+  font-size: 12.5px;
   color: var(--text-muted);
 }
 
@@ -297,19 +310,21 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 3px 8px 3px 10px;
+  min-height: 24px;
+  box-sizing: border-box;
+  padding: 2px 7px 2px 9px;
   border: 1px solid var(--accent-purple);
   border-radius: 999px;
   background: color-mix(in srgb, var(--accent-purple) 16%, transparent);
   color: var(--text-main);
   font: inherit;
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
 }
 
 .ai-battle-clear {
-  padding: 3px 4px;
+  padding: 2px 4px;
   border: 0;
   background: none;
   color: var(--text-main);

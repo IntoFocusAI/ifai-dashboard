@@ -319,6 +319,12 @@ test("Category Battlecards opens on the hero pie row, then the chips, the catego
   const css = read("components/v3/live/ai-search/category-battlecards.css");
   assert.match(css, /\.ai-battle-heroes > \[data-ai-run-details-lead\] \{\s*display: contents;/);
   assert.match(css, /grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/);
+  assert.match(
+    css,
+    /\.ai-battle-pies \{[^}]*grid-template-columns: repeat\(auto-fill, minmax\(max\(140px, calc\(\(100% - 30px\) \/ 6\)\), 1fr\)\);[^}]*gap: 6px;/,
+    "at most six pies a row, so all six share one row at 1280 by 720",
+  );
+  assert.match(css, /\.ai-battle-heroes \.citation-pie-disc \{\s*width: 62px;\s*height: 62px;/, "hero pies stay at 62px");
   for (const size of css.matchAll(/font-size:\s*([\d.]+)px/g)) assert.ok(Number(size[1]) >= 10, `${size[0]} keeps the 10px floor`);
 
   const pies = read("components/v3/live/ai-search/CategoryLeadPies.tsx");
