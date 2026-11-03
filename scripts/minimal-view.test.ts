@@ -616,5 +616,5 @@ test("the switch offers only Minimal and Balanced and the shell wiring stays min
   assert.match(shell, /<ViewModeSwitch views=\{views\} \/>\s*\{spec\.headerSlot\}/);
   assert.match(shell, /<MinimalView views=\{views\} spokes=\{spec\.spokes\} onOpenMetric=\{focusNode\} \/>/);
   assert.match(shell, /<HubSlots feeds=\{spec\.hubSlots\} bubbleId=\{inspectedBubbleId\} onOpen=\{focusNode\} \/>/);
-  assert.ok(shell.split("\n").length <= 1593, "CanvasShell does not grow");
+  assert.ok(shell.split("\n").length <= 1595, "CanvasShell does not grow past the bubble landing's import and call");
 });

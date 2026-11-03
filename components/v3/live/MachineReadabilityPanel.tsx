@@ -4,7 +4,7 @@ import { useState } from "react";
 import { MachineReadabilityPageTable } from "@/components/v3/live/MachineReadabilityPageTable";
 import { PageFoundTable } from "@/components/v3/live/PageFoundTable";
 import { ShareHeroCard } from "@/components/v3/live/ShareHeroCard";
-import { useLandOnPageFoundHero } from "@/components/v3/live/useLandOnPageFoundHero";
+import { openedFromPageFoundBubble, useLandOnPageFoundHero } from "@/components/v3/live/useLandOnPageFoundHero";
 import { usePageFoundEvidence } from "@/components/v3/live/usePageFoundEvidence";
 import {
   machineReadabilityHeroes,
@@ -58,11 +58,13 @@ export function MachineReadabilityPanel({
   summary: SpecPageSummary | null;
   metrics: CanvasMetricsRow | null;
 }) {
-  const [openTable, setOpenTable] = useState<OpenTable>("missing_specs");
+  const [openTable, setOpenTable] = useState<OpenTable>(() =>
+    openedFromPageFoundBubble() ? PAGE_FOUND_HERO_ID : "missing_specs",
+  );
   const heroes = machineReadabilityHeroes(summary);
   const pageFound = brandSitePageFoundHero(metrics);
   const pageFoundRead = usePageFoundEvidence(openTable === PAGE_FOUND_HERO_ID);
-  useLandOnPageFoundHero(PAGE_FOUND_ANCHOR);
+  useLandOnPageFoundHero(PAGE_FOUND_ANCHOR, () => setOpenTable(PAGE_FOUND_HERO_ID));
 
   function toggle(which: Exclude<OpenTable, "closed">) {
     setOpenTable((prev) => (prev === which ? "closed" : which));

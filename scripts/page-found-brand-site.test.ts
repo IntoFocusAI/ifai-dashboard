@@ -130,7 +130,8 @@ test("the AI Readiness bubble's page-found figure opens Brand-Site Specs at that
 
   const panel = read("components/v3/live/MachineReadabilityPanel.tsx");
   const land = read("components/v3/live/useLandOnPageFoundHero.ts");
-  assert.match(panel, /useLandOnPageFoundHero\(PAGE_FOUND_ANCHOR\)/);
-  assert.match(land, /data-graph-node-id="\$\{PAGE_FOUND_BUBBLE_ID\}"/);
+  assert.match(panel, /useLandOnPageFoundHero\(PAGE_FOUND_ANCHOR, \(\) => setOpenTable\(PAGE_FOUND_HERO_ID\)\)/);
+  assert.match(panel, /openedFromPageFoundBubble\(\) \? PAGE_FOUND_HERO_ID : "missing_specs"/);
+  assert.match(land, /usePanelLanding\(PAGE_FOUND_BUBBLE_ID, /);
   assert.match(land, /scrollIntoView/);
 });
