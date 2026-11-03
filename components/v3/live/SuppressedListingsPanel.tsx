@@ -1,13 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { CitationPieDisc } from "@/components/v3/live/ai-search/CitationPieDisc";
 import { DefinedTerm } from "@/components/v3/live/DefinedTerm";
 import { ResizableTable } from "@/components/v3/live/ResizableTable";
 import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
 import {
+  SET_ASIDE_COLUMN,
+  SetAsideCell,
+  SetAsideFormRow,
+  SetAsideHistory,
+  useCheckSetAsides,
+} from "@/components/v3/live/SetAsideTable";
+import { SET_ASIDE_CHECKS } from "@/lib/set-aside/keys";
+import {
   SUPPRESSED_LISTINGS_TABLE_COLUMNS,
-  SUPPRESSED_LISTINGS_TABLE_COLUMN_COUNT,
   FeaturedOfferTableRow,
 } from "@/components/v3/live/FeaturedOfferRow";
 import {
@@ -36,6 +43,8 @@ import type { CanvasFreshnessRow } from "@/lib/fender-canvas/types";
 
 const PAGE_SIZE = 1000;
 const RETAIL_PIE_SIZE = "citation-pie-disc citation-pie-disc-retail";
+
+const TABLE_COLUMNS = [...SUPPRESSED_LISTINGS_TABLE_COLUMNS, SET_ASIDE_COLUMN];
 
 const TOP_ROW_STYLE = {
   display: "flex",
@@ -253,6 +262,7 @@ export function SuppressedListingsPanel({
   }, []);
 
   const rows = typeof state === "object" ? state.rows : null;
+  const setAsides = useCheckSetAsides(SET_ASIDE_CHECKS.buyboxSuppression, "Suppressed Listings");
   const sorted = useClientTableSort(
     rows ?? [],
     SUPPRESSED_LISTINGS_TABLE_COLUMNS,
@@ -275,7 +285,7 @@ export function SuppressedListingsPanel({
         {rows ? (
           <ResizableTable
             tableId="suppressed-listings"
-            columns={SUPPRESSED_LISTINGS_TABLE_COLUMNS}
+            columns={TABLE_COLUMNS}
             freezeHeader
             maxHeight={520}
             sort={sorted.sort}
@@ -284,23 +294,36 @@ export function SuppressedListingsPanel({
             <tbody>
               {sorted.rows.length === 0 ? (
                 <tr>
-                  <td colSpan={SUPPRESSED_LISTINGS_TABLE_COLUMN_COUNT}>
+                  <td colSpan={TABLE_COLUMNS.length}>
                     No monitored listing has a withheld Buy Box in the current reading.
                   </td>
                 </tr>
               ) : (
-                sorted.rows.map((row) => (
-                  <FeaturedOfferTableRow
-                    key={String(row.asin ?? "")}
-                    row={row}
-                    showBuyBox={false}
-                    showSource={false}
-                  />
-                ))
+                sorted.rows.map((row) => {
+                  const asin = typeof row.asin === "string" ? row.asin : "";
+                  const valid = /^[A-Z0-9]{10}$/.test(asin);
+                  return (
+                    <Fragment key={asin}>
+                      <FeaturedOfferTableRow
+                        row={row}
+                        showBuyBox={false}
+                        showSource={false}
+                        trailing={<SetAsideCell ctl={setAsides} entityKey={asin} canSetAside={valid} />}
+                      />
+                      <SetAsideFormRow
+                        ctl={setAsides}
+                        entityKey={asin}
+                        entityLabel={listingLabel(row) || null}
+                        colSpan={TABLE_COLUMNS.length}
+                      />
+                    </Fragment>
+                  );
+                })
               )}
             </tbody>
           </ResizableTable>
         ) : null}
+        <SetAsideHistory ctl={setAsides} />
       </div>
     </div>
   );

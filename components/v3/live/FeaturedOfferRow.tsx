@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import type { RetailColumn } from "@/components/v3/live/ResizableTable";
 import { formatUsd } from "@/lib/fender-canvas/format";
 import {
@@ -81,12 +82,15 @@ export function FeaturedOfferTableRow({
   row,
   showBuyBox = true,
   showSource = true,
+  trailing,
 }: {
   row: Row;
   /** False on Suppressed Listings, where every row is Buy Box withheld. */
   showBuyBox?: boolean;
   /** False when every row of that table uses the same Source label. */
   showSource?: boolean;
+  /** Extra last cell, e.g. a set-aside control. */
+  trailing?: ReactNode;
 }) {
   const state = featuredOfferState(row);
   const asin = typeof row.asin === "string" ? row.asin : null;
@@ -149,6 +153,7 @@ export function FeaturedOfferTableRow({
         <td>{readFromKeepa(row) ? "Amazon listing read" : "Catalog"}</td>
       ) : null}
       <td>{checkedAt ?? <span className="fo-note">Never</span>}</td>
+      {trailing}
     </tr>
   );
 }

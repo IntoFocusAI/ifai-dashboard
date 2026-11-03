@@ -149,18 +149,16 @@ test.describe("drill-downs", () => {
     await expect(header.locator('[data-source="SmartScout"]').first()).toBeVisible();
     await expect(header.locator('[data-source="Estimate"]').first()).toBeVisible();
 
-    // $0.00 only where the listing had no out-of-stock days. A missing estimate reads as not estimated.
+    // Every row was out of stock at least one day, so no 12-month estimate is $0.00.
+    // A listing with no sales source reads Awaiting inputs.
     const rows = panel.locator("tr.stock-loss-row");
     await expect(rows.first()).toBeVisible();
-    const zeroWithStockouts = await rows.evaluateAll(
-      (trs) =>
-        trs.filter((tr) => {
-          const cells = tr.querySelectorAll("td");
-          return cells[1]?.textContent?.trim() === "$0.00" && cells[2]?.textContent?.trim() !== "0";
-        }).length,
+    const zeroYear = await rows.evaluateAll(
+      (trs) => trs.filter((tr) => tr.querySelectorAll("td")[1]?.textContent?.trim() === "$0.00").length,
     );
-    expect(zeroWithStockouts).toBe(0);
-    await expect(rows.locator("td:nth-child(2)", { hasText: "Not estimated" }).first()).toBeVisible();
+    expect(zeroYear).toBe(0);
+    await expect(rows.locator("td:nth-child(2)", { hasText: "Awaiting inputs" }).first()).toBeVisible();
+    await expect(panel.locator("[data-no-active-offer]").first()).toBeVisible();
 
     // The top row has an estimate, and it opens to its inputs and dated stretches.
     await rows.first().click();
