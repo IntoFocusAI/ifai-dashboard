@@ -64,6 +64,14 @@ export type MinimalEntry = {
   read: (ctx: MinimalContext) => MinimalFigure;
 };
 
+/** Entries made at build time, e.g. one per question category the run holds. */
+export type MinimalEntryFamily = {
+  family: string;
+  entries: (ctx: MinimalContext) => MinimalEntry[];
+};
+
+export type MinimalListItem = MinimalEntry | MinimalEntryFamily;
+
 /** Every slot reads "Not available*" for a missing input, the way the tabs do. */
 export const NOT_AVAILABLE = "Not available*";
 

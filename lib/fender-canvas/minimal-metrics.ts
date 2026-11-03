@@ -11,12 +11,12 @@ import { AI_SEARCH_ENTRIES, COMPETITIVE_ENTRIES } from "@/lib/fender-canvas/mini
 import { READINESS_ENTRIES } from "@/lib/fender-canvas/minimal-metrics-readiness";
 import { RETAIL_ENTRIES } from "@/lib/fender-canvas/minimal-metrics-retail";
 import { ACTION_ITEM_ENTRIES, SUMMARY_ENTRIES } from "@/lib/fender-canvas/minimal-metrics-summary";
-import type { MinimalContext, MinimalEntry, MinimalMetricInput } from "@/lib/fender-canvas/minimal-metric-kit";
+import type { MinimalContext, MinimalListItem, MinimalMetricInput } from "@/lib/fender-canvas/minimal-metric-kit";
 
 export { NOT_AVAILABLE, type MinimalMetricInput, type StockLossRead } from "@/lib/fender-canvas/minimal-metric-kit";
 
 /** Summary, Catalog Health, AI Search Visibility, AI Readiness, Competitive Radar, Action Items. */
-export const MINIMAL_ENTRIES: readonly MinimalEntry[] = [
+export const MINIMAL_ENTRIES: readonly MinimalListItem[] = [
   ...SUMMARY_ENTRIES,
   ...RETAIL_ENTRIES,
   ...AI_SEARCH_ENTRIES,
@@ -39,7 +39,8 @@ function estimateDetail(estimate: string | undefined): string {
 export function buildMinimalMetrics(nodes: CanvasNode[], input: MinimalMetricInput): CanvasMinimalMetric[] {
   const byId = new Map(nodes.map((node) => [node.id, node]));
   const ctx: MinimalContext = { ...input, node: (id) => byId.get(id) };
-  return MINIMAL_ENTRIES.flatMap((entry): CanvasMinimalMetric[] => {
+  const entries = MINIMAL_ENTRIES.flatMap((item) => ("family" in item ? item.entries(ctx) : [item]));
+  return entries.flatMap((entry): CanvasMinimalMetric[] => {
     if (entry.offered && !entry.offered(ctx)) return [];
     const { value, tone, estimate, ...figure } = entry.read(ctx);
     const reading = withoutRepeatedCount(figure, value);

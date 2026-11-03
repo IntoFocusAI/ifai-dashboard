@@ -237,7 +237,8 @@ test("the list offers most headline figures, grouped by area, and each opens a t
   assert.ok(slots.length >= 38, `expected most headline figures, got ${slots.length}`);
   const ids = slots.map((slot) => slot.id);
   assert.equal(new Set(ids).size, ids.length, "each option once");
-  assert.equal(new Set(MINIMAL_ENTRIES.map((entry) => entry.id)).size, MINIMAL_ENTRIES.length, "entry ids are unique");
+  const keys = MINIMAL_ENTRIES.map((item) => ("family" in item ? item.family : item.id));
+  assert.equal(new Set(keys).size, keys.length, "entry ids are unique");
   const areas = slots.map((slot) => AREA_ORDER.indexOf(slot.spokeId));
   assert.ok(areas.every((area) => area >= 0), "every option sits in one of the six areas");
   assert.deepEqual([...areas].sort((a, b) => a - b), areas, "areas run Summary through Action Items");
@@ -290,6 +291,44 @@ test("both Suppressed Listings figures and both Run Summary and Run Details rate
   assert.match(beginner.reading.ratio ?? "", /^2 of 2 resolved Beginner unbranded discovery answers · Small sample$/);
 });
 
+const BATTERY_CATEGORIES = ["electrics", "acoustics", "amps", "basses", "squier", "beginner"];
+
+test("Category Battlecards offers one option per question category, each with its row's rate", () => {
+  const { slots } = build(retailReady(), aiReady());
+  const ids = BATTERY_CATEGORIES.map((category) => `battlecards-${category}-unbranded`);
+  const options = slots.filter((slot) => /^battlecards-.+-unbranded$/.test(slot.id) && slot.id !== "battlecards-unbranded");
+  assert.deepEqual(options.map((slot) => slot.id), ids, "battery order, one each");
+  const branded = slots.findIndex((slot) => slot.id === "battlecards-branded");
+  assert.equal(slots.findIndex((slot) => slot.id === ids[0]), branded + 1, "right after the run-wide rates");
+  for (const slot of options) {
+    assert.equal(slot.spokeId, "competitors");
+    assert.equal(slot.subTab, "Category Battlecards");
+    assert.match(slot.label, /^[A-Z]\w+: Fender leads in unbranded discovery$/);
+  }
+  const electrics = slotById(slots, "battlecards-electrics-unbranded");
+  assert.equal(electrics.value, "66.7%");
+  assert.equal(electrics.reading.ratio, "6 of 9 resolved Electrics unbranded discovery answers · Small sample");
+  assert.equal(slotById(slots, "battlecards-basses-unbranded").reading.ratio, "1 of 4 resolved Basses unbranded discovery answers · Small sample");
+  const squier = slotById(slots, "battlecards-squier-unbranded");
+  assert.equal(squier.value, NOT_AVAILABLE, "a category with no resolved answers");
+  assert.equal(squier.reading.missing, "The published run has no resolved Squier unbranded discovery answers.");
+
+  const ai = aiReady();
+  assert.equal(ai.phase, "ready");
+  const moved = { ...ai.snapshot, calls: ai.snapshot.calls.map((call) => (call.category === "amps" ? { ...call, category: "ukuleles" } : call)) };
+  const withExtra = build(retailReady(), { phase: "ready", snapshot: moved }).slots;
+  const amps = slotById(withExtra, "battlecards-amps-unbranded");
+  assert.equal(amps.value, NOT_AVAILABLE, "a battery category the run did not ask stays offered");
+  assert.equal(amps.reading.missing, "The published run asked no Amps questions.");
+  const ukuleles = slotById(withExtra, "battlecards-ukuleles-unbranded");
+  assert.equal(ukuleles.label, "Ukuleles: Fender leads in unbranded discovery");
+  assert.equal(ukuleles.value, "100.0%");
+  assert.equal(withExtra.indexOf(ukuleles), withExtra.findIndex((slot) => slot.id === "battlecards-beginner-unbranded") + 1, "live extras follow the battery");
+
+  const loading = build(retailReady(), { phase: "loading" }).slots;
+  for (const id of ids) assert.equal(slotById(loading, id).value, "Loading", `${id} waits for the run`);
+});
+
 test("the AI Consensus and AI Commerce options match Performance and Retail Overview with the viewer's authorized sellers", () => {
   const retail = retailReady();
   const ai = aiReady();
@@ -333,7 +372,8 @@ test("each live figure says N of M and the larger slots carry the tab's disc", (
     "spoke-aeo", "run-summary-branded", "run-details-unbranded", "sat-prompts", "sat-citations", "sat-drift",
     "sat-findability", "findability-official-family-page", "findability-completed-not-found",
     "findability-ambiguous-candidate", "findability-not-checked", "spoke-competitors", "battlecards-unbranded",
-    "battlecards-branded", "battlecards-beginner-unbranded", "sat-taylor", "sat-amps", "engines-unbranded",
+    "battlecards-branded", "battlecards-electrics-unbranded", "battlecards-acoustics-unbranded",
+    "battlecards-amps-unbranded", "battlecards-basses-unbranded", "battlecards-beginner-unbranded", "sat-taylor", "sat-amps", "engines-unbranded",
     "engines-branded", "summary-ai-consensus", "summary-ai-foundation", "summary-ai-commerce",
   ];
   const averages = ["map-average-gap"];

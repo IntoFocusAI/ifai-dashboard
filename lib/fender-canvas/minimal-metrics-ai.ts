@@ -8,6 +8,7 @@ import {
   sumRoleTallies,
   type HeadlineRole,
 } from "@/lib/ai-search/question-role";
+import { PROMPT_BATTERY } from "@/lib/ai-search/prompt-battery";
 import { categoryLabel, engineLabel, isSmallSample } from "@/lib/ai-search/run-metrics";
 import { BRANDED_RATE_BANDS, SMALL_SAMPLE_LABEL, UNBRANDED_RATE_BANDS, type AiRunSummary } from "@/lib/ai-search/summary";
 import { formatInt } from "@/lib/fender-canvas/format";
@@ -15,13 +16,17 @@ import {
   aiFigure,
   aiReading,
   bubbleEntry,
+  cached,
   counted,
+  missingFigure,
   rateFigure,
   rateLeadPie,
   rateTip,
   runSummary,
   type MinimalContext,
   type MinimalEntry,
+  type MinimalEntryFamily,
+  type MinimalListItem,
 } from "@/lib/fender-canvas/minimal-metric-kit";
 
 const ROLE = {
@@ -97,27 +102,62 @@ function rivalLead(summary: AiRunSummary | null) {
   return null;
 }
 
+/** The battery's question categories, in the order it asks them. */
+const BATTERY_CATEGORIES = [...new Set(PROMPT_BATTERY.filter((prompt) => prompt.kind === "commercial").map((prompt) => prompt.category))];
+
+function categoryRows(ctx: MinimalContext) {
+  return cached(ctx, "category-role-tallies", () => (ctx.ai.phase === "ready" ? categoryRoleTallies(ctx.ai.snapshot.calls) : []));
+}
+
+function categoryId(category: string): string {
+  const slug = category.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  return `battlecards-${slug || "uncategorized"}-unbranded`;
+}
+
 /** One category's unbranded rate, as its Category Battlecards row reads it, small-sample mark included. */
 function categoryUnbrandedEntry(category: string): MinimalEntry {
   const name = categoryLabel(category);
-  const rows = (ctx: MinimalContext) => (ctx.ai.phase === "ready" ? categoryRoleTallies(ctx.ai.snapshot.calls) : []);
   return {
-    id: `battlecards-${category}-unbranded`,
+    id: categoryId(category),
     spokeId: "competitors",
     tab: "Category Battlecards",
     label: `${name}: Fender leads in unbranded discovery`,
-    offered: (ctx) => ctx.ai.phase !== "ready" || rows(ctx).some((row) => row.key === category),
     read: (ctx) =>
       aiFigure(ctx, () => {
-        const all = rows(ctx);
-        const tally = all.find((row) => row.key === category)?.roles.unbranded_discovery ?? { fenderWins: 0, resolved: 0 };
-        const figure = rateFigure(tally, UNBRANDED_RATE_BANDS, `resolved ${name} unbranded discovery answers`, null, NO_RESOLVED);
-        const largest = Math.max(0, ...all.map((row) => row.roles.unbranded_discovery.resolved));
+        const all = categoryRows(ctx);
+        const row = all.find((item) => item.key === category);
+        if (!row) return missingFigure(`The published run asked no ${name} questions.`);
+        const tally = row.roles.unbranded_discovery;
+        const figure = rateFigure(
+          tally,
+          UNBRANDED_RATE_BANDS,
+          `resolved ${name} unbranded discovery answers`,
+          null,
+          `The published run has no resolved ${name} unbranded discovery answers.`,
+        );
+        const largest = Math.max(0, ...all.map((item) => item.roles.unbranded_discovery.resolved));
         if (!figure.ratio || !isSmallSample(tally.resolved, largest)) return figure;
         return { ...figure, ratio: `${figure.ratio} · ${SMALL_SAMPLE_LABEL}` };
       }),
   };
 }
+
+/** Every battery category, then any other category the published run holds. */
+const CATEGORY_UNBRANDED: MinimalEntryFamily = {
+  family: "battlecards-category-unbranded",
+  entries: (ctx) => {
+    const extra = categoryRows(ctx)
+      .map((row) => row.key)
+      .filter((key) => !BATTERY_CATEGORIES.includes(key));
+    const ids = new Set<string>();
+    return [...BATTERY_CATEGORIES, ...extra].flatMap((category) => {
+      const id = categoryId(category);
+      if (ids.has(id)) return [];
+      ids.add(id);
+      return [categoryUnbrandedEntry(category)];
+    });
+  },
+};
 
 export const AI_SEARCH_ENTRIES: MinimalEntry[] = [
   bubbleEntry({
@@ -191,7 +231,7 @@ export const AI_SEARCH_ENTRIES: MinimalEntry[] = [
   }),
 ];
 
-export const COMPETITIVE_ENTRIES: MinimalEntry[] = [
+export const COMPETITIVE_ENTRIES: MinimalListItem[] = [
   bubbleEntry({
     id: "spoke-competitors",
     spokeId: "competitors",
@@ -208,7 +248,7 @@ export const COMPETITIVE_ENTRIES: MinimalEntry[] = [
   }),
   roleRateEntry("battlecards-unbranded", "competitors", "Category Battlecards", "unbranded_discovery", "role-unbranded"),
   roleRateEntry("battlecards-branded", "competitors", "Category Battlecards", "branded_consideration", "role-branded"),
-  categoryUnbrandedEntry("beginner"),
+  CATEGORY_UNBRANDED,
   bubbleEntry({
     id: "sat-taylor",
     spokeId: "competitors",
