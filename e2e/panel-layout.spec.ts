@@ -10,7 +10,7 @@ test.describe("panel layout", () => {
     await expect(page.locator(".drilldown-panel-toggle")).toBeVisible();
   });
 
-  test("opens a full-width drill-down after a bubble is selected", async ({
+  test("opens a full-width drill-down after a bubble is selected", { tag: "@1440" }, async ({
     canvas,
     page,
   }) => {
@@ -78,7 +78,7 @@ test.describe("panel layout", () => {
     expect(overflow).toBeLessThanOrEqual(1);
   });
 
-  test("panel content never scrolls sideways", async ({ canvas, page }) => {
+  test("panel content never scrolls sideways", { tag: "@1440" }, async ({ canvas, page }) => {
     await canvas.openPriority("Buy Box withheld");
     const tabs = await page.locator(".drilldown-tab-btn").count();
     for (let i = 0; i < tabs; i += 1) {

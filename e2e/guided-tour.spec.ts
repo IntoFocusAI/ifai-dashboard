@@ -4,7 +4,7 @@ import { expect, test } from "./fixtures";
    walkthrough: "that brought me out of the Guided Tour, but I was not done...
    it looks like I need to start over." */
 test.describe("guided tour", () => {
-  test("opening a deep dive suspends the tour instead of ending it", async ({
+  test("opening a deep dive suspends the tour instead of ending it", { tag: "@1440" }, async ({
     canvas,
     page,
   }) => {
