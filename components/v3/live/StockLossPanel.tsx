@@ -14,11 +14,12 @@ import {
   EPISODE_STATE_LABELS,
   formatDay,
   keepaHref,
+  awaitingInputsReason,
   loadStockLossRows,
   lostSales,
-  noBuyBoxAtRisk,
-  notEstimatedReason,
+  noActiveOffer,
   num,
+  REVENUE_SOURCE_LABELS,
   stockEpisodesQuery,
   type StockEpisode,
   type StockLossRow,
@@ -48,19 +49,29 @@ const STOCK_LOSS_COLUMNS: RetailColumn[] = [
     sort: "number",
   },
   {
+    id: "lost90",
+    name: "Est. lost sales, 90 days",
+    label: sourced("Est. lost sales, 90 days", "Estimate"),
+    width: 200,
+    minWidth: 140,
+    className: "money",
+    sort: "number",
+  },
+  {
+    id: "lost30",
+    name: "Est. lost sales, 30 days",
+    label: sourced("Est. lost sales, 30 days", "Estimate"),
+    width: 200,
+    minWidth: 140,
+    className: "money",
+    sort: "number",
+  },
+  {
     id: "oos365",
     name: "Out-of-stock days, 12 months",
     label: sourced("Out-of-stock days, 12 months", "Keepa"),
     width: 210,
     minWidth: 150,
-    sort: "number",
-  },
-  {
-    id: "oos90",
-    name: "Out-of-stock days, 90 days",
-    label: sourced("Out-of-stock days, 90 days", "Keepa"),
-    width: 200,
-    minWidth: 140,
     sort: "number",
   },
   {
@@ -84,11 +95,12 @@ const STOCK_LOSS_COLUMNS: RetailColumn[] = [
 
 function sortValue(row: StockLossRow, columnId: string): SortInput {
   if (columnId === "listing") return (row.title ?? row.asin).trim() || null;
-  if (columnId === "lost") return lostSales(row);
+  if (columnId === "lost") return lostSales(row, 365);
+  if (columnId === "lost90") return lostSales(row, 90);
+  if (columnId === "lost30") return lostSales(row, 30);
   if (columnId === "oos365") return num(row.oos_days_365);
-  if (columnId === "oos90") return num(row.oos_days_90);
-  if (columnId === "rate") return row.baseline_method ? num(row.baseline_daily_revenue) : null;
-  if (columnId === "nobb") return num(row.suppressed_days_365);
+  if (columnId === "rate") return row.revenue_source ? num(row.baseline_daily_revenue) : null;
+  if (columnId === "nobb") return num(row.no_buy_box_days_365);
   return null;
 }
 
@@ -106,9 +118,12 @@ function Explanation() {
         A listing is out of stock on a day when no seller has a new one for sale on Amazon, so
         shoppers cannot buy it there. The estimate takes the listing&apos;s sales from{" "}
         <DefinedTerm term="SmartScout" />, divides by the days it was in stock according to{" "}
-        <DefinedTerm term="Keepa" />, and multiplies by the days it was not. It is an analyst
-        estimate, not reported sales. Fender sells through dealers, so the data shows that a
-        listing ran out but not whether Fender or the dealer did.
+        <DefinedTerm term="Keepa" />, and multiplies by the days it was not, for the last 30 days,
+        90 days, and 12 months. Each figure is also what the next period of the same length would
+        miss if the sales rate and the out-of-stock pattern hold. It is an analyst estimate, not
+        reported sales. Fender sells through dealers, so the data shows that a listing ran out but
+        not whether Fender or the dealer did. A listing with no sales source is awaiting inputs,
+        not $0.
       </div>
     </div>
   );
@@ -166,10 +181,12 @@ function EpisodeList({ asin }: { asin: string }) {
 function EstimateInputs({ row }: { row: StockLossRow }) {
   const input = baselineInput(row);
   const rate = num(row.baseline_daily_revenue);
-  const oos = num(row.oos_days_365);
-  const nobb = num(row.suppressed_days_365);
-  const lost = lostSales(row);
-  const atRisk = noBuyBoxAtRisk(row);
+  const windows = [
+    { label: "last 30 days", days: num(row.oos_days_30), lost: lostSales(row, 30) },
+    { label: "last 90 days", days: num(row.oos_days_90), lost: lostSales(row, 90) },
+    { label: "last 12 months", days: num(row.oos_days_365), lost: lostSales(row, 365) },
+  ];
+  const nobb = num(row.no_buy_box_days_365);
   const keepa = keepaHref(row.asin);
   const amazon = amazonHref(row.asin);
 
@@ -177,8 +194,11 @@ function EstimateInputs({ row }: { row: StockLossRow }) {
     <div className="stock-loss-drawer" data-stock-loss-drawer={row.asin}>
       <div className="stock-loss-inputs">
         <h4>How this estimate is built</h4>
-        {row.baseline_method ? (
+        {row.revenue_source ? (
           <ol>
+            <li>
+              Sales source: <strong>{REVENUE_SOURCE_LABELS[row.revenue_source]}</strong>
+            </li>
             <li>
               {input.label}: <strong>{formatUsd(input.value)}</strong> <SourceTag source="SmartScout" />
             </li>
@@ -189,23 +209,22 @@ function EstimateInputs({ row }: { row: StockLossRow }) {
               Sales per in-stock day: {formatUsd(input.value)} ÷ {formatInt(input.days)} ={" "}
               <strong>{formatUsd(rate)}</strong>
             </li>
-            <li>
-              Out-of-stock days, last 12 months: <strong>{formatInt(oos)}</strong> <SourceTag source="Keepa" />
-            </li>
-            <li>
-              Estimated lost sales: {formatUsd(rate)} × {formatInt(oos)} = <strong>{formatUsd(lost)}</strong>{" "}
-              <SourceTag source="Estimate" />
-            </li>
+            {windows.map((w) => (
+              <li key={w.label}>
+                Estimated lost sales, {w.label}: {formatUsd(rate)} × {formatInt(w.days)} out-of-stock days{" "}
+                <SourceTag source="Keepa" /> = <strong>{formatUsd(w.lost)}</strong> <SourceTag source="Estimate" />
+              </li>
+            ))}
             {nobb ? (
               <li>
-                No Buy Box days: {formatInt(nobb)}. Sales still happen without a Buy Box, just fewer, so
-                this is at most {formatUsd(atRisk)} and is not added to the estimate above.
+                No Buy Box days, last 12 months: {formatInt(nobb)} <SourceTag source="Keepa" />. Listed for
+                reference. They are not part of this estimate.
               </li>
             ) : null}
           </ol>
         ) : (
           <p className="retail-missing">
-            Not estimated. {notEstimatedReason(row)} The out-of-stock days below are still from Keepa.
+            Awaiting inputs. {awaitingInputsReason(row)} The out-of-stock days below are still from Keepa.
           </p>
         )}
         <p className="stock-loss-sources">
@@ -238,7 +257,7 @@ function EstimateInputs({ row }: { row: StockLossRow }) {
 
 export function StockLossPanel() {
   const [state, setState] = useState<
-    "loading" | "unavailable" | { rows: StockLossRow[]; liveCount: number | null }
+    "loading" | "unavailable" | { rows: StockLossRow[]; populationCount: number | null }
   >("loading");
   const [openAsin, setOpenAsin] = useState<string | null>(null);
 
@@ -247,7 +266,11 @@ export function StockLossPanel() {
     loadStockLossRows()
       .then((next) => {
         if (cancelled) return;
-        setState(next.available ? { rows: defaultStockLossOrder(next.rows), liveCount: next.liveCount } : "unavailable");
+        setState(
+          next.available
+            ? { rows: defaultStockLossOrder(next.rows), populationCount: next.populationCount }
+            : "unavailable",
+        );
       })
       .catch(() => {
         if (!cancelled) setState("unavailable");
@@ -272,7 +295,7 @@ export function StockLossPanel() {
           data-stock-loss-lead=""
           style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "flex-start" }}
         >
-          <StockLossHero rows={rows} liveCount={state.liveCount} />
+          <StockLossHero rows={rows} populationCount={state.populationCount} />
           <Explanation />
         </div>
       ) : null}
@@ -301,13 +324,14 @@ export function StockLossPanel() {
                 {sorted.rows.length === 0 ? (
                   <tr>
                     <td colSpan={STOCK_LOSS_COLUMNS.length}>
-                      No live listing was out of stock or without a Buy Box in the last 12 months.
+                      No listing was out of stock in the last 12 months.
                     </td>
                   </tr>
                 ) : (
                   sorted.rows.map((row) => {
                     const open = openAsin === row.asin;
-                    const lost = lostSales(row);
+                    const awaiting = <span className="fo-note">Awaiting inputs</span>;
+                    const money = (value: number | null) => (value != null ? formatUsd(value) : awaiting);
                     const toggle = () => setOpenAsin(open ? null : row.asin);
                     return (
                       <Fragment key={row.asin}>
@@ -327,20 +351,24 @@ export function StockLossPanel() {
                             <strong>{row.title ?? row.asin}</strong>
                             <br />
                             <span className="asin-chip">{row.asin}</span>
+                            {noActiveOffer(row) ? (
+                              <span
+                                className="tag-badge tag-neutral stock-loss-offer-chip"
+                                data-no-active-offer=""
+                                title="The retail read found no active offer on this listing."
+                              >
+                                No active offer
+                              </span>
+                            ) : null}
                           </td>
-                          <td className="money">
-                            {lost != null ? formatUsd(lost) : <span className="fo-note">Not estimated</span>}
-                          </td>
+                          <td className="money">{money(lostSales(row, 365))}</td>
+                          <td className="money">{money(lostSales(row, 90))}</td>
+                          <td className="money">{money(lostSales(row, 30))}</td>
                           <td>{formatInt(num(row.oos_days_365) ?? 0)}</td>
-                          <td>{formatInt(num(row.oos_days_90) ?? 0)}</td>
                           <td className="money">
-                            {row.baseline_method ? (
-                              formatUsd(num(row.baseline_daily_revenue))
-                            ) : (
-                              <span className="fo-note">Not estimated</span>
-                            )}
+                            {row.revenue_source ? formatUsd(num(row.baseline_daily_revenue)) : awaiting}
                           </td>
-                          <td>{formatInt(num(row.suppressed_days_365) ?? 0)}</td>
+                          <td>{formatInt(num(row.no_buy_box_days_365) ?? 0)}</td>
                         </tr>
                         {open ? (
                           <tr className="stock-loss-detail">
