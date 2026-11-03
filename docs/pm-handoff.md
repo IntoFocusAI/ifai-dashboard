@@ -34,9 +34,9 @@ number instead.
    and stop.
 
 "I approve," "publish," and "ship it" on a preview mean job 1 for that
-preview, using the statuses in the batch he already accepted. Product title
-stays v6.6. Preserve every DECISION and LATER item unless he changes it.
-X-20 stays TARGET.
+preview, using the statuses in the batch he already accepted. The header
+title follows FDD X-26. Preserve every DECISION and LATER item unless he
+changes it. X-20 stays TARGET.
 
 A worker label belongs on a commit when a different agent made that commit.
 If you are about to edit a product file, stop and write the brief.
