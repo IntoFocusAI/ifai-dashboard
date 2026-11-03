@@ -13,8 +13,6 @@ import {
   CitationRoleNote,
 } from "@/components/v3/live/ai-search/CitationRoleNote";
 import { CitationHero } from "@/components/v3/live/ai-search/CitationHero";
-import { CitationLeadFigure } from "@/components/v3/live/ai-search/CitationLeadFigure";
-import { CitationTopSources } from "@/components/v3/live/ai-search/CitationTopSources";
 import { useEvidenceFocus } from "@/components/v3/live/ai-search/useEvidenceFocus";
 import {
   citationPickLabel,
@@ -77,7 +75,7 @@ function Ecosystem({
     () => citationEvidence(snapshot.calls, snapshot.citations, scope),
     [snapshot, scope],
   );
-  // The lead figure stays on every category. Everything under the category filter narrows.
+  // The lead figure stays on every category. Every other figure, chart, and table narrows.
   const view = useMemo(() => snapshotInCategory(snapshot, category), [snapshot, category]);
   const read = useMemo(
     () => (category == null ? full : citationEvidence(view.calls, view.citations, scope)),
@@ -107,51 +105,33 @@ function Ecosystem({
   return (
     <>
       <div className="content-box ai-citation-summary">
-        <CitationLeadFigure
-          owned={leadOwned}
-          total={full.rows.length}
-          ready={!caution && citationUrlsLoaded}
-        />
-        <div className="content-box-title">
-          <span>Which web sources AI answers cite</span>
-        </div>
         {caution ? (
           <p style={{ fontSize: 13, lineHeight: 1.5, margin: "0 0 6px" }} data-ai-citation-caution>
             {caution}
           </p>
         ) : citationUrlsLoaded ? (
           <>
-            {copy ? (
-              <p className="citation-window" data-citation-window>
-                {copy}
-              </p>
-            ) : null}
             <CitationHero
               snapshot={view}
               read={read}
               scope={scope}
               scopeNoun={scopeNoun}
               showSmallSample={singleRun}
+              lead={{ owned: leadOwned, total: full.rows.length, within: category ? "all categories" : null }}
+              note={copy}
+              categories={citationCategoryOptions(snapshot.calls, scope)}
+              category={category}
+              onCategory={(next) => {
+                setCategory(next);
+                setPick(pickAfterCategoryChange);
+              }}
+              activeDomain={pick?.field === "domain" ? pick.value : null}
               onScope={(next) => {
                 setScope(next);
                 setPick(null);
                 setCategory(categoryForScope(snapshot.calls, next, category));
               }}
               onPick={setPick}
-              intro={
-                <CitationTopSources
-                  read={read}
-                  scopeNoun={scopeNoun}
-                  categories={citationCategoryOptions(snapshot.calls, scope)}
-                  category={category}
-                  onCategory={(next) => {
-                    setCategory(next);
-                    setPick(pickAfterCategoryChange);
-                  }}
-                  activeDomain={pick?.field === "domain" ? pick.value : null}
-                  onPickDomain={(domain) => setPick({ field: "domain", value: domain })}
-                />
-              }
             />
             <details className="citation-method-notes">
               <summary>How these counts work</summary>

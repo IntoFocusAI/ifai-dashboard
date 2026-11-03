@@ -1,0 +1,354 @@
+/* Citation Ecosystem first screen: figure tiles, one control row, then the
+   top-sites chart beside compact source-role and gap tiles. Sizes follow the
+   panel width (container queries), not the window, because the drawer resizes. */
+
+.citation-glance {
+  --citation-owned-ink: #38bdf8;
+  --citation-cited-ink: #22d3ee;
+  container: citation-glance / inline-size;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+}
+
+.ifai-canvas.light-theme .citation-glance {
+  --citation-owned-ink: #0369a1;
+  --citation-cited-ink: #0e7490;
+}
+
+/* Figure tiles: the Retail Overview hero look (label, colored figure, N of M). */
+.citation-figure-tiles {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.citation-figure-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  padding: 8px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  background: var(--bg-card);
+}
+
+.citation-figure-label {
+  color: var(--text-muted);
+  font-size: var(--metric-label-size, 10px);
+  font-weight: var(--metric-label-weight, 700);
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.citation-figure-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.citation-figure-tile .citation-figure-value {
+  display: inline;
+  font-size: clamp(20px, 2vw, 26px);
+  line-height: 1.05;
+  white-space: nowrap;
+}
+
+.citation-figure-tile .citation-figure-owned {
+  color: var(--citation-owned-ink);
+}
+
+.citation-figure-tile .citation-figure-cited {
+  color: var(--citation-cited-ink);
+}
+
+.citation-figure-unit {
+  color: var(--text-muted);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0;
+}
+
+.citation-figure-ratio {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.3;
+}
+
+.citation-figure-ratio [data-citation-window] {
+  font-size: 11px;
+}
+
+/* One control row: scope buttons, then the category chips. */
+.citation-control-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  min-width: 0;
+}
+
+.citation-control-row .citation-controls {
+  margin: 0;
+}
+
+.citation-control-row .citation-category-filter {
+  margin: 0;
+  padding-left: 14px;
+  border-left: 1px solid var(--border-color);
+}
+
+/* Chart in the wider column, compact tiles in the other. */
+.citation-glance-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.72fr) minmax(0, 1fr);
+  align-items: stretch;
+  gap: 12px;
+}
+
+.citation-glance-tiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  min-width: 0;
+}
+
+.citation-glance .citation-tile {
+  display: flex;
+  flex-direction: column;
+  grid-column: auto;
+  min-width: 0;
+  padding: 10px 14px;
+}
+
+.citation-glance .citation-card-kicker {
+  margin-bottom: 6px;
+}
+
+.citation-glance .citation-card-note,
+.citation-glance .citation-card-secondary,
+.citation-glance [data-citation-reconcile] {
+  margin: 4px 0 0;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.citation-glance .citation-card-caveat {
+  margin-top: auto;
+  padding-top: 6px;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.citation-tile-figure {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.citation-tile-figure > div {
+  min-width: 0;
+}
+
+.citation-glance .citation-tile-pct {
+  display: block;
+  color: var(--citation-owned-ink);
+  font-family: var(--font-mono);
+  font-size: clamp(20px, 2vw, 26px);
+  font-weight: 800;
+  letter-spacing: -0.045em;
+  line-height: 1.05;
+}
+
+.citation-glance .citation-hero-ratio {
+  max-width: none;
+  margin: 4px 0 0;
+  color: var(--text-main);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.citation-glance [data-citation-hero-value] {
+  font-family: var(--font-mono);
+  font-weight: 750;
+}
+
+.citation-glance .citation-tile-pie {
+  width: 46px;
+  height: 46px;
+}
+
+.citation-glance .citation-tile-pie-lg {
+  width: 88px;
+  height: 88px;
+}
+
+.citation-tile-follow {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-color);
+}
+
+.citation-tile-pie-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+}
+
+.citation-tile-pie-row figcaption {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.citation-glance .citation-pie-legend {
+  margin: 0;
+}
+
+.citation-glance .citation-pie-legend li {
+  color: var(--text-main);
+  font-size: 11.5px;
+  line-height: 1.35;
+}
+
+.citation-tile-legend-inline .citation-pie-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 10px;
+}
+
+.citation-tile-total {
+  margin: 3px 0 0;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+/* Question-type tile: one line per role, then its bar and the two lead counts. */
+.citation-glance .citation-role-list > li + li {
+  margin-top: 10px;
+}
+
+.citation-glance .citation-role-label {
+  flex-direction: row;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+  font-size: 12px;
+}
+
+.citation-glance .citation-role-label strong {
+  font-size: 12.5px;
+}
+
+.citation-glance .citation-role-label > span {
+  font-family: var(--font-mono);
+  white-space: nowrap;
+}
+
+.citation-glance .citation-role-track {
+  min-height: 18px;
+}
+
+.citation-glance .citation-role-seg {
+  min-width: 22px;
+  font-size: 11px;
+}
+
+.citation-glance .citation-role-leads {
+  margin: 4px 0 0;
+}
+
+.citation-glance .citation-role-leads li {
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+/* Gaps tile: count, category and leader on one line, top cited sites under it. */
+.citation-glance .citation-card-lead {
+  margin-bottom: 6px;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.citation-glance .citation-gap-list {
+  margin: 0;
+}
+
+.citation-glance .citation-gap-list > li + li {
+  margin-top: 4px;
+}
+
+.citation-glance .citation-gap-btn {
+  align-items: center;
+  gap: 10px;
+  padding: 4px 10px;
+  border-radius: 10px;
+}
+
+.citation-glance .citation-gap-count {
+  min-width: 2.5ch;
+  font-family: var(--font-mono);
+  font-size: 18px;
+  text-align: right;
+}
+
+.citation-glance .citation-gap-body {
+  gap: 1px;
+  font-size: 11.5px;
+}
+
+.citation-glance .citation-gap-body strong {
+  font-size: 12.5px;
+}
+
+.citation-glance .citation-gap-domains {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.citation-glance .citation-gap-more {
+  margin-top: 6px;
+  font-size: 12px;
+}
+
+@container citation-glance (max-width: 1000px) {
+  .citation-glance-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .citation-top-source-class {
+    display: none;
+  }
+}
+
+@container citation-glance (max-width: 760px) {
+  .citation-glance-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@container citation-glance (max-width: 560px) {
+  .citation-figure-tiles,
+  .citation-glance-tiles {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .citation-control-row .citation-category-filter {
+    padding-left: 0;
+    border-left: 0;
+  }
+}

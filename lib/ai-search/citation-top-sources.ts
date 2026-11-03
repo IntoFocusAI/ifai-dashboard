@@ -8,8 +8,7 @@ import {
 import { categoryLabel } from "@/lib/ai-search/run-metrics";
 import type { AiCallRow, AiSearchSnapshot } from "@/lib/ai-search/types";
 
-/** Rows shown before "Show top 10", and the most the list ever shows. */
-export const TOP_SOURCES_FIRST = 5;
+/** Rows the top-sites chart shows. */
 export const TOP_SOURCES_MAX = 10;
 
 export type TopCitedSource = {

@@ -104,7 +104,8 @@ test.describe("AI Search Visibility", () => {
     const brandPie = page.locator("[data-citation-pie='brands']");
     const pies = [linkPie, ownedPie];
     if (await brandPie.count()) pies.push(brandPie);
-    for (const pie of pies) {
+    // The unbranded pie has no legend; its total is the hero N checked above.
+    for (const pie of pies.filter((pie) => pie !== ownedPie)) {
       const total = Number(await pie.getAttribute("data-pie-total"));
       const counts = await pie.locator("[data-pie-count]").evaluateAll((els) =>
         els.map((el) => Number(el.getAttribute("data-pie-count"))),
@@ -122,15 +123,15 @@ test.describe("AI Search Visibility", () => {
       );
       expect(groupNs.reduce((sum, n) => sum + n, 0)).toBe(resolved);
     }
-    const heroBox = await page.locator("[data-citation-hero-value]").boundingBox();
-    expect(heroBox && heroBox.height).toBeGreaterThan(40);
-    const ownedDisc = await page.locator(".citation-pie-disc-owned").boundingBox();
-    const mixDisc = await page.locator(".citation-pie-disc-mix").boundingBox();
-    expect(ownedDisc && ownedDisc.width).toBeGreaterThanOrEqual(160);
-    expect(mixDisc && mixDisc.width).toBeGreaterThanOrEqual(180);
+    const pctBox = await page.locator("[data-citation-hero-pct]").boundingBox();
+    expect(pctBox && pctBox.height).toBeGreaterThan(20);
+    const ownedDisc = await page.locator("[data-citation-pie='unbranded'] .citation-pie-disc").boundingBox();
+    const mixDisc = await page.locator("[data-citation-pie='classes'] .citation-pie-disc").boundingBox();
+    expect(ownedDisc && ownedDisc.width).toBeGreaterThanOrEqual(40);
+    expect(mixDisc && mixDisc.width).toBeGreaterThanOrEqual(80);
     await expect(page.locator("[data-ai-cited-links]")).toContainText(/\d+ cited links/);
-    await expect(page.locator("[data-ai-fender-owned]")).toContainText(
-      /\d+ of \d+ cited links .* led to Fender-owned sites/,
+    await expect(page.locator("[data-citation-lead-population]")).toContainText(
+      /\d+ of \d+ cited links lead to Fender-owned sites/,
     );
     const body = page.locator(".drilldown-body");
     await expect(body).toContainText("Answers and links are separate counts");

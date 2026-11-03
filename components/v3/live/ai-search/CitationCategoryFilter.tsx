@@ -4,8 +4,8 @@ import "@/components/v3/live/ai-search/citation-top-sources.css";
 import type { CitationCategoryOption } from "@/lib/ai-search/citation-top-sources";
 
 /**
- * One category at a time. Narrows the top-sources list and every chart and table
- * below it. The Fender-owned lead figure above stays on all categories.
+ * One category at a time. Narrows the chart, tiles, and tables on the tab.
+ * Sits in the control row beside the scope buttons.
  */
 export function CitationCategoryFilter({
   options,
@@ -49,8 +49,7 @@ export function CitationCategoryFilter({
       {active ? (
         <p className="citation-category-status" data-citation-category-active={active.key} aria-live="polite">
           <span>
-            Showing <strong>{active.label}</strong> only: {active.answered} {scopeNoun}. The list, charts, and
-            tables below count these answers.
+            Showing <strong>{active.label}</strong> only: {active.answered} {scopeNoun}.
           </span>
           <button
             type="button"

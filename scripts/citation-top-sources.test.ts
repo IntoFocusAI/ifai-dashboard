@@ -10,7 +10,6 @@ import {
   citationCategoryOptions,
   snapshotInCategory,
   topCitedSources,
-  TOP_SOURCES_FIRST,
   TOP_SOURCES_MAX,
 } from "../lib/ai-search/citation-top-sources.ts";
 import { citationPickLabel, citationPickMatches, pickAfterCategoryChange } from "../lib/ai-search/citation-pick.ts";
@@ -125,8 +124,7 @@ test("each row carries N of M answers and whether the site is Fender-owned", () 
   assert.equal(ranked.find((source) => source.domain === "sweetwater.com")!.classLabel, "Retailer");
 });
 
-test("the list stops at ten sites and opens on five", () => {
-  assert.equal(TOP_SOURCES_FIRST, 5);
+test("the chart stops at ten sites", () => {
   assert.equal(TOP_SOURCES_MAX, 10);
   const many = Array.from({ length: 14 }, (_, index) => cite("e3", `https://site${index}.example.com/p`, index + 1));
   const ranked = topCitedSources(citationEvidence(calls, many, "commercial"));
@@ -191,20 +189,44 @@ test("the cited-links title names the category, and a new category keeps only si
   assert.equal(pickAfterCategoryChange({ field: "gap", value: "amps", simulationIds: ["e1"] }), null);
 });
 
-test("Citation Ecosystem opens with the lead figure, then top sources, then the existing cards and tables", () => {
+test("Citation Ecosystem opens with figure tiles, one control row, then the chart beside the tiles", () => {
   const panel = read("components/v3/live/ai-search/CitationEcosystemPanel.tsx");
-  const lead = panel.indexOf("<CitationLeadFigure");
   const hero = panel.indexOf("<CitationHero");
-  const top = panel.indexOf("<CitationTopSources");
+  const notes = panel.indexOf("How these counts work");
   const engines = panel.indexOf('tableId="citation-engines"');
   const evidence = panel.indexOf("<CitationEvidenceTable");
-  assert.ok(lead >= 0 && lead < hero && hero < top && top < engines && engines < evidence);
-  const heroFile = read("components/v3/live/ai-search/CitationHero.tsx");
-  const scopes = heroFile.indexOf('part="scopes"');
-  const intro = heroFile.indexOf("{intro}");
-  assert.ok(scopes < intro && intro < heroFile.indexOf("<CitationExecutiveGrid"), "top sources sit above the cards");
-  assert.match(panel, /owned=\{leadOwned\}\s+total=\{full\.rows\.length\}/, "the lead figure ignores the category");
+  assert.ok(hero >= 0 && hero < notes && notes < engines && engines < evidence, "the method notes and tables stay below");
+  const glance = read("components/v3/live/ai-search/CitationHero.tsx");
+  const order = [
+    "<CitationFigureTiles",
+    "data-citation-control-row",
+    "<CitationControlsStrip",
+    "<CitationCategoryFilter",
+    'className="citation-glance-grid"',
+    "<CitationTopSources",
+    "<CitationExecutiveGrid",
+    "<GapsCard",
+  ].map((marker) => glance.indexOf(marker));
+  assert.ok(order.every((at, index) => at >= 0 && (index === 0 || at > order[index - 1])), `order ${order}`);
+  const tiles = read("components/v3/live/ai-search/CitationFigureTiles.tsx");
+  assert.ok(tiles.indexOf("<CitationLeadFigure") < tiles.indexOf("data-ai-cited-answers"));
+  assert.ok(tiles.indexOf("data-ai-cited-answers") < tiles.indexOf("data-ai-cited-links"));
+  assert.match(panel, /owned: leadOwned, total: full\.rows\.length/, "the lead figure ignores the category");
   assert.ok(panel.split("\n").length - 1 <= 400);
+});
+
+test("bars scale to the largest count shown, and N of M sits beside each bar", () => {
+  const chart = read("components/v3/live/ai-search/CitationTopSources.tsx");
+  assert.match(chart, /const max = Math\.max\(1, \.\.\.ranked\.map/);
+  assert.match(chart, /width: `\$\{\(100 \* source\.answers\) \/ max\}%`/);
+  assert.match(chart, /<strong>\{source\.answers\}<\/strong> of \{source\.answered\}/);
+  assert.match(chart, /citation-top-source-owner">Fender-owned</);
+  const css = read("components/v3/live/ai-search/citation-glance.css");
+  assert.match(css, /\.citation-glance-grid \{[^}]*grid-template-columns: minmax\(0, [\d.]+fr\) minmax\(0, 1fr\)/s);
+  assert.match(css, /\.citation-figure-tiles \{[^}]*repeat\(3, minmax\(0, 1fr\)\)/s);
+  for (const path of [css, read("components/v3/live/ai-search/citation-top-sources.css")]) {
+    for (const size of path.matchAll(/font-size:\s*([\d.]+)px/g)) assert.ok(Number(size[1]) >= 10, size[0]);
+  }
 });
 
 test("the ranking rule is one plain sentence in a custom tooltip, and the copy claims no cause", () => {
@@ -216,6 +238,11 @@ test("the ranking rule is one plain sentence in a custom tooltip, and the copy c
     "components/v3/live/ai-search/CitationTopSources.tsx",
     "components/v3/live/ai-search/CitationCategoryFilter.tsx",
     "components/v3/live/ai-search/CitationCountTable.tsx",
+    "components/v3/live/ai-search/CitationFigureTiles.tsx",
+    "components/v3/live/ai-search/CitationHero.tsx",
+    "components/v3/live/ai-search/CitationExecutiveGrid.tsx",
+    "components/v3/live/ai-search/CitationGapsCard.tsx",
+    "components/v3/live/ai-search/CitationLeadFigure.tsx",
   ];
   assert.match(read(files[0]), /<AiTerm term="top cited sites">/);
   for (const path of files) {

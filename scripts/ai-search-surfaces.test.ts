@@ -164,9 +164,12 @@ test("the fact-check evidence view runs question, fact, source, answer, result",
 test("citation copy separates answers from links and avoids causal claims", () => {
   // JSX spacing ({" "}) collapsed too, so the rendered sentence can be matched whole.
   const prose = (path: string) => flat(path).replace(/\{" "\}\s*/g, " ");
-  const strip = prose("components/v3/live/ai-search/CitationControlsStrip.tsx");
-  assert.match(strip, /\{read\.answersWithCitation\} of \{read\.answered\} \{scopeNoun\} cited web sources/);
-  assert.match(strip, /<span data-ai-cited-links> \{read\.rows\.length\} cited links <\/span>/);
+  const tiles = prose("components/v3/live/ai-search/CitationFigureTiles.tsx");
+  assert.match(tiles, /\{read\.answersWithCitation\} of \{read\.answered\} \{scopeNoun\} cited web sources/);
+  assert.match(
+    tiles,
+    /data-ai-cited-links> \{read\.rows\.length\} <span className="citation-figure-unit"> <AiTerm term="cited link">cited links<\/AiTerm> <\/span> <\/span>/,
+  );
   const panel = prose("components/v3/live/ai-search/CitationEcosystemPanel.tsx");
   const notes = panel.slice(panel.indexOf("<summary>How these counts work</summary>"));
   assert.ok(notes.length < panel.length, "the counts note is on the panel");
