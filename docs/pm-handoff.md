@@ -116,10 +116,8 @@ Docs win if this block is stale.
 - PM20 wrote this at 6:55 PM ET on 3 Nov 2026. Both docs open on
   Documentation version: 20.9 (workers 20.1, 20.2, 20.4 to 20.9; Watson's
   18.5 and 18.6). Do not redo that closeout. Next is PM21.
-- Main is e99e0d9; the header label reads 20.9. Every pull request runs a
-  "Unit tests" check. Production: https://ifai-dashboard.netlify.app/dashboard
-- Held: pull request 110 (worker 20.3, hover slots, X-22 TARGET). Brian did
-  not approve the picks and will rework it. It conflicts with main.
+- Main is e99e0d9 (header label 20.9); every PR runs a "Unit tests" check.
+- Held: PR 110 (worker 20.3, hover slots, X-22 TARGET); Brian will rework it.
 - Collector: the FenderTest Toolbelt agent (AEO_Product_Research-FenderTest,
   via Lux_Connector manage_delegations) runs it. v15 Step 1 is live (3
   repeats, Perplexity fix, empty probe columns). PM20 asked it to switch the
@@ -130,9 +128,7 @@ Docs win if this block is stale.
   two data writes), canvas_ai_probe_coverage grants, the claude database
   copy, docs/pending-migrations, the drift-check load, and three answers on
   publishing his API job (engine slugs, same scoring, which runs count).
-- Next batch candidates: hover lag and cursor glitches (Brian's top
-  concern); the All / Without API / API only switch after Watson answers;
-  the tour card covering its lit area; one failed read blanking the whole
-  map; link each page-found reason to its Findability row; 62px hero pies on
-  Run Details and Engine Comparison. Ask Brian: an edge tab to reopen a
-  spoke? Priorities open on load?
+- Next batch: hover lag and cursor glitches (Brian's top concern); the All /
+  Without API / API only switch after Watson answers; the tour card over its
+  lit area; one failed read blanking the map; page-found reasons linked to
+  Findability rows. Ask Brian: edge tab to reopen a spoke? Priorities open?
