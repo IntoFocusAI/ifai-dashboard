@@ -6,10 +6,13 @@ import { AiSearchProvider, useAiSearchRead } from "@/components/v3/live/ai-searc
 import { FindabilityProvider, useFindabilityRead } from "@/components/v3/live/findability/FindabilityContext";
 import { CanvasLoadingShell } from "@/components/v3/live/CanvasLoadingShell";
 import { DataFreshnessBar } from "@/components/v3/live/DataFreshnessBar";
+import { useAmazonFieldTotals, useStockLossRead } from "@/components/v3/live/useMinimalMetricReads";
 import { usePortfolioRetailSnapshot } from "@/components/v3/live/usePortfolioRetailSnapshot";
 import { useFenderCanvasData } from "@/components/v3/use-fender-canvas-data";
 import { aiSpokeDesc } from "@/lib/ai-search/canvas-surfaces";
 import { historySpokeDescription } from "@/lib/ai-search/history-mode";
+import { authorizedPartnersFromSave } from "@/lib/fender-canvas/authorized-sellers";
+import { useAuthorizedSellers } from "@/lib/fender-canvas/authorized-sellers-store";
 import { buildFenderCanvasSpec } from "@/lib/fender-canvas/build-canvas-spec";
 import { IntelligenceCanvas } from "@/lib/canvas-sdk";
 import type { CanvasUserMenu } from "@/lib/canvas-sdk/types";
@@ -83,6 +86,10 @@ function FenderBrandCanvasBody({
     selectedMessage,
     runDescription: displayedAiSearch.phase === "ready" ? aiSpokeDesc(displayedAiSearch) : null,
   });
+  const [savedSellers] = useAuthorizedSellers();
+  const authorizedPartners = authorizedPartnersFromSave(savedSellers);
+  const stockLoss = useStockLossRead();
+  const amazonFieldTotals = useAmazonFieldTotals(bundle?.m ?? null);
   const spec = useMemo(() => {
     if (!bundle) return null;
     const built = buildFenderCanvasSpec(bundle, {
@@ -91,6 +98,9 @@ function FenderBrandCanvasBody({
       retail,
       aiSearch,
       findability,
+      authorizedPartners,
+      stockLoss,
+      amazonFieldTotals,
       metricStorageSuffix: viewerStorageScope(viewerId),
       headerSlot: <DataFreshnessBar fresh={bundle.fresh} stale={stale} />,
     });
@@ -102,7 +112,7 @@ function FenderBrandCanvasBody({
         aeo: { ...built.spokes.aeo, desc: panelDescription },
       },
     };
-  }, [aiSearch, bundle, findability, panelDescription, retail, stale, userMenu, viewerId]);
+  }, [aiSearch, amazonFieldTotals, authorizedPartners, bundle, findability, panelDescription, retail, stale, stockLoss, userMenu, viewerId]);
 
   if (loading && !spec) return <CanvasLoadingShell />;
   if (!spec) {

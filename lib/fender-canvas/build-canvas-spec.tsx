@@ -20,7 +20,8 @@ import { specPageCounts } from "@/lib/fender-canvas/machine-readability";
 import { buildHubSlots } from "@/lib/fender-canvas/hub-slots";
 import { headlineSentence, headlineSurface } from "@/lib/fender-canvas/portfolio-retail-display";
 import { buildLiveMetrics } from "@/lib/fender-canvas/metrics-from-live";
-import { buildMinimalMetrics } from "@/lib/fender-canvas/minimal-metrics";
+import type { AmazonFieldTotals } from "@/lib/fender-canvas/ai-readiness-lead";
+import { buildMinimalMetrics, type StockLossRead } from "@/lib/fender-canvas/minimal-metrics";
 import { buildLiveNodes } from "@/lib/fender-canvas/nodes-from-live";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
 import { fenderCanvasEdges, frameTourStep, withPrimaryFocusTargets } from "@/lib/fender-canvas/primary-spoke-layout";
@@ -43,6 +44,9 @@ export type BuildCanvasSpecOptions = {
   retail?: RetailCanvasRead;
   aiSearch?: AiSearchRead;
   findability?: FindabilityRead;
+  authorizedPartners?: readonly string[] | null;
+  stockLoss?: StockLossRead;
+  amazonFieldTotals?: AmazonFieldTotals | null;
 };
 
 /** Static fallback when Supabase is unavailable on first paint. */
@@ -80,7 +84,11 @@ export function buildFenderCanvasSpec(
           retail,
           ai: aiSearch,
           findability,
-          phaseOneDetail: metrics.phaseOneLift.detail,
+          authorizedPartners: options.authorizedPartners ?? null,
+          stockLoss: options.stockLoss ?? { phase: "loading" },
+          amazonFieldTotals: options.amazonFieldTotals ?? null,
+          phaseOne: metrics.phaseOneLift,
+          enterprise: metrics.enterprisePotential,
         }),
         ...minimalViewKeys(options.metricStorageSuffix ?? "anonymous"),
       }

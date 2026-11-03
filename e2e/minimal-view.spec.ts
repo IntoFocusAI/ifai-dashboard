@@ -17,6 +17,33 @@ test.describe("Minimal / Balanced view switch", () => {
     await expect(page.locator(".viewport-container")).toBeHidden();
   });
 
+  test("the picker groups most headline figures by area and filters as you type", async ({ canvas, page }) => {
+    await page.locator("[data-view-mode='minimal']").click();
+    await page.getByRole("button", { name: "Add metric to large slot 1" }).click();
+    const dialog = page.getByRole("dialog", { name: "Choose metric for large slot 1" });
+    await expect(dialog.locator(".metric-widget-group h3")).toHaveText([
+      "Summary",
+      "Catalog Health",
+      "AI Search Visibility",
+      "AI Readiness",
+      "Competitive Radar",
+      "Action Items",
+    ]);
+    await expect.poll(() => dialog.locator("[data-metric-option]").count()).toBeGreaterThanOrEqual(38);
+    await expect(dialog.locator("[data-metric-option='suppressed-buy-box-withheld']")).toBeVisible();
+    await expect(dialog.locator("[data-metric-option='sat-buybox']")).toBeVisible();
+
+    const filter = dialog.getByRole("searchbox", { name: "Filter metrics" });
+    await expect(filter).toBeFocused();
+    await filter.fill("price gap");
+    await expect(dialog.locator("[data-metric-option]")).toHaveCount(1);
+    await filter.press("Enter");
+    const slot = page.locator(".large-metric-body[data-metric-id='map-average-gap']");
+    await expect(slot).toBeVisible();
+    await slot.click();
+    await expect(canvas.activeTab).toContainText("MAP");
+  });
+
   test("a picked metric matches the map, opens its tab, and is remembered", async ({ canvas, page }) => {
     const mapFace = page.locator("[data-graph-node-id='sat-map'] .node-hero-value");
     await expect.poll(async () => heroText(await mapFace.allTextContents())).toMatch(/%|Not available/);
