@@ -75,6 +75,8 @@ Don't bring back the retired labels Brand Portfolio, Portfolio Retail, Retail Po
 
 **Voice.** Write for an e-commerce or marketing operator. Use plain language, active voice, contractions, and short sentences. Command center items speak to the reader as "you". Explain any unavoidable jargon in `glossary.ts`.
 
+**Let the data speak.** Don't put qualifiers on screen that say what a figure is not ("not a random sample," "not proof of cause"). Show the figure with its N of M. If a caveat is truly needed, put it in the tooltip. Required labels stay visible: "analyst estimate," "Not available*," and the asterisk on a partial or filtered figure.
+
 **Figures.** Keep numbers in the source files above, not in documentation. Label analyst estimates and targets at the point of use ("est.", "analyst estimate", "not yet measured"), and give a rate's sample or denominator next to it.
 
 **IntoFocus fees.** Client-facing copy never mentions IntoFocus fees, retainers, monthly charges, or whether the estimated lift justifies IntoFocus's price. Do not show a service-fee multiple. Opening an estimate to its inputs is a later pass. Until then, label the figure as an analyst estimate and do not invent the formula.

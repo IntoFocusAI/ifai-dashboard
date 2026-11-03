@@ -41,6 +41,10 @@ Keep this section **outside** the Next.js block above. Cursor agents also load `
 
 Prefer clarity of the ecommerce ↔ AEO story and evidence trails over generic analytics chrome. Every headline metric should have a path to source assumptions and raw inputs.
 
+## Let the data speak
+
+Do not put qualifiers on screen that say what a figure is not, such as "not a random sample" or "not proof of cause." Show the figure with its N of M and let it speak. If a caveat is truly needed, put it in the figure's tooltip. Required labels stay visible: "analyst estimate," "Not available*," and the asterisk on a partial or filtered figure.
+
 ## Client commercial terms
 
 The client portal never discusses IntoFocus fees, retainers, monthly charges, or whether the brand's estimated lift justifies IntoFocus's price. Do not show a service-fee multiple.
