@@ -45,6 +45,14 @@ Prefer clarity of the ecommerce ↔ AEO story and evidence trails over generic a
 
 Do not put qualifiers on screen that say what a figure is not, such as "not a random sample" or "not proof of cause." Show the figure with its N of M and let it speak. If a caveat is truly needed, put it in the figure's tooltip. Required labels stay visible: "analyst estimate," "Not available*," and the asterisk on a partial or filtered figure.
 
+## Database changes
+
+The live dashboard reads the production Supabase database (`SUPABASE_DB_URL` points at it). Every database change starts as a migration file in `supabase/migrations`, committed with its pull request, so there is a log to revert from. Each file says what it changes and how to undo it.
+
+- **Additive changes** (a new view, table, column, or function that leaves existing objects and data as they are) may be applied to production by an agent after Brian Magazu approves. The pull request records when the change was applied and by whom.
+- **Anything that alters or deletes existing data, tables, columns, views, or permissions** waits for Brian Watson, who applies it.
+- Never run other writes against the production database.
+
 ## Client commercial terms
 
 The client portal never discusses IntoFocus fees, retainers, monthly charges, or whether the brand's estimated lift justifies IntoFocus's price. Do not show a service-fee multiple.

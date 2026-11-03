@@ -131,7 +131,10 @@ approves the preview, and what you are leaving out. Worker labels use the number
 
 The map stays on the published run. The shared date pill is the only period
 label. Cited pages are associations. Dollar figures stay analyst estimates.
-The client portal says nothing about IntoFocus fees.
+The client portal says nothing about IntoFocus fees. Database changes
+follow "Database changes" in AGENTS.md: a migration file first; additive
+changes applied after his approval; anything else waits for Brian Watson.
+Every worker brief repeats that rule.
 
 Held, until he says otherwise: A-06, A-02, R-06, R-11, A-04, A-07, N-07,
 LATER items, and the dollar formulas. Detail lives in the FDD.
