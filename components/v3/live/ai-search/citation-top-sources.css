@@ -119,7 +119,7 @@
 
 .citation-top-source {
   display: grid;
-  grid-template-columns: 2ch minmax(0, 2.2fr) minmax(48px, 1fr) auto;
+  grid-template-columns: 20px minmax(0, 2.2fr) minmax(48px, 1fr) auto;
   align-items: center;
   gap: 10px;
   width: 100%;
@@ -145,11 +145,18 @@
 }
 
 .citation-top-source-rank {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: var(--citation-track, color-mix(in srgb, var(--border-color) 70%, transparent));
   color: var(--text-muted);
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 10.5px;
   font-variant-numeric: tabular-nums;
-  text-align: right;
+  font-weight: 750;
 }
 
 .citation-top-source-site {
@@ -183,11 +190,11 @@
 
 .citation-top-source-owner {
   flex: 0 0 auto;
-  padding: 1px 5px;
-  border: 1px solid #38bdf8;
+  padding: 1px 6px;
+  border: 1px solid color-mix(in srgb, var(--citation-owned-fill, #38bdf8) 70%, transparent);
   border-radius: 999px;
-  background: color-mix(in srgb, #38bdf8 16%, transparent);
-  color: var(--text-main);
+  background: color-mix(in srgb, var(--citation-owned-fill, #38bdf8) 14%, transparent);
+  color: var(--citation-owned-ink, var(--text-main));
   font-size: 10px;
   font-weight: 750;
   white-space: nowrap;
@@ -196,17 +203,28 @@
 .citation-top-source-track {
   display: block;
   width: 100%;
-  height: 10px;
+  height: 8px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--border-color) 70%, transparent);
+  background: var(--citation-track, color-mix(in srgb, var(--border-color) 70%, transparent));
   overflow: hidden;
 }
 
+/* Fender blue for Fender-owned sites, one slate for every other site. */
 .citation-top-source-fill {
   display: block;
   height: 100%;
   min-width: 3px;
   border-radius: inherit;
+  background: var(--chain-answers, #64748b);
+}
+
+.citation-top-source-fender .citation-top-source-fill {
+  background: var(--citation-owned-fill, #38bdf8);
+}
+
+.citation-top-source-fender .citation-top-source-rank {
+  background: color-mix(in srgb, var(--citation-owned-fill, #38bdf8) 18%, transparent);
+  color: var(--citation-owned-ink, #38bdf8);
 }
 
 .citation-top-source-value {

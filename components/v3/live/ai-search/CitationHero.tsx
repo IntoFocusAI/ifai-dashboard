@@ -3,9 +3,9 @@
 import "@/components/v3/live/ai-search/citation-glance.css";
 import { useState } from "react";
 import { CitationCategoryFilter } from "@/components/v3/live/ai-search/CitationCategoryFilter";
+import { CitationChain, type CitationLeadInput } from "@/components/v3/live/ai-search/CitationChain";
 import { CitationControlsStrip } from "@/components/v3/live/ai-search/CitationControlsStrip";
 import { CitationExecutiveGrid } from "@/components/v3/live/ai-search/CitationExecutiveGrid";
-import { CitationFigureTiles, type CitationLeadInput } from "@/components/v3/live/ai-search/CitationFigureTiles";
 import { GapsCard } from "@/components/v3/live/ai-search/CitationGapsCard";
 import { CitationTopSources } from "@/components/v3/live/ai-search/CitationTopSources";
 import {
@@ -25,7 +25,7 @@ import type { AiSearchSnapshot } from "@/lib/ai-search/types";
 
 export type { CitationPick } from "@/lib/ai-search/citation-pick";
 
-/** First screen of Citation Ecosystem: figure tiles, one control row, then the chart beside the tiles. */
+/** First screen of Citation Ecosystem: the headline chain, one control row, then the chart beside the tiles. */
 export function CitationHero({
   snapshot,
   read,
@@ -84,7 +84,7 @@ export function CitationHero({
 
   return (
     <div className="citation-hero citation-glance" data-citation-hero>
-      <CitationFigureTiles
+      <CitationChain
         lead={lead}
         read={read}
         scopeNoun={scopeNoun}
@@ -120,6 +120,7 @@ export function CitationHero({
           rolesApplicable={shoppingScope}
           showSmallSample={showSmallSample}
           onPickRoleGroup={onPickRoleGroup}
+          onPickClass={(key) => onPick({ field: "class", value: key })}
         >
           <GapsCard
             gaps={gapResult?.gaps ?? []}

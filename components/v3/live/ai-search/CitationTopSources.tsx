@@ -3,7 +3,6 @@
 import "@/components/v3/live/ai-search/citation-top-sources.css";
 import { useState } from "react";
 import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
-import { sliceColor } from "@/components/v3/live/ai-search/CitationPieDisc";
 import type { CitationRead } from "@/lib/ai-search/citations";
 import {
   TOP_SITES_RULE,
@@ -14,9 +13,11 @@ import {
 } from "@/lib/ai-search/citation-top-sources";
 
 const MEASURES: Array<[TopSitesMeasure, string]> = [
-  ["answers", "Answers citing"],
-  ["links", "Cited links"],
+  ["answers", "Answers"],
+  ["links", "Links"],
 ];
+
+const count = (n: number) => n.toLocaleString("en-US");
 
 /** Shown in each site's tooltip and spoken with its row. */
 export const TOP_SITE_ASSOCIATION =
@@ -44,7 +45,7 @@ function SourceRow({
 }) {
   const owner = source.fenderOwned ? "Fender-owned" : "Not Fender-owned";
   const [n, m] = measure === "links" ? [source.links, source.linksTotal] : [source.answers, source.answered];
-  const counts = `Cited in ${source.answers} of ${source.answered} ${scopeNoun}, ${source.links} of ${source.linksTotal} cited links.`;
+  const counts = `Cited in ${count(source.answers)} of ${count(source.answered)} ${scopeNoun}, ${count(source.links)} of ${count(source.linksTotal)} links.`;
   return (
     // The tooltip sits on the row so the button keeps its own border; focusing the button shows it too.
     <li
@@ -54,7 +55,7 @@ function SourceRow({
     >
       <button
         type="button"
-        className={`citation-top-source${active ? " active" : ""}`}
+        className={`citation-top-source${active ? " active" : ""}${source.fenderOwned ? " citation-top-source-fender" : ""}`}
         aria-pressed={active}
         data-citation-top-source={source.domain}
         data-top-source-rank={source.rank}
@@ -78,13 +79,10 @@ function SourceRow({
           )}
         </span>
         <span className="citation-top-source-track" aria-hidden="true">
-          <span
-            className="citation-top-source-fill"
-            style={{ width: `${(100 * n) / max}%`, background: sliceColor(source.sourceClass) }}
-          />
+          <span className="citation-top-source-fill" style={{ width: `${(100 * n) / max}%` }} />
         </span>
         <span className="citation-top-source-value" data-top-source-ratio>
-          <strong>{n}</strong> of {m}
+          <strong>{count(n)}</strong> of {count(m)}
         </span>
       </button>
     </li>
@@ -172,7 +170,7 @@ export function CitationTopSources({
               scrollToEvidence();
             }}
           >
-            See all {sites} sites in the cited links table
+            See all {count(sites)} sites
           </button>
         </div>
       ) : null}

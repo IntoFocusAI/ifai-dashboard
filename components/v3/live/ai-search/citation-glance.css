@@ -1,10 +1,20 @@
-/* Citation Ecosystem first screen: figure tiles, one control row, then the
+/* Citation Ecosystem first screen: the headline chain, one control row, then the
    top-sites chart beside compact source-role and gap tiles. Sizes follow the
-   panel width (container queries), not the window, because the drawer resizes. */
+   panel width (container queries), not the window, because the drawer resizes.
+   Color carries meaning only: Fender blue for Fender-owned, one slate family
+   for everything else, status colors where a status exists. */
 
 .citation-glance {
   --citation-owned-ink: #38bdf8;
-  --citation-cited-ink: #22d3ee;
+  --citation-owned-fill: #38bdf8;
+  --chain-answers: #64748b;
+  --chain-on-neutral: #fff;
+  --chain-rest: color-mix(in srgb, #94a3b8 8%, transparent);
+  --chain-hatch: color-mix(in srgb, #94a3b8 34%, transparent);
+  --citation-track: color-mix(in srgb, #94a3b8 16%, transparent);
+  --citation-card-border: var(--border-color);
+  --citation-card-radius: 14px;
+  --citation-card-bg: var(--bg-card);
   container: citation-glance / inline-size;
   display: flex;
   flex-direction: column;
@@ -14,114 +24,28 @@
 
 .ifai-canvas.light-theme .citation-glance {
   --citation-owned-ink: #0369a1;
-  --citation-cited-ink: #0e7490;
+  --citation-owned-fill: #0ea5e9;
+  --chain-answers: #94a3b8;
+  --chain-on-neutral: #0f172a;
+  --chain-rest: #f1f5f9;
+  --chain-hatch: #cbd5e1;
+  --citation-track: #eef2f6;
+  --citation-card-border: #0f172a1c;
 }
 
-/* Figure tiles: the Retail Overview hero look (label, colored figure, N of M). */
-.citation-figure-tiles {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
+/* One card style for the chart and the tiles: border, radius, padding, kicker. */
+.citation-glance .citation-card {
+  border: 1px solid var(--citation-card-border);
+  border-radius: var(--citation-card-radius);
+  background: var(--citation-card-bg);
 }
 
-.citation-figure-tile {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-  padding: 8px 14px;
-  border: 1px solid var(--border-color);
-  border-radius: 16px;
-  background: var(--bg-card);
-}
-
-.citation-figure-label {
+.citation-glance .citation-card-kicker {
   color: var(--text-muted);
-  font-size: var(--metric-label-size, 10px);
-  font-weight: var(--metric-label-weight, 700);
-  letter-spacing: 0.08em;
-  line-height: 1.2;
-  text-transform: uppercase;
-}
-
-.citation-figure-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-width: 0;
-}
-
-.citation-figure-tile .citation-figure-value {
-  display: inline;
-  font-size: clamp(20px, 2vw, 26px);
-  line-height: 1.05;
-  white-space: nowrap;
-}
-
-.citation-figure-tile .citation-figure-owned {
-  color: var(--citation-owned-ink);
-}
-
-.citation-figure-tile .citation-figure-cited {
-  color: var(--citation-cited-ink);
-}
-
-.citation-figure-main {
-  display: inline-flex;
-  flex: 0 0 auto;
-  align-items: flex-start;
-  white-space: nowrap;
-}
-
-/* Asterisk on a figure that counts one category. Its tooltip names the category. */
-.citation-figure-tile .citation-figure-filtered.ifai-term {
-  margin-left: 2px;
-  padding: 0 2px;
-  border-bottom: 0;
-  border-radius: 4px;
-  color: var(--text-main);
-  font-family: var(--font-mono);
-  font-size: 18px;
-  font-weight: 800;
-  line-height: 1;
-}
-
-.citation-figure-tile .citation-figure-owned + .citation-figure-filtered.ifai-term {
-  color: var(--citation-owned-ink);
-}
-
-.citation-figure-tile .citation-figure-cited + .citation-figure-filtered.ifai-term {
-  color: var(--citation-cited-ink);
-}
-
-.citation-figure-tile .citation-figure-filtered.ifai-term:hover,
-.citation-figure-tile .citation-figure-filtered.ifai-term:focus-visible {
-  color: var(--accent-purple);
-  outline: 2px solid var(--accent-purple);
-  outline-offset: 1px;
-}
-
-.citation-figure-unit {
-  color: var(--text-muted);
-  font-family: var(--font-sans);
-  font-size: 12px;
-  font-weight: 650;
-  letter-spacing: 0;
-}
-
-.citation-figure-ratio {
-  display: flex;
-  flex: 1 1 auto;
-  flex-direction: column;
-  min-width: 0;
-  color: var(--text-muted);
-  font-size: 12px;
-  font-variant-numeric: tabular-nums;
+  font-size: 10.5px;
+  font-weight: 750;
+  letter-spacing: 0.07em;
   line-height: 1.3;
-}
-
-.citation-figure-ratio [data-citation-window] {
-  font-size: 11px;
 }
 
 /* One control row: scope buttons, then the category chips. */
@@ -189,22 +113,28 @@
   line-height: 1.35;
 }
 
+/* Presence tile: the share and its N of M side by side, its track beneath. */
 .citation-tile-figure {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 10px;
 }
 
 .citation-tile-figure > div {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   min-width: 0;
 }
 
 .citation-glance .citation-tile-pct {
   display: block;
+  flex: 0 0 auto;
+  margin: 0;
   color: var(--citation-owned-ink);
   font-family: var(--font-mono);
-  font-size: clamp(20px, 2vw, 26px);
+  font-size: 24px;
+  font-variant-numeric: tabular-nums;
   font-weight: 800;
   letter-spacing: -0.045em;
   line-height: 1.05;
@@ -212,71 +142,33 @@
 
 .citation-glance .citation-hero-ratio {
   max-width: none;
-  margin: 4px 0 0;
-  color: var(--text-main);
-  font-size: 12px;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 11.5px;
   font-weight: 600;
   line-height: 1.35;
 }
 
 .citation-glance [data-citation-hero-value] {
+  color: var(--text-main);
   font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
   font-weight: 750;
-}
-
-.citation-glance .citation-tile-pie {
-  width: 46px;
-  height: 46px;
-}
-
-.citation-glance .citation-tile-pie-lg {
-  width: 88px;
-  height: 88px;
 }
 
 .citation-tile-follow {
   margin-top: 10px;
-  padding-top: 8px;
-  border-top: 1px solid var(--border-color);
-}
-
-.citation-tile-pie-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin: 0;
-}
-
-.citation-tile-pie-row figcaption {
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
-.citation-glance .citation-pie-legend {
-  margin: 0;
-}
-
-.citation-glance .citation-pie-legend li {
-  color: var(--text-main);
-  font-size: 11.5px;
-  line-height: 1.35;
-}
-
-.citation-tile-legend-inline .citation-pie-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 2px 10px;
-}
-
-.citation-tile-total {
-  margin: 3px 0 0;
-  color: var(--text-muted);
-  font-size: 11px;
+  padding-top: 9px;
+  border-top: 1px solid var(--citation-card-border);
 }
 
 /* Question-type tile: one line per role, then its bar and the two lead counts. */
+.citation-glance .citation-role-list {
+  margin: 0;
+}
+
 .citation-glance .citation-role-list > li + li {
-  margin-top: 10px;
+  margin-top: 8px;
 }
 
 .citation-glance .citation-role-label {
@@ -284,8 +176,9 @@
   align-items: baseline;
   justify-content: space-between;
   gap: 8px;
-  margin-bottom: 4px;
+  margin-bottom: 3px;
   font-size: 12px;
+  line-height: 1.3;
 }
 
 .citation-glance .citation-role-label strong {
@@ -298,7 +191,7 @@
 }
 
 .citation-glance .citation-role-track {
-  min-height: 18px;
+  min-height: 16px;
 }
 
 .citation-glance .citation-role-seg {
@@ -306,18 +199,27 @@
   font-size: 11px;
 }
 
+.citation-glance .citation-role-seg-cited_owned {
+  background: var(--citation-owned-fill);
+}
+
+.citation-glance .citation-role-seg-no_owned {
+  background: var(--chain-answers);
+  color: var(--chain-on-neutral);
+}
+
 .citation-glance .citation-role-leads {
-  margin: 4px 0 0;
+  margin: 3px 0 0;
 }
 
 .citation-glance .citation-role-leads li {
   font-size: 11px;
-  line-height: 1.35;
+  line-height: 1.3;
 }
 
 /* Gaps tile: count, category and leader on one line, top cited sites under it. */
 .citation-glance .citation-card-lead {
-  margin-bottom: 6px;
+  margin-bottom: 4px;
   font-size: 12px;
   line-height: 1.35;
 }
@@ -327,13 +229,13 @@
 }
 
 .citation-glance .citation-gap-list > li + li {
-  margin-top: 4px;
+  margin-top: 3px;
 }
 
 .citation-glance .citation-gap-btn {
   align-items: center;
   gap: 10px;
-  padding: 4px 10px;
+  padding: 3px 10px;
   border-radius: 10px;
 }
 
@@ -360,7 +262,7 @@
 }
 
 .citation-glance .citation-gap-more {
-  margin-top: 6px;
+  margin-top: 4px;
   font-size: 12px;
 }
 
@@ -392,7 +294,6 @@
 }
 
 @container citation-glance (max-width: 560px) {
-  .citation-figure-tiles,
   .citation-glance-tiles {
     grid-template-columns: minmax(0, 1fr);
   }

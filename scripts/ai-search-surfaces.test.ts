@@ -164,12 +164,16 @@ test("the fact-check evidence view runs question, fact, source, answer, result",
 test("citation copy separates answers from links and avoids causal claims", () => {
   // JSX spacing ({" "}) collapsed too, so the rendered sentence can be matched whole.
   const prose = (path: string) => flat(path).replace(/\{" "\}\s*/g, " ");
-  const tiles = prose("components/v3/live/ai-search/CitationFigureTiles.tsx");
-  assert.match(tiles, /\{read\.answersWithCitation\} of \{read\.answered\} \{scopeNoun\} cited web sources/);
-  assert.match(
-    tiles,
-    /data-ai-cited-links> \{read\.rows\.length\} <span className="citation-figure-unit"> <AiTerm term="cited link">cited links<\/AiTerm> <\/span> <\/span>/,
-  );
+  // The headline chain counts answers, then the answers that showed sources, then the links they listed.
+  const chain = prose("components/v3/live/ai-search/CitationChain.tsx");
+  assert.match(chain, /= citationChain\(read, lead\);/);
+  assert.match(flat("lib/ai-search/citation-lead.ts"), /const \{ answered, answersWithCitation: showed \} = read;/);
+  assert.match(chain, /data-ai-cited-answers> \{count\(showed\)\} of \{count\(answered\)\} \{scopeNoun\} showed sources </);
+  assert.match(chain, /data-ai-cited-links> \{count\(links\)\} <\/span>/);
+  assert.match(chain, /links: "Every web page those answers listed\. One answer can list several\."/);
+  const steps = ["answers", "showed", "links", "owned"].map((step) => chain.indexOf(`data-citation-chain-step="${step}"`));
+  assert.ok(steps.every((at, index) => at >= 0 && (index === 0 || at > steps[index - 1])), `chain order ${steps}`);
+  assert.doesNotMatch(chain, /cited web sources|answers citing|cited links/i, "the chain uses the plain names");
   const panel = prose("components/v3/live/ai-search/CitationEcosystemPanel.tsx");
   const notes = panel.slice(panel.indexOf("<summary>How these counts work</summary>"));
   assert.ok(notes.length < panel.length, "the counts note is on the panel");

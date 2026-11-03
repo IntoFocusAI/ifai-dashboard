@@ -215,7 +215,7 @@ test("the cited-links title names the category, and a new category keeps only si
   assert.equal(pickAfterCategoryChange({ field: "gap", value: "amps", simulationIds: ["e1"] }), null);
 });
 
-test("Citation Ecosystem opens with figure tiles, one control row, then the chart beside the tiles", () => {
+test("Citation Ecosystem opens with the headline chain, one control row, then the chart beside the tiles", () => {
   const panel = read("components/v3/live/ai-search/CitationEcosystemPanel.tsx");
   const hero = panel.indexOf("<CitationHero");
   const notes = panel.indexOf("How these counts work");
@@ -224,7 +224,7 @@ test("Citation Ecosystem opens with figure tiles, one control row, then the char
   assert.ok(hero >= 0 && hero < notes && notes < engines && engines < evidence, "the method notes and tables stay below");
   const glance = read("components/v3/live/ai-search/CitationHero.tsx");
   const order = [
-    "<CitationFigureTiles",
+    "<CitationChain",
     "data-citation-control-row",
     "<CitationControlsStrip",
     "<CitationCategoryFilter",
@@ -234,33 +234,55 @@ test("Citation Ecosystem opens with figure tiles, one control row, then the char
     "<GapsCard",
   ].map((marker) => glance.indexOf(marker));
   assert.ok(order.every((at, index) => at >= 0 && (index === 0 || at > order[index - 1])), `order ${order}`);
-  const tiles = read("components/v3/live/ai-search/CitationFigureTiles.tsx");
-  assert.ok(tiles.indexOf("<CitationLeadFigure") < tiles.indexOf("data-ai-cited-answers"));
-  assert.ok(tiles.indexOf("data-ai-cited-answers") < tiles.indexOf("data-ai-cited-links"));
+  assert.doesNotMatch(glance, /CitationFigureTiles|CitationLeadFigure/, "the three figure tiles are retired");
+  const chain = read("components/v3/live/ai-search/CitationChain.tsx");
+  assert.ok(chain.indexOf("data-ai-cited-answers") < chain.indexOf("data-ai-cited-links"));
+  assert.ok(chain.indexOf("data-ai-cited-links") < chain.indexOf("data-citation-lead-figure"));
   assert.match(panel, /lead=\{\{ owned: fender\.length, total: read\.rows\.length \}\}/, "the lead counts the filtered rows");
-  assert.match(glance, /<CitationFigureTiles[^>]*category=\{category \? citationCategoryLabel\(category\) : null\}/s);
-  assert.ok(panel.split("\n").length - 1 <= 400);
+  assert.match(glance, /<CitationChain[^>]*category=\{category \? citationCategoryLabel\(category\) : null\}/s);
+  for (const path of [panel, chain, glance]) assert.ok(path.split("\n").length - 1 <= 400);
 });
 
-test("with a category picked, each figure tile carries an asterisk whose tooltip names it", () => {
+test("each chain step has a one-line definition in a custom tooltip, and the split is named", () => {
+  const chain = read("components/v3/live/ai-search/CitationChain.tsx").replace(/\s+/g, " ");
+  const definitions = {
+    showed: "Answers that listed web pages as sources. The sites and shares on this tab come from these answers.",
+    none: "Answers given without listing any web page, so they add no sites to this tab.",
+    links: "Every web page those answers listed. One answer can list several.",
+    owned: "Links that lead to fender.com and other Fender-owned sites.",
+  };
+  for (const [key, text] of Object.entries(definitions)) assert.ok(chain.includes(`${key}: "${text}"`), key);
+  for (const [title, key, label] of [
+    ["Showed sources", "showed", "showed sources"],
+    ["No sources", "none", "{count(none)} no sources"],
+    ["Links", "links", "links"],
+    ["To Fender-owned sites", "owned", "to Fender-owned sites"],
+    ["Other sites", "other", "{count(other)} other sites"],
+  ]) {
+    assert.ok(chain.includes(`<Term name="${title}" desc={CHAIN_DEFINITIONS.${key}}> ${label} </Term>`), title);
+  }
+  assert.match(chain, /data-ifai-tooltip-title=\{name\} data-ifai-tooltip-desc=\{desc\} tabIndex=\{0\} aria-label=\{`\$\{name\}: \$\{desc\}`\}/);
+  assert.match(chain, /const answersDesc = `\$\{engines\.length \? `Answers from \$\{listed\(engines\)\}` : "Answers"\} in this view\./);
+  assert.match(chain, /style=\{\{ height: `\$\{100 \* kept\}%` \}\}/, "the band height is the share");
+});
+
+test("with a category picked, each chain step carries an asterisk whose tooltip names it", () => {
   const mark = read("components/v3/live/ai-search/CitationFilteredMark.tsx").replace(/\s+/g, " ");
-  assert.match(mark, /if \(!category\) return null;/, "clearing the category removes the asterisk");
-  assert.match(mark, /const description = `\$\{category\} only\. Clear the category to see all categories\.`;/);
+  assert.match(mark, /if \(!category && !note\) return null;/, "clearing the category removes the asterisk");
+  assert.match(mark, /const filter = category \? `\$\{category\} only\. Clear the category to see all categories\.` : "";/);
+  assert.match(mark, /const description = \[filter, note\]\.filter\(Boolean\)\.join\(" "\);/);
   assert.match(mark, /className="ifai-term citation-figure-filtered"/);
   assert.match(mark, /data-ifai-tooltip-desc=\{description\}/);
   assert.match(mark, /tabIndex=\{0\}/);
-  assert.match(mark, /aria-label=\{`Category filter: \$\{description\}`\}/);
+  assert.match(mark, /aria-label=\{`\$\{title\}: \$\{description\}`\}/);
   assert.match(mark, /> \* <\/span>/);
   assert.doesNotMatch(mark, /\stitle=/);
-  const tiles = read("components/v3/live/ai-search/CitationFigureTiles.tsx");
-  const lead = read("components/v3/live/ai-search/CitationLeadFigure.tsx");
-  assert.match(tiles, /<CitationLeadFigure [^>]*category=\{category\}/);
-  assert.equal(tiles.match(/<CitationFilteredMark category=\{category\} \/>/g)?.length, 2, "answers and total tiles");
-  assert.match(lead, /<CitationFilteredMark category=\{category\} \/>/, "lead tile");
-  for (const text of [tiles, lead]) assert.doesNotMatch(text, /` in \$\{|\bwithin\b/, "no on-screen \"in Amps\" wording");
-  assert.match(lead, /<AiTerm term="Fender-owned">Fender-owned<\/AiTerm> links\s*<\/span>/);
-  const notAvailable = tiles.slice(tiles.indexOf(") : ("), tiles.indexOf("Not available*"));
-  assert.doesNotMatch(notAvailable, /CitationFilteredMark/, "Not available* keeps its own asterisk only");
+  const chain = read("components/v3/live/ai-search/CitationChain.tsx");
+  assert.equal(chain.match(/<CitationFilteredMark category=\{category\} note=\{note\} \/>/g)?.length, 1, "the first step names runs left out");
+  assert.match(chain, /const mark = <CitationFilteredMark category=\{category\} \/>;/);
+  assert.equal(chain.match(/\{showedShare == null \? null : mark\}|\{mark\}|\{ownedLead\.population \? mark : null\}/g)?.length, 3, "the other three steps");
+  assert.doesNotMatch(chain, /` in \$\{|\bwithin\b/, "no on-screen \"in Amps\" wording");
+  assert.doesNotMatch(read("components/v3/live/ai-search/CitationHero.tsx"), /data-citation-window|\{note\}</, "the window note lives in the asterisk tooltip");
 });
 
 test("the Fender-owned lead follows the category", () => {
@@ -281,16 +303,22 @@ test("bars scale to the largest count shown, and N of M sits beside each bar", (
   const chart = read("components/v3/live/ai-search/CitationTopSources.tsx");
   assert.match(chart, /const max = Math\.max\(1, \.\.\.ranked\.map/);
   assert.match(chart, /width: `\$\{\(100 \* n\) \/ max\}%`/);
-  assert.match(chart, /<strong>\{n\}<\/strong> of \{m\}/);
+  assert.match(chart, /<strong>\{count\(n\)\}<\/strong> of \{count\(m\)\}/);
+  assert.doesNotMatch(chart, /sliceColor/, "bars use Fender blue or slate, not a color per class");
   assert.match(chart, /\[source\.links, source\.linksTotal\] : \[source\.answers, source\.answered\]/);
   assert.match(chart, /citation-top-source-owner">Fender-owned</);
   const css = read("components/v3/live/ai-search/citation-glance.css");
   assert.match(css, /\.citation-glance-grid \{[^}]*grid-template-columns: minmax\(0, [\d.]+fr\) minmax\(0, 1fr\)/s);
-  assert.match(css, /\.citation-figure-tiles \{[^}]*repeat\(3, minmax\(0, 1fr\)\)/s);
+  const chainCss = read("components/v3/live/ai-search/citation-chain.css");
+  const chainGrid = chainCss.match(/\.citation-chain \{[^}]*grid-template-columns:([^;]*);/s)?.[1] ?? "";
+  assert.equal(chainGrid.match(/minmax\(0, 1fr\)/g)?.length, 4, "four steps in one row");
+  const sitesCss = read("components/v3/live/ai-search/citation-top-sources.css");
+  assert.match(sitesCss, /\.citation-top-source-fill \{[^}]*background: var\(--chain-answers/s);
+  assert.match(sitesCss, /\.citation-top-source-fender \.citation-top-source-fill \{[^}]*background: var\(--citation-owned-fill/s);
   const narrow = css.match(/@container citation-glance \(max-width: 1060px\) \{([\s\S]*?)\n\}/)?.[1] ?? "";
   assert.match(narrow, /\.citation-top-source-list \{[^}]*grid-auto-flow: column;[^}]*repeat\(2, minmax\(0, 1fr\)\)/s);
   assert.match(chart, /gridTemplateRows: `repeat\(\$\{Math\.ceil\(ranked\.length \/ 2\)\}, auto\)`/);
-  for (const path of [css, read("components/v3/live/ai-search/citation-top-sources.css")]) {
+  for (const path of [css, sitesCss, chainCss, read("components/v3/live/ai-search/citation-share-bars.css")]) {
     for (const size of path.matchAll(/font-size:\s*([\d.]+)px/g)) assert.ok(Number(size[1]) >= 10, size[0]);
   }
 });
@@ -306,7 +334,7 @@ test("each measure's rule is one sentence in a custom tooltip that names that me
   assert.match(links, /how many cited links in the selected period point to it/);
   const chart = read("components/v3/live/ai-search/CitationTopSources.tsx");
   assert.match(chart, /<AiTerm term=\{TOP_SITES_RULE\[measure\]\}>Top cited sites<\/AiTerm>/);
-  assert.match(chart, /\["answers", "Answers citing"\],\s*\["links", "Cited links"\]/);
+  assert.match(chart, /\["answers", "Answers"\],\s*\["links", "Links"\]/);
   assert.match(chart, /useState<TopSitesMeasure>\("answers"\)/, "answers is the default");
   assert.match(chart, /aria-pressed=\{measure === value\}/);
 });
@@ -331,11 +359,11 @@ test("the ranking rule is one plain sentence in a custom tooltip, and the copy c
     "components/v3/live/ai-search/CitationTopSources.tsx",
     "components/v3/live/ai-search/CitationCategoryFilter.tsx",
     "components/v3/live/ai-search/CitationCountTable.tsx",
-    "components/v3/live/ai-search/CitationFigureTiles.tsx",
+    "components/v3/live/ai-search/CitationChain.tsx",
+    "components/v3/live/ai-search/CitationShareBars.tsx",
     "components/v3/live/ai-search/CitationHero.tsx",
     "components/v3/live/ai-search/CitationExecutiveGrid.tsx",
     "components/v3/live/ai-search/CitationGapsCard.tsx",
-    "components/v3/live/ai-search/CitationLeadFigure.tsx",
     "components/v3/live/ai-search/CitationFilteredMark.tsx",
     "components/v3/live/ai-search/CitationNotAvailable.tsx",
     "components/v3/live/ai-search/CitationRoleNote.tsx",
@@ -382,7 +410,10 @@ test("on-screen Citation copy says what each figure is, and its caveats sit in t
   assert.match(grid, /const desc = `\$\{led\} [^`]*\$\{ROLE_ASSOCIATION_CAVEAT\}`;/, "each lead count's tooltip");
   assert.match(grid, /data-ifai-tooltip-desc=\{desc\}\s+tabIndex=\{0\}\s+aria-label=\{`\$\{role\.roleLabel\}: \$\{desc\}`\}/);
   assert.match(grid, /\{showSmallSample \? \(\s*<p className="citation-card-caveat" data-citation-small-sample>\s*Counts from one run\./);
-  assert.match(grid, /tip=\{`Source mix of \$\{pie\.total\} cited links\. .*\$\{SOURCE_MIX_CAVEAT\}`\}/);
+  assert.match(grid, /<RankedShareBars pie=\{pie\} ownedKey="fender_owned" caveat=\{SOURCE_MIX_CAVEAT\}/);
+  const bars = read(join(dir, "CitationShareBars.tsx"));
+  assert.match(bars, /const desc = `\$\{slice\.label\}: [^`]*\$\{caveat\}`;/, "each source-class row's tooltip");
+  assert.match(bars, /data-ifai-tooltip-desc=\{desc\}/);
   const note = read(join(dir, "CitationRoleNote.tsx"));
   assert.match(note, /export const SOURCE_MIX_CAVEAT =\s+"A useful authorized retailer citation is not a worse outcome than a Fender page/);
 
@@ -399,5 +430,5 @@ test("on-screen Citation copy says what each figure is, and its caveats sit in t
   assert.match(mark, /data-ifai-tooltip-desc=\{description\}/);
   assert.match(mark, /tabIndex=\{0\}/);
   assert.match(mark, />\s*Not available\*\s*</);
-  assert.match(read(join(dir, "CitationFigureTiles.tsx")), />\s*Not available\*\s*</, "required label stays visible");
+  assert.match(read(join(dir, "CitationChain.tsx")), />\s*Not available\*\s*</, "required label stays visible");
 });

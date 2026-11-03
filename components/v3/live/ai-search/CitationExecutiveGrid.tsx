@@ -2,8 +2,8 @@
 
 import type { ReactNode } from "react";
 import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
-import { CitationPieDisc, CitationPieLegend } from "@/components/v3/live/ai-search/CitationPieDisc";
 import { SOURCE_MIX_CAVEAT } from "@/components/v3/live/ai-search/CitationRoleNote";
+import { BrandStackBar, OwnedShareBar, RankedShareBars } from "@/components/v3/live/ai-search/CitationShareBars";
 import type { CitationPie } from "@/lib/ai-search/citation-pies";
 import type {
   OwnedByQuestionType,
@@ -13,6 +13,8 @@ import type {
 } from "@/lib/ai-search/citation-insights";
 import type { HeadlineRole } from "@/lib/ai-search/question-role";
 import { SMALL_SAMPLE_LABEL, pct } from "@/lib/ai-search/summary";
+
+const count = (n: number) => n.toLocaleString("en-US");
 
 /** Caveat on the question-type counts. Shown in their tooltips. */
 export const ROLE_ASSOCIATION_CAVEAT = "An association, not proof of cause.";
@@ -38,19 +40,10 @@ function BrandSites({ pie }: { pie: CitationPie | null }) {
       ) : pie.total === 0 ? (
         <p className="citation-card-note">No brand website was cited in unbranded discovery answers.</p>
       ) : (
-        <figure className="citation-tile-pie-row citation-tile-legend-inline" data-citation-pie="brands" data-pie-total={pie.total}>
-          <CitationPieDisc
-            pie={pie}
-            sizeClass="citation-pie-disc citation-tile-pie"
-            tip={`Brand websites cited in unbranded discovery. ${pie.slices.map((slice) => `${slice.label} ${slice.count}`).join(". ")}. Retail and editorial sites are in the source mix.`}
-          />
-          <figcaption>
-            <CitationPieLegend pie={pie} />
-            <p className="citation-tile-total">
-              {pie.total} {pie.totalLabel}
-            </p>
-          </figcaption>
-        </figure>
+        <BrandStackBar
+          pie={pie}
+          tip={`${count(pie.total)} brand-website links in unbranded discovery. ${pie.slices.map((slice) => `${slice.label} ${slice.count}`).join(". ")}. Retail and editorial sites are in the source mix.`}
+        />
       )}
     </div>
   );
@@ -98,45 +91,44 @@ function PresenceCard({
             )}
           </p>
         </div>
-        {unbrandedPie && unbrandedPie.total > 0 ? (
-          <figure className="citation-tile-pie-row" data-citation-pie="unbranded" data-pie-total={unbrandedPie.total}>
-            <CitationPieDisc
-              pie={unbrandedPie}
-              sizeClass="citation-pie-disc citation-tile-pie"
-              tip={`Same ${ratio} answers. ${unbrandedPie.slices.map((slice) => `${slice.count} ${slice.label}`).join(". ")}. Total ${unbrandedPie.total} unbranded discovery answers.`}
-            />
-          </figure>
-        ) : null}
       </div>
+      {unbranded && unbrandedPie && unbrandedPie.total > 0 ? (
+        <OwnedShareBar
+          id="unbranded"
+          owned={unbranded.withOwned}
+          total={unbrandedPie.total}
+          name={unbrandedPie.title}
+          tip={`Same ${ratio} answers. ${unbrandedPie.slices.map((slice) => `${slice.count} ${slice.label}`).join(". ")}. Total ${unbrandedPie.total} unbranded discovery answers.`}
+        />
+      ) : !unbranded && presence.answered > 0 ? (
+        <OwnedShareBar
+          id="presence"
+          owned={presence.answersWithOwned}
+          total={presence.answered}
+          name="Answers that cited a Fender-owned page"
+          tip={`${ratio} ${scopeNoun} cited at least one Fender-owned page.`}
+        />
+      ) : null}
       {brands}
     </section>
   );
 }
 
-function SourceMixCard({ pie }: { pie: CitationPie | null }) {
+function SourceMixCard({ pie, onPickClass }: { pie: CitationPie | null; onPickClass: (key: string) => void }) {
   return (
     <section className="citation-card citation-tile" data-citation-mix>
-      <h3 className="citation-card-kicker">
-        Cited links by <AiTerm term="source class">source class</AiTerm>
+      <h3 className="citation-card-kicker citation-kicker-row">
+        <span>
+          Links by <AiTerm term="source class">source class</AiTerm>
+        </span>
+        {pie && pie.total > 0 ? <span className="citation-kicker-total">{count(pie.total)} links</span> : null}
       </h3>
       {pie == null ? (
-        <p data-citation-reconcile>The source-mix chart is hidden because its slices do not match the cited-link total.</p>
+        <p data-citation-reconcile>The source-mix chart is hidden because its slices do not match the link total.</p>
       ) : pie.total === 0 ? (
-        <p className="citation-card-note">No cited links in this view.</p>
+        <p className="citation-card-note">No links in this view.</p>
       ) : (
-        <figure className="citation-tile-pie-row" data-citation-pie="classes" data-pie-total={pie.total}>
-          <CitationPieDisc
-            pie={pie}
-            sizeClass="citation-pie-disc citation-tile-pie citation-tile-pie-lg"
-            tip={`Source mix of ${pie.total} cited links. ${pie.slices.map((slice) => `${slice.label} ${slice.count}`).join(". ")}. ${SOURCE_MIX_CAVEAT}`}
-          />
-          <figcaption>
-            <CitationPieLegend pie={pie} />
-            <p className="citation-tile-total">
-              Slices total {pie.total} {pie.totalLabel}.
-            </p>
-          </figcaption>
-        </figure>
+        <RankedShareBars pie={pie} ownedKey="fender_owned" caveat={SOURCE_MIX_CAVEAT} onPick={onPickClass} />
       )}
     </section>
   );
@@ -289,6 +281,7 @@ export function CitationExecutiveGrid({
   rolesApplicable,
   showSmallSample,
   onPickRoleGroup,
+  onPickClass,
   children,
 }: {
   presence: OwnedPresence;
@@ -300,6 +293,7 @@ export function CitationExecutiveGrid({
   rolesApplicable: boolean;
   showSmallSample: boolean;
   onPickRoleGroup: (role: RoleOwnedPresence, group: RoleOwnedGroup) => void;
+  onPickClass: (key: string) => void;
   children?: ReactNode;
 }) {
   return (
@@ -315,7 +309,7 @@ export function CitationExecutiveGrid({
         }
         brands={rolesApplicable ? <BrandSites pie={brandPie} /> : null}
       />
-      <SourceMixCard pie={mixPie} />
+      <SourceMixCard pie={mixPie} onPickClass={onPickClass} />
       <RoleOwnedCard
         byType={byQuestionType}
         applicable={rolesApplicable}

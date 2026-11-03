@@ -83,8 +83,18 @@ test.describe("AI Search Visibility", () => {
     await canvas.openSpokeFromMap("AI Search Visibility");
     await canvas.openTab("Citation Ecosystem");
     await expect(page.locator("[data-ai-cited-answers]")).toContainText(
-      /\d+ of \d+ shopping answers cited web sources/,
+      /[\d,]+ of [\d,]+ shopping answers showed sources/,
     );
+    const step = (name: string) => page.locator(`[data-citation-chain-step='${name}']`);
+    const chainCount = async (locator: ReturnType<typeof page.locator>) => Number(await locator.getAttribute("data-chain-count"));
+    const answeredInChain = await chainCount(step("answers"));
+    const showedInChain = await chainCount(step("showed"));
+    expect(showedInChain + (await chainCount(page.locator("[data-citation-chain-rest='none']")))).toBe(answeredInChain);
+    expect((await chainCount(step("owned"))) + (await chainCount(page.locator("[data-citation-chain-rest='other']")))).toBe(
+      await chainCount(step("links")),
+    );
+    expect(Number(await page.locator("[data-citation-top-sources]").getAttribute("data-top-sources-answered"))).toBe(answeredInChain);
+    await expect(page.locator("[data-citation-chain]")).not.toContainText(/cited web sources|cited links/i);
     const ratio = await page.locator("[data-citation-hero-value]").innerText();
     const ratioMatch = ratio.match(/(\d+) of (\d+)/);
     expect(ratioMatch).not.toBeNull();
@@ -125,13 +135,13 @@ test.describe("AI Search Visibility", () => {
     }
     const pctBox = await page.locator("[data-citation-hero-pct]").boundingBox();
     expect(pctBox && pctBox.height).toBeGreaterThan(20);
-    const ownedDisc = await page.locator("[data-citation-pie='unbranded'] .citation-pie-disc").boundingBox();
-    const mixDisc = await page.locator("[data-citation-pie='classes'] .citation-pie-disc").boundingBox();
-    expect(ownedDisc && ownedDisc.width).toBeGreaterThanOrEqual(40);
-    expect(mixDisc && mixDisc.width).toBeGreaterThanOrEqual(80);
-    await expect(page.locator("[data-ai-cited-links]")).toContainText(/\d+ cited links/);
+    const ownedBar = await page.locator("[data-citation-pie='unbranded']").boundingBox();
+    const mixTrack = await page.locator("[data-citation-pie='classes'] .citation-rank-bar-track").first().boundingBox();
+    expect(ownedBar && ownedBar.width).toBeGreaterThanOrEqual(120);
+    expect(mixTrack && mixTrack.width).toBeGreaterThanOrEqual(24);
+    await expect(page.locator("[data-ai-cited-links]")).toHaveText(/^[\d,]+$/);
     await expect(page.locator("[data-citation-lead-population]")).toContainText(
-      /\d+ of \d+ cited links lead to Fender-owned sites/,
+      /[\d,]+ of [\d,]+ links lead to Fender-owned sites/,
     );
     const body = page.locator(".drilldown-body");
     await expect(body).toContainText("Answers and links are separate counts");
@@ -158,7 +168,7 @@ test.describe("AI Search Visibility", () => {
       "data-ifai-tooltip-desc",
       /does not show that the site caused what the answer said\.$/,
     );
-    await expect(page.locator("[data-citation-pie='classes'] .citation-pie-disc")).toHaveAttribute(
+    await expect(page.locator("[data-citation-pie='classes'] > li").first()).toHaveAttribute(
       "data-ifai-tooltip-desc",
       /not a worse outcome than a Fender page/,
     );
@@ -176,7 +186,7 @@ test.describe("AI Search Visibility", () => {
       .evaluateAll((els) => els.map((el) => Number(el.getAttribute("data-top-source-links"))));
     expect(linkCounts).toEqual([...linkCounts].sort((a, b) => b - a));
     await page.locator("[data-citation-top-measure='answers']").click();
-    const marks = page.locator("[data-citation-figures] [data-citation-filtered]");
+    const marks = page.locator("[data-citation-figures] [data-citation-filtered]:not([data-citation-filtered=''])");
     await expect(marks).toHaveCount(0);
     const chip = page.locator("[data-citation-category]:not([data-citation-category='all'])").first();
     if (await chip.count()) {
@@ -184,12 +194,20 @@ test.describe("AI Search Visibility", () => {
       await chip.click();
       await expect(marks.first()).toBeVisible();
       const descs = await marks.evaluateAll((els) => els.map((el) => el.getAttribute("data-ifai-tooltip-desc")));
-      expect(descs.length).toBeLessThanOrEqual(3);
-      for (const desc of descs) expect(desc).toBe(`${label} only. Clear the category to see all categories.`);
+      expect(descs.length).toBe(4);
+      for (const desc of descs) expect(desc!.startsWith(`${label} only. Clear the category to see all categories.`)).toBe(true);
       await expect(marks.first()).not.toHaveAttribute("title", /./);
       await expect(page.locator("[data-citation-figures]")).not.toContainText(` in ${label}`);
       await page.locator("[data-citation-category-clear]").click();
       await expect(marks).toHaveCount(0);
+    }
+    const mixClass = page.locator("[data-citation-mix-class]").first();
+    const pickedClass = (await mixClass.getAttribute("data-citation-mix-class"))!;
+    await mixClass.click();
+    const classRows = page.locator(".ai-citation-evidence tbody tr");
+    await expect(classRows.first()).toBeVisible();
+    for (const c of await classRows.evaluateAll((els) => els.map((el) => el.getAttribute("data-source-class")))) {
+      expect(c).toBe(pickedClass);
     }
     const domain = page.locator("[data-citation-top-source]").first();
     const picked = (await domain.getAttribute("data-citation-top-source"))!;
@@ -230,7 +248,10 @@ test.describe("AI Search Visibility", () => {
     await canvas.openSpokeFromMap("AI Search Visibility");
     await canvas.openTab("Citation Ecosystem");
     for (const [label, fragment] of [
-      ["Cited link", "explicitly returned with its answer"],
+      ["Showed sources", "listed web pages as sources"],
+      ["No sources", "without listing any web page"],
+      ["Links", "One answer can list several"],
+      ["To Fender-owned sites", "fender.com and other Fender-owned sites"],
       ["Fender-owned", "controlled by Fender or another FMIC brand"],
       ["Source class", "brand-owned, retailer, editorial, community, video, or other"],
     ]) {
