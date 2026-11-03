@@ -113,13 +113,26 @@ LATER items, and the dollar formulas. Detail lives in the FDD.
 Replace this whole section on handoff. Keep it under 25 lines. The Google
 Docs win if this block is stale.
 
-- The "You are PM11" line below is the October 26 snapshot. A new Project
-  Manager follows Your number, not this line.
-- You are PM11. Next feature workers are 11.1, 11.2, 11.3.
-- Confirmed at 3:18 PM ET on October 26, 2026. Both docs open on
-  Documentation version: 10.5. Workers 9.1 through 10.5 are written there.
-  X-22 stays TARGET. Do not redo that closeout.
-- Approved code is on main at d9911c9. Pull request 46 is merged.
-  Production: https://ifai-dashboard.netlify.app/dashboard
-- Nothing is in flight. First job is the next small batch from the FDD.
-  Propose it and wait for "go ahead."
+- PM20 wrote this at 6:55 PM ET on 3 Nov 2026. Both docs open on
+  Documentation version: 20.9 (workers 20.1, 20.2, 20.4 to 20.9; Watson's
+  18.5 and 18.6). Do not redo that closeout. Next is PM21.
+- Main is e99e0d9; the header label reads 20.9. Every pull request runs a
+  "Unit tests" check. Production: https://ifai-dashboard.netlify.app/dashboard
+- Held: pull request 110 (worker 20.3, hover slots, X-22 TARGET). Brian did
+  not approve the picks and will rework it. It conflicts with main.
+- Collector: the FenderTest Toolbelt agent (AEO_Product_Research-FenderTest,
+  via Lux_Connector manage_delegations) runs it. v15 Step 1 is live (3
+  repeats, Perplexity fix, empty probe columns). PM20 asked it to switch the
+  catalog rotation on (dlg_e98b9df8-c4a4-4d81-af17-470f8dbc9820). First job:
+  confirm p35 to p37 are active before 5 Nov 06:00 UTC. If that delegation
+  is stuck, Brian presses Resume. If the rotation is off, nothing breaks.
+- Waiting on Brian Watson: review of pull request 115 (four replaced views,
+  two data writes), canvas_ai_probe_coverage grants, the claude database
+  copy, docs/pending-migrations, the drift-check load, and three answers on
+  publishing his API job (engine slugs, same scoring, which runs count).
+- Next batch candidates: hover lag and cursor glitches (Brian's top
+  concern); the All / Without API / API only switch after Watson answers;
+  the tour card covering its lit area; one failed read blanking the whole
+  map; link each page-found reason to its Findability row; 62px hero pies on
+  Run Details and Engine Comparison. Ask Brian: an edge tab to reopen a
+  spoke? Priorities open on load?
