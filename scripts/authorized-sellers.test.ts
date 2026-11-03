@@ -127,6 +127,18 @@ test("the authorized sellers bubble starts closed and reveals the list only when
   assert.match(fields, /AMAZON_RETAIL_ALWAYS_INCLUDED/);
   assert.match(fields, /AUTHORIZED_SELLERS_BROWSER_LINE/);
   assert.doesNotMatch(controlRender, /data-authorized-sellers-save=""|data-authorized-seller=\{choice/);
+
+  const css = read("lib/canvas-sdk/canvas-sdk.css");
+  const toggle = css.slice(css.indexOf(".authorized-sellers-toggle"), css.indexOf(".authorized-sellers-body"));
+  const bubble = css.slice(css.indexOf(".authorized-sellers.content-box {"), css.indexOf(".authorized-sellers-toggle"));
+  assert.match(bubble, /width:\s*fit-content/);
+  assert.match(bubble, /max-width:\s*100%/);
+  assert.match(bubble, /padding:\s*8px/);
+  assert.doesNotMatch(toggle, /(?<![\w-])width:\s*100%/);
+  assert.doesNotMatch(toggle, /justify-content:\s*space-between/);
+  assert.match(toggle, /justify-content:\s*flex-start/);
+  assert.match(toggle, /gap:\s*6px/);
+  assert.match(css, /\[data-authorized-sellers-open="true"\][\s\S]*width:\s*100%/);
 });
 
 test("Retail Overview offers the control from the Buy Box read and stores it in this browser", () => {
