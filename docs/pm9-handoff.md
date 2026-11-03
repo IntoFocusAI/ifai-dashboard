@@ -19,7 +19,7 @@ Project Manager N's workers are N.1, N.2, N.3 in delegation order. The FDD and T
 Three labels stay separate:
 
 - Documentation version (8.7 now, then 9.1, 9.2, ...)
-- Product title version (v6.6, FDD X-26)
+- Product title version (FDD X-26)
 - Feature status (CURRENT, REFINE, TARGET, DECISION, LATER)
 
 Change a feature status only after the running desktop preview is verified and Brian approves. Source or a passing test does not establish CURRENT. A change-log row cites the worker label, the pull request, and the commit. Preserve every DECISION and LATER item unless Brian explicitly changes it. Restoring a whole Google Doc requires approval. X-20 stays TARGET.
@@ -57,7 +57,7 @@ The selected period is represented only by the shared date pill. Tabs render the
 - C-02 is CURRENT.
 - X-11, R-11, and X-03 stay REFINE. Checked-page links shipped. Formula trails stay blocked by R-06. Many Musician's Friend checks still have no stored URL. The first screenful of each tab still does not lead with the figure everywhere.
 - X-09, A-02, and A-06 are unchanged. Do not mark X-09 CURRENT. Do not add an A-06 versus X-09 open decision. A-06 still says citation visuals use the published run only. X-09 still wants a latest-month default. The shipped control is a rolling 30 UTC days on AI Search and Competitive Radar, not a calendar month. A-02 still gates a month default on trustworthy recurring runs (live battery 102 calls; target 306).
-- Product title stays v6.6.
+- The header title follows FDD X-26.
 
 ## Preview links
 

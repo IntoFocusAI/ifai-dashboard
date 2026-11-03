@@ -209,6 +209,11 @@ export function averageAcrossRatio(count: number | null, unit: string): string |
   return `Across ${formatInt(count)} ${unit}`;
 }
 
+export const PAGE_FOUND_LABEL = "fender.com page found";
+
+export const PAGE_FOUND_DEFINITION =
+  "Share of checked SKUs in this older spec read where site search stored a fender.com page. Official-page outcomes are on the Findability tab.";
+
 export function pageFoundHero(m: CanvasMetricsRow): AiReadinessHeroModel {
   const checked = m.spec_checked;
   const found = m.spec_fender_found;
@@ -216,9 +221,8 @@ export function pageFoundHero(m: CanvasMetricsRow): AiReadinessHeroModel {
   const ready = checked != null && checked > 0 && found != null && pct != null;
   return {
     id: "page_found",
-    label: "fender.com page found",
-    definition:
-      "Share of checked SKUs in this older spec read where site search stored a fender.com page. Official-page outcomes are on the Findability tab.",
+    label: PAGE_FOUND_LABEL,
+    definition: PAGE_FOUND_DEFINITION,
     percent: ready ? formatPct(pct) : pendingLabel(),
     ratio: ready ? formatRatio(found, checked) : null,
     color: toneColor(pageFoundTone(pct)),

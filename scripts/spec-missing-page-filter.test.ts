@@ -181,7 +181,10 @@ test("the catalog control copy stays on the live rollup and the custom tooltip",
   assert.doesNotMatch(catalog, forbidden);
 
   assert.match(spokes, /<CatalogReadinessSpec bundle=\{bundle\} \/>/);
-  assert.match(spokes, /<MachineReadabilityPanel summary=\{bundle\.specPages \?\? null\} \/>/);
+  assert.match(
+    spokes,
+    /<MachineReadabilityPanel summary=\{bundle\.specPages \?\? null\} metrics=\{bundle\.m\} \/>/,
+  );
   assert.doesNotMatch(spokes, /<FenderSpecPanel/);
   assert.doesNotMatch(spokes, forbidden);
 

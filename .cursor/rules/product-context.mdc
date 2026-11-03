@@ -46,6 +46,7 @@ When choosing what to build or how to shape UI:
 - Prefer **evidence trails** over orphan metrics: every headline number should have a path to source assumptions and raw inputs
 - Keep the first read executive-friendly; keep depth available for operators and for IntoFocus sniff-tests
 - Do not invent a delegation / tier workflow until product reopens item 5
+- **Let the data speak:** do not put qualifiers on screen that say what a figure is not, such as "not a random sample" or "not proof of cause." Show the figure with its N of M. If a caveat is truly needed, put it in the figure's tooltip. Required labels stay visible: "analyst estimate," "Not available*," and the asterisk on a partial or filtered figure
 
 ## Client commercial terms
 

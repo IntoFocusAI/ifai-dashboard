@@ -21,7 +21,7 @@ Project Manager N's workers are N.1, N.2, N.3 in delegation order. The FDD and T
 Three labels stay separate:
 
 - Documentation version (8.7 now; 9.5 only after Brian approves this preview; then 10.1, 10.2, ...)
-- Product title version (v6.6, FDD X-26)
+- Product title version (FDD X-26)
 - Feature status (CURRENT, REFINE, TARGET, DECISION, LATER)
 
 Change a feature status only after the running desktop preview is verified and Brian approves. Source or a passing test does not establish CURRENT. A change-log row cites the worker label, the pull request, and the commit. Preserve every DECISION and LATER item unless Brian explicitly changes it. Restoring a whole Google Doc requires approval. X-20 stays TARGET.
@@ -154,7 +154,7 @@ Same deploy. Guest Skip Login, or cookie `ifai_guest_fender=1`.
 
 Do not start feature work until Brian asks. If he asks, do these in order.
 
-1. If he has approved the PR 46 preview, write the 9.5 documentation closeout before any 10.x feature. C-04 can move toward CURRENT. X-23 can move toward CURRENT. H-02's acceptance (no duplicated headline stats in the main-bubble hover) is met because those hovers are gone. X-03 stays REFINE. X-22 stays TARGET unless he says the slot behavior matches the desired hover/focus contract. Cite PR 46 and the commits above. Product title stays v6.6.
+1. If he has approved the PR 46 preview, write the 9.5 documentation closeout before any 10.x feature. C-04 can move toward CURRENT. X-23 can move toward CURRENT. H-02's acceptance (no duplicated headline stats in the main-bubble hover) is met because those hovers are gone. X-03 stays REFINE. X-22 stays TARGET unless he says the slot behavior matches the desired hover/focus contract. Cite PR 46 and the commits above. The header title follows FDD X-26.
 2. **10.1 Hero values, next bubble, proposal only.** Use the 9.5 table as the template. Propose one hero value and red/yellow/green bounds for one next main bubble and its satellites. Wait for Brian to lock them before writing the face. Do not roll the pattern onto Catalog Health, AI Readiness, Competitive Radar, Action Items, Strategy Roadmap, or the hub in the same pass, and do not improvise their bounds.
 3. **10.2 X-03 remainder.** The first screenful of each tab that 9.2 did not cover shows the figure before the essay. Run Summary and Competitive Radar already do. No new banners and no period restatements.
 

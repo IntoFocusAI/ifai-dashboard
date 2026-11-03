@@ -26,14 +26,20 @@ export default defineConfig({
     baseURL: BASE_URL,
     trace: "on-first-retry",
     screenshot: "only-on-failure",
-    // The canvas is a desktop command surface; test it at a real desk width.
-    viewport: { width: 1600, height: 950 },
   },
 
+  /* A project's viewport wins over the top-level one, so each project sets its own
+     after the device preset. 1280×720 is the laptop size the dashboard must work at.
+     Tests tagged @1440 run again at 1440×900. */
   projects: [
     {
       name: "chrome",
-      use: { ...devices["Desktop Chrome"], channel },
+      use: { ...devices["Desktop Chrome"], channel, viewport: { width: 1280, height: 720 } },
+    },
+    {
+      name: "chrome-1440",
+      grep: /@1440/,
+      use: { ...devices["Desktop Chrome"], channel, viewport: { width: 1440, height: 900 } },
     },
   ],
 

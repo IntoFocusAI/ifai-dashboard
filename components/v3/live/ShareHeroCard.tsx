@@ -17,6 +17,8 @@ export type ShareHeroModel = {
   explainer: string;
   numerator: number | null;
   denominator: number | null;
+  /** Tooltip on the figure itself, e.g. why it is Not available*. */
+  figureTip?: string | null;
 };
 
 function ExploreChevron() {
@@ -40,6 +42,29 @@ function ExploreChevron() {
   );
 }
 
+function HeroFigure({ hero }: { hero: ShareHeroModel }) {
+  const tip = hero.figureTip ?? null;
+  return (
+    <span
+      className={tip ? "ai-lead-figure ifai-term" : "ai-lead-figure"}
+      style={{ color: hero.color }}
+      data-hero-percent=""
+      data-hero-numerator={hero.numerator ?? ""}
+      data-hero-denominator={hero.denominator ?? ""}
+      {...(tip
+        ? {
+            "data-ifai-tooltip-title": hero.label,
+            "data-ifai-tooltip-desc": tip,
+            tabIndex: 0,
+            "aria-label": `${hero.label}: ${hero.percent}. ${tip}`,
+          }
+        : {})}
+    >
+      {hero.percent}
+    </span>
+  );
+}
+
 /**
  * Same card as the Catalog Governance heroes: defined label, share, N of M, disc,
  * and a chevron that toggles the table named by `controls`. No chevron without a population.
@@ -50,17 +75,21 @@ export function ShareHeroCard({
   open,
   onToggle,
   controls,
+  anchorId,
 }: {
   hero: ShareHeroModel;
   /** data-* attribute that names this hero for tests, e.g. "data-machine-hero". */
   dataAttr: string;
   open: boolean;
-  onToggle: () => void;
+  /** Without a toggle the card has no chevron. */
+  onToggle?: () => void;
   controls: string;
+  anchorId?: string;
 }) {
   return (
     <div
       className="content-box findability-lead-card"
+      id={anchorId}
       {...{ [dataAttr]: hero.id }}
       style={{ flex: "0 0 auto", width: "fit-content", maxWidth: "100%" }}
     >
@@ -77,23 +106,19 @@ export function ShareHeroCard({
       </div>
       <div className="findability-lead-row">
         <div className="findability-lead-figures">
-          <span
-            className="ai-lead-figure"
-            style={{ color: hero.color }}
-            data-hero-percent=""
-            data-hero-numerator={hero.numerator ?? ""}
-            data-hero-denominator={hero.denominator ?? ""}
-          >
-            {hero.percent}
-          </span>
-          {hero.ratio ? <span className="findability-lead-ratio">{hero.ratio}</span> : null}
+          <HeroFigure hero={hero} />
+          {hero.ratio ? (
+            <span className="findability-lead-ratio" data-hero-ratio="">
+              {hero.ratio}
+            </span>
+          ) : null}
         </div>
         {hero.pie ? (
           <CitationPieDisc pie={hero.pie} sizeClass={RETAIL_PIE_SIZE} tip={hero.tip ?? undefined} />
         ) : null}
       </div>
       <span className="metric-card-sub">{hero.explainer}</span>
-      {hero.denominator ? (
+      {hero.denominator && onToggle ? (
         <button
           type="button"
           className="retail-explore"

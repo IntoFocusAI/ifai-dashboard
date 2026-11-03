@@ -2,6 +2,7 @@ import type { TourStep } from "@/lib/canvas-sdk/types";
 import { aiTourLines } from "@/lib/ai-search/canvas-surfaces";
 import type { AiSearchRead } from "@/lib/ai-search/types";
 import { findabilityTourLine, type FindabilityRead } from "@/lib/findability/copy";
+import { ENTERPRISE_POTENTIAL_ESTIMATE, PHASE_ONE_LIFT_ESTIMATE } from "@/lib/fender-canvas/analyst-estimates";
 import { formatInt } from "@/lib/fender-canvas/format";
 import { specPageCounts } from "@/lib/fender-canvas/machine-readability";
 import {
@@ -101,8 +102,8 @@ export function buildLiveTourSteps(
       category: "OPPORTUNITY",
       displays: [
         "Revenue figures on this spoke are estimates",
-        "Phase 1 estimate: +$680K",
-        "Enterprise estimate: +$38M to $62M",
+        `Phase 1: ${PHASE_ONE_LIFT_ESTIMATE}`,
+        `Enterprise: ${ENTERPRISE_POTENTIAL_ESTIMATE}`,
       ],
       value: "See what each Action Item is worth, so you know where to start.",
     },

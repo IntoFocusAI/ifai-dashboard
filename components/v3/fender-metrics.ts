@@ -1,4 +1,5 @@
 import type { CanvasMetric } from "@/lib/canvas-sdk";
+import { ENTERPRISE_POTENTIAL_ESTIMATE, PHASE_ONE_LIFT_ESTIMATE } from "@/lib/fender-canvas/analyst-estimates";
 
 /**
  * Canonical names and display values for the compact dashboard signals.
@@ -180,7 +181,7 @@ export const FENDER_METRICS = {
     id: "phase-one-lift",
     spokeId: "suggestions",
     label: "Recoverable Revenue",
-    value: "+$680K",
+    value: PHASE_ONE_LIFT_ESTIMATE,
     detail: "Phase 1 annual · 14 pilot ASINs",
     tone: "success",
     subTab: "Revenue Estimates",
@@ -190,7 +191,7 @@ export const FENDER_METRICS = {
     id: "enterprise-potential",
     spokeId: "suggestions",
     label: "Enterprise GMV Potential",
-    value: "+$38M to $62M",
+    value: ENTERPRISE_POTENTIAL_ESTIMATE,
     detail: "Annual · full portfolio",
     tone: "success",
     subTab: "Revenue Estimates",

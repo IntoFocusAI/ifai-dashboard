@@ -319,6 +319,154 @@ test.describe("Competitive Radar", () => {
     await expect(page.locator(".ai-engine-comparison tbody tr")).not.toHaveCount(0);
   });
 
+  test("category battlecards open on a row of pies with no header sentence, and chips filter in place", async ({ page }) => {
+    test.slow();
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/dashboard?spoke=competitors&tab=category-battlecards");
+    await expect(page.locator(".drilldown-tab-btn.active")).toHaveText("Category Battlecards");
+    const cards = page.locator(".ai-battlecards");
+    await expect(cards).toBeVisible({ timeout: 90_000 });
+    const heroes = cards.locator(":scope > *").first();
+    await expect(heroes).toHaveAttribute("data-ai-battle-heroes", "");
+    const desc = page.locator(".drilldown-desc");
+    await expect(desc).toBeHidden();
+    const sentence = (await desc.textContent())?.match(/Competitors led (\d+) of (\d+) resolved unbranded discovery answers/);
+    expect(sentence).not.toBeNull();
+    await expect(heroes.locator("[data-ai-battle-competitor-led]")).toHaveText(
+      `Competitors led ${sentence?.[1]} of ${sentence?.[2]}`,
+    );
+    await expect(heroes.locator("[data-ai-ontrack-figure]")).toContainText(/^\d+ of \d+$/);
+    await expect(heroes.locator("[data-ai-win-rate='unbranded_discovery']")).toContainText(/\d+\.\d%/);
+    await expect(heroes.locator("[data-ai-win-rate='branded_consideration']")).toContainText(/\d+\.\d%/);
+    await expect(heroes.locator("[data-citation-pie-disc]")).toHaveCount(3);
+    const discTops = await heroes
+      .locator("[data-citation-pie-disc]")
+      .evaluateAll((els) => els.map((el) => Math.round(el.getBoundingClientRect().top)));
+    expect(new Set(discTops).size, "the three hero pies share one row").toBe(1);
+    await expect(heroes.locator("[data-ai-on-track-hero] .ifai-term").first()).toHaveAttribute(
+      "data-ifai-tooltip-desc",
+      /The pie counts every category, including any the Who leads chip hides\./,
+    );
+    const tab = page.locator("[data-ai-battlecards-tab]");
+    for (const gone of [
+      "not inside unbranded discovery",
+      "Not in either rate above",
+      "stay out of both denominators",
+      "No filter is on",
+      "count inside",
+      "unbranded discovery only",
+    ]) {
+      await expect(tab).not.toContainText(gone);
+    }
+    const onTrack = await heroes.locator("[data-ai-ontrack-figure]").innerText();
+
+    const rows = cards.locator("[data-ai-on-track-category]");
+    await expect(rows).not.toHaveCount(0);
+    for (const row of await rows.all()) {
+      const status = await row.getAttribute("data-ai-on-track-status");
+      await expect(row.locator(status === "not_available" ? "[data-ai-battle-pie-empty]" : "[data-ai-battle-pie-disc]")).toHaveCount(1);
+    }
+    const piesBottom = await cards
+      .locator("[data-ai-battle-lead-graph]")
+      .evaluate((el) => el.getBoundingClientRect().bottom);
+    expect(piesBottom, "hero row and category pies fit a 1440 by 900 window").toBeLessThanOrEqual(900);
+    const theadTop = await cards.locator("thead").evaluate((el) => el.getBoundingClientRect().top);
+    expect(theadTop, "the table header starts inside a 1440 by 900 window").toBeLessThan(900);
+
+    await page.setViewportSize({ width: 1280, height: 720 });
+    const groupTops = await cards
+      .locator(".ai-battle-chip-group")
+      .evaluateAll((els) => els.map((el) => Math.round(el.getBoundingClientRect().top)));
+    expect(new Set(groupTops).size, "both chip groups share one row at 1280 wide").toBe(1);
+    const tileBottoms = await rows.evaluateAll((els) => els.map((el) => el.getBoundingClientRect().bottom));
+    expect(Math.max(...tileBottoms), "every category pie fits a 1280 by 720 window").toBeLessThanOrEqual(720);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    const total = await rows.count();
+    const url = page.url();
+
+    await cards.locator("[data-ai-battle-chip='lead:other']").click();
+    await expect(cards.locator("[data-ai-battle-chip='lead:other']")).toHaveAttribute("aria-pressed", "true");
+    for (const status of await rows.evaluateAll((els) => els.map((el) => el.getAttribute("data-ai-on-track-status")))) {
+      expect(status).toBe("behind");
+    }
+    for (const status of await cards
+      .locator("tbody tr[data-category]")
+      .evaluateAll((els) => els.map((el) => el.getAttribute("data-ai-on-track-status")))) {
+      expect(status).toBe("behind");
+    }
+    await expect(cards.locator("[data-ai-battle-active-chip]")).toHaveText("Another brand leads");
+    await expect(heroes.locator("[data-ai-ontrack-figure]"), "the hero pie still counts every category").toHaveText(onTrack);
+
+    const engine = cards.locator("[data-ai-battle-chip^='engine:']:not([data-ai-battle-chip='engine:all'])").first();
+    await engine.click();
+    await expect(engine).toHaveAttribute("aria-pressed", "true");
+    await expect(cards.locator("[data-ai-battle-rates-scope]")).toHaveCount(0);
+
+    await cards.locator("[data-ai-battle-clear]").first().click();
+    await expect(rows).toHaveCount(total);
+    await expect(cards.locator("[data-ai-battle-chip='engine:all']")).toHaveAttribute("aria-pressed", "true");
+    await expect(cards.locator("[data-ai-battle-active-chip]")).toHaveCount(0);
+    expect(page.url()).toBe(url);
+
+    await page.locator(".drilldown-tab-btn", { hasText: "Competitor Wins" }).click();
+    await expect(desc).toBeVisible();
+    await expect(desc).toContainText(/Competitors led \d+ of \d+ resolved unbranded discovery answers/);
+  });
+
+  test("a battlecard engine chip carries into each evidence link and marks the figures it narrows", async ({ page }) => {
+    test.slow();
+    await page.goto("/dashboard?spoke=competitors&tab=category-battlecards");
+    const cards = page.locator(".ai-battlecards");
+    await expect(cards).toBeVisible({ timeout: 90_000 });
+    const pieLink = (key: string) => cards.locator(`[data-ai-battle-pie-disc='${key}']`).locator("xpath=ancestor::button[1]");
+    const key = await cards.locator("[data-ai-battle-pie-disc]").first().getAttribute("data-ai-battle-pie-disc");
+    expect(key).toBeTruthy();
+    await expect(pieLink(key!)).toHaveAttribute("data-ifai-evidence", `category:${key}`);
+    await expect(cards.locator(".ai-battle-engine-mark")).toHaveCount(0);
+    const firstRow = cards.locator("tbody tr[data-category]").first();
+    const firstKey = await firstRow.getAttribute("data-category");
+    const plainRates = firstRow.locator("[data-ai-role-count='unbranded_discovery'] .ifai-evidence-link");
+    if (await plainRates.count()) {
+      await expect(plainRates.first(), "with no chip, a row's rate opens that row's category").toHaveAttribute(
+        "data-ifai-evidence",
+        `role:unbranded_discovery/fender_win,category:${firstKey}`,
+      );
+    }
+
+    const chip = cards.locator("[data-ai-battle-chip^='engine:']:not([data-ai-battle-chip='engine:all'])").first();
+    const engine = (await chip.getAttribute("data-ai-battle-chip"))!.slice("engine:".length);
+    const engineName = (await chip.innerText()).trim();
+    await chip.click();
+    const marks = cards.locator(".ai-battle-engine-mark");
+    await expect(marks.first()).toBeVisible();
+    for (const mark of await marks.all()) {
+      await expect(mark).toHaveText("*");
+      await expect(mark).toHaveAttribute("data-ifai-tooltip-desc", `${engineName} only. Clear the engine to see all engines.`);
+      await expect(mark).not.toHaveAttribute("title");
+    }
+    await expect(cards.locator("[data-ai-on-track-hero] .ai-battle-engine-mark")).toHaveCount(1);
+    await expect(pieLink(key!)).toHaveAttribute("data-ifai-evidence", `category:${key},engine:${engine}`);
+    const row = cards.locator("tbody tr[data-category]").first();
+    const rowKey = await row.getAttribute("data-category");
+    await expect(row.locator("td").first().locator(".ifai-evidence-link")).toHaveAttribute(
+      "data-ifai-evidence",
+      `category:${rowKey},engine:${engine}`,
+    );
+    const rateLinks = row.locator("[data-ai-role-count='unbranded_discovery'] .ifai-evidence-link");
+    if (await rateLinks.count()) {
+      await expect(rateLinks.first()).toHaveAttribute(
+        "data-ifai-evidence",
+        `role:unbranded_discovery/fender_win,category:${rowKey},engine:${engine}`,
+      );
+    }
+
+    await pieLink(key!).click();
+    await expect(page.locator(".drilldown-tab-btn.active")).toHaveText("Run Details");
+    expect(new URL(page.url()).searchParams.get("evidence")).toBe(`category:${key},engine:${engine}`);
+    await expect(page.locator(".ai-simulations select[aria-label='Engine']")).toHaveValue(engine);
+    await expect(page.locator(".ai-simulations select[aria-label='Category']")).toHaveValue(key!);
+  });
+
   test("engine comparison shows the two rates, not one pooled commercial win rate", async ({ canvas, page }) => {
     await canvas.openSpokeFromMap("Competitive Radar");
     await canvas.openTab("Engine Comparison");

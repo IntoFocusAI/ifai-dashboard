@@ -1,0 +1,341 @@
+/* Minimal / Balanced view switch (header) and the Minimal slot board. */
+
+.view-mode-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  min-height: 26px;
+  border: 1px solid color-mix(in srgb, var(--accent-cyan) 22%, transparent);
+  border-radius: 999px;
+  background: var(--bg-glass);
+  backdrop-filter: blur(10px);
+  pointer-events: auto;
+}
+
+.view-mode-option {
+  padding: 3px 11px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.3;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.view-mode-option:hover {
+  color: var(--text-main);
+}
+
+.view-mode-option.active {
+  border-color: color-mix(in srgb, var(--accent-cyan) 55%, transparent);
+  background: color-mix(in srgb, var(--accent-cyan) 22%, transparent);
+  color: var(--text-main);
+}
+
+.view-mode-option:focus-visible {
+  outline: 2px solid var(--accent-cyan);
+  outline-offset: 2px;
+}
+
+/* The map stays mounted so switching back is instant; Minimal hides it until a tab opens.
+   A guided tour walks the map, so the map returns while the tour runs. */
+.ifai-canvas.view-minimal:not(.column-layout):not(.tour-running) .viewport-container {
+  visibility: hidden;
+}
+
+.ifai-canvas.tour-running .minimal-view {
+  display: none;
+}
+
+.minimal-view {
+  position: absolute;
+  top: var(--canvas-header-height, 64px);
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 46;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  overflow: auto;
+}
+
+.ifai-canvas.column-layout .minimal-view {
+  display: none;
+}
+
+.ifai-canvas.theme-iom.iom-map-exiting .minimal-view {
+  pointer-events: none;
+  animation: iom-map-exit calc(0.48s * var(--iom-motion-scale, 1)) cubic-bezier(0.22, 0.9, 0.24, 1) forwards;
+}
+
+.ifai-canvas.theme-iom.iom-map-entering .minimal-view {
+  pointer-events: none;
+  animation: iom-map-enter calc(0.48s * var(--iom-motion-scale, 1)) cubic-bezier(0.22, 0.9, 0.24, 1) both;
+}
+
+/* The board already animates as one piece; the small slots must not animate twice. */
+.ifai-canvas.theme-iom.iom-map-exiting .minimal-view .canvas-metric-widgets,
+.ifai-canvas.theme-iom.iom-map-entering .minimal-view .canvas-metric-widgets {
+  animation: none;
+}
+
+.minimal-view-board {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+  width: min(1120px, 100%);
+}
+
+.ifai-canvas .minimal-view .canvas-metric-widgets {
+  position: static;
+  flex-direction: row;
+  justify-content: center;
+  gap: 18px;
+  width: auto;
+}
+
+.ifai-canvas .minimal-view .canvas-metric-widget {
+  width: 240px;
+}
+
+.ifai-canvas .minimal-view .canvas-metric-widget:hover,
+.ifai-canvas .minimal-view .canvas-metric-widget.picker-open {
+  transform: translateY(-2px);
+}
+
+.ifai-canvas .minimal-view .metric-widget-category,
+.ifai-canvas .minimal-view .metric-widget-label,
+.ifai-canvas .minimal-view .metric-widget-detail {
+  max-width: 180px;
+}
+
+.ifai-canvas .minimal-view .metric-widget-value.is-longer {
+  font-size: 18px;
+}
+
+/* Semi-transparent "+" placeholders until a metric is picked. */
+.ifai-canvas .minimal-view .canvas-metric-widget.is-empty,
+.large-metric-slot.is-empty {
+  opacity: 0.55;
+}
+
+.ifai-canvas .minimal-view .canvas-metric-widget.is-empty:hover,
+.ifai-canvas .minimal-view .canvas-metric-widget.is-empty:focus-within,
+.ifai-canvas .minimal-view .canvas-metric-widget.is-empty.picker-open,
+.large-metric-slot.is-empty:hover,
+.large-metric-slot.is-empty:focus-within,
+.large-metric-slot.is-empty.picker-open {
+  opacity: 1;
+}
+
+/* Each slot is its own stacking context (backdrop-filter), so the open one must sit above its neighbours. */
+.ifai-canvas .minimal-view .canvas-metric-widget.picker-open,
+.large-metric-slot.picker-open {
+  z-index: 70;
+}
+
+.ifai-canvas .minimal-view .canvas-metric-widget:nth-child(3) .metric-widget-picker,
+.large-metric-slot:nth-child(3) .metric-widget-picker {
+  right: calc(100% + 12px);
+  left: auto;
+}
+
+.large-metric-slots {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 340px));
+  justify-content: center;
+  gap: 22px;
+  width: 100%;
+}
+
+.large-metric-slot {
+  position: relative;
+  min-height: 236px;
+  border: 1px solid var(--border-dark);
+  border-radius: 16px;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--accent-cyan) 10%, transparent), transparent 52%),
+    var(--bg-glass);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--accent-cyan) 8%, transparent),
+    0 14px 32px rgba(0, 0, 0, 0.26);
+  backdrop-filter: blur(14px);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
+}
+
+.large-metric-slot.is-empty {
+  border-style: dashed;
+  background: color-mix(in srgb, var(--bg-glass) 82%, transparent);
+}
+
+.large-metric-slot:hover,
+.large-metric-slot.picker-open {
+  border-color: var(--accent-cyan);
+  transform: translateY(-2px);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--accent-cyan) 18%, transparent),
+    0 0 22px color-mix(in srgb, var(--accent-cyan) 16%, transparent),
+    0 16px 36px rgba(0, 0, 0, 0.3);
+}
+
+.large-metric-slot .metric-widget-picker {
+  top: auto;
+  bottom: 0;
+}
+
+.large-metric-body,
+.large-metric-empty {
+  width: 100%;
+  min-height: 236px;
+  border: 0;
+  border-radius: 16px;
+  background: transparent;
+  color: var(--text-main);
+  cursor: pointer;
+}
+
+.large-metric-body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 18px 46px 16px 20px;
+  text-align: left;
+}
+
+.large-metric-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--text-muted);
+}
+
+.large-metric-empty span {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.large-metric-body:focus-visible,
+.large-metric-empty:focus-visible {
+  outline: 2px solid var(--accent-cyan);
+  outline-offset: 3px;
+}
+
+.large-metric-label {
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.large-metric-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  margin-top: 4px;
+}
+
+.large-metric-figures {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.large-metric-value {
+  color: var(--text-main);
+  font-family: var(--font-mono);
+  font-size: 40px;
+  font-weight: var(--metric-value-weight);
+  letter-spacing: var(--metric-value-tracking);
+  line-height: 1;
+  overflow-wrap: anywhere;
+}
+
+.large-metric-value.is-long {
+  font-size: 28px;
+}
+
+.large-metric-value.is-longer {
+  font-size: 22px;
+}
+
+.large-metric-value.tone-danger { color: var(--danger-text); }
+.large-metric-value.tone-warning { color: var(--warning-text); }
+.large-metric-value.tone-success { color: var(--success-text); }
+.large-metric-value.tone-accent { color: var(--accent-cyan); }
+
+.large-metric-ratio {
+  color: var(--text-main);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.citation-pie-disc.large-metric-disc {
+  width: 84px;
+  height: 84px;
+}
+
+.large-metric-detail {
+  max-width: 100%;
+}
+
+.large-metric-opens {
+  margin-top: auto;
+  padding-top: 6px;
+  color: var(--accent-cyan);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 1180px) {
+  .large-metric-slots {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .large-metric-value {
+    font-size: 32px;
+  }
+
+  .large-metric-value.is-long {
+    font-size: 24px;
+  }
+
+  .large-metric-value.is-longer {
+    font-size: 19px;
+  }
+
+  .citation-pie-disc.large-metric-disc {
+    width: 64px;
+    height: 64px;
+  }
+}
+
+@media (max-height: 760px) {
+  .minimal-view-board {
+    gap: 18px;
+  }
+
+  .large-metric-slot,
+  .large-metric-body,
+  .large-metric-empty {
+    min-height: 196px;
+  }
+}

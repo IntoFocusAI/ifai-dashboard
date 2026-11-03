@@ -288,7 +288,7 @@ test("Amazon Specs puts Top missing fields beside the completeness hero", async 
   await expect(table).toBeVisible();
 });
 
-test("Brand-Site Specs leads with missing machine-readable specs and no Amazon percentage", async ({
+test("Brand-Site Specs leads with page found and missing machine-readable specs, and no Amazon percentage", async ({
   page,
 }) => {
   await mockCanvasRead(page);
@@ -297,6 +297,10 @@ test("Brand-Site Specs leads with missing machine-readable specs and no Amazon p
   await page.goto("/dashboard?spoke=specs&tab=brand-site-specs&layout=wide");
   await expect(page.locator(".ifai-canvas.column-layout")).toHaveCount(1);
   await expect(canvas.activeTab).toHaveText("Brand-Site Specs");
+
+  const pageFound = page.locator("[data-machine-hero='page_found']");
+  await expect(pageFound.locator("[data-hero-percent]")).toHaveText("50.0%");
+  await expect(pageFound).toContainText("2 of 4");
 
   const missing = page.locator("[data-machine-hero='missing_specs']");
   await expect(missing).toBeVisible();
@@ -307,30 +311,36 @@ test("Brand-Site Specs leads with missing machine-readable specs and no Amazon p
   await expect(missing).toContainText("spec block");
 
   const lead = page.locator("[data-brand-site-specs-lead]");
+  const pageFoundBox = lead.locator("[data-machine-hero='page_found']");
   const missingBox = lead.locator("[data-machine-hero='missing_specs']");
   const basicsBox = lead.locator("[data-machine-hero='product_basics']");
   const notes = lead.locator("[data-brand-site-specs-notes]");
+  await expect(pageFoundBox).toBeVisible();
   await expect(missingBox).toBeVisible();
   await expect(basicsBox).toBeVisible();
   await expect(notes).toBeVisible();
-  const band = await Promise.all([
-    missingBox.evaluate((el) => {
-      const box = el.getBoundingClientRect();
-      return { top: box.top, right: box.right, left: box.left };
-    }),
-    basicsBox.evaluate((el) => {
-      const box = el.getBoundingClientRect();
-      return { top: box.top, right: box.right, left: box.left };
-    }),
-    notes.evaluate((el) => {
-      const box = el.getBoundingClientRect();
-      return { top: box.top, left: box.left };
-    }),
-  ]);
-  expect(Math.abs(band[0].top - band[1].top)).toBeLessThan(8);
-  expect(Math.abs(band[0].top - band[2].top)).toBeLessThan(8);
-  expect(band[0].right).toBeLessThanOrEqual(band[1].left + 1);
-  expect(band[1].right).toBeLessThanOrEqual(band[2].left + 1);
+  const rect = (el: Element) => {
+    const box = el.getBoundingClientRect();
+    return { top: box.top, bottom: box.bottom, right: box.right, left: box.left };
+  };
+  // The panel widens as it opens; read the band once it settles.
+  await expect(async () => {
+    const band = await Promise.all([
+      pageFoundBox.evaluate(rect),
+      missingBox.evaluate(rect),
+      basicsBox.evaluate(rect),
+      notes.evaluate(rect),
+    ]);
+    // The three heroes share one row, page found first.
+    expect(Math.abs(band[0].top - band[1].top)).toBeLessThan(8);
+    expect(Math.abs(band[0].top - band[2].top)).toBeLessThan(8);
+    expect(band[0].right).toBeLessThanOrEqual(band[1].left + 1);
+    expect(band[1].right).toBeLessThanOrEqual(band[2].left + 1);
+    // The explainer sits to their right when the panel has room, otherwise just below them.
+    const besideHeroes = Math.abs(band[0].top - band[3].top) < 8 && band[2].right <= band[3].left + 1;
+    const belowHeroes = band[3].top >= Math.max(band[0].bottom, band[1].bottom, band[2].bottom) - 1;
+    expect(besideHeroes || belowHeroes).toBe(true);
+  }).toPass({ timeout: 10_000 });
 
   await expect(page.locator("[data-ai-readiness-hero='amazon_completeness']")).toHaveCount(0);
   await expect(lead).not.toContainText("Amazon attribute completeness");

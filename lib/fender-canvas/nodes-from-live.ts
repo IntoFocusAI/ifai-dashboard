@@ -241,7 +241,7 @@ export function buildLiveNodes(
       title: "Action Items",
       stats: [],
       // Phase 1 dollar figure stays an analyst estimate — never a fee or ROI multiple.
-      heroValue: { value: metrics.phaseOneLift.value, label: "est. Phase 1 lift" },
+      heroValue: { value: metrics.phaseOneLift.value, label: "Phase 1 lift" },
       spokeId: "suggestions",
       tooltip: { title: "", desc: "" },
     },

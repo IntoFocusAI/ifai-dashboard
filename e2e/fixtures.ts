@@ -1,4 +1,30 @@
 import { expect, test as base, type Locator, type Page } from "@playwright/test";
+import { mockSetAsides, type SetAsideMock } from "./set-aside-mock";
+
+/** Must outlast the hover rest before the map slides (`DWELL_MS` in useHoverFraming). */
+const MAP_SETTLE_MS = 500;
+
+/** Runs in the page: resolves once `el` has kept the same box for `quietMs`. */
+function holdStill(el: Element, quietMs: number) {
+  return new Promise<void>((resolve, reject) => {
+    const start = performance.now();
+    let last = "";
+    let since = start;
+    const check = () => {
+      const { x, y, width } = el.getBoundingClientRect();
+      const box = `${x} ${y} ${width}`;
+      const now = performance.now();
+      if (box !== last) {
+        last = box;
+        since = now;
+      }
+      if (now - since >= quietMs) return resolve();
+      if (now - start > 10_000) return reject(new Error("the map kept moving for 10s"));
+      setTimeout(check, 50);
+    };
+    check();
+  });
+}
 
 /** Thin page object over the v3 canvas so specs read as behaviour, not selectors. */
 export class Canvas {
@@ -19,12 +45,34 @@ export class Canvas {
     await expect(this.page.locator(".ifai-canvas.panel-hidden")).toHaveCount(1);
   }
 
+  /** A map bubble by its node id, e.g. `spoke-specs` or `hub`. */
+  bubble(nodeId: string) {
+    return this.page.locator(`[data-graph-node-id="${nodeId}"]`);
+  }
+
+  /** Clicks a map bubble with the mouse once the map has stopped moving under it. */
+  async clickBubble(nodeId: string) {
+    const bubble = this.bubble(nodeId);
+    // Pointing at a bubble opens the signal slots. Up to 1500px wide that shifts the map
+    // right, and a short rest can slide it again, so a click sent on arrival lands on
+    // empty map. The halo always pulses (hence `force`); the circle holds still.
+    await bubble.hover({ force: true });
+    await bubble.locator(":scope > .node-inner > .node-circle").evaluate(holdStill, MAP_SETTLE_MS);
+    await bubble.click({ force: true });
+  }
+
   /** Opens a spoke from the map column layout (panel starts hidden on IOM). */
   async openSpokeFromMap(titleFragment: string) {
     // Spoke titles are drawn as separate SVG lines, so the DOM text has no space.
     const pattern = new RegExp(titleFragment.trim().split(/\s+/).join("\\s*"), "i");
-    await this.page.locator(".graph-node").filter({ hasText: pattern }).click({ force: true });
+    const nodeId = await this.page
+      .locator(".graph-node")
+      .filter({ hasText: pattern })
+      .getAttribute("data-graph-node-id", { timeout: 10_000 });
+    if (!nodeId) throw new Error(`no map bubble titled "${titleFragment}"`);
+    await this.clickBubble(nodeId);
     await expect(this.page.locator(".ifai-canvas.column-layout")).toHaveCount(1);
+    await expect(this.bubble(nodeId)).toHaveClass(/\bnode-selected\b/);
     await expect(this.panel).toBeVisible();
   }
 
@@ -122,6 +170,8 @@ type Fixtures = {
   canvas: Canvas;
   /** Page errors seen during the test; asserted empty on teardown. */
   pageErrors: string[];
+  /** In-memory set-aside endpoints; specs never write the live audit log. */
+  setAsides: SetAsideMock;
 };
 
 /* Both fixtures are `auto` so every test starts on a loaded /v3 with the error
@@ -135,7 +185,9 @@ export const test = base.extend<Fixtures>({
       page.on("console", (message) => {
         if (message.type() !== "error") return;
         const text = message.text();
-        errors.push(`console: ${text}`);
+        // Chrome leaves the failing URL out of the text; without it a 500 cannot be traced.
+        const resource = text.startsWith("Failed to load resource") ? ` ${message.location().url}` : "";
+        errors.push(`console: ${text}${resource}`);
       });
       await use(errors);
       // A dashboard that throws in the console is broken even if the assertion passed.
@@ -144,9 +196,17 @@ export const test = base.extend<Fixtures>({
     { auto: true },
   ],
 
+  setAsides: [
+    async ({ page }, use) => {
+      await use(await mockSetAsides(page));
+    },
+    { auto: true },
+  ],
+
   canvas: [
-    async ({ page, pageErrors }, use) => {
+    async ({ page, pageErrors, setAsides }, use) => {
       void pageErrors; // ordering: attach the listener before the first navigation
+      void setAsides; // and the set-aside routes, so live rows never shift the queue
       const canvas = new Canvas(page);
       await canvas.open();
       await use(canvas);

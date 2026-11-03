@@ -2,17 +2,27 @@
 
 import { useState } from "react";
 import { MachineReadabilityPageTable } from "@/components/v3/live/MachineReadabilityPageTable";
+import { PageFoundTable } from "@/components/v3/live/PageFoundTable";
 import { ShareHeroCard } from "@/components/v3/live/ShareHeroCard";
+import { openedFromPageFoundBubble, useLandOnPageFoundHero } from "@/components/v3/live/useLandOnPageFoundHero";
+import { usePageFoundEvidence } from "@/components/v3/live/usePageFoundEvidence";
 import {
   machineReadabilityHeroes,
   sharedGapSentence,
   type MachineHeroId,
   type SpecPageSummary,
 } from "@/lib/fender-canvas/machine-readability";
+import {
+  brandSitePageFoundHero,
+  PAGE_FOUND_ANCHOR,
+  PAGE_FOUND_HERO_ID,
+} from "@/lib/fender-canvas/page-found-hero";
+import type { CanvasMetricsRow } from "@/lib/fender-canvas/types";
 
 const PAGES_TABLE_ID = "machine-readability-pages";
+const PAGE_FOUND_TABLE_ID = "brand-site-page-found-skus";
 
-type OpenTable = MachineHeroId | "closed";
+type OpenTable = MachineHeroId | typeof PAGE_FOUND_HERO_ID | "closed";
 
 function BrandSiteSpecsNotes({ summary }: { summary: SpecPageSummary | null }) {
   const shared = sharedGapSentence(summary);
@@ -38,14 +48,25 @@ function BrandSiteSpecsNotes({ summary }: { summary: SpecPageSummary | null }) {
 }
 
 /**
- * Brand-Site Specs: found fender.com pages only.
- * Lead matches Amazon A+ Matrix: hero cards in one row, explainer to the right.
+ * Brand-Site Specs. The page-found hero leads with checked SKUs; the heroes after it
+ * count found fender.com pages only. Hero cards in one row, explainer to the right.
  */
-export function MachineReadabilityPanel({ summary }: { summary: SpecPageSummary | null }) {
-  const [openTable, setOpenTable] = useState<OpenTable>("missing_specs");
+export function MachineReadabilityPanel({
+  summary,
+  metrics,
+}: {
+  summary: SpecPageSummary | null;
+  metrics: CanvasMetricsRow | null;
+}) {
+  const [openTable, setOpenTable] = useState<OpenTable>(() =>
+    openedFromPageFoundBubble() ? PAGE_FOUND_HERO_ID : "missing_specs",
+  );
   const heroes = machineReadabilityHeroes(summary);
+  const pageFound = brandSitePageFoundHero(metrics);
+  const pageFoundRead = usePageFoundEvidence(openTable === PAGE_FOUND_HERO_ID);
+  useLandOnPageFoundHero(PAGE_FOUND_ANCHOR, () => setOpenTable(PAGE_FOUND_HERO_ID));
 
-  function toggle(which: MachineHeroId) {
+  function toggle(which: Exclude<OpenTable, "closed">) {
     setOpenTable((prev) => (prev === which ? "closed" : which));
   }
 
@@ -57,6 +78,14 @@ export function MachineReadabilityPanel({ summary }: { summary: SpecPageSummary 
         style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "flex-start" }}
       >
         <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "stretch" }}>
+          <ShareHeroCard
+            hero={pageFound}
+            dataAttr="data-machine-hero"
+            open={openTable === PAGE_FOUND_HERO_ID}
+            onToggle={() => toggle(PAGE_FOUND_HERO_ID)}
+            controls={PAGE_FOUND_TABLE_ID}
+            anchorId={PAGE_FOUND_ANCHOR}
+          />
           {heroes.map((hero) => (
             <ShareHeroCard
               key={hero.id}
@@ -71,7 +100,11 @@ export function MachineReadabilityPanel({ summary }: { summary: SpecPageSummary 
         <BrandSiteSpecsNotes summary={summary} />
       </div>
 
-      {summary && openTable !== "closed" ? (
+      {openTable === PAGE_FOUND_HERO_ID ? (
+        <PageFoundTable read={pageFoundRead} hero={pageFound} tableId={PAGE_FOUND_TABLE_ID} />
+      ) : null}
+
+      {summary && openTable !== "closed" && openTable !== PAGE_FOUND_HERO_ID ? (
         <MachineReadabilityPageTable
           summary={summary}
           filter={openTable}
