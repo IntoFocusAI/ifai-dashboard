@@ -31,6 +31,7 @@ test.describe("AI Search Visibility", () => {
     await expect(page.locator(".ai-engine-table tbody tr")).not.toHaveCount(0);
     await expect(page.locator(".ai-category-table [data-category='hallucinations']")).toHaveCount(0);
     await expect(page.locator("[data-ai-window-completeness]")).toContainText("Runs in this selection");
+    await expect(page.locator("[data-ai-window-calls]")).toHaveText(/^[\d,]+ answered of [\d,]+ calls?$/);
     await expect(page.locator(".ai-run-card")).not.toContainText("Expected calls");
   });
 
@@ -273,6 +274,12 @@ test.describe("AI Search Visibility", () => {
     const drawer = page.locator("[data-ai-fact-check-evidence]");
     await expect(drawer).toBeVisible();
     await expect(drawer).toContainText("product questions IntoFocus sends to every engine on purpose");
+    await expect(drawer).not.toContainText("randomly chosen");
+    await expect(drawer).not.toContainText("not the whole answer");
+    await expect(drawer.locator(".ifai-term", { hasText: "product questions" })).toHaveAttribute(
+      "data-ifai-tooltip-desc",
+      /is not recorded/,
+    );
     // The step labels are uppercased in CSS, so compare case-insensitively.
     const order = (await drawer.innerText()).toLowerCase();
     const steps = ["question checked", "verified fender fact", "official fender source", "ai answer", "result"];
@@ -285,6 +292,81 @@ test.describe("AI Search Visibility", () => {
     await expect(drawer.locator("[data-ai-fact-result-row]")).toHaveText("No contradiction found for this fact");
     await expect(drawer.locator("[data-ai-remediation]")).toHaveCount(0);
     await expect(drawer.locator("[data-ai-root-cause]")).toHaveCount(0);
+  });
+
+  test("Product Fact Checks states how its products were chosen, N of M", async ({ canvas, page }) => {
+    test.slow();
+    await page.goto("/dashboard?spoke=aeo&tab=product-fact-checks");
+    await expect(canvas.activeTab).toHaveText("Product Fact Checks");
+    await expect(page.locator("[data-ai-accuracy-figure]")).toHaveText(/\d+\.\d% Accuracy/, { timeout: 60_000 });
+    const badge = page.locator("[data-ai-fact-result]");
+    await expect(badge).toHaveText(/^(No contradictions found|1 contradiction|([2-9]|\d{2,}) contradictions)$/);
+    const method = page.locator("[data-ai-accuracy-lead] [data-ai-fact-method]");
+    await expect(method).toHaveText(/^\d+ products? checked · \d+ with a verified fact$/);
+    const term = method.locator(".ifai-term").first();
+    await expect(term).toHaveAttribute("data-ifai-tooltip-title", "How these products were chosen");
+    await expect(term).toHaveAttribute("data-ifai-tooltip-desc", /is not recorded, so this result covers/);
+    await expect(term).not.toHaveAttribute("data-ifai-tooltip-desc", /representative|random/i);
+    await expect(term).not.toHaveAttribute("title");
+    await term.focus();
+    await expect(page.locator(".node-tooltip-definition, .node-tooltip")).toContainText("picked");
+    const accuracy = page.locator("[data-ai-accuracy-figure] .ifai-term");
+    await expect(accuracy).toHaveAttribute("data-ifai-tooltip-title", "Accuracy");
+    await expect(accuracy).toHaveAttribute(
+      "data-ifai-tooltip-desc",
+      /^[\d,]+ of [\d,]+ answers matched\. These checks cover the selected facts only\. They do not prove every statement/,
+    );
+    await expect(page.locator("[data-ai-fact-scope]")).toHaveCount(0);
+    const body = page.locator(".drilldown-body");
+    await expect(body).not.toContainText("These checks cover the selected facts only");
+    for (const qualifier of ["does not cover", "clean bill of health", "is not a buying prompt", "so they are not reported"]) {
+      await expect(body).not.toContainText(qualifier);
+    }
+  });
+
+  test("every non-fact-check row reads n/a in Fact check", async ({ canvas, page }) => {
+    test.slow();
+    await page.goto("/dashboard?spoke=aeo&tab=run-details");
+    await expect(canvas.activeTab).toHaveText("Run Details");
+    await expect(canvas.simulations.first()).toBeVisible({ timeout: 60_000 });
+    await canvas.filterChip("All calls").click();
+    // The table draws 25 rows at first; this test reads every row.
+    const showAll = page.locator("#ai-simulation-list [data-table-show-all]");
+    if (await showAll.count()) await showAll.click();
+    await expect(page.locator("#ai-simulation-list [data-table-row-limit]")).toHaveCount(0);
+    const factCells = (kind: string) =>
+      page
+        .locator(`#ai-simulation-list .ai-sim-row${kind} td:nth-child(6)`)
+        .evaluateAll((cells) => cells.map((cell) => cell.textContent?.trim() ?? ""));
+    const shopping = await factCells(":not([data-kind='probe'])");
+    expect(shopping.length).toBeGreaterThan(0);
+    for (const text of shopping) expect(text).toBe("n/a");
+    const checks = await factCells("[data-kind='probe']");
+    expect(checks.length).toBeGreaterThan(0);
+    for (const text of checks) expect(text).not.toBe("n/a");
+
+    await canvas.filterChip("Shopping prompts").click();
+    await page.getByLabel("Fact-check result").selectOption("not_evaluated");
+    await expect(canvas.filterChip("Product fact checks")).toHaveAttribute("aria-pressed", "true");
+    await expect(canvas.simulations.first()).toBeVisible();
+    const kinds = await canvas.simulations.evaluateAll((rows) => rows.map((row) => row.getAttribute("data-kind")));
+    for (const kind of kinds) expect(kind).toBe("probe");
+  });
+
+  test("Run Details draws the first 25 rows, then 25 more, then every row", async ({ canvas, page }) => {
+    test.slow();
+    await page.goto("/dashboard?spoke=aeo&tab=run-details");
+    await expect(canvas.simulations.first()).toBeVisible({ timeout: 60_000 });
+    const footer = page.locator("#ai-simulation-list [data-table-row-limit]");
+    await expect(canvas.simulations).toHaveCount(25);
+    const total = Number(await footer.getAttribute("data-rows-total"));
+    expect(total).toBeGreaterThan(25);
+    await expect(footer).toContainText(`Showing 25 of ${total.toLocaleString("en-US")} rows`);
+    await footer.locator("[data-table-show-more]").click();
+    await expect(canvas.simulations).toHaveCount(Math.min(50, total));
+    await footer.locator("[data-table-show-all]").click();
+    await expect(canvas.simulations).toHaveCount(total);
+    await expect(footer).toHaveCount(0);
   });
 
   test("a question with no verified fact says so", async ({ canvas, page }) => {

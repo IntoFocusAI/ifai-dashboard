@@ -6,6 +6,7 @@ import {
   joinBrands,
   type CategoryBattle,
 } from "@/lib/ai-search/competitors";
+import { competitorWinsFigure } from "@/lib/ai-search/competitor-wins-lead";
 import {
   factCheckHeadline,
   factCheckShortLine,
@@ -23,6 +24,7 @@ import {
   UNBRANDED_RATE_BANDS,
 } from "@/lib/ai-search/summary";
 import type { AiSearchRead } from "@/lib/ai-search/types";
+import { selectionLine } from "@/lib/ai-search/displayed-read";
 import { isWindowHistoryKind } from "@/lib/ai-search/window-display";
 
 /** Engines with resolved unbranded answers, weakest Fender-lead share first (same order as Engine Comparison). */
@@ -317,6 +319,7 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
 /** One-line AI Search panel lead. Run facts stay on the pill and on the other tabs' chips. */
 export function aiSpokeDesc(read: AiSearchRead): string {
   if (read.phase === "loading") return "Reading the published AI run.";
+  if (read.phase === "error" && read.selection) return `${selectionLine(read.selection, false)}.`;
   if (read.phase === "error") return `The published AI run did not load: ${read.message}`;
   if (read.phase === "no-run") return "No AI run has been published yet, so no AI Search figure is shown.";
   return "How AI shopping answers cite the web, and whether Fender-owned pages show up.";
@@ -404,7 +407,7 @@ export function competitorsSpokeLead(read: AiSearchRead): { figure: string; expl
   if (read.phase !== "ready") return { figure: aiSpokeDesc(read), explainer: "" };
   const s = summarizeRun(read.snapshot);
   return {
-    figure: `Competitors led ${s.competitorWins} of ${s.roles.unbranded.resolved} resolved unbranded discovery answers.`,
+    figure: competitorWinsFigure(s.competitorWins, s.roles.unbranded.resolved),
     explainer:
       "Which brands AI engines name over Fender/Squier on unbranded discovery prompts. Branded consideration, product fact checks, provider errors, and answers with no clear leader are left out.",
   };

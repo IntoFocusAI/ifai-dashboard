@@ -24,6 +24,7 @@ import {
   summarizeRun,
 } from "@/lib/ai-search/summary";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
+import { formatInt } from "@/lib/fender-canvas/format";
 
 const SIM = AI_TABS.simulations;
 
@@ -84,8 +85,8 @@ export function RoleCount({
   const name = ROLE_LABELS[role];
   return (
     <span data-ai-role-count={role} data-ai-rate={figure} data-small-sample={small ? "true" : undefined}>
-      {pct(tally.fenderWins, tally.resolved)} ({roleLink(role, "fender_win", `${name}: Fender/Squier leads`, tally.fenderWins, scope)} of{" "}
-      {roleLink(role, "resolved", `${name}: resolved answers`, tally.resolved, scope)})
+      {pct(tally.fenderWins, tally.resolved)} ({roleLink(role, "fender_win", `${name}: Fender/Squier leads`, formatInt(tally.fenderWins), scope)} of{" "}
+      {roleLink(role, "resolved", `${name}: resolved answers`, formatInt(tally.resolved), scope)})
       {small ? (
         <>
           {" "}
@@ -154,8 +155,8 @@ export function RoleSumLine({
             {": "}
             {tally.resolved > 0 ? (
               <>
-                Fender/Squier leads {roleLink(role, "fender_win", `${name}: Fender/Squier leads`, tally.fenderWins)} of{" "}
-                {roleLink(role, "resolved", `${name}: resolved answers`, tally.resolved)} resolved answers (
+                Fender/Squier leads {roleLink(role, "fender_win", `${name}: Fender/Squier leads`, formatInt(tally.fenderWins))} of{" "}
+                {roleLink(role, "resolved", `${name}: resolved answers`, formatInt(tally.resolved))} resolved answers (
                 {pct(tally.fenderWins, tally.resolved)}).
               </>
             ) : (
@@ -170,8 +171,8 @@ export function RoleSumLine({
 
 function keptOut(tally: OutcomeTally): string {
   const parts = [resolvedPhrase(tally)];
-  if (tally.unresolved > 0) parts.push(`${tally.unresolved} with no clear leader`);
-  if (tally.errors > 0) parts.push(`${tally.errors} provider errors`);
+  if (tally.unresolved > 0) parts.push(`${formatInt(tally.unresolved)} with no clear leader`);
+  if (tally.errors > 0) parts.push(`${formatInt(tally.errors)} provider errors`);
   return parts.join(", ");
 }
 

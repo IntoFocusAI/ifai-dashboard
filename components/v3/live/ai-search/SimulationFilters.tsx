@@ -102,7 +102,11 @@ export function SimulationFilters({
       <select
         aria-label="Fact-check result"
         value={filter.accuracy}
-        onChange={(e) => set({ accuracy: e.target.value as ExplorerFilter["accuracy"] })}
+        onChange={(e) => {
+          const accuracy = e.target.value as ExplorerFilter["accuracy"];
+          const toFactChecks = accuracy !== "" && filter.scope === "commercial";
+          set(toFactChecks ? { accuracy, scope: "probe", category: "" } : { accuracy });
+        }}
       >
         <option value="">Any fact-check result</option>
         {Object.entries(ACCURACY_LABELS).map(([value, label]) => (

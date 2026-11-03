@@ -2,6 +2,8 @@
 
 import { useMemo, useState, type ReactNode } from "react";
 import { useAiHistory } from "@/components/v3/live/ai-search/AiHistoryContext";
+import { READ_ERROR_TITLE } from "@/components/v3/live/ai-search/AiReadGate";
+import { CopyTip } from "@/components/v3/live/ai-search/CopyTip";
 import { HistoryPointDetail } from "@/components/v3/live/ai-search/HistoryPointDetail";
 import { HistoryTrendChart } from "@/components/v3/live/ai-search/HistoryTrendChart";
 import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
@@ -72,8 +74,26 @@ export function HistoryTrendsPanel() {
   if (history.catalog.phase === "loading" || history.trend.phase === "loading") {
     body = <p className="ai-history-note" data-ai-history-state="loading">Loading run history.</p>;
   } else if (history.catalog.phase === "error") {
-    body = <p className="ai-history-note" data-ai-history-state="error">Run history did not load. {history.catalog.message}</p>;
-  } else if (history.trend.phase === "unavailable" || history.trend.phase === "error") {
+    body = (
+      <p className="ai-history-note" data-ai-history-state="error">
+        Run history{" "}
+        <CopyTip label={READ_ERROR_TITLE} description={history.catalog.message}>
+          did not load
+        </CopyTip>
+        .
+      </p>
+    );
+  } else if (history.trend.phase === "error") {
+    body = (
+      <p className="ai-history-note" data-ai-history-state="error">
+        The runs in this period{" "}
+        <CopyTip label={READ_ERROR_TITLE} description={history.trend.message}>
+          did not load
+        </CopyTip>
+        . No trend line is drawn.
+      </p>
+    );
+  } else if (history.trend.phase === "unavailable") {
     body = (
       <p className="ai-history-note" data-ai-history-state="unavailable">
         {history.trend.message} No trend line is drawn.

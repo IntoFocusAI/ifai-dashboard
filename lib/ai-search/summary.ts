@@ -19,6 +19,7 @@ import {
   type RunCompleteness,
 } from "@/lib/ai-search/run-metrics";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
+import { formatInt } from "@/lib/fender-canvas/format";
 
 /** Everything the map, widgets, tour, and command center say about the published run. */
 export type AiRunSummary = {
@@ -140,13 +141,21 @@ export function roleRateLead(
   return { rate: pct(tally.fenderWins, tally.resolved), color };
 }
 
+/** Lives in the lead rate's tooltip, never as a line under the rates. */
+export const LEAD_RATE_BASIS = "A provider error or an answer with no clear leader is neither a win nor a loss.";
+
+/** Tooltip on a lead rate: its N of M, then what stays outside it. */
+export function leadRateTip(tally: Pick<RoleTally, "fenderWins" | "resolved">): string {
+  return `${formatInt(tally.fenderWins)} of ${formatInt(tally.resolved)} resolved answers named Fender/Squier most. ${LEAD_RATE_BASIS}`;
+}
+
 /** Visible label on a rate that is too small to rank against the rows beside it. */
 export const SMALL_SAMPLE_LABEL = "Small sample";
 
 /** Exact observed rate, such as "25.0% (1 of 4)". Null when the denominator is zero. */
 export function formatObservedRate(wins: number, resolved: number): string | null {
   if (resolved <= 0) return null;
-  return `${pct(wins, resolved)} (${wins} of ${resolved})`;
+  return `${pct(wins, resolved)} (${formatInt(wins)} of ${formatInt(resolved)})`;
 }
 
 /** The words a role cell shows. A small sample keeps its percentage and is marked. */
@@ -181,8 +190,13 @@ export function errorLine(summary: AiRunSummary): string {
   if (engines.length === 0) return "No provider errors";
   const total = engines.reduce((sum, entry) => sum + entry.errors, 0);
   const noun = total === 1 ? "provider error" : "provider errors";
-  if (engines.length === 1) return `${total} ${noun}, all ${engineLabel(engines[0].engine)}`;
-  return `${total} ${noun} (${engines.map((e) => `${e.errors} ${engineLabel(e.engine)}`).join(", ")})`;
+  if (engines.length === 1) return `${formatInt(total)} ${noun}, all ${engineLabel(engines[0].engine)}`;
+  return `${formatInt(total)} ${noun} (${engines.map((e) => `${formatInt(e.errors)} ${engineLabel(e.engine)}`).join(", ")})`;
+}
+
+/** "4,601 answered of 6,628 calls", both counts from the call rows this read returned. */
+export function answeredOfCallsLine(c: RunCompleteness): string {
+  return `${formatInt(c.answeredRows)} answered of ${formatInt(c.rowsRead)} ${c.rowsRead === 1 ? "call" : "calls"}`;
 }
 
 export function runStateLabel(state: string): string {
@@ -194,7 +208,7 @@ export function runStateLabel(state: string): string {
 /** "13 of 23 resolved answers (56.5%)", or a non-zero phrase when nothing resolved. */
 export function resolvedPhrase(tally: OutcomeTally): string {
   if (tally.resolved <= 0) return "no resolved answers";
-  return `${tally.fenderWins} of ${tally.resolved} resolved answers (${pct(tally.fenderWins, tally.resolved)})`;
+  return `${formatInt(tally.fenderWins)} of ${formatInt(tally.resolved)} resolved answers (${pct(tally.fenderWins, tally.resolved)})`;
 }
 
 /** The two rates that lead AI Search. Shopping guidance and product-fact questions are not in either one. */

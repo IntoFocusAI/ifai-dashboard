@@ -7,6 +7,9 @@ export function isWindowHistoryKind(kind: string | null | undefined): boolean {
   return kind === "month" || kind === "range" || kind === "all";
 }
 
+export const MIXED_SCORING_TITLE = "Mixed scoring";
+
+/** Tooltip on the lead figure it qualifies, never a line of its own. */
 export const MIXED_SCORING_NOTE =
   "Lead rates and gaps add runs that named the leader in different ways.";
 

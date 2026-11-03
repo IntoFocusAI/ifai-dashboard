@@ -1,7 +1,9 @@
 "use client";
 
+import { useAiHistoryOptional } from "@/components/v3/live/ai-search/AiHistoryContext";
 import { useAiSearch } from "@/components/v3/live/ai-search/AiSearchContext";
 import { competitorsSpokeLead } from "@/lib/ai-search/canvas-surfaces";
+import { selectionLine } from "@/lib/ai-search/displayed-read";
 
 /**
  * Competitive Radar's opening sentence.
@@ -9,7 +11,12 @@ import { competitorsSpokeLead } from "@/lib/ai-search/canvas-surfaces";
  * The N-of-M clause is the figure. The rest of the sentence sits under it.
  */
 export function CompetitorsSpokeDescription() {
-  const { figure, explainer } = competitorsSpokeLead(useAiSearch());
+  const read = useAiSearch();
+  const single = useAiHistoryOptional()?.mode.kind === "run";
+  if (read.phase === "error" && read.selection) {
+    return <span data-ai-competitor-desc="">{selectionLine(read.selection, single)}.</span>;
+  }
+  const { figure, explainer } = competitorsSpokeLead(read);
   return (
     <span data-ai-competitor-desc="">
       {explainer ? <span className="ai-lead-figure">{figure}</span> : figure}

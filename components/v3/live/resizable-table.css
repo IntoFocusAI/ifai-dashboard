@@ -1,0 +1,6 @@
+/* Headers break between words only. ResizableTable floors each column at its longest header word. */
+.resizable-table .resizable-th .ifai-sort-btn,
+.resizable-table .resizable-th .resizable-th-label {
+  overflow-wrap: normal;
+  word-break: normal;
+}

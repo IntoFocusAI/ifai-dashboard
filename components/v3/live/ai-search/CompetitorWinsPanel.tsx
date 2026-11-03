@@ -15,6 +15,7 @@ import { citationEvidence } from "@/lib/ai-search/citations";
 import { competitorTallies, isUnbrandedDiscovery, type CompetitorTally } from "@/lib/ai-search/competitors";
 import { callOutcome, categoryLabel, cleanPrompt, engineLabel, modelLabel } from "@/lib/ai-search/run-metrics";
 import { summarizeRun } from "@/lib/ai-search/summary";
+import { formatInt } from "@/lib/fender-canvas/format";
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
 import { hasMixedScoringMethods, isWindowHistoryKind } from "@/lib/ai-search/window-display";
@@ -26,13 +27,19 @@ const COLUMNS = [
   clientColumn("engines", "Engines", "text", 240, 120),
 ];
 
+const ofResolved = (wins: number, resolved: number) => `${formatInt(wins)} of ${formatInt(resolved)}`;
+
+const categoryLine = (row: CompetitorTally) =>
+  row.byCategory.map((c) => `${categoryLabel(c.category)} ${ofResolved(c.wins, c.resolved)}`).join(", ");
+
+const engineLine = (row: CompetitorTally) =>
+  row.byEngine.map((e) => `${engineLabel(e.engine)} ${ofResolved(e.wins, e.resolved)}`).join(", ");
+
 function tallySortValue(row: CompetitorTally, columnId: string): SortInput {
   if (columnId === "competitor") return row.brand;
   if (columnId === "leads") return row.wins;
-  if (columnId === "categories") {
-    return row.byCategory.map((c) => `${categoryLabel(c.category)} ${c.wins} of ${c.resolved}`).join(", ") || null;
-  }
-  return row.byEngine.map((e) => `${engineLabel(e.engine)} ${e.wins} of ${e.resolved}`).join(", ") || null;
+  if (columnId === "categories") return categoryLine(row) || null;
+  return engineLine(row) || null;
 }
 
 function Wins({ snapshot }: { snapshot: AiSearchSnapshot }) {
@@ -102,11 +109,9 @@ function Wins({ snapshot }: { snapshot: AiSearchSnapshot }) {
                         {t.brand}
                       </button>
                     </td>
-                    <td>
-                      {t.wins} of {t.resolved} resolved
-                    </td>
-                    <td>{t.byCategory.map((c) => `${categoryLabel(c.category)} ${c.wins} of ${c.resolved}`).join(", ")}</td>
-                    <td>{t.byEngine.map((e) => `${engineLabel(e.engine)} ${e.wins} of ${e.resolved}`).join(", ")}</td>
+                    <td>{ofResolved(t.wins, t.resolved)} resolved</td>
+                    <td>{categoryLine(t)}</td>
+                    <td>{engineLine(t)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -120,7 +125,7 @@ function Wins({ snapshot }: { snapshot: AiSearchSnapshot }) {
           <div className="content-box ai-competitor-answers" style={{ marginTop: 12 }}>
             <div className="content-box-title">
               <span>{brand ? `Answers where ${brand} led` : "Every answer a competitor led"}</span>
-              <span className="tag-badge tag-neutral">{shown.length} answers</span>
+              <span className="tag-badge tag-neutral">{formatInt(shown.length)} answers</span>
             </div>
             {shown.map((row) => (
               <div key={row.id} className="action-card" data-sim-id={row.sim_id} style={{ marginTop: 6 }}>

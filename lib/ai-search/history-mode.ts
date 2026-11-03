@@ -12,6 +12,7 @@ export function historyControlLabel(
   mode: HistoryMode,
   currentDay: string | null,
   selectedDay: string | null,
+  publishedRunId: string | null = null,
 ): string {
   if (mode.kind === "month") {
     if (!currentDay) return "Last 30 days";
@@ -22,6 +23,10 @@ export function historyControlLabel(
   if (mode.kind === "all") return "All time";
   if (mode.kind === "range") return `${formatDay(mode.from)} to ${formatDay(mode.to)}`;
   if (mode.kind === "legacy") return selectedDay ? `Legacy run · ${formatDay(selectedDay)}` : "Legacy run";
+  if (mode.runId === publishedRunId) {
+    const day = selectedDay ?? currentDay;
+    return day ? `Published run · ${formatDay(day)}` : "Published run";
+  }
   return selectedDay ? `Historical run · ${formatDay(selectedDay)}` : "Historical run";
 }
 
@@ -49,6 +54,7 @@ export function historySpokeDescription(input: {
     return "Legacy test run. These calls stay out of the two rates and out of the trend.";
   }
   if (input.selectedPhase === "loading" || input.selectedPhase === "idle") return "Loading the selected run.";
-  if (input.selectedPhase === "unavailable" || input.selectedPhase === "error") return input.selectedMessage;
+  if (input.selectedPhase === "error") return "The selected run did not load.";
+  if (input.selectedPhase === "unavailable") return input.selectedMessage;
   return null;
 }

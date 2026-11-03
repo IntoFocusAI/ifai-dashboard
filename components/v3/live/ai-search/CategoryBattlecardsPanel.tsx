@@ -34,7 +34,7 @@ import {
 import { categoryLabel, engineLabel } from "@/lib/ai-search/run-metrics";
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
-import { hasMixedScoringMethods, isWindowHistoryKind, MIXED_SCORING_NOTE } from "@/lib/ai-search/window-display";
+import { isWindowHistoryKind } from "@/lib/ai-search/window-display";
 
 function notedColumn(id: keyof typeof BATTLE_COLUMN_NOTES, name: string, sort: "text" | "number", width: number, min: number) {
   return { ...clientColumn(id, name, sort, width, min), headerTooltip: { title: name, description: BATTLE_COLUMN_NOTES[id] } };
@@ -69,7 +69,6 @@ function battleSortValue(
 function Battlecards({ snapshot }: { snapshot: AiSearchSnapshot }) {
   const history = useAiHistoryOptional();
   const showSmallSample = !isWindowHistoryKind(history?.mode.kind);
-  const mixed = hasMixedScoringMethods(snapshot);
   const [chosen, setChosen] = useState<BattlecardFilter>(NO_BATTLECARD_FILTER);
   const engines = battlecardEngines(snapshot.calls);
   const filter = effectiveBattlecardFilter(chosen, engines);
@@ -118,11 +117,6 @@ function Battlecards({ snapshot }: { snapshot: AiSearchSnapshot }) {
           scope={engineScope}
           engineName={engineName}
         />
-        {mixed ? (
-          <p className="ai-role-footnote" data-ai-mixed-scoring>
-            {MIXED_SCORING_NOTE}
-          </p>
-        ) : null}
         <div className="content-box-title">Category battlecards</div>
         <ResizableTable
           tableId="category-battlecards"

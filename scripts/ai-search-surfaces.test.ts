@@ -5,6 +5,8 @@ import { join } from "node:path";
 import { test } from "node:test";
 import { tabIndexFromSlug, tabSlug } from "../lib/canvas-sdk/canvas-url-state.ts";
 import { AI_TABS, RADAR_TABS } from "../lib/ai-search/canvas-surfaces.ts";
+import { applyExplorerFilter, filterFromEvidence } from "../lib/ai-search/explorer-filter.ts";
+import type { AiCallRow } from "../lib/ai-search/types.ts";
 
 const root = new URL("..", import.meta.url).pathname;
 const read = (path: string) => readFileSync(join(root, path), "utf8");
@@ -78,8 +80,25 @@ test("every headline figure opens its evidence", () => {
   ]) {
     assert.match(summary, new RegExp(value), value);
   }
-  assert.match(summary, /value: "error"/);
   assert.match(summary, /value: "probe"/);
+  // Provider errors sit on the run card, for one run and for a pooled selection alike.
+  assert.match(summary, /<RunCompletenessCard snapshot=\{snapshot\} \/>/);
+  const card = flat("components/v3/live/ai-search/RunCompletenessCard.tsx");
+  const errorLinks = card.match(
+    /<td>Provider errors<\/td> <td> <EvidenceLink focus=\{\{ field: "outcome", value: "error" \}\} tab=\{SIM\}> \{errorLine\(s\)\}/g,
+  );
+  assert.equal(errorLinks?.length, 2, "single-run and pooled cards both link the provider-error count");
+  const failed = filterFromEvidence({ field: "outcome", value: "error" });
+  const calls = [
+    { id: "a", sim_id: 1, prompt_kind: "commercial", call_status: "error", outcome: "error" },
+    { id: "b", sim_id: 2, prompt_kind: "probe", call_status: "error", outcome: "error" },
+    { id: "c", sim_id: 3, prompt_kind: "commercial", call_status: "answered", outcome: "fender_win" },
+  ] as AiCallRow[];
+  assert.deepEqual(
+    applyExplorerFilter(calls, failed).map((row) => row.id),
+    ["a", "b"],
+    "the link opens every failed call, fact checks included",
+  );
   assert.match(read("components/v3/live/ai-search/CitationEcosystemPanel.tsx"), /CitationEvidenceTable/);
   assert.match(read("components/v3/live/ai-search/FactCheckTable.tsx"), /field: "sim"/);
   assert.match(read("components/v3/live/ai-search/CompetitorWinsPanel.tsx"), /field: "sim"/);
@@ -157,8 +176,11 @@ test("the fact-check evidence view runs question, fact, source, answer, result",
   }
   assert.ok(view.indexOf("Engine and run details") > cursor, "engine details stay last");
   const flatView = flat("components/v3/live/ai-search/FactCheckEvidence.tsx");
-  assert.match(flatView, /product questions IntoFocus sends to every engine on purpose/);
-  assert.match(flatView, /not a randomly chosen product/);
+  assert.match(
+    flatView,
+    /<CopyTip label=\{FACT_CHECK_METHOD_TITLE\} description=\{factCheckPickTip\(questionsSent\)\}> product questions <\/CopyTip>\{" "\} IntoFocus sends to every engine on purpose\./,
+  );
+  assert.doesNotMatch(flatView, /randomly chosen/);
 });
 
 test("citation copy separates answers from links and avoids causal claims", () => {

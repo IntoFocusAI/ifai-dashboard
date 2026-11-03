@@ -224,6 +224,8 @@ export type RunCompleteness = {
   missing: number | null;
   /** Rows the views returned for this run. Compared with expected to catch a short read. */
   rowsRead: number;
+  /** Of those rows, the ones with an answer. Provider errors are the rest. */
+  answeredRows: number;
 };
 
 export function runCompleteness(run: AiCurrentRun, rows: AiCallRow[]): RunCompleteness {
@@ -236,6 +238,7 @@ export function runCompleteness(run: AiCurrentRun, rows: AiCallRow[]): RunComple
     errors: run.error_calls,
     missing: run.missing_calls,
     rowsRead: rows.length,
+    answeredRows: rows.filter((row) => row.call_status === "answered").length,
   };
 }
 

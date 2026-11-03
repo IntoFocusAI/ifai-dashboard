@@ -6,6 +6,7 @@ import { useAiHistoryOptional } from "@/components/v3/live/ai-search/AiHistoryCo
 import { AiReadGate, mutedText } from "@/components/v3/live/ai-search/AiReadGate";
 import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
 import { EvidenceLink } from "@/components/v3/live/ai-search/EvidenceLink";
+import { MixedScoringTip } from "@/components/v3/live/ai-search/MixedScoringTip";
 import { RunCompletenessCard } from "@/components/v3/live/ai-search/RunCompletenessCard";
 import { KeptOutNote, RoleCount, RoleSumLine, largestResolved, roleColumn, roleRateSort } from "@/components/v3/live/ai-search/RoleRateTable";
 import { AI_TABS } from "@/lib/ai-search/canvas-surfaces";
@@ -13,8 +14,9 @@ import { categoryRoleTallies, engineResultRoleTallies, headlineAside, ROLE_LABEL
 import { categoryLabel, engineLabel } from "@/lib/ai-search/run-metrics";
 import { pct, resolvedPhrase, summarizeRun } from "@/lib/ai-search/summary";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
+import { formatInt } from "@/lib/fender-canvas/format";
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
-import { hasMixedScoringMethods, isWindowHistoryKind, MIXED_SCORING_NOTE } from "@/lib/ai-search/window-display";
+import { hasMixedScoringMethods, isWindowHistoryKind } from "@/lib/ai-search/window-display";
 
 const ENGINE_COLUMNS = [
   clientColumn("engine", "Engine", "text", 140, 100),
@@ -54,27 +56,33 @@ function RoleRate({
   tally,
   term,
   unit,
+  mixed,
 }: {
   tally: RoleTally;
   term: "unbranded discovery" | "branded consideration";
   unit: "run" | "selection";
+  mixed: boolean;
 }) {
   const rate = tally.resolved > 0 ? pct(tally.fenderWins, tally.resolved) : "No resolved answers";
   return (
     <div className="metric-card-sm" data-ai-role={tally.role}>
       <div className="metric-card-val" data-ai-lead-figure={tally.role}>
-        {tally.resolved > 0 ? `${tally.fenderWins} of ${tally.resolved}` : "No resolved answers"}
+        {tally.resolved > 0 ? (
+          <MixedScoringTip mixed={mixed}>{`${formatInt(tally.fenderWins)} of ${formatInt(tally.resolved)}`}</MixedScoringTip>
+        ) : (
+          "No resolved answers"
+        )}
       </div>
       <span className="metric-card-label"><AiTerm term={term}>{ROLE_LABELS[tally.role]}</AiTerm></span>
       <span className="metric-card-sub">
         {tally.resolved > 0 ? (
           <>
             <EvidenceLink focus={{ field: "role", value: `${tally.role}/fender_win` }} tab={SIM}>
-              {tally.fenderWins} Fender/Squier leads
+              {formatInt(tally.fenderWins)} Fender/Squier leads
             </EvidenceLink>{" "}
             of{" "}
             <EvidenceLink focus={{ field: "role", value: `${tally.role}/resolved` }} tab={SIM}>
-              {tally.resolved}
+              {formatInt(tally.resolved)}
             </EvidenceLink>{" "}
             <AiTerm term="resolved" /> answers (<span data-ai-win-rate={tally.role}>{rate}</span>)
           </>
@@ -88,8 +96,8 @@ function RoleRate({
 
 function keptOut(tally: RoleTally): string {
   const parts = [resolvedPhrase(tally)];
-  if (tally.unresolved > 0) parts.push(`${tally.unresolved} with no clear leader`);
-  if (tally.errors > 0) parts.push(`${tally.errors} provider errors`);
+  if (tally.unresolved > 0) parts.push(`${formatInt(tally.unresolved)} with no clear leader`);
+  if (tally.errors > 0) parts.push(`${formatInt(tally.errors)} provider errors`);
   return parts.join(", ");
 }
 
@@ -98,14 +106,9 @@ function WinCard({ snapshot, unit, mixed }: { snapshot: AiSearchSnapshot; unit: 
   return (
     <div className="content-box ai-win-card">
       <div className="metric-grid-2">
-        <RoleRate tally={s.roles.unbranded} term="unbranded discovery" unit={unit} />
-        <RoleRate tally={s.roles.branded} term="branded consideration" unit={unit} />
+        <RoleRate tally={s.roles.unbranded} term="unbranded discovery" unit={unit} mixed={mixed} />
+        <RoleRate tally={s.roles.branded} term="branded consideration" unit={unit} mixed={mixed} />
       </div>
-      {mixed ? (
-        <p style={{ ...mutedText, margin: "10px 0 0" }} data-ai-mixed-scoring>
-          {MIXED_SCORING_NOTE}
-        </p>
-      ) : null}
       <div className="content-box-title">
         <span>How often Fender/Squier is named, by the kind of question</span>
       </div>
@@ -133,13 +136,13 @@ function WinCard({ snapshot, unit, mixed }: { snapshot: AiSearchSnapshot; unit: 
         </li>
         <li>
           <EvidenceLink focus={{ field: "kind", value: "probe" }} tab={SIM}>
-            {s.probesAnswered} answered
+            {formatInt(s.probesAnswered)} answered
           </EvidenceLink>{" "}
           <AiTerm term="product fact check">product fact checks</AiTerm> stay on their own tab.
         </li>
         {s.commercial.disqualified > 0 ? (
           <li>
-            {s.commercial.disqualified} Fender leads with a <AiTerm term="confirmed contradiction" />, not counted as wins
+            {formatInt(s.commercial.disqualified)} Fender leads with a <AiTerm term="confirmed contradiction" />, not counted as wins
           </li>
         ) : null}
       </ul>
@@ -195,8 +198,8 @@ function EngineTable({ snapshot, showSmallSample }: { snapshot: AiSearchSnapshot
                     showSmallSample={showSmallSample}
                   />
                 </td>
-                <td>{aside.unresolved}</td>
-                <td>{aside.errors}</td>
+                <td>{formatInt(aside.unresolved)}</td>
+                <td>{formatInt(aside.errors)}</td>
               </tr>
             );
           })}
@@ -253,8 +256,8 @@ function CategoryTable({ snapshot, showSmallSample }: { snapshot: AiSearchSnapsh
                     showSmallSample={showSmallSample}
                   />
                 </td>
-                <td>{aside.unresolved}</td>
-                <td>{aside.errors}</td>
+                <td>{formatInt(aside.unresolved)}</td>
+                <td>{formatInt(aside.errors)}</td>
               </tr>
             );
           })}

@@ -2,6 +2,8 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { useAiHistory } from "@/components/v3/live/ai-search/AiHistoryContext";
+import { READ_ERROR_TITLE } from "@/components/v3/live/ai-search/AiReadGate";
+import { CopyTip } from "@/components/v3/live/ai-search/CopyTip";
 import { RunHistoryCalendar } from "@/components/v3/live/ai-search/RunHistoryCalendar";
 import { formatDay, utcDay, type HistoryRunSummary } from "@/lib/ai-search/history-eligibility";
 import { batteryGaps } from "@/lib/ai-search/prompt-battery";
@@ -193,7 +195,13 @@ export function RunHistoryControl() {
           </div>
           {history.catalog.phase === "loading" ? <p className="ai-history-note">Loading runs.</p> : null}
           {history.catalog.phase === "error" ? (
-            <p className="ai-history-note">Run history did not load. {history.catalog.message}</p>
+            <p className="ai-history-note">
+              Run history{" "}
+              <CopyTip label={READ_ERROR_TITLE} description={history.catalog.message}>
+                did not load
+              </CopyTip>
+              .
+            </p>
           ) : null}
           {history.catalog.phase === "ready" ? (
             <RunHistoryCalendar

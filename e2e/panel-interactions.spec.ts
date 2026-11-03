@@ -273,7 +273,11 @@ test.describe("drill-downs", () => {
     await expect(page.locator("[data-ai-fact-headline]")).toContainText(
       /\d+ Fender product facts were checked across .+\. No contradictions were found in \d+ answers\./,
     );
-    await expect(body).toContainText("These checks cover the selected facts only");
+    await expect(body).not.toContainText("These checks cover the selected facts only");
+    await expect(page.locator("[data-ai-accuracy-figure] .ifai-term")).toHaveAttribute(
+      "data-ifai-tooltip-desc",
+      /These checks cover the selected facts only\./,
+    );
     await expect(page.locator(".ai-probe-table tbody tr").first()).toBeVisible();
     await expect(body).not.toContainText("Dual Humbucker");
     await expect(body).not.toContainText("12-Inch");
