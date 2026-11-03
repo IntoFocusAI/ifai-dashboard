@@ -23,6 +23,7 @@ import {
   UNBRANDED_RATE_BANDS,
 } from "@/lib/ai-search/summary";
 import type { AiSearchRead } from "@/lib/ai-search/types";
+import { selectionLine } from "@/lib/ai-search/displayed-read";
 import { isWindowHistoryKind } from "@/lib/ai-search/window-display";
 
 /** Engines with resolved unbranded answers, weakest Fender-lead share first (same order as Engine Comparison). */
@@ -317,6 +318,7 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
 /** One-line AI Search panel lead. Run facts stay on the pill and on the other tabs' chips. */
 export function aiSpokeDesc(read: AiSearchRead): string {
   if (read.phase === "loading") return "Reading the published AI run.";
+  if (read.phase === "error" && read.selection) return `${selectionLine(read.selection, false)}.`;
   if (read.phase === "error") return `The published AI run did not load: ${read.message}`;
   if (read.phase === "no-run") return "No AI run has been published yet, so no AI Search figure is shown.";
   return "How AI shopping answers cite the web, and whether Fender-owned pages show up.";

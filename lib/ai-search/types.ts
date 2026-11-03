@@ -102,6 +102,14 @@ export type AiSearchSnapshot = {
 /** Every surface renders one of these. A failed or missing read is never shown as zero. */
 export type AiSearchRead =
   | { phase: "loading" }
-  | { phase: "error"; message: string }
+  | {
+      phase: "error";
+      message: string;
+      /**
+       * Set when the panels' history selection failed or holds no stored calls, not the
+       * published run. The map's published read never carries it.
+       */
+      selection?: "failed" | "empty";
+    }
   | { phase: "no-run" }
   | { phase: "ready"; snapshot: AiSearchSnapshot; stale?: boolean };
