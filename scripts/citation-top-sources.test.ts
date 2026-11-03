@@ -1,6 +1,6 @@
 // node --experimental-strip-types --import ./scripts/register-alias.mjs --import ./scripts/register-ts-extensions.mjs --test scripts/citation-top-sources.test.ts
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { test } from "node:test";
 import { citationEvidence } from "../lib/ai-search/citations.ts";
@@ -10,6 +10,7 @@ import {
   citationCategoryOptions,
   snapshotInCategory,
   topCitedSources,
+  TOP_SITES_RULE,
   TOP_SOURCES_MAX,
 } from "../lib/ai-search/citation-top-sources.ts";
 import { citationPickLabel, citationPickMatches, pickAfterCategoryChange } from "../lib/ai-search/citation-pick.ts";
@@ -111,6 +112,24 @@ test("ties on answers go to the site with more cited links", () => {
   const center = ranked.find((source) => source.domain === "guitarcenter.com")!;
   assert.equal(reddit.answers, center.answers);
   assert.ok(reddit.rank < center.rank, "reddit has 3 links to guitarcenter's 1");
+});
+
+test("the Cited links toggle ranks by links, ties go to more answers, and N of M is links of all links", () => {
+  const ranked = topCitedSources(citationEvidence(calls, citations, "commercial"), TOP_SOURCES_MAX, "links");
+  assert.deepEqual(
+    ranked.map((source) => [source.rank, source.domain, source.links, source.linksTotal, source.answers]),
+    [
+      [1, "fender.com", 3, 9, 3],
+      [2, "reddit.com", 3, 9, 1],
+      [3, "sweetwater.com", 2, 9, 2],
+      [4, "guitarcenter.com", 1, 9, 1],
+    ],
+  );
+  assert.deepEqual(
+    topCitedSources(citationEvidence(calls, citations, "commercial")),
+    topCitedSources(citationEvidence(calls, citations, "commercial"), TOP_SOURCES_MAX, "answers"),
+    "answers is the default measure",
+  );
 });
 
 test("each row carries N of M answers and whether the site is Fender-owned", () => {
@@ -218,8 +237,9 @@ test("Citation Ecosystem opens with figure tiles, one control row, then the char
 test("bars scale to the largest count shown, and N of M sits beside each bar", () => {
   const chart = read("components/v3/live/ai-search/CitationTopSources.tsx");
   assert.match(chart, /const max = Math\.max\(1, \.\.\.ranked\.map/);
-  assert.match(chart, /width: `\$\{\(100 \* source\.answers\) \/ max\}%`/);
-  assert.match(chart, /<strong>\{source\.answers\}<\/strong> of \{source\.answered\}/);
+  assert.match(chart, /width: `\$\{\(100 \* n\) \/ max\}%`/);
+  assert.match(chart, /<strong>\{n\}<\/strong> of \{m\}/);
+  assert.match(chart, /\[source\.links, source\.linksTotal\] : \[source\.answers, source\.answered\]/);
   assert.match(chart, /citation-top-source-owner">Fender-owned</);
   const css = read("components/v3/live/ai-search/citation-glance.css");
   assert.match(css, /\.citation-glance-grid \{[^}]*grid-template-columns: minmax\(0, [\d.]+fr\) minmax\(0, 1fr\)/s);
@@ -227,6 +247,33 @@ test("bars scale to the largest count shown, and N of M sits beside each bar", (
   for (const path of [css, read("components/v3/live/ai-search/citation-top-sources.css")]) {
     for (const size of path.matchAll(/font-size:\s*([\d.]+)px/g)) assert.ok(Number(size[1]) >= 10, size[0]);
   }
+});
+
+test("each measure's rule is one sentence in a custom tooltip that names that measure", () => {
+  assert.deepEqual(TOP_SITES_RULE, { answers: "top cited sites", links: "top cited sites by links" });
+  const answers = AI_DEFINITIONS[TOP_SITES_RULE.answers];
+  const links = AI_DEFINITIONS[TOP_SITES_RULE.links];
+  for (const rule of [answers, links]) {
+    assert.equal(rule.split(/[.!?](\s|$)/).filter((part) => part.trim()).length, 1, rule);
+  }
+  assert.match(answers, /how many answers in the selected period cite it/);
+  assert.match(links, /how many cited links in the selected period point to it/);
+  const chart = read("components/v3/live/ai-search/CitationTopSources.tsx");
+  assert.match(chart, /<AiTerm term=\{TOP_SITES_RULE\[measure\]\}>Top cited sites<\/AiTerm>/);
+  assert.match(chart, /\["answers", "Answers citing"\],\s*\["links", "Cited links"\]/);
+  assert.match(chart, /useState<TopSitesMeasure>\("answers"\)/, "answers is the default");
+  assert.match(chart, /aria-pressed=\{measure === value\}/);
+});
+
+test("the tab has one ranked chart of sites, and Fender-owned rows say so in words", () => {
+  const dir = "components/v3/live/ai-search";
+  assert.ok(!existsSync(join(root, dir, "CitationDomainsMix.tsx")), "the older domains list is gone");
+  for (const name of readdirSync(join(root, dir)).filter((file) => file.endsWith(".tsx"))) {
+    assert.doesNotMatch(read(join(dir, name)), /CitationDomainsMix|data-citation-domains-mix/, name);
+  }
+  const chart = read(join(dir, "CitationTopSources.tsx"));
+  assert.match(chart, /citation-top-source-owner">Fender-owned</);
+  assert.match(chart, /width: `\$\{\(100 \* n\) \/ max\}%`/);
 });
 
 test("the ranking rule is one plain sentence in a custom tooltip, and the copy claims no cause", () => {
@@ -244,7 +291,6 @@ test("the ranking rule is one plain sentence in a custom tooltip, and the copy c
     "components/v3/live/ai-search/CitationGapsCard.tsx",
     "components/v3/live/ai-search/CitationLeadFigure.tsx",
   ];
-  assert.match(read(files[0]), /<AiTerm term="top cited sites">/);
   for (const path of files) {
     const text = read(path);
     assert.doesNotMatch(text, /\stitle=/, path);

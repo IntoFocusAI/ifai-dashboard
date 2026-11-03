@@ -143,8 +143,16 @@ test.describe("AI Search Visibility", () => {
       "A low count does not prove a source had no influence",
     );
     await expect(body).not.toContainText("valid link");
-    const domain = page.locator(".ai-top-domains [data-ai-pick^='domain:']").first();
-    const picked = (await domain.getAttribute("data-ai-pick"))!.slice("domain:".length);
+    await expect(page.locator("[data-citation-top-sources]")).toHaveCount(1);
+    await expect(page.locator("[data-citation-domains-mix]")).toHaveCount(0);
+    await page.locator("[data-citation-top-measure='links']").click();
+    const linkCounts = await page
+      .locator("[data-citation-top-source]")
+      .evaluateAll((els) => els.map((el) => Number(el.getAttribute("data-top-source-links"))));
+    expect(linkCounts).toEqual([...linkCounts].sort((a, b) => b - a));
+    await page.locator("[data-citation-top-measure='answers']").click();
+    const domain = page.locator("[data-citation-top-source]").first();
+    const picked = (await domain.getAttribute("data-citation-top-source"))!;
     await domain.click();
     const rows = page.locator(".ai-citation-evidence tbody tr");
     await expect(rows.first()).toBeVisible();

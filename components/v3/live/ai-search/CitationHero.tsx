@@ -4,7 +4,6 @@ import "@/components/v3/live/ai-search/citation-glance.css";
 import { useState } from "react";
 import { CitationCategoryFilter } from "@/components/v3/live/ai-search/CitationCategoryFilter";
 import { CitationControlsStrip } from "@/components/v3/live/ai-search/CitationControlsStrip";
-import { CitationDomainsMix } from "@/components/v3/live/ai-search/CitationDomainsMix";
 import { CitationExecutiveGrid } from "@/components/v3/live/ai-search/CitationExecutiveGrid";
 import { CitationFigureTiles, type CitationLeadInput } from "@/components/v3/live/ai-search/CitationFigureTiles";
 import { GapsCard } from "@/components/v3/live/ai-search/CitationGapsCard";
@@ -13,7 +12,6 @@ import {
   citationGaps,
   ownedByQuestionType,
   ownedPresence,
-  topDomainBars,
   type CitationGap,
   type RoleOwnedGroup,
   type RoleOwnedPresence,
@@ -22,7 +20,6 @@ import type { CitationPick } from "@/lib/ai-search/citation-pick";
 import { citationPies, unbrandedAnswerPie, unbrandedBrandPie } from "@/lib/ai-search/citation-pies";
 import type { CitationCategoryOption } from "@/lib/ai-search/citation-top-sources";
 import type { CitationRead, CitationScope } from "@/lib/ai-search/citations";
-import { groupCitations } from "@/lib/ai-search/citations";
 import { engineLabel } from "@/lib/ai-search/run-metrics";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
 
@@ -66,7 +63,6 @@ export function CitationHero({
   const mixPie = pies?.find((pie) => pie.id === "classes") ?? null;
   const byQuestionType = ownedByQuestionType(snapshot.calls, read, scope);
   const gapResult = citationGaps(snapshot.calls, read, scope);
-  const domains = groupCitations(read.rows, (row) => row.domain);
   const shoppingScope = scope !== "probe";
   const engines = [
     ...new Set(
@@ -105,6 +101,7 @@ export function CitationHero({
           category={category}
           activeDomain={activeDomain}
           onPickDomain={(domain) => onPick({ field: "domain", value: domain })}
+          onShowAll={() => onPick(null)}
         />
         <CitationExecutiveGrid
           presence={presence}
@@ -126,14 +123,6 @@ export function CitationHero({
             onPickGap={onPickGap}
           />
         </CitationExecutiveGrid>
-      </div>
-      <div className="citation-row-domains">
-        <CitationDomainsMix
-          bars={topDomainBars(read, 10)}
-          totalDomains={domains.length}
-          onPickDomain={(domain) => onPick({ field: "domain", value: domain })}
-          onShowAllDomains={() => onPick(null)}
-        />
       </div>
     </div>
   );

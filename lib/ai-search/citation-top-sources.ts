@@ -11,6 +11,15 @@ import type { AiCallRow, AiSearchSnapshot } from "@/lib/ai-search/types";
 /** Rows the top-sites chart shows. */
 export const TOP_SOURCES_MAX = 10;
 
+/** What the top-sites chart counts: answers that cite a site, or links to it. */
+export type TopSitesMeasure = "answers" | "links";
+
+/** The definition key whose sentence states each measure's ranking rule. */
+export const TOP_SITES_RULE = {
+  answers: "top cited sites",
+  links: "top cited sites by links",
+} as const satisfies Record<TopSitesMeasure, string>;
+
 export type TopCitedSource = {
   rank: number;
   domain: string;
@@ -18,19 +27,32 @@ export type TopCitedSource = {
   answers: number;
   /** Answered calls in this view, cited or not. */
   answered: number;
-  /** Cited links to the site. The tie-break, and the row count its evidence table shows. */
+  /** Cited links to the site. The row count its evidence table shows. */
   links: number;
+  /** Cited links in this view, to any site. */
+  linksTotal: number;
   sourceClass: SourceClass;
   classLabel: string;
   fenderOwned: boolean;
 };
 
-/** Sites ranked by answers that cite them, then by cited links, then by name. */
-export function topCitedSources(read: CitationRead, limit = TOP_SOURCES_MAX): TopCitedSource[] {
+/**
+ * Sites ranked by the chosen measure, then by the other one, then by name.
+ * Answers: answers that cite the site. Links: cited links to the site.
+ */
+export function topCitedSources(
+  read: CitationRead,
+  limit = TOP_SOURCES_MAX,
+  measure: TopSitesMeasure = "answers",
+): TopCitedSource[] {
   const classOf = new Map<string, SourceClass>();
   for (const row of read.rows) if (!classOf.has(row.domain)) classOf.set(row.domain, row.sourceClass);
   return groupCitations(read.rows, (row) => row.domain)
-    .sort((a, b) => b.answers - a.answers || b.rows - a.rows || a.key.localeCompare(b.key))
+    .sort((a, b) =>
+      measure === "links"
+        ? b.rows - a.rows || b.answers - a.answers || a.key.localeCompare(b.key)
+        : b.answers - a.answers || b.rows - a.rows || a.key.localeCompare(b.key),
+    )
     .slice(0, Math.max(0, limit))
     .map((group, index) => {
       const sourceClass = classOf.get(group.key) ?? "other";
@@ -40,6 +62,7 @@ export function topCitedSources(read: CitationRead, limit = TOP_SOURCES_MAX): To
         answers: group.answers,
         answered: read.answered,
         links: group.rows,
+        linksTotal: read.rows.length,
         sourceClass,
         classLabel: SOURCE_CLASS_LABELS[sourceClass],
         fenderOwned: sourceClass === "fender_owned",
