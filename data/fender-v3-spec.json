@@ -25,12 +25,14 @@
         "Retail Overview",
         "Suppressed Listings",
         "MAP",
-        "Catalog Governance"
+        "Catalog Governance",
+        "Out of Stock"
       ],
       "navLabel": "Catalog Health",
       "next": "competitors",
       "tabTemplates": [
         "\n<div class=\"content-box\"><p style=\"font-size:12.5px; line-height:1.5; margin:0;\">Retail readings load with the live catalog.</p></div>\n",
+        "",
         "",
         "",
         ""

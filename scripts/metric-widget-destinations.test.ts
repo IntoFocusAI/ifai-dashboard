@@ -5,7 +5,8 @@ import { test } from "node:test";
 import { fenderWidgetMetrics } from "../components/v3/fender-metrics.ts";
 import { aiMetrics } from "../lib/ai-search/canvas-surfaces.ts";
 import { buildLiveMetrics } from "../lib/fender-canvas/metrics-from-live.ts";
-import { RETAIL_PANEL_TABS } from "../lib/fender-canvas/portfolio-retail-display.ts";
+import { tabIndexFromSlug, tabSlug } from "../lib/canvas-sdk/canvas-url-state.ts";
+import { RETAIL_PANEL_TABS, STOCK_LOSS_TAB } from "../lib/fender-canvas/portfolio-retail-display.ts";
 import type { CanvasBundle, CanvasMetricsRow } from "../lib/fender-canvas/types.ts";
 import type { CanvasMetric } from "../lib/canvas-sdk/types.ts";
 import type { FindabilityRead } from "../lib/findability/copy.ts";
@@ -158,6 +159,14 @@ const findability: FindabilityRead = {
 
 test("retail tabs on the live spoke match the catalog names", () => {
   assert.deepEqual([...RETAIL_PANEL_TABS], spec.spokes.ecommerce.tabs);
+});
+
+test("a metric or link that opens Out of Stock lands on that tab, before and after the live read", () => {
+  for (const tabs of [[...RETAIL_PANEL_TABS], spec.spokes.ecommerce.tabs]) {
+    assert.equal(openedTab(tabs, STOCK_LOSS_TAB), STOCK_LOSS_TAB);
+    assert.equal(tabs[tabIndexFromSlug(tabs, tabSlug(STOCK_LOSS_TAB))], STOCK_LOSS_TAB);
+    assert.equal(tabs.indexOf(STOCK_LOSS_TAB), tabs.indexOf("Catalog Governance") + 1);
+  }
 });
 
 test("the fallback catalog opens a current tab for every widget", () => {
