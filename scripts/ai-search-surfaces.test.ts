@@ -162,18 +162,24 @@ test("the fact-check evidence view runs question, fact, source, answer, result",
 });
 
 test("citation copy separates answers from links and avoids causal claims", () => {
-  const panel = read("components/v3/live/ai-search/CitationEcosystemPanel.tsx");
-  assert.match(panel, /cited web sources/);
-  assert.match(panel, /Those answers contained \{read\.rows\.length\}/);
-  const flatPanel = flat("components/v3/live/ai-search/CitationEcosystemPanel.tsx");
-  assert.match(flatPanel, /Answers and links are separate counts/);
-  assert.match(flatPanel, /does not measure whether the page caused the recommendation/);
-  assert.match(flatPanel, /not an endorsement/);
-  for (const path of [
-    "components/v3/live/ai-search/CitationEcosystemPanel.tsx",
-    "components/v3/live/ai-search/CitationEvidenceTable.tsx",
-    "components/v3/live/ai-search/CitationRoleNote.tsx",
-  ]) {
+  // JSX spacing ({" "}) collapsed too, so the rendered sentence can be matched whole.
+  const prose = (path: string) => flat(path).replace(/\{" "\}\s*/g, " ");
+  const strip = prose("components/v3/live/ai-search/CitationControlsStrip.tsx");
+  assert.match(strip, /\{read\.answersWithCitation\} of \{read\.answered\} \{scopeNoun\} cited web sources/);
+  assert.match(strip, /<span data-ai-cited-links> \{read\.rows\.length\} cited links <\/span>/);
+  const panel = prose("components/v3/live/ai-search/CitationEcosystemPanel.tsx");
+  const notes = panel.slice(panel.indexOf("<summary>How these counts work</summary>"));
+  assert.ok(notes.length < panel.length, "the counts note is on the panel");
+  assert.match(notes, /Answers and links are separate counts/);
+  assert.match(
+    notes,
+    /\{read\.answersWithCitation\} \{scopeNoun\} produced \{read\.rows\.length\} links, so one answer can cite several pages/,
+  );
+  assert.match(notes, /does not measure whether the page caused the recommendation/);
+  assert.match(notes, /a citation is not an endorsement/);
+  const citationFiles = files("components/v3/live/ai-search", ".tsx").filter((path) => /\/Citation\w*\.tsx$/.test(path));
+  assert.ok(citationFiles.length >= 10, "every Citation Ecosystem component is checked");
+  for (const path of citationFiles) {
     assert.doesNotMatch(read(path), /valid link|valid cited/, path);
   }
   const note = flat("components/v3/live/ai-search/CitationRoleNote.tsx");
