@@ -165,7 +165,7 @@ export function CitationChain({
         <span className="citation-chain-figure">
           <span className="citation-chain-count">{count(showed)}</span>
           {showedShare == null ? (
-            <NotAvailable desc={`No ${scopeNoun} were answered in this view, so there is no share to show.`} />
+            <NotAvailable desc={`No ${scopeNoun} in this view, so there is no share to show.`} />
           ) : (
             <span className="citation-chain-share">{pct(showed, answered)}</span>
           )}
