@@ -275,7 +275,7 @@ test.describe("Competitive Radar", () => {
       .evaluateAll((els) => els.map((el) => el.getAttribute("data-ai-on-track-status")))) {
       expect(status).toBe("behind");
     }
-    await expect(cards.locator("[data-ai-battle-active-chip]")).toHaveText("Other brands lead");
+    await expect(cards.locator("[data-ai-battle-active-chip]")).toHaveText("Another brand leads");
 
     const engine = cards.locator("[data-ai-battle-chip^='engine:']:not([data-ai-battle-chip='engine:all'])").first();
     await engine.click();

@@ -184,7 +184,7 @@ function Battlecards({ snapshot }: { snapshot: AiSearchSnapshot }) {
           </tbody>
         </ResizableTable>
         <p className="ai-role-footnote">
-          On track, Behind, and Competitor leads count inside{" "}
+          On track, Tied, Behind, and Competitor leads count inside{" "}
           <AiTerm term="unbranded discovery">unbranded discovery</AiTerm> only. Branded consideration stays in its
           Fender-lead column and is not part of either. A competitor win on a question kept out below does not appear in
           these columns.
@@ -198,8 +198,9 @@ function Battlecards({ snapshot }: { snapshot: AiSearchSnapshot }) {
         </div>
         <div className="ceo-callout-body">
           A category is on track when Fender/Squier leads more of its resolved{" "}
-          <AiTerm term="unbranded discovery">unbranded discovery</AiTerm> answers than every other brand together, and
-          behind when other brands lead more. Each category also shows two Fender-lead rates, unbranded discovery and{" "}
+          <AiTerm term="unbranded discovery">unbranded discovery</AiTerm> answers than any single other brand, tied when
+          the top other brand leads as many, and behind when one other brand leads more. Each category also shows two
+          Fender-lead rates, unbranded discovery and{" "}
           <AiTerm term="branded consideration">branded consideration</AiTerm>. A <AiTerm term="Fender lead" /> means
           Fender or Squier was named more than any other brand. Squier counts with Fender because it is Fender&apos;s
           entry-level line against Yamaha and Ibanez. The top competitor and Competitor leads columns use unbranded

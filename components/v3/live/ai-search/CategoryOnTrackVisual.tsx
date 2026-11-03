@@ -21,15 +21,15 @@ import { SMALL_SAMPLE_LABEL } from "@/lib/ai-search/summary";
 /** The icon and the word carry the status. Color only repeats it. */
 export const LEAD_STATUS_ICONS: Record<CategoryLeadStatus, LucideIcon> = {
   on_track: CircleCheck,
+  tied: Equal,
   behind: TriangleAlert,
-  even: Equal,
   not_available: CircleMinus,
 };
 
 const BADGE_TAG: Record<CategoryLeadStatus, string> = {
   on_track: "tag-success",
+  tied: "tag-warning",
   behind: "tag-danger",
-  even: "tag-warning",
   not_available: "tag-neutral",
 };
 
@@ -108,7 +108,7 @@ function Headline({ summary, engineName }: { summary: CategoryLeadSummary; engin
   const scope = engineName ? ` in ${engineName} answers` : "";
   const rest = [
     summary.behind.length ? `Behind in ${joinBrands(summary.behind)}.` : "Behind in none.",
-    summary.even.length ? `Even in ${joinBrands(summary.even)}.` : "",
+    summary.tied.length ? `Tied in ${joinBrands(summary.tied)}.` : "",
   ]
     .filter(Boolean)
     .join(" ");

@@ -15,6 +15,8 @@ import {
   leadSentence,
   leadStatusDefinition,
   NO_BATTLECARD_FILTER,
+  ON_TRACK_DEFINITION,
+  restLeads,
 } from "../lib/ai-search/category-on-track.ts";
 import { categoryRoleTallies } from "../lib/ai-search/question-role.ts";
 import type { AiCallRow } from "../lib/ai-search/types.ts";
@@ -64,15 +66,32 @@ function leadsOf(rows: AiCallRow[]) {
   return categoryLeads(categoryRoleTallies(rows), rows);
 }
 
-test("on track means Fender/Squier leads more resolved answers than every other brand together", () => {
-  assert.equal(categoryLeadStatus({ resolved: 10, fenderWins: 6, competitorWins: 4 }), "on_track");
-  assert.equal(categoryLeadStatus({ resolved: 10, fenderWins: 4, competitorWins: 6 }), "behind");
-  assert.equal(categoryLeadStatus({ resolved: 10, fenderWins: 5, competitorWins: 5 }), "even");
-  assert.equal(categoryLeadStatus({ resolved: 0, fenderWins: 0, competitorWins: 0 }), "not_available");
-  // Fender/Squier 8, Yamaha 6, Taylor 6: no single rival out-leads Fender/Squier, but rivals together do.
+test("on track means Fender/Squier leads more resolved answers than any single other brand", () => {
+  assert.equal(categoryLeadStatus({ resolved: 10, fenderWins: 6, topRivalWins: 4 }), "on_track");
+  assert.equal(categoryLeadStatus({ resolved: 10, fenderWins: 4, topRivalWins: 6 }), "behind");
+  assert.equal(categoryLeadStatus({ resolved: 10, fenderWins: 5, topRivalWins: 5 }), "tied");
+  assert.equal(categoryLeadStatus({ resolved: 0, fenderWins: 0, topRivalWins: 0 }), "not_available");
+  // Fender/Squier 8, Yamaha 6, Taylor 6: other brands together lead 12, but no single brand beats 8.
   const [lead] = leadsOf([...times(8, {}), ...times(6, yamaha), ...times(6, taylor)]);
-  assert.equal(lead.status, "behind");
+  assert.equal(lead.status, "on_track");
   assert.equal(lead.resolved, 20);
+  assert.equal(lead.otherLeads, 12);
+  assert.deepEqual(lead.topRival, { brand: "Taylor", wins: 6 });
+  assert.equal(restLeads(lead), 6);
+  assert.equal(
+    leadSentence(lead),
+    "Fender/Squier leads 8 of 20 resolved answers. Taylor, the top rival, leads 6. Other brands lead 6.",
+  );
+  const [tied] = leadsOf([...times(6, {}), ...times(6, yamaha), ...times(2, taylor)]);
+  assert.equal(tied.status, "tied", "level with the top rival is not on track");
+  assert.match(leadStatusDefinition(tied), /same number/);
+  const [behind] = leadsOf([...times(5, {}), ...times(6, yamaha)]);
+  assert.equal(behind.status, "behind");
+  assert.match(ON_TRACK_DEFINITION, /than any single other brand/);
+  for (const path of ["components/v3/live/ai-search/CategoryBattlecardsPanel.tsx", "lib/ai-search/category-on-track.ts"]) {
+    assert.doesNotMatch(read(path), /than every other brand together/, path);
+  }
+  assert.match(read("components/v3/live/ai-search/CategoryBattlecardsPanel.tsx"), /than any single other brand, tied when/);
 });
 
 test("lead counts use resolved unbranded discovery answers only", () => {
@@ -91,7 +110,7 @@ test("lead counts use resolved unbranded discovery answers only", () => {
   assert.equal(lead.otherLeads, 5);
   assert.equal(lead.status, "behind");
   assert.deepEqual(lead.topRival, { brand: "Yamaha", wins: 5 });
-  assert.equal(leadSentence(lead), "Other brands lead 5 of 8 resolved answers, all Yamaha. Fender/Squier leads 3.");
+  assert.equal(leadSentence(lead), "Fender/Squier leads 3 of 8 resolved answers. Yamaha, the top rival, leads 5.");
 });
 
 test("a confirmed product error stays in the denominator and in neither lead", () => {
@@ -100,15 +119,17 @@ test("a confirmed product error stays in the denominator and in neither lead", (
   assert.equal(lead.fenderLeads, 4);
   assert.equal(lead.disqualified, 2);
   assert.equal(lead.status, "on_track");
-  assert.match(leadSentence(lead), /^Fender\/Squier leads 4 of 9 resolved answers\. Other brands lead 3, all Yamaha\. 2 more/);
+  assert.match(leadSentence(lead), /^Fender\/Squier leads 4 of 9 resolved answers\. Yamaha, the top rival, leads 3\. 2 more/);
 });
 
-test("categories sort behind first, then the weakest Fender/Squier share, and a category with no unbranded questions is last", () => {
+test("categories sort behind, then tied, then the weakest Fender/Squier share, and a category with no unbranded questions is last", () => {
   const rows = [
     ...times(9, { category: "amps" }),
     ...times(1, { category: "amps", ...yamaha }),
     ...times(3, { category: "basses" }),
     ...times(2, { category: "basses", ...yamaha }),
+    ...times(4, { category: "electrics" }),
+    ...times(4, { category: "electrics", ...taylor }),
     ...times(2, { category: "acoustics" }),
     ...times(7, { category: "acoustics", ...yamaha }),
     ...times(3, { category: "acoustics", ...taylor }),
@@ -119,16 +140,22 @@ test("categories sort behind first, then the weakest Fender/Squier share, and a 
     leads.map((lead) => [lead.key, lead.status]),
     [
       ["acoustics", "behind"],
+      ["electrics", "tied"],
       ["basses", "on_track"],
       ["amps", "on_track"],
       ["squier", "not_available"],
     ],
   );
-  assert.equal(leadSentence(leads[0]), "Other brands lead 10 of 12 resolved answers, Yamaha the most (7). Fender/Squier leads 2.");
-  assert.equal(leadSentence(leads[2]), "Fender/Squier leads 9 of 10 resolved answers. Other brands lead 1, all Yamaha.");
-  assert.equal(leadSentence(leads[3]), "No unbranded discovery questions in this category.");
-  assert.match(leadStatusDefinition(leads[3]), /no unbranded discovery questions/);
-  assert.deepEqual(categoryLeadSummary(leads), { measured: 3, onTrack: 2, behind: ["Acoustics"], even: [] });
+  assert.equal(
+    leadSentence(leads[0]),
+    "Fender/Squier leads 2 of 12 resolved answers. Yamaha, the top rival, leads 7. Other brands lead 3.",
+  );
+  assert.equal(leadSentence(leads[3]), "Fender/Squier leads 9 of 10 resolved answers. Yamaha, the top rival, leads 1.");
+  assert.equal(leadSentence(leads[4]), "No unbranded discovery questions in this category.");
+  assert.match(leadStatusDefinition(leads[4]), /no unbranded discovery questions/);
+  assert.deepEqual(categoryLeadSummary(leads), { measured: 4, onTrack: 2, tied: ["Electrics"], behind: ["Acoustics"] });
+  const [alone] = leadsOf(times(3, { category: "amps" }));
+  assert.equal(leadSentence(alone), "Fender/Squier leads 3 of 3 resolved answers. No other brand leads any.");
 });
 
 test("engine chips cover engines with an answer, and an engine filter changes the counts", () => {
@@ -151,7 +178,8 @@ test("engine chips cover engines with an answer, and an engine filter changes th
 test("who-leads chips match on-track and behind categories, and clearing restores everything", () => {
   assert.ok(leadMatches("on_track", "fender") && !leadMatches("behind", "fender"));
   assert.ok(leadMatches("behind", "other") && !leadMatches("on_track", "other"));
-  for (const status of ["on_track", "behind", "even", "not_available"] as const) assert.ok(leadMatches(status, "all"));
+  assert.ok(!leadMatches("tied", "fender") && !leadMatches("tied", "other"), "a tie is neither side's lead");
+  for (const status of ["on_track", "tied", "behind", "not_available"] as const) assert.ok(leadMatches(status, "all"));
   assert.equal(isBattlecardFiltered(NO_BATTLECARD_FILTER), false);
   assert.equal(isBattlecardFiltered({ engine: "gemini", lead: "all" }), true);
   assert.equal(isBattlecardFiltered({ engine: "", lead: "other" }), true);

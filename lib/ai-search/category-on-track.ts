@@ -3,7 +3,7 @@ import { categoryLabel, engineLabel, isCommercial, isError } from "@/lib/ai-sear
 import type { AiCallRow } from "@/lib/ai-search/types";
 
 /** Who leads one category on unbranded discovery. */
-export type CategoryLeadStatus = "on_track" | "behind" | "even" | "not_available";
+export type CategoryLeadStatus = "on_track" | "tied" | "behind" | "not_available";
 
 export type CategoryLead = {
   key: string;
@@ -22,17 +22,17 @@ export type CategoryLead = {
 
 export const LEAD_STATUS_LABELS: Record<CategoryLeadStatus, string> = {
   on_track: "On track",
+  tied: "Tied",
   behind: "Behind",
-  even: "Even",
   not_available: "Not available*",
 };
 
 const LEAD_STATUS_DEFINITIONS: Record<Exclude<CategoryLeadStatus, "not_available">, string> = {
   on_track:
-    "Fender or Squier was named most in more of this category's resolved unbranded discovery answers than every other brand together.",
+    "Fender or Squier was named most in more of this category's resolved unbranded discovery answers than any single other brand.",
+  tied: "Fender/Squier and the top other brand were each named most in the same number of this category's resolved unbranded discovery answers.",
   behind:
-    "Other brands together were named most in more of this category's resolved unbranded discovery answers than Fender or Squier.",
-  even: "Fender/Squier and other brands were each named most in the same number of this category's resolved unbranded discovery answers.",
+    "One other brand was named most in more of this category's resolved unbranded discovery answers than Fender or Squier.",
 };
 
 export function leadStatusDefinition(lead: Pick<CategoryLead, "status" | "asked">): string {
@@ -43,18 +43,19 @@ export function leadStatusDefinition(lead: Pick<CategoryLead, "status" | "asked"
   return "No unbranded discovery answer in this category had a clear leader, so no brand leads it on that measure.";
 }
 
+/** Fender/Squier against the single brand named most, not against every other brand together. */
 export function categoryLeadStatus(tally: {
   resolved: number;
   fenderWins: number;
-  competitorWins: number;
+  topRivalWins: number;
 }): CategoryLeadStatus {
   if (tally.resolved <= 0) return "not_available";
-  if (tally.fenderWins > tally.competitorWins) return "on_track";
-  if (tally.competitorWins > tally.fenderWins) return "behind";
-  return "even";
+  if (tally.fenderWins > tally.topRivalWins) return "on_track";
+  if (tally.fenderWins === tally.topRivalWins) return "tied";
+  return "behind";
 }
 
-const STATUS_ORDER: Record<CategoryLeadStatus, number> = { behind: 0, even: 1, on_track: 2, not_available: 3 };
+const STATUS_ORDER: Record<CategoryLeadStatus, number> = { behind: 0, tied: 1, on_track: 2, not_available: 3 };
 
 function fenderShare(lead: CategoryLead): number {
   return lead.resolved > 0 ? lead.fenderLeads / lead.resolved : 1;
@@ -69,7 +70,7 @@ export function categoryLeads(groups: readonly RoleGroupTally[], calls: readonly
       return {
         key: group.key,
         label: categoryLabel(group.key),
-        status: categoryLeadStatus(unbranded),
+        status: categoryLeadStatus({ ...unbranded, topRivalWins: rivals[0]?.wins ?? 0 }),
         resolved: unbranded.resolved,
         fenderLeads: unbranded.fenderWins,
         otherLeads: unbranded.competitorWins,
@@ -85,15 +86,15 @@ export function categoryLeads(groups: readonly RoleGroupTally[], calls: readonly
 }
 
 export const ON_TRACK_DEFINITION =
-  "A category is on track when Fender or Squier is named most in more of its resolved unbranded discovery answers than every other brand together. Branded consideration is not part of this test.";
+  "A category is on track when Fender or Squier is named most in more of its resolved unbranded discovery answers than any single other brand. Level with the top other brand reads Tied. Branded consideration is not part of this test.";
 
 export type CategoryLeadSummary = {
   /** Categories with at least one resolved unbranded discovery answer. */
   measured: number;
   onTrack: number;
-  /** Labels of the categories other brands lead, in display order. */
+  /** Labels in display order. */
+  tied: string[];
   behind: string[];
-  even: string[];
 };
 
 export function categoryLeadSummary(leads: readonly CategoryLead[]): CategoryLeadSummary {
@@ -101,36 +102,30 @@ export function categoryLeadSummary(leads: readonly CategoryLead[]): CategoryLea
   return {
     measured: leads.filter((lead) => lead.status !== "not_available").length,
     onTrack: labels("on_track").length,
+    tied: labels("tied"),
     behind: labels("behind"),
-    even: labels("even"),
   };
 }
 
-function rivalClause(lead: CategoryLead): string {
-  const rival = lead.topRival;
-  if (!rival) return "";
-  if (rival.wins === lead.otherLeads) return `, all ${rival.brand}`;
-  return `, ${rival.brand} the most (${rival.wins})`;
+/** Other brands' leads outside the top rival. */
+export function restLeads(lead: Pick<CategoryLead, "otherLeads" | "topRival">): number {
+  return lead.otherLeads - (lead.topRival?.wins ?? 0);
 }
 
 /** One plain sentence per category. Every count shares the resolved denominator. */
 export function leadSentence(lead: CategoryLead): string {
-  const { fenderLeads: fender, otherLeads: other, resolved } = lead;
-  const flagged =
-    lead.disqualified > 0 ? ` ${lead.disqualified} more named Fender/Squier most with a confirmed product error.` : "";
   if (lead.status === "not_available") {
     return lead.asked > 0
       ? "No unbranded discovery answer in this category had a clear leader."
       : "No unbranded discovery questions in this category.";
   }
-  if (lead.status === "even") {
-    return `Fender/Squier and other brands each lead ${fender} of ${resolved} resolved answers.${flagged}`;
-  }
-  if (lead.status === "behind") {
-    return `Other brands lead ${other} of ${resolved} resolved answers${rivalClause(lead)}. Fender/Squier leads ${fender}.${flagged}`;
-  }
-  const others = other > 0 ? ` Other brands lead ${other}${rivalClause(lead)}.` : " No other brand leads any.";
-  return `Fender/Squier leads ${fender} of ${resolved} resolved answers.${others}${flagged}`;
+  const rival = lead.topRival;
+  const rest = restLeads(lead);
+  const rivalPart = rival ? ` ${rival.brand}, the top rival, leads ${rival.wins}.` : " No other brand leads any.";
+  const restPart = rival && rest > 0 ? ` Other brands lead ${rest}.` : "";
+  const flagged =
+    lead.disqualified > 0 ? ` ${lead.disqualified} more named Fender/Squier most with a confirmed product error.` : "";
+  return `Fender/Squier leads ${lead.fenderLeads} of ${lead.resolved} resolved answers.${rivalPart}${restPart}${flagged}`;
 }
 
 export type LeadFilter = "all" | "fender" | "other";
@@ -142,7 +137,7 @@ export const NO_BATTLECARD_FILTER: BattlecardFilter = { engine: "", lead: "all" 
 export const LEAD_FILTER_LABELS: Record<LeadFilter, string> = {
   all: "All categories",
   fender: "Fender/Squier leads",
-  other: "Other brands lead",
+  other: "Another brand leads",
 };
 
 /** Engines with at least one answered shopping call. An engine that failed every call is not a result. */
