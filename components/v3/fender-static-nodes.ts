@@ -108,7 +108,7 @@ export const fenderStaticNodes: CanvasNode[] = [
       status: "success",
       title: "Action Items",
       stats: [],
-      heroValue: { value: FENDER_METRICS.phaseOneLift.value, label: "est. Phase 1 lift" },
+      heroValue: { value: FENDER_METRICS.phaseOneLift.value, label: "Phase 1 lift" },
       spokeId: "suggestions",
       tooltip: { title: "", desc: "" },
     },
