@@ -197,6 +197,13 @@ test("category options use the stored category values in scope", () => {
   assert.equal(categoryForScope(calls, "commercial", null), null);
 });
 
+test("an active category adds one Clear button to the control row and keeps its sentence for screen readers", () => {
+  const filter = read("components/v3/live/ai-search/CitationCategoryFilter.tsx").replace(/\s+/g, " ");
+  assert.match(filter, /aria-pressed=\{active\?\.key === option\.key\}/);
+  assert.match(filter, /<span className="sr-only"> Showing \{active\.label\} only: \{active\.answered\} \{scopeNoun\}\. <\/span>/);
+  assert.match(filter, /data-citation-category-clear onClick=\{\(\) => onChange\(null\)\} > Clear category <\/button>/);
+});
+
 test("the cited-links title names the category, and a new category keeps only site-level picks", () => {
   assert.equal(citationPickLabel(null), "every cited link");
   assert.equal(citationPickLabel(null, "electrics"), "every cited link in Electrics");

@@ -5,7 +5,7 @@ import type { CitationCategoryOption } from "@/lib/ai-search/citation-top-source
 
 /**
  * One category at a time. Narrows the chart, tiles, and tables on the tab.
- * Sits in the control row beside the scope buttons.
+ * Sits in the control row beside the scope buttons; an active category adds only a Clear button.
  */
 export function CitationCategoryFilter({
   options,
@@ -48,8 +48,9 @@ export function CitationCategoryFilter({
       </div>
       {active ? (
         <p className="citation-category-status" data-citation-category-active={active.key} aria-live="polite">
-          <span>
-            Showing <strong>{active.label}</strong> only: {active.answered} {scopeNoun}.
+          {/* The active chip, the lead tile, and the answers tile already show this, so the row stays one line. */}
+          <span className="sr-only">
+            Showing {active.label} only: {active.answered} {scopeNoun}.
           </span>
           <button
             type="button"
