@@ -28,7 +28,7 @@ export const OUTCOME_DEFINITION: Record<FindabilityOutcome, string> = {
   ambiguous_candidate:
     "More than one fender.com page could fit, so we did not pick one.",
   not_checked:
-    "We have not looked at this listing yet. A blank result is not a missing page.",
+    "This listing was not checked and should be opened for that reason. A blank result is not a missing page.",
 };
 
 const HEADLINE_NOUN: Record<FindabilityOutcome, [string, string]> = {
@@ -255,6 +255,17 @@ export function presentExplanation(row: FindabilityRow): string {
   return "None";
 }
 
+/** Why an unchecked listing was not checked. The first matching flag wins. */
+export function uncheckedReason(row: FindabilityRow): string {
+  if (row.counts_as_blocked === true) return "Blocked";
+  if (row.counts_as_timeout === true) return "Timeout";
+  if (row.counts_as_parse_failure === true) return "Parse failure";
+  if (row.counts_as_unsupported === true) return "Unsupported";
+  const stored = row.explanation?.trim() ?? "";
+  if (!stored || stored === "None") return "Reason not recorded";
+  return stored;
+}
+
 export function listingTitle(row: FindabilityRow): string {
   return row.title?.trim() || "No title stored";
 }
@@ -287,6 +298,8 @@ export function findabilitySortValue(row: FindabilityRow, columnId: string): Sor
       return bucket === "not_checked" ? null : row.latest_attempt_at;
     case "explanation":
       return presentExplanation(row);
+    case "reason":
+      return uncheckedReason(row);
     case "bundle":
       return dealerBundleLabel(row.dealer_bundle);
     default:

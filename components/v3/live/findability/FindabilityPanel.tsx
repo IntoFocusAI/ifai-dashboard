@@ -100,7 +100,7 @@ function OutcomeCount({
 
 export function FindabilityPanel() {
   const read = useFindability();
-  const [selected, setSelected] = useState<FindabilityBucket | null>(null);
+  const [selected, setSelected] = useState<FindabilityBucket | null>("exact_official_product");
 
   const counts = useMemo(
     () => (read.phase === "ready" ? countFindability(read.rows) : null),
@@ -174,7 +174,7 @@ export function FindabilityPanel() {
           <p className="findability-note">
             {read.dealerBundleLoaded ? DEALER_BUNDLE_NOTE : "Dealer bundle status did not load with this read."}
           </p>
-          <FindabilityTable key={selected} rows={filtered} />
+          <FindabilityTable key={selected} outcome={selected} rows={filtered} />
         </div>
       ) : null}
     </div>

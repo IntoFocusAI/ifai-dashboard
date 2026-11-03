@@ -3668,7 +3668,7 @@
       line-height: 1.35;
     }
 
-    /* Summary Briefing: five executive findings in one short row. */
+    /* Summary Briefing: one row of equal bubbles. Narrow widths may wrap. */
     .briefing-findings {
       display: flex;
       flex-wrap: wrap;
@@ -3677,28 +3677,22 @@
       margin-bottom: 12px;
     }
 
-    .briefing-buy-box-cluster {
-      flex: 1.4 1 220px;
-      min-width: 200px;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      align-items: stretch;
+    .briefing-findings > .briefing-finding,
+    .briefing-findings > .briefing-revenue-placeholder {
+      flex: 1 1 120px;
+      min-width: min(120px, 100%);
+      max-width: 100%;
     }
 
-    .briefing-buy-box-cluster > .briefing-finding {
-      flex: 1 1 140px;
-      min-width: 130px;
+    .briefing-consensus {
+      cursor: default;
     }
 
-    .briefing-findings > .briefing-finding {
-      flex: 1 1 148px;
-      min-width: 136px;
+    .briefing-finding > .retail-finding-hit {
+      flex: 1 1 auto;
     }
 
     .briefing-revenue-placeholder {
-      flex: 1 1 120px;
-      min-width: 110px;
       box-sizing: border-box;
       background: var(--bg-card);
       border: 1px dashed var(--border-color);
@@ -3713,11 +3707,6 @@
       font-size: clamp(20px, 2vw, 26px);
       line-height: 1.05;
       color: var(--text-muted);
-    }
-
-    .briefing-revenue-placeholder .metric-card-sub {
-      margin: 0;
-      line-height: 1.35;
     }
 
     /* Featured Offer readings. Unchecked and failed share one card, still as two counts. */
@@ -3835,6 +3824,90 @@
       font-size: 12.5px;
       line-height: 1.45;
       color: var(--text-muted);
+    }
+
+    .authorized-sellers.content-box {
+      width: fit-content;
+      max-width: 100%;
+      align-self: flex-start;
+      margin: 0 0 12px;
+      padding: 8px;
+      gap: 8px;
+      min-inline-size: 0;
+    }
+
+    .authorized-sellers.content-box[data-authorized-sellers-open="true"] {
+      width: 100%;
+    }
+
+    .authorized-sellers-toggle {
+      width: fit-content;
+      max-width: 100%;
+      align-self: flex-start;
+      justify-content: flex-start;
+      gap: 6px;
+      padding: 0;
+      font-size: 13px;
+      line-height: 1.3;
+    }
+
+    .authorized-sellers-body {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 0;
+    }
+
+    .authorized-sellers-always,
+    .authorized-sellers-status {
+      margin: 0;
+      font-size: 12.5px;
+      line-height: 1.45;
+      color: var(--text-main);
+    }
+
+    .authorized-sellers-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      max-height: 220px;
+      overflow: auto;
+    }
+
+    .authorized-sellers-choice {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      line-height: 1.35;
+      color: var(--text-main);
+      cursor: pointer;
+    }
+
+    .authorized-sellers-save {
+      width: fit-content;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      border-radius: var(--radius-button);
+      border: 1px solid var(--border-color);
+      background: var(--bg-card);
+      color: var(--text-main);
+      cursor: pointer;
+    }
+
+    .authorized-sellers-save:disabled {
+      opacity: 0.55;
+      cursor: default;
+    }
+
+    .authorized-sellers-save:focus-visible,
+    .authorized-sellers-choice input:focus-visible {
+      outline: 2px solid var(--accent-cyan);
+      outline-offset: 2px;
     }
 
     .retail-explore {
@@ -5314,6 +5387,16 @@
 
     .stock-loss-hero .source-tag-estimate.ifai-term {
       cursor: help;
+    }
+
+    /* One 12-month figure per sales source, with its 90- and 30-day figures beneath. */
+    .stock-loss-hero-source {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .stock-loss-row .stock-loss-offer-chip {
+      margin-left: 6px;
     }
 
     .stock-loss-row {

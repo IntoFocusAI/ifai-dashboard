@@ -1,11 +1,15 @@
 "use client";
 
+import { AuthorizedSellersControl } from "@/components/v3/live/AuthorizedSellersControl";
 import { CommerceConsensusPanel } from "@/components/v3/live/CommerceConsensusPanel";
 import { ExploreListings } from "@/components/v3/live/ExploreListings";
 import { DefinedTerm } from "@/components/v3/live/DefinedTerm";
 import { FeaturedOfferReadings } from "@/components/v3/live/FeaturedOfferReadings";
+import { authorizedSellerControlOffered } from "@/lib/fender-canvas/authorized-sellers";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
 import type { CanvasFreshnessRow } from "@/lib/fender-canvas/types";
+
+const RETAIL_SELLER_TYPE = "Partner-led";
 
 export function RetailOverview({
   read,
@@ -21,10 +25,14 @@ export function RetailOverview({
     <div className="retail-health retail-surface">
       <p
         className="metric-card-sub"
+        data-seller-type={RETAIL_SELLER_TYPE}
         style={{ margin: "0 0 10px", fontSize: 11, letterSpacing: "0.02em" }}
       >
-        Seller type: Partner-led
+        Seller type: {RETAIL_SELLER_TYPE}
       </p>
+      {authorizedSellerControlOffered(RETAIL_SELLER_TYPE) ? (
+        <AuthorizedSellersControl read={read} />
+      ) : null}
 
       <CommerceConsensusPanel read={read} />
 

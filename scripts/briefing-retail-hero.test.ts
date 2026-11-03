@@ -331,18 +331,52 @@ test("a missing stored count shows Not available* without inventing zero", () =>
   assert.equal(lead.findings[4].percent, BRIEFING_COUNT_MISSING);
 });
 
-test("hub Briefing override leads with the five-finding hero before the essay", () => {
+test("hub Briefing puts consensus in the findings row, then the essay", () => {
   const spokes = read("components/v3/build-live-spokes.tsx");
   const hero = read("components/v3/live/BriefingRetailHero.tsx");
   const lead = read("lib/fender-canvas/briefing-retail-lead.ts");
+  const consensusLead = read("components/v3/live/BriefingConsensusLead.tsx");
   const briefingHtml = JSON.parse(read("data/fender-v3-spec.json")).spokes.hub.tabTemplates[0] as string;
   assert.match(spokes, /BriefingRetailHero/);
   assert.match(
     spokes,
     /0:\s*\([^)]*\)\s*=>\s*\(\s*<>\s*<BriefingRetailHero[\s\S]*?htmlBlock\(bindCopy\(HUB_BRIEFING_HTML/,
-    "essay HTML stays under the hero",
+    "findings row, then the essay",
   );
+  assert.doesNotMatch(spokes, /BriefingConsensusLead|briefing-consensus-lead/);
+  assert.match(hero, /<BriefingConsensusLead[\s\S]*<BriefingFindingCard[\s\S]*<LostRevenuePlaceholder/);
+  assert.doesNotMatch(hero, /briefing-buy-box-cluster|briefing-consensus-lead/);
+  assert.match(consensusLead, /consensusFromLive\(/);
+  assert.match(consensusLead, /briefingConsensusSentence\(/);
+  assert.match(consensusLead, /data-ifai-tooltip-title="AI Consensus"/);
+  assert.match(consensusLead, /data-ifai-tooltip-desc=\{sentence\}/);
+  assert.doesNotMatch(consensusLead, /<p[\s>]|className="briefing-consensus-sentence"|className="briefing-consensus-lead"/);
+  assert.doesNotMatch(
+    consensusLead,
+    /dominant|ScoreHeroCard|ConsensusLeadBand|ActuationHeroCard|CONSENSUS_EXPLAINER|FenderDivisionsTable|why it matters|Featured Offer/,
+  );
+  assert.doesNotMatch(consensusLead, /\stitle=/);
+  const hub = spokes.slice(spokes.indexOf("\n  hub:"), spokes.indexOf("\n  ecommerce:"));
+  const tab0 = hub.slice(hub.indexOf("\n    0:"), hub.indexOf("\n    1:"));
+  const tab1 = hub.slice(hub.indexOf("\n    1:"));
+  assert.match(tab0, /BriefingRetailHero/);
+  assert.doesNotMatch(tab0, /FenderDivisionsTable|ConsensusScoresPanel|ConsensusLeadBand|BriefingConsensusLead/);
+  assert.match(
+    tab1,
+    /<ConsensusScoresPanel bundle=\{bundle\} retail=\{retail\} \/>\s*<FenderDivisionsTable divisions=\{bundle\.divisions\} \/>/,
+  );
+  assert.doesNotMatch(tab1, /BriefingConsensusLead|BriefingRetailHero/);
   const card = read("components/v3/live/BriefingFindingCard.tsx");
+  const buttonAt = card.indexOf("<button");
+  assert.ok(buttonAt > card.indexOf("data-ifai-tooltip-desc={finding.explainer}"));
+  assert.doesNotMatch(card.slice(buttonAt), /tabIndex=\{0\}|metric-card-sub|data-briefing-finding-explainer/);
+  assert.match(card, /className="metric-card-label ifai-term"/);
+  assert.match(card, /data-ifai-tooltip-title=\{finding\.label\}/);
+  assert.match(card, /aria-label=\{`\$\{finding\.label\}: \$\{finding\.explainer\}`\}/);
+  assert.match(hero, /data-ifai-tooltip-desc=\{placeholder\.explainer\}/);
+  assert.doesNotMatch(hero, /metric-card-sub|data-briefing-revenue-explainer/);
+  assert.doesNotMatch(read("components/v3/live/CurrentFindingsPanel.tsx"), /BriefingConsensusLead|AI Consensus/);
+  assert.doesNotMatch(read("components/v3/live/RoadmapFindingsPanel.tsx"), /BriefingConsensusLead|AI Consensus/);
   assert.match(hero, /briefingFindingsLead/);
   assert.match(hero, /data-briefing-findings/);
   assert.match(hero, /data-briefing-revenue-placeholder/);

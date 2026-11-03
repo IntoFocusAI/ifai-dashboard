@@ -11,6 +11,7 @@ import {
   OUTCOME_LABEL,
   presentExplanation,
   readinessFindabilityFace,
+  uncheckedReason,
 } from "../lib/findability/copy.ts";
 import { orderFullResult } from "../lib/fender-canvas/full-result-sort.ts";
 import {
@@ -126,8 +127,13 @@ test("the five outcomes stay distinct and sum to the stored row count", () => {
   );
   assert.equal(
     OUTCOME_DEFINITION.not_checked,
-    "We have not looked at this listing yet. A blank result is not a missing page.",
+    "This listing was not checked and should be opened for that reason. A blank result is not a missing page.",
   );
+  assert.match(OUTCOME_DEFINITION.not_checked, /was not checked/);
+  assert.match(OUTCOME_DEFINITION.not_checked, /opened for that reason/);
+  assert.match(OUTCOME_DEFINITION.not_checked, /blank result is not a missing page/);
+  assert.doesNotMatch(OUTCOME_DEFINITION.not_checked, /\byet\b/i);
+  assert.doesNotMatch(OUTCOME_DEFINITION.not_checked, /still running|in progress|this pass/i);
   assert.doesNotMatch(headline, /finished search(?:es)? with no defensible page/i);
   assert.doesNotMatch(headline, /Finished search, no defensible page/);
   assert.match(headline, /8 ambiguous matches/);
@@ -384,6 +390,15 @@ test("outcome buttons carry the explore chevron on the button", () => {
   );
 });
 
+test("Findability opens with the Exact official product page outcome selected", () => {
+  const root = new URL("..", import.meta.url);
+  const panel = readFileSync(new URL("components/v3/live/findability/FindabilityPanel.tsx", root), "utf8");
+  assert.match(panel, /useState<FindabilityBucket \| null>\("exact_official_product"\)/);
+  assert.doesNotMatch(panel, /useState<FindabilityBucket \| null>\(null\)/);
+  assert.match(panel, /if \(read\.phase !== "ready" \|\| !selected\) return \[\]/);
+  assert.match(panel, /\{selected \? \(/);
+});
+
 test("findability listing cells stay short and drop the count column", () => {
   const root = new URL("..", import.meta.url);
   const table = readFileSync(new URL("components/v3/live/findability/FindabilityTable.tsx", root), "utf8");
@@ -408,6 +423,7 @@ test("findability listing cells stay short and drop the count column", () => {
     explanation: null,
   });
   assert.equal(presentExplanation(unchecked), "None");
+  assert.equal(uncheckedReason(unchecked), "Reason not recorded");
   assert.equal(presentExplanation(row({
     asin: "B00EXACT",
     latest_state: "exact_official_product",
@@ -416,6 +432,115 @@ test("findability listing cells stay short and drop the count column", () => {
   assert.equal(dealerBundleLabel(true), "Yes");
   assert.equal(dealerBundleLabel(false), "No");
   assert.equal(dealerBundleLabel(null), "Not in this read");
+});
+
+test("unchecked reason uses the first matching flag, then the stored explanation", () => {
+  const base = {
+    asin: "B00REASON",
+    latest_state: "not_checked" as const,
+    counts_as_unchecked: true,
+    explanation: "  Stored explanation.  ",
+  };
+  assert.equal(
+    uncheckedReason(row({
+      ...base,
+      counts_as_blocked: true,
+      counts_as_timeout: true,
+      counts_as_parse_failure: true,
+      counts_as_unsupported: true,
+    })),
+    "Blocked",
+  );
+  assert.equal(
+    uncheckedReason(row({
+      ...base,
+      counts_as_timeout: true,
+      counts_as_parse_failure: true,
+      counts_as_unsupported: true,
+    })),
+    "Timeout",
+  );
+  assert.equal(
+    uncheckedReason(row({
+      ...base,
+      counts_as_parse_failure: true,
+      counts_as_unsupported: true,
+    })),
+    "Parse failure",
+  );
+  assert.equal(
+    uncheckedReason(row({ ...base, counts_as_unsupported: true })),
+    "Unsupported",
+  );
+  assert.equal(uncheckedReason(row(base)), "Stored explanation.");
+  assert.equal(findabilitySortValue(row({ ...base, counts_as_blocked: true }), "reason"), "Blocked");
+
+  for (const explanation of [null, "", "   ", "None", " None "]) {
+    assert.equal(
+      uncheckedReason(row({ ...base, explanation })),
+      "Reason not recorded",
+    );
+  }
+  assert.equal(
+    uncheckedReason(row({ ...base, explanation: "None recorded" })),
+    "None recorded",
+  );
+
+  const root = new URL("..", import.meta.url);
+  const table = readFileSync(new URL("components/v3/live/findability/FindabilityTable.tsx", root), "utf8");
+  const shared = table.slice(table.indexOf("const COLUMNS"), table.indexOf("const UNCHECKED_COLUMNS"));
+  const unchecked = table.slice(table.indexOf("const UNCHECKED_COLUMNS"), table.indexOf("function columnsFor"));
+  assert.match(shared, /Official page/);
+  assert.match(shared, /HTTP status/);
+  assert.match(shared, /"Checked"/);
+  assert.match(shared, /"Outcome"/);
+  assert.match(shared, /VARIANT_SKU_COLUMN/);
+  assert.match(shared, /"Confidence"/);
+  assert.match(shared, /How it was matched/);
+  assert.doesNotMatch(shared, /"Reason"/);
+  assert.match(unchecked, /"Reason"/);
+  assert.match(unchecked, /"Category"/);
+  assert.match(unchecked, /Product kind/);
+  assert.match(unchecked, /"Explanation"/);
+  assert.match(unchecked, /Dealer bundle/);
+  assert.doesNotMatch(unchecked, /Official page|HTTP status|"Checked"|"Outcome"/);
+  assert.doesNotMatch(unchecked, /Variant SKU|"Confidence"|How it was matched/);
+  assert.match(table, /outcome === "not_checked" \? UNCHECKED_COLUMNS : COLUMNS/);
+});
+
+test("a 10-character ASIN links to its Amazon page and every other value stays text", () => {
+  const root = new URL("..", import.meta.url);
+  const table = readFileSync(new URL("components/v3/live/findability/FindabilityTable.tsx", root), "utf8");
+  const returnLine = table.match(
+    /return (\/\^\[A-Z0-9\]\{10\}\$\/\.test\(asin\) \? `https:\/\/www\.amazon\.com\/dp\/\$\{asin\}` : null);/,
+  );
+  assert.ok(returnLine?.[1]);
+  const amazonHref = new Function("asin", `return ${returnLine[1]}`) as (asin: string) => string | null;
+
+  assert.equal(amazonHref("B0EXACT001"), "https://www.amazon.com/dp/B0EXACT001");
+  assert.equal(amazonHref("B00BUNDLE1"), "https://www.amazon.com/dp/B00BUNDLE1");
+  assert.equal(amazonHref("0140000001"), "https://www.amazon.com/dp/0140000001");
+  assert.equal(amazonHref("B0VARSKU01"), "https://www.amazon.com/dp/B0VARSKU01");
+  assert.equal(amazonHref("b0exact001"), null);
+  assert.equal(amazonHref("B00ZEBRA"), null);
+  assert.equal(amazonHref("B00FAMILY"), null);
+  assert.equal(amazonHref("B00UNCHECKED"), null);
+  assert.equal(amazonHref("B0-NOPAGE1"), null);
+  assert.equal(amazonHref("B0EXACT001 "), null);
+  assert.equal(amazonHref(""), null);
+
+  const asinCell = table.slice(table.indexOf('case "asin"'), table.indexOf('case "title"'));
+  assert.match(asinCell, /amazonHref\(row\.asin\)/);
+  assert.match(asinCell, /className="listing-link"/);
+  assert.match(asinCell, /target="_blank"/);
+  assert.match(asinCell, /rel="noopener noreferrer"/);
+  assert.match(asinCell, /<span className="asin-chip">\{row\.asin\}<\/span>/);
+  assert.equal(asinCell.match(/<span className="asin-chip">\{row\.asin\}<\/span>/g)?.length, 2);
+
+  const skuCell = table.slice(table.indexOf('case "sku"'), table.indexOf('case "confidence"'));
+  assert.match(skuCell, /latest_variant_sku/);
+  assert.doesNotMatch(skuCell, /amazonHref|<a |amazon\.com/);
+  assert.equal(table.match(/case "asin"/g)?.length, 1);
 });
 
 test("the readiness face uses outcome counts instead of the older found percentage", () => {

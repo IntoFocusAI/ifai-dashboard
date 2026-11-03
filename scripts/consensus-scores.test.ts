@@ -3,7 +3,12 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
   AUTHORIZED_BUY_BOX_PARTNERS,
+  buyBoxSellerCensus,
+  COMMERCE_COMPONENT_SPECS,
+  CONTROLLED_BUY_BOX_PLACEHOLDER_TOOLTIP,
+  commerceScore,
   controlledBuyBoxFinding,
+  controlledBuyBoxFromCensus,
   consensusScore,
   hasKnownBuyBoxSeller,
   isAmazonRetailSeller,
@@ -111,6 +116,101 @@ test("partner matching: Amazon 1P, Austin Bazaar, and GearTree count; unknown dr
   assert.deepEqual(detail, { controlled: 3, known: 4, population: 5 });
   assert.equal(shareScore({ numerator: detail!.controlled, denominator: detail!.known }), 75);
   assert.deepEqual([...AUTHORIZED_BUY_BOX_PARTNERS], ["Austin Bazaar", "GearTree"]);
+  assert.equal(
+    CONTROLLED_BUY_BOX_PLACEHOLDER_TOOLTIP,
+    "Placeholder: Amazon Retail, Austin Bazaar, and GearTree are the set used until the authorized-partner list is confirmed.",
+  );
+});
+
+test("a saved list replaces the placeholder set and Amazon Retail still counts", () => {
+  const rows = [
+    { buybox_status: "Amazon 1P", buybox_seller_name: null },
+    { buybox_status: "3P Confirmed", buybox_seller_name: "Austin Bazaar" },
+    { buybox_status: "3P Confirmed", buybox_seller_name: "GearTree" },
+    { buybox_status: "3P Confirmed", buybox_seller_name: "Crazy Dave's Music" },
+    { buybox_status: "Unknown/Not Harvested", buybox_seller_name: null },
+  ];
+
+  assert.equal(isAuthorizedBuyBoxPartner({ buybox_seller_name: "Austin Bazaar" }, ["Crazy Dave's Music"]), false);
+  assert.equal(isAuthorizedBuyBoxPartner({ buybox_seller_name: "crazy dave's music" }, ["Crazy Dave's Music"]), true);
+  assert.equal(isControlledBuyBoxSeller({ buybox_status: "3P Confirmed", buybox_seller_name: "Crazy Dave's Music" }, ["Crazy Dave's Music"]), true);
+  assert.equal(isAuthorizedBuyBoxPartner({ buybox_seller_name: "Austin Bazaar" }, []), false);
+  assert.equal(isAuthorizedBuyBoxPartner({ buybox_seller_name: "GearTree" }, []), false);
+  assert.equal(isControlledBuyBoxSeller({ buybox_status: "Amazon 1P", buybox_seller_name: null }, []), true);
+  assert.equal(isControlledBuyBoxSeller({ buybox_status: "3P Confirmed", buybox_seller_name: "Amazon.com" }, []), true);
+
+  assert.deepEqual(controlledBuyBoxFinding(rows, ["Crazy Dave's Music"]), {
+    controlled: 2,
+    known: 4,
+    population: 5,
+  });
+  assert.deepEqual(controlledBuyBoxFinding(rows, []), { controlled: 1, known: 4, population: 5 });
+  assert.deepEqual(controlledBuyBoxFinding(rows), { controlled: 3, known: 4, population: 5 });
+
+  const census = buyBoxSellerCensus(rows);
+  assert.deepEqual(census, {
+    amazonRetail: 1,
+    sellers: [
+      { name: "Austin Bazaar", listings: 1 },
+      { name: "Crazy Dave's Music", listings: 1 },
+      { name: "GearTree", listings: 1 },
+    ],
+    known: 4,
+    population: 5,
+  });
+  assert.deepEqual(controlledBuyBoxFromCensus(census!, null), controlledBuyBoxFinding(rows));
+  assert.deepEqual(
+    controlledBuyBoxFromCensus(census!, ["Crazy Dave's Music"]),
+    controlledBuyBoxFinding(rows, ["Crazy Dave's Music"]),
+  );
+  assert.deepEqual(controlledBuyBoxFromCensus(census!, []), controlledBuyBoxFinding(rows, []));
+  assert.equal(controlledBuyBoxFromCensus(census!, ["geartree"]).controlled, 2);
+
+  const amazonNamed = buyBoxSellerCensus([
+    { buybox_status: "3P Confirmed", buybox_seller_name: "Amazon.com" },
+    { buybox_status: "3P Confirmed", buybox_seller_name: "GearTree" },
+    { buybox_status: "3P Confirmed", buybox_seller_name: "geartree" },
+  ]);
+  assert.equal(amazonNamed!.amazonRetail, 1);
+  assert.deepEqual(amazonNamed!.sellers, [{ name: "GearTree", listings: 2 }]);
+
+  const inputs = {
+    controlledBuyBox: { numerator: 1, denominator: 2 },
+    notSuppressed: { numerator: 1, denominator: 2 },
+    activeProductsAvailable: { numerator: 1, denominator: 2 },
+    notSplintered: { numerator: 1, denominator: 2 },
+    noMapViolation: { numerator: 1, denominator: 2 },
+  };
+  const unsaved = commerceScore(inputs).components.find((row) => row.id === "controlled_buy_box");
+  assert.equal(unsaved?.placeholder, true);
+  assert.equal(unsaved?.placeholderTooltip, CONTROLLED_BUY_BOX_PLACEHOLDER_TOOLTIP);
+
+  const saved = commerceScore(inputs, { authorizedPartners: ["Crazy Dave's Music"] }).components.find(
+    (row) => row.id === "controlled_buy_box",
+  );
+  assert.equal(saved?.placeholder, false);
+  assert.equal(saved?.placeholderTooltip, undefined);
+  assert.equal(saved?.weight, 35);
+
+  const amazonOnly = commerceScore(inputs, { authorizedPartners: [] }).components.find(
+    (row) => row.id === "controlled_buy_box",
+  );
+  assert.equal(amazonOnly?.placeholder, false);
+
+  assert.deepEqual(
+    COMMERCE_COMPONENT_SPECS.map((spec) => [spec.id, spec.weight, spec.placeholder ?? false]),
+    [
+      ["controlled_buy_box", 35, true],
+      ["not_suppressed", 25, false],
+      ["active_products_available", 15, false],
+      ["not_splintered", 15, false],
+      ["no_map_violation", 10, false],
+    ],
+  );
+  assert.equal(
+    COMMERCE_COMPONENT_SPECS.find((spec) => spec.id === "controlled_buy_box")?.placeholderTooltip,
+    CONTROLLED_BUY_BOX_PLACEHOLDER_TOOLTIP,
+  );
 });
 
 test("required-spec placeholder list is the guitar and instrument fields", () => {

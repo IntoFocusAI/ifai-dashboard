@@ -7,6 +7,8 @@ import {
   COMPONENTS_ID,
 } from "@/components/v3/live/ConsensusScoreView";
 import { RetailOverviewLead } from "@/components/v3/live/RetailOverviewLead";
+import { authorizedPartnersFromSave } from "@/lib/fender-canvas/authorized-sellers";
+import { useAuthorizedSellers } from "@/lib/fender-canvas/authorized-sellers-store";
 import { commerceInputsFromLive } from "@/lib/fender-canvas/consensus-scores-from-live";
 import { commerceScore } from "@/lib/fender-canvas/consensus-scores";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
@@ -17,6 +19,8 @@ import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-disp
  */
 export function CommerceConsensusPanel({ read }: { read: RetailCanvasRead }) {
   const [open, setOpen] = useState(false);
+  const [saved] = useAuthorizedSellers();
+  const authorizedPartners = authorizedPartnersFromSave(saved);
 
   if (read.phase === "loading") {
     return <p className="retail-missing">Loading AI Commerce score…</p>;
@@ -25,7 +29,7 @@ export function CommerceConsensusPanel({ read }: { read: RetailCanvasRead }) {
     return <p className="retail-missing">The AI Commerce score could not be loaded.</p>;
   }
 
-  const inputs = commerceInputsFromLive(read);
+  const inputs = commerceInputsFromLive(read, authorizedPartners);
   if (!inputs) {
     return (
       <>
@@ -37,7 +41,7 @@ export function CommerceConsensusPanel({ read }: { read: RetailCanvasRead }) {
     );
   }
 
-  const commerce = commerceScore(inputs);
+  const commerce = commerceScore(inputs, { authorizedPartners });
 
   return (
     <div data-consensus-commerce-block="">
