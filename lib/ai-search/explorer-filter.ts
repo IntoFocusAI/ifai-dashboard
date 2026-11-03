@@ -125,7 +125,8 @@ export function applyExplorerFilter(rows: AiCallRow[], filter: ExplorerFilter): 
             : outcome === filter.outcome;
       if (!matches) return false;
     }
-    if (filter.accuracy && accuracyState(row) !== filter.accuracy) return false;
+    // Only fact-check rows have a fact-check result; every other row reads "n/a".
+    if (filter.accuracy && (row.prompt_kind !== "probe" || accuracyState(row) !== filter.accuracy)) return false;
     if (filter.brand && (row.primary_brand ?? "") !== filter.brand) return false;
     if (filter.role && questionRole(row) !== filter.role) return false;
     return true;

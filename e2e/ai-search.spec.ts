@@ -230,6 +230,31 @@ test.describe("AI Search Visibility", () => {
     await expect(method).not.toContainText(/representative|random/i);
   });
 
+  test("every non-fact-check row reads n/a in Fact check", async ({ canvas, page }) => {
+    test.slow();
+    await page.goto("/dashboard?spoke=aeo&tab=run-details");
+    await expect(canvas.activeTab).toHaveText("Run Details");
+    await expect(canvas.simulations.first()).toBeVisible({ timeout: 60_000 });
+    await canvas.filterChip("All calls").click();
+    const factCells = (kind: string) =>
+      page
+        .locator(`#ai-simulation-list .ai-sim-row${kind} td:nth-child(6)`)
+        .evaluateAll((cells) => cells.map((cell) => cell.textContent?.trim() ?? ""));
+    const shopping = await factCells(":not([data-kind='probe'])");
+    expect(shopping.length).toBeGreaterThan(0);
+    for (const text of shopping) expect(text).toBe("n/a");
+    const checks = await factCells("[data-kind='probe']");
+    expect(checks.length).toBeGreaterThan(0);
+    for (const text of checks) expect(text).not.toBe("n/a");
+
+    await canvas.filterChip("Shopping prompts").click();
+    await page.getByLabel("Fact-check result").selectOption("not_evaluated");
+    await expect(canvas.filterChip("Product fact checks")).toHaveAttribute("aria-pressed", "true");
+    await expect(canvas.simulations.first()).toBeVisible();
+    const kinds = await canvas.simulations.evaluateAll((rows) => rows.map((row) => row.getAttribute("data-kind")));
+    for (const kind of kinds) expect(kind).toBe("probe");
+  });
+
   test("a question with no verified fact says so", async ({ canvas, page }) => {
     await canvas.openSpokeFromMap("AI Search Visibility");
     await canvas.openTab("Product Fact Checks");

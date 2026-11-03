@@ -3,8 +3,13 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { driftRead } from "../lib/ai-search/drift.ts";
+import {
+  DEFAULT_FILTER,
+  applyExplorerFilter,
+  factCheckColumnLabel,
+} from "../lib/ai-search/explorer-filter.ts";
 import { factCheckAccuracyLead, factCheckMethodStatement } from "../lib/ai-search/fact-check-copy.ts";
-import type { AiProbeRow } from "../lib/ai-search/types.ts";
+import type { AiCallRow, AiProbeRow } from "../lib/ai-search/types.ts";
 
 function probe(partial: Partial<AiProbeRow> & Pick<AiProbeRow, "sim_id" | "prompt_key" | "engine">): AiProbeRow {
   return {
@@ -19,6 +24,32 @@ function probe(partial: Partial<AiProbeRow> & Pick<AiProbeRow, "sim_id" | "promp
     verified_at: "2026-01-01T00:00:00Z",
     created_at: "2026-01-01T00:00:00Z",
     ...partial,
+  };
+}
+
+function call(patch: Partial<AiCallRow>): AiCallRow {
+  return {
+    id: "row",
+    audit_run_id: "r1",
+    sim_id: 1,
+    engine: "chatgpt",
+    model: null,
+    category: "electrics",
+    prompt: "Prompt",
+    prompt_key: "p01",
+    prompt_kind: "commercial",
+    call_status: "answered",
+    outcome: "fender_win",
+    primary_brand: "Fender/Squier",
+    material_hallucination: "not_evaluated",
+    hallucination_evidence: null,
+    root_cause: null,
+    remediation_patch: null,
+    error_message: null,
+    attempt_no: 1,
+    repeat_no: 1,
+    created_at: "2026-10-12T16:40:00Z",
+    ...patch,
   };
 }
 
@@ -91,4 +122,40 @@ test("adding the method statement leaves the Accuracy lead figure and colors unc
   assert.ok(headlineAt > 0 && methodAt > headlineAt, "method follows the headline");
   assert.ok(methodAt < explainer.indexOf("FACT_CHECK_SCOPE"), "method precedes the scope line");
   assert.doesNotMatch(explainer, /\btitle=/);
+});
+
+test("a fact-check result filter never returns a non-fact-check row", () => {
+  const rows = [
+    call({ id: "c1", sim_id: 1, prompt_kind: "commercial", material_hallucination: "not_evaluated" }),
+    call({ id: "c2", sim_id: 2, prompt_kind: "commercial", material_hallucination: "confirmed" }),
+    call({ id: "c3", sim_id: 3, prompt_kind: null, material_hallucination: "none" }),
+    call({ id: "f1", sim_id: 4, prompt_kind: "probe", material_hallucination: "not_evaluated" }),
+    call({ id: "f2", sim_id: 5, prompt_kind: "probe", material_hallucination: "none" }),
+    call({ id: "f3", sim_id: 6, prompt_kind: "probe", material_hallucination: "confirmed" }),
+  ];
+  for (const scope of ["commercial", "probe", "all"] as const) {
+    for (const accuracy of ["confirmed", "none", "not_evaluated", "unverified"] as const) {
+      const matched = applyExplorerFilter(rows, { ...DEFAULT_FILTER, scope, accuracy });
+      for (const row of matched) {
+        assert.equal(row.prompt_kind, "probe", `${scope}/${accuracy} matched ${row.id}`);
+        assert.notEqual(factCheckColumnLabel(row), "n/a");
+      }
+    }
+  }
+  assert.deepEqual(
+    applyExplorerFilter(rows, { ...DEFAULT_FILTER, scope: "all", accuracy: "not_evaluated" }).map((r) => r.id),
+    ["f1"],
+  );
+  // Without a fact-check result filter, shopping rows still list and read "n/a".
+  const shopping = applyExplorerFilter(rows, { ...DEFAULT_FILTER, scope: "all" }).filter(
+    (row) => row.prompt_kind !== "probe",
+  );
+  assert.equal(shopping.length, 3);
+  for (const row of shopping) assert.equal(factCheckColumnLabel(row), "n/a");
+});
+
+test("choosing a fact-check result on Shopping prompts moves the table to Product fact checks", () => {
+  const filters = readFileSync("components/v3/live/ai-search/SimulationFilters.tsx", "utf8");
+  assert.match(filters, /accuracy !== "" && filter\.scope === "commercial"/);
+  assert.match(filters, /\{ accuracy, scope: "probe", category: "" \}/);
 });
