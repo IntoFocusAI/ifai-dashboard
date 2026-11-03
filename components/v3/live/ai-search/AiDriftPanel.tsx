@@ -3,8 +3,10 @@
 import { useAiHistoryOptional } from "@/components/v3/live/ai-search/AiHistoryContext";
 import { AiReadGate, mutedText } from "@/components/v3/live/ai-search/AiReadGate";
 import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
+import { CatalogCoverageTable } from "@/components/v3/live/ai-search/CatalogCoverageTable";
 import { CitationPieDisc } from "@/components/v3/live/ai-search/CitationPieDisc";
 import { CopyTip } from "@/components/v3/live/ai-search/CopyTip";
+import { ExternalLink } from "@/components/v3/live/ai-search/ExternalLink";
 import { FactCheckTable } from "@/components/v3/live/ai-search/FactCheckTable";
 import { driftRead } from "@/lib/ai-search/drift";
 import {
@@ -12,6 +14,7 @@ import {
   FACT_CHECK_SCOPE_LINE,
   FACT_CHECK_SCOPE_TITLE,
   UNVERIFIED_FLAG_TIP,
+  amazonMismatchNote,
   contradictionCount,
   factCheckAccuracyColor,
   factCheckAccuracyLead,
@@ -38,7 +41,8 @@ function FactChecks({ snapshot }: { snapshot: AiSearchSnapshot }) {
   const coverageNote = factCheckCoverageNote(coverage);
   const pendingNote = factCheckPendingNote(coverage);
   const headline = factCheckHeadline(coverage, windowed);
-  const method = factCheckMethodLine(coverage, windowed);
+  const method = factCheckMethodLine(coverage, windowed, snapshot.run.probe_rotation ?? null);
+  const amazonNote = amazonMismatchNote(coverage);
   const rateColor = factCheckAccuracyColor(accuracy.tone);
 
   const explainer = (
@@ -60,7 +64,7 @@ function FactChecks({ snapshot }: { snapshot: AiSearchSnapshot }) {
       {method ? (
         <p style={{ fontSize: 12, lineHeight: 1.45, margin: "0 0 6px" }} data-ai-fact-method>
           <CopyTip label={FACT_CHECK_METHOD_TITLE} description={method.tip}>
-            {method.products}
+            {method.rotation ? `${method.rotation} · ${method.products}` : method.products}
           </CopyTip>{" "}
           · {method.verified}
         </p>
@@ -131,18 +135,27 @@ function FactChecks({ snapshot }: { snapshot: AiSearchSnapshot }) {
               <div className="action-details">
                 {engineLabel(row.engine)} · {modelLabel(row.model)}. Fender publishes: {row.claim}. The answer said:{" "}
                 {row.evidence}
+                {row.catalog && row.sourceUrl ? (
+                  <>
+                    {" "}
+                    <ExternalLink href={row.sourceUrl}>fender.com spec page</ExternalLink>
+                  </>
+                ) : null}
               </div>
             </div>
           ))}
         </div>
       ) : null}
 
+      <CatalogCoverageTable snapshot={snapshot} windowed={windowed} />
+
       <FactCheckTable rows={drift.probes} windowed={windowed} />
 
-      {pendingNote || coverageNote || drift.unverified > 0 || drift.facts.length ? (
+      {pendingNote || coverageNote || amazonNote || drift.unverified > 0 || drift.facts.length ? (
         <div className="content-box" style={{ marginTop: 12 }}>
           <div className="content-box-title">Coverage notes</div>
           <ul style={{ ...mutedText, paddingLeft: 16, margin: 0 }}>
+            {amazonNote ? <li data-ai-amazon-mismatch>{amazonNote}</li> : null}
             {pendingNote ? <li data-ai-pending-fact>{pendingNote}</li> : null}
             {coverageNote ? <li data-ai-coverage-note>{coverageNote}</li> : null}
             {drift.unverified > 0 ? (

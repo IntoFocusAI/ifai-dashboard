@@ -3,10 +3,12 @@
 import { clientColumn, ResizableTable } from "@/components/v3/live/ResizableTable";
 import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
 import { EmptyRows, mutedText } from "@/components/v3/live/ai-search/AiReadGate";
+import { CopyTip } from "@/components/v3/live/ai-search/CopyTip";
 import { EvidenceLink } from "@/components/v3/live/ai-search/EvidenceLink";
 import { ExternalLink } from "@/components/v3/live/ai-search/ExternalLink";
 import { AI_TABS } from "@/lib/ai-search/canvas-surfaces";
 import { PROBE_STATE_LABELS, type ProbeEvidence, type ProbeState } from "@/lib/ai-search/drift";
+import { AMAZON_DIFFERS_TITLE, amazonDiffersTip } from "@/lib/ai-search/fact-check-copy";
 import { engineLabel, formatRunTime, modelLabel } from "@/lib/ai-search/run-metrics";
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
 
@@ -83,6 +85,15 @@ export function FactCheckTable({ rows, windowed = false }: { rows: ProbeEvidence
                   ) : (
                     "Not verified yet"
                   )}
+                  {row.amazonDiffers ? (
+                    <div data-ai-amazon-differs="">
+                      <span className="tag-badge tag-warning">
+                        <CopyTip label={AMAZON_DIFFERS_TITLE} description={amazonDiffersTip(row.amazonValue, row.claim)}>
+                          {AMAZON_DIFFERS_TITLE}
+                        </CopyTip>
+                      </span>
+                    </div>
+                  ) : null}
                   {row.evidence ? <div style={mutedText}>Conflicting text: {row.evidence}</div> : null}
                 </td>
                 <td>{formatRunTime(row.checkedAt)}</td>

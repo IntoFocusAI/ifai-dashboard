@@ -1,7 +1,20 @@
 import type { HistoryRunSummary } from "@/lib/ai-search/history-eligibility";
+import {
+  isCatalogProbe,
+  PROBE_CATALOG_COLUMNS,
+  PROBE_COVERAGE_COLUMNS,
+  PROBE_COVERAGE_VIEW,
+} from "@/lib/ai-search/probe-catalog";
 import { historyReadLimit, type ReadLimit } from "@/lib/ai-search/read-limit";
 import { isReviewHistoryRun } from "@/lib/ai-search/review-runs";
-import type { AiCallRow, AiCitationRow, AiCurrentRun, AiProbeRow, AiSearchSnapshot } from "@/lib/ai-search/types";
+import type {
+  AiCallRow,
+  AiCitationRow,
+  AiCurrentRun,
+  AiProbeCoverageRow,
+  AiProbeRow,
+  AiSearchSnapshot,
+} from "@/lib/ai-search/types";
 
 /** Columns on the live `canvas_ai_run_history` view. It has no missing_calls column. */
 const CATALOG_COLUMNS =
@@ -12,8 +25,7 @@ const HISTORY_RUN_COLUMNS = `${CATALOG_COLUMNS},missing_calls`;
 const HISTORY_CALL_COLUMNS =
   "id,audit_run_id,sim_id,engine,model,category,prompt,prompt_key,prompt_kind,call_status,outcome,primary_brand,material_hallucination,hallucination_evidence,root_cause,remediation_patch,error_message,attempt_no,repeat_no,created_at,answer_text";
 
-const HISTORY_PROBE_COLUMNS =
-  "audit_run_id,sim_id,prompt_key,prompt,engine,model,call_status,material_hallucination,hallucination_evidence,verified_claim,verified_source_url,verified_at,created_at,answer_text";
+const HISTORY_PROBE_COLUMNS = `audit_run_id,sim_id,prompt_key,prompt,engine,model,call_status,material_hallucination,hallucination_evidence,verified_claim,verified_source_url,verified_at,created_at,answer_text,${PROBE_CATALOG_COLUMNS}`;
 
 const HISTORY_CITATION_COLUMNS =
   "audit_run_id,sim_id,simulation_id,prompt_key,prompt_kind,category,engine,position,url,domain,title";
@@ -243,16 +255,29 @@ export async function loadHistorySnapshot(
       is_published: run.is_published === true,
       run_kind: run.run_kind ?? "ai_simulation",
     };
-    return {
-      phase: "ready",
-      snapshot: {
-        run: current,
-        calls: callRows,
-        probes: probeRows,
-        citations: keepRun(citations.rows, runId),
-      },
+    const snapshot: AiSearchSnapshot = {
+      run: current,
+      calls: callRows,
+      probes: probeRows,
+      citations: keepRun(citations.rows, runId),
     };
+    if (probeRows.some(isCatalogProbe)) snapshot.probeCoverage = await readProbeCoverage(client, runId, options);
+    return { phase: "ready", snapshot };
   } catch (error) {
     return { phase: "error", message: error instanceof Error ? error.message : String(error) };
   }
+}
+
+/** One run's catalog coverage rows. A failed read is null, never an empty catalog. */
+async function readProbeCoverage(
+  client: HistoryReadClient,
+  runId: string,
+  options: HistoryReadOptions,
+): Promise<AiProbeCoverageRow[] | null> {
+  const limit = options.limit ?? historyReadLimit;
+  const result = await limit<ReadResult>(() =>
+    client.from(PROBE_COVERAGE_VIEW).select(PROBE_COVERAGE_COLUMNS).eq("audit_run_id", runId),
+  );
+  if (result.error) return null;
+  return keepRun((result.data ?? []) as AiProbeCoverageRow[], runId);
 }

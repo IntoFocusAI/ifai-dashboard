@@ -18,6 +18,13 @@ export type AiCurrentRun = {
   /** Present on history rows. The current-run view omits it. */
   is_published?: boolean | null;
   run_kind?: string | null;
+  /** How the collector picked this run's catalog products. No run view carries it yet. */
+  probe_rotation?: ProbeRotation | null;
+};
+
+export type ProbeRotation = {
+  rule?: string | null;
+  cycle?: number | string | null;
 };
 
 export type AiOutcome = "fender_win" | "competitor_win" | "unresolved" | "error" | "not_scored";
@@ -70,6 +77,35 @@ export type AiProbeRow = {
   verified_source_url: string | null;
   verified_at: string | null;
   created_at: string | null;
+} & Partial<ProbeCatalogFields>;
+
+/**
+ * Collector v15's catalog rotation columns on canvas_ai_probes and canvas_ai_history_probes.
+ * All NULL until the rotation is switched on.
+ */
+export type ProbeCatalogFields = {
+  probe_asin: string | null;
+  probe_asins: string[] | string | null;
+  probe_fender_sku: string | null;
+  probe_category: string | null;
+  probe_series: string | null;
+  probe_spec_field: string | null;
+  probe_expected_value: string | null;
+  probe_source_url: string | null;
+  probe_amazon_value: string | null;
+  probe_is_anchor: boolean | null;
+};
+
+/** One row of canvas_ai_probe_coverage: catalog products checked, per run, category, and engine. */
+export type AiProbeCoverageRow = {
+  audit_run_id: string;
+  cycle_no: number | null;
+  category: string | null;
+  engine: string | null;
+  models_in_scope: number | null;
+  models_checked: number | null;
+  asins_covered: number | null;
+  wrong_answers: number | null;
 };
 
 export type AiCitationRow = {
@@ -97,6 +133,11 @@ export type AiSearchSnapshot = {
    * not treat the shorter list as a change in the citation ecosystem.
    */
   storedCitationCount?: number;
+  /**
+   * canvas_ai_probe_coverage rows, read only when a fact check names a catalog product.
+   * Null when that read failed.
+   */
+  probeCoverage?: AiProbeCoverageRow[] | null;
 };
 
 /** Every surface renders one of these. A failed or missing read is never shown as zero. */

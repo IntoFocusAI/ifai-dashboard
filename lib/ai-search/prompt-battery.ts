@@ -77,13 +77,14 @@ type GapCall = {
  * Question-engine pairs in the current battery that this run did not store.
  * Returns nothing when the stored wording is a different question set, so a
  * future wording change stays a boundary rather than a list of fake gaps.
+ * Fact checks match by key only: a rotating key names a different product in each repeat.
  */
 export function batteryGaps(calls: readonly GapCall[]): BatteryGap[] {
   const present = new Set<string>();
   for (const call of calls) {
     const prompt = batteryPrompt(call.prompt_key);
     if (!prompt) return [];
-    if (call.prompt && call.prompt !== prompt.text) return [];
+    if (call.prompt_kind !== "probe" && call.prompt && call.prompt !== prompt.text) return [];
     present.add(`${prompt.key}|${(call.engine ?? "").toLowerCase()}`);
   }
   if (present.size === 0) return [];

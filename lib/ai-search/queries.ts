@@ -1,16 +1,23 @@
+import {
+  isCatalogProbe,
+  PROBE_CATALOG_COLUMNS,
+  PROBE_COVERAGE_COLUMNS,
+  PROBE_COVERAGE_VIEW,
+} from "@/lib/ai-search/probe-catalog";
 import type {
   AiCallRow,
   AiCitationRow,
   AiCurrentRun,
+  AiProbeCoverageRow,
   AiProbeRow,
   AiSearchRead,
+  AiSearchSnapshot,
 } from "@/lib/ai-search/types";
 
 export const AI_CALL_COLUMNS =
   "id,audit_run_id,sim_id,engine,model,category,prompt,prompt_key,prompt_kind,call_status,outcome,primary_brand,material_hallucination,hallucination_evidence,root_cause,remediation_patch,error_message,attempt_no,repeat_no,created_at";
 
-export const AI_PROBE_COLUMNS =
-  "audit_run_id,sim_id,prompt_key,prompt,engine,model,call_status,material_hallucination,hallucination_evidence,verified_claim,verified_source_url,verified_at,created_at";
+export const AI_PROBE_COLUMNS = `audit_run_id,sim_id,prompt_key,prompt,engine,model,call_status,material_hallucination,hallucination_evidence,verified_claim,verified_source_url,verified_at,created_at,${PROBE_CATALOG_COLUMNS}`;
 
 export const AI_CITATION_COLUMNS =
   "audit_run_id,sim_id,simulation_id,prompt_key,prompt_kind,category,engine,position,url,domain,title";
@@ -27,6 +34,7 @@ export type AiReadClient = {
   from: (view: string) => {
     select: (columns: string) => ReadResult & {
       order: (column: string, options?: { ascending?: boolean }) => Ordered;
+      eq: (column: string, value: string) => ReadResult;
     };
   };
 };
@@ -112,15 +120,18 @@ export async function loadAiSearchRead(client: AiReadClient): Promise<AiSearchRe
     ]);
     const inRun = <T extends { audit_run_id: string }>(rows: T[]) =>
       rows.filter((row) => row.audit_run_id === run.audit_run_id);
-    return {
-      phase: "ready",
-      snapshot: {
-        run,
-        calls: inRun(calls),
-        probes: inRun(probes),
-        citations: inRun(citations),
-      },
+    const snapshot: AiSearchSnapshot = {
+      run,
+      calls: inRun(calls),
+      probes: inRun(probes),
+      citations: inRun(citations),
     };
+    if (snapshot.probes.some(isCatalogProbe)) {
+      // A failed coverage read is null, never an empty catalog. The run itself still loads.
+      const coverage = await client.from(PROBE_COVERAGE_VIEW).select(PROBE_COVERAGE_COLUMNS).eq("audit_run_id", run.audit_run_id);
+      snapshot.probeCoverage = coverage.error ? null : inRun((coverage.data ?? []) as AiProbeCoverageRow[]);
+    }
+    return { phase: "ready", snapshot };
   } catch (error) {
     return { phase: "error", message: error instanceof Error ? error.message : String(error) };
   }

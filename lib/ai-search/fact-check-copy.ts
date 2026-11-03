@@ -1,7 +1,9 @@
 import type { FactCheckCoverage } from "@/lib/ai-search/drift";
 import type { PieDiscData } from "@/lib/ai-search/citation-pies";
 import { joinBrands } from "@/lib/ai-search/competitors";
+import { rotationSummary, type RotationSummary } from "@/lib/ai-search/probe-catalog";
 import { pct } from "@/lib/ai-search/summary";
+import type { ProbeRotation } from "@/lib/ai-search/types";
 
 const FACT = (n: number) => `${n} Fender product fact${n === 1 ? "" : "s"}`;
 const ANSWER = (n: number) => `${n} answer${n === 1 ? "" : "s"}`;
@@ -105,21 +107,51 @@ export function factCheckHeadline(c: FactCheckCoverage, windowed = false): strin
 export const FACT_CHECK_METHOD_TITLE = "How these products were chosen";
 
 export type FactCheckMethodLine = {
+  /** "Catalog rotation, cycle 3" when the run recorded its rotation, else null. */
+  rotation: string | null;
   products: string;
   verified: string;
-  /** How the products were picked, and that the pick is not recorded. */
+  /** How the products were picked, or that the pick is not recorded. */
   tip: string;
 };
+
+/**
+ * Catalog checks count products by ASIN and compare against each product's own fender.com value.
+ * The rotation rule and cycle lead when the run recorded them.
+ */
+function catalogMethodLine(c: FactCheckCoverage, unit: string, rotation: RotationSummary | null): FactCheckMethodLine {
+  const n = c.questionsSent;
+  const fixed = n - c.catalogProducts;
+  const counted =
+    fixed > 0
+      ? `${n} products were checked: ${c.catalogProducts} catalog products counted by ASIN, and ${fixed} fixed ${fixed === 1 ? "question" : "questions"}.`
+      : `${n} catalog ${n === 1 ? "product was" : "products were"} checked, counted by ASIN.`;
+  const compared = `${c.factsChecked} of ${n} ${c.factsChecked === 1 ? "was" : "were"} compared with the product's own fender.com spec value in this ${unit}.`;
+  const picked = rotation?.tip ?? "How these products were picked is not recorded for this run.";
+  return {
+    rotation: rotation?.label ?? null,
+    products: `${n} product${n === 1 ? "" : "s"} checked`,
+    verified: `${c.factsChecked} with a verified fact`,
+    tip: `${picked} ${counted} ${compared}`,
+  };
+}
 
 /**
  * "5 products checked · 4 with a verified fact", from the live coverage counts.
  * Each fact-check question names one Fender product, so questions count as products.
  * No stored field records how those products were picked or what part of the catalog
  * they stand for, so the tooltip says so instead of calling them a sample.
+ * Once a check names its catalog product, products are counted by ASIN instead, and a
+ * recorded rotation (one run only) says how they were picked.
  */
-export function factCheckMethodLine(c: FactCheckCoverage, windowed = false): FactCheckMethodLine | null {
+export function factCheckMethodLine(
+  c: FactCheckCoverage,
+  windowed = false,
+  rotation: ProbeRotation | null = null,
+): FactCheckMethodLine | null {
   if (c.questionsSent === 0) return null;
   const unit = windowed ? "selection" : "run";
+  if (c.catalogProducts > 0) return catalogMethodLine(c, unit, windowed ? null : rotationSummary(rotation));
   const n = c.questionsSent;
   const one = n === 1;
   const named = `Each fact-check question names one Fender product, and the question set names ${n}. IntoFocus sends ${one ? "it" : "them"} to every engine on purpose.`;
@@ -128,11 +160,29 @@ export function factCheckMethodLine(c: FactCheckCoverage, windowed = false): Fac
     ? "How this product was picked, and what part of Fender's catalog it stands for, is not recorded, so this result covers this product only."
     : `How these products were picked, and what part of Fender's catalog they stand for, is not recorded, so this result covers these ${n} products only.`;
   return {
+    rotation: null,
     products: `${n} product${one ? "" : "s"} checked`,
     verified: `${c.factsChecked} with a verified fact`,
     tip: `${named} ${compared} ${picked}`,
   };
 }
+
+export const AMAZON_DIFFERS_TITLE = "Amazon listing differs";
+
+/** Catalog checks whose Amazon value disagrees with fender.com. Silent before the rotation. */
+export function amazonMismatchNote(c: FactCheckCoverage): string | null {
+  if (c.amazonMismatches === 0) return null;
+  const n = c.amazonMismatches;
+  return `${n} ${n === 1 ? "product's Amazon listing shows" : "products' Amazon listings show"} a different value than fender.com for the checked spec.`;
+}
+
+export function amazonDiffersTip(amazon: string | null, fenderValue: string | null): string {
+  return `Amazon lists "${amazon ?? ""}". The fender.com spec page lists "${fenderValue ?? ""}".`;
+}
+
+/** Drawer tooltip on "catalog products", once a check names the product it asked about. */
+export const CATALOG_PICK_TIP =
+  "Catalog products are counted by ASIN. Each check compares the answer with that product's own value on its fender.com spec page.";
 
 /** Drawer tooltip on "product questions": the pick is not recorded. */
 export function factCheckPickTip(n: number): string {
@@ -171,7 +221,8 @@ export function factCheckCoverageNote(c: FactCheckCoverage): string | null {
 export function factCheckPendingNote(c: FactCheckCoverage): string | null {
   if (c.answersWithoutFact === 0) return null;
   const questions = c.questionsWithoutFact.length;
-  return `${questions} question${questions === 1 ? "" : "s"} ${questions === 1 ? "has" : "have"} no verified Fender fact yet, so ${ANSWER(c.answersWithoutFact)} ${c.answersWithoutFact === 1 ? "was" : "were"} not evaluated.`;
+  const unit = c.catalogProducts > 0 ? "product" : "question";
+  return `${questions} ${unit}${questions === 1 ? "" : "s"} ${questions === 1 ? "has" : "have"} no verified Fender fact yet, so ${ANSWER(c.answersWithoutFact)} ${c.answersWithoutFact === 1 ? "was" : "were"} not evaluated.`;
 }
 
 /** Short form for the map bubble and the guided tour. */

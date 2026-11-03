@@ -1,3 +1,4 @@
+import { amazonDiffers, catalogClaim, isCatalogProbe } from "@/lib/ai-search/probe-catalog";
 import { cleanPrompt, engineLabel, isCommercial, isConfirmedHallucination } from "@/lib/ai-search/run-metrics";
 import type { AiCallRow, AiProbeRow } from "@/lib/ai-search/types";
 
@@ -32,7 +33,18 @@ export type ProbeEvidence = {
   simId: number;
   /** Matching call id on the displayed snapshot, when the probe joins a call row. */
   callId: string | null;
+  /** Fact checks group by key, never by wording: a rotating key asks a different product in each repeat. */
   promptKey: string;
+  /** Products are counted by this: the ASIN when the collector named one, else the question key. */
+  productKey: string;
+  /** The collector named the catalog product (probe_asin). */
+  catalog: boolean;
+  asin: string | null;
+  sku: string | null;
+  specField: string | null;
+  amazonValue: string | null;
+  /** Amazon lists a different value for this spec than the fender.com page. */
+  amazonDiffers: boolean;
   prompt: string;
   engine: string;
   model: string | null;
@@ -70,10 +82,14 @@ export type DriftRead = {
 };
 
 export type FactCheckCoverage = {
-  /** Product-fact questions sent in this run. */
+  /** Products asked about: by ASIN when the collector named one, else by question key. */
   questionsSent: number;
-  /** Those questions that have a fact IntoFocus verified on a Fender page. */
+  /** Those products that have a fact verified on a Fender page. */
   questionsWithFact: number;
+  /** Distinct ASINs among the checks that name a catalog product. Zero before the rotation. */
+  catalogProducts: number;
+  /** Products whose Amazon value for the checked spec differs from fender.com. */
+  amazonMismatches: number;
   /** Verified facts an answer was actually compared against. */
   factsChecked: number;
   /** Answers compared against one of those facts. */
@@ -101,13 +117,15 @@ function factCheckCoverage(rows: ProbeEvidence[]): FactCheckCoverage {
   const withoutFact = rows.filter((row) => row.state === "no_fact");
 
   return {
-    questionsSent: new Set(rows.map((row) => row.promptKey)).size,
-    questionsWithFact: new Set(rows.filter((row) => row.claim).map((row) => row.promptKey)).size,
-    factsChecked: new Set(checked.map((row) => row.promptKey)).size,
+    questionsSent: new Set(rows.map((row) => row.productKey)).size,
+    questionsWithFact: new Set(rows.filter((row) => row.claim).map((row) => row.productKey)).size,
+    catalogProducts: new Set(rows.filter((row) => row.catalog).map((row) => row.productKey)).size,
+    amazonMismatches: new Set(rows.filter((row) => row.amazonDiffers).map((row) => row.productKey)).size,
+    factsChecked: new Set(checked.map((row) => row.productKey)).size,
     answersChecked: checked.length,
     contradictions: checked.filter((row) => row.state === "confirmed").length,
     checkedEngines: engineNames(checked),
-    questionsWithoutFact: [...new Set(withoutFact.map((row) => row.promptKey))].sort(),
+    questionsWithoutFact: [...new Set(withoutFact.map((row) => row.productKey))].sort(),
     answersWithoutFact: withoutFact.length,
     failedCalls: failed.length,
     failedEngines: engineNames(failed),
@@ -122,18 +140,28 @@ export function driftRead(calls: AiCallRow[], probes: AiProbeRow[]): DriftRead {
   const rows: ProbeEvidence[] = probes
     .map((row) => {
       const key = `${row.audit_run_id}:${row.sim_id}`;
+      const catalog = isCatalogProbe(row);
+      const promptKey = row.prompt_key ?? "";
       return {
         key,
         auditRunId: row.audit_run_id,
         simId: row.sim_id,
         callId: callIdByProbe.get(key) ?? null,
-        promptKey: row.prompt_key ?? "",
+        promptKey,
+        productKey: catalog ? row.probe_asin!.trim() : promptKey,
+        catalog,
+        asin: catalog ? row.probe_asin!.trim() : null,
+        sku: row.probe_fender_sku?.trim() || null,
+        specField: row.probe_spec_field?.trim() || null,
+        amazonValue: row.probe_amazon_value?.trim() || null,
+        amazonDiffers: catalog && amazonDiffers(row),
         prompt: cleanPrompt(row.prompt),
         engine: (row.engine ?? "").toLowerCase(),
         model: row.model,
         state: probeState(row),
-        claim: row.verified_claim?.trim() || null,
-        sourceUrl: row.verified_source_url?.trim() || null,
+        // A catalog check compares against its own fender.com value and page, not the question's fact.
+        claim: catalog ? catalogClaim(row) : row.verified_claim?.trim() || null,
+        sourceUrl: (catalog ? row.probe_source_url : row.verified_source_url)?.trim() || null,
         evidence: row.hallucination_evidence?.trim() || null,
         checkedAt: row.created_at,
         verifiedAt: row.verified_at,
@@ -147,8 +175,9 @@ export function driftRead(calls: AiCallRow[], probes: AiProbeRow[]): DriftRead {
 
   const facts = new Map<string, DriftRead["facts"][number]>();
   for (const row of rows) {
-    if (row.claim && !facts.has(row.promptKey)) {
-      facts.set(row.promptKey, {
+    const factKey = row.catalog ? `${row.productKey}|${row.specField ?? ""}` : row.promptKey;
+    if (row.claim && !facts.has(factKey)) {
+      facts.set(factKey, {
         promptKey: row.promptKey,
         claim: row.claim,
         sourceUrl: row.sourceUrl,

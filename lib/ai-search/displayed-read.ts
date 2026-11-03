@@ -1,5 +1,6 @@
 import { poolWindowSnapshots } from "@/lib/ai-search/citation-aggregate";
 import type { HistoryMode } from "@/lib/ai-search/history-mode";
+import { poolProbeCoverage } from "@/lib/ai-search/probe-catalog";
 import type { AiSearchRead, AiSearchSnapshot } from "@/lib/ai-search/types";
 
 type Pending =
@@ -46,5 +47,6 @@ export function displayedAiRead(
   }
   const pooled = poolWindowSnapshots(trend.snapshots);
   if (!pooled) return { phase: "error", message: EMPTY_SELECTION_MESSAGE, selection: "empty" };
-  return { phase: "ready", snapshot: pooled };
+  const probeCoverage = poolProbeCoverage(trend.snapshots);
+  return { phase: "ready", snapshot: probeCoverage === undefined ? pooled : { ...pooled, probeCoverage } };
 }
