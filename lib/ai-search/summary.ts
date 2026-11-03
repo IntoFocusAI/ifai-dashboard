@@ -141,6 +141,14 @@ export function roleRateLead(
   return { rate: pct(tally.fenderWins, tally.resolved), color };
 }
 
+/** Lives in the lead rate's tooltip, never as a line under the rates. */
+export const LEAD_RATE_BASIS = "A provider error or an answer with no clear leader is neither a win nor a loss.";
+
+/** Tooltip on a lead rate: its N of M, then what stays outside it. */
+export function leadRateTip(tally: Pick<RoleTally, "fenderWins" | "resolved">): string {
+  return `${formatInt(tally.fenderWins)} of ${formatInt(tally.resolved)} resolved answers named Fender/Squier most. ${LEAD_RATE_BASIS}`;
+}
+
 /** Visible label on a rate that is too small to rank against the rows beside it. */
 export const SMALL_SAMPLE_LABEL = "Small sample";
 

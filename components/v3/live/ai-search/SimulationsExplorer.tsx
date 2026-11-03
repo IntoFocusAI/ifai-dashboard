@@ -130,9 +130,7 @@ function Explorer({ snapshot }: { snapshot: AiSearchSnapshot }) {
       <RunDetailsLead snapshot={snapshot} />
       <p className="ai-lead-explainer" style={mutedText}>
         Shopping prompts are buying questions, scored by which brand the answer names most. A{" "}
-        <AiTerm term="product fact check">product fact check</AiTerm> tests one published Fender fact instead. A{" "}
-        <AiTerm term="provider error" /> or an answer with <AiTerm term="no clear leader" /> is neither a win nor a
-        loss.
+        <AiTerm term="product fact check">product fact check</AiTerm> tests one published Fender fact instead.
       </p>
       <SimulationFilters rows={snapshot.calls} filter={filter} onChange={changeFilter} />
       {filter.role ? (

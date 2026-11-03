@@ -19,6 +19,7 @@ import {
 import { applyExplorerFilter, filterFromEvidence } from "../lib/ai-search/explorer-filter.ts";
 import { driftRead } from "../lib/ai-search/drift.ts";
 import { aiSpokeHeaderChips } from "../lib/ai-search/canvas-surfaces.ts";
+import { LEAD_RATE_BASIS, leadRateTip } from "../lib/ai-search/summary.ts";
 
 const root = new URL("..", import.meta.url).pathname;
 const AI_DIR = "components/v3/live/ai-search";
@@ -118,15 +119,36 @@ test("the mixed scoring note is a tooltip on the lead figure, never a line on sc
 
   // Run Details and Category Battlecards both lead with RunDetailsLead.
   for (const file of ["RunDetailsLead.tsx", "EngineComparisonLead.tsx", "RunSummaryPanel.tsx", "CompetitorWinsHero.tsx"]) {
-    assert.match(source(`${AI_DIR}/${file}`), /<MixedScoringTip mixed=\{mixed\}>/, file);
+    assert.match(source(`${AI_DIR}/${file}`), /<MixedScoringTip mixed=\{mixed\}[ >]/, file);
   }
-  assert.match(source(`${AI_DIR}/RunDetailsLead.tsx`), /<MixedScoringTip mixed=\{mixed\}>\{lead\.rate\}<\/MixedScoringTip>/);
+  assert.match(
+    source(`${AI_DIR}/RunDetailsLead.tsx`).replace(/\s+/g, " "),
+    /<MixedScoringTip mixed=\{mixed\} basis=\{\{ label: `\$\{label\} rate`, note: leadRateTip\(tally\) \}\}> \{lead\.rate\} <\/MixedScoringTip>/,
+  );
+  // A figure with a basis keeps one tooltip: the mixed note joins it rather than nesting a second.
+  assert.match(tip, /description=\{mixed \? `\$\{basis\.note\} \$\{MIXED_SCORING_NOTE\}` : basis\.note\}/);
+  assert.equal((tip.match(/<CopyTip /g) ?? []).length, 2);
   assert.match(source(`${AI_DIR}/EngineComparisonPanel.tsx`), /<EngineComparisonLead engines=\{engines\} mixed=\{mixed\} \/>/);
 
   const onScreen = readdirSync(join(root, AI_DIR))
     .filter((name) => name.endsWith(".tsx") && name !== "MixedScoringTip.tsx")
     .filter((name) => /MIXED_SCORING_NOTE/.test(source(`${AI_DIR}/${name}`)));
   assert.deepEqual(onScreen, []);
+});
+
+test("the win-or-loss note is the lead rate's tooltip, not a sentence in the Run Details explainer", () => {
+  assert.equal(LEAD_RATE_BASIS, "A provider error or an answer with no clear leader is neither a win nor a loss.");
+  assert.equal(
+    leadRateTip({ fenderWins: 1064, resolved: 1788 }),
+    "1,064 of 1,788 resolved answers named Fender/Squier most. A provider error or an answer with no clear leader is neither a win nor a loss.",
+  );
+  const explorer = source(`${AI_DIR}/SimulationsExplorer.tsx`).replace(/\s+/g, " ");
+  assert.match(explorer, /<RunDetailsLead snapshot=\{snapshot\} \/>/);
+  assert.doesNotMatch(explorer, /neither a win nor a/);
+  assert.match(explorer, /tests one published Fender fact instead\. <\/p>/);
+  for (const name of readdirSync(join(root, AI_DIR)).filter((file) => file.endsWith(".tsx"))) {
+    assert.doesNotMatch(source(`${AI_DIR}/${name}`), /neither a win nor a loss/, name);
+  }
 });
 
 test("header chips omit single-run state on window modes and do not restate the pill", () => {

@@ -6,6 +6,7 @@ import { MixedScoringTip } from "@/components/v3/live/ai-search/MixedScoringTip"
 import type { AiTermKey } from "@/lib/ai-search/definitions";
 import {
   BRANDED_RATE_BANDS,
+  leadRateTip,
   roleRateLead,
   summarizeRun,
   UNBRANDED_RATE_BANDS,
@@ -63,7 +64,9 @@ function RateSide({
             data-ai-win-rate={role}
             data-ai-lead-figure={role}
           >
-            <MixedScoringTip mixed={mixed}>{lead.rate}</MixedScoringTip>
+            <MixedScoringTip mixed={mixed} basis={{ label: `${label} rate`, note: leadRateTip(tally) }}>
+              {lead.rate}
+            </MixedScoringTip>
           </span>
           <CitationPieDisc
             pie={ratePie(pieId, label, tally)}
