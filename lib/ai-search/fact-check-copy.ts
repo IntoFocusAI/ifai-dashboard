@@ -97,6 +97,24 @@ export function factCheckHeadline(c: FactCheckCoverage, windowed = false): strin
   return `${scope} ${result}`;
 }
 
+/**
+ * How the fact-check products were chosen, and how many were checked out of how many.
+ * Each fact-check question names one Fender product, so questions count as products.
+ * No stored field records how those products were picked or what part of the catalog
+ * they stand for, so the statement says so instead of calling them a sample.
+ */
+export function factCheckMethodStatement(c: FactCheckCoverage, windowed = false): string | null {
+  if (c.questionsSent === 0) return null;
+  const unit = windowed ? "selection" : "run";
+  const one = c.questionsSent === 1;
+  const named = `The question set names ${c.questionsSent} Fender product${one ? "" : "s"} for fact checks.`;
+  const checked = `${c.factsChecked} of ${c.questionsSent} ${c.factsChecked === 1 ? "was" : "were"} checked against a verified fact in this ${unit}.`;
+  const picked = one
+    ? "How this product was picked is not recorded, and neither is what part of Fender's catalog it stands for, so this result covers this product only."
+    : `How these products were picked is not recorded, and neither is what part of Fender's catalog they stand for, so this result covers these ${c.questionsSent} products only.`;
+  return `${named} ${checked} ${picked}`;
+}
+
 export const FACT_CHECK_SCOPE =
   "These checks cover the selected facts only. They do not prove every statement in each answer is accurate.";
 

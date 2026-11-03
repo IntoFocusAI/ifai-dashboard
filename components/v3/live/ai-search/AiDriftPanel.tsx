@@ -16,6 +16,7 @@ import {
   factCheckAccuracyPieTip,
   factCheckCoverageNote,
   factCheckHeadline,
+  factCheckMethodStatement,
   factCheckPendingNote,
 } from "@/lib/ai-search/fact-check-copy";
 import { engineLabel, formatRunTime, modelLabel } from "@/lib/ai-search/run-metrics";
@@ -34,6 +35,7 @@ function FactChecks({ snapshot }: { snapshot: AiSearchSnapshot }) {
   const pendingNote = factCheckPendingNote(coverage);
   const shoppingScope = windowed ? FACT_CHECK_SHOPPING_SCOPE_WINDOW : FACT_CHECK_SHOPPING_SCOPE;
   const headline = factCheckHeadline(coverage, windowed);
+  const method = factCheckMethodStatement(coverage, windowed);
   const rateColor = factCheckAccuracyColor(accuracy.tone);
 
   const explainer = (
@@ -50,6 +52,11 @@ function FactChecks({ snapshot }: { snapshot: AiSearchSnapshot }) {
       <p style={{ fontSize: 13, lineHeight: 1.5, margin: "0 0 6px" }} data-ai-fact-headline>
         {headline}
       </p>
+      {method ? (
+        <p style={{ fontSize: 12, lineHeight: 1.45, margin: "0 0 6px" }} data-ai-fact-method>
+          <strong>How these products were chosen:</strong> {method}
+        </p>
+      ) : null}
       <p style={{ ...mutedText, margin: 0 }}>{FACT_CHECK_SCOPE}</p>
       <p style={{ ...mutedText, marginBottom: 0 }}>
         IntoFocus sends {coverage.questionsSent} product questions to every engine on purpose, and compares each

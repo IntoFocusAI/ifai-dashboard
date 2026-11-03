@@ -217,6 +217,19 @@ test.describe("AI Search Visibility", () => {
     await expect(drawer.locator("[data-ai-root-cause]")).toHaveCount(0);
   });
 
+  test("Product Fact Checks states how its products were chosen, N of M", async ({ canvas, page }) => {
+    test.slow();
+    await page.goto("/dashboard?spoke=aeo&tab=product-fact-checks");
+    await expect(canvas.activeTab).toHaveText("Product Fact Checks");
+    await expect(page.locator("[data-ai-accuracy-figure]")).toHaveText(/\d+\.\d% Accuracy/, { timeout: 60_000 });
+    const method = page.locator("[data-ai-accuracy-lead] [data-ai-fact-method]");
+    await expect(method).toContainText("How these products were chosen:");
+    await expect(method).toContainText(/The question set names \d+ Fender products? for fact checks\./);
+    await expect(method).toContainText(/\d+ of \d+ (was|were) checked against a verified fact/);
+    await expect(method).toContainText("picked is not recorded");
+    await expect(method).not.toContainText(/representative|random/i);
+  });
+
   test("a question with no verified fact says so", async ({ canvas, page }) => {
     await canvas.openSpokeFromMap("AI Search Visibility");
     await canvas.openTab("Product Fact Checks");
