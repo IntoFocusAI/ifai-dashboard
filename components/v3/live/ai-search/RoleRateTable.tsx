@@ -6,6 +6,7 @@ import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
 import { EvidenceLink } from "@/components/v3/live/ai-search/EvidenceLink";
 import { AI_TABS } from "@/lib/ai-search/canvas-surfaces";
 import type { AiTermKey } from "@/lib/ai-search/definitions";
+import { scopeEvidence, type EvidenceScope } from "@/lib/ai-search/evidence-focus";
 import {
   HEADLINE_ROLES,
   ROLE_LABELS,
@@ -45,9 +46,15 @@ export function largestResolved(groups: readonly RoleGroupTally[], role: Headlin
   return Math.max(0, ...groups.map((group) => group.roles[role].resolved));
 }
 
-function roleLink(role: HeadlineRole, outcome: "fender_win" | "resolved", label: string, children: ReactNode) {
+function roleLink(
+  role: HeadlineRole,
+  outcome: "fender_win" | "resolved",
+  label: string,
+  children: ReactNode,
+  scope?: EvidenceScope,
+) {
   return (
-    <EvidenceLink focus={{ field: "role", value: `${role}/${outcome}` }} tab={SIM} label={label}>
+    <EvidenceLink focus={scopeEvidence({ field: "role", value: `${role}/${outcome}` }, scope)} tab={SIM} label={label}>
       {children}
     </EvidenceLink>
   );
@@ -59,12 +66,15 @@ export function RoleCount({
   tally,
   largestResolved: largest,
   showSmallSample = true,
+  scope,
 }: {
   role: HeadlineRole;
   tally: OutcomeTally;
   largestResolved: number;
   /** False on pooled windows. Defaults true so a single run still shows the mark. */
   showSmallSample?: boolean;
+  /** Narrows both count links, for a row on a filtered tab. */
+  scope?: EvidenceScope;
 }) {
   const figure = formatObservedRate(tally.fenderWins, tally.resolved);
   if (figure == null) {
@@ -74,8 +84,8 @@ export function RoleCount({
   const name = ROLE_LABELS[role];
   return (
     <span data-ai-role-count={role} data-ai-rate={figure} data-small-sample={small ? "true" : undefined}>
-      {pct(tally.fenderWins, tally.resolved)} ({roleLink(role, "fender_win", `${name}: Fender/Squier leads`, tally.fenderWins)} of{" "}
-      {roleLink(role, "resolved", `${name}: resolved answers`, tally.resolved)})
+      {pct(tally.fenderWins, tally.resolved)} ({roleLink(role, "fender_win", `${name}: Fender/Squier leads`, tally.fenderWins, scope)} of{" "}
+      {roleLink(role, "resolved", `${name}: resolved answers`, tally.resolved, scope)})
       {small ? (
         <>
           {" "}

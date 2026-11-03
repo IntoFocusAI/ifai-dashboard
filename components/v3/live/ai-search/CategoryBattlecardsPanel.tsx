@@ -9,10 +9,11 @@ import { AiReadGate } from "@/components/v3/live/ai-search/AiReadGate";
 import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
 import { CategoryBattleChips } from "@/components/v3/live/ai-search/CategoryBattleChips";
 import { CategoryBattleHeroes } from "@/components/v3/live/ai-search/CategoryBattleHeroes";
-import { CategoryLeadPies, LeadStatusBadge } from "@/components/v3/live/ai-search/CategoryLeadPies";
+import { CategoryLeadPies, EngineMark, LeadStatusBadge } from "@/components/v3/live/ai-search/CategoryLeadPies";
 import { EvidenceLink } from "@/components/v3/live/ai-search/EvidenceLink";
 import { KeptOutNote, RoleCount, largestResolved, roleColumn, roleRateSort } from "@/components/v3/live/ai-search/RoleRateTable";
 import { AI_TABS } from "@/lib/ai-search/canvas-surfaces";
+import { scopeEvidence } from "@/lib/ai-search/evidence-focus";
 import {
   battlecardEngines,
   callsForEngine,
@@ -70,6 +71,7 @@ function Battlecards({ snapshot }: { snapshot: AiSearchSnapshot }) {
   const filter = effectiveBattlecardFilter(chosen, engines);
   const engineName = filter.engine ? engineLabel(filter.engine) : null;
 
+  const engineScope = filter.engine ? { engine: filter.engine } : undefined;
   const calls = callsForEngine(snapshot.calls, filter.engine);
   const scoped = { ...snapshot, calls };
   const groups = categoryRoleTallies(calls);
@@ -95,6 +97,8 @@ function Battlecards({ snapshot }: { snapshot: AiSearchSnapshot }) {
           snapshot={scoped}
           summary={categoryLeadSummary(leads)}
           scope={heroScope(engineName, filter.lead !== "all")}
+          engineScope={engineScope}
+          engineName={engineName}
         />
         <CategoryBattleChips
           engines={engines}
@@ -108,6 +112,8 @@ function Battlecards({ snapshot }: { snapshot: AiSearchSnapshot }) {
           largestResolved={largest.unbranded}
           showSmallSample={showSmallSample}
           onClear={() => setChosen(NO_BATTLECARD_FILTER)}
+          scope={engineScope}
+          engineName={engineName}
         />
         {mixed ? (
           <p className="ai-role-footnote" data-ai-mixed-scoring>
@@ -133,12 +139,17 @@ function Battlecards({ snapshot }: { snapshot: AiSearchSnapshot }) {
               const top = leadersFor(battle.key)[0];
               const aside = headlineAside(battle);
               const lead = leadByKey.get(battle.key);
+              const rowScope = filter.engine ? { category: battle.key, engine: filter.engine } : undefined;
               return (
                 <tr key={battle.key} data-category={battle.key} data-ai-on-track-status={lead?.status}>
                   <td>
-                    <EvidenceLink focus={{ field: "category", value: battle.key }} tab={AI_TABS.simulations}>
+                    <EvidenceLink
+                      focus={scopeEvidence({ field: "category", value: battle.key }, engineScope)}
+                      tab={AI_TABS.simulations}
+                    >
                       {categoryLabel(battle.key)}
                     </EvidenceLink>
+                    <EngineMark engineName={engineName} />
                     {lead ? (
                       <div className="ai-battle-row-status">
                         <LeadStatusBadge lead={lead} />
@@ -151,7 +162,9 @@ function Battlecards({ snapshot }: { snapshot: AiSearchSnapshot }) {
                       tally={battle.roles.unbranded_discovery}
                       largestResolved={largest.unbranded}
                       showSmallSample={showSmallSample}
+                      scope={rowScope}
                     />
+                    <EngineMark engineName={battle.roles.unbranded_discovery.resolved > 0 ? engineName : null} />
                   </td>
                   <td>
                     <RoleCount
@@ -159,7 +172,9 @@ function Battlecards({ snapshot }: { snapshot: AiSearchSnapshot }) {
                       tally={battle.roles.branded_consideration}
                       largestResolved={largest.branded}
                       showSmallSample={showSmallSample}
+                      scope={rowScope}
                     />
+                    <EngineMark engineName={battle.roles.branded_consideration.resolved > 0 ? engineName : null} />
                   </td>
                   <td>{top ? `${top.brand} (${top.wins})` : "None"}</td>
                   <td>{aside.competitorWins}</td>

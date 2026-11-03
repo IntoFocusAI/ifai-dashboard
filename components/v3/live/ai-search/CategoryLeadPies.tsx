@@ -6,8 +6,10 @@ import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
 import { sliceColor } from "@/components/v3/live/ai-search/CitationPieDisc";
 import { EvidenceLink } from "@/components/v3/live/ai-search/EvidenceLink";
 import { AI_TABS } from "@/lib/ai-search/canvas-surfaces";
+import { scopeEvidence, type EvidenceScope } from "@/lib/ai-search/evidence-focus";
 import {
   categoryLeadPie,
+  engineOnlyNote,
   LEAD_STATUS_LABELS,
   leadSentence,
   leadStatusDefinition,
@@ -41,10 +43,20 @@ const LEGEND = [
 
 const ERROR_LEGEND = { key: "none", label: "Fender/Squier with a product error" };
 
-export function Term({ name, desc, children }: { name: string; desc: string; children: ReactNode }) {
+export function Term({
+  name,
+  desc,
+  children,
+  className,
+}: {
+  name: string;
+  desc: string;
+  children: ReactNode;
+  className?: string;
+}) {
   return (
     <span
-      className="ifai-term"
+      className={className ? `ifai-term ${className}` : "ifai-term"}
       data-ifai-tooltip-title={name}
       data-ifai-tooltip-desc={desc}
       tabIndex={0}
@@ -52,6 +64,16 @@ export function Term({ name, desc, children }: { name: string; desc: string; chi
     >
       {children}
     </span>
+  );
+}
+
+/** The asterisk on a figure the engine chip narrows. Nothing shows with all engines. */
+export function EngineMark({ engineName }: { engineName: string | null }) {
+  if (!engineName) return null;
+  return (
+    <Term name={`${engineName} only`} desc={engineOnlyNote(engineName)} className="ai-battle-engine-mark">
+      *
+    </Term>
   );
 }
 
@@ -82,10 +104,21 @@ function conicGradient(pie: LeadPie): string {
  * One small pie per category. The pie sits inside the evidence button, so it is
  * drawn here rather than with CitationPieDisc, which is itself focusable.
  */
-function CategoryPie({ lead, small }: { lead: CategoryLead; small: boolean }) {
+function CategoryPie({
+  lead,
+  small,
+  scope,
+  engineName,
+}: {
+  lead: CategoryLead;
+  small: boolean;
+  scope?: EvidenceScope;
+  engineName: string | null;
+}) {
   const pie = categoryLeadPie(lead);
-  const focus = { field: "category", value: lead.key } as const;
+  const focus = scopeEvidence({ field: "category", value: lead.key }, scope);
   const sentence = leadSentence(lead);
+  const opens = engineName ? `Opens these ${engineName} answers in Run Details.` : "Opens these answers in Run Details.";
   return (
     <li
       className="ai-battle-pie"
@@ -97,9 +130,9 @@ function CategoryPie({ lead, small }: { lead: CategoryLead; small: boolean }) {
         <span
           className="ifai-term citation-chart-tip ai-battle-pie-tip"
           data-ifai-tooltip-title={lead.label}
-          data-ifai-tooltip-desc={`${sentence} Opens these answers in Run Details.`}
+          data-ifai-tooltip-desc={`${sentence} ${opens}`}
         >
-          <EvidenceLink focus={focus} tab={AI_TABS.simulations} label={`${lead.label}. ${sentence} Open these answers.`}>
+          <EvidenceLink focus={focus} tab={AI_TABS.simulations} label={`${lead.label}. ${sentence} ${opens}`}>
             <span
               className="citation-pie-disc ai-battle-pie-disc"
               style={{ background: conicGradient(pie) }}
@@ -115,6 +148,7 @@ function CategoryPie({ lead, small }: { lead: CategoryLead; small: boolean }) {
           <EvidenceLink focus={focus} tab={AI_TABS.simulations}>
             {lead.label}
           </EvidenceLink>
+          <EngineMark engineName={engineName} />
         </span>
         <LeadStatusBadge lead={lead} />
         {lead.topRival ? (
@@ -140,11 +174,16 @@ export function CategoryLeadPies({
   largestResolved,
   showSmallSample,
   onClear,
+  scope,
+  engineName,
 }: {
   leads: readonly CategoryLead[];
   largestResolved: number;
   showSmallSample: boolean;
   onClear: () => void;
+  /** The engine chip's narrowing, carried into every pie's link. */
+  scope?: EvidenceScope;
+  engineName: string | null;
 }) {
   const legend = leads.some((lead) => lead.disqualified > 0) ? [...LEGEND, ERROR_LEGEND] : LEGEND;
   return (
@@ -176,6 +215,8 @@ export function CategoryLeadPies({
               key={lead.key}
               lead={lead}
               small={showSmallSample && lead.resolved > 0 && isSmallSample(lead.resolved, largestResolved)}
+              scope={scope}
+              engineName={engineName}
             />
           ))}
         </ul>

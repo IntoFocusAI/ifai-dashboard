@@ -11,6 +11,7 @@ import {
   categoryLeadStatus,
   categoryLeadSummary,
   effectiveBattlecardFilter,
+  engineOnlyNote,
   heroScope,
   isBattlecardFiltered,
   leadMatches,
@@ -22,6 +23,9 @@ import {
   restLeads,
 } from "../lib/ai-search/category-on-track.ts";
 import { competitorsSpokeLead } from "../lib/ai-search/canvas-surfaces.ts";
+import { explorerFilterFor } from "../lib/ai-search/evidence-filter.ts";
+import { formatEvidence, parseEvidence, scopeEvidence } from "../lib/ai-search/evidence-focus.ts";
+import { applyExplorerFilter } from "../lib/ai-search/explorer-filter.ts";
 import { categoryRoleTallies } from "../lib/ai-search/question-role.ts";
 import { summarizeRun } from "../lib/ai-search/summary.ts";
 import type { AiCallRow, AiSearchSnapshot } from "../lib/ai-search/types.ts";
@@ -271,8 +275,9 @@ test("Category Battlecards opens on the hero pie row, then the chips, the catego
   const ratesAt = heroes.indexOf("<RunDetailsLead snapshot={snapshot}");
   assert.ok(onTrackAt >= 0 && ratesAt > onTrackAt, "categories on track, then the two rates");
   assert.match(heroes, /<CitationPieDisc/);
-  assert.match(heroes, /\$\{role\}\/fender_win/);
-  assert.match(heroes, /\$\{role\}\/resolved/);
+  assert.match(heroes, /value: `\$\{role\}\/\$\{outcome\}`/);
+  assert.match(heroes, /focus\("fender_win"\)/);
+  assert.match(heroes, /focus\("resolved"\)/);
   const css = read("components/v3/live/ai-search/category-battlecards.css");
   assert.match(css, /\.ai-battle-heroes > \[data-ai-run-details-lead\] \{\s*display: contents;/);
   assert.match(css, /grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/);
@@ -340,11 +345,59 @@ test("Category Battlecards drops the Competitive Radar sentence and keeps its co
   assert.match(read("components/v3/build-live-spokes.tsx"), /descSlot: <CompetitorsSpokeDescription \/>/);
 
   const heroes = read("components/v3/live/ai-search/CategoryBattleHeroes.tsx");
-  assert.match(heroes, /<RateCaption role="unbranded_discovery" tally=\{roles\.unbranded\} showCompetitors \/>/);
-  assert.match(heroes, /<RateCaption role="branded_consideration" tally=\{roles\.branded\} \/>/);
+  assert.match(heroes, /role="unbranded_discovery"\s+tally=\{roles\.unbranded\}\s+showCompetitors/);
+  assert.doesNotMatch(heroes, /role="branded_consideration"[^>]*showCompetitors/);
   assert.match(heroes, /"Competitors led "/);
-  assert.match(heroes, /\$\{role\}\/competitor_win/, "the competitor count opens those answers");
+  assert.match(heroes, /focus\("competitor_win"\)/, "the competitor count opens those answers");
   assert.match(heroes, /` of \$\{tally\.resolved\}`/);
+});
+
+test("with an engine chip on, every evidence link on the tab opens that engine's rows, and its figure carries an asterisk", () => {
+  assert.deepEqual(parseEvidence("category:acoustics"), { field: "category", value: "acoustics" });
+  assert.equal(formatEvidence({ field: "category", value: "acoustics" }), "category:acoustics", "no chip, same link as before");
+  const pie = scopeEvidence({ field: "category", value: "acoustics" }, { engine: "chatgpt" });
+  assert.equal(formatEvidence(pie), "category:acoustics,engine:chatgpt");
+  assert.deepEqual(parseEvidence(formatEvidence(pie)), pie);
+  const cell = scopeEvidence({ field: "role", value: "unbranded_discovery/fender_win" }, { category: "amps", engine: "gemini" });
+  assert.equal(formatEvidence(cell), "role:unbranded_discovery/fender_win,category:amps,engine:gemini");
+  assert.deepEqual(parseEvidence(formatEvidence(cell)), cell);
+  const plain = { field: "competitor", value: "Yamaha" } as const;
+  assert.equal(scopeEvidence(plain, undefined), plain);
+
+  const rows = [
+    call({ engine: "chatgpt", category: "acoustics" }),
+    call({ engine: "gemini", category: "acoustics" }),
+    call({ engine: "chatgpt", category: "amps" }),
+    call({ engine: "chatgpt", category: "acoustics", ...yamaha }),
+  ];
+  const opened = (focus: Parameters<typeof explorerFilterFor>[0]) =>
+    applyExplorerFilter(rows, explorerFilterFor(focus)).map((row) => row.id);
+  assert.deepEqual(opened(pie), [rows[0].id, rows[3].id]);
+  assert.deepEqual(opened({ field: "category", value: "acoustics" }), [rows[0].id, rows[1].id, rows[3].id]);
+  assert.deepEqual(
+    opened(scopeEvidence({ field: "role", value: "unbranded_discovery/fender_win" }, { category: "acoustics", engine: "chatgpt" })),
+    [rows[0].id],
+  );
+  assert.equal(engineOnlyNote("ChatGPT"), "ChatGPT only. Clear the engine to see all engines.");
+
+  assert.match(read("components/v3/live/ai-search/EvidenceLink.tsx"), /data-ifai-evidence=\{focus \? formatEvidence\(focus\) : "all"\}/);
+  const explorer = read("components/v3/live/ai-search/SimulationsExplorer.tsx");
+  assert.doesNotMatch(explorer, /filterFromEvidence/, "Run Details reads the engine and category too");
+  assert.equal(explorer.match(/explorerFilterFor\(focus\)/g)?.length, 3);
+  const panel = read("components/v3/live/ai-search/CategoryBattlecardsPanel.tsx");
+  assert.match(panel, /const engineScope = filter\.engine \? \{ engine: filter\.engine \} : undefined;/);
+  assert.match(panel, /const rowScope = filter\.engine \? \{ category: battle\.key, engine: filter\.engine \} : undefined;/);
+  assert.equal(panel.match(/scope=\{rowScope\}/g)?.length, 2, "both rate cells in a row");
+  assert.equal(panel.match(/<EngineMark /g)?.length, 3, "the category name and both rate cells");
+  assert.match(panel, /<CategoryLeadPies[\s\S]*?scope=\{engineScope\}[\s\S]*?engineName=\{engineName\}/);
+  const pies = read("components/v3/live/ai-search/CategoryLeadPies.tsx");
+  assert.match(pies, /scopeEvidence\(\{ field: "category", value: lead\.key \}, scope\)/);
+  assert.match(pies, /if \(!engineName\) return null;/, "no asterisk with all engines");
+  assert.match(pies, /<Term name=\{`\$\{engineName\} only`\} desc=\{engineOnlyNote\(engineName\)\}/);
+  const heroes = read("components/v3/live/ai-search/CategoryBattleHeroes.tsx");
+  assert.match(heroes, /scopeEvidence\(\{ field: "role", value: `\$\{role\}\/\$\{outcome\}` \}, engineScope\)/);
+  assert.equal(heroes.match(/<EngineMark /g)?.length, 3, "the on-track figure, both rate captions, and the competitor line");
+  assert.match(read("components/v3/live/ai-search/RoleRateTable.tsx"), /scopeEvidence\(\{ field: "role", value: `\$\{role\}\/\$\{outcome\}` \}, scope\)/);
 });
 
 test("battlecard copy has no em dash and no native title tooltips", () => {
@@ -361,7 +414,7 @@ test("battlecard copy has no em dash and no native title tooltips", () => {
     if (path.endsWith(".tsx")) assert.ok(text.split("\n").length - 1 <= 400, `${path} stays at or under 400 lines`);
   }
   const pies = read("components/v3/live/ai-search/CategoryLeadPies.tsx");
-  for (const attr of ['className="ifai-term"', "data-ifai-tooltip-title", "data-ifai-tooltip-desc", "tabIndex={0}"]) {
+  for (const attr of ['"ifai-term"', "data-ifai-tooltip-title", "data-ifai-tooltip-desc", "tabIndex={0}"]) {
     assert.ok(pies.includes(attr), attr);
   }
 });

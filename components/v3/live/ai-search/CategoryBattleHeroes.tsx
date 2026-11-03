@@ -2,11 +2,12 @@
 
 import { CitationPieDisc } from "@/components/v3/live/ai-search/CitationPieDisc";
 import { EvidenceLink } from "@/components/v3/live/ai-search/EvidenceLink";
-import { Term } from "@/components/v3/live/ai-search/CategoryLeadPies";
+import { EngineMark, Term } from "@/components/v3/live/ai-search/CategoryLeadPies";
 import { RunDetailsLead } from "@/components/v3/live/ai-search/RunDetailsLead";
 import { AI_TABS } from "@/lib/ai-search/canvas-surfaces";
 import { ON_TRACK_DEFINITION, onTrackPie, type CategoryLeadSummary } from "@/lib/ai-search/category-on-track";
 import { joinBrands } from "@/lib/ai-search/competitors";
+import { scopeEvidence, type EvidenceScope } from "@/lib/ai-search/evidence-focus";
 import type { RoleTally } from "@/lib/ai-search/question-role";
 import { summarizeRun } from "@/lib/ai-search/summary";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
@@ -19,7 +20,9 @@ const ROLE_NAMES = {
   branded_consideration: "Branded consideration",
 } as const;
 
-function OnTrackHero({ summary }: { summary: CategoryLeadSummary }) {
+type EngineView = { engineScope?: EvidenceScope; engineName: string | null };
+
+function OnTrackHero({ summary, engineName }: { summary: CategoryLeadSummary; engineName: string | null }) {
   const pie = onTrackPie(summary);
   return (
     <div data-ai-on-track-hero="">
@@ -32,6 +35,7 @@ function OnTrackHero({ summary }: { summary: CategoryLeadSummary }) {
         <div className="ai-battle-hero-row">
           <span className="ai-lead-figure" data-ai-ontrack-figure="">
             {summary.onTrack} of {summary.measured}
+            <EngineMark engineName={engineName} />
           </span>
           <CitationPieDisc
             pie={pie}
@@ -59,38 +63,39 @@ function RateCaption({
   role,
   tally,
   showCompetitors = false,
+  engineScope,
+  engineName,
 }: {
   role: keyof typeof ROLE_NAMES;
   tally: RoleTally;
   showCompetitors?: boolean;
-}) {
+} & EngineView) {
   if (tally.resolved <= 0) return <p className="ai-battle-hero-caption" data-ai-battle-role-total={role} />;
   const name = ROLE_NAMES[role];
+  const focus = (outcome: string) => scopeEvidence({ field: "role", value: `${role}/${outcome}` }, engineScope);
   return (
     <p className="ai-battle-hero-caption" data-ai-battle-role-total={role}>
-      <EvidenceLink focus={{ field: "role", value: `${role}/fender_win` }} tab={AI_TABS.simulations} label={`${name}: Fender/Squier leads`}>
+      <EvidenceLink focus={focus("fender_win")} tab={AI_TABS.simulations} label={`${name}: Fender/Squier leads`}>
         {tally.fenderWins}
       </EvidenceLink>
       {" of "}
-      <EvidenceLink focus={{ field: "role", value: `${role}/resolved` }} tab={AI_TABS.simulations} label={`${name}: resolved answers`}>
+      <EvidenceLink focus={focus("resolved")} tab={AI_TABS.simulations} label={`${name}: resolved answers`}>
         {tally.resolved}
       </EvidenceLink>
+      <EngineMark engineName={engineName} />
       {" resolved answers"}
       {showCompetitors ? (
         <span className="ai-battle-hero-caption-line" data-ai-battle-competitor-led="">
           {"Competitors led "}
           {tally.competitorWins > 0 ? (
-            <EvidenceLink
-              focus={{ field: "role", value: `${role}/competitor_win` }}
-              tab={AI_TABS.simulations}
-              label={`${name}: competitors lead`}
-            >
+            <EvidenceLink focus={focus("competitor_win")} tab={AI_TABS.simulations} label={`${name}: competitors lead`}>
               {tally.competitorWins}
             </EvidenceLink>
           ) : (
             0
           )}
           {` of ${tally.resolved}`}
+          <EngineMark engineName={engineName} />
         </span>
       ) : null}
     </p>
@@ -105,21 +110,29 @@ export function CategoryBattleHeroes({
   snapshot,
   summary,
   scope,
+  engineScope,
+  engineName,
 }: {
   snapshot: AiSearchSnapshot;
   summary: CategoryLeadSummary;
   scope: string | null;
-}) {
+} & EngineView) {
   const roles = summarizeRun(snapshot).roles;
   return (
     <div className="ai-battle-heroes" data-ai-battle-heroes="">
-      <OnTrackHero summary={summary} />
+      <OnTrackHero summary={summary} engineName={engineName} />
       <RunDetailsLead snapshot={snapshot} />
       <p className="ai-battle-hero-caption" data-ai-on-track-caption="">
         {onTrackCaption(summary)}
       </p>
-      <RateCaption role="unbranded_discovery" tally={roles.unbranded} showCompetitors />
-      <RateCaption role="branded_consideration" tally={roles.branded} />
+      <RateCaption
+        role="unbranded_discovery"
+        tally={roles.unbranded}
+        showCompetitors
+        engineScope={engineScope}
+        engineName={engineName}
+      />
+      <RateCaption role="branded_consideration" tally={roles.branded} engineScope={engineScope} engineName={engineName} />
       {scope ? (
         <p className="ai-battle-rates-scope" data-ai-battle-rates-scope="">
           {scope}

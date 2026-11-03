@@ -202,6 +202,11 @@ export function isBattlecardFiltered(filter: BattlecardFilter): boolean {
   return filter.engine !== "" || filter.lead !== "all";
 }
 
+/** Tooltip on the asterisk an engine chip puts on each figure it narrows. */
+export function engineOnlyNote(engineName: string): string {
+  return `${engineName} only. Clear the engine to see all engines.`;
+}
+
 /** The engine chip narrows every pie; the who-leads chip only narrows the category pies and the table. */
 export function heroScope(engineName: string | null, leadFiltered: boolean): string | null {
   if (engineName && leadFiltered) {

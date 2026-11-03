@@ -315,6 +315,51 @@ test.describe("Competitive Radar", () => {
     await expect(desc).toContainText(/Competitors led \d+ of \d+ resolved unbranded discovery answers/);
   });
 
+  test("a battlecard engine chip carries into each evidence link and marks the figures it narrows", async ({ page }) => {
+    test.slow();
+    await page.goto("/dashboard?spoke=competitors&tab=category-battlecards");
+    const cards = page.locator(".ai-battlecards");
+    await expect(cards).toBeVisible({ timeout: 90_000 });
+    const pieLink = (key: string) => cards.locator(`[data-ai-battle-pie-disc='${key}']`).locator("xpath=ancestor::button[1]");
+    const key = await cards.locator("[data-ai-battle-pie-disc]").first().getAttribute("data-ai-battle-pie-disc");
+    expect(key).toBeTruthy();
+    await expect(pieLink(key!)).toHaveAttribute("data-ifai-evidence", `category:${key}`);
+    await expect(cards.locator(".ai-battle-engine-mark")).toHaveCount(0);
+
+    const chip = cards.locator("[data-ai-battle-chip^='engine:']:not([data-ai-battle-chip='engine:all'])").first();
+    const engine = (await chip.getAttribute("data-ai-battle-chip"))!.slice("engine:".length);
+    const engineName = (await chip.innerText()).trim();
+    await chip.click();
+    const marks = cards.locator(".ai-battle-engine-mark");
+    await expect(marks.first()).toBeVisible();
+    for (const mark of await marks.all()) {
+      await expect(mark).toHaveText("*");
+      await expect(mark).toHaveAttribute("data-ifai-tooltip-desc", `${engineName} only. Clear the engine to see all engines.`);
+      await expect(mark).not.toHaveAttribute("title");
+    }
+    await expect(cards.locator("[data-ai-on-track-hero] .ai-battle-engine-mark")).toHaveCount(1);
+    await expect(pieLink(key!)).toHaveAttribute("data-ifai-evidence", `category:${key},engine:${engine}`);
+    const row = cards.locator("tbody tr[data-category]").first();
+    const rowKey = await row.getAttribute("data-category");
+    await expect(row.locator("td").first().locator(".ifai-evidence-link")).toHaveAttribute(
+      "data-ifai-evidence",
+      `category:${rowKey},engine:${engine}`,
+    );
+    const rateLinks = row.locator("[data-ai-role-count='unbranded_discovery'] .ifai-evidence-link");
+    if (await rateLinks.count()) {
+      await expect(rateLinks.first()).toHaveAttribute(
+        "data-ifai-evidence",
+        `role:unbranded_discovery/fender_win,category:${rowKey},engine:${engine}`,
+      );
+    }
+
+    await pieLink(key!).click();
+    await expect(page.locator(".drilldown-tab-btn.active")).toHaveText("Run Details");
+    expect(new URL(page.url()).searchParams.get("evidence")).toBe(`category:${key},engine:${engine}`);
+    await expect(page.locator(".ai-simulations select[aria-label='Engine']")).toHaveValue(engine);
+    await expect(page.locator(".ai-simulations select[aria-label='Category']")).toHaveValue(key!);
+  });
+
   test("engine comparison shows the two rates, not one pooled commercial win rate", async ({ canvas, page }) => {
     await canvas.openSpokeFromMap("Competitive Radar");
     await canvas.openTab("Engine Comparison");
