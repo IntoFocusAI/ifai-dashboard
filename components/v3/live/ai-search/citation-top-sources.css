@@ -1,0 +1,273 @@
+/* Citation Ecosystem: category chips and the top cited sites chart. Follows the canvas theme variables. */
+
+.citation-category-filter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  min-width: 0;
+}
+
+.citation-category-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+
+.citation-category-label {
+  margin-right: 6px;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.citation-category-chips .segmented-btn {
+  border: 1px solid var(--border-color);
+}
+
+.citation-category-chips .segmented-btn.active {
+  border-color: var(--accent-purple);
+}
+
+.citation-category-chips .segmented-btn:focus-visible,
+.citation-category-clear:focus-visible,
+.citation-top-source:focus-visible,
+.citation-top-sites-more:focus-visible {
+  outline: 2px solid #38bdf8;
+  outline-offset: 2px;
+}
+
+.citation-category-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.citation-category-status strong {
+  color: var(--text-main);
+}
+
+.citation-category-clear {
+  padding: 2px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  background: none;
+  color: var(--text-main);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.citation-category-clear:hover {
+  border-color: color-mix(in srgb, #38bdf8 50%, var(--border-color));
+}
+
+/* The chart: one line per site, bars scaled to the leader in view. */
+.citation-top-sources {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 12px 14px;
+}
+
+.citation-top-sites-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 10px;
+  margin-bottom: 6px;
+}
+
+.citation-top-sites-head .citation-card-kicker {
+  margin: 0;
+}
+
+.citation-top-sites-measure.segmented-control {
+  padding: 2px;
+  gap: 2px;
+}
+
+.citation-top-sites-measure .segmented-btn {
+  padding: 4px 10px;
+}
+
+.citation-top-sites-measure .segmented-btn:focus-visible {
+  outline: 2px solid #38bdf8;
+  outline-offset: 2px;
+}
+
+.citation-top-source-list {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  justify-content: space-evenly;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.citation-top-source {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 2.2fr) minmax(48px, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 30px;
+  padding: 4px 8px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.citation-top-source:hover {
+  border-color: var(--border-color);
+  background: color-mix(in srgb, var(--text-main) 4%, transparent);
+}
+
+.citation-top-source.active {
+  border-color: color-mix(in srgb, #38bdf8 60%, var(--border-color));
+  background: color-mix(in srgb, #38bdf8 10%, transparent);
+}
+
+.citation-top-source-rank {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: var(--citation-track, color-mix(in srgb, var(--border-color) 70%, transparent));
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 750;
+}
+
+.citation-top-source-site {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.citation-top-source-domain {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-main);
+  font-size: 13px;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The class label only takes the room the site name leaves, so it gives way first. */
+.citation-top-source-class {
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-muted);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.citation-top-source-owner {
+  flex: 0 0 auto;
+  padding: 1px 6px;
+  border: 1px solid color-mix(in srgb, var(--citation-owned-fill, #38bdf8) 70%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--citation-owned-fill, #38bdf8) 14%, transparent);
+  color: var(--citation-owned-ink, var(--text-main));
+  font-size: 10px;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+.citation-top-source-track {
+  display: block;
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--citation-track, color-mix(in srgb, var(--border-color) 70%, transparent));
+  overflow: hidden;
+}
+
+/* Fender blue for Fender-owned sites, one slate for every other site. */
+.citation-top-source-fill {
+  display: block;
+  height: 100%;
+  min-width: 3px;
+  border-radius: inherit;
+  background: var(--chain-answers, #64748b);
+}
+
+.citation-top-source-fender .citation-top-source-fill {
+  background: var(--citation-owned-fill, #38bdf8);
+}
+
+.citation-top-source-fender .citation-top-source-rank {
+  background: color-mix(in srgb, var(--citation-owned-fill, #38bdf8) 18%, transparent);
+  color: var(--citation-owned-ink, #38bdf8);
+}
+
+.citation-top-source-value {
+  min-width: 10ch;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.citation-top-source-value strong {
+  color: var(--text-main);
+  font-weight: 750;
+}
+
+.citation-top-sites-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 12px;
+  margin-top: auto;
+  padding-top: 8px;
+}
+
+/* Each row carries its site's tooltip. The row button already shows hover and focus. */
+.citation-top-source-list > li.citation-chart-tip.ifai-term,
+.citation-top-source-list > li.citation-chart-tip.ifai-term:hover {
+  min-width: 0;
+  outline: none;
+  cursor: default;
+}
+
+.citation-top-sites-more {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text-main);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  text-decoration: underline;
+  cursor: pointer;
+}

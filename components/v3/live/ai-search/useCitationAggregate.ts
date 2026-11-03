@@ -10,12 +10,13 @@ import {
   poolCitationSnapshots,
   type CitationWindow,
 } from "@/lib/ai-search/citation-aggregate";
+import type { CitationFailedRead } from "@/lib/ai-search/citation-read-failure";
 import { utcDay } from "@/lib/ai-search/history-eligibility";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
 
 export type CitationAggregate =
   | { phase: "loading" }
-  | { phase: "error"; message: string }
+  | { phase: "error"; message: string; failed: CitationFailedRead }
   | { phase: "empty"; message: string }
   | { phase: "ready"; snapshot: AiSearchSnapshot; copy: string; singleRun: boolean };
 
@@ -67,14 +68,14 @@ export function useCitationAggregate(): CitationAggregate {
     if (!window || window.kind === "run") return null;
     if (!trend || trend.phase === "loading" || trend.phase === "idle") return { phase: "loading" };
     if (trend.phase === "error" || trend.phase === "unavailable") {
-      return { phase: "error", message: trend.message };
+      return { phase: "error", message: trend.message, failed: "period" };
     }
     return finish(window, trend.snapshots, false);
   }, [trend, window]);
 
   if (!history || !mode || mode.kind === "run") {
     if (read.phase === "loading") return { phase: "loading" };
-    if (read.phase === "error") return { phase: "error", message: read.message };
+    if (read.phase === "error") return { phase: "error", message: read.message, failed: "published" };
     if (read.phase === "no-run") return { phase: "empty", message: "No AI run has been published yet." };
     return finish({ kind: "run" }, [read.snapshot], true);
   }
@@ -83,7 +84,7 @@ export function useCitationAggregate(): CitationAggregate {
   }
   if (mode.kind === "month" && !window) {
     if (!current || current.phase === "loading") return { phase: "loading" };
-    if (current.phase === "error") return { phase: "error", message: current.message };
+    if (current.phase === "error") return { phase: "error", message: current.message, failed: "published" };
     if (current.phase === "no-run") return { phase: "empty", message: "No AI run has been published yet." };
     return { phase: "loading" };
   }

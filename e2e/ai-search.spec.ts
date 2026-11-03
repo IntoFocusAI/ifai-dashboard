@@ -84,8 +84,18 @@ test.describe("AI Search Visibility", () => {
     await canvas.openSpokeFromMap("AI Search Visibility");
     await canvas.openTab("Citation Ecosystem");
     await expect(page.locator("[data-ai-cited-answers]")).toContainText(
-      /\d+ of \d+ shopping answers cited web sources/,
+      /[\d,]+ of [\d,]+ shopping answers showed sources/,
     );
+    const step = (name: string) => page.locator(`[data-citation-chain-step='${name}']`);
+    const chainCount = async (locator: ReturnType<typeof page.locator>) => Number(await locator.getAttribute("data-chain-count"));
+    const answeredInChain = await chainCount(step("answers"));
+    const showedInChain = await chainCount(step("showed"));
+    expect(showedInChain + (await chainCount(page.locator("[data-citation-chain-rest='none']")))).toBe(answeredInChain);
+    expect((await chainCount(step("owned"))) + (await chainCount(page.locator("[data-citation-chain-rest='other']")))).toBe(
+      await chainCount(step("links")),
+    );
+    expect(Number(await page.locator("[data-citation-top-sources]").getAttribute("data-top-sources-answered"))).toBe(answeredInChain);
+    await expect(page.locator("[data-citation-chain]")).not.toContainText(/cited web sources|cited links/i);
     const ratio = await page.locator("[data-citation-hero-value]").innerText();
     const ratioMatch = ratio.match(/(\d+) of (\d+)/);
     expect(ratioMatch).not.toBeNull();
@@ -105,7 +115,8 @@ test.describe("AI Search Visibility", () => {
     const brandPie = page.locator("[data-citation-pie='brands']");
     const pies = [linkPie, ownedPie];
     if (await brandPie.count()) pies.push(brandPie);
-    for (const pie of pies) {
+    // The unbranded pie has no legend; its total is the hero N checked above.
+    for (const pie of pies.filter((pie) => pie !== ownedPie)) {
       const total = Number(await pie.getAttribute("data-pie-total"));
       const counts = await pie.locator("[data-pie-count]").evaluateAll((els) =>
         els.map((el) => Number(el.getAttribute("data-pie-count"))),
@@ -123,28 +134,84 @@ test.describe("AI Search Visibility", () => {
       );
       expect(groupNs.reduce((sum, n) => sum + n, 0)).toBe(resolved);
     }
-    const heroBox = await page.locator("[data-citation-hero-value]").boundingBox();
-    expect(heroBox && heroBox.height).toBeGreaterThan(40);
-    const ownedDisc = await page.locator(".citation-pie-disc-owned").boundingBox();
-    const mixDisc = await page.locator(".citation-pie-disc-mix").boundingBox();
-    expect(ownedDisc && ownedDisc.width).toBeGreaterThanOrEqual(160);
-    expect(mixDisc && mixDisc.width).toBeGreaterThanOrEqual(180);
-    await expect(page.locator("[data-ai-cited-links]")).toContainText(/\d+ cited links/);
-    await expect(page.locator("[data-ai-fender-owned]")).toContainText(
-      /\d+ of \d+ cited links .* led to Fender-owned sites/,
+    const pctBox = await page.locator("[data-citation-hero-pct]").boundingBox();
+    expect(pctBox && pctBox.height).toBeGreaterThan(20);
+    const ownedBar = await page.locator("[data-citation-pie='unbranded']").boundingBox();
+    const mixTrack = await page.locator("[data-citation-pie='classes'] .citation-rank-bar-track").first().boundingBox();
+    expect(ownedBar && ownedBar.width).toBeGreaterThanOrEqual(120);
+    expect(mixTrack && mixTrack.width).toBeGreaterThanOrEqual(24);
+    await expect(page.locator("[data-ai-cited-links]")).toHaveText(/^[\d,]+$/);
+    await expect(page.locator("[data-citation-lead-population]")).toContainText(
+      /[\d,]+ of [\d,]+ links lead to Fender-owned sites/,
     );
     const body = page.locator(".drilldown-body");
     await expect(body).toContainText("Answers and links are separate counts");
     await expect(body).toContainText("Why this matters");
     await expect(body).toContainText("canonical product facts");
-    await expect(body).toContainText("An association, not proof of cause");
     await expect(page.locator(".drilldown-desc")).not.toContainText("\u2014");
-    await expect(page.locator("[data-ai-citation-interpretation]")).toContainText(
+    for (const caveat of [
+      "An association, not proof of cause",
+      "does not show that the site caused",
       "A low count does not prove a source had no influence",
+      "not a worse outcome",
+    ]) {
+      await expect(body).not.toContainText(caveat);
+    }
+    await expect(page.locator("[data-citation-role] .citation-role-track").first()).toHaveAttribute(
+      "data-ifai-tooltip-desc",
+      /An association, not proof of cause\.$/,
+    );
+    await expect(page.locator("[data-citation-role-lead] .ifai-term").first()).toHaveAttribute(
+      "data-ifai-tooltip-desc",
+      /An association, not proof of cause\.$/,
+    );
+    await expect(page.locator(".citation-top-source-list > li").first()).toHaveAttribute(
+      "data-ifai-tooltip-desc",
+      /does not show that the site caused what the answer said\.$/,
+    );
+    await expect(page.locator("[data-citation-pie='classes'] > li").first()).toHaveAttribute(
+      "data-ifai-tooltip-desc",
+      /not a worse outcome than a Fender page/,
+    );
+    await expect(page.locator("[data-ai-citation-interpretation]")).toHaveCount(0);
+    await expect(page.locator("[data-table-id='citation-engines'] th[data-col-id='links'] .ifai-term")).toHaveAttribute(
+      "data-ifai-tooltip-desc",
+      /A low count does not prove a source had no influence/,
     );
     await expect(body).not.toContainText("valid link");
-    const domain = page.locator(".ai-top-domains [data-ai-pick^='domain:']").first();
-    const picked = (await domain.getAttribute("data-ai-pick"))!.slice("domain:".length);
+    await expect(page.locator("[data-citation-top-sources]")).toHaveCount(1);
+    await expect(page.locator("[data-citation-domains-mix]")).toHaveCount(0);
+    await page.locator("[data-citation-top-measure='links']").click();
+    const linkCounts = await page
+      .locator("[data-citation-top-source]")
+      .evaluateAll((els) => els.map((el) => Number(el.getAttribute("data-top-source-links"))));
+    expect(linkCounts).toEqual([...linkCounts].sort((a, b) => b - a));
+    await page.locator("[data-citation-top-measure='answers']").click();
+    const marks = page.locator("[data-citation-figures] [data-citation-filtered]:not([data-citation-filtered=''])");
+    await expect(marks).toHaveCount(0);
+    const chip = page.locator("[data-citation-category]:not([data-citation-category='all'])").first();
+    if (await chip.count()) {
+      const label = (await chip.innerText()).trim();
+      await chip.click();
+      await expect(marks.first()).toBeVisible();
+      const descs = await marks.evaluateAll((els) => els.map((el) => el.getAttribute("data-ifai-tooltip-desc")));
+      expect(descs.length).toBe(4);
+      for (const desc of descs) expect(desc!.startsWith(`${label} only. Clear the category to see all categories.`)).toBe(true);
+      await expect(marks.first()).not.toHaveAttribute("title", /./);
+      await expect(page.locator("[data-citation-figures]")).not.toContainText(` in ${label}`);
+      await page.locator("[data-citation-category-clear]").click();
+      await expect(marks).toHaveCount(0);
+    }
+    const mixClass = page.locator("[data-citation-mix-class]").first();
+    const pickedClass = (await mixClass.getAttribute("data-citation-mix-class"))!;
+    await mixClass.click();
+    const classRows = page.locator(".ai-citation-evidence tbody tr");
+    await expect(classRows.first()).toBeVisible();
+    for (const c of await classRows.evaluateAll((els) => els.map((el) => el.getAttribute("data-source-class")))) {
+      expect(c).toBe(pickedClass);
+    }
+    const domain = page.locator("[data-citation-top-source]").first();
+    const picked = (await domain.getAttribute("data-citation-top-source"))!;
     await domain.click();
     const rows = page.locator(".ai-citation-evidence tbody tr");
     await expect(rows.first()).toBeVisible();
@@ -182,7 +249,10 @@ test.describe("AI Search Visibility", () => {
     await canvas.openSpokeFromMap("AI Search Visibility");
     await canvas.openTab("Citation Ecosystem");
     for (const [label, fragment] of [
-      ["Cited link", "explicitly returned with its answer"],
+      ["Showed sources", "listed web pages as sources"],
+      ["No sources", "without showing a web page"],
+      ["Links", "One answer can list several"],
+      ["To Fender-owned sites", "fender.com and other Fender-owned sites"],
       ["Fender-owned", "controlled by Fender or another FMIC brand"],
       ["Source class", "brand-owned, retailer, editorial, community, video, or other"],
     ]) {

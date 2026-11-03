@@ -1,114 +1,63 @@
 "use client";
 
 import { useMemo, useState, type ReactNode } from "react";
-import { clientColumn, ResizableTable, type RetailColumn } from "@/components/v3/live/ResizableTable";
-import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
+import { clientColumn } from "@/components/v3/live/ResizableTable";
 import { AiReadGate, EmptyRows, mutedText } from "@/components/v3/live/ai-search/AiReadGate";
 import { useAiHistoryOptional } from "@/components/v3/live/ai-search/AiHistoryContext";
 import { useCitationAggregate } from "@/components/v3/live/ai-search/useCitationAggregate";
 import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
+import { CountTable, PickButton } from "@/components/v3/live/ai-search/CitationCountTable";
 import { CitationEvidenceTable } from "@/components/v3/live/ai-search/CitationEvidenceTable";
-import {
-  CitationInterpretationNote,
-  CitationRoleNote,
-} from "@/components/v3/live/ai-search/CitationRoleNote";
-import {
-  CitationHero,
-  type CitationPick,
-} from "@/components/v3/live/ai-search/CitationHero";
-import { CitationLeadFigure } from "@/components/v3/live/ai-search/CitationLeadFigure";
+import { CITED_LINK_COUNT_CAVEAT, CitationRoleNote } from "@/components/v3/live/ai-search/CitationRoleNote";
+import { CitationHero } from "@/components/v3/live/ai-search/CitationHero";
+import { CitationNotAvailable } from "@/components/v3/live/ai-search/CitationNotAvailable";
+import { CitationReadFailed } from "@/components/v3/live/ai-search/CitationReadFailed";
 import { useEvidenceFocus } from "@/components/v3/live/ai-search/useEvidenceFocus";
 import {
-  citationEvidence,
-  citedAnswers,
-  groupCitations,
-  SOURCE_CLASS_LABELS,
-  type CitationEvidence,
-  type CitationScope,
-  type SourceClass,
-} from "@/lib/ai-search/citations";
-import { categoryLabel, engineLabel } from "@/lib/ai-search/run-metrics";
+  citationPickLabel,
+  citationPickMatches,
+  pickAfterCategoryChange,
+  type CitationPick,
+} from "@/lib/ai-search/citation-pick";
+import {
+  categoryForScope,
+  citationCategoryLabel,
+  citationCategoryOptions,
+  snapshotInCategory,
+} from "@/lib/ai-search/citation-top-sources";
+import { citationEvidence, citedAnswers, groupCitations, type CitationScope } from "@/lib/ai-search/citations";
+import { engineLabel } from "@/lib/ai-search/run-metrics";
 import { citationStorageCaution } from "@/lib/ai-search/review-runs";
-import type { SortInput } from "@/lib/fender-canvas/table-sort";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
 
-function CountTable<T>({
-  tableId,
-  columns,
-  rows,
-  value,
-  renderRow,
-}: {
-  tableId: string;
-  columns: readonly RetailColumn[];
-  rows: readonly T[];
-  value: (row: T, columnId: string) => SortInput;
-  renderRow: (row: T) => ReactNode;
-}) {
-  const sorted = useClientTableSort(rows, columns, value);
-  return (
-    <ResizableTable tableId={tableId} columns={columns} freezeHeader maxHeight={520} sort={sorted.sort} onSort={sorted.onSort}>
-      <tbody>{sorted.rows.map((row) => renderRow(row))}</tbody>
-    </ResizableTable>
-  );
-}
+const LINK_COLUMNS = [
+  {
+    ...clientColumn("links", "Links", "number", 90, 72),
+    headerTooltip: {
+      title: "Links",
+      description: `Explicit links the engines returned with these answers. ${CITED_LINK_COUNT_CAVEAT}`,
+    },
+  },
+  {
+    ...clientColumn("owned", "Fender-owned", "number", 130, 100),
+    headerTooltip: {
+      title: "Fender-owned links",
+      description: `Links to sites controlled by Fender or another FMIC brand. ${CITED_LINK_COUNT_CAVEAT}`,
+    },
+  },
+];
 
 const ENGINE_COLUMNS = [
   clientColumn("engine", "Engine", "text", 140, 100),
   clientColumn("cited", "Cited answers", "number", 140, 110),
-  clientColumn("links", "Links", "number", 90, 72),
-  clientColumn("owned", "Fender-owned", "number", 130, 100),
+  ...LINK_COLUMNS,
 ];
 
 const CATEGORY_COLUMNS = [
   clientColumn("category", "Category", "text", 180, 120),
   clientColumn("cited", "Cited answers", "number", 140, 110),
-  clientColumn("links", "Links", "number", 90, 72),
-  clientColumn("owned", "Fender-owned", "number", 130, 100),
+  ...LINK_COLUMNS,
 ];
-
-function matches(row: CitationEvidence, pick: CitationPick) {
-  if (!pick) return true;
-  if (pick.field === "gap" || pick.field === "role_owned") {
-    return pick.simulationIds.includes(row.simulationId);
-  }
-  if (pick.field === "domain") return row.domain === pick.value;
-  if (pick.field === "class") return row.sourceClass === pick.value;
-  if (pick.field === "engine") return row.engine === pick.value;
-  return row.category === pick.value;
-}
-
-function PickButton({
-  pick,
-  onPick,
-  children,
-}: {
-  pick: Extract<CitationPick, { field: "domain" | "class" | "engine" | "category" }>;
-  onPick: (p: CitationPick) => void;
-  children: string;
-}) {
-  return (
-    <button
-      type="button"
-      className="ifai-evidence-link"
-      data-ai-pick={`${pick.field}:${pick.value}`}
-      onClick={() => onPick(pick)}
-      style={{
-        background: "none",
-        border: 0,
-        padding: 0,
-        font: "inherit",
-        fontWeight: 600,
-        color: "var(--text-main)",
-        textDecoration: "underline",
-        cursor: "pointer",
-        textAlign: "left",
-      }}
-    >
-      {children}
-    </button>
-  );
-}
 
 function Ecosystem({
   snapshot,
@@ -135,40 +84,32 @@ function Ecosystem({
     }
   }
 
-  const read = useMemo(
+  const [category, setCategory] = useState<string | null>(null);
+  const full = useMemo(
     () => citationEvidence(snapshot.calls, snapshot.citations, scope),
     [snapshot, scope],
   );
+  // Every figure, chart, and table follows the category filter, the Fender-owned lead included.
+  const view = useMemo(() => snapshotInCategory(snapshot, category), [snapshot, category]);
+  const read = useMemo(
+    () => (category == null ? full : citationEvidence(view.calls, view.citations, scope)),
+    [full, view, scope, category],
+  );
   const fender = read.rows.filter((row) => row.sourceClass === "fender_owned");
   const fenderAnswers = new Set(fender.map((row) => row.simulationId)).size;
-  const byEngine = citedAnswers(snapshot.calls, read.rows, scope, (call) =>
+  const byEngine = citedAnswers(view.calls, read.rows, scope, (call) =>
     (call.engine ?? "").toLowerCase(),
   );
   const engineLinks = new Map(
     groupCitations(read.rows, (row) => row.engine).map((g) => [g.key, g]),
   );
-  const byCategory = citedAnswers(snapshot.calls, read.rows, scope, (call) => call.category ?? "");
+  const byCategory = citedAnswers(view.calls, read.rows, scope, (call) => call.category ?? "");
   const categoryLinks = new Map(
     groupCitations(read.rows, (row) => row.category).map((g) => [g.key, g]),
   );
   const scopeNoun =
     scope === "probe" ? "fact-check answers" : scope === "all" ? "answers" : "shopping answers";
-  const filtered = read.rows.filter((row) => matches(row, pick));
-  const pickLabel = !pick
-    ? "every cited link"
-    : pick.field === "gap"
-      ? `${categoryLabel(pick.value)} gaps (no Fender-owned page)`
-      : pick.field === "role_owned"
-        ? pick.value.includes("cited_owned")
-          ? "answers that cited a Fender-owned page"
-          : "answers with no Fender-owned page"
-        : pick.field === "class"
-          ? SOURCE_CLASS_LABELS[pick.value as SourceClass]
-          : pick.field === "engine"
-            ? engineLabel(pick.value)
-            : pick.field === "category"
-              ? categoryLabel(pick.value)
-              : pick.value;
+  const filtered = read.rows.filter((row) => citationPickMatches(row, pick));
 
   const caution = citationStorageCaution(snapshot.run.audit_run_id);
   const declaredCitations = snapshot.storedCitationCount ?? snapshot.citations.length;
@@ -177,34 +118,31 @@ function Ecosystem({
   return (
     <>
       <div className="content-box ai-citation-summary">
-        <CitationLeadFigure
-          owned={fender.length}
-          total={read.rows.length}
-          ready={!caution && citationUrlsLoaded}
-        />
-        <div className="content-box-title">
-          <span>Which web sources AI answers cite</span>
-        </div>
         {caution ? (
           <p style={{ fontSize: 13, lineHeight: 1.5, margin: "0 0 6px" }} data-ai-citation-caution>
-            {caution}
+            Cited sites for this run: <CitationNotAvailable description={caution} />
           </p>
         ) : citationUrlsLoaded ? (
           <>
-            {copy ? (
-              <p className="citation-window" data-citation-window>
-                {copy}
-              </p>
-            ) : null}
             <CitationHero
-              snapshot={snapshot}
+              snapshot={view}
               read={read}
               scope={scope}
               scopeNoun={scopeNoun}
               showSmallSample={singleRun}
+              lead={{ owned: fender.length, total: read.rows.length }}
+              note={copy}
+              categories={citationCategoryOptions(snapshot.calls, scope)}
+              category={category}
+              onCategory={(next) => {
+                setCategory(next);
+                setPick(pickAfterCategoryChange);
+              }}
+              activeDomain={pick?.field === "domain" ? pick.value : null}
               onScope={(next) => {
                 setScope(next);
                 setPick(null);
+                setCategory(categoryForScope(snapshot.calls, next, category));
               }}
               onPick={setPick}
             />
@@ -241,8 +179,8 @@ function Ecosystem({
           </>
         ) : (
           <p style={{ fontSize: 13, lineHeight: 1.5, margin: "0 0 6px" }} data-ai-citation-count>
-            This run stores {declaredCitations} citation rows. This copy does not list each URL, so those
-            rows are not read as a change in the citation ecosystem.
+            This run stores {declaredCitations} citation rows. Cited sites:{" "}
+            <CitationNotAvailable description="This copy does not list each URL, so these rows are not read as a change in the citation ecosystem." />
           </p>
         )}
       </div>
@@ -259,7 +197,6 @@ function Ecosystem({
             <div className="content-box-title">
               <span>By engine</span>
             </div>
-            <CitationInterpretationNote />
             <CountTable
               tableId="citation-engines"
               columns={ENGINE_COLUMNS}
@@ -296,9 +233,7 @@ function Ecosystem({
                 columns={CATEGORY_COLUMNS}
                 rows={byCategory}
                 value={(g, id) => {
-                  if (id === "category") {
-                    return g.key === "hallucinations" ? "Product fact checks" : categoryLabel(g.key);
-                  }
+                  if (id === "category") return citationCategoryLabel(g.key);
                   if (id === "cited") return g.cited;
                   if (id === "links") return categoryLinks.get(g.key)?.rows ?? 0;
                   return categoryLinks.get(g.key)?.fenderOwnedRows ?? 0;
@@ -307,7 +242,7 @@ function Ecosystem({
                   <tr key={g.key} data-category={g.key}>
                     <td>
                       <PickButton pick={{ field: "category", value: g.key }} onPick={setPick}>
-                        {g.key === "hallucinations" ? "Product fact checks" : categoryLabel(g.key)}
+                        {citationCategoryLabel(g.key)}
                       </PickButton>
                     </td>
                     <td>
@@ -326,7 +261,7 @@ function Ecosystem({
       {!caution && citationUrlsLoaded ? (
         <CitationEvidenceTable
           rows={filtered}
-          label={pickLabel}
+          label={citationPickLabel(pick, category)}
           onClear={pick ? () => setPick(null) : undefined}
         />
       ) : null}
@@ -355,16 +290,12 @@ function CitationAggregateBody() {
   if (aggregate.phase === "loading") {
     return (
       <RangeNotice heading="Adding the runs in this selection" tone="loading">
-        Reading each stored run. Figures appear when those runs load. They are added together, not shown as one snapshot.
+        Reading each stored run. Figures appear when those runs load and add every run together.
       </RangeNotice>
     );
   }
   if (aggregate.phase === "error") {
-    return (
-      <RangeNotice heading="These runs did not load" tone="error">
-        {aggregate.message} No citation figure is shown for this selection.
-      </RangeNotice>
-    );
+    return <CitationReadFailed failed={aggregate.failed} message={aggregate.message} />;
   }
   if (aggregate.phase === "empty") {
     return (
