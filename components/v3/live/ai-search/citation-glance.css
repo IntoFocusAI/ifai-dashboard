@@ -102,6 +102,10 @@
   margin: 0;
 }
 
+.citation-control-row .segmented-btn {
+  padding: 6px 9px;
+}
+
 .citation-control-row .citation-category-filter {
   margin: 0;
   padding-left: 14px;
@@ -325,9 +329,20 @@
   font-size: 12px;
 }
 
+/* Too narrow for the chart beside the tiles: the chart takes the full width as
+   two short columns of ranks (1 to 5, 6 to 10), and the tiles sit under it. */
 @container citation-glance (max-width: 1000px) {
   .citation-glance-grid {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .citation-glance .citation-top-source-list {
+    display: grid;
+    grid-auto-flow: column;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    justify-content: normal;
+    align-content: start;
+    gap: 2px 20px;
   }
 
   .citation-top-source-class {
@@ -336,8 +351,8 @@
 }
 
 @container citation-glance (max-width: 760px) {
-  .citation-glance-grid {
-    grid-template-columns: minmax(0, 1fr);
+  .citation-glance .citation-top-source-list {
+    display: flex;
   }
 }
 

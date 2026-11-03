@@ -264,6 +264,9 @@ test("bars scale to the largest count shown, and N of M sits beside each bar", (
   const css = read("components/v3/live/ai-search/citation-glance.css");
   assert.match(css, /\.citation-glance-grid \{[^}]*grid-template-columns: minmax\(0, [\d.]+fr\) minmax\(0, 1fr\)/s);
   assert.match(css, /\.citation-figure-tiles \{[^}]*repeat\(3, minmax\(0, 1fr\)\)/s);
+  const narrow = css.match(/@container citation-glance \(max-width: 1000px\) \{([\s\S]*?)\n\}/)?.[1] ?? "";
+  assert.match(narrow, /\.citation-top-source-list \{[^}]*grid-auto-flow: column;[^}]*repeat\(2, minmax\(0, 1fr\)\)/s);
+  assert.match(chart, /gridTemplateRows: `repeat\(\$\{Math\.ceil\(ranked\.length \/ 2\)\}, auto\)`/);
   for (const path of [css, read("components/v3/live/ai-search/citation-top-sources.css")]) {
     for (const size of path.matchAll(/font-size:\s*([\d.]+)px/g)) assert.ok(Number(size[1]) >= 10, size[0]);
   }

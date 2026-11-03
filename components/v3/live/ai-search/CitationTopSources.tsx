@@ -134,7 +134,10 @@ export function CitationTopSources({
       ) : ranked.length === 0 ? (
         <p className="citation-card-note">None of the {read.answered} {scopeNoun} in this view cited a site.</p>
       ) : (
-        <ol className="citation-top-source-list">
+        <ol
+          className="citation-top-source-list"
+          style={{ gridTemplateRows: `repeat(${Math.ceil(ranked.length / 2)}, auto)` }}
+        >
           {ranked.map((source) => (
             <SourceRow
               key={source.domain}
