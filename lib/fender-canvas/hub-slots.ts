@@ -1,534 +1,215 @@
-import type { HubSlot, HubSlotChart, HubSlotFeed, HubSlotRole, NodeStatus, PriorityItem } from "@/lib/canvas-sdk/types";
-import { strongestCategory } from "@/lib/ai-search/canvas-surfaces";
-import { categoryBattles } from "@/lib/ai-search/competitors";
-import { pct, summarizeRun } from "@/lib/ai-search/summary";
+/**
+ * Hover slots for each main bubble (FDD X-22): largest performance gap, largest defensible
+ * opportunity, and highest-priority action. Each slot names the rule that picked it, its
+ * target (or No target set), what it is counted out of, when it was last checked, and the
+ * tab that holds the rows. Targets are only the FDD-approved bands.
+ */
+
+import type { HubEvidenceFeed, HubEvidenceSlot } from "@/lib/canvas-sdk/hub-slot-types";
+import type { HubSlotFeed, HubSlotRole, PriorityItem } from "@/lib/canvas-sdk/types";
 import type { AiSearchRead } from "@/lib/ai-search/types";
-import { categoryLabel } from "@/lib/ai-search/run-metrics";
-import { findabilityWidgetCopy, type FindabilityRead } from "@/lib/findability/copy";
-import { countFindability } from "@/lib/findability/outcomes";
-import { formatInt } from "@/lib/fender-canvas/format";
-import type { SuppressionDetail } from "@/lib/fender-canvas/portfolio-retail";
-import type { RetailReading } from "@/lib/fender-canvas/portfolio-retail";
+import type { FindabilityRead } from "@/lib/findability/copy";
+import { pickAction } from "@/lib/fender-canvas/hub-slot-actions";
+import { buildCheckBook, type CheckBook, type CheckId, type SlotReads } from "@/lib/fender-canvas/hub-slot-checks";
+import {
+  evidenceSlot,
+  HUB_SLOT_ROLE_LABEL,
+  NO_TARGET_SET,
+  notAvailableLine,
+} from "@/lib/fender-canvas/hub-slot-format";
+import {
+  consensusGap,
+  pickCategoryGap,
+  pickCategoryOpportunity,
+  pickGap,
+  pickOpportunity,
+  readScores,
+  type GapPool,
+} from "@/lib/fender-canvas/hub-slot-rules";
+import { buildLiveMetrics } from "@/lib/fender-canvas/metrics-from-live";
+import type { RetailReading, SuppressionDetail } from "@/lib/fender-canvas/portfolio-retail";
+import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
+import type { CanvasBundle } from "@/lib/fender-canvas/types";
 
 export type SuppressedSlotRead = RetailReading<SuppressionDetail | null> | "loading" | "error";
 
 export type HubSlotInput = {
-  suppressed: SuppressedSlotRead;
   ai: AiSearchRead;
   findability: FindabilityRead;
-  missingSpecPages: number | null;
+  commandItems: PriorityItem[];
   phaseOneValue: string;
   phaseOneDetail: string;
-  commandItems: PriorityItem[];
-};
-
-const ROLE_LABEL: Record<HubSlotRole, string> = {
-  gap: "Performance gap",
-  opportunity: "Opportunity",
-  action: "Next action",
+  bundle?: CanvasBundle | null;
+  /** Undefined is read as still loading. */
+  retail?: RetailCanvasRead;
+  /** Null keeps the placeholder partner list. */
+  authorizedPartners?: readonly string[] | null;
+  /** Accepted from older callers and not read. The slots use `retail` and `bundle`. */
+  suppressed?: SuppressedSlotRead;
+  missingSpecPages?: number | null;
 };
 
 export function hubSlotRoleLabel(role: HubSlotRole): string {
-  return ROLE_LABEL[role];
+  return HUB_SLOT_ROLE_LABEL[role];
 }
 
-function statusWord(tone: NodeStatus): string {
-  if (tone === "danger") return "Needs attention";
-  if (tone === "warning") return "Watch";
-  if (tone === "success") return "Ahead";
-  return "Recorded";
+const ALL_CHECKS: CheckId[] = [
+  "buy_box_withheld",
+  "controlled_buy_box",
+  "map_violation",
+  "splintered",
+  "specs_complete",
+  "required_specs",
+  "machine_readable",
+  "exact_pages",
+  "five_bullets",
+  "unbranded",
+  "branded",
+  "fact_checks",
+];
+
+const SHARE_RULE = "this one has the highest share of its own population falling short.";
+
+const POOLS = {
+  retail: {
+    ids: ["buy_box_withheld", "controlled_buy_box", "map_violation", "splintered", "specs_complete"],
+    rule: `Of the Catalog Health checks with a stored population, ${SHARE_RULE}`,
+  },
+  specs: {
+    ids: ["exact_pages", "machine_readable", "required_specs", "specs_complete", "five_bullets"],
+    rule: `Of the AI Readiness checks with a stored population, ${SHARE_RULE}`,
+    evidence: { specs_complete: { spokeId: "specs", subTab: "Amazon Specs" } },
+  },
+  aeo: {
+    ids: ["unbranded", "branded", "fact_checks"],
+    rule: `Of the AI Search Visibility checks in the published run, ${SHARE_RULE}`,
+  },
+  findings: {
+    ids: ["buy_box_withheld", "map_violation", "splintered", "exact_pages", "unbranded"],
+    rule: `Of the five current findings, ${SHARE_RULE}`,
+  },
+  all: {
+    ids: ALL_CHECKS,
+    rule: `Of every check behind the map's bubbles, ${SHARE_RULE}`,
+  },
+} satisfies Record<string, GapPool>;
+
+function times(book: CheckBook, ids: CheckId[]): Array<string | null | undefined> {
+  return ids.flatMap((id) => book.checks[id]?.checkedAt ?? []);
 }
 
-function share(part: number, total: number, partLabel: string, restLabel: string): HubSlotChart | null {
-  if (!Number.isInteger(part) || !Number.isInteger(total)) return null;
-  if (total <= 0 || part < 0 || part > total) return null;
-  return { part, total, partLabel, restLabel };
-}
-
-function slot(input: Omit<HubSlot, "statusWord">): HubSlot {
-  return { ...input, statusWord: statusWord(input.tone) };
-}
-
-function actionSlot(item: PriorityItem | undefined, figure: string, fallback: HubSlot): HubSlot {
-  if (!item) return fallback;
-  const tone: NodeStatus =
-    item.severity === "critical" ? "danger" : item.severity === "high" ? "warning" : "success";
-  return slot({
-    role: "action",
-    figure,
-    label: item.title,
-    detail: item.why,
-    note: "Opens the evidence for this action.",
-    tone,
-    chart: null,
-    spokeId: item.spokeId ?? fallback.spokeId,
-    subTab: item.subTab ?? fallback.subTab,
-  });
-}
-
-function firstFor(items: PriorityItem[], spokeId: string): PriorityItem | undefined {
-  return items.find((item) => item.spokeId === spokeId);
-}
-
-function retailPair(reading: SuppressedSlotRead): [HubSlot, HubSlot] {
-  const base = {
-    spokeId: "ecommerce",
-    subTab: "Suppressed Listings",
-  };
-  if (reading === "loading" || reading === "error") {
-    const failed = reading === "error";
-    const gap = slot({
-      role: "gap",
-      figure: failed ? "Unavailable" : "Loading",
-      label: "Suppressed listings",
-      detail: failed ? "The retail read did not succeed." : "The retail read is still loading.",
-      note: "",
-      tone: "warning",
-      chart: null,
-      ...base,
-    });
-    const opportunity = slot({
-      role: "opportunity",
-      figure: failed ? "Unavailable" : "Loading",
-      label: "Listings outside this gap",
-      detail: "The same retail read supplies this count.",
-      note: "",
-      tone: "neutral",
-      chart: null,
-      ...base,
-    });
-    return [gap, opportunity];
-  }
-
-  const count = reading.issueCount;
-  const population = reading.detail?.population ?? null;
-  const label = reading.headlineLabel ?? "Suppressed listings";
-  if (count == null) {
-    const gap = slot({
-      role: "gap",
-      figure: "Not stored",
-      label,
-      detail: reading.missingMessage ?? "This retail read has no suppressed-listing count.",
-      note: "Live retail read.",
-      tone: "warning",
-      chart: null,
-      ...base,
-    });
-    const opportunity = slot({
-      role: "opportunity",
-      figure: "Not stored",
-      label: "Listings outside this gap",
-      detail: "The monitored population is not in this read.",
-      note: "Live retail read.",
-      tone: "neutral",
-      chart: null,
-      ...base,
-    });
-    return [gap, opportunity];
-  }
-
-  const chart =
-    population != null && population >= count
-      ? share(count, population, "Suppressed", "Not suppressed")
-      : null;
-  const outside = chart ? population! - count : null;
-  const gap = slot({
-    role: "gap",
-    figure: formatInt(count),
-    label,
-    detail: chart
-      ? `${formatInt(count)} of ${formatInt(population!)} monitored listings`
-      : (reading.missingMessage ?? "The monitored population for this count is not in this read."),
-    note: reading.missingMessage ?? "Live retail read.",
-    tone: count > 0 ? "danger" : "success",
-    chart,
-    ...base,
-  });
-  const opportunity = slot({
+/** Action Items: the only stored dollar opportunity is the Phase 1 analyst estimate. */
+function estimateOpportunity(input: HubSlotInput): HubEvidenceSlot {
+  return evidenceSlot({
     role: "opportunity",
-    figure: outside == null ? "Not stored" : formatInt(outside),
-    label: "Listings outside this gap",
-    detail:
-      outside == null
-        ? "The monitored population is not in this read."
-        : `${formatInt(outside)} of ${formatInt(population!)} monitored listings`,
-    note: "Same monitored population as the gap.",
-    tone: outside == null ? "neutral" : outside > 0 ? "success" : "warning",
-    chart:
-      outside == null ? null : share(outside, population!, "Outside the gap", "Inside the gap"),
-    ...base,
-  });
-  return [gap, opportunity];
-}
-
-function rateSlot(
-  role: HubSlotRole,
-  label: string,
-  wins: number,
-  resolved: number,
-  note: string,
-  spokeId: string,
-  subTab: string,
-): HubSlot {
-  if (resolved <= 0) {
-    return slot({
-      role,
-      figure: "No resolved answers",
-      label,
-      detail: "This run has no resolved answers for this question.",
-      note,
-      tone: "neutral",
-      chart: null,
-      spokeId,
-      subTab,
-    });
-  }
-  const missed = resolved - wins;
-  const focus = role === "gap" ? missed : wins;
-  const tone: NodeStatus =
-    role === "gap"
-      ? missed / resolved >= 0.5
-        ? "danger"
-        : missed > 0
-          ? "warning"
-          : "success"
-      : wins / resolved >= 0.75
-        ? "success"
-        : "warning";
-  return slot({
-    role,
-    figure: pct(focus, resolved),
-    label,
-    detail:
-      role === "gap"
-        ? `Fender led ${wins} of ${resolved} (${pct(wins, resolved)}). This gap is the other ${missed}.`
-        : `Fender led ${wins} of ${resolved} resolved answers.`,
-    note,
-    tone,
-    chart: share(
-      focus,
-      resolved,
-      role === "gap" ? "Fender did not lead" : "Fender led",
-      role === "gap" ? "Fender led" : "Fender did not lead",
-    ),
-    spokeId,
-    subTab,
-  });
-}
-
-function aiPair(ai: AiSearchRead): [HubSlot, HubSlot] {
-  if (ai.phase !== "ready") {
-    const [figure, detail] =
-      ai.phase === "loading"
-        ? ["Loading", "The published AI run is still loading."]
-        : ai.phase === "error"
-          ? ["Unavailable", "The published AI run did not load."]
-          : ["No run", "No AI run has been published."];
-    const make = (role: HubSlotRole, label: string): HubSlot =>
-      slot({
-        role,
-        figure,
-        label,
-        detail,
-        note: "Published AI run.",
-        tone: "neutral",
-        chart: null,
-        spokeId: "aeo",
-        subTab: "Run Summary",
-      });
-    return [make("gap", "Unbranded answers Fender did not lead"), make("opportunity", "Branded consideration")];
-  }
-  const summary = summarizeRun(ai.snapshot);
-  const note = `Published run · ${summary.completedAt}`;
-  return [
-    rateSlot(
-      "gap",
-      "Unbranded answers Fender did not lead",
-      summary.roles.unbranded.fenderWins,
-      summary.roles.unbranded.resolved,
-      note,
-      "aeo",
-      "Run Summary",
-    ),
-    rateSlot(
-      "opportunity",
-      "Branded consideration",
-      summary.roles.branded.fenderWins,
-      summary.roles.branded.resolved,
-      note,
-      "aeo",
-      "Run Summary",
-    ),
-  ];
-}
-
-function findabilityPair(read: FindabilityRead): [HubSlot, HubSlot] {
-  const base = { spokeId: "specs", subTab: "Findability" };
-  if (read.phase !== "ready") {
-    const figure = read.phase === "loading" ? "Loading" : "Unavailable";
-    const detail =
-      read.phase === "loading" ? "Official-page outcomes are loading." : "The official-page read did not load.";
-    const make = (role: HubSlotRole, label: string): HubSlot =>
-      slot({
-        role,
-        figure,
-        label,
-        detail,
-        note: "Official-page read.",
-        tone: "neutral",
-        chart: null,
-        ...base,
-      });
-    return [make("gap", "Listings without an exact official page"), make("opportunity", "Exact official product pages")];
-  }
-  const counts = countFindability(read.rows);
-  if (counts.total === 0) {
-    const make = (role: HubSlotRole, label: string): HubSlot =>
-      slot({
-        role,
-        figure: "No listings",
-        label,
-        detail: "This official-page read has no listings.",
-        note: "Official-page read.",
-        tone: "neutral",
-        chart: null,
-        ...base,
-      });
-    return [make("gap", "Listings without an exact official page"), make("opportunity", "Exact official product pages")];
-  }
-  const exact = counts.exact_official_product;
-  const other = counts.total - exact;
-  return [
-    slot({
-      role: "gap",
-      figure: formatInt(other),
-      label: "Listings without an exact official page",
-      detail: `${formatInt(other)} of ${formatInt(counts.total)} listings in the official-page read`,
-      note: "A family page is not an exact product page.",
-      tone: other > 0 ? "warning" : "success",
-      chart: share(other, counts.total, "Not an exact page", "Exact official page"),
-      ...base,
-    }),
-    slot({
-      role: "opportunity",
-      figure: formatInt(exact),
-      label: "Exact official product pages",
-      detail: findabilityWidgetCopy(read).detail,
-      note: "Official-page read. A family page is not an exact page.",
-      tone: exact > 0 ? "success" : "warning",
-      chart: share(exact, counts.total, "Exact official page", "Other outcomes"),
-      ...base,
-    }),
-  ];
-}
-
-function competitorPair(ai: AiSearchRead): [HubSlot, HubSlot] {
-  const [pendingGap, pendingLead] = aiPair(ai);
-  if (ai.phase !== "ready") {
-    return [
-      { ...pendingGap, spokeId: "competitors", subTab: "Category Battlecards", label: "Category answers Fender did not lead" },
-      { ...pendingLead, spokeId: "competitors", subTab: "Category Battlecards", label: "Strongest category lead" },
-    ];
-  }
-  const summary = summarizeRun(ai.snapshot);
-  const note = `Published run · ${summary.completedAt}. Unbranded discovery only.`;
-  const battles = categoryBattles(ai.snapshot.calls);
-  const gapBattle = summary.largestGap;
-  const lead = strongestCategory(battles);
-  const gap = gapBattle
-    ? rateSlot(
-        "gap",
-        `${categoryLabel(gapBattle.category)} answers Fender did not lead`,
-        gapBattle.fenderWins,
-        gapBattle.resolved,
-        note,
-        "competitors",
-        "Category Battlecards",
-      )
-    : slot({
-        role: "gap",
-        figure: "No gap",
-        label: "Category answers Fender did not lead",
-        detail: "No category gap in this run.",
-        note,
-        tone: "neutral",
-        chart: null,
-        spokeId: "competitors",
-        subTab: "Category Battlecards",
-      });
-  const opportunity = lead
-    ? rateSlot(
-        "opportunity",
-        `${categoryLabel(lead.category)} lead`,
-        lead.fenderWins,
-        lead.resolved,
-        note,
-        "competitors",
-        "Category Battlecards",
-      )
-    : slot({
-        role: "opportunity",
-        figure: "No resolved answers",
-        label: "Strongest category lead",
-        detail: "No category in this run has a resolved answer.",
-        note,
-        tone: "neutral",
-        chart: null,
-        spokeId: "competitors",
-        subTab: "Category Battlecards",
-      });
-  return [gap, opportunity];
-}
-
-function specAction(input: HubSlotInput, fallback: HubSlot): HubSlot {
-  const item = firstFor(input.commandItems, "specs");
-  const figure = input.missingSpecPages == null ? "Open" : formatInt(input.missingSpecPages);
-  const fromQueue = actionSlot(item, figure, fallback);
-  return {
-    ...fromQueue,
-    label: input.missingSpecPages == null ? fromQueue.label : "fender.com pages with no spec block",
-    detail:
-      input.missingSpecPages == null
-        ? fromQueue.detail
-        : `${formatInt(input.missingSpecPages)} fender.com product pages carry no machine-readable specs.`,
-    note: "Opens Brand-Site Specs.",
-    chart: null,
-    subTab: "Brand-Site Specs",
-    spokeId: "specs",
-  };
-}
-
-/** The AI bubble's action stays on that bubble. A retail queue item never borrows the AI percentage. */
-function aiBubbleAction(input: HubSlotInput, aiGap: HubSlot): HubSlot {
-  const fallback = slot({
-    role: "action",
-    figure: "Open",
-    label: "Review the published run",
-    detail: aiGap.detail,
-    note: "Opens Run Summary.",
-    tone: aiGap.tone,
-    chart: null,
-    spokeId: "aeo",
-    subTab: "Run Summary",
-  });
-  const item = firstFor(input.commandItems, "aeo");
-  if (item) {
-    const confirmed = input.ai.phase === "ready" ? summarizeRun(input.ai.snapshot).drift.totalConfirmed : 0;
-    return actionSlot(item, confirmed > 0 ? formatInt(confirmed) : "Open", fallback);
-  }
-  const missed = aiGap.chart?.part;
-  if (missed == null) return fallback;
-  return slot({
-    role: "action",
-    figure: formatInt(missed),
-    label: "Unbranded answers to review",
-    detail: `${formatInt(missed)} unbranded answers are the gap above.`,
-    note: "Opens Run Summary.",
-    tone: aiGap.tone,
-    chart: null,
-    spokeId: "aeo",
-    subTab: "Run Summary",
-  });
-}
-
-function estimateOpportunity(input: HubSlotInput): HubSlot {
-  return slot({
-    role: "opportunity",
+    rule: "The Phase 1 lift is the only dollar opportunity stored for Action Items. It is an analyst estimate, and its inputs are not open yet.",
     figure: input.phaseOneValue,
-    label: "Recoverable Revenue",
-    detail: input.phaseOneDetail,
+    label: `Recoverable Revenue: ${input.phaseOneDetail}`,
     note: "Analyst estimate.",
-    tone: "success",
+    tone: "neutral",
+    statusWord: "Analyst estimate",
     chart: null,
+    target: { text: NO_TARGET_SET },
+    countedOutOf: notAvailableLine("", "This analyst estimate does not open to its inputs and formula yet."),
+    lastChecked: notAvailableLine("Last checked", "This analyst estimate has no stored date."),
     spokeId: "suggestions",
     subTab: "Revenue Estimates",
   });
 }
 
-function exampleGap(): HubSlot {
-  return slot({
-    role: "gap",
-    figure: "Example",
-    label: "No live gap on this bubble",
-    detail: "Strategy Roadmap is a visual example until a live plan is stored.",
-    note: "Not a live reading.",
-    tone: "neutral",
-    chart: null,
-    spokeId: "roadmap",
-    subTab: "30-60-90 Day Milestones",
-  });
-}
-
-function feed(bubbleId: string, title: string, slots: [HubSlot, HubSlot, HubSlot]): HubSlotFeed {
+function feed(bubbleId: string, title: string, slots: [HubEvidenceSlot, HubEvidenceSlot, HubEvidenceSlot]): HubEvidenceFeed {
   return { bubbleId, title, slots };
 }
 
-/** Three slots for each main bubble. Every chart part is a stored count, and the two parts add up to the total. */
+/** Three evidence slots for each main bubble, keyed by bubble id. */
 export function buildHubSlots(input: HubSlotInput): Record<string, HubSlotFeed> {
-  const [retailGap, retailOutside] = retailPair(input.suppressed);
-  const [aiGap, aiLead] = aiPair(input.ai);
-  const [pagesGap, exactPages] = findabilityPair(input.findability);
-  const [categoryGap, categoryLead] = competitorPair(input.ai);
-  const openAction = slot({
-    role: "action",
-    figure: "Open",
-    label: "No priority is stored for this bubble",
-    detail: "Action Items still lists the current queue.",
-    note: "Opens Action Items.",
-    tone: "neutral",
-    chart: null,
-    spokeId: "suggestions",
-    subTab: "Urgent Interventions",
+  const reads: SlotReads = {
+    bundle: input.bundle,
+    retail: input.retail,
+    ai: input.ai,
+    findability: input.findability,
+    authorizedPartners: input.authorizedPartners,
+  };
+  const book = buildCheckBook(reads);
+  const scores = readScores(reads);
+  const items = input.commandItems;
+  const performance = { spokeId: "hub", subTab: "Performance" };
+  const consensusOpportunity = pickOpportunity(book, scores, {
+    unit: "AI Consensus",
+    waitFor: ALL_CHECKS,
+    evidence: performance,
+    rule: "Of every check in AI Consensus, closing this one would add the most AI Consensus points, by its approved weight.",
   });
-  const retailAction = actionSlot(firstFor(input.commandItems, "ecommerce") ?? input.commandItems[0], retailGap.figure, openAction);
-  const aiAction = aiBubbleAction(input, aiGap);
-  const radarAction = actionSlot(firstFor(input.commandItems, "competitors"), "Open", {
-    ...openAction,
-    spokeId: "competitors",
-    subTab: "Category Battlecards",
-    label: "Open Category Battlecards",
-    detail: "Unbranded discovery only.",
-  });
-  const queueAction = actionSlot(input.commandItems[0], "Open", openAction);
-  const secondAction = actionSlot(input.commandItems[1], "Next", queueAction);
-  const roadmapAction = actionSlot(undefined, "Open", {
-    ...openAction,
-    spokeId: "roadmap",
-    subTab: "30-60-90 Day Milestones",
-    label: "30-60-90 Day Milestones",
-    detail: "The phases are a plan, not a measured result.",
-    note: "Not a live reading.",
-  });
+  const firstItem = (bubble: string) => pickAction(items, book, reads, { bubble, fallbackTimes: times(book, ALL_CHECKS) });
+  const bubbleItem = (bubble: string, spokeId: string, ids: CheckId[]) =>
+    pickAction(items, book, reads, { bubble, spokeId, fallbackTimes: times(book, ids) });
 
   return {
-    hub: feed("hub", "Summary", [retailGap, aiLead, queueAction]),
-    "spoke-retail": feed("spoke-retail", "Catalog Health", [retailGap, retailOutside, retailAction]),
-    "spoke-aeo": feed("spoke-aeo", "AI Search Visibility", [aiGap, aiLead, aiAction]),
-    "spoke-specs": feed("spoke-specs", "AI Readiness", [pagesGap, exactPages, specAction(input, openAction)]),
-    "spoke-competitors": feed("spoke-competitors", "Competitive Radar", [categoryGap, categoryLead, radarAction]),
+    hub: feed("hub", "Summary", [
+      pickGap(book, POOLS.all, "Summary", { spokeId: "hub", subTab: "Briefing" }),
+      consensusOpportunity,
+      firstItem("Summary"),
+    ]),
+    "spoke-retail": feed("spoke-retail", "Catalog Health", [
+      pickGap(book, POOLS.retail, "Catalog Health", { spokeId: "ecommerce", subTab: "Retail Overview" }),
+      pickOpportunity(book, scores, {
+        unit: "AI Commerce",
+        waitFor: POOLS.retail.ids,
+        evidence: { spokeId: "ecommerce", subTab: "Retail Overview" },
+      }),
+      bubbleItem("Catalog Health", "ecommerce", POOLS.retail.ids),
+    ]),
+    "spoke-aeo": feed("spoke-aeo", "AI Search Visibility", [
+      pickGap(book, POOLS.aeo, "AI Search Visibility", { spokeId: "aeo", subTab: "Run Summary" }),
+      pickOpportunity(book, scores, {
+        unit: "AI Foundation",
+        only: ["unbranded_named_most", "fact_check_match"],
+        waitFor: ["unbranded", "fact_checks"],
+        evidence: performance,
+      }),
+      bubbleItem("AI Search Visibility", "aeo", POOLS.aeo.ids),
+    ]),
+    "spoke-specs": feed("spoke-specs", "AI Readiness", [
+      pickGap(book, POOLS.specs, "AI Readiness", { spokeId: "specs", subTab: "Findability" }),
+      pickOpportunity(book, scores, {
+        unit: "AI Foundation",
+        only: ["exact_official_pages", "machine_readable_specs", "required_marketplace_specs"],
+        waitFor: ["exact_pages", "machine_readable", "required_specs"],
+        evidence: performance,
+      }),
+      bubbleItem("AI Readiness", "specs", POOLS.specs.ids),
+    ]),
+    "spoke-competitors": feed("spoke-competitors", "Competitive Radar", [
+      pickCategoryGap(book),
+      pickCategoryOpportunity(book, scores),
+      bubbleItem("Competitive Radar", "competitors", ["unbranded"]),
+    ]),
     "spoke-fixes": feed("spoke-fixes", "Action Items", [
-      {
-        ...queueAction,
-        role: "gap",
-        note: "Dollar figures are analyst estimates.",
-      },
+      pickGap(book, POOLS.findings, "Action Items", { spokeId: "suggestions", subTab: "Current findings" }),
       estimateOpportunity(input),
-      secondAction,
+      firstItem("Action Items"),
     ]),
     "spoke-roadmap": feed("spoke-roadmap", "Strategy Roadmap", [
-      exampleGap(),
-      slot({
-        role: "opportunity",
-        figure: "3 phases",
-        label: "90-day plan",
-        detail: "MAP, catalog nesting, and estimated lift.",
-        note: "The phases are a plan, not a measured result.",
-        tone: "neutral",
-        chart: null,
-        spokeId: "roadmap",
-        subTab: "30-60-90 Day Milestones",
-      }),
-      { ...roadmapAction, role: "action" },
+      consensusGap(book, scores),
+      consensusOpportunity,
+      firstItem("Strategy Roadmap"),
     ]),
   };
+}
+
+/** Live slots from the same reads the canvas shows. The Phase 1 figure comes from the live metrics. */
+export function buildLiveHubSlots(args: {
+  bundle: CanvasBundle;
+  retail: RetailCanvasRead;
+  ai: AiSearchRead;
+  findability: FindabilityRead;
+  commandItems: PriorityItem[];
+  authorizedPartners: readonly string[] | null;
+}): Record<string, HubSlotFeed> {
+  const phaseOne = buildLiveMetrics(args.bundle, args.retail, args.findability).phaseOneLift;
+  return buildHubSlots({
+    ...args,
+    phaseOneValue: phaseOne.value,
+    phaseOneDetail: phaseOne.detail ?? "Phase 1 annual estimate",
+  });
 }

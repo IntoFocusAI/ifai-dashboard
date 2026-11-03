@@ -1,13 +1,28 @@
 // node --experimental-strip-types --import ./scripts/register-alias.mjs --import ./scripts/register-ts-extensions.mjs --test scripts/hub-slots-and-pies.test.ts
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { test } from "node:test";
 import { citationEvidence } from "../lib/ai-search/citations.ts";
 import { citationPies } from "../lib/ai-search/citation-pies.ts";
 import type { AiCallRow, AiCitationRow, AiSearchRead } from "../lib/ai-search/types.ts";
-import { buildHubSlots } from "../lib/fender-canvas/hub-slots.ts";
-import type { SuppressionDetail } from "../lib/fender-canvas/portfolio-retail.ts";
-import type { RetailReading } from "../lib/fender-canvas/portfolio-retail.ts";
+import { isHubEvidenceSlot, type HubEvidenceSlot } from "../lib/canvas-sdk/hub-slot-types.ts";
+import type { HubSlotFeed, PriorityItem } from "../lib/canvas-sdk/types.ts";
+import { buildCheckBook } from "../lib/fender-canvas/hub-slot-checks.ts";
+import { gapSlot } from "../lib/fender-canvas/hub-slot-rules.ts";
+import { buildHubSlots, type HubSlotInput } from "../lib/fender-canvas/hub-slots.ts";
+import type { FeaturedOfferCounts } from "../lib/fender-canvas/featured-offer.ts";
+import {
+  selectRetailHeadline,
+  type PortfolioRetailFindings,
+  type PortfolioRetailSnapshot,
+  type UnnestedBundleOpportunity,
+} from "../lib/fender-canvas/portfolio-retail.ts";
+import type { CanvasBundle } from "../lib/fender-canvas/types.ts";
 import type { FindabilityRow } from "../lib/findability/outcomes.ts";
+
+const root = new URL("..", import.meta.url).pathname;
+const read = (path: string) => readFileSync(join(root, path), "utf8");
 
 function call(patch: Partial<AiCallRow>): AiCallRow {
   return {
@@ -35,36 +50,7 @@ function call(patch: Partial<AiCallRow>): AiCallRow {
   };
 }
 
-function suppressed(count: number, population: number): RetailReading<SuppressionDetail | null> {
-  return {
-    status: count > 0 ? "available_with_issues" : "available_with_zero",
-    issueCount: count,
-    missingMessage: null,
-    headlineLabel: "Suppressed Listings",
-    headlineNoun: "listing",
-    detail: {
-      counts: {
-        population,
-        current: population,
-        classified: population,
-        confirmedHighPrice: count,
-        benchmarkPresent: population,
-      },
-      suppressed: count,
-      audited: population,
-      population,
-      withThreshold: population,
-    } as SuppressionDetail,
-  };
-}
-
-function readyAi(): AiSearchRead {
-  const calls = [
-    call({ id: "u1", sim_id: 1, prompt: "Best guitar under $300", outcome: "fender_win" }),
-    call({ id: "u2", sim_id: 2, prompt: "Best bass under $400", outcome: "competitor_win", primary_brand: "Yamaha" }),
-    call({ id: "b1", sim_id: 3, prompt: "Is the Fender Stratocaster a good first guitar", outcome: "fender_win" }),
-    call({ id: "b2", sim_id: 4, prompt: "Is a Squier Affinity a good bass", outcome: "fender_win" }),
-  ];
+function readyAi(calls?: AiCallRow[]): AiSearchRead {
   return {
     phase: "ready",
     snapshot: {
@@ -82,87 +68,436 @@ function readyAi(): AiSearchRead {
         published_at: "2026-10-18T12:06:00.000Z",
         missing_calls: 0,
       },
-      calls,
+      calls: calls ?? [
+        call({ id: "u1", sim_id: 1, prompt: "Best guitar under $300", outcome: "fender_win" }),
+        call({ id: "u2", sim_id: 2, prompt: "Best bass under $400", outcome: "competitor_win", primary_brand: "Yamaha" }),
+        call({ id: "b1", sim_id: 3, prompt: "Is the Fender Stratocaster a good first guitar", outcome: "fender_win" }),
+        call({ id: "b2", sim_id: 4, prompt: "Is a Squier Affinity a good bass", outcome: "fender_win" }),
+      ],
       probes: [],
       citations: [],
     },
   };
 }
 
+/** 12 resolved electric answers (4 led by Gibson) and 3 bass answers (2 led by Yamaha). */
+function categoryCalls(): AiCallRow[] {
+  const electric = Array.from({ length: 12 }, (_, index) =>
+    call({
+      id: `e${index}`,
+      sim_id: index,
+      category: "electric",
+      prompt: "Best electric guitar under $800",
+      outcome: index < 4 ? "competitor_win" : "fender_win",
+      primary_brand: index < 4 ? "Gibson" : "Fender/Squier",
+    }),
+  );
+  const bass = Array.from({ length: 3 }, (_, index) =>
+    call({
+      id: `b${index}`,
+      sim_id: 100 + index,
+      category: "bass",
+      prompt: "Best bass under $500",
+      outcome: index < 2 ? "competitor_win" : "fender_win",
+      primary_brand: index < 2 ? "Yamaha" : "Fender/Squier",
+    }),
+  );
+  return [...electric, ...bass];
+}
+
+function gaps(required: number, other: number) {
+  return [
+    ...Array.from({ length: required }, (_, index) => ({ asin: `R${index}`, modelOrTitle: null, missingFields: ["color"] })),
+    ...Array.from({ length: other }, (_, index) => ({ asin: `O${index}`, modelOrTitle: null, missingFields: ["brand_name"] })),
+  ];
+}
+
+/** Withheld 10 of 100, MAP 30 of 60, splintered 2 of 20, another seller 5 of 50, specs missing 3 of 100. */
+function snapshot(patch: Partial<PortfolioRetailFindings> = {}): PortfolioRetailSnapshot {
+  const findings: PortfolioRetailFindings = {
+    suppressedListings: {
+      status: "available_with_issues",
+      issueCount: 10,
+      missingMessage: null,
+      headlineLabel: "Buy Box withheld",
+      headlineNoun: "listing",
+      detail: {
+        counts: {
+          population: 120,
+          current: 100,
+          withheld: 10,
+          confirmedHighPrice: 0,
+          newestCheckedAt: "2026-11-01T09:00:00.000Z",
+          oldestCheckedAt: "2026-10-28T09:00:00.000Z",
+        } as FeaturedOfferCounts,
+        suppressed: 0,
+        audited: 100,
+        population: 120,
+        withThreshold: 0,
+      },
+    },
+    mapLeakage: {
+      status: "available_with_issues",
+      issueCount: 30,
+      missingMessage: null,
+      detail: { violations: 30, decided: 60, undecided: 0, population: 80, averageLeakage: 12 },
+    },
+    unnestedBundles: {
+      status: "available_with_issues",
+      issueCount: 2,
+      missingMessage: null,
+      detail: { opportunities: [{}, {}] as UnnestedBundleOpportunity[], bundlesInRead: 20, catalogBundles: 20 },
+    },
+    amazonSpecGaps: {
+      status: "available_with_issues",
+      issueCount: 3,
+      missingMessage: null,
+      detail: { gaps: gaps(1, 2), checked: 100, unchecked: 0 },
+    },
+    controlledBuyBox: { controlled: 45, known: 50, population: 120 },
+    buyBoxSellers: {
+      amazonRetail: 40,
+      sellers: [
+        { name: "Austin Bazaar", listings: 5 },
+        { name: "Other Shop", listings: 5 },
+      ],
+      known: 50,
+      population: 120,
+    },
+    ...patch,
+  };
+  return { ...findings, headline: selectRetailHeadline(findings) };
+}
+
+function bundle(): CanvasBundle {
+  const pages = Array.from({ length: 10 }, (_, index) => ({
+    url: `https://www.fender.com/p${index}`,
+    model: `Page ${index}`,
+    asins: [],
+    missingFields: [],
+    hasSpecBlock: index >= 4,
+    basicsPresent: 0,
+    missingBasics: [],
+    checkedAt: index === 0 ? "2026-10-31T10:00:00.000Z" : "2026-10-29T10:00:00.000Z",
+  }));
+  return {
+    fresh: [
+      { job_key: "map_leakage_walmart", last_run_at: "2026-11-02T08:00:00.000Z" },
+      { job_key: "map_parity_musiciansfriend", last_run_at: "2026-10-30T08:00:00.000Z" },
+      { job_key: "catalog_harvester", last_run_at: "2026-11-01T08:00:00.000Z" },
+      { job_key: "buybox_seller_harvester", last_run_at: "2026-11-01T08:00:00.000Z" },
+      { job_key: "spec_readiness", last_run_at: "2026-10-27T08:00:00.000Z" },
+    ],
+    specPages: { pages, withSpecBlock: 6, withAllBasics: 0, listings: 10 },
+    listingContent: {
+      rows: [{ checked_at: "2026-10-26T08:00:00.000Z" }],
+      bulletsRead: 10,
+      fullBullets: 9,
+    },
+  } as unknown as CanvasBundle;
+}
+
 const findabilityRows = [
-  { latest_state: "exact_official_product" },
-  { latest_state: "exact_official_product" },
-  { latest_state: "official_family_page" },
-  { latest_state: "completed_not_found" },
-  { latest_state: "ambiguous_candidate" },
-  { latest_state: "not_checked" },
+  { latest_state: "exact_official_product", latest_attempt_at: "2026-10-25T08:00:00.000Z" },
+  { latest_state: "exact_official_product", latest_attempt_at: "2026-10-25T08:00:00.000Z" },
+  { latest_state: "exact_official_product", latest_attempt_at: "2026-10-25T08:00:00.000Z" },
+  { latest_state: "official_family_page", latest_attempt_at: "2026-10-24T08:00:00.000Z" },
 ] as FindabilityRow[];
 
-test("retail slots use one population and name a danger in words", () => {
-  const feeds = buildHubSlots({
-    suppressed: suppressed(39, 993),
-    ai: { phase: "loading" },
-    findability: { phase: "loading" },
-    missingSpecPages: 12,
+const ITEMS: PriorityItem[] = [
+  {
+    id: "buybox-suppression",
+    title: "Buy Box withheld: 10 listings",
+    why: "Buy Box withheld is the current retail headline.",
+    severity: "critical",
+    spokeId: "ecommerce",
+    subTab: "Retail Overview",
+  },
+  {
+    id: "schema-coverage",
+    title: "fender.com pages are missing machine-readable specs",
+    why: "4 of 10 fender.com product pages have no spec block.",
+    severity: "high",
+    spokeId: "specs",
+    subTab: "Brand-Site Specs",
+  },
+  {
+    id: "map-leakage",
+    title: "30 listings are below MAP",
+    why: "Open the MAP tab.",
+    severity: "high",
+    spokeId: "ecommerce",
+    subTab: "MAP",
+  },
+  {
+    id: "aplus-tables",
+    title: "Amazon listings are missing bullet copy",
+    why: "1 of 10 live Amazon listings fill fewer than five bullets.",
+    severity: "moderate",
+    spokeId: "specs",
+    subTab: "A+",
+  },
+];
+
+function input(patch: Partial<HubSlotInput> = {}): HubSlotInput {
+  return {
+    bundle: bundle(),
+    retail: { phase: "ready", snapshot: snapshot() },
+    ai: readyAi(categoryCalls()),
+    findability: { phase: "ready", rows: findabilityRows, dealerBundleLoaded: true },
     phaseOneValue: "+$680K",
     phaseOneDetail: "Phase 1 annual estimate",
-    commandItems: [
-      {
-        id: "buybox",
-        title: "Suppressed listings need a price match",
-        why: "Open the suppressed listings.",
-        severity: "critical",
-        spokeId: "ecommerce",
-        subTab: "Suppressed Listings",
-      },
-    ],
+    commandItems: ITEMS,
+    authorizedPartners: null,
+    ...patch,
+  };
+}
+
+function slots(feed: HubSlotFeed): HubEvidenceSlot[] {
+  return feed.slots.map((slot) => {
+    assert.ok(isHubEvidenceSlot(slot), `${feed.title} ${slot.role} carries its evidence`);
+    return slot;
   });
-  const [gap, opportunity, action] = feeds["spoke-retail"].slots;
-  assert.equal(gap.figure, "39");
-  assert.equal(gap.statusWord, "Needs attention");
-  assert.equal(gap.chart?.part, 39);
-  assert.equal(gap.chart?.total, 993);
-  assert.equal(opportunity.figure, "954");
-  assert.equal(opportunity.chart?.part, 954);
-  assert.equal((gap.chart?.part ?? 0) + (opportunity.chart?.part ?? 0), 993);
-  assert.equal(action.statusWord, "Needs attention");
-  assert.match(action.detail, /suppressed listings/i);
-  const aiAction = feeds["spoke-aeo"].slots[2];
-  assert.equal(aiAction.spokeId, "aeo");
-  assert.equal(aiAction.figure, "Open");
-  assert.doesNotMatch(aiAction.label, /Suppressed|Buy Box|price match/);
-  assert.equal(feeds["spoke-fixes"].slots[1].chart, null);
-  assert.match(feeds["spoke-fixes"].slots[1].note, /Analyst estimate/);
-  assert.equal(feeds["spoke-roadmap"].slots[0].figure, "Example");
-  assert.equal(feeds.hub.title, "Summary");
+}
+
+function texts(slot: HubEvidenceSlot): string[] {
+  return [
+    slot.rule,
+    slot.figure,
+    slot.label,
+    slot.note,
+    slot.statusWord,
+    slot.target.text,
+    slot.countedOutOf.text,
+    slot.lastChecked.text,
+    slot.evidenceLabel,
+    slot.countedOutOf.definition ?? "",
+    slot.lastChecked.definition ?? "",
+    slot.figureDefinition ?? "",
+    slot.noteDefinition ?? "",
+  ];
+}
+
+const MAIN_BUBBLES = [
+  "hub",
+  "spoke-retail",
+  "spoke-aeo",
+  "spoke-specs",
+  "spoke-competitors",
+  "spoke-fixes",
+  "spoke-roadmap",
+];
+
+test("every slot names its rule, target, N of M, last check, and the tab that opens it", () => {
+  for (const reading of [input(), input({ retail: { phase: "loading" } }), input({ retail: { phase: "error" } })]) {
+    const feeds = buildHubSlots(reading);
+    for (const id of MAIN_BUBBLES) {
+      const feed = feeds[id];
+      assert.ok(feed, id);
+      assert.deepEqual(
+        feed.slots.map((slot) => slot.role),
+        ["gap", "opportunity", "action"],
+      );
+      for (const slot of slots(feed)) {
+        assert.match(slot.rule, /^[A-Z].+\.$/, `${id} ${slot.role} rule is one plain sentence`);
+        assert.ok(slot.figure.trim(), `${id} ${slot.role} figure`);
+        assert.ok(slot.statusWord.trim(), `${id} ${slot.role} has a status word, so color is never alone`);
+        assert.match(slot.target.text, /^(Target: .+ \(now .+\)|No target set|Loading)$/);
+        assert.ok(slot.countedOutOf.text.trim(), `${id} ${slot.role} N of M`);
+        assert.match(slot.lastChecked.text, /^(Last checked .+|Loading)$/);
+        assert.ok(slot.spokeId, `${id} ${slot.role} opens a bubble`);
+        assert.ok(slot.subTab, `${id} ${slot.role} opens a tab`);
+        assert.equal(slot.evidenceLabel, `Open ${slot.subTab}`);
+        if (slot.countedOutOf.text.includes("Not available*")) assert.ok(slot.countedOutOf.definition);
+        if (slot.lastChecked.text.includes("Not available*")) assert.ok(slot.lastChecked.definition);
+        for (const text of texts(slot)) {
+          assert.doesNotMatch(text, /\u2014/, `${id} ${slot.role} has no em dash`);
+          assert.doesNotMatch(text, /retainer|fee\b|monthly charge|IntoFocus price/i);
+        }
+      }
+    }
+  }
 });
 
-test("findability and AI slots keep their denominators", () => {
-  const feeds = buildHubSlots({
-    suppressed: "loading",
-    ai: readyAi(),
-    findability: { phase: "ready", rows: findabilityRows, dealerBundleLoaded: true },
-    missingSpecPages: 4,
-    phaseOneValue: "+$680K",
-    phaseOneDetail: "Phase 1 annual estimate",
-    commandItems: [],
-  });
-  const [pagesGap, exact] = feeds["spoke-specs"].slots;
-  assert.equal(exact.figure, "2");
-  assert.equal(exact.chart?.total, 6);
-  assert.equal(pagesGap.chart?.part, 4);
-  assert.match(exact.detail, /1 family page/);
-  const [aiGap, branded] = feeds["spoke-aeo"].slots;
-  assert.equal(aiGap.chart?.total, 2);
-  assert.equal(aiGap.chart?.part, 1);
-  assert.match(aiGap.detail, /1 of 2/);
-  assert.equal(branded.chart?.part, 2);
-  assert.equal(branded.chart?.total, 2);
-  assert.match(branded.note, /Published run/);
-  const aiAction = feeds["spoke-aeo"].slots[2];
-  assert.equal(aiAction.figure, "1");
-  assert.equal(aiAction.label, "Unbranded answers to review");
-  assert.equal(aiAction.spokeId, "aeo");
+test("the gap is the check with the highest share falling short, with no invented target", () => {
+  const feeds = buildHubSlots(input());
+  const [gap] = slots(feeds["spoke-retail"]);
+  assert.equal(gap.label, "Listings priced below MAP");
+  assert.equal(gap.figure, "50.0%");
+  assert.equal(gap.countedOutOf.text, "30 of 60 listings with a stored MAP comparison");
+  assert.equal(gap.target.text, "No target set");
+  assert.equal(gap.tone, "warning");
+  assert.equal(gap.statusWord, "Open gap");
+  assert.deepEqual([gap.chart?.part, gap.chart?.total], [30, 60]);
+  assert.equal(gap.lastChecked.text, "Last checked Nov 2, 2026");
+  assert.deepEqual([gap.spokeId, gap.subTab], ["ecommerce", "MAP"]);
+
+  const [specsGap] = slots(feeds["spoke-specs"]);
+  assert.equal(specsGap.label, "Found fender.com pages missing machine-readable specs");
+  assert.equal(specsGap.countedOutOf.text, "4 of 10 found fender.com pages");
+  assert.equal(specsGap.lastChecked.text, "Last checked Oct 31, 2026");
+  assert.equal(specsGap.subTab, "Brand-Site Specs");
+
+  const [aiGap] = slots(feeds["spoke-aeo"]);
+  assert.equal(aiGap.label, "Unbranded answers Fender/Squier did not lead");
+  assert.equal(aiGap.countedOutOf.text, "6 of 15 resolved unbranded answers");
+  assert.equal(aiGap.target.text, "No target set");
+  assert.equal(aiGap.lastChecked.text, "Last checked Oct 18, 2026");
+
+  const [summaryGap] = slots(feeds.hub);
+  assert.equal(summaryGap.label, "Listings priced below MAP");
+  assert.match(summaryGap.rule, /^Of every check behind the map's bubbles/);
+
+  const [findingsGap] = slots(feeds["spoke-fixes"]);
+  assert.match(findingsGap.rule, /^Of the five current findings/);
+  assert.equal(findingsGap.label, "Listings priced below MAP");
+});
+
+test("specs complete uses its approved band and stays on the AI Readiness bubble", () => {
+  const retail = { phase: "ready" as const, snapshot: snapshot({
+    amazonSpecGaps: {
+      status: "available_with_issues",
+      issueCount: 10,
+      missingMessage: null,
+      detail: { gaps: gaps(5, 5), checked: 100, unchecked: 0 },
+    },
+  }) };
+  const book = buildCheckBook({ ...input(), retail });
+  const check = book.checks.specs_complete;
+  assert.ok(check);
+  assert.deepEqual(check.target, { text: "Specs complete at 98% and up", now: "90.0%", tone: "danger" });
+  const slot = gapSlot(check, "Rule.");
+  assert.equal(slot.statusWord, "Needs attention");
+  assert.equal(slot.target.text, "Target: Specs complete at 98% and up (now 90.0%)");
+
+  const allClear = bundle();
+  allClear.specPages = { ...allClear.specPages!, withSpecBlock: 10, pages: allClear.specPages!.pages.map((page) => ({ ...page, hasSpecBlock: true })) };
+  allClear.listingContent = { ...allClear.listingContent!, fullBullets: 10 };
+  const exactRows = findabilityRows.map((row) => ({ ...row, latest_state: "exact_official_product" }));
+  const [specsGap] = slots(
+    buildHubSlots(
+      input({ bundle: allClear, retail, findability: { phase: "ready", rows: exactRows, dealerBundleLoaded: true } }),
+    )["spoke-specs"],
+  );
+  assert.equal(specsGap.label, "Listings missing an Amazon spec field");
+  assert.equal(specsGap.countedOutOf.text, "10 of 100 checked listings");
+  assert.deepEqual([specsGap.spokeId, specsGap.subTab], ["specs", "Amazon Specs"]);
+  assert.equal(specsGap.tone, "danger");
+  assert.equal(specsGap.statusWord, "Needs attention");
+});
+
+test("the opportunity adds the most score points by the approved weights", () => {
+  const feeds = buildHubSlots(input());
+  const [, opportunity] = slots(feeds["spoke-retail"]);
+  // Active products available has no input, so 35 + 25 + 15 + 10 rescale to 100.
+  const mapWeight = (100 * 10) / 85;
+  const commerce = (90 * 35 + 90 * 25 + 90 * 15 + 50 * 10) / 85;
+  assert.equal(opportunity.figure, `+${((mapWeight * 50) / 100).toFixed(1)}`);
+  assert.equal(opportunity.label, "AI Commerce points if no listing was below MAP");
+  assert.equal(opportunity.countedOutOf.text, "30 of 60 listings with a stored MAP comparison fall short");
+  assert.equal(opportunity.target.text, `Target: AI Commerce above 70 (now ${commerce.toFixed(1)})`);
+  assert.equal(opportunity.note, "This check carries 11.8% of AI Commerce.");
+  assert.deepEqual([opportunity.spokeId, opportunity.subTab], ["ecommerce", "Retail Overview"]);
+
+  const [, radarOpportunity] = slots(feeds["spoke-competitors"]);
+  assert.match(radarOpportunity.label, /^AI Foundation points if Fender\/Squier led the Electric/);
+  assert.equal(radarOpportunity.countedOutOf.text, "4 of 12 resolved unbranded electric answers");
+  assert.equal(radarOpportunity.subTab, "Competitor Wins");
+
+  const [, aiOpportunity] = slots(feeds["spoke-aeo"]);
+  assert.match(aiOpportunity.label, /^AI Foundation points if Fender\/Squier led every unbranded answer$/);
+  assert.equal(aiOpportunity.countedOutOf.text, "6 of 15 resolved unbranded answers fall short");
+  assert.deepEqual([aiOpportunity.spokeId, aiOpportunity.subTab], ["hub", "Performance"]);
+});
+
+test("the action is the first Priorities item that opens the bubble, with its stored count", () => {
+  const feeds = buildHubSlots(input());
+  const [, , retailAction] = slots(feeds["spoke-retail"]);
+  assert.equal(retailAction.label, "Buy Box withheld: 10 listings");
+  assert.equal(retailAction.figure, "10");
+  assert.equal(retailAction.countedOutOf.text, "10 of 100 current Buy Box readings");
+  assert.equal(retailAction.statusWord, "Critical");
+  assert.equal(retailAction.tone, "danger");
+  assert.equal(retailAction.lastChecked.text, "Last checked Nov 1, 2026");
+  assert.deepEqual([retailAction.spokeId, retailAction.subTab], ["ecommerce", "Retail Overview"]);
+
+  const [, , specsAction] = slots(feeds["spoke-specs"]);
+  assert.equal(specsAction.label, "fender.com pages are missing machine-readable specs");
+  assert.equal(specsAction.countedOutOf.text, "4 of 10 found fender.com pages");
+  assert.equal(specsAction.statusWord, "High");
+
+  const onlyBullets = buildHubSlots(input({ commandItems: [ITEMS[3]] }));
+  const [, , bulletsAction] = slots(onlyBullets["spoke-specs"]);
+  assert.equal(bulletsAction.subTab, "Amazon A+ Matrix");
+  assert.equal(bulletsAction.countedOutOf.text, "1 of 10 live Amazon listings read");
+  assert.equal(bulletsAction.statusWord, "Moderate");
+
+  const [, , aiAction] = slots(feeds["spoke-aeo"]);
+  assert.equal(aiAction.figure, "None");
+  assert.match(aiAction.rule, /^No Priorities item opens AI Search Visibility today/);
+  assert.equal(aiAction.countedOutOf.text, "0 of 4 open priorities");
+
+  const [, , summaryAction] = slots(feeds.hub);
+  assert.equal(summaryAction.label, ITEMS[0].title);
+  assert.match(summaryAction.rule, /^This is the first item in Priorities\. Priorities lists critical items first/);
+});
+
+test("the Phase 1 dollar figure stays an analyst estimate with no invented inputs", () => {
+  const [, estimate] = slots(buildHubSlots(input())["spoke-fixes"]);
+  assert.equal(estimate.figure, "+$680K");
+  assert.equal(estimate.statusWord, "Analyst estimate");
+  assert.match(estimate.note, /Analyst estimate/);
+  assert.equal(estimate.chart, null);
+  assert.equal(estimate.target.text, "No target set");
+  assert.equal(estimate.countedOutOf.text, "Not available*");
+  assert.ok(estimate.countedOutOf.definition);
+  assert.equal(estimate.lastChecked.text, "Last checked Not available*");
+  assert.deepEqual([estimate.spokeId, estimate.subTab], ["suggestions", "Revenue Estimates"]);
+});
+
+test("missing reads are left out, never counted as zero", () => {
+  const loading = buildHubSlots(input({ retail: { phase: "loading" } }));
+  const [retailGap, retailOpportunity] = slots(loading["spoke-retail"]);
+  assert.equal(retailGap.figure, "Loading");
+  assert.equal(retailOpportunity.figure, "Loading");
+
+  const failed = buildHubSlots(input({ retail: { phase: "error" } }));
+  const [failedGap, failedOpportunity] = slots(failed["spoke-retail"]);
+  assert.equal(failedGap.figure, "Not available*");
+  assert.ok(failedGap.figureDefinition);
+  assert.equal(failedOpportunity.figure, "Not available*");
+  // Pages (4 of 10) and unbranded answers (6 of 15) tie at 40%. The larger count wins.
+  const [summaryGap] = slots(failed.hub);
+  assert.equal(summaryGap.label, "Unbranded answers Fender/Squier did not lead");
+  const [roadmapGap] = slots(failed["spoke-roadmap"]);
+  assert.equal(roadmapGap.figure, "Not available*");
+});
+
+test("Competitive Radar compares categories with enough resolved answers", () => {
+  const [gap] = slots(buildHubSlots(input())["spoke-competitors"]);
+  assert.equal(gap.label, "Electric answers another brand led");
+  assert.equal(gap.countedOutOf.text, "4 of 12 resolved unbranded electric answers");
+  assert.match(gap.rule, /at least 10 resolved answers/);
+  assert.equal(gap.subTab, "Category Battlecards");
+
+  const [small] = slots(buildHubSlots(input({ ai: readyAi() }))["spoke-competitors"]);
+  assert.match(small.rule, /^No unbranded category has 10 resolved answers yet/);
+});
+
+test("Strategy Roadmap measures AI Consensus against its approved band", () => {
+  const [gap] = slots(buildHubSlots(input())["spoke-roadmap"]);
+  assert.match(gap.target.text, /^Target: AI Consensus above 70 \(now \d+\.\d\)$/);
+  assert.match(gap.countedOutOf.text, /^\d+\.\d of 100 points, from 2 of 3 pillars$/);
+  assert.deepEqual([gap.spokeId, gap.subTab], ["hub", "Performance"]);
+});
+
+test("slot definitions use the custom tooltip, never a native title", () => {
+  const source = read("lib/canvas-sdk/HubSlots.tsx");
+  assert.match(source, /className="ifai-term"/);
+  assert.match(source, /data-ifai-tooltip-title=/);
+  assert.match(source, /data-ifai-tooltip-desc=/);
+  assert.doesNotMatch(source, /(?<![-\w])title=/);
+  assert.match(source, /import "@\/lib\/canvas-sdk\/hub-slots.css"/);
 });
 
 test("citation pies use the same totals as the tables", () => {

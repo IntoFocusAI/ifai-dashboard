@@ -11,6 +11,9 @@ import { useFenderCanvasData } from "@/components/v3/use-fender-canvas-data";
 import { aiSpokeDesc } from "@/lib/ai-search/canvas-surfaces";
 import { historySpokeDescription } from "@/lib/ai-search/history-mode";
 import { buildFenderCanvasSpec } from "@/lib/fender-canvas/build-canvas-spec";
+import { authorizedPartnersFromSave } from "@/lib/fender-canvas/authorized-sellers";
+import { useAuthorizedSellers } from "@/lib/fender-canvas/authorized-sellers-store";
+import { buildLiveHubSlots } from "@/lib/fender-canvas/hub-slots";
 import { IntelligenceCanvas } from "@/lib/canvas-sdk";
 import type { CanvasUserMenu } from "@/lib/canvas-sdk/types";
 import type { AiSearchRead } from "@/lib/ai-search/types";
@@ -83,6 +86,7 @@ function FenderBrandCanvasBody({
     selectedMessage,
     runDescription: displayedAiSearch.phase === "ready" ? aiSpokeDesc(displayedAiSearch) : null,
   });
+  const [savedSellers] = useAuthorizedSellers();
   const spec = useMemo(() => {
     if (!bundle) return null;
     const built = buildFenderCanvasSpec(bundle, {
@@ -94,15 +98,26 @@ function FenderBrandCanvasBody({
       metricStorageSuffix: viewerStorageScope(viewerId),
       headerSlot: <DataFreshnessBar fresh={bundle.fresh} stale={stale} />,
     });
-    if (!panelDescription || !built.spokes.aeo) return built;
-    return {
+    const withSlots = {
       ...built,
+      hubSlots: buildLiveHubSlots({
+        bundle,
+        retail,
+        ai: aiSearch,
+        findability,
+        commandItems: built.commandCenter?.items ?? [],
+        authorizedPartners: authorizedPartnersFromSave(savedSellers),
+      }),
+    };
+    if (!panelDescription || !withSlots.spokes.aeo) return withSlots;
+    return {
+      ...withSlots,
       spokes: {
-        ...built.spokes,
-        aeo: { ...built.spokes.aeo, desc: panelDescription },
+        ...withSlots.spokes,
+        aeo: { ...withSlots.spokes.aeo, desc: panelDescription },
       },
     };
-  }, [aiSearch, bundle, findability, panelDescription, retail, stale, userMenu, viewerId]);
+  }, [aiSearch, bundle, findability, panelDescription, retail, savedSellers, stale, userMenu, viewerId]);
 
   if (loading && !spec) return <CanvasLoadingShell />;
   if (!spec) {
