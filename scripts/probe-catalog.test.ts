@@ -4,18 +4,25 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { driftRead } from "../lib/ai-search/drift.ts";
 import {
+  ANCHOR_TIP,
+  ANCHOR_TITLE,
+  CATALOG_COVERAGE_TITLE,
   amazonDiffersTip,
   amazonMismatchNote,
+  catalogCoverageTip,
   factCheckMethodLine,
   factCheckPendingNote,
 } from "../lib/ai-search/fact-check-copy.ts";
 import { historyFixtureSnapshot } from "../lib/ai-search/history-fixtures.ts";
 import { buildHistoryTrend, questionsInRun } from "../lib/ai-search/history-trends.ts";
 import {
+  CATALOG_ROTATION_RULE,
   PROBE_CATALOG_COLUMNS,
   PROBE_COVERAGE_COLUMNS,
   PROBE_COVERAGE_VIEW,
   catalogCoverage,
+  catalogCycles,
+  catalogModelKey,
   poolProbeCoverage,
   rotationSummary,
 } from "../lib/ai-search/probe-catalog.ts";
@@ -209,7 +216,7 @@ test("NULL catalog columns count exactly as today", () => {
     assert.equal(row.claim, row.promptKey === "p18" ? null : `Fact for ${row.promptKey}`);
     assert.equal(row.sourceUrl, "https://www.fender.com/example");
   }
-  const line = factCheckMethodLine(after.coverage, false, { rule: "least recently checked", cycle: 3 });
+  const line = factCheckMethodLine(after.coverage, false, [3]);
   assert.deepEqual(line, factCheckMethodLine(before.coverage));
   assert.equal(line?.rotation, null);
   assert.equal(`${line?.products} · ${line?.verified}`, "5 products checked · 4 with a verified fact");
@@ -287,47 +294,115 @@ test("rows where Amazon disagrees with fender.com are flagged; spacing and case 
   assert.doesNotMatch(table, /\stitle=/);
 });
 
-test("one run reads N of M catalog products checked by category and engine from the coverage view", () => {
+/** One more chatgpt row on the rotating key p17, shaped like a catalog check. */
+function catalogRow(sim: number, patch: Partial<AiProbeRow>): AiProbeRow {
+  return { ...rotationShape()[0], sim_id: sim, probe_is_anchor: false, ...patch };
+}
+
+test("one run counts catalog models by spec page, then SKU, against its models in scope; fixed questions stay out", () => {
   const rows = [
-    coverageRow({ engine: "chatgpt", models_checked: 3 }),
-    coverageRow({ engine: "gemini", models_checked: 2 }),
-    coverageRow({ category: "acoustics", engine: "chatgpt", models_in_scope: 64, models_checked: 1 }),
+    ...rotationShape(),
+    // A second ASIN on the Telecaster's spec page is the same model.
+    catalogRow(201, { probe_asin: "B0C2TELE99", probe_asins: ["B0C2TELE99"], probe_fender_sku: TELE.sku, probe_source_url: TELE.url }),
+    // Two acoustic ASINs with no spec page and one SKU are one model. A provider error counts, as in the view.
+    catalogRow(202, {
+      probe_asin: "B0C4ACOUS1",
+      probe_category: "acoustics",
+      probe_source_url: null,
+      probe_fender_sku: "0970150022",
+      call_status: "error",
+      material_hallucination: "not_evaluated",
+    }),
+    catalogRow(203, { probe_asin: "B0C4ACOUS2", probe_category: "acoustics", probe_source_url: null, probe_fender_sku: "0970150022" }),
+    // A fixed question in the same run, which the view counts under its own category.
+    probe({ ...EMPTY_CATALOG, sim_id: 204, prompt_key: "p34", engine: "chatgpt" }),
   ];
-  const read = catalogCoverage(snapshot(rotationShape(), rows), false);
+  const coverage = [
+    coverageRow({ engine: "chatgpt", models_checked: 3 }),
+    coverageRow({ engine: "gemini", models_checked: 3 }),
+    coverageRow({ category: "acoustics", engine: "chatgpt", models_checked: 1 }),
+    coverageRow({ category: "hallucinations", engine: "chatgpt", models_checked: 1, asins_covered: 1 }),
+  ];
+  const read = catalogCoverage(snapshot(rows, coverage), false);
   assert.ok(read && read.phase === "ready");
   assert.equal(read.basis, "run");
+  assert.equal(read.inScope, 180);
   assert.deepEqual(read.engines, ["chatgpt", "gemini"]);
   assert.deepEqual(read.rows, [
-    { category: "acoustics", cells: { chatgpt: { checked: 1, inScope: 64 } } },
-    { category: "electrics", cells: { chatgpt: { checked: 3, inScope: 180 }, gemini: { checked: 2, inScope: 180 } } },
+    { category: "Acoustics", cells: { chatgpt: { checked: 1, inScope: 180 }, gemini: { checked: 0, inScope: 180 } } },
+    { category: "Electrics", cells: { chatgpt: { checked: 3, inScope: 180 }, gemini: { checked: 3, inScope: 180 } } },
   ]);
-  const table = readFileSync("components/v3/live/ai-search/CatalogCoverageTable.tsx", "utf8");
-  assert.match(table, /\{formatInt\(cell\.checked\)\} of \{formatInt\(cell\.inScope\)\}/);
+  assert.equal(catalogModelKey({ probe_source_url: STRAT.url, probe_fender_sku: STRAT.sku, probe_asin: STRAT.asin }), STRAT.url);
+  assert.equal(catalogModelKey({ probe_source_url: " ", probe_fender_sku: STRAT.sku, probe_asin: STRAT.asin }), STRAT.sku);
+  assert.equal(catalogModelKey({ probe_source_url: null, probe_fender_sku: null, probe_asin: STRAT.asin }), STRAT.asin);
+
+  const table = readFileSync("components/v3/live/ai-search/CatalogCoverageTable.tsx", "utf8").replace(/\s+/g, " ");
+  assert.match(
+    table,
+    /<CopyTip label=\{CATALOG_COVERAGE_TITLE\} description=\{catalogCoverageTip\(coverage\.basis, cell\.inScope\)\}> \{formatInt\(cell\.checked\)\} of \{formatInt\(cell\.inScope\)\} <\/CopyTip>/,
+  );
+  assert.doesNotMatch(table, /"None"/);
+  assert.equal(CATALOG_COVERAGE_TITLE, "Catalog models checked");
+  assert.equal(
+    catalogCoverageTip("run", 180),
+    "Distinct catalog models checked in this run, counted by fender.com spec page, then SKU, of the 180 models in scope.",
+  );
+  assert.equal(
+    catalogCoverageTip("selection", 1250),
+    "Distinct catalog models checked across the runs in this selection, counted by fender.com spec page, then SKU, of the 1,250 models in scope in the newest run.",
+  );
 });
 
-test("a selection counts distinct ASINs checked across runs against the newest run's scope", () => {
-  const older = rotationShape("r0").filter((row) => row.probe_asin !== JAGUAR.asin);
-  const newer = rotationShape("r1").map((row, index) => ({ ...row, sim_id: 100 + index }));
-  newer[0] = { ...newer[0], call_status: "error", material_hallucination: "not_evaluated" };
+test("a selection counts distinct models across its runs against the newest run's models in scope", () => {
+  const older = rotationShape("r0")
+    .filter((row) => row.probe_asin !== JAGUAR.asin)
+    .map((row) => ({ ...row, created_at: "2026-11-01T06:00:00Z" }));
+  const newer = rotationShape("r1")
+    .filter((row) => row.probe_asin !== TELE.asin)
+    .map((row, index) => ({ ...row, sim_id: 100 + index, created_at: "2026-11-02T06:00:00Z" }));
+  // Pooled order is not run order: the newest run is read from its fact-check times.
   const coverage = [
-    coverageRow({ audit_run_id: "r0", models_in_scope: 170 }),
-    coverageRow({ audit_run_id: "r1", models_in_scope: 180 }),
-    coverageRow({ audit_run_id: "r1", engine: "gemini", models_in_scope: 180 }),
+    coverageRow({ audit_run_id: "r1", models_in_scope: 182, cycle_no: 4 }),
+    coverageRow({ audit_run_id: "r0", models_in_scope: 180, cycle_no: 3 }),
   ];
-  const read = catalogCoverage(snapshot([...older, ...newer], coverage), true);
-  assert.ok(read && read.phase === "ready");
-  assert.equal(read.basis, "selection");
-  assert.deepEqual(read.rows, [
-    { category: "electrics", cells: { chatgpt: { checked: 3, inScope: 180 }, gemini: { checked: 3, inScope: 180 } } },
-  ]);
+  for (const order of [coverage, [...coverage].reverse()]) {
+    const read = catalogCoverage(snapshot([...older, ...newer], order), true);
+    assert.ok(read && read.phase === "ready");
+    assert.equal(read.basis, "selection");
+    assert.equal(read.inScope, 182);
+    assert.deepEqual(read.rows, [
+      { category: "Electrics", cells: { chatgpt: { checked: 3, inScope: 182 }, gemini: { checked: 3, inScope: 182 } } },
+    ]);
+  }
+  const oneRun = catalogCoverage(snapshot(older, coverage), true);
+  assert.ok(oneRun && oneRun.phase === "ready");
+  assert.equal(oneRun.inScope, 180, "a run outside the selection's fact checks does not set the scope");
+  assert.deepEqual(oneRun.rows[0].cells.chatgpt, { checked: 2, inScope: 180 });
 });
 
 test("a failed coverage read shows Not available, never zero", () => {
   assert.deepEqual(catalogCoverage(snapshot(rotationShape(), null), false), { phase: "unavailable" });
   assert.deepEqual(catalogCoverage(snapshot(rotationShape()), false), { phase: "unavailable" });
+  assert.deepEqual(catalogCoverage(snapshot(rotationShape(), [coverageRow({ audit_run_id: "r9" })]), false), { phase: "unavailable" });
+  assert.deepEqual(catalogCoverage(snapshot(rotationShape(), [coverageRow({ models_in_scope: null })]), false), { phase: "unavailable" });
   const table = readFileSync("components/v3/live/ai-search/CatalogCoverageTable.tsx", "utf8");
   assert.match(table, /Not available\*/);
   assert.match(table, /<CopyTip label="Catalog coverage"/);
+});
+
+test("an anchor that names a catalog product carries an Anchor mark; a fixed question never does", () => {
+  const rows = [...rotationShape(), probe({ ...EMPTY_CATALOG, sim_id: 99, prompt_key: "p33", engine: "chatgpt", probe_is_anchor: true })];
+  const drift = driftRead([], rows);
+  assert.deepEqual(new Set(drift.probes.filter((row) => row.anchor).map((row) => row.asin)), new Set([STRAT.asin]));
+  assert.equal(drift.probes.find((row) => row.promptKey === "p33")?.anchor, false);
+  for (const row of driftRead([], publishedShape(true)).probes) assert.equal(row.anchor, false);
+  assert.equal(ANCHOR_TITLE, "Anchor");
+  assert.equal(ANCHOR_TIP, "IntoFocus asks this product in every run, on top of the rotating catalog models.");
+  const table = readFileSync("components/v3/live/ai-search/FactCheckTable.tsx", "utf8").replace(/\s+/g, " ");
+  assert.match(
+    table,
+    /\{row\.anchor \? \( <div data-ai-anchor=""> <span className="tag-badge tag-neutral"> <CopyTip label=\{ANCHOR_TITLE\} description=\{ANCHOR_TIP\}> \{ANCHOR_TITLE\} <\/CopyTip>/,
+  );
 });
 
 test("pooled coverage stays undefined, fails as a whole, or concatenates", () => {
@@ -339,29 +414,45 @@ test("pooled coverage stays undefined, fails as a whole, or concatenates", () =>
   assert.deepEqual(poolProbeCoverage([a, b, b]), [coverageRow({}), coverageRow({})]);
 });
 
-test("the method line leads with the run's rotation and keeps detail in the tooltip", () => {
-  const { coverage } = driftRead([], rotationShape());
-  const line = factCheckMethodLine(coverage, false, { rule: "least recently checked first", cycle: 3 });
+test("the method line leads with the cycle from the coverage view and keeps the approved rule in the tooltip", () => {
+  assert.equal(
+    CATALOG_ROTATION_RULE,
+    "about 90 catalog models per run, each asked once per engine, all 180 in-scope guitar and bass models every 2 runs, plus anchors p17 and p33",
+  );
+  const snap = snapshot(rotationShape(), [coverageRow({ cycle_no: 3 }), coverageRow({ engine: "gemini", cycle_no: 3 })]);
+  assert.deepEqual(catalogCycles(snap), [3]);
+  const { coverage } = driftRead([], snap.probes);
+  const line = factCheckMethodLine(coverage, false, catalogCycles(snap));
   assert.ok(line);
   assert.equal(line.rotation, "Catalog rotation, cycle 3");
   assert.equal(`${line.rotation} · ${line.products} · ${line.verified}`, "Catalog rotation, cycle 3 · 3 products checked · 3 with a verified fact");
   assert.equal(
     line.tip,
-    "IntoFocus picked these products by its catalog rotation rule: least recently checked first. This run is cycle 3. 3 catalog products were checked, counted by ASIN. 3 of 3 were compared with the product's own fender.com spec value in this run.",
+    "IntoFocus picked these products by its catalog rotation rule: about 90 catalog models per run, each asked once per engine, all 180 in-scope guitar and bass models every 2 runs, plus anchors p17 and p33. This run is cycle 3. 3 catalog products were checked, counted by ASIN. 3 of 3 were compared with the product's own fender.com spec value in this run.",
   );
-  assert.deepEqual(rotationSummary({ rule: null, cycle: null }), null);
-  assert.deepEqual(rotationSummary({ cycle: "4" })?.label, "Catalog rotation, cycle 4");
-  assert.deepEqual(rotationSummary({ rule: "by category" })?.label, "Catalog rotation");
 
-  const unrecorded = factCheckMethodLine(coverage);
-  assert.equal(unrecorded?.rotation, null);
-  assert.match(unrecorded?.tip ?? "", /^How these products were picked is not recorded for this run\./);
-  const selection = factCheckMethodLine(coverage, true, { rule: "least recently checked first", cycle: 3 });
-  assert.equal(selection?.rotation, null, "a selection spans cycles, so no one cycle leads");
-  assert.match(selection?.tip ?? "", /in this selection\.$/);
+  // No recorded cycle: the rule still leads, with no cycle named.
+  const uncycled = factCheckMethodLine(coverage);
+  assert.equal(uncycled?.rotation, "Catalog rotation");
+  assert.match(uncycled?.tip ?? "", /^IntoFocus picked these products by its catalog rotation rule: about 90 .+ p33\. 3 catalog products/);
+  const selection = factCheckMethodLine(coverage, true, [3, 4]);
+  assert.equal(selection?.rotation, "Catalog rotation, cycles 3 to 4");
+  assert.match(selection?.tip ?? "", /p33\. This selection covers cycles 3 to 4\. .+ in this selection\.$/);
+  assert.equal(rotationSummary([4], true).tip.endsWith("This selection covers cycle 4."), true);
 
-  for (const text of [line.rotation, line.products, line.verified, line.tip, unrecorded?.tip ?? ""]) {
-    assert.doesNotMatch(text, /\u2014|representative|random|regex|collector|probe/i);
+  // Cycles come only from runs whose fact checks name a catalog product; a NULL cycle_no is skipped.
+  const fixedRun = publishedShape(true).map((row) => ({ ...row, audit_run_id: "r2" }));
+  const mixed = snapshot([...rotationShape("r1"), ...fixedRun], [
+    coverageRow({ audit_run_id: "r1", cycle_no: 4 }),
+    coverageRow({ audit_run_id: "r1", engine: "gemini", cycle_no: null }),
+    coverageRow({ audit_run_id: "r2", category: "hallucinations", cycle_no: 9 }),
+  ]);
+  assert.deepEqual(catalogCycles(mixed), [4]);
+  assert.deepEqual(catalogCycles(snapshot(rotationShape(), null)), []);
+  assert.deepEqual(catalogCycles(snapshot(publishedShape(true), [coverageRow({ cycle_no: 2 })])), []);
+
+  for (const text of [line.rotation, line.products, line.verified, line.tip, uncycled?.tip ?? "", selection?.tip ?? ""]) {
+    assert.doesNotMatch(text, /\u2014|representative|random|regex|collector|probe|not recorded/i);
   }
   assert.doesNotMatch(`${line.products} · ${line.verified}`, /\bnot\b|\bno\b/i);
   assert.match(factCheckPendingNote({ ...coverage, answersWithoutFact: 2, questionsWithoutFact: [TELE.asin] }) ?? "", /^1 product has/);

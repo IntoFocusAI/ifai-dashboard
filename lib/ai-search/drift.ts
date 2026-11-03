@@ -39,6 +39,8 @@ export type ProbeEvidence = {
   productKey: string;
   /** The collector named the catalog product (probe_asin). */
   catalog: boolean;
+  /** A catalog product asked in every run (probe_is_anchor). A fixed question is never marked. */
+  anchor: boolean;
   asin: string | null;
   sku: string | null;
   specField: string | null;
@@ -150,6 +152,7 @@ export function driftRead(calls: AiCallRow[], probes: AiProbeRow[]): DriftRead {
         promptKey,
         productKey: catalog ? row.probe_asin!.trim() : promptKey,
         catalog,
+        anchor: catalog && row.probe_is_anchor === true,
         asin: catalog ? row.probe_asin!.trim() : null,
         sku: row.probe_fender_sku?.trim() || null,
         specField: row.probe_spec_field?.trim() || null,

@@ -25,6 +25,7 @@ import {
   factCheckMethodLine,
   factCheckPendingNote,
 } from "@/lib/ai-search/fact-check-copy";
+import { catalogCycles } from "@/lib/ai-search/probe-catalog";
 import { engineLabel, formatRunTime, modelLabel } from "@/lib/ai-search/run-metrics";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
 import { isWindowHistoryKind } from "@/lib/ai-search/window-display";
@@ -40,7 +41,7 @@ function FactChecks({ snapshot }: { snapshot: AiSearchSnapshot }) {
   const coverageNote = factCheckCoverageNote(coverage);
   const pendingNote = factCheckPendingNote(coverage);
   const headline = factCheckHeadline(coverage, windowed);
-  const method = factCheckMethodLine(coverage, windowed, snapshot.run.probe_rotation ?? null);
+  const method = factCheckMethodLine(coverage, windowed, catalogCycles(snapshot));
   const amazonNote = amazonMismatchNote(coverage);
   const rateColor = factCheckAccuracyColor(accuracy.tone);
 

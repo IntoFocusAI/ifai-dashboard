@@ -131,7 +131,7 @@ test("the method line leaves the Accuracy lead figure and colors unchanged", () 
   assert.equal(lead.rate, "100.0%");
   assert.equal(lead.tone, "success");
   const panel = readFileSync("components/v3/live/ai-search/AiDriftPanel.tsx", "utf8");
-  assert.match(panel, /factCheckMethodLine\(coverage, windowed, snapshot\.run\.probe_rotation \?\? null\)/);
+  assert.match(panel, /factCheckMethodLine\(coverage, windowed, catalogCycles\(snapshot\)\)/);
   assert.match(panel, /color: rateColor/);
   assert.match(panel, /\{accuracy\.rate\} Accuracy/);
   // The line sits in the explainer beside the Accuracy figure, right under the headline.

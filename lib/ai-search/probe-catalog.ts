@@ -1,5 +1,5 @@
-import { engineLabel } from "@/lib/ai-search/run-metrics";
-import type { AiProbeCoverageRow, AiProbeRow, AiSearchSnapshot, ProbeRotation } from "@/lib/ai-search/types";
+import { categoryLabel, engineLabel } from "@/lib/ai-search/run-metrics";
+import type { AiProbeCoverageRow, AiProbeRow, AiSearchSnapshot } from "@/lib/ai-search/types";
 
 /** Collector v15 columns on canvas_ai_probes and canvas_ai_history_probes. NULL until the rotation is on. */
 export const PROBE_CATALOG_COLUMNS =
@@ -48,65 +48,76 @@ export type CatalogCoverage =
   | { phase: "unavailable" }
   | {
       phase: "ready";
-      /** "run" reads the coverage view as stored; "selection" counts products by ASIN across the runs. */
+      /** "run" counts one run's models; "selection" counts distinct models across the runs. */
       basis: "run" | "selection";
+      /** models_in_scope of the newest run in the selection. */
+      inScope: number;
       engines: string[];
       rows: Array<{ category: string; cells: Record<string, CatalogCoverageCell> }>;
     };
-
-const CHECKED = new Set(["confirmed", "none"]);
 
 function cellKey(category: string, engine: string): string {
   return `${category}\u0000${engine}`;
 }
 
+/** canvas_ai_probe_coverage counts a model by its fender.com spec page, then its SKU. */
+export function catalogModelKey(
+  row: Pick<AiProbeRow, "probe_source_url" | "probe_fender_sku" | "probe_asin">,
+): string {
+  return row.probe_source_url?.trim() || row.probe_fender_sku?.trim() || row.probe_asin?.trim() || "";
+}
+
+/** models_in_scope of the newest catalog run that has a coverage row, by its latest fact check. */
+function newestInScope(catalog: readonly AiProbeRow[], coverage: readonly AiProbeCoverageRow[]): number | null {
+  const latest = new Map<string, string>();
+  for (const row of catalog) {
+    const at = row.created_at ?? "";
+    if (!latest.has(row.audit_run_id) || at > latest.get(row.audit_run_id)!) latest.set(row.audit_run_id, at);
+  }
+  const scope = new Map<string, number>();
+  for (const row of coverage) {
+    if (row.models_in_scope != null && latest.has(row.audit_run_id)) scope.set(row.audit_run_id, row.models_in_scope);
+  }
+  const newest = [...scope.keys()].sort((a, b) => latest.get(b)!.localeCompare(latest.get(a)!))[0];
+  return newest === undefined ? null : scope.get(newest)!;
+}
+
 /**
- * "N of M catalog products checked" by category and engine. Null while no fact check names a
- * catalog product, so runs before the rotation show nothing here.
- * One run reads models_checked of models_in_scope from canvas_ai_probe_coverage. A selection of
- * runs counts distinct ASINs checked across them, against the newest run's models_in_scope.
+ * "N of M catalog models checked" by category and engine. Null while no fact check names a
+ * catalog product, so runs before the rotation show nothing here. Only rows with probe_asin
+ * count; fixed questions stay in the fact-check table as before.
+ * Models count the way canvas_ai_probe_coverage counts them, by spec page and then SKU, as
+ * distinct models across every run in the selection. M is the newest run's models_in_scope.
  */
 export function catalogCoverage(snapshot: AiSearchSnapshot, windowed: boolean): CatalogCoverage | null {
   const catalog = snapshot.probes.filter(isCatalogProbe);
   if (catalog.length === 0) return null;
   const coverage = snapshot.probeCoverage;
-  if (!coverage) return { phase: "unavailable" };
+  const inScope = coverage ? newestInScope(catalog, coverage) : null;
+  if (inScope == null) return { phase: "unavailable" };
 
-  const cells = new Map<string, CatalogCoverageCell & { category: string; engine: string }>();
-  for (const row of coverage) {
-    const category = row.category?.trim() || "";
-    const engine = (row.engine ?? "").toLowerCase();
-    if (!category || !engine || row.models_in_scope == null) continue;
-    const checked = windowed ? 0 : (row.models_checked ?? 0);
-    cells.set(cellKey(category, engine), { category, engine, checked, inScope: row.models_in_scope });
+  const models = new Map<string, Set<string>>();
+  for (const probe of catalog) {
+    const key = cellKey(categoryLabel(probe.probe_category), (probe.engine ?? "").toLowerCase());
+    const seen = models.get(key) ?? new Set<string>();
+    seen.add(catalogModelKey(probe));
+    models.set(key, seen);
   }
-  if (windowed) {
-    const asins = new Map<string, Set<string>>();
-    for (const probe of catalog) {
-      if (probe.call_status === "error" || !CHECKED.has(String(probe.material_hallucination))) continue;
-      const key = cellKey(probe.probe_category?.trim() || "", (probe.engine ?? "").toLowerCase());
-      const seen = asins.get(key) ?? new Set<string>();
-      seen.add(probe.probe_asin!.trim());
-      asins.set(key, seen);
-    }
-    for (const [key, cell] of cells) cell.checked = asins.get(key)?.size ?? 0;
-  }
-
-  const engines = [...new Set([...cells.values()].map((cell) => cell.engine))].sort((a, b) =>
+  const engines = [...new Set(catalog.map((probe) => (probe.engine ?? "").toLowerCase()))].sort((a, b) =>
     engineLabel(a).localeCompare(engineLabel(b)),
   );
-  const categories = [...new Set([...cells.values()].map((cell) => cell.category))].sort();
+  const categories = [...new Set(catalog.map((probe) => categoryLabel(probe.probe_category)))].sort();
   return {
     phase: "ready",
     basis: windowed ? "selection" : "run",
+    inScope,
     engines,
     rows: categories.map((category) => {
-      const byEngine: Record<string, CatalogCoverageCell> = {};
+      const cells: Record<string, CatalogCoverageCell> = {};
       for (const engine of engines) {
-        const cell = cells.get(cellKey(category, engine));
-        if (cell) byEngine[engine] = { checked: cell.checked, inScope: cell.inScope };
+        cells[engine] = { checked: models.get(cellKey(category, engine))?.size ?? 0, inScope };
       }
-      return { category, cells: byEngine };
+      return { category, cells };
     }),
   };
 }
@@ -118,18 +129,30 @@ export function poolProbeCoverage(snapshots: readonly AiSearchSnapshot[]): AiPro
   return snapshots.flatMap((snapshot) => snapshot.probeCoverage ?? []);
 }
 
+/** The approved rotation plan. No stored field carries the rule, so it is fixed here. */
+export const CATALOG_ROTATION_RULE =
+  "about 90 catalog models per run, each asked once per engine, all 180 in-scope guitar and bass models every 2 runs, plus anchors p17 and p33";
+
+/** Rotation cycles (cycle_no) recorded for the runs whose fact checks name a catalog product, lowest first. */
+export function catalogCycles(snapshot: AiSearchSnapshot): number[] {
+  const runs = new Set(snapshot.probes.filter(isCatalogProbe).map((row) => row.audit_run_id));
+  const cycles = new Set<number>();
+  for (const row of snapshot.probeCoverage ?? []) {
+    const cycle = row.cycle_no == null ? NaN : Number(row.cycle_no);
+    if (runs.has(row.audit_run_id) && Number.isFinite(cycle)) cycles.add(cycle);
+  }
+  return [...cycles].sort((a, b) => a - b);
+}
+
 export type RotationSummary = { label: string; tip: string };
 
-/** The run's rotation rule and cycle, when the collector recorded them. */
-export function rotationSummary(rotation: ProbeRotation | null | undefined): RotationSummary | null {
-  const rule = rotation?.rule?.trim() || null;
-  const cycle = rotation?.cycle == null ? null : String(rotation.cycle).trim() || null;
-  if (!rule && !cycle) return null;
-  const picked = rule
-    ? `IntoFocus picked these products by its catalog rotation rule: ${rule}.`
-    : "IntoFocus picked these products by its catalog rotation.";
+/** "Catalog rotation, cycle 3" and the rule. Only called once a fact check names a catalog product. */
+export function rotationSummary(cycles: readonly number[], windowed = false): RotationSummary {
+  const picked = `IntoFocus picked these products by its catalog rotation rule: ${CATALOG_ROTATION_RULE}.`;
+  if (cycles.length === 0) return { label: "Catalog rotation", tip: picked };
+  const span = cycles.length === 1 ? `cycle ${cycles[0]}` : `cycles ${cycles[0]} to ${cycles[cycles.length - 1]}`;
   return {
-    label: cycle ? `Catalog rotation, cycle ${cycle}` : "Catalog rotation",
-    tip: cycle ? `${picked} This run is cycle ${cycle}.` : picked,
+    label: `Catalog rotation, ${span}`,
+    tip: `${picked} ${windowed ? `This selection covers ${span}` : `This run is ${span}`}.`,
   };
 }

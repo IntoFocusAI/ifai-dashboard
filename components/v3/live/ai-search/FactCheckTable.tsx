@@ -8,7 +8,7 @@ import { EvidenceLink } from "@/components/v3/live/ai-search/EvidenceLink";
 import { ExternalLink } from "@/components/v3/live/ai-search/ExternalLink";
 import { AI_TABS } from "@/lib/ai-search/canvas-surfaces";
 import { PROBE_STATE_LABELS, type ProbeEvidence, type ProbeState } from "@/lib/ai-search/drift";
-import { AMAZON_DIFFERS_TITLE, amazonDiffersTip } from "@/lib/ai-search/fact-check-copy";
+import { AMAZON_DIFFERS_TITLE, ANCHOR_TIP, ANCHOR_TITLE, amazonDiffersTip } from "@/lib/ai-search/fact-check-copy";
 import { engineLabel, formatRunTime, modelLabel } from "@/lib/ai-search/run-metrics";
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
 
@@ -69,6 +69,15 @@ export function FactCheckTable({ rows, windowed = false }: { rows: ProbeEvidence
                   >
                     {row.prompt}
                   </EvidenceLink>
+                  {row.anchor ? (
+                    <div data-ai-anchor="">
+                      <span className="tag-badge tag-neutral">
+                        <CopyTip label={ANCHOR_TITLE} description={ANCHOR_TIP}>
+                          {ANCHOR_TITLE}
+                        </CopyTip>
+                      </span>
+                    </div>
+                  ) : null}
                 </td>
                 <td>
                   {engineLabel(row.engine)}

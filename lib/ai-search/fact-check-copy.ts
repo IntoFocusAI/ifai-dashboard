@@ -4,7 +4,6 @@ import { joinBrands } from "@/lib/ai-search/competitors";
 import { formatInt } from "@/lib/fender-canvas/format";
 import { rotationSummary, type RotationSummary } from "@/lib/ai-search/probe-catalog";
 import { pct } from "@/lib/ai-search/summary";
-import type { ProbeRotation } from "@/lib/ai-search/types";
 
 const FACT = (n: number) => `${n} Fender product fact${n === 1 ? "" : "s"}`;
 const ANSWER = (n: number) => `${n} answer${n === 1 ? "" : "s"}`;
@@ -108,7 +107,7 @@ export function factCheckHeadline(c: FactCheckCoverage, windowed = false): strin
 export const FACT_CHECK_METHOD_TITLE = "How these products were chosen";
 
 export type FactCheckMethodLine = {
-  /** "Catalog rotation, cycle 3" when the run recorded its rotation, else null. */
+  /** "Catalog rotation, cycle 3" once a fact check names a catalog product, else null. */
   rotation: string | null;
   products: string;
   verified: string;
@@ -118,9 +117,9 @@ export type FactCheckMethodLine = {
 
 /**
  * Catalog checks count products by ASIN and compare against each product's own fender.com value.
- * The rotation rule and cycle lead when the run recorded them.
+ * The rotation rule leads, with the cycle canvas_ai_probe_coverage recorded.
  */
-function catalogMethodLine(c: FactCheckCoverage, unit: string, rotation: RotationSummary | null): FactCheckMethodLine {
+function catalogMethodLine(c: FactCheckCoverage, unit: string, rotation: RotationSummary): FactCheckMethodLine {
   const n = c.questionsSent;
   const fixed = n - c.catalogProducts;
   const counted =
@@ -128,12 +127,11 @@ function catalogMethodLine(c: FactCheckCoverage, unit: string, rotation: Rotatio
       ? `${n} products were checked: ${c.catalogProducts} catalog products counted by ASIN, and ${fixed} fixed ${fixed === 1 ? "question" : "questions"}.`
       : `${n} catalog ${n === 1 ? "product was" : "products were"} checked, counted by ASIN.`;
   const compared = `${c.factsChecked} of ${n} ${c.factsChecked === 1 ? "was" : "were"} compared with the product's own fender.com spec value in this ${unit}.`;
-  const picked = rotation?.tip ?? "How these products were picked is not recorded for this run.";
   return {
-    rotation: rotation?.label ?? null,
+    rotation: rotation.label,
     products: `${n} product${n === 1 ? "" : "s"} checked`,
     verified: `${c.factsChecked} with a verified fact`,
-    tip: `${picked} ${counted} ${compared}`,
+    tip: `${rotation.tip} ${counted} ${compared}`,
   };
 }
 
@@ -142,17 +140,17 @@ function catalogMethodLine(c: FactCheckCoverage, unit: string, rotation: Rotatio
  * Each fact-check question names one Fender product, so questions count as products.
  * No stored field records how those products were picked or what part of the catalog
  * they stand for, so the tooltip says so instead of calling them a sample.
- * Once a check names its catalog product, products are counted by ASIN instead, and a
- * recorded rotation (one run only) says how they were picked.
+ * Once a check names its catalog product, products are counted by ASIN instead, and the
+ * rotation rule with its recorded cycles says how they were picked.
  */
 export function factCheckMethodLine(
   c: FactCheckCoverage,
   windowed = false,
-  rotation: ProbeRotation | null = null,
+  cycles: readonly number[] = [],
 ): FactCheckMethodLine | null {
   if (c.questionsSent === 0) return null;
   const unit = windowed ? "selection" : "run";
-  if (c.catalogProducts > 0) return catalogMethodLine(c, unit, windowed ? null : rotationSummary(rotation));
+  if (c.catalogProducts > 0) return catalogMethodLine(c, unit, rotationSummary(cycles, windowed));
   const n = c.questionsSent;
   const one = n === 1;
   const named = `Each fact-check question names one Fender product, and the question set names ${n}. IntoFocus sends ${one ? "it" : "them"} to every engine on purpose.`;
@@ -180,6 +178,20 @@ export function amazonMismatchNote(c: FactCheckCoverage): string | null {
 export function amazonDiffersTip(amazon: string | null, fenderValue: string | null): string {
   return `Amazon lists "${amazon ?? ""}". The fender.com spec page lists "${fenderValue ?? ""}".`;
 }
+
+export const CATALOG_COVERAGE_TITLE = "Catalog models checked";
+
+/** Tooltip on each "N of M" cell of the catalog table. */
+export function catalogCoverageTip(basis: "run" | "selection", inScope: number): string {
+  const counted = "counted by fender.com spec page, then SKU";
+  return basis === "run"
+    ? `Distinct catalog models checked in this run, ${counted}, of the ${formatInt(inScope)} models in scope.`
+    : `Distinct catalog models checked across the runs in this selection, ${counted}, of the ${formatInt(inScope)} models in scope in the newest run.`;
+}
+
+export const ANCHOR_TITLE = "Anchor";
+
+export const ANCHOR_TIP = "IntoFocus asks this product in every run, on top of the rotating catalog models.";
 
 /** Drawer tooltip on "catalog products", once a check names the product it asked about. */
 export const CATALOG_PICK_TIP =

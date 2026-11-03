@@ -18,13 +18,6 @@ export type AiCurrentRun = {
   /** Present on history rows. The current-run view omits it. */
   is_published?: boolean | null;
   run_kind?: string | null;
-  /** How the collector picked this run's catalog products. No run view carries it yet. */
-  probe_rotation?: ProbeRotation | null;
-};
-
-export type ProbeRotation = {
-  rule?: string | null;
-  cycle?: number | string | null;
 };
 
 export type AiOutcome = "fender_win" | "competitor_win" | "unresolved" | "error" | "not_scored";
