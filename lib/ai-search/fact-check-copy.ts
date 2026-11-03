@@ -97,22 +97,36 @@ export function factCheckHeadline(c: FactCheckCoverage, windowed = false): strin
   return `${scope} ${result}`;
 }
 
+export const FACT_CHECK_METHOD_TITLE = "How these products were chosen";
+
+export type FactCheckMethodLine = {
+  products: string;
+  verified: string;
+  /** How the products were picked, and that the pick is not recorded. */
+  tip: string;
+};
+
 /**
- * How the fact-check products were chosen, and how many were checked out of how many.
+ * "5 products checked · 4 with a verified fact", from the live coverage counts.
  * Each fact-check question names one Fender product, so questions count as products.
  * No stored field records how those products were picked or what part of the catalog
- * they stand for, so the statement says so instead of calling them a sample.
+ * they stand for, so the tooltip says so instead of calling them a sample.
  */
-export function factCheckMethodStatement(c: FactCheckCoverage, windowed = false): string | null {
+export function factCheckMethodLine(c: FactCheckCoverage, windowed = false): FactCheckMethodLine | null {
   if (c.questionsSent === 0) return null;
   const unit = windowed ? "selection" : "run";
-  const one = c.questionsSent === 1;
-  const named = `The question set names ${c.questionsSent} Fender product${one ? "" : "s"} for fact checks.`;
-  const checked = `${c.factsChecked} of ${c.questionsSent} ${c.factsChecked === 1 ? "was" : "were"} checked against a verified fact in this ${unit}.`;
+  const n = c.questionsSent;
+  const one = n === 1;
+  const named = `Each fact-check question names one Fender product, and the question set names ${n}. IntoFocus sends ${one ? "it" : "them"} to every engine on purpose.`;
+  const compared = `${c.factsChecked} of ${n} ${c.factsChecked === 1 ? "was" : "were"} compared with a fact verified on an official Fender page in this ${unit}.`;
   const picked = one
-    ? "How this product was picked is not recorded, and neither is what part of Fender's catalog it stands for, so this result covers this product only."
-    : `How these products were picked is not recorded, and neither is what part of Fender's catalog they stand for, so this result covers these ${c.questionsSent} products only.`;
-  return `${named} ${checked} ${picked}`;
+    ? "How this product was picked, and what part of Fender's catalog it stands for, is not recorded, so this result covers this product only."
+    : `How these products were picked, and what part of Fender's catalog they stand for, is not recorded, so this result covers these ${n} products only.`;
+  return {
+    products: `${n} product${one ? "" : "s"} checked`,
+    verified: `${c.factsChecked} with a verified fact`,
+    tip: `${named} ${compared} ${picked}`,
+  };
 }
 
 export const FACT_CHECK_SCOPE =

@@ -223,11 +223,14 @@ test.describe("AI Search Visibility", () => {
     await expect(canvas.activeTab).toHaveText("Product Fact Checks");
     await expect(page.locator("[data-ai-accuracy-figure]")).toHaveText(/\d+\.\d% Accuracy/, { timeout: 60_000 });
     const method = page.locator("[data-ai-accuracy-lead] [data-ai-fact-method]");
-    await expect(method).toContainText("How these products were chosen:");
-    await expect(method).toContainText(/The question set names \d+ Fender products? for fact checks\./);
-    await expect(method).toContainText(/\d+ of \d+ (was|were) checked against a verified fact/);
-    await expect(method).toContainText("picked is not recorded");
-    await expect(method).not.toContainText(/representative|random/i);
+    await expect(method).toHaveText(/^\d+ products? checked · \d+ with a verified fact$/);
+    const term = method.locator(".ifai-term").first();
+    await expect(term).toHaveAttribute("data-ifai-tooltip-title", "How these products were chosen");
+    await expect(term).toHaveAttribute("data-ifai-tooltip-desc", /is not recorded, so this result covers/);
+    await expect(term).not.toHaveAttribute("data-ifai-tooltip-desc", /representative|random/i);
+    await expect(term).not.toHaveAttribute("title");
+    await term.focus();
+    await expect(page.locator(".node-tooltip-definition, .node-tooltip")).toContainText("picked");
   });
 
   test("every non-fact-check row reads n/a in Fact check", async ({ canvas, page }) => {

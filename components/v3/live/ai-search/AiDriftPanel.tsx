@@ -4,9 +4,11 @@ import { useAiHistoryOptional } from "@/components/v3/live/ai-search/AiHistoryCo
 import { AiReadGate, mutedText } from "@/components/v3/live/ai-search/AiReadGate";
 import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
 import { CitationPieDisc } from "@/components/v3/live/ai-search/CitationPieDisc";
+import { CopyTip } from "@/components/v3/live/ai-search/CopyTip";
 import { FactCheckTable } from "@/components/v3/live/ai-search/FactCheckTable";
 import { driftRead } from "@/lib/ai-search/drift";
 import {
+  FACT_CHECK_METHOD_TITLE,
   FACT_CHECK_SCOPE,
   FACT_CHECK_SHOPPING_SCOPE,
   FACT_CHECK_SHOPPING_SCOPE_WINDOW,
@@ -16,7 +18,7 @@ import {
   factCheckAccuracyPieTip,
   factCheckCoverageNote,
   factCheckHeadline,
-  factCheckMethodStatement,
+  factCheckMethodLine,
   factCheckPendingNote,
 } from "@/lib/ai-search/fact-check-copy";
 import { engineLabel, formatRunTime, modelLabel } from "@/lib/ai-search/run-metrics";
@@ -35,7 +37,7 @@ function FactChecks({ snapshot }: { snapshot: AiSearchSnapshot }) {
   const pendingNote = factCheckPendingNote(coverage);
   const shoppingScope = windowed ? FACT_CHECK_SHOPPING_SCOPE_WINDOW : FACT_CHECK_SHOPPING_SCOPE;
   const headline = factCheckHeadline(coverage, windowed);
-  const method = factCheckMethodStatement(coverage, windowed);
+  const method = factCheckMethodLine(coverage, windowed);
   const rateColor = factCheckAccuracyColor(accuracy.tone);
 
   const explainer = (
@@ -54,7 +56,10 @@ function FactChecks({ snapshot }: { snapshot: AiSearchSnapshot }) {
       </p>
       {method ? (
         <p style={{ fontSize: 12, lineHeight: 1.45, margin: "0 0 6px" }} data-ai-fact-method>
-          <strong>How these products were chosen:</strong> {method}
+          <CopyTip label={FACT_CHECK_METHOD_TITLE} description={method.tip}>
+            {method.products}
+          </CopyTip>{" "}
+          · {method.verified}
         </p>
       ) : null}
       <p style={{ ...mutedText, margin: 0 }}>{FACT_CHECK_SCOPE}</p>

@@ -8,7 +8,7 @@ import {
   applyExplorerFilter,
   factCheckColumnLabel,
 } from "../lib/ai-search/explorer-filter.ts";
-import { factCheckAccuracyLead, factCheckMethodStatement } from "../lib/ai-search/fact-check-copy.ts";
+import { factCheckAccuracyLead, factCheckMethodLine } from "../lib/ai-search/fact-check-copy.ts";
 import type { AiCallRow, AiProbeRow } from "../lib/ai-search/types.ts";
 
 function probe(partial: Partial<AiProbeRow> & Pick<AiProbeRow, "sim_id" | "prompt_key" | "engine">): AiProbeRow {
@@ -76,52 +76,64 @@ function publishedShape(): AiProbeRow[] {
   return rows;
 }
 
-test("method statement says N of M products, that the pick is not recorded, and what it covers", () => {
+test("method line is N products checked and N with a verified fact; the tooltip says how they were picked", () => {
   const coverage = driftRead([], publishedShape()).coverage;
   assert.equal(coverage.questionsSent, 5);
   assert.equal(coverage.factsChecked, 4);
+  const line = factCheckMethodLine(coverage);
+  assert.equal(`${line?.products} · ${line?.verified}`, "5 products checked · 4 with a verified fact");
   assert.equal(
-    factCheckMethodStatement(coverage),
-    "The question set names 5 Fender products for fact checks. 4 of 5 were checked against a verified fact in this run. How these products were picked is not recorded, and neither is what part of Fender's catalog they stand for, so this result covers these 5 products only.",
+    line?.tip,
+    "Each fact-check question names one Fender product, and the question set names 5. IntoFocus sends them to every engine on purpose. 4 of 5 were compared with a fact verified on an official Fender page in this run. How these products were picked, and what part of Fender's catalog they stand for, is not recorded, so this result covers these 5 products only.",
   );
-  assert.match(factCheckMethodStatement(coverage, true) ?? "", /in this selection\./);
+  assert.match(factCheckMethodLine(coverage, true)?.tip ?? "", /in this selection\./);
 });
 
-test("method statement never calls the set representative and stays in client copy rules", () => {
+test("method line never calls the set representative and keeps qualifiers in the tooltip", () => {
   const one = driftRead([], [probe({ sim_id: 1, prompt_key: "p1", engine: "chatgpt" })]).coverage;
   const many = driftRead([], publishedShape()).coverage;
-  for (const text of [factCheckMethodStatement(one), factCheckMethodStatement(many, true)]) {
-    assert.ok(text);
-    assert.doesNotMatch(text, /representative|random/i);
-    assert.doesNotMatch(text, /\u2014/, "no em dash in client copy");
-    assert.doesNotMatch(text, /regex|collector|probe/i);
+  for (const line of [factCheckMethodLine(one), factCheckMethodLine(many, true)]) {
+    assert.ok(line);
+    const onScreen = `${line.products} · ${line.verified}`;
+    assert.doesNotMatch(onScreen, /\bnot\b|\bno\b/i, "the on-screen line states counts only");
+    for (const text of [onScreen, line.tip]) {
+      assert.doesNotMatch(text, /representative|random/i);
+      assert.doesNotMatch(text, /\u2014/, "no em dash in client copy");
+      assert.doesNotMatch(text, /regex|collector|probe/i);
+    }
   }
-  assert.equal(
-    factCheckMethodStatement(one),
-    "The question set names 1 Fender product for fact checks. 1 of 1 was checked against a verified fact in this run. How this product was picked is not recorded, and neither is what part of Fender's catalog it stands for, so this result covers this product only.",
-  );
+  const single = factCheckMethodLine(one);
+  assert.equal(`${single?.products} · ${single?.verified}`, "1 product checked · 1 with a verified fact");
+  assert.match(single?.tip ?? "", /IntoFocus sends it to every engine on purpose\. 1 of 1 was compared/);
+  assert.match(single?.tip ?? "", /so this result covers this product only\.$/);
 });
 
-test("no fact-check questions means no method statement", () => {
-  assert.equal(factCheckMethodStatement(driftRead([], []).coverage), null);
+test("no fact-check questions means no method line", () => {
+  assert.equal(factCheckMethodLine(driftRead([], []).coverage), null);
 });
 
-test("adding the method statement leaves the Accuracy lead figure and colors unchanged", () => {
+test("the method line leaves the Accuracy lead figure and colors unchanged", () => {
   const coverage = driftRead([], publishedShape()).coverage;
   const lead = factCheckAccuracyLead(coverage);
   assert.equal(lead.rate, "100.0%");
   assert.equal(lead.tone, "success");
   const panel = readFileSync("components/v3/live/ai-search/AiDriftPanel.tsx", "utf8");
-  assert.match(panel, /factCheckMethodStatement\(coverage, windowed\)/);
+  assert.match(panel, /factCheckMethodLine\(coverage, windowed\)/);
   assert.match(panel, /color: rateColor/);
   assert.match(panel, /\{accuracy\.rate\} Accuracy/);
-  // The statement sits in the explainer beside the Accuracy figure, right under the headline.
+  // The line sits in the explainer beside the Accuracy figure, right under the headline.
   const explainer = panel.slice(panel.indexOf("data-ai-accuracy-lead"), panel.indexOf("data-ai-accuracy-row"));
   const headlineAt = explainer.indexOf("data-ai-fact-headline");
   const methodAt = explainer.indexOf("data-ai-fact-method");
   assert.ok(headlineAt > 0 && methodAt > headlineAt, "method follows the headline");
-  assert.ok(methodAt < explainer.indexOf("FACT_CHECK_SCOPE"), "method precedes the scope line");
+  const method = explainer.slice(methodAt, explainer.indexOf("</p>", methodAt));
+  assert.match(method, /<CopyTip label=\{FACT_CHECK_METHOD_TITLE\} description=\{method\.tip\}>/);
   assert.doesNotMatch(explainer, /\btitle=/);
+  const tip = readFileSync("components/v3/live/ai-search/CopyTip.tsx", "utf8");
+  for (const attr of ['className="ifai-term"', "data-ifai-tooltip-title", "data-ifai-tooltip-desc", "tabIndex={0}", "aria-label"]) {
+    assert.ok(tip.includes(attr), attr);
+  }
+  assert.doesNotMatch(tip, /\stitle=/);
 });
 
 test("a fact-check result filter never returns a non-fact-check row", () => {
