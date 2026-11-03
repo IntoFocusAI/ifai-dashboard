@@ -174,7 +174,7 @@ export function FindabilityPanel() {
           <p className="findability-note">
             {read.dealerBundleLoaded ? DEALER_BUNDLE_NOTE : "Dealer bundle status did not load with this read."}
           </p>
-          <FindabilityTable key={selected} rows={filtered} />
+          <FindabilityTable key={selected} outcome={selected} rows={filtered} />
         </div>
       ) : null}
     </div>
