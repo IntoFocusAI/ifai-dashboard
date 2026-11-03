@@ -31,8 +31,8 @@ function fakeClient(tables: Record<string, Row[]>, failOn?: (request: Request) =
   const requests: Request[] = [];
   let seed = 7;
   const random = () => {
-    seed = (seed * 1103515245 + 12345) % 2147483648;
-    return seed / 2147483648;
+    seed = (Math.imul(seed, 1103515245) + 12345) >>> 0;
+    return seed / 4294967296;
   };
   const run = (request: Request) => {
     requests.push(request);

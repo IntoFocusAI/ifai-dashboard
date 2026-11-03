@@ -17,13 +17,16 @@ export const AI_CITATION_COLUMNS =
 
 type ReadResult = PromiseLike<{ data: unknown; error: { message: string } | null }>;
 
-type Ranged = ReadResult & { range: (from: number, to: number) => ReadResult };
+type Ordered = ReadResult & {
+  order: (column: string, options?: { ascending?: boolean }) => Ordered;
+  range: (from: number, to: number) => ReadResult;
+};
 
 /** The slice of the Supabase client these reads use, so tests can pass a fake. */
 export type AiReadClient = {
   from: (view: string) => {
     select: (columns: string) => ReadResult & {
-      order: (column: string, options?: { ascending?: boolean }) => Ranged;
+      order: (column: string, options?: { ascending?: boolean }) => Ordered;
     };
   };
 };
@@ -31,20 +34,29 @@ export type AiReadClient = {
 const PAGE = 1000;
 const MAX_PAGES = 20;
 
+/**
+ * Paged reads need an order that is unique per row. Ties come back in no fixed order,
+ * so a page boundary inside a tie reads some rows twice and skips others.
+ */
+export const AI_READ_ORDER = {
+  calls: ["sim_id", "id"],
+  probes: ["sim_id"],
+  citations: ["sim_id", "position"],
+} as const;
+
 async function readAll<T>(
   client: AiReadClient,
   view: string,
   columns: string,
-  orderBy: string,
+  orderBy: readonly [string, ...string[]],
 ): Promise<T[]> {
   const rows: T[] = [];
+  const [first, ...rest] = orderBy;
   for (let page = 0; page < MAX_PAGES; page += 1) {
     const from = page * PAGE;
-    const { data, error } = await client
-      .from(view)
-      .select(columns)
-      .order(orderBy, { ascending: true })
-      .range(from, from + PAGE - 1);
+    let query = client.from(view).select(columns).order(first, { ascending: true });
+    for (const column of rest) query = query.order(column, { ascending: true });
+    const { data, error } = await query.range(from, from + PAGE - 1);
     if (error) throw new Error(`${view}: ${error.message}`);
     const batch = (data ?? []) as T[];
     rows.push(...batch);
@@ -94,9 +106,9 @@ export async function loadAiSearchRead(client: AiReadClient): Promise<AiSearchRe
 
   try {
     const [calls, probes, citations] = await Promise.all([
-      readAll<AiCallRow>(client, "canvas_ai_simulations", AI_CALL_COLUMNS, "sim_id"),
-      readAll<AiProbeRow>(client, "canvas_ai_probes", AI_PROBE_COLUMNS, "sim_id"),
-      readAll<AiCitationRow>(client, "canvas_ai_citations", AI_CITATION_COLUMNS, "sim_id"),
+      readAll<AiCallRow>(client, "canvas_ai_simulations", AI_CALL_COLUMNS, AI_READ_ORDER.calls),
+      readAll<AiProbeRow>(client, "canvas_ai_probes", AI_PROBE_COLUMNS, AI_READ_ORDER.probes),
+      readAll<AiCitationRow>(client, "canvas_ai_citations", AI_CITATION_COLUMNS, AI_READ_ORDER.citations),
     ]);
     const inRun = <T extends { audit_run_id: string }>(rows: T[]) =>
       rows.filter((row) => row.audit_run_id === run.audit_run_id);

@@ -145,8 +145,8 @@ function fakeClient(rows: Rows, failing?: string): AiReadClient {
   return {
     from(view: string) {
       const result = () => Promise.resolve(failing === view ? { data: null, error: { message: `${view} failed` } } : { data: rows[view] ?? [], error: null });
-      const ranged = Object.assign(result(), { range: () => result() });
-      return { select: () => Object.assign(result(), { order: () => ranged }) };
+      const ordered = Object.assign(result(), { range: () => result(), order: (): unknown => ordered });
+      return { select: () => Object.assign(result(), { order: () => ordered }) };
     },
   } as AiReadClient;
 }
