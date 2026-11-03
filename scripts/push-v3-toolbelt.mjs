@@ -1,7 +1,10 @@
 /**
- * Rebuild fender-brand-canvas-v3.html and upload to Toolbelt workspace storage,
- * then refresh the "v3" dashboard page. Requires .cursor/mcp.json with
- * AEO_Product_Research-FenderTest configured.
+ * Rebuild fender-brand-canvas-v3.html and upload it to the FenderTest
+ * Toolbelt workspace, then refresh dashboard page "v3".
+ *
+ * Connection, in order:
+ * 1. FENDERTEST_TOOLBELT_MCP_URL (cloud environment secret; the Streamable HTTP URL)
+ * 2. .cursor/mcp.json server whose name contains "fendertest"
  *
  * Usage: node scripts/push-v3-toolbelt.mjs
  */
@@ -27,12 +30,39 @@ const { StreamableHTTPClientTransport } = await import(join(sdkRoot, "client/str
 const htmlPath = join(root, "fender-brand-canvas-v3.html");
 const mcpConfigPath = join(root, ".cursor/mcp.json");
 
+function fenderMcpUrl() {
+  const fromEnv = process.env.FENDERTEST_TOOLBELT_MCP_URL?.trim();
+  if (fromEnv) {
+    // Accept a pasted client config snippet as well as a bare URL.
+    const found = fromEnv.match(/https:\/\/[^\s"'<>]+/)?.[0];
+    if (!found || !URL.canParse(found)) {
+      console.error("FENDERTEST_TOOLBELT_MCP_URL does not contain a valid https URL.");
+      process.exit(1);
+    }
+    return found;
+  }
+  if (!existsSync(mcpConfigPath)) {
+    console.error(
+      "Missing FenderTest Toolbelt connection. Set FENDERTEST_TOOLBELT_MCP_URL or create .cursor/mcp.json.",
+    );
+    process.exit(1);
+  }
+  const servers = JSON.parse(readFileSync(mcpConfigPath, "utf8")).mcpServers ?? {};
+  const match = Object.entries(servers).find(([name]) => name.toLowerCase().includes("fendertest"));
+  const url = match?.[1]?.url;
+  if (!url) {
+    console.error(
+      "Set FENDERTEST_TOOLBELT_MCP_URL or add the FenderTest server URL to .cursor/mcp.json.",
+    );
+    process.exit(1);
+  }
+  return url;
+}
+
+const url = fenderMcpUrl();
+
 const build = spawnSync("node", ["scripts/build-v3-html.mjs"], { cwd: root, stdio: "inherit" });
 if (build.status !== 0) process.exit(build.status ?? 1);
-
-const url = JSON.parse(readFileSync(mcpConfigPath, "utf8")).mcpServers[
-  "AEO_Product_Research-FenderTest"
-].url;
 
 const transport = new StreamableHTTPClientTransport(new URL(url));
 const client = new Client({ name: "ifai-v3-push", version: "1.0.0" });
