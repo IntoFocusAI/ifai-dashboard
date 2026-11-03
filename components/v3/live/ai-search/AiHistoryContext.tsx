@@ -10,6 +10,7 @@ import { historyControlLabel, rangeFromMode, type HistoryMode } from "@/lib/ai-s
 import { loadHistoryCatalog, loadHistorySnapshot, type HistorySnapshotResult } from "@/lib/ai-search/history-queries";
 import { isReviewHistoryRun } from "@/lib/ai-search/review-runs";
 import type { AiSearchRead, AiSearchSnapshot } from "@/lib/ai-search/types";
+import { readsWindowRemotely } from "@/lib/ai-search/window-read";
 import { getCanvasSupabase } from "@/lib/supabase/canvas-client";
 
 type CatalogState =
@@ -157,7 +158,7 @@ export function AiHistoryProvider({ current, children }: { current: AiSearchRead
     if (mode.kind === "month" && !publishedDay && current.phase === "loading") return { phase: "loading" };
     if (catalog.phase === "loading") return { phase: "loading" };
     if (catalog.phase === "error") return { phase: "error", message: catalog.message };
-    if (trusted.length < 2 || source === "fixture") {
+    if (!readsWindowRemotely(source, trusted.length)) {
       const snapshots = trusted
         .map((run) => (source === "fixture" ? historyFixtureSnapshot(run.audit_run_id) : null))
         .filter((snapshot): snapshot is AiSearchSnapshot => snapshot != null);
