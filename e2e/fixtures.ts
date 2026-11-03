@@ -1,4 +1,5 @@
 import { expect, test as base, type Locator, type Page } from "@playwright/test";
+import { mockSetAsides, type SetAsideMock } from "./set-aside-mock";
 
 /** Thin page object over the v3 canvas so specs read as behaviour, not selectors. */
 export class Canvas {
@@ -122,6 +123,8 @@ type Fixtures = {
   canvas: Canvas;
   /** Page errors seen during the test; asserted empty on teardown. */
   pageErrors: string[];
+  /** In-memory set-aside endpoints; specs never write the live audit log. */
+  setAsides: SetAsideMock;
 };
 
 /* Both fixtures are `auto` so every test starts on a loaded /v3 with the error
@@ -144,9 +147,17 @@ export const test = base.extend<Fixtures>({
     { auto: true },
   ],
 
+  setAsides: [
+    async ({ page }, use) => {
+      await use(await mockSetAsides(page));
+    },
+    { auto: true },
+  ],
+
   canvas: [
-    async ({ page, pageErrors }, use) => {
+    async ({ page, pageErrors, setAsides }, use) => {
       void pageErrors; // ordering: attach the listener before the first navigation
+      void setAsides; // and the set-aside routes, so live rows never shift the queue
       const canvas = new Canvas(page);
       await canvas.open();
       await use(canvas);

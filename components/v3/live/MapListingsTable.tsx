@@ -1,8 +1,17 @@
 "use client";
 
+import { Fragment } from "react";
 import { ChannelPriceCell } from "@/components/v3/live/ChannelPriceCell";
 import { ResizableTable, type RetailColumn } from "@/components/v3/live/ResizableTable";
 import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
+import {
+  SET_ASIDE_COLUMN,
+  SetAsideCell,
+  SetAsideFormRow,
+  SetAsideHistory,
+  useCheckSetAsides,
+} from "@/components/v3/live/SetAsideTable";
+import { SET_ASIDE_CHECKS } from "@/lib/set-aside/keys";
 import { formatUsd, pendingLabel } from "@/lib/fender-canvas/format";
 import { mapListingSortValue } from "@/lib/fender-canvas/listing-table-sort";
 import {
@@ -49,6 +58,7 @@ function mapColumns(model: MapTabModel): RetailColumn[] {
   if (model.showWalmart) columns.push(money("walmart", "Walmart"));
   if (model.showMusiciansFriend) columns.push(money("musicians-friend", "Musician's Friend", 176));
   for (const channel of model.extraChannels) columns.push(money(channel.channel, channel.name));
+  columns.push(SET_ASIDE_COLUMN);
   return columns;
 }
 
@@ -65,6 +75,8 @@ export function MapListingsTable({
 }) {
   const prices = channelPriceLookup(channelPrices);
   const columns = mapColumns(model);
+  // R-12: approved MAP promotions are recorded here as "Approved exception".
+  const setAsides = useCheckSetAsides(SET_ASIDE_CHECKS.mapPricing, "MAP");
   const sorted = useClientTableSort(rows, columns, (row, columnId) =>
     mapListingSortValue(row, columnId, (id) => {
       const facts = listingChannelFacts(row, prices.get(row.asin.trim()));
@@ -73,6 +85,7 @@ export function MapListingsTable({
   );
 
   return (
+    <>
     <ResizableTable
       tableId="map-listings"
       columns={columns}
@@ -100,7 +113,8 @@ export function MapListingsTable({
             const walmartUrl = storedHttpUrl(row.wmt_url);
             const musiciansFriendUrl = musiciansFriendCheckedPageUrl(prices, row.asin);
             return (
-              <tr key={row.asin}>
+              <Fragment key={row.asin}>
+              <tr>
                 <td className="listing-col">
                   <span className="listing-title-scroll">
                     <strong>{listingLabel(row)}</strong>
@@ -138,11 +152,21 @@ export function MapListingsTable({
                     />
                   );
                 })}
+                <SetAsideCell ctl={setAsides} entityKey={row.asin} canSetAside={Boolean(href)} />
               </tr>
+              <SetAsideFormRow
+                ctl={setAsides}
+                entityKey={row.asin}
+                entityLabel={listingLabel(row)}
+                colSpan={columns.length}
+              />
+              </Fragment>
             );
           })
         )}
       </tbody>
     </ResizableTable>
+    <SetAsideHistory ctl={setAsides} />
+    </>
   );
 }

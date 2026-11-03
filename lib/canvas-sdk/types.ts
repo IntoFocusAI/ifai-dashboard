@@ -125,8 +125,13 @@ export type CommandCenterSpec = {
   items: PriorityItem[];
   /** Open the command center instead of a spoke on first paint. */
   openByDefault?: boolean;
-  /** localStorage key for owner/done state. Placeholder until Supabase per-user state lands. */
+  /** localStorage key for owner chips (and done state when `setAsideClientKey` is unset). */
   storageKey?: string;
+  /**
+   * Client key in public.set_aside_clients. When set, "Done" becomes a server-side
+   * set-aside with a reason, a name, and an audit row; reopen updates the same row.
+   */
+  setAsideClientKey?: string;
 };
 
 export type CanvasTicker = {
