@@ -128,6 +128,40 @@ export function leadSentence(lead: CategoryLead): string {
   return `Fender/Squier leads ${lead.fenderLeads} of ${lead.resolved} resolved answers.${rivalPart}${restPart}${flagged}`;
 }
 
+/** Same shape CitationPieDisc draws. Slice keys pick the shared slice colors. */
+export type LeadPie = {
+  id: string;
+  title: string;
+  total: number;
+  totalLabel: string;
+  slices: Array<{ key: string; label: string; count: number }>;
+};
+
+function pie(id: string, title: string, total: number, totalLabel: string, slices: LeadPie["slices"]): LeadPie {
+  return { id, title, total, totalLabel, slices: slices.filter((slice) => slice.count > 0) };
+}
+
+/** On track, tied, and behind out of the categories with a resolved unbranded discovery answer. */
+export function onTrackPie(summary: CategoryLeadSummary): LeadPie | null {
+  if (summary.measured <= 0) return null;
+  return pie("category-on-track", "Categories on track", summary.measured, "categories with resolved answers", [
+    { key: "fender", label: "On track", count: summary.onTrack },
+    { key: "community", label: "Tied", count: summary.tied.length },
+    { key: "competitor_brand", label: "Behind", count: summary.behind.length },
+  ]);
+}
+
+/** Fender/Squier, the top rival, and every other brand, out of the category's resolved unbranded answers. */
+export function categoryLeadPie(lead: CategoryLead): LeadPie | null {
+  if (lead.status === "not_available" || lead.resolved <= 0) return null;
+  return pie(`category-${lead.key}`, lead.label, lead.resolved, "resolved unbranded discovery answers", [
+    { key: "fender", label: "Fender/Squier leads", count: lead.fenderLeads },
+    { key: "competitor_brand", label: lead.topRival ? `${lead.topRival.brand} leads` : "Top rival leads", count: lead.topRival?.wins ?? 0 },
+    { key: "other", label: "Other brands lead", count: restLeads(lead) },
+    { key: "none", label: "Fender/Squier with a confirmed product error", count: lead.disqualified },
+  ]);
+}
+
 export type LeadFilter = "all" | "fender" | "other";
 
 export type BattlecardFilter = { engine: string; lead: LeadFilter };
@@ -166,4 +200,14 @@ export function leadMatches(status: CategoryLeadStatus, lead: LeadFilter): boole
 
 export function isBattlecardFiltered(filter: BattlecardFilter): boolean {
   return filter.engine !== "" || filter.lead !== "all";
+}
+
+/** The engine chip narrows every pie; the who-leads chip only narrows the category pies and the table. */
+export function heroScope(engineName: string | null, leadFiltered: boolean): string | null {
+  if (engineName && leadFiltered) {
+    return `The pies and the table cover ${engineName} answers. The top three pies also count categories the filter hides.`;
+  }
+  if (engineName) return `The pies and the table cover ${engineName} answers only.`;
+  if (leadFiltered) return "The top three pies count every category, including any the filter hides.";
+  return null;
 }

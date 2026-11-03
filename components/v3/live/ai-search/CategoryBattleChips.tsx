@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import { Check, X, type LucideIcon } from "lucide-react";
-import { LEAD_STATUS_ICONS } from "@/components/v3/live/ai-search/CategoryOnTrackVisual";
+import { LEAD_STATUS_ICONS } from "@/components/v3/live/ai-search/CategoryLeadPies";
 import {
   isBattlecardFiltered,
   LEAD_FILTER_LABELS,

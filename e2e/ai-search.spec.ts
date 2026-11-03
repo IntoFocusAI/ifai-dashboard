@@ -249,19 +249,34 @@ test.describe("Competitive Radar", () => {
     await expect(page.locator(".ai-engine-comparison tbody tr")).not.toHaveCount(0);
   });
 
-  test("category battlecards open on who leads, and chips filter in place", async ({ page }) => {
+  test("category battlecards open on a row of pies, and chips filter in place", async ({ page }) => {
     test.slow();
+    await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/dashboard?spoke=competitors&tab=category-battlecards");
     await expect(page.locator(".drilldown-tab-btn.active")).toHaveText("Category Battlecards");
     const cards = page.locator(".ai-battlecards");
     await expect(cards).toBeVisible({ timeout: 90_000 });
-    await expect(cards.locator(":scope > *").first()).toHaveAttribute("data-ai-on-track", "");
-    await expect(cards.locator("[data-ai-ontrack-figure]")).toContainText(/^\d+ of \d+$/);
+    const heroes = cards.locator(":scope > *").first();
+    await expect(heroes).toHaveAttribute("data-ai-battle-heroes", "");
+    await expect(heroes.locator("[data-ai-ontrack-figure]")).toContainText(/^\d+ of \d+$/);
+    await expect(heroes.locator("[data-ai-win-rate='unbranded_discovery']")).toContainText(/\d+\.\d%/);
+    await expect(heroes.locator("[data-ai-win-rate='branded_consideration']")).toContainText(/\d+\.\d%/);
+    await expect(heroes.locator("[data-citation-pie-disc]")).toHaveCount(3);
+    const discTops = await heroes
+      .locator("[data-citation-pie-disc]")
+      .evaluateAll((els) => els.map((el) => Math.round(el.getBoundingClientRect().top)));
+    expect(new Set(discTops).size, "the three hero pies share one row").toBe(1);
+
     const rows = cards.locator("[data-ai-on-track-category]");
     await expect(rows).not.toHaveCount(0);
-    for (const sentence of await rows.locator("[data-ai-on-track-sentence]").allInnerTexts()) {
-      expect(sentence).toMatch(/\d+ of \d+ resolved answers|No unbranded discovery/);
+    for (const row of await rows.all()) {
+      const status = await row.getAttribute("data-ai-on-track-status");
+      await expect(row.locator(status === "not_available" ? "[data-ai-battle-pie-empty]" : "[data-ai-battle-pie-disc]")).toHaveCount(1);
     }
+    const piesBottom = await cards
+      .locator("[data-ai-battle-lead-graph]")
+      .evaluate((el) => el.getBoundingClientRect().bottom);
+    expect(piesBottom, "hero row and category pies fit a 1440 by 900 window").toBeLessThanOrEqual(900);
     const total = await rows.count();
     const url = page.url();
 
@@ -280,7 +295,7 @@ test.describe("Competitive Radar", () => {
     const engine = cards.locator("[data-ai-battle-chip^='engine:']:not([data-ai-battle-chip='engine:all'])").first();
     await engine.click();
     await expect(engine).toHaveAttribute("aria-pressed", "true");
-    await expect(cards.locator("[data-ai-battle-rates-scope]")).toContainText(/answers in every category/);
+    await expect(cards.locator("[data-ai-battle-rates-scope]")).toContainText(/The pies and the table cover \w+ answers/);
 
     await cards.locator("[data-ai-battle-clear]").first().click();
     await expect(rows).toHaveCount(total);

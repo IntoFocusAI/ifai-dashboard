@@ -6,16 +6,19 @@ import { test } from "node:test";
 import {
   battlecardEngines,
   callsForEngine,
+  categoryLeadPie,
   categoryLeads,
   categoryLeadStatus,
   categoryLeadSummary,
   effectiveBattlecardFilter,
+  heroScope,
   isBattlecardFiltered,
   leadMatches,
   leadSentence,
   leadStatusDefinition,
   NO_BATTLECARD_FILTER,
   ON_TRACK_DEFINITION,
+  onTrackPie,
   restLeads,
 } from "../lib/ai-search/category-on-track.ts";
 import { categoryRoleTallies } from "../lib/ai-search/question-role.ts";
@@ -187,21 +190,98 @@ test("who-leads chips match on-track and behind categories, and clearing restore
   assert.deepEqual(effectiveBattlecardFilter({ engine: "chatgpt", lead: "all" }, ["chatgpt"]), { engine: "chatgpt", lead: "all" });
 });
 
-test("Category Battlecards opens on the on-track visual, then the two rates, then the table", () => {
+test("the hero pie counts on track, tied, and behind out of the measured categories", () => {
+  const rows = [
+    ...times(9, { category: "amps" }),
+    ...times(1, { category: "amps", ...yamaha }),
+    ...times(4, { category: "electrics" }),
+    ...times(4, { category: "electrics", ...taylor }),
+    ...times(2, { category: "acoustics" }),
+    ...times(7, { category: "acoustics", ...yamaha }),
+    ...times(4, { category: "squier", prompt: BRANDED }),
+  ];
+  const summary = categoryLeadSummary(leadsOf(rows));
+  const hero = onTrackPie(summary);
+  assert.ok(hero);
+  assert.equal(hero.total, 3, "Squier has no unbranded questions, so it is not in M");
+  assert.deepEqual(
+    hero.slices.map((slice) => [slice.label, slice.count]),
+    [
+      ["On track", 1],
+      ["Tied", 1],
+      ["Behind", 1],
+    ],
+  );
+  assert.equal(onTrackPie({ measured: 0, onTrack: 0, tied: [], behind: [] }), null);
+});
+
+test("each category pie splits resolved answers into Fender/Squier, the top rival, other brands, and product errors", () => {
+  const [lead] = leadsOf([
+    ...times(4, {}),
+    ...times(1, { material_hallucination: "confirmed" }),
+    ...times(5, yamaha),
+    ...times(2, taylor),
+  ]);
+  const pie = categoryLeadPie(lead);
+  assert.ok(pie);
+  assert.equal(pie.total, 12);
+  assert.deepEqual(
+    pie.slices.map((slice) => [slice.key, slice.label, slice.count]),
+    [
+      ["fender", "Fender/Squier leads", 4],
+      ["competitor_brand", "Yamaha leads", 5],
+      ["other", "Other brands lead", 2],
+      ["none", "Fender/Squier with a confirmed product error", 1],
+    ],
+  );
+  assert.equal(
+    pie.slices.reduce((sum, slice) => sum + slice.count, 0),
+    pie.total,
+    "slices add up to the resolved denominator",
+  );
+  const [squier] = leadsOf(times(4, { category: "squier", prompt: BRANDED }));
+  assert.equal(squier.status, "not_available");
+  assert.equal(categoryLeadPie(squier), null, "a category with no data gets Not available*, not an empty pie");
+});
+
+test("the scope line says which chips narrow the hero pies", () => {
+  assert.equal(heroScope(null, false), null);
+  assert.equal(heroScope("ChatGPT", false), "The pies and the table cover ChatGPT answers only.");
+  assert.match(heroScope(null, true) ?? "", /top three pies count every category/);
+  assert.match(heroScope("Gemini", true) ?? "", /^The pies and the table cover Gemini answers\. The top three pies also count/);
+});
+
+test("Category Battlecards opens on the hero pie row, then the chips, the category pies, and the table", () => {
   const panel = read("components/v3/live/ai-search/CategoryBattlecardsPanel.tsx");
-  const visualAt = panel.indexOf("<CategoryOnTrackVisual");
+  const heroesAt = panel.indexOf("<CategoryBattleHeroes");
   const chipsAt = panel.indexOf("<CategoryBattleChips");
-  const ratesAt = panel.indexOf("<RunDetailsLead");
+  const piesAt = panel.indexOf("<CategoryLeadPies");
   const tableAt = panel.indexOf("Category battlecards");
-  assert.ok(visualAt >= 0 && chipsAt > visualAt && ratesAt > chipsAt && tableAt > ratesAt);
+  assert.ok(heroesAt >= 0 && chipsAt > heroesAt && piesAt > chipsAt && tableAt > piesAt);
   assert.match(panel, /import "@\/components\/v3\/live\/ai-search\/category-battlecards\.css"/);
-  assert.match(panel, /<RunDetailsLead snapshot=\{scoped\}/, "the two rates follow the engine chip");
+  assert.match(panel, /<CategoryBattleHeroes\s+snapshot=\{scoped\}/, "every hero pie follows the engine chip");
   assert.match(panel, /sorted\.rows\.map/);
   assert.match(panel, /callsForEngine\(snapshot\.calls, filter\.engine\)/, "numbers come from the date pill's snapshot");
-  const visual = read("components/v3/live/ai-search/CategoryOnTrackVisual.tsx");
-  assert.match(visual, /data-ai-battle-lead-graph=""/);
-  assert.match(visual, /data-ai-on-track-status=\{lead\.status\}/);
-  assert.match(visual, /LEAD_STATUS_ICONS\[lead\.status\]/, "an icon and a word carry each status, not color alone");
+  assert.doesNotMatch(panel, /CategoryOnTrackVisual|leadSentence/, "the table already lists each category's figures");
+
+  const heroes = read("components/v3/live/ai-search/CategoryBattleHeroes.tsx");
+  const onTrackAt = heroes.indexOf("<OnTrackHero");
+  const ratesAt = heroes.indexOf("<RunDetailsLead snapshot={snapshot}");
+  assert.ok(onTrackAt >= 0 && ratesAt > onTrackAt, "categories on track, then the two rates");
+  assert.match(heroes, /<CitationPieDisc/);
+  assert.match(heroes, /\$\{role\}\/fender_win/);
+  assert.match(heroes, /\$\{role\}\/resolved/);
+  const css = read("components/v3/live/ai-search/category-battlecards.css");
+  assert.match(css, /\.ai-battle-heroes > \[data-ai-run-details-lead\] \{\s*display: contents;/);
+  assert.match(css, /grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/);
+  for (const size of css.matchAll(/font-size:\s*([\d.]+)px/g)) assert.ok(Number(size[1]) >= 10, `${size[0]} keeps the 10px floor`);
+
+  const pies = read("components/v3/live/ai-search/CategoryLeadPies.tsx");
+  assert.match(pies, /data-ai-battle-lead-graph=""/);
+  assert.match(pies, /data-ai-on-track-status=\{lead\.status\}/);
+  assert.match(pies, /LEAD_STATUS_ICONS\[lead\.status\]/, "an icon and a word carry each status, not color alone");
+  assert.match(pies, /<EvidenceLink focus=\{focus\} tab=\{AI_TABS\.simulations\}/, "a pie opens its table row's evidence");
+  assert.match(pies, /Top rival: \{lead\.topRival\.brand\}/);
   const chips = read("components/v3/live/ai-search/CategoryBattleChips.tsx");
   assert.match(chips, /aria-pressed=\{pressed\}/);
   assert.match(chips, /Clear filters/);
@@ -211,7 +291,8 @@ test("Category Battlecards opens on the on-track visual, then the two rates, the
 test("battlecard copy has no em dash and no native title tooltips", () => {
   for (const path of [
     "components/v3/live/ai-search/CategoryBattlecardsPanel.tsx",
-    "components/v3/live/ai-search/CategoryOnTrackVisual.tsx",
+    "components/v3/live/ai-search/CategoryBattleHeroes.tsx",
+    "components/v3/live/ai-search/CategoryLeadPies.tsx",
     "components/v3/live/ai-search/CategoryBattleChips.tsx",
     "lib/ai-search/category-on-track.ts",
   ]) {
@@ -220,8 +301,8 @@ test("battlecard copy has no em dash and no native title tooltips", () => {
     assert.doesNotMatch(text, /\stitle=/, path);
     if (path.endsWith(".tsx")) assert.ok(text.split("\n").length - 1 <= 400, `${path} stays at or under 400 lines`);
   }
-  const visual = read("components/v3/live/ai-search/CategoryOnTrackVisual.tsx");
+  const pies = read("components/v3/live/ai-search/CategoryLeadPies.tsx");
   for (const attr of ['className="ifai-term"', "data-ifai-tooltip-title", "data-ifai-tooltip-desc", "tabIndex={0}"]) {
-    assert.ok(visual.includes(attr), attr);
+    assert.ok(pies.includes(attr), attr);
   }
 });

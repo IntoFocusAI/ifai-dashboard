@@ -91,25 +91,24 @@ test("zero competitor leads yields an empty mark list (no fake zero chart)", () 
   );
 });
 
-test("Category Battlecards keeps the two rates and marks the categories another brand leads", () => {
+test("Category Battlecards keeps the two rates in its hero row and a pie for each category", () => {
   const panel = read("components/v3/live/ai-search/CategoryBattlecardsPanel.tsx");
-  assert.match(panel, /RunDetailsLead/);
-  assert.match(panel, /CategoryOnTrackVisual/);
-  assert.doesNotMatch(panel, /RoleSumLine/);
-  const visual = read("components/v3/live/ai-search/CategoryOnTrackVisual.tsx");
-  assert.match(visual, /data-ai-battle-lead-graph/);
+  assert.match(panel, /CategoryBattleHeroes/);
+  assert.match(panel, /CategoryLeadPies/);
+  assert.doesNotMatch(panel, /RoleSumLine|CategoryCompetitorLeadGraph/);
+  assert.match(read("components/v3/live/ai-search/CategoryBattleHeroes.tsx"), /<RunDetailsLead snapshot=\{snapshot\}/);
+  const pies = read("components/v3/live/ai-search/CategoryLeadPies.tsx");
+  assert.match(pies, /data-ai-battle-lead-graph=""/);
+  assert.match(pies, /AiTerm term="unbranded discovery"/);
 });
 
-test("graph and panel copy have no em dash and no native title tooltips", () => {
+test("marks and panel copy have no em dash and no native title tooltips", () => {
   for (const path of [
     "components/v3/live/ai-search/CategoryBattlecardsPanel.tsx",
-    "components/v3/live/ai-search/CategoryCompetitorLeadGraph.tsx",
     "components/v3/live/ai-search/category-competitor-lead-marks.ts",
   ]) {
     const text = read(path);
     assert.doesNotMatch(text, /\u2014/, path);
     assert.doesNotMatch(text, /\stitle=/, path);
   }
-  const graph = read("components/v3/live/ai-search/CategoryCompetitorLeadGraph.tsx");
-  assert.match(graph, /AiTerm term="unbranded discovery"/);
 });

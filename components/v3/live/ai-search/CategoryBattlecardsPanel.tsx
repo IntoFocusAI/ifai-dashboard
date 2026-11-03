@@ -8,10 +8,10 @@ import { useAiHistoryOptional } from "@/components/v3/live/ai-search/AiHistoryCo
 import { AiReadGate } from "@/components/v3/live/ai-search/AiReadGate";
 import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
 import { CategoryBattleChips } from "@/components/v3/live/ai-search/CategoryBattleChips";
-import { CategoryOnTrackVisual, LeadStatusBadge } from "@/components/v3/live/ai-search/CategoryOnTrackVisual";
+import { CategoryBattleHeroes } from "@/components/v3/live/ai-search/CategoryBattleHeroes";
+import { CategoryLeadPies, LeadStatusBadge } from "@/components/v3/live/ai-search/CategoryLeadPies";
 import { EvidenceLink } from "@/components/v3/live/ai-search/EvidenceLink";
 import { KeptOutNote, RoleCount, largestResolved, roleColumn, roleRateSort } from "@/components/v3/live/ai-search/RoleRateTable";
-import { RunDetailsLead } from "@/components/v3/live/ai-search/RunDetailsLead";
 import { AI_TABS } from "@/lib/ai-search/canvas-surfaces";
 import {
   battlecardEngines,
@@ -19,6 +19,7 @@ import {
   categoryLeads,
   categoryLeadSummary,
   effectiveBattlecardFilter,
+  heroScope,
   leadMatches,
   NO_BATTLECARD_FILTER,
   type BattlecardFilter,
@@ -60,13 +61,6 @@ function battleSortValue(
   return aside.errors;
 }
 
-function ratesScope(engineName: string | null, leadFiltered: boolean): string | null {
-  if (engineName && leadFiltered) return `Both rates cover ${engineName} answers in every category, including any the filter hides.`;
-  if (engineName) return `Both rates cover ${engineName} answers only.`;
-  if (leadFiltered) return "Both rates cover every category, including any the filter hides.";
-  return null;
-}
-
 function Battlecards({ snapshot }: { snapshot: AiSearchSnapshot }) {
   const history = useAiHistoryOptional();
   const showSmallSample = !isWindowHistoryKind(history?.mode.kind);
@@ -94,34 +88,27 @@ function Battlecards({ snapshot }: { snapshot: AiSearchSnapshot }) {
   const sorted = useClientTableSort(battles, COLUMNS, (row, columnId) =>
     battleSortValue(row, columnId, leadersFor(row.key)[0], largest),
   );
-  const scope = ratesScope(engineName, filter.lead !== "all");
-
   return (
     <div className="ai-role-rates">
       <div className="content-box ai-battlecards">
-        <CategoryOnTrackVisual
-          leads={shownLeads}
+        <CategoryBattleHeroes
+          snapshot={scoped}
           summary={categoryLeadSummary(leads)}
-          engineName={engineName}
+          scope={heroScope(engineName, filter.lead !== "all")}
+        />
+        <CategoryBattleChips
+          engines={engines}
+          filter={filter}
+          onChange={setChosen}
+          shown={shownLeads.length}
+          total={leads.length}
+        />
+        <CategoryLeadPies
+          leads={shownLeads}
           largestResolved={largest.unbranded}
           showSmallSample={showSmallSample}
           onClear={() => setChosen(NO_BATTLECARD_FILTER)}
-          chips={
-            <CategoryBattleChips
-              engines={engines}
-              filter={filter}
-              onChange={setChosen}
-              shown={shownLeads.length}
-              total={leads.length}
-            />
-          }
         />
-        <RunDetailsLead snapshot={scoped} />
-        {scope ? (
-          <p className="ai-battle-rates-scope" data-ai-battle-rates-scope="">
-            {scope}
-          </p>
-        ) : null}
         {mixed ? (
           <p className="ai-role-footnote" data-ai-mixed-scoring>
             {MIXED_SCORING_NOTE}
