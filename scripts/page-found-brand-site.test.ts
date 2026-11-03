@@ -11,7 +11,11 @@ import {
   PAGE_FOUND_ANCHOR,
   PAGE_FOUND_UNAVAILABLE,
 } from "../lib/fender-canvas/page-found-hero.ts";
-import type { CanvasMetricsRow } from "../lib/fender-canvas/types.ts";
+import type { CanvasBundle, CanvasMetricsRow } from "../lib/fender-canvas/types.ts";
+import { buildLiveNodes } from "../lib/fender-canvas/nodes-from-live.ts";
+import { buildLiveMetrics } from "../lib/fender-canvas/metrics-from-live.ts";
+import { fenderStaticNodes } from "../components/v3/fender-static-nodes.ts";
+import { PAGE_FOUND_BUBBLE_ID } from "../components/v3/live/useLandOnPageFoundHero.ts";
 
 const root = new URL("..", import.meta.url);
 const read = (path: string) => readFileSync(new URL(path, root), "utf8");
@@ -106,4 +110,27 @@ test("Brand-Site Specs renders the page-found hero first with the shared card an
   assert.match(card, /data-ifai-tooltip-desc/);
   assert.doesNotMatch(card, /(?<![\w-])title=/);
   assert.doesNotMatch(panel, /(?<![\w-])title=/);
+});
+
+test("the AI Readiness bubble's page-found figure opens Brand-Site Specs at that hero", () => {
+  const specTabs = JSON.parse(read("data/fender-v3-spec.json")).spokes.specs.tabs as string[];
+  const resolve = (subTab: string) =>
+    specTabs.findIndex((tab) => tab.toLowerCase().includes(subTab.toLowerCase()));
+  const m = metrics({});
+  const bundle = { m, divisions: [], cats: [], engines: [], sov: [], missing: [], fresh: [] } as unknown as CanvasBundle;
+  const live = buildLiveNodes(bundle, buildLiveMetrics(bundle)).find((node) => node.id === PAGE_FOUND_BUBBLE_ID);
+  const fixed = fenderStaticNodes.find((node) => node.id === PAGE_FOUND_BUBBLE_ID);
+  for (const node of [live, fixed]) {
+    assert.ok(node?.subTab);
+    assert.equal(node.spokeId, "specs");
+    assert.equal(specTabs[resolve(node.subTab)], "Brand-Site Specs");
+  }
+  const hero = brandSitePageFoundHero(m);
+  assert.deepEqual(live?.heroValue, { value: hero.percent, label: hero.label });
+
+  const panel = read("components/v3/live/MachineReadabilityPanel.tsx");
+  const land = read("components/v3/live/useLandOnPageFoundHero.ts");
+  assert.match(panel, /useLandOnPageFoundHero\(PAGE_FOUND_ANCHOR\)/);
+  assert.match(land, /data-graph-node-id="\$\{PAGE_FOUND_BUBBLE_ID\}"/);
+  assert.match(land, /scrollIntoView/);
 });

@@ -57,3 +57,29 @@ test("Brand-Site Specs shows the page-found hero and opens its checked SKUs", as
   await expect(table.locator("[data-page-found-row]")).toHaveCount(2);
   await expect(page.locator("#machine-readability-pages")).toHaveCount(0);
 });
+
+test("the AI Readiness bubble's page-found figure opens Brand-Site Specs at that hero", async ({ page }) => {
+  await mockCanvasRead(page);
+  const canvas = new Canvas(page);
+  await canvas.open();
+  const bubble = page.locator("[data-graph-node-id='spoke-specs']");
+  await expect(bubble).toContainText("fender.com page found");
+  await expect(bubble).toContainText("50.0%");
+
+  await openAiReadiness(page, canvas);
+  await expect(canvas.activeTab).toContainText("Brand-Site Specs");
+  const hero = page.locator("#brand-site-page-found[data-machine-hero='page_found']");
+  await expect(hero).toBeInViewport();
+  await expect(hero.locator("[data-hero-percent]")).toHaveText("50.0%");
+
+  // Already on Brand-Site Specs and scrolled away: the bubble still lands on the hero.
+  await hero.getByRole("button", { name: "fender.com page found" }).click();
+  await page.locator("#brand-site-page-found-skus").scrollIntoViewIfNeeded();
+  await page.locator(".drilldown-body").evaluate((body) => {
+    body.scrollTop = body.scrollHeight;
+  });
+  await expect(hero).not.toBeInViewport({ ratio: 0.5 });
+  await page.locator("[data-graph-node-id='spoke-specs']").click({ force: true });
+  await expect(canvas.activeTab).toContainText("Brand-Site Specs");
+  await expect(hero).toBeInViewport({ ratio: 1 });
+});
