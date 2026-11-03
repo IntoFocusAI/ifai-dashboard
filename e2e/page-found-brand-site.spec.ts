@@ -38,7 +38,8 @@ test("Brand-Site Specs shows the page-found hero and opens its checked SKUs", as
   );
   await expect(hero).not.toContainText(/older spec read|Findability/);
 
-  await hero.getByRole("button", { name: "fender.com page found" }).click();
+  // The bubble lands with this table open.
+  await expect(hero.getByRole("button", { name: "fender.com page found" })).toHaveAttribute("aria-expanded", "true");
   const table = page.locator("#brand-site-page-found-skus");
   await expect(table).toHaveAttribute("data-page-found-table", "ready");
   await expect(table).toHaveAttribute("data-page-found-found", "2");
@@ -85,7 +86,7 @@ test("Brand-Site Specs shows the page-found hero and opens its checked SKUs", as
   await expect(page.locator("#machine-readability-pages")).toHaveCount(0);
 });
 
-test("the AI Readiness bubble's page-found figure opens Brand-Site Specs at that hero", async ({ page }) => {
+test("the AI Readiness bubble's page-found figure opens Brand-Site Specs at that hero with its table open", async ({ page }) => {
   await mockCanvasRead(page);
   const canvas = new Canvas(page);
   await canvas.open();
@@ -96,12 +97,14 @@ test("the AI Readiness bubble's page-found figure opens Brand-Site Specs at that
   await openAiReadiness(page, canvas);
   await expect(canvas.activeTab).toContainText("Brand-Site Specs");
   const hero = page.locator("#brand-site-page-found[data-machine-hero='page_found']");
+  const pageFound = page.locator("#brand-site-page-found-skus");
+  const missingSpecs = page.locator("#machine-readability-pages");
   await expect(hero).toBeInViewport();
   await expect(hero.locator("[data-hero-percent]")).toHaveText("50.0%");
+  await expect(pageFound).toHaveAttribute("data-page-found-table", "ready");
+  await expect(missingSpecs).toHaveCount(0);
 
   // Already on Brand-Site Specs and scrolled away: the bubble still lands on the hero.
-  await hero.getByRole("button", { name: "fender.com page found" }).click();
-  await page.locator("#brand-site-page-found-skus").scrollIntoViewIfNeeded();
   await page.locator(".drilldown-body").evaluate((body) => {
     body.scrollTop = body.scrollHeight;
   });
@@ -109,4 +112,36 @@ test("the AI Readiness bubble's page-found figure opens Brand-Site Specs at that
   await page.locator("[data-graph-node-id='spoke-specs']").click({ force: true });
   await expect(canvas.activeTab).toContainText("Brand-Site Specs");
   await expect(hero).toBeInViewport({ ratio: 1 });
+  await expect(pageFound).toHaveAttribute("data-page-found-table", "ready");
+
+  // Already open on the missing-specs table: the bubble switches back to the page-found table.
+  await page.locator("[data-machine-hero='missing_specs'] button.retail-explore").click();
+  await expect(missingSpecs).toBeVisible();
+  await expect(pageFound).toHaveCount(0);
+  await page.locator("[data-graph-node-id='spoke-specs']").click({ force: true });
+  await expect(pageFound).toHaveAttribute("data-page-found-table", "ready");
+  await expect(missingSpecs).toHaveCount(0);
+  await expect(hero).toBeInViewport({ ratio: 1 });
+
+  // Any other way in keeps the missing-specs table as the default.
+  await canvas.openTab("Findability");
+  await canvas.openTab("Brand-Site Specs");
+  await expect(missingSpecs).toBeVisible();
+  await expect(pageFound).toHaveCount(0);
+});
+
+test("the Brand-Site Specs satellite still opens on missing machine-readable specs", async ({ page }) => {
+  await mockCanvasRead(page);
+  const canvas = new Canvas(page);
+  await canvas.open();
+  const satellite = page.locator("[data-graph-node-id='sat-schema']");
+  await expect(async () => {
+    await page.locator("[data-graph-node-id='spoke-specs']").hover({ force: true });
+    await expect(page.locator(".satellite-group.visible")).toHaveCount(1, { timeout: 2000 });
+    await satellite.click({ force: true });
+    await expect(page.locator(".ifai-canvas.column-layout")).toHaveCount(1, { timeout: 2000 });
+  }).toPass({ timeout: 20_000 });
+  await expect(canvas.activeTab).toContainText("Brand-Site Specs");
+  await expect(page.locator("#machine-readability-pages")).toBeVisible();
+  await expect(page.locator("#brand-site-page-found-skus")).toHaveCount(0);
 });

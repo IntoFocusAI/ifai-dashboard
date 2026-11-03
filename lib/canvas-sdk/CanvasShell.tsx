@@ -7,6 +7,7 @@ import { CommandCenter } from "@/lib/canvas-sdk/CommandCenter";
 import { HubSlots } from "@/lib/canvas-sdk/HubSlots";
 import { MetricWidgets } from "@/lib/canvas-sdk/MetricWidgets";
 import { usePanelInteractions } from "@/lib/canvas-sdk/panel-interactions";
+import { landPanelFrom } from "@/lib/canvas-sdk/panel-landing";
 import type { CanvasRenderContext, TickerIcon } from "@/lib/canvas-sdk/types";
 import { MinimalView, ViewModeSwitch, useCanvasViewMode, type CanvasSpecWithViews } from "@/lib/canvas-sdk/canvas-views";
 import { SHOW_HEADER_TICKERS } from "@/lib/canvas-sdk/canvas-chrome-flags";
@@ -488,9 +489,10 @@ export function CanvasShell({ spec, children }: Props) {
   }, [closeDrilldown, frameOverview, hidePanel, iom, restoreTourLauncher]);
 
   const focusNode = useCallback(
-    (spokeId: string, subTab?: string) => {
+    (spokeId: string, subTab?: string, fromBubble?: string) => {
       const spoke = spec.spokes[spokeId];
       if (!spoke) return;
+      landPanelFrom(fromBubble ?? null);
       activeSpokeRef.current = spokeId;
       setActiveSpoke(spokeId);
       setPanelView("spoke");

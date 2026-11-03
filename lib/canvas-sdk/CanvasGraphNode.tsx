@@ -25,7 +25,7 @@ export function CanvasGraphNode({
   node: CanvasNode;
   contentRadius?: number;
   centered: boolean;
-  onFocusNode: (spokeId: string, subTab?: string) => void;
+  onFocusNode: (spokeId: string, subTab?: string, fromBubble?: string) => void;
   onResetView: () => void;
   onShowTooltip: (evt: MouseEvent, title: string, desc: string, hasMoreInfo?: boolean) => void;
   onHideTooltip: () => void;
@@ -68,7 +68,7 @@ export function CanvasGraphNode({
         onInspect?.();
         // The center node is the portfolio overview. A click always reopens it,
         // including when the camera is already framed on the hub.
-        if (node.spokeId) onFocusNode(node.spokeId, node.subTab);
+        if (node.spokeId) onFocusNode(node.spokeId, node.subTab, node.id);
         else onResetView();
         onHideTooltip();
       }}

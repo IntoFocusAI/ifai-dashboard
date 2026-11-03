@@ -13,6 +13,7 @@ import { commerceInputsFromLive, consensusFromLive } from "../lib/fender-canvas/
 import { commerceScore } from "../lib/fender-canvas/consensus-scores.ts";
 import { formatPct, formatUsd } from "../lib/fender-canvas/format.ts";
 import { buildLiveMetrics } from "../lib/fender-canvas/metrics-from-live.ts";
+import { isNotAvailable } from "../lib/fender-canvas/minimal-metric-kit.ts";
 import {
   buildMinimalMetrics,
   MINIMAL_ENTRIES,
@@ -20,6 +21,7 @@ import {
   type StockLossRead,
 } from "../lib/fender-canvas/minimal-metrics.ts";
 import { buildLiveNodes } from "../lib/fender-canvas/nodes-from-live.ts";
+import { brandSitePageFoundHero } from "../lib/fender-canvas/page-found-hero.ts";
 import type { StockLossRow } from "../lib/fender-canvas/stock-loss.ts";
 import {
   mapLeakageFinding,
@@ -257,8 +259,37 @@ test("the list offers most headline figures, grouped by area, and each opens a t
     assert.equal(slot.spokeId, node.spokeId, `${slot.id} spoke`);
     assert.equal(slot.tone, node.status, `${slot.id} tone`);
   }
-  for (const id of ["hub", "spoke-roadmap", "spoke-specs"]) assert.equal(ids.includes(id), false, `${id} is not offered`);
-  assert.equal(slots.some((slot) => /page found/i.test(slot.label)), false, "fender.com page found waits for its tab");
+  for (const id of ["hub", "spoke-roadmap"]) assert.equal(ids.includes(id), false, `${id} is not offered`);
+});
+
+test("fender.com page found reads the AI Readiness bubble and the Brand-Site Specs hero, and opens that tab", () => {
+  const b = bundle();
+  const { nodes, slots } = build(retailReady(), aiReady(), findability, { b });
+  const slot = slotById(slots, "spoke-specs");
+  const bubble = nodeById(nodes, "spoke-specs");
+  const hero = brandSitePageFoundHero(b.m);
+  assert.equal(slot.label, "fender.com page found");
+  assert.equal(slot.label, hero.label);
+  assert.equal(slot.value, "13.3%");
+  assert.equal(slot.value, bubble.heroValue?.value);
+  assert.equal(slot.value, hero.percent);
+  assert.equal(slot.tone, bubble.status);
+  assert.equal(slot.reading.ratio, "123 of 925 checked SKUs");
+  assert.equal(slot.reading.ratio, `${hero.ratio} checked SKUs`);
+  assert.deepEqual(slot.reading.pie, hero.pie);
+  assert.equal(slot.reading.pie?.id, "brand-site-page-found");
+  assert.equal(slot.spokeId, "specs");
+  assert.equal(openedTab(slot.spokeId, slot.subTab), "Brand-Site Specs");
+  const readiness = slots.filter((item) => item.spokeId === "specs").map((item) => item.id);
+  assert.equal(readiness.indexOf("spoke-specs") + 1, readiness.indexOf("sat-schema"), "leads Brand-Site Specs, as its hero does");
+
+  const missing = build(retailReady(), aiReady(), findability, { b: { ...b, m: { catalog_skus: 3598 } as CanvasMetricsRow } });
+  const unread = slotById(missing.slots, "spoke-specs");
+  assert.equal(unread.value, nodeById(missing.nodes, "spoke-specs").heroValue?.value);
+  assert.ok(isNotAvailable(unread.value), `reads ${unread.value}`);
+  assert.equal(unread.reading.ratio, null);
+  assert.equal(unread.reading.pie, null);
+  assert.equal(unread.reading.missing, brandSitePageFoundHero(null).figureTip);
 });
 
 test("both Suppressed Listings figures and both Run Summary and Run Details rates are separate options", () => {
@@ -457,7 +488,7 @@ test("each live figure says N of M and the larger slots carry the tab's disc", (
     "spoke-retail", "retail-ai-commerce", "suppressed-buy-box-withheld", "sat-buybox", "sat-map", "sat-asin",
     "spoke-aeo", "run-summary-branded", "run-details-unbranded", "sat-prompts", "sat-citations", "sat-drift",
     "sat-findability", "findability-official-family-page", "findability-completed-not-found",
-    "findability-ambiguous-candidate", "findability-not-checked", "spoke-competitors", "battlecards-unbranded",
+    "findability-ambiguous-candidate", "findability-not-checked", "spoke-specs", "spoke-competitors", "battlecards-unbranded",
     "battlecards-branded", "battlecards-electrics-unbranded", "battlecards-acoustics-unbranded",
     "battlecards-amps-unbranded", "battlecards-basses-unbranded", "battlecards-beginner-unbranded", "sat-taylor", "sat-amps", "engines-unbranded",
     "engines-branded", "summary-ai-consensus", "summary-ai-foundation", "summary-ai-commerce",
@@ -481,7 +512,7 @@ test("each live figure says N of M and the larger slots carry the tab's disc", (
     assert.equal(slot.reading.missing, null, `${slot.id} should be ready`);
   }
   const withDisc = new Set(slots.filter((slot) => slot.reading.pie).map((slot) => slot.id));
-  for (const id of ["spoke-retail", "sat-map", "sat-asin", "sat-findability", "findability-official-family-page", "sat-drift", "sat-prompts"]) {
+  for (const id of ["spoke-retail", "sat-map", "sat-asin", "sat-findability", "findability-official-family-page", "spoke-specs", "sat-drift", "sat-prompts"]) {
     assert.ok(withDisc.has(id), `${id} carries its tab disc`);
   }
   for (const slot of slots) {
@@ -585,5 +616,5 @@ test("the switch offers only Minimal and Balanced and the shell wiring stays min
   assert.match(shell, /<ViewModeSwitch views=\{views\} \/>\s*\{spec\.headerSlot\}/);
   assert.match(shell, /<MinimalView views=\{views\} spokes=\{spec\.spokes\} onOpenMetric=\{focusNode\} \/>/);
   assert.match(shell, /<HubSlots feeds=\{spec\.hubSlots\} bubbleId=\{inspectedBubbleId\} onOpen=\{focusNode\} \/>/);
-  assert.ok(shell.split("\n").length <= 1593, "CanvasShell does not grow");
+  assert.ok(shell.split("\n").length <= 1595, "CanvasShell does not grow past the bubble landing's import and call");
 });

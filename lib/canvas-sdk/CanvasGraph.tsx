@@ -21,7 +21,8 @@ type Props = {
   tourY: number;
   tourRadius: number;
   tourCategory: string;
-  onFocusNode: (spokeId: string, subTab?: string) => void;
+  /** `fromBubble` is the clicked bubble's id, so its tab can land on what that bubble leads with. */
+  onFocusNode: (spokeId: string, subTab?: string, fromBubble?: string) => void;
   onInspectBubble?: (nodeId: string) => void;
   onResetView: () => void;
   overviewNonce: number;
