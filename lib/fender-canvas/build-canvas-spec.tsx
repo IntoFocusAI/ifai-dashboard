@@ -11,6 +11,7 @@ import graphLayout from "@/data/fender-v3-spokes.json";
 import type { TourStep } from "@/lib/canvas-sdk/types";
 import type { CanvasUserMenu } from "@/lib/canvas-sdk/types";
 import { defineCanvas } from "@/lib/canvas-sdk/types";
+import type { CanvasSpecWithViews } from "@/lib/canvas-sdk/minimal-view-types";
 import { aiMetrics } from "@/lib/ai-search/canvas-surfaces";
 import type { AiSearchRead } from "@/lib/ai-search/types";
 import type { FindabilityRead } from "@/lib/findability/copy";
@@ -19,6 +20,7 @@ import { specPageCounts } from "@/lib/fender-canvas/machine-readability";
 import { buildHubSlots } from "@/lib/fender-canvas/hub-slots";
 import { headlineSentence, headlineSurface } from "@/lib/fender-canvas/portfolio-retail-display";
 import { buildLiveMetrics } from "@/lib/fender-canvas/metrics-from-live";
+import { buildMinimalMetrics } from "@/lib/fender-canvas/minimal-metrics";
 import { buildLiveNodes } from "@/lib/fender-canvas/nodes-from-live";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
 import { fenderCanvasEdges, frameTourStep, withPrimaryFocusTargets } from "@/lib/fender-canvas/primary-spoke-layout";
@@ -48,10 +50,19 @@ export function buildStaticFenderCanvasSpec(options: BuildCanvasSpecOptions = {}
   return buildFenderCanvasSpec(null, options);
 }
 
+/** Minimal view keys are new, so a first visit opens on Balanced with six empty slots. */
+function minimalViewKeys(scope: string) {
+  return {
+    viewStorageKey: `ifai:fender:canvas-view:v1:${scope}`,
+    smallStorageKey: `ifai:fender:minimal-small:v1:${scope}`,
+    largeStorageKey: `ifai:fender:minimal-large:v1:${scope}`,
+  };
+}
+
 export function buildFenderCanvasSpec(
   bundle: CanvasBundle | null,
   options: BuildCanvasSpecOptions = {},
-) {
+): CanvasSpecWithViews {
   const retail = options.retail ?? { phase: "loading" as const };
   const aiSearch = options.aiSearch ?? { phase: "loading" as const };
   const findability = options.findability ?? { phase: "loading" as const };
@@ -61,8 +72,21 @@ export function buildFenderCanvasSpec(
   const ai = metrics.overallAiWinRate;
   const headline = headlineSurface(retail);
   const commandCenter = bundle ? buildLiveCommandCenter(bundle, retail, aiSearch) : fenderCommandCenter;
+  const nodes = bundle ? buildLiveNodes(bundle, metrics, retail, aiSearch, findability) : fenderStaticNodes;
+  const minimalView = bundle
+    ? {
+        metrics: buildMinimalMetrics(nodes, {
+          bundle,
+          retail,
+          ai: aiSearch,
+          findability,
+          phaseOneDetail: metrics.phaseOneLift.detail,
+        }),
+        ...minimalViewKeys(options.metricStorageSuffix ?? "anonymous"),
+      }
+    : undefined;
 
-  return defineCanvas({
+  const spec = defineCanvas({
     appearance: "iom",
     commandCenter,
     promptsEditor: (close) => <PromptsEditor onClose={close} />,
@@ -126,7 +150,7 @@ export function buildFenderCanvasSpec(
     ],
     badges: [],
     edges: fenderCanvasEdges(),
-    nodes: bundle ? buildLiveNodes(bundle, metrics, retail, aiSearch, findability) : fenderStaticNodes,
+    nodes,
     spokes: bundle ? buildLiveSpokes(bundle, retail, aiSearch, findability) : spokeData,
     focusTargets: FOCUS_TARGETS,
     tour: bundle ? buildLiveTourSteps(bundle, retail, aiSearch, findability) : tourSteps,
@@ -134,4 +158,5 @@ export function buildFenderCanvasSpec(
       ? { userMenu: options.userMenu, userEmail: options.userMenu.email }
       : {}),
   });
+  return minimalView ? { ...spec, minimalView } : spec;
 }
