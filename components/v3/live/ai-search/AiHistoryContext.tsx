@@ -174,29 +174,34 @@ export function AiHistoryProvider({ current, children }: { current: AiSearchRead
     if (localTrend || catalog.phase !== "ready") return;
     if (!isWindowMode(mode)) return;
     const key = trendKey;
-    const trusted = runsInScope(catalog.runs, mode, publishedDay);
+    const trusted = [...runsInScope(catalog.runs, mode, publishedDay)].sort(compareRuns);
+    const stop = new AbortController();
     let cancelled = false;
     void (async () => {
-      const snapshots: AiSearchSnapshot[] = [];
-      for (const run of [...trusted].sort(compareRuns)) {
-        const loaded = await loadHistorySnapshot(getCanvasSupabase() as never, run.audit_run_id);
-        if (cancelled) return;
-        if (loaded.phase !== "ready") {
-          setRemoteTrend({
-            key,
-            trend:
-              loaded.phase === "unavailable"
-                ? { phase: "unavailable", message: loaded.message }
-                : { phase: "error", message: loaded.message },
-          });
-          return;
-        }
-        snapshots.push(loaded.snapshot);
+      // The first run that fails names the failure; the runs still queued behind it stop.
+      const first: { failed: Exclude<HistorySnapshotResult, { phase: "ready" }> | null } = { failed: null };
+      const loaded = await Promise.all(
+        trusted.map((run) =>
+          loadHistorySnapshot(getCanvasSupabase() as never, run.audit_run_id, { signal: stop.signal }).then((result) => {
+            if (result.phase !== "ready" && !first.failed && !stop.signal.aborted) {
+              first.failed = result;
+              stop.abort();
+            }
+            return result;
+          }),
+        ),
+      );
+      if (cancelled) return;
+      if (first.failed) {
+        setRemoteTrend({ key, trend: first.failed });
+        return;
       }
-      if (!cancelled) setRemoteTrend({ key, trend: { phase: "ready", snapshots } });
+      const snapshots = loaded.flatMap((result) => (result.phase === "ready" ? [result.snapshot] : []));
+      setRemoteTrend({ key, trend: { phase: "ready", snapshots } });
     })();
     return () => {
       cancelled = true;
+      stop.abort();
     };
   }, [catalog, localTrend, mode, publishedDay, source, trendKey]);
 

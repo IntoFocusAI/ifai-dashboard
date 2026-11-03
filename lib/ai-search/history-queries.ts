@@ -1,4 +1,5 @@
 import type { HistoryRunSummary } from "@/lib/ai-search/history-eligibility";
+import { historyReadLimit, type ReadLimit } from "@/lib/ai-search/read-limit";
 import { isReviewHistoryRun } from "@/lib/ai-search/review-runs";
 import type { AiCallRow, AiCitationRow, AiCurrentRun, AiProbeRow, AiSearchSnapshot } from "@/lib/ai-search/types";
 
@@ -17,6 +18,12 @@ const HISTORY_PROBE_COLUMNS =
 const HISTORY_CITATION_COLUMNS =
   "audit_run_id,sim_id,simulation_id,prompt_key,prompt_kind,category,engine,position,url,domain,title";
 
+/**
+ * Same columns and rows as canvas_ai_history_citations. Its join also matches on audit_run_id,
+ * so the run filter narrows both sides instead of reading every history run's calls.
+ */
+export const HISTORY_CITATION_VIEW = "canvas_ai_history_citations_by_run";
+
 const PAGE = 1000;
 /** A full run is about 2,000 calls and 8,000 citations. Past this cap the read fails instead of truncating. */
 const RUN_MAX_PAGES = 50;
@@ -27,9 +34,39 @@ type ReadResult = { data: unknown; error: DbError };
 
 type ListQuery = PromiseLike<ReadResult> & {
   eq: (column: string, value: string) => ListQuery;
+  gte: (column: string, value: unknown) => ListQuery;
+  gt: (column: string, value: unknown) => ListQuery;
+  or: (filters: string) => ListQuery;
   order: (column: string, options?: { ascending?: boolean }) => ListQuery;
+  limit: (count: number) => PromiseLike<ReadResult>;
   range: (from: number, to: number) => PromiseLike<ReadResult>;
 };
+
+/** A key that is unique within one run: one column, or a column and its tiebreaker. */
+export type RunKey = readonly [string] | readonly [string, string];
+
+export type HistoryReadOptions = {
+  /** Defaults to the shared browser limit of four reads at once. */
+  limit?: ReadLimit;
+  /** Stops queuing pages once the caller no longer needs the run. */
+  signal?: AbortSignal;
+};
+
+const STOPPED: DbError = { message: "The read was stopped." };
+
+function filterValue(value: unknown): string {
+  if (typeof value === "number") return String(value);
+  return `"${String(value).replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
+}
+
+/** Rows after `last` in key order. Pages never skip ahead by offset, so each page reads only what it returns. */
+function afterKey(query: ListQuery, key: RunKey, last: Record<string, unknown>): ListQuery {
+  const [first, second] = key;
+  if (second === undefined) return query.gt(first, last[first]);
+  return query
+    .gte(first, last[first])
+    .or(`${first}.gt.${filterValue(last[first])},${second}.gt.${filterValue(last[second])}`);
+}
 
 /** The slice of the browser client the history reads use. */
 export type HistoryReadClient = {
@@ -74,9 +111,12 @@ async function readPages<T>(client: HistoryReadClient, view: string, columns: st
 
 export async function loadHistoryCatalog(
   client: HistoryReadClient,
+  limit: ReadLimit = historyReadLimit,
 ): Promise<{ phase: "ready"; runs: HistoryRunSummary[] } | { phase: "error"; message: string }> {
   try {
-    const rows = await readPages<HistoryRunSummary>(client, "canvas_ai_run_history", CATALOG_COLUMNS, "completed_at");
+    const rows = await limit(() =>
+      readPages<HistoryRunSummary>(client, "canvas_ai_run_history", CATALOG_COLUMNS, "completed_at"),
+    );
     return { phase: "ready", runs: rows };
   } catch (error) {
     const message = error && typeof error === "object" && "message" in error ? String(error.message) : String(error);
@@ -86,26 +126,35 @@ export async function loadHistoryCatalog(
 
 /**
  * Every row one run has in a history view. The server returns at most 1,000 rows
- * per request, so the read pages. The order columns must be unique within a run,
- * or offset pages can repeat some rows and skip others.
+ * per request, so the read pages by key: each page asks for the rows after the last
+ * one seen. The key must be unique within a run, or a page boundary inside a tie
+ * would skip rows.
  */
 export async function readRunPages<T>(
   client: HistoryReadClient,
   view: string,
   columns: string,
   runId: string,
-  order: readonly string[],
+  key: RunKey,
+  options: HistoryReadOptions = {},
 ): Promise<{ rows: T[]; error: DbError }> {
+  const limit = options.limit ?? historyReadLimit;
   const rows: T[] = [];
+  let last: Record<string, unknown> | null = null;
   for (let page = 0; page < RUN_MAX_PAGES; page += 1) {
-    const from = page * PAGE;
-    let query = client.from(view).select(columns).eq("audit_run_id", runId);
-    for (const column of order) query = query.order(column, { ascending: true });
-    const { data, error } = await query.range(from, from + PAGE - 1);
-    if (error) return { rows, error };
-    const batch = (data ?? []) as T[];
+    const after = last;
+    const result = await limit<ReadResult>(() => {
+      if (options.signal?.aborted) return Promise.resolve({ data: null, error: STOPPED });
+      let query = client.from(view).select(columns).eq("audit_run_id", runId);
+      if (after) query = afterKey(query, key, after);
+      for (const column of key) query = query.order(column, { ascending: true });
+      return query.limit(PAGE);
+    });
+    if (result.error) return { rows, error: result.error };
+    const batch = (result.data ?? []) as Array<T & Record<string, unknown>>;
     rows.push(...batch);
     if (batch.length < PAGE) return { rows, error: null };
+    last = batch[batch.length - 1];
   }
   return {
     rows,
@@ -117,8 +166,17 @@ function keepRun<T extends { audit_run_id: string }>(rows: T[], runId: string): 
   return rows.filter((row) => row.audit_run_id === runId);
 }
 
-export async function loadHistorySnapshot(client: HistoryReadClient, runId: string): Promise<HistorySnapshotResult> {
-  const runResult = await client.from("canvas_ai_history_runs").select(HISTORY_RUN_COLUMNS).eq("audit_run_id", runId);
+export async function loadHistorySnapshot(
+  client: HistoryReadClient,
+  runId: string,
+  options: HistoryReadOptions = {},
+): Promise<HistorySnapshotResult> {
+  const limit = options.limit ?? historyReadLimit;
+  const runResult = await limit<ReadResult>(() =>
+    options.signal?.aborted
+      ? Promise.resolve({ data: null, error: STOPPED })
+      : client.from("canvas_ai_history_runs").select(HISTORY_RUN_COLUMNS).eq("audit_run_id", runId),
+  );
   if (runResult.error) {
     return historyViewMissing(runResult.error)
       ? { phase: "unavailable", message: UNAVAILABLE }
@@ -136,18 +194,23 @@ export async function loadHistorySnapshot(client: HistoryReadClient, runId: stri
   try {
     // sim_id is unique within a run, and position is unique within a call's citations.
     const [calls, probes, citations] = await Promise.all([
-      readRunPages<AiCallRow>(client, "canvas_ai_history_calls", HISTORY_CALL_COLUMNS, runId, ["sim_id", "id"]),
+      readRunPages<AiCallRow>(client, "canvas_ai_history_calls", HISTORY_CALL_COLUMNS, runId, ["sim_id", "id"], options),
       readRunPages<AiProbeRow & { answer_text?: string | null }>(
         client,
         "canvas_ai_history_probes",
         HISTORY_PROBE_COLUMNS,
         runId,
         ["sim_id"],
+        options,
       ),
-      readRunPages<AiCitationRow>(client, "canvas_ai_history_citations", HISTORY_CITATION_COLUMNS, runId, [
-        "sim_id",
-        "position",
-      ]),
+      readRunPages<AiCitationRow>(
+        client,
+        HISTORY_CITATION_VIEW,
+        HISTORY_CITATION_COLUMNS,
+        runId,
+        ["sim_id", "position"],
+        options,
+      ),
     ]);
     for (const result of [calls, probes, citations]) {
       if (result.error) {
