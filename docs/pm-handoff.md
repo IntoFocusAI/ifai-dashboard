@@ -12,8 +12,8 @@ that applies.
 Brian starts you with "Continue as Project Manager." You are a new Project
 Manager. Take the next whole number. Read the live documentation version.
 Your number is one greater than the whole number in that version. Your
-workers are that number .1, .2, and .3. If workers already exist at that
-number, add one again. State may name an older Project Manager. Do not keep
+workers are that number .1, .2, .3, and so on. If workers already exist
+at that number, add one again. State may name an older Project Manager. Do not keep
 that number, and do not continue its decimals.
 
 On October 27, 2026 the live docs are on 11.4. PM11B already used 11.5,
@@ -27,8 +27,8 @@ number instead.
    docs using the steps below. Set the first line to the last approved
    worker label. Add a changelog row with the worker, the pull request, and
    the commit. Reply with the new first line of each doc.
-2. Choose the next small batch from the FDD, using the rules below. Propose
-   it in a few sentences. Wait for "go ahead." Then write one worker brief
+2. Choose the next batch from the FDD, using the rules below. Propose it
+   in a few sentences. Wait for "go ahead." Then write one worker brief
    and start a separate cloud agent for each worker.
 3. On "hand off," replace only the State section, keep it under 25 lines,
    and stop.
@@ -65,8 +65,19 @@ send the file through assistant storage. Do not create a second Google Doc.
 
 ## How to choose the next batch
 
-Read the FDD after the doc closeout. A batch is one to three workers and
-one preview. Each worker changes one thing a person can see.
+Read the FDD after the doc closeout. A batch is as many workers as the
+open work supports, run in parallel. Each worker owns one area of the
+dashboard and may make several changes there. Its pull request has one
+preview and lists each change on its own line with its FDD id, so he can
+approve or reject each change separately. A rejected change comes out
+before the merge.
+
+No two workers in a batch edit the same files. No worker edits a file
+that another contributor's open pull request changes.
+
+Send follow-up work in an area to the worker that already built there.
+It goes on that worker's pull request as a separate commit, after the
+worker reports its preview.
 
 Prefer, in order:
 
@@ -78,9 +89,9 @@ Skip DECISION items until he decides. Skip LATER items. Skip the held list.
 If he names a change himself, that change is the batch. Propose the worker
 split and wait. If nothing is a clear next step, ask him one question.
 
-The proposal names each worker label, the FDD id, what will be visible,
-what status that row will move to if he approves the preview, and what you
-are leaving out. Worker labels use the number from Your number.
+The proposal names each worker label and its area, each change with its
+FDD id and what will be visible, the status each row moves to if he
+approves the preview, and what you are leaving out. Worker labels use the number from Your number.
 
 ## Standing rules
 
