@@ -353,6 +353,15 @@ test.describe("Competitive Radar", () => {
     expect(key).toBeTruthy();
     await expect(pieLink(key!)).toHaveAttribute("data-ifai-evidence", `category:${key}`);
     await expect(cards.locator(".ai-battle-engine-mark")).toHaveCount(0);
+    const firstRow = cards.locator("tbody tr[data-category]").first();
+    const firstKey = await firstRow.getAttribute("data-category");
+    const plainRates = firstRow.locator("[data-ai-role-count='unbranded_discovery'] .ifai-evidence-link");
+    if (await plainRates.count()) {
+      await expect(plainRates.first(), "with no chip, a row's rate opens that row's category").toHaveAttribute(
+        "data-ifai-evidence",
+        `role:unbranded_discovery/fender_win,category:${firstKey}`,
+      );
+    }
 
     const chip = cards.locator("[data-ai-battle-chip^='engine:']:not([data-ai-battle-chip='engine:all'])").first();
     const engine = (await chip.getAttribute("data-ai-battle-chip"))!.slice("engine:".length);

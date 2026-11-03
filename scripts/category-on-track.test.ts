@@ -397,6 +397,35 @@ test("Category Battlecards drops the Competitive Radar sentence and keeps its co
   assert.match(heroes, /` of \$\{tally\.resolved\}`/);
 });
 
+test("a table row's rate counts open that row's category, with or without an engine chip", () => {
+  const rows = [
+    call({ engine: "chatgpt", category: "acoustics" }),
+    call({ engine: "gemini", category: "acoustics" }),
+    call({ engine: "chatgpt", category: "amps" }),
+    call({ engine: "gemini", category: "acoustics", ...yamaha }),
+  ];
+  const opened = (focus: Parameters<typeof explorerFilterFor>[0]) =>
+    applyExplorerFilter(rows, explorerFilterFor(focus)).map((row) => row.id);
+  const cell = (scope: { category: string; engine?: string }) =>
+    scopeEvidence({ field: "role", value: "unbranded_discovery/fender_win" }, scope);
+
+  const allEngines = cell({ category: "acoustics" });
+  assert.equal(formatEvidence(allEngines), "role:unbranded_discovery/fender_win,category:acoustics");
+  assert.deepEqual(parseEvidence(formatEvidence(allEngines)), allEngines);
+  assert.deepEqual(opened(allEngines), [rows[0].id, rows[1].id], "every engine, this row's category only");
+  assert.deepEqual(
+    opened(scopeEvidence({ field: "role", value: "unbranded_discovery/resolved" }, { category: "acoustics" })),
+    [rows[0].id, rows[1].id, rows[3].id],
+  );
+  const oneEngine = cell({ category: "acoustics", engine: "chatgpt" });
+  assert.equal(formatEvidence(oneEngine), "role:unbranded_discovery/fender_win,category:acoustics,engine:chatgpt");
+  assert.deepEqual(opened(oneEngine), [rows[0].id]);
+
+  const panel = read("components/v3/live/ai-search/CategoryBattlecardsPanel.tsx");
+  assert.doesNotMatch(panel, /rowScope = filter\.engine/, "the category no longer waits for an engine chip");
+  assert.match(panel, /<EngineMark engineName=\{battle\.roles\.unbranded_discovery\.resolved > 0 \? engineName : null\} \/>/);
+});
+
 test("with an engine chip on, every evidence link on the tab opens that engine's rows, and its figure carries an asterisk", () => {
   assert.deepEqual(parseEvidence("category:acoustics"), { field: "category", value: "acoustics" });
   assert.equal(formatEvidence({ field: "category", value: "acoustics" }), "category:acoustics", "no chip, same link as before");
@@ -431,7 +460,7 @@ test("with an engine chip on, every evidence link on the tab opens that engine's
   assert.equal(explorer.match(/explorerFilterFor\(focus\)/g)?.length, 3);
   const panel = read("components/v3/live/ai-search/CategoryBattlecardsPanel.tsx");
   assert.match(panel, /const engineScope = filter\.engine \? \{ engine: filter\.engine \} : undefined;/);
-  assert.match(panel, /const rowScope = filter\.engine \? \{ category: battle\.key, engine: filter\.engine \} : undefined;/);
+  assert.match(panel, /const rowScope = \{ category: battle\.key, \.\.\.engineScope \};/);
   assert.equal(panel.match(/scope=\{rowScope\}/g)?.length, 2, "both rate cells in a row");
   assert.equal(panel.match(/<EngineMark /g)?.length, 3, "the category name and both rate cells");
   assert.match(panel, /<CategoryLeadPies[\s\S]*?scope=\{engineScope\}[\s\S]*?engineName=\{engineName\}/);

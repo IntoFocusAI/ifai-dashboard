@@ -142,7 +142,7 @@ function Battlecards({ snapshot }: { snapshot: AiSearchSnapshot }) {
               const top = leadersFor(battle.key)[0];
               const aside = headlineAside(battle);
               const lead = leadByKey.get(battle.key);
-              const rowScope = filter.engine ? { category: battle.key, engine: filter.engine } : undefined;
+              const rowScope = { category: battle.key, ...engineScope };
               return (
                 <tr key={battle.key} data-category={battle.key} data-ai-on-track-status={lead?.status}>
                   <td>
