@@ -26,7 +26,7 @@ import { buildLiveTourSteps } from "@/lib/fender-canvas/tour-from-live";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
 
 /** Documentation version shown beside the product name in the canvas header. */
-export const DOCUMENTATION_VERSION = "18.8";
+export const DOCUMENTATION_VERSION = "19.5";
 
 const FOCUS_TARGETS = withPrimaryFocusTargets(
   graphLayout.focusTargets as Record<string, { x: number; y: number }>,
