@@ -203,6 +203,12 @@ test.describe("AI Search Visibility", () => {
     const drawer = page.locator("[data-ai-fact-check-evidence]");
     await expect(drawer).toBeVisible();
     await expect(drawer).toContainText("product questions IntoFocus sends to every engine on purpose");
+    await expect(drawer).not.toContainText("randomly chosen");
+    await expect(drawer).not.toContainText("not the whole answer");
+    await expect(drawer.locator(".ifai-term", { hasText: "product questions" })).toHaveAttribute(
+      "data-ifai-tooltip-desc",
+      /is not recorded/,
+    );
     // The step labels are uppercased in CSS, so compare case-insensitively.
     const order = (await drawer.innerText()).toLowerCase();
     const steps = ["question checked", "verified fender fact", "official fender source", "ai answer", "result"];
@@ -231,6 +237,13 @@ test.describe("AI Search Visibility", () => {
     await expect(term).not.toHaveAttribute("title");
     await term.focus();
     await expect(page.locator(".node-tooltip-definition, .node-tooltip")).toContainText("picked");
+    const scope = page.locator("[data-ai-fact-scope] .ifai-term");
+    await expect(scope).toHaveText("These checks cover the selected facts only.");
+    await expect(scope).toHaveAttribute("data-ifai-tooltip-desc", /do not prove every statement/);
+    const body = page.locator(".drilldown-body");
+    for (const qualifier of ["does not cover", "clean bill of health", "is not a buying prompt", "so they are not reported"]) {
+      await expect(body).not.toContainText(qualifier);
+    }
   });
 
   test("every non-fact-check row reads n/a in Fact check", async ({ canvas, page }) => {

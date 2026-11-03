@@ -176,8 +176,11 @@ test("the fact-check evidence view runs question, fact, source, answer, result",
   }
   assert.ok(view.indexOf("Engine and run details") > cursor, "engine details stay last");
   const flatView = flat("components/v3/live/ai-search/FactCheckEvidence.tsx");
-  assert.match(flatView, /product questions IntoFocus sends to every engine on purpose/);
-  assert.match(flatView, /not a randomly chosen product/);
+  assert.match(
+    flatView,
+    /<CopyTip label=\{FACT_CHECK_METHOD_TITLE\} description=\{factCheckPickTip\(questionsSent\)\}> product questions <\/CopyTip>\{" "\} IntoFocus sends to every engine on purpose\./,
+  );
+  assert.doesNotMatch(flatView, /randomly chosen/);
 });
 
 test("citation copy separates answers from links and avoids causal claims", () => {

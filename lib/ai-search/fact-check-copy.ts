@@ -129,14 +129,32 @@ export function factCheckMethodLine(c: FactCheckCoverage, windowed = false): Fac
   };
 }
 
-export const FACT_CHECK_SCOPE =
-  "These checks cover the selected facts only. They do not prove every statement in each answer is accurate.";
+/** Drawer tooltip on "product questions": the pick is not recorded. */
+export function factCheckPickTip(n: number): string {
+  return n === 1
+    ? "This fact-check question names one Fender product. How it was picked, and what part of Fender's catalog it stands for, is not recorded."
+    : `Each fact-check question names one Fender product. How these ${n} products were picked, and what part of Fender's catalog they stand for, is not recorded.`;
+}
+
+export const FACT_CHECK_SCOPE_LINE = "These checks cover the selected facts only.";
+
+export const FACT_CHECK_SCOPE = `${FACT_CHECK_SCOPE_LINE} They do not prove every statement in each answer is accurate.`;
 
 export const FACT_CHECK_SHOPPING_SCOPE =
   "This run checked selected product facts, not every factual claim in the shopping answers.";
 
 export const FACT_CHECK_SHOPPING_SCOPE_WINDOW =
   "This selection checked selected product facts, not every factual claim in the shopping answers.";
+
+export const FACT_CHECK_SCOPE_TITLE = "Fact-check scope";
+
+/** Scope qualifiers live in the tooltip on the scope line, never as on-screen sentences. */
+export function factCheckScopeTip(windowed = false): string {
+  return `${FACT_CHECK_SCOPE} ${windowed ? FACT_CHECK_SHOPPING_SCOPE_WINDOW : FACT_CHECK_SHOPPING_SCOPE}`;
+}
+
+export const UNVERIFIED_FLAG_TIP =
+  "The answer carries a flag that was never verified against a Fender page, so it is not reported as a contradiction.";
 
 /** Engines that returned nothing. Secondary, never the headline. */
 export function factCheckCoverageNote(c: FactCheckCoverage): string | null {

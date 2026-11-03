@@ -9,9 +9,9 @@ import { FactCheckTable } from "@/components/v3/live/ai-search/FactCheckTable";
 import { driftRead } from "@/lib/ai-search/drift";
 import {
   FACT_CHECK_METHOD_TITLE,
-  FACT_CHECK_SCOPE,
-  FACT_CHECK_SHOPPING_SCOPE,
-  FACT_CHECK_SHOPPING_SCOPE_WINDOW,
+  FACT_CHECK_SCOPE_LINE,
+  FACT_CHECK_SCOPE_TITLE,
+  UNVERIFIED_FLAG_TIP,
   factCheckAccuracyColor,
   factCheckAccuracyLead,
   factCheckAccuracyPie,
@@ -20,6 +20,7 @@ import {
   factCheckHeadline,
   factCheckMethodLine,
   factCheckPendingNote,
+  factCheckScopeTip,
 } from "@/lib/ai-search/fact-check-copy";
 import { engineLabel, formatRunTime, modelLabel } from "@/lib/ai-search/run-metrics";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
@@ -35,7 +36,6 @@ function FactChecks({ snapshot }: { snapshot: AiSearchSnapshot }) {
   const contradictions = drift.probes.filter((row) => row.state === "confirmed");
   const coverageNote = factCheckCoverageNote(coverage);
   const pendingNote = factCheckPendingNote(coverage);
-  const shoppingScope = windowed ? FACT_CHECK_SHOPPING_SCOPE_WINDOW : FACT_CHECK_SHOPPING_SCOPE;
   const headline = factCheckHeadline(coverage, windowed);
   const method = factCheckMethodLine(coverage, windowed);
   const rateColor = factCheckAccuracyColor(accuracy.tone);
@@ -43,7 +43,9 @@ function FactChecks({ snapshot }: { snapshot: AiSearchSnapshot }) {
   const explainer = (
     <div className="ai-lead-explainer" data-ai-accuracy-lead style={{ marginTop: 0 }}>
       <div className="content-box-title" style={{ marginTop: 0 }}>
-        <span>Do AI answers match Fender&apos;s published product facts?</span>
+        <span>
+          Do AI answers match Fender&apos;s published <AiTerm term="product fact check">product facts</AiTerm>?
+        </span>
         <span
           className={`tag-badge ${coverage.contradictions ? "tag-danger" : "tag-success"}`}
           data-ai-fact-result
@@ -62,12 +64,10 @@ function FactChecks({ snapshot }: { snapshot: AiSearchSnapshot }) {
           · {method.verified}
         </p>
       ) : null}
-      <p style={{ ...mutedText, margin: 0 }}>{FACT_CHECK_SCOPE}</p>
-      <p style={{ ...mutedText, marginBottom: 0 }}>
-        IntoFocus sends {coverage.questionsSent} product questions to every engine on purpose, and compares each
-        answer with a fact taken from an official Fender page. A{" "}
-        <AiTerm term="product fact check">product fact check</AiTerm> is not a buying prompt, so it never counts
-        toward a win rate or a competitor&apos;s share.
+      <p style={{ ...mutedText, margin: 0 }} data-ai-fact-scope>
+        <CopyTip label={FACT_CHECK_SCOPE_TITLE} description={factCheckScopeTip(windowed)}>
+          {FACT_CHECK_SCOPE_LINE}
+        </CopyTip>
       </p>
     </div>
   );
@@ -138,29 +138,29 @@ function FactChecks({ snapshot }: { snapshot: AiSearchSnapshot }) {
 
       <FactCheckTable rows={drift.probes} windowed={windowed} />
 
-      <div className="content-box" style={{ marginTop: 12 }}>
-        <div className="content-box-title">What this does and does not cover</div>
-        <ul style={{ ...mutedText, paddingLeft: 16, margin: 0 }}>
-          <li>{shoppingScope}</li>
-          <li>
-            A result of <AiTerm term="no contradiction found" /> means nothing in that answer conflicted with the one
-            fact being checked. It is not a clean bill of health for the whole answer.
-          </li>
-          {pendingNote ? <li data-ai-pending-fact>{pendingNote}</li> : null}
-          {coverageNote ? <li data-ai-coverage-note>{coverageNote}</li> : null}
-          {drift.unverified > 0 ? (
-            <li>
-              {drift.unverified} answers carry a flag that was never verified against a Fender page, so they are not
-              reported as contradictions.
-            </li>
-          ) : null}
-          {drift.facts.length ? (
-            <li>
-              Each verified fact was read from the linked Fender page on {formatRunTime(drift.facts[0].verifiedAt)}.
-            </li>
-          ) : null}
-        </ul>
-      </div>
+      {pendingNote || coverageNote || drift.unverified > 0 || drift.facts.length ? (
+        <div className="content-box" style={{ marginTop: 12 }}>
+          <div className="content-box-title">Coverage notes</div>
+          <ul style={{ ...mutedText, paddingLeft: 16, margin: 0 }}>
+            {pendingNote ? <li data-ai-pending-fact>{pendingNote}</li> : null}
+            {coverageNote ? <li data-ai-coverage-note>{coverageNote}</li> : null}
+            {drift.unverified > 0 ? (
+              <li data-ai-unverified-note>
+                {drift.unverified} {drift.unverified === 1 ? "answer carries an" : "answers carry an"}{" "}
+                <CopyTip label="Unverified flag" description={UNVERIFIED_FLAG_TIP}>
+                  unverified flag
+                </CopyTip>
+                .
+              </li>
+            ) : null}
+            {drift.facts.length ? (
+              <li>
+                Each verified fact was read from the linked Fender page on {formatRunTime(drift.facts[0].verifiedAt)}.
+              </li>
+            ) : null}
+          </ul>
+        </div>
+      ) : null}
     </>
   );
 }

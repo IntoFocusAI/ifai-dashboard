@@ -8,7 +8,15 @@ import {
   applyExplorerFilter,
   factCheckColumnLabel,
 } from "../lib/ai-search/explorer-filter.ts";
-import { factCheckAccuracyLead, factCheckMethodLine } from "../lib/ai-search/fact-check-copy.ts";
+import { AI_DEFINITIONS } from "../lib/ai-search/definitions.ts";
+import {
+  FACT_CHECK_SCOPE_LINE,
+  UNVERIFIED_FLAG_TIP,
+  factCheckAccuracyLead,
+  factCheckMethodLine,
+  factCheckPickTip,
+  factCheckScopeTip,
+} from "../lib/ai-search/fact-check-copy.ts";
 import type { AiCallRow, AiProbeRow } from "../lib/ai-search/types.ts";
 
 function probe(partial: Partial<AiProbeRow> & Pick<AiProbeRow, "sim_id" | "prompt_key" | "engine">): AiProbeRow {
@@ -134,6 +142,48 @@ test("the method line leaves the Accuracy lead figure and colors unchanged", () 
     assert.ok(tip.includes(attr), attr);
   }
   assert.doesNotMatch(tip, /\stitle=/);
+});
+
+test("fact-check 'not' qualifiers sit in tooltips, never as on-screen sentences", () => {
+  const flat = (path: string) => readFileSync(path, "utf8").replace(/\s+/g, " ");
+  const panel = flat("components/v3/live/ai-search/AiDriftPanel.tsx");
+  const drawer = flat("components/v3/live/ai-search/FactCheckEvidence.tsx");
+  const explorer = flat("components/v3/live/ai-search/SimulationsExplorer.tsx");
+  const removed = [
+    /randomly chosen/,
+    /clean bill of health/,
+    /does not cover/,
+    /is not a buying prompt/,
+    /never scored as a win/,
+    /not the whole answer/,
+    /so they are not reported/,
+    /has not verified a fact/,
+    /\{FACT_CHECK_SCOPE\}/,
+    /\{shoppingScope\}/,
+  ];
+  for (const source of [panel, drawer, explorer]) {
+    for (const phrase of removed) assert.doesNotMatch(source, phrase);
+  }
+  // The scope line stays visible as the dotted trigger; its qualifiers are the tooltip.
+  assert.equal(FACT_CHECK_SCOPE_LINE, "These checks cover the selected facts only.");
+  assert.match(panel, /<CopyTip label=\{FACT_CHECK_SCOPE_TITLE\} description=\{factCheckScopeTip\(windowed\)\}> \{FACT_CHECK_SCOPE_LINE\} <\/CopyTip>/);
+  assert.match(factCheckScopeTip(), /do not prove every statement in each answer is accurate\. This run checked selected product facts, not every factual claim/);
+  assert.match(factCheckScopeTip(true), /This selection checked selected product facts/);
+  assert.match(panel, /<CopyTip label="Unverified flag" description=\{UNVERIFIED_FLAG_TIP\}> unverified flag <\/CopyTip>/);
+  assert.match(UNVERIFIED_FLAG_TIP, /never verified against a Fender page, so it is not reported as a contradiction/);
+  assert.match(panel, /<AiTerm term="product fact check">product facts<\/AiTerm>\?/);
+  assert.match(AI_DEFINITIONS["product fact check"], /never count toward win rates or competitor share/);
+  assert.match(drawer, /<AiTerm term="no contradiction found">\{result\}<\/AiTerm>/);
+  assert.match(AI_DEFINITIONS["no contradiction found"], /does not prove every statement in the answer is accurate/);
+  assert.match(drawer, /\{probe\?\.claim \?\? PROBE_STATE_LABELS\.no_fact\}/);
+  assert.equal(
+    factCheckPickTip(5),
+    "Each fact-check question names one Fender product. How these 5 products were picked, and what part of Fender's catalog they stand for, is not recorded.",
+  );
+  assert.match(factCheckPickTip(1), /^This fact-check question names one Fender product\. How it was picked/);
+  for (const tip of [factCheckScopeTip(), UNVERIFIED_FLAG_TIP, factCheckPickTip(5)]) {
+    assert.doesNotMatch(tip, /\u2014|representative|random/i);
+  }
 });
 
 test("a fact-check result filter never returns a non-fact-check row", () => {

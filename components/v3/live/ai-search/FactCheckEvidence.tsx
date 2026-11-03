@@ -2,9 +2,11 @@
 
 import { mutedText } from "@/components/v3/live/ai-search/AiReadGate";
 import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
+import { CopyTip } from "@/components/v3/live/ai-search/CopyTip";
 import { ExternalLink } from "@/components/v3/live/ai-search/ExternalLink";
 import { answerCopy, useAnswerText } from "@/components/v3/live/ai-search/useAnswerText";
 import { PROBE_STATE_LABELS, type ProbeEvidence } from "@/lib/ai-search/drift";
+import { FACT_CHECK_METHOD_TITLE, factCheckPickTip } from "@/lib/ai-search/fact-check-copy";
 import { cleanPrompt, engineLabel, formatRunTime, modelLabel } from "@/lib/ai-search/run-metrics";
 import type { AiCallRow } from "@/lib/ai-search/types";
 
@@ -42,8 +44,11 @@ export function FactCheckEvidence({
   return (
     <div data-ai-fact-check-evidence>
       <p style={{ ...mutedText, marginTop: 0 }}>
-        This is one of {questionsSent} product questions IntoFocus sends to every engine on purpose. It is not a
-        randomly chosen product.
+        This is one of {questionsSent}{" "}
+        <CopyTip label={FACT_CHECK_METHOD_TITLE} description={factCheckPickTip(questionsSent)}>
+          product questions
+        </CopyTip>{" "}
+        IntoFocus sends to every engine on purpose.
       </p>
 
       <Step step={1} heading="Question checked">
@@ -51,7 +56,7 @@ export function FactCheckEvidence({
       </Step>
 
       <Step step={2} heading="Verified Fender fact">
-        {probe?.claim ?? "IntoFocus has not verified a fact for this question yet, so no comparison was made."}
+        {probe?.claim ?? PROBE_STATE_LABELS.no_fact}
       </Step>
 
       <Step step={3} heading="Official Fender source">
@@ -76,13 +81,10 @@ export function FactCheckEvidence({
       </Step>
 
       <Step step={5} heading="Result">
-        <span data-ai-fact-result-row>{result}</span>
+        <span data-ai-fact-result-row>
+          {probe?.state === "no_contradiction" ? <AiTerm term="no contradiction found">{result}</AiTerm> : result}
+        </span>
         {probe?.evidence ? <div style={mutedText}>Conflicting text: {probe.evidence}</div> : null}
-        {probe?.state === "no_contradiction" ? (
-          <div style={mutedText}>
-            <AiTerm term="no contradiction found">This checks one fact, not the whole answer.</AiTerm>
-          </div>
-        ) : null}
       </Step>
 
       <details>
