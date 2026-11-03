@@ -1,0 +1,44 @@
+/* Brand-Site Specs: fender.com page found evidence. Uses the canvas theme variables, so dark and light follow the shell. */
+
+.page-found-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+}
+
+.page-found-filters .segmented-btn {
+  font-size: 11px;
+}
+
+.page-found-status {
+  padding: 3px 8px;
+  font-size: 10px;
+}
+
+.page-found-reason {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.page-found-model {
+  font-size: 12px;
+  color: var(--text-main);
+}
+
+.page-found-mismatch {
+  margin-left: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--warning-amber);
+}
+
+.page-found-pager {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--text-muted);
+}

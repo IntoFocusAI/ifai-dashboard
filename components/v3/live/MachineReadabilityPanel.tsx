@@ -2,19 +2,26 @@
 
 import { useState } from "react";
 import { MachineReadabilityPageTable } from "@/components/v3/live/MachineReadabilityPageTable";
+import { PageFoundTable } from "@/components/v3/live/PageFoundTable";
 import { ShareHeroCard } from "@/components/v3/live/ShareHeroCard";
+import { usePageFoundEvidence } from "@/components/v3/live/usePageFoundEvidence";
 import {
   machineReadabilityHeroes,
   sharedGapSentence,
   type MachineHeroId,
   type SpecPageSummary,
 } from "@/lib/fender-canvas/machine-readability";
-import { brandSitePageFoundHero, PAGE_FOUND_ANCHOR } from "@/lib/fender-canvas/page-found-hero";
+import {
+  brandSitePageFoundHero,
+  PAGE_FOUND_ANCHOR,
+  PAGE_FOUND_HERO_ID,
+} from "@/lib/fender-canvas/page-found-hero";
 import type { CanvasMetricsRow } from "@/lib/fender-canvas/types";
 
 const PAGES_TABLE_ID = "machine-readability-pages";
+const PAGE_FOUND_TABLE_ID = "brand-site-page-found-skus";
 
-type OpenTable = MachineHeroId | "closed";
+type OpenTable = MachineHeroId | typeof PAGE_FOUND_HERO_ID | "closed";
 
 function BrandSiteSpecsNotes({ summary }: { summary: SpecPageSummary | null }) {
   const shared = sharedGapSentence(summary);
@@ -53,8 +60,9 @@ export function MachineReadabilityPanel({
   const [openTable, setOpenTable] = useState<OpenTable>("missing_specs");
   const heroes = machineReadabilityHeroes(summary);
   const pageFound = brandSitePageFoundHero(metrics);
+  const pageFoundRead = usePageFoundEvidence(openTable === PAGE_FOUND_HERO_ID);
 
-  function toggle(which: MachineHeroId) {
+  function toggle(which: Exclude<OpenTable, "closed">) {
     setOpenTable((prev) => (prev === which ? "closed" : which));
   }
 
@@ -69,8 +77,9 @@ export function MachineReadabilityPanel({
           <ShareHeroCard
             hero={pageFound}
             dataAttr="data-machine-hero"
-            open={false}
-            controls={PAGES_TABLE_ID}
+            open={openTable === PAGE_FOUND_HERO_ID}
+            onToggle={() => toggle(PAGE_FOUND_HERO_ID)}
+            controls={PAGE_FOUND_TABLE_ID}
             anchorId={PAGE_FOUND_ANCHOR}
           />
           {heroes.map((hero) => (
@@ -87,7 +96,11 @@ export function MachineReadabilityPanel({
         <BrandSiteSpecsNotes summary={summary} />
       </div>
 
-      {summary && openTable !== "closed" ? (
+      {openTable === PAGE_FOUND_HERO_ID ? (
+        <PageFoundTable read={pageFoundRead} hero={pageFound} tableId={PAGE_FOUND_TABLE_ID} />
+      ) : null}
+
+      {summary && openTable !== "closed" && openTable !== PAGE_FOUND_HERO_ID ? (
         <MachineReadabilityPageTable
           summary={summary}
           filter={openTable}
