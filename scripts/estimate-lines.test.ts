@@ -45,13 +45,11 @@ test("the Phase 1 and enterprise ROI lines do not wear the live retail headline"
   assert.equal(pilotLines.length, 4);
   assert.equal(enterpriseLines.length, 4);
 
-  assert.equal(
-    pilotLines[0],
-    "Earlier analyst estimate, not calculated from the current listing count: +$380,000 / yr",
-  );
-  assert.equal(
-    enterpriseLines[0],
-    "Earlier analyst estimate, not calculated from the current listing count: +$25,000,000 / yr",
+  assert.equal(pilotLines[0], "Earlier analyst estimate: +$380,000 / yr");
+  assert.equal(enterpriseLines[0], "Earlier analyst estimate: +$25,000,000 / yr");
+  assert.match(
+    roi,
+    /<li><span class="ifai-term" data-ifai-tooltip-title="Earlier analyst estimate" data-ifai-tooltip-desc="Not calculated from the current listing count\."/,
   );
   for (const line of [pilotLines[0], enterpriseLines[0]]) {
     assert.equal(line?.startsWith("Suppressed Listings"), false);
@@ -71,16 +69,17 @@ test("Opportunity does not paste the live headline into the Phase 1 estimate", (
   assert.equal(sizing.includes("follows the live retail headline"), false);
   assert.equal(sizing.includes(LIVE_HEADLINE), false);
   assert.equal(sizing.includes("{retail_headline}"), false);
-  assert.match(sizing, /\+\$680K est\. <span[^>]*>\/ yr/);
+  assert.match(sizing, /\+\$680K est\.<\/span> <span[^>]*>\/ yr/);
   assert.match(sizing, /\+\$38M to \$62M est\./);
   assert.match(sizing, /\(\$50M midpoint\)/);
   assert.match(sizing, /\+\$50M/);
-  const card = sizing.split("Phase 1 (estimate)")[1]?.split("Full Enterprise Scale")[0] ?? "";
-  assert.match(card, /Analyst estimate\. Not calculated from the current listing count\./);
+  const card = sizing.split("Phase 1 (estimate)</span>")[1]?.split("Full Enterprise Scale")[0] ?? "";
+  assert.match(card, /data-ifai-tooltip-desc="This analyst estimate is not calculated from the current listing count\."/);
+  assert.match(card, /<span class="metric-card-sub">Analyst estimate<\/span>/);
   assert.equal(card.includes("Suppressed Listings"), false);
   assert.match(
     sizing,
-    /Phase 1 Quick-Win Lift \(\+\$680K est\. \/ yr\):<\/strong> Analyst estimate\. Not calculated from the current listing count\./,
+    /Phase 1 Quick-Win Lift \(\+\$680K est\. \/ yr\):<\/strong> <span class="ifai-term" data-ifai-tooltip-title="Analyst estimate" data-ifai-tooltip-desc="Not calculated from the current listing count\."[^>]*>Analyst estimate<\/span>\./,
   );
 });
 

@@ -86,6 +86,24 @@ test("steps the repo does not state read Not available* with a custom tooltip", 
   assert.doesNotMatch(html, /\stitle="/);
 });
 
+test("no on-screen qualifier says what an estimate is not; each one sits in a custom tooltip", () => {
+  for (const [name, template] of Object.entries(TABS)) {
+    const html = bound(template);
+    const onScreen = html
+      .replace(/<[^>]+>/g, " ")
+      .replace(/Not available\*/g, "")
+      .replace(/\s+/g, " ");
+    assert.doesNotMatch(onScreen, /\bnot\b|n't\b|\bno range\b/i, `${name} keeps "not" copy in tooltips`);
+    assert.doesNotMatch(html, /\stitle="/, name);
+  }
+  const card = bound(TABS.Opportunity).split("Phase 1 (estimate)</span>")[1]!.split("Full Enterprise Scale")[0]!;
+  assert.match(
+    card,
+    /<span class="ifai-term" data-estimate-figure-note="" data-ifai-tooltip-title="Phase 1 \(estimate\)" data-ifai-tooltip-desc="This analyst estimate is not calculated from the current listing count\." tabindex="0" aria-label="[^"]+">\+\$680K est\.<\/span>/,
+  );
+  assert.match(card, /<span class="metric-card-sub">Analyst estimate<\/span>/);
+});
+
 test("the method section adds no formula, population, or fee the repo does not state", () => {
   const html = method(TABS.Opportunity);
   assert.doesNotMatch(html, /\u2014/);
