@@ -12,6 +12,7 @@ const REST = { x: 0.58, y: 0.42 };
  * The glow is painted once at its largest size (pointer in a corner) and moved and shrunk with a
  * transform once per frame, so a pointer move only recomposites it; nothing is repainted or
  * rasterized. The shrink keeps the size of the farthest-corner gradient this replaced.
+ * With reduced motion the glow stays at its rest point.
  */
 export function useIomPointerWash(bodyRef: RefObject<HTMLElement | null>, enabled = true) {
   useEffect(() => {
@@ -20,10 +21,16 @@ export function useIomPointerWash(bodyRef: RefObject<HTMLElement | null>, enable
     const glow = wash?.querySelector<HTMLElement>(".canvas-pointer-glow");
     if (!enabled || !body || !wash || !glow) return;
 
+    const still = window.matchMedia("(prefers-reduced-motion: reduce)");
     let box = body.getBoundingClientRect();
     let diagonal = 0;
     let radius = 0;
-    const pointer = { x: box.left + box.width * REST.x, y: box.top + box.height * REST.y };
+    const pointer = { x: 0, y: 0 };
+    const rest = () => {
+      pointer.x = box.left + box.width * REST.x;
+      pointer.y = box.top + box.height * REST.y;
+    };
+    rest();
     let frame = 0;
     const paint = () => {
       frame = 0;
@@ -39,6 +46,7 @@ export function useIomPointerWash(bodyRef: RefObject<HTMLElement | null>, enable
       diagonal = Math.hypot(box.width, box.height);
       radius = Math.round(diagonal * GLOW_REACH);
       glow.style.width = glow.style.height = `${radius * 2}px`;
+      if (still.matches) rest();
       if (!frame) frame = requestAnimationFrame(paint);
     };
     measure();
@@ -47,17 +55,20 @@ export function useIomPointerWash(bodyRef: RefObject<HTMLElement | null>, enable
     window.addEventListener("resize", measure);
 
     const onPointerMove = (event: PointerEvent) => {
+      if (still.matches) return;
       pointer.x = event.clientX;
       pointer.y = event.clientY;
       if (!frame) frame = requestAnimationFrame(paint);
     };
 
     body.addEventListener("pointermove", onPointerMove, { passive: true });
+    still.addEventListener("change", measure);
     return () => {
       cancelAnimationFrame(frame);
       observer.disconnect();
       window.removeEventListener("resize", measure);
       body.removeEventListener("pointermove", onPointerMove);
+      still.removeEventListener("change", measure);
     };
   }, [bodyRef, enabled]);
 }

@@ -1823,6 +1823,11 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .ifai-canvas.theme-iom .drilldown-panel,
+  .ifai-canvas.theme-iom .viewport-container {
+    transition: none;
+  }
+
   .iom-cursor-ring,
   .iom-cursor-core,
   .iom-cursor-tick {

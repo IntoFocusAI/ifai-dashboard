@@ -436,6 +436,44 @@ async function walkTour(canvas: Canvas, page: Page) {
 
 /* H-08: the step card used to sit bottom-left on every step, so bubbles left of the hub
    slid in from under it while the camera moved. */
+test.describe("reduced motion", () => {
+  test.use({ reducedMotion: "reduce" });
+
+  test("the pointer glow stays at its rest point and the panel appears without sliding", async ({ canvas, page }) => {
+    const glowCenter = () =>
+      page.evaluate(() => {
+        const body = document.querySelector(".canvas-body")!.getBoundingClientRect();
+        const box = document.querySelector(".canvas-pointer-glow")!.getBoundingClientRect();
+        return {
+          x: (box.left + box.width / 2 - body.left) / body.width,
+          y: (box.top + box.height / 2 - body.top) / body.height,
+        };
+      });
+    const from = await center(canvas, "spoke-aeo");
+    const to = await center(canvas, "spoke-competitors");
+    await page.mouse.move(from.x, from.y);
+    await page.mouse.move(to.x, to.y, { steps: 10 });
+    await frames(page);
+    const glow = await glowCenter();
+    expect(glow.x).toBeCloseTo(0.58, 2);
+    expect(glow.y).toBeCloseTo(0.42, 2);
+
+    const firstFrame = page.evaluate(
+      () =>
+        new Promise<number>((done) => {
+          const tick = () => {
+            const box = document.querySelector(".drilldown-panel.open")?.getBoundingClientRect();
+            if (box && box.left < innerWidth - 1) done(Math.round(box.right - innerWidth));
+            else requestAnimationFrame(tick);
+          };
+          requestAnimationFrame(tick);
+        }),
+    );
+    await canvas.clickBubble("spoke-retail");
+    expect(await firstFrame, "the panel is in place on its first frame").toBe(0);
+  });
+});
+
 test.describe("tour card", () => {
   test("never covers the lit area in any frame, stepping forward and back", { tag: "@1440" }, async ({ canvas, page }) => {
     const seen = await walkTour(canvas, page);
