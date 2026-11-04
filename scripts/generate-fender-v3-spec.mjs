@@ -74,8 +74,6 @@ const RULES = [
   [/2,420\+/g, "{bundle_reviews}"],
   [/\+\$680K/g, "{phase_one_lift}"],
   [/\+\$38M to \$62M/g, "{enterprise_potential}"],
-  [/6 divisions/gi, "{division_count} divisions"],
-  [/6 Catalog Divisions/g, "{division_count} Catalog Divisions"],
 ];
 
 function applyRules(text) {
