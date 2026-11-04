@@ -18,6 +18,8 @@ import {
   iomMotionMs,
 } from "@/lib/canvas-sdk/iom-motion";
 import { IomCursor } from "@/lib/canvas-sdk/IomCursor";
+import { NodeTooltip, type NodeTooltipHandle } from "@/lib/canvas-sdk/NodeTooltip";
+import { useIomPointerWash } from "@/lib/canvas-sdk/useIomPointerWash";
 import { CanvasHudZoomControls } from "@/lib/canvas-sdk/CanvasHudZoomControls";
 import { TourLauncher } from "@/lib/canvas-sdk/TourLauncher";
 import { useDefinitionTooltips } from "@/lib/canvas-sdk/useDefinitionTooltips";
@@ -53,6 +55,7 @@ import {
   type MouseEvent as ReactMouseEvent,
   type ReactNode,
 } from "react";
+import { flushSync } from "react-dom";
 
 const DEFAULT_DRILLDOWN_WIDTH = 620;
 const DEFAULT_FOCUS_SCALE = 1.55;
@@ -66,16 +69,6 @@ const TOUR_CARD_ZONE = 36 + 440 + 24;
 const TOUR_CARD_MIN_ROOM = 240;
 
 type PanelLayout = "wide" | "narrow" | "hidden";
-
-type TooltipState = {
-  title: string;
-  desc: string;
-  x: number;
-  y: number;
-  hasMoreInfo: boolean;
-  anchor: "cursor" | "column-right" | "definition";
-  example?: boolean;
-};
 
 type Props = {
   spec: CanvasSpecWithViews;
@@ -139,8 +132,7 @@ export function CanvasShell({ spec, children }: Props) {
   const [lightTheme, setLightTheme] = useState(!iom);
   const [promptsOpen, setPromptsOpen] = useState(false);
   const closePrompts = useCallback(() => setPromptsOpen(false), []);
-  const [tooltip, setTooltip] = useState<TooltipState | null>(null);
-  const [tooltipVisible, setTooltipVisible] = useState(false);
+  const tooltipRef = useRef<NodeTooltipHandle>(null);
   const [activeSpoke, setActiveSpoke] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState(0);
   const [inspectedBubbleId, setInspectedBubbleId] = useState("hub");
@@ -511,7 +503,7 @@ export function CanvasShell({ spec, children }: Props) {
       } else {
         setActiveTab(0);
       }
-      setTooltipVisible(false);
+      tooltipRef.current?.hide();
       beginOverviewChromeExit();
       if (iom) {
         if (spokeId === "hub") setOverviewNonce((nonce) => nonce + 1);
@@ -576,7 +568,7 @@ export function CanvasShell({ spec, children }: Props) {
       setTourSuspended(false);
       setTourStep(safeStep);
       setTourProgress(null);
-      setTooltipVisible(false);
+      tooltipRef.current?.hide();
       if (!iom) setActiveSpoke(null);
       const step = tourSteps[safeStep];
       smoothPanToNode(step.targetX, step.targetY);
@@ -662,34 +654,25 @@ export function CanvasShell({ spec, children }: Props) {
         if (!(target instanceof Element)) return;
         const node = target.closest(".graph-node") ?? target;
         const nodeRect = node.getBoundingClientRect();
-        setTooltip({
-          title,
-          desc,
-          hasMoreInfo,
-          example,
-          x: nodeRect.right - hostRect.left + 14,
-          y: nodeRect.top - hostRect.top + nodeRect.height / 2,
-          anchor: "column-right",
-        });
+        tooltipRef.current?.show(
+          { title, desc, hasMoreInfo, example, anchor: "column-right" },
+          nodeRect.right - hostRect.left + 14,
+          nodeRect.top - hostRect.top + nodeRect.height / 2,
+        );
       } else {
         // Nudge toward the pointer; CSS lifts the box by its height + a small gap.
-        setTooltip({
-          title,
-          desc,
-          hasMoreInfo,
-          example,
-          x: evt.clientX - hostRect.left + 10,
-          y: evt.clientY - hostRect.top + 10,
-          anchor: "cursor",
-        });
+        tooltipRef.current?.show(
+          { title, desc, hasMoreInfo, example, anchor: "cursor" },
+          evt.clientX - hostRect.left + 10,
+          evt.clientY - hostRect.top + 10,
+        );
       }
-      setTooltipVisible(true);
     },
     [],
   );
 
   const hideTooltip = useCallback(() => {
-    setTooltipVisible(false);
+    tooltipRef.current?.hide();
   }, []);
 
   useEffect(() => {
@@ -708,8 +691,11 @@ export function CanvasShell({ spec, children }: Props) {
   });
 
   const inspectBubble = useCallback((nodeId: string) => {
-    setInspectedBubbleId(nodeId);
-    setHubSlotsVisible(true);
+    // Hover updates otherwise wait for the next task, a frame after the pointer arrived.
+    flushSync(() => {
+      setInspectedBubbleId(nodeId);
+      setHubSlotsVisible(true);
+    });
     frameHoveredBubble(nodeId);
   }, [frameHoveredBubble]);
 
@@ -742,15 +728,11 @@ export function CanvasShell({ spec, children }: Props) {
     const desc = target.getAttribute("data-ifai-tooltip-desc")?.trim() ?? "";
     if (!desc) return;
     const rect = target.getBoundingClientRect();
-    setTooltip({
-      title,
-      desc,
-      hasMoreInfo: false,
-      x: rect.left + rect.width / 2,
-      y: rect.top,
-      anchor: "definition",
-    });
-    setTooltipVisible(true);
+    tooltipRef.current?.show(
+      { title, desc, hasMoreInfo: false, anchor: "definition" },
+      rect.left + rect.width / 2,
+      rect.top,
+    );
   }, []);
 
   const definitionTooltipsBlocked = useCallback(
@@ -794,21 +776,7 @@ export function CanvasShell({ spec, children }: Props) {
     return () => root.removeEventListener("scroll", lockScroll, true);
   }, []);
 
-  useEffect(() => {
-    if (!iom) return;
-    const body = canvasBodyRef.current;
-    if (!body) return;
-    const onPointerMove = (event: PointerEvent) => {
-      const box = body.getBoundingClientRect();
-      if (!box.width || !box.height) return;
-      const x = ((event.clientX - box.left) / box.width) * 100;
-      const y = ((event.clientY - box.top) / box.height) * 100;
-      body.style.setProperty("--pointer-x", `${x}%`);
-      body.style.setProperty("--pointer-y", `${y}%`);
-    };
-    body.addEventListener("pointermove", onPointerMove);
-    return () => body.removeEventListener("pointermove", onPointerMove);
-  }, [iom]);
+  useIomPointerWash(canvasBodyRef, iom);
 
   useEffect(() => {
     const viewport = viewportRef.current;
@@ -1316,31 +1284,7 @@ export function CanvasShell({ spec, children }: Props) {
           </div>
         ) : null}
 
-        <div
-          className={`node-tooltip${tooltip?.anchor === "column-right" ? " node-tooltip-column" : ""}${tooltip?.anchor === "definition" ? " node-tooltip-definition" : ""}${tooltip?.example ? " node-tooltip-example" : ""}${tooltipVisible ? " visible" : ""}`}
-          style={{ left: tooltip?.x ?? 0, top: tooltip?.y ?? 0 }}
-        >
-          {tooltip?.title ? (
-            <div style={{ fontWeight: 700, marginBottom: 2 }}>{tooltip.title}</div>
-          ) : null}
-          {tooltip?.desc ? (
-            <div className="node-tooltip-desc" style={{ color: "var(--text-muted)", fontSize: 11 }}>
-              {tooltip.desc}
-            </div>
-          ) : null}
-          {tooltip?.hasMoreInfo ? (
-            <div
-              style={{
-                marginTop: 6,
-                color: "var(--accent-purple)",
-                fontWeight: 700,
-                fontSize: 10,
-              }}
-            >
-              CLICK FOR MORE INFO →
-            </div>
-          ) : null}
-        </div>
+        <NodeTooltip ref={tooltipRef} />
 
         {panelOpen && panelLayout === "hidden" && !tourOverlayVisible ? (
           <button
