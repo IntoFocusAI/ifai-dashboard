@@ -42,20 +42,15 @@ export function buildLiveCommandCenter(
   retail: RetailCanvasRead = { phase: "loading" },
   ai: AiSearchRead = { phase: "loading" },
 ): CommandCenterSpec {
-  const { m, divisions } = bundle;
   const schemaPages = specPageCounts(bundle.specPages);
   const bullets = bulletCounts(bundle.listingContent);
-  const divisionCount = divisions.length > 0 ? divisions.length : m.division_count;
   const headline = headlineSurface(retail);
   const mapItem = mapPriority(retail);
   const aiItems = aiPriorityItems(ai);
   const aiCritical = aiItems.filter((item) => item.severity === "critical");
   const aiOther = aiItems.filter((item) => item.severity !== "critical");
 
-  const summaryParts = [
-    headlineSentence(headline),
-    `The catalog read covers ${formatInt(divisionCount)} divisions.`,
-  ];
+  const summaryParts = [headlineSentence(headline)];
   const aiLine = aiCommandSummary(ai);
   if (aiLine) summaryParts.push(aiLine);
 

@@ -3,7 +3,7 @@
     "hub": {
       "badge": "PORTFOLIO CORE · MASTER COMMAND",
       "title": "Summary",
-      "desc": "Overview of Fender's electric catalog health. The division read lists {division_count} divisions.",
+      "desc": "Overview of Fender's electric catalog health.",
       "tabs": [
         "Briefing",
         "Performance",
