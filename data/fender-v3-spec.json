@@ -114,9 +114,7 @@
       "title": "Executive Portfolio Roadmap",
       "desc": "{retail_headline}",
       "tabs": [
-        "30-60-90 Day Milestones",
-        "Executive KPI Target Matrix",
-        "Flexible Resourcing & Operating Model"
+        "30-60-90 Day Milestones"
       ],
       "navLabel": "90-Day Roadmap",
       "next": "aeo",

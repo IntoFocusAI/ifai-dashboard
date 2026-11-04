@@ -25,11 +25,7 @@ const TABS: Tab[] = [
   ["specs", "AI Readiness", ["Findability", "Amazon Specs", "Brand-Site Specs", "Amazon A+ Matrix"]],
   ["competitors", "Competitive Radar", ["Category Battlecards", "Competitor Wins", "Engine Comparison"]],
   ["suggestions", "Action Items", ["Urgent Interventions", "Revenue Estimates", "Current findings"]],
-  [
-    "roadmap",
-    "Strategy Roadmap",
-    ["30-60-90 Day Milestones", "Executive KPI Target Matrix", "Flexible Resourcing & Operating Model"],
-  ],
+  ["roadmap", "Strategy Roadmap", ["30-60-90 Day Milestones"]],
 ].flatMap(([spoke, area, tabs]) =>
   (tabs as string[]).map((tab) => ({
     spoke: spoke as string,
@@ -47,16 +43,6 @@ const KNOWN_GAPS: Record<string, { x03: boolean; x04: boolean; owner: string }> 
     x03: false,
     x04: false,
     owner: "data/fender-v3-spec.json Action Items tab 2 (no owner in batch 21)",
-  },
-  "roadmap/executive-kpi-target-matrix": {
-    x03: false,
-    x04: false,
-    owner: "empty tab: data/fender-v3-spec.json / build-live-spokes.tsx (worker 21.2)",
-  },
-  "roadmap/flexible-resourcing-operating-model": {
-    x03: false,
-    x04: false,
-    owner: "empty tab: data/fender-v3-spec.json / build-live-spokes.tsx (worker 21.2)",
   },
 };
 
