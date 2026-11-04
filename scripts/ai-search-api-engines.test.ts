@@ -416,6 +416,24 @@ test("an API run loads its own calls, fact checks, and citations", async () => {
   assert.equal(loaded.snapshot.run.audit_run_id, API_RUN);
 });
 
+test("an API run loads only repeats 1 to 3 of each question per engine", async () => {
+  const snapshot = apiSnapshot();
+  const extra = [4, 20].map((repeat) => call(API_RUN, "openai_api", { repeat_no: repeat, outcome: "competitor_win" }));
+  const client = fakeClient({
+    canvas_ai_api_runs: [apiRun({})],
+    canvas_ai_api_calls: [...snapshot.calls, ...extra],
+    canvas_ai_api_probes: [...snapshot.probes, probeOf(extra[0])],
+    canvas_ai_api_citations: [...snapshot.citations, ...extra.map(citeOf)],
+  });
+  const loaded = await loadApiRunSnapshot(client, apiRun({}));
+  assert.equal(loaded.phase, "ready");
+  if (loaded.phase !== "ready") return;
+  assert.equal(loaded.snapshot.calls.length, 5);
+  assert.equal(loaded.snapshot.probes.length, 1);
+  assert.equal(loaded.snapshot.citations.length, 5);
+  assert.equal(loaded.snapshot.storedCitationCount, 5);
+});
+
 test("Run Details lists the search engines before the API engines for the same question", () => {
   const rows = sortExplorerRows([call(API_RUN, "claude_api"), call(BATTERY, "perplexity"), call(API_RUN, "openai_api"), call(BATTERY, "chatgpt")]);
   assert.deepEqual(rows.map((row) => engineGroup(row.engine)), ["search", "search", "api", "api"]);

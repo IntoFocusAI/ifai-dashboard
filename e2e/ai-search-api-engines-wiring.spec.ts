@@ -87,6 +87,7 @@ test("a one-question smoke test on the same day is not offered beside the Nov 3 
   const detail = page.locator(`[data-ai-history-run='${SEARCH_RUN}'] [data-ai-history-api-run='ready']`);
   await expect(detail).toContainText("API run beside it: Nov 2, 2026 (1 day before)");
   await expect(detail.locator(".ifai-term")).toHaveAttribute("data-ifai-tooltip-desc", /at least as many questions/);
+  await expect(detail.locator(".ifai-term")).toHaveAttribute("data-ifai-tooltip-desc", /Only repeats 1 to 3 of each API question per engine are counted/);
 });
 
 test("a single run offers the API run nearest its day, labeled with its date", async ({ page }) => {

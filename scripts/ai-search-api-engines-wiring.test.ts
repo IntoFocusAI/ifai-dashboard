@@ -10,7 +10,7 @@ import {
   nearestApiRun,
   type ApiRunSummary,
 } from "../lib/ai-search/api-runs.ts";
-import { fixedQuestionCount } from "../lib/ai-search/engine-group.ts";
+import { API_REPEAT_CAP, API_REPEAT_RULE, capApiRepeats, fixedQuestionCount } from "../lib/ai-search/engine-group.ts";
 import { engineGroupTrend, engineGroupWindow, pairApiRuns } from "../lib/ai-search/engine-group-window.ts";
 import type { ApiEngineLoad } from "../lib/ai-search/engine-group-read.ts";
 import { buildHistoryTrend } from "../lib/ai-search/history-trends.ts";
@@ -249,6 +249,44 @@ test("an API run counts only when it asked the fixed questions of the battery ru
   assert.equal(apiRunsCoveringBattery(runs, [{ day: "2026-10-27", fixedQuestions: 1 }]).length, 4);
   assert.deepEqual(apiRunsCoveringBattery(runs, []), []);
   assert.deepEqual(apiRunsCoveringBattery([apiSummary("no-count", "2026-11-03T10:00:00Z")], window), []);
+});
+
+test("the API repeat cap keeps repeats 1 to 3 and the fact checks and citations of those calls", () => {
+  const id = "a-capped";
+  const calls = [
+    call(id, "openai_api", { repeat_no: 1 }),
+    call(id, "openai_api", { repeat_no: 3 }),
+    call(id, "openai_api", { repeat_no: null }),
+    call(id, "openai_api", { repeat_no: 4, outcome: "competitor_win" }),
+    call(id, "gemini_api", { repeat_no: 20, call_status: "error", outcome: "error" }),
+    call(id, "gemini_api", { repeat_no: 2, prompt_kind: "probe", prompt_key: "p17", outcome: "not_scored" }),
+    call(id, "gemini_api", { repeat_no: 5, prompt_kind: "probe", prompt_key: "p17", outcome: "not_scored" }),
+  ];
+  const probe = (row: AiCallRow) =>
+    ({ audit_run_id: row.audit_run_id, sim_id: row.sim_id, prompt_key: "p17", engine: row.engine }) as AiSearchSnapshot["probes"][number];
+  const cite = (row: AiCallRow) =>
+    ({ audit_run_id: row.audit_run_id, sim_id: row.sim_id, simulation_id: row.id, url: "https://www.fender.com/" }) as AiSearchSnapshot["citations"][number];
+  const snapshot: AiSearchSnapshot = {
+    run: runOn(id, "2026-11-03", { published_at: null, expected_calls: 7, attempted_calls: 7, answered_calls: 6, error_calls: 1 }),
+    calls,
+    probes: [probe(calls[5]), probe(calls[6])],
+    citations: calls.map(cite),
+    storedCitationCount: calls.length,
+  };
+  const capped = capApiRepeats(snapshot);
+  assert.equal(API_REPEAT_CAP, 3);
+  assert.deepEqual(capped.calls.map((row) => row.repeat_no), [1, 3, null, 2]);
+  assert.deepEqual(capped.probes.map((row) => row.sim_id), [calls[5].sim_id]);
+  assert.deepEqual(capped.citations.map((row) => row.simulation_id), [calls[0], calls[1], calls[2], calls[5]].map((row) => row.id));
+  assert.equal(capped.storedCitationCount, 4);
+  assert.equal(capped.run.attempted_calls, 4);
+  assert.equal(capped.run.answered_calls, 4);
+  assert.equal(capped.run.error_calls, 0);
+  assert.equal(capped.run.expected_calls, null);
+
+  const underCap = { ...snapshot, calls: calls.slice(0, 3) };
+  assert.equal(capApiRepeats(underCap), underCap);
+  assert.match(API_REPEAT_RULE, /repeats 1 to 3/);
 });
 
 test("Run Summary, Citation Ecosystem, the trend, and the run detail read the switch", () => {

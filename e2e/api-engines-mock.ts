@@ -47,7 +47,13 @@ const CLAIMS: Record<string, { claim: string; url: string }> = {
 };
 
 /** answered: outcome for a buying question, or the fact-check result for a probe. */
-type Plan = { engine: string; key: Key; result: "fender_win" | "competitor_win" | "none" | "confirmed" | "error" };
+type Plan = {
+  engine: string;
+  key: Key;
+  result: "fender_win" | "competitor_win" | "none" | "confirmed" | "error";
+  /** repeat_no, 1 unless set. */
+  repeat?: number;
+};
 
 const SEARCH_PLAN: Plan[] = [
   { engine: "chatgpt", key: "p01", result: "fender_win" },
@@ -75,6 +81,10 @@ const API_PLAN: Plan[] = [
   { engine: "crescent_api", key: "p02", result: "error" },
   { engine: "crescent_api", key: "p17", result: "error" },
   { engine: "crescent_api", key: "p18", result: "error" },
+  // Repeats 4 and 5 sit past the 3-repeat cap. Counted, they would move Accuracy and Unbranded Discovery.
+  { engine: "openai_api", key: "p17", result: "confirmed", repeat: 4 },
+  { engine: "gemini_api", key: "p01", result: "competitor_win", repeat: 4 },
+  { engine: "gemini_api", key: "p02", result: "competitor_win", repeat: 5 },
 ];
 
 function rowsFor(runId: string, plan: Plan[], day: string, firstSim: number) {
@@ -108,7 +118,7 @@ function rowsFor(runId: string, plan: Plan[], day: string, firstSim: number) {
       remediation_patch: null,
       error_message: failed ? "Provider returned 503" : null,
       attempt_no: 1,
-      repeat_no: 1,
+      repeat_no: step.repeat ?? 1,
       created_at: created,
       answer_text: answer,
     });
@@ -198,7 +208,7 @@ const API_SUMMARY: Row = {
   prompt_set_hash: "mock-prompt-set",
   expected_calls: API_PLAN.length,
   attempted_calls: API_PLAN.length,
-  answered_calls: 8,
+  answered_calls: 11,
   error_calls: 4,
   is_published: false,
   published_at: null,
@@ -207,7 +217,7 @@ const API_SUMMARY: Row = {
   missing_calls: 4,
   engine_group: "api",
   engines: ["crescent_api", "gemini_api", "openai_api"],
-  repeats: 1,
+  repeats: 5,
   questions_asked: 4,
   questions_matched: 4,
   question_set_match: true,

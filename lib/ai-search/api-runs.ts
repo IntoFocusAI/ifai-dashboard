@@ -1,5 +1,5 @@
 import { defaultWindowRuns, runDay } from "@/lib/ai-search/default-window";
-import { fixedQuestionCount } from "@/lib/ai-search/engine-group";
+import { capApiRepeats, fixedQuestionCount } from "@/lib/ai-search/engine-group";
 import { compareRuns, utcDay, type HistoryRunSummary } from "@/lib/ai-search/history-eligibility";
 import type { HistoryMode } from "@/lib/ai-search/history-mode";
 import {
@@ -195,7 +195,10 @@ export type ApiSnapshotResult =
   | { phase: "missing" }
   | { phase: "error"; message: string };
 
-/** One counted API run's calls, fact checks, and citations, paged the same way as a history run. */
+/**
+ * One counted API run's calls, fact checks, and citations, paged the same way as a history run,
+ * capped at repeats 1 to 3 of each question per engine so every reader counts the same calls.
+ */
 export async function loadApiRunSnapshot(
   client: HistoryReadClient,
   run: ApiRunSummary,
@@ -215,7 +218,7 @@ export async function loadApiRunSnapshot(
     const mine = <T extends { audit_run_id: string }>(rows: T[]) => rows.filter((row) => row.audit_run_id === runId);
     return {
       phase: "ready",
-      snapshot: {
+      snapshot: capApiRepeats({
         run: {
           audit_run_id: runId,
           run_state: run.run_state ?? "partial",
@@ -235,7 +238,7 @@ export async function loadApiRunSnapshot(
         calls: mine(calls.rows),
         probes: mine(probes.rows),
         citations: mine(citations.rows),
-      },
+      }),
     };
   } catch (error) {
     return { phase: "error", message: messageOf(error) };

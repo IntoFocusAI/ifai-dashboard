@@ -78,6 +78,34 @@ export function fixedQuestionCount(snapshot: Pick<AiSearchSnapshot, "calls" | "p
 export const API_QUESTION_RULE =
   "An API run counts only when it asked at least as many questions as the search run's fixed questions, so a short test run is left out.";
 
+/** Repeats of each API question per engine that count: the question set × 3 repeats (Brian Magazu). */
+export const API_REPEAT_CAP = 3;
+
+export const API_REPEAT_RULE = `Only repeats 1 to ${API_REPEAT_CAP} of each API question per engine are counted.`;
+
+/**
+ * An API run's calls up to the repeat cap, with the fact checks and citations of those calls.
+ * The run's counts are recounted; expected and missing are not known for the capped subset.
+ */
+export function capApiRepeats(snapshot: AiSearchSnapshot, cap = API_REPEAT_CAP): AiSearchSnapshot {
+  const calls = snapshot.calls.filter((row) => {
+    const repeat = row.repeat_no ?? 1;
+    return repeat >= 1 && repeat <= cap;
+  });
+  if (calls.length === snapshot.calls.length) return snapshot;
+  const kept = new Set(calls.map(callKey));
+  const ids = new Set(calls.map((row) => row.id));
+  const citations = snapshot.citations.filter((row) => ids.has(row.simulation_id));
+  return {
+    ...snapshot,
+    run: withCallCounts(snapshot, calls),
+    calls,
+    probes: snapshot.probes.filter((row) => kept.has(callKey(row))),
+    citations,
+    storedCitationCount: citations.length,
+  };
+}
+
 /** What the engine switch did to the selection. Panels read it for N of M and tooltips. */
 export type EngineScope = {
   choice: EngineGroupChoice;

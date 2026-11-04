@@ -7,7 +7,7 @@ import { CopyTip } from "@/components/v3/live/ai-search/CopyTip";
 import { RunHistoryCalendar } from "@/components/v3/live/ai-search/RunHistoryCalendar";
 import { useApiRunCatalog } from "@/components/v3/live/ai-search/useApiEngineLoad";
 import { apiRunDay, apiRunsCoveringBattery, daysApart, nearestApiRun } from "@/lib/ai-search/api-runs";
-import { API_QUESTION_RULE, fixedQuestionCount } from "@/lib/ai-search/engine-group";
+import { API_QUESTION_RULE, API_REPEAT_RULE, fixedQuestionCount } from "@/lib/ai-search/engine-group";
 import { formatDay, utcDay, type HistoryRunSummary } from "@/lib/ai-search/history-eligibility";
 import { LAST_30_DAYS_LABEL } from "@/lib/ai-search/default-window";
 import { batteryGaps, PROMPT_BATTERY } from "@/lib/ai-search/prompt-battery";
@@ -33,7 +33,7 @@ function monthOf(day: string | null): { year: number; month: number } {
   return { year, month: month - 1 };
 }
 
-const PAIRED_API_TIP = `API engines run on their own schedule. This run is shown with the counted API run nearest its day when the Engines switch is on All or API only. ${API_QUESTION_RULE}`;
+const PAIRED_API_TIP = `API engines run on their own schedule. This run is shown with the counted API run nearest its day when the Engines switch is on All or API only. ${API_QUESTION_RULE} ${API_REPEAT_RULE}`;
 
 /** The counted API run the Engines switch shows beside this run. */
 function PairedApiRun({ runId, day }: { runId: string; day: string | null }) {
