@@ -31,7 +31,9 @@ export function ReadNotAvailableBox({
       <div className="content-box-title">
         <span>{title}</span>
       </div>
-      <ReadNotAvailableMark failure={failure} />
+      <div>
+        <ReadNotAvailableMark failure={failure} />
+      </div>
     </div>
   );
 }
