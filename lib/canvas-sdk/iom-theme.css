@@ -1442,17 +1442,17 @@
   transition: none;
 }
 
-/* Custom reticle cursor (fine pointer only; see IomCursor.tsx).
-   Do not gate cursor:none on a JS class — class toggles can drop after clicks/DOM updates. */
+/* Custom reticle cursor (fine pointer only; see IomCursor.tsx). Applies only while
+   IomCursor is mounted and enabled; the dashboard uses the native cursor for now. */
 @media (pointer: fine) and (hover: hover) {
-  .ifai-canvas.theme-iom,
-  .ifai-canvas.theme-iom *,
-  .ifai-canvas.theme-iom *:active,
-  .ifai-canvas.theme-iom .viewport-container,
-  .ifai-canvas.theme-iom .viewport-container:active,
-  .ifai-canvas.theme-iom.column-layout .viewport-container,
-  .ifai-canvas.theme-iom.column-layout .viewport-container .graph-node,
-  .ifai-canvas.theme-iom.column-layout .viewport-container:active {
+  html.iom-custom-cursor-active .ifai-canvas.theme-iom,
+  html.iom-custom-cursor-active .ifai-canvas.theme-iom *,
+  html.iom-custom-cursor-active .ifai-canvas.theme-iom *:active,
+  html.iom-custom-cursor-active .ifai-canvas.theme-iom .viewport-container,
+  html.iom-custom-cursor-active .ifai-canvas.theme-iom .viewport-container:active,
+  html.iom-custom-cursor-active .ifai-canvas.theme-iom.column-layout .viewport-container,
+  html.iom-custom-cursor-active .ifai-canvas.theme-iom.column-layout .viewport-container .graph-node,
+  html.iom-custom-cursor-active .ifai-canvas.theme-iom.column-layout .viewport-container:active {
     cursor: none !important;
   }
 

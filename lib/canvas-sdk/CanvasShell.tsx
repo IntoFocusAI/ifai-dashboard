@@ -17,7 +17,7 @@ import {
   IOM_RAIL_MOTION_BASE_MS,
   iomMotionMs,
 } from "@/lib/canvas-sdk/iom-motion";
-import { IomCursor } from "@/lib/canvas-sdk/IomCursor";
+import { IOM_CUSTOM_CURSOR, IomCursor } from "@/lib/canvas-sdk/IomCursor";
 import { NodeTooltip, type NodeTooltipHandle } from "@/lib/canvas-sdk/NodeTooltip";
 import { useIomPointerWash } from "@/lib/canvas-sdk/useIomPointerWash";
 import { CanvasHudZoomControls } from "@/lib/canvas-sdk/CanvasHudZoomControls";
@@ -1409,7 +1409,7 @@ export function CanvasShell({ spec, children }: Props) {
         </div>
       </div>
       {promptsOpen && spec.promptsEditor ? spec.promptsEditor(closePrompts) : null}
-      {iom ? <IomCursor rootRef={rootRef} enabled /> : null}
+      {iom && IOM_CUSTOM_CURSOR ? <IomCursor rootRef={rootRef} enabled /> : null}
     </div>
   );
 }
