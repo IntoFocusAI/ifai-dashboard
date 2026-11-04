@@ -71,3 +71,21 @@ test("a pointer move renders nothing in React on the map", () => {
   assert.match(node, /export const CanvasGraphNode = memo\(/);
   assert.doesNotMatch(read("lib/canvas-sdk/CanvasGraph.tsx"), /node=\{\{ \.\.\.node/, "each bubble gets a stable node object");
 });
+
+/** The declarations of every rule whose selector list includes `selector`. */
+function rule(css: string, selector: string) {
+  const blocks = [...css.matchAll(/([^{}]+)\{([^}]*)\}/g)]
+    .filter((match) => match[1].split(",").some((part) => part.trim() === selector))
+    .map((match) => match[2]);
+  assert.ok(blocks.length, `no rule for ${selector}`);
+  return blocks.join("\n");
+}
+
+test("only the metric widgets blur what is behind them on the map, at a small radius", () => {
+  const iom = read("lib/canvas-sdk/iom-theme.css");
+  for (const selector of [".hdr-btn", ".canvas-hud-legend", ".user-menu-panel"]) {
+    assert.doesNotMatch(rule(iom, `.ifai-canvas.theme-iom ${selector}`), /backdrop-filter:\s*blur/, `${selector} uses a fill, not a blur`);
+  }
+  assert.match(rule(iom, ".ifai-canvas.theme-iom .view-mode-switch"), /backdrop-filter: none;/);
+  assert.match(rule(iom, ".ifai-canvas.theme-iom .canvas-metric-widget"), /backdrop-filter: blur\(8px\);/);
+});

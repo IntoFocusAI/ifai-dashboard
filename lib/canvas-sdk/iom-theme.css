@@ -87,11 +87,21 @@
 .ifai-canvas.theme-iom .filter-selector,
 .ifai-canvas.theme-iom .search-input,
 .ifai-canvas.theme-iom .hdr-btn {
-  background: rgba(6, 16, 30, 0.78);
+  /* A slightly denser fill stands in for a backdrop blur: these pills sit on the plain canvas
+     background, where a blur shows almost nothing and costs a filter pass whenever it changes. */
+  background: rgba(6, 16, 30, 0.86);
   border: 1px solid rgba(46, 183, 255, 0.18);
   border-radius: 999px;
   box-shadow: none;
-  backdrop-filter: blur(10px);
+}
+
+.ifai-canvas.theme-iom .view-mode-switch {
+  background: rgba(6, 16, 30, 0.86);
+  backdrop-filter: none;
+}
+
+.ifai-canvas.theme-iom.light-theme .view-mode-switch {
+  background: var(--bg-glass);
 }
 
 .ifai-canvas.theme-iom .search-input {
@@ -345,6 +355,8 @@
 }
 
 .ifai-canvas.theme-iom .canvas-metric-widget {
+  /* The widgets keep the frosted look, at a smaller radius that reads the same and filters less. */
+  backdrop-filter: blur(8px);
   transition:
     opacity calc(0.76s * var(--iom-motion-scale)) cubic-bezier(0.22, 0.9, 0.24, 1),
     transform calc(0.76s * var(--iom-motion-scale)) cubic-bezier(0.22, 0.9, 0.24, 1),
@@ -1158,10 +1170,9 @@
 
 .ifai-canvas.theme-iom .canvas-hud-legend,
 .ifai-canvas.theme-iom .hud-btn-group {
-  background: rgba(6, 16, 30, 0.78);
+  background: rgba(6, 16, 30, 0.86);
   border: 1px solid rgba(46, 183, 255, 0.18);
   border-radius: 12px;
-  backdrop-filter: blur(10px);
 }
 
 .ifai-canvas.theme-iom .map-chrome-slide.tour-launcher.hdr-btn {
@@ -1192,7 +1203,6 @@
 .ifai-canvas.theme-iom .user-menu-panel {
   background: rgba(8, 22, 40, 0.98);
   border-color: rgba(46, 183, 255, 0.28);
-  backdrop-filter: blur(12px);
 }
 
 .ifai-canvas.theme-iom.light-theme .user-menu-panel {
