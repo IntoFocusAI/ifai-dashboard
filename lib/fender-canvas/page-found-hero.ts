@@ -11,6 +11,7 @@ import {
   pageFoundDefinition,
   pageFoundHero,
 } from "@/lib/fender-canvas/ai-readiness-lead";
+import { metricsRowFailure, readFailureTip } from "@/lib/fender-canvas/canvas-reads";
 import { formatInt } from "@/lib/fender-canvas/format";
 import type { CanvasMetricsRow } from "@/lib/fender-canvas/types";
 
@@ -76,6 +77,14 @@ export function brandSitePageFoundHero(
 ): PageFoundHeroModel {
   const definition = pageFoundDefinition(checkedAt);
   if (!m) return unavailableHero(definition);
+  const failure = metricsRowFailure(m);
+  if (failure) {
+    return {
+      ...unavailableHero(definition),
+      explainer: "The checked-SKU counts did not load.",
+      figureTip: readFailureTip(failure),
+    };
+  }
   const base = pageFoundHero(m, checkedAt);
   const checked = m.spec_checked;
   const found = m.spec_fender_found;

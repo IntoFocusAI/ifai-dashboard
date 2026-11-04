@@ -31,7 +31,12 @@ export function CatalogReadinessSpec({ bundle }: { bundle: CanvasBundle }) {
         >
           <AiReadinessLead bundle={bundle} specRows={specRows} />
         </div>
-        <MissingFieldList missing={bundle.missing} specChecked={bundle.m.spec_checked} />
+        <MissingFieldList
+          missing={bundle.missing}
+          specChecked={bundle.m.spec_checked}
+          missingFailure={bundle.unavailable?.missing ?? null}
+          metricsFailure={bundle.unavailable?.m ?? null}
+        />
       </div>
       <FenderSpecPanel catalogReadiness read={specRows} />
     </div>

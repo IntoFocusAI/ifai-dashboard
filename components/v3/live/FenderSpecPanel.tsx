@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment, useEffect, useState } from "react";
+import { ReadNotAvailableMark } from "@/components/v3/live/ReadNotAvailable";
 import { clientColumn, ResizableTable } from "@/components/v3/live/ResizableTable";
 import {
   SET_ASIDE_COLUMN,
@@ -15,6 +16,7 @@ import { CLIENT_TABLE_PAGE_SIZE, loadFilteredPages } from "@/lib/fender-canvas/f
 import { specReadinessSortValue } from "@/lib/fender-canvas/spec-table-sort";
 import {
   specModelTitle,
+  type CanvasReadFailure,
   type CanvasSpecMissingRow,
   type CanvasSpecReadinessRow,
 } from "@/lib/fender-canvas/types";
@@ -40,6 +42,8 @@ const SPEC_TABLE_MAX_HEIGHT = 420;
 
 /** The list opens on the two heaviest fields. The title chevron reveals the rest. */
 const MISSING_FIELD_PREVIEW = 2;
+
+const MISSING_FIELDS_TITLE = "Top missing Amazon fields";
 
 function amazonMissingRows(missing: CanvasSpecMissingRow[]): CanvasSpecMissingRow[] {
   return missing.filter((row) => (row.source ?? "").toLowerCase() === "amazon");
@@ -69,13 +73,23 @@ function FieldsChevron() {
 function MissingFieldRow({
   row,
   specChecked,
+  metricsFailure,
 }: {
   row: CanvasSpecMissingRow;
   specChecked: number | null;
+  metricsFailure: CanvasReadFailure | null;
 }) {
   const share = presentMissingFieldShare(row.sku_count, specChecked);
   const countLabel =
-    share.kind === "share" ? share.label : `${share.label} · ${share.shareLabel}`;
+    share.kind === "share" ? (
+      share.label
+    ) : metricsFailure ? (
+      <>
+        {share.label} · <ReadNotAvailableMark failure={metricsFailure} />
+      </>
+    ) : (
+      `${share.label} · ${share.shareLabel}`
+    );
 
   return (
     <div
@@ -101,19 +115,45 @@ function MissingFieldRow({
   );
 }
 
-/** Top missing Amazon fields; sits beside the completeness hero on Amazon Specs. */
+/**
+ * Top missing Amazon fields; sits beside the completeness hero on Amazon Specs. A failed
+ * missing-field read keeps the box and reads Not available*; a failed metrics read
+ * names that read on each share it cannot compute.
+ */
 export function MissingFieldList({
   missing,
   specChecked,
+  missingFailure = null,
+  metricsFailure = null,
 }: {
   missing: CanvasSpecMissingRow[];
   specChecked: number | null;
+  missingFailure?: CanvasReadFailure | null;
+  metricsFailure?: CanvasReadFailure | null;
 }) {
   const [showAll, setShowAll] = useState(false);
   const amazonOnly = amazonMissingRows(missing);
   const shown = showAll ? amazonOnly : amazonOnly.slice(0, MISSING_FIELD_PREVIEW);
   const rest = amazonOnly.length - MISSING_FIELD_PREVIEW;
   const collapsed = rest > 0 && !showAll;
+
+  if (missingFailure) {
+    return (
+      <div
+        className="content-box spec-missing-fields-box"
+        data-spec-missing-fields-box=""
+        data-read-unavailable-box={missingFailure.source}
+        style={{ flex: "1 1 240px", minWidth: 200 }}
+      >
+        <div className="content-box-title spec-missing-fields-title">
+          <span>{MISSING_FIELDS_TITLE}</span>
+        </div>
+        <div>
+          <ReadNotAvailableMark failure={missingFailure} />
+        </div>
+      </div>
+    );
+  }
 
   if (amazonOnly.length === 0) return null;
 
@@ -124,7 +164,7 @@ export function MissingFieldList({
       style={{ flex: "1 1 240px", minWidth: 200 }}
     >
       <div className="content-box-title spec-missing-fields-title">
-        <span>Top missing Amazon fields</span>
+        <span>{MISSING_FIELDS_TITLE}</span>
         {rest > 0 ? (
           <button
             type="button"
@@ -148,7 +188,12 @@ export function MissingFieldList({
         className={collapsed ? "spec-missing-fields-preview" : undefined}
       >
         {shown.map((row) => (
-          <MissingFieldRow key={`${row.source}-${row.field}`} row={row} specChecked={specChecked} />
+          <MissingFieldRow
+            key={`${row.source}-${row.field}`}
+            row={row}
+            specChecked={specChecked}
+            metricsFailure={metricsFailure}
+          />
         ))}
       </div>
     </div>

@@ -200,7 +200,7 @@ export function PageFoundTable({
   );
   const sorted = useClientTableSort(rows, COLUMNS, value);
   const slice = sorted.rows.slice(page * PAGE, page * PAGE + PAGE);
-  const matches = evidence ? evidenceMatchesHero(evidence, hero) : true;
+  const matches = evidence && hero.denominator != null ? evidenceMatchesHero(evidence, hero) : true;
 
   return (
     <div
