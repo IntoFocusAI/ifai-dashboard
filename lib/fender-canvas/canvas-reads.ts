@@ -129,6 +129,12 @@ export function readFailureTip(failure: CanvasReadFailure): string {
   return sanitizeUiText(`${read}: ${failure.message}${end}`);
 }
 
+/** The tooltip for a figure built from `key`, or null when that read loaded. */
+export function failedReadTip(bundle: CanvasBundle, key: CanvasReadKey): string | null {
+  const failure = bundle.unavailable?.[key];
+  return failure ? readFailureTip(failure) : null;
+}
+
 /** Every bundle read failed, or (for a partial load) the reads that did. */
 export class CanvasReadError extends Error {
   readonly failures: CanvasReadFailure[];

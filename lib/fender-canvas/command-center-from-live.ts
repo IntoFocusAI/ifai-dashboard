@@ -52,10 +52,8 @@ export function buildLiveCommandCenter(
   const aiCritical = aiItems.filter((item) => item.severity === "critical");
   const aiOther = aiItems.filter((item) => item.severity !== "critical");
 
-  const summaryParts = [
-    headlineSentence(headline),
-    `The catalog read covers ${formatInt(divisionCount)} divisions.`,
-  ];
+  const summaryParts = [headlineSentence(headline)];
+  if (divisionCount != null) summaryParts.push(`The catalog read covers ${formatInt(divisionCount)} divisions.`);
   const aiLine = aiCommandSummary(ai);
   if (aiLine) summaryParts.push(aiLine);
 
