@@ -159,6 +159,19 @@ test.describe("AI Search opens on the latest month", () => {
     await expect(page.locator("[data-ai-role='unbranded_discovery']")).toContainText("of 43");
     await expect(page.locator("[data-ai-trend-row$=':overall']")).toHaveCount(2);
 
+    // X-03: the two rates, each with its N of M and disc, open the first screen above the trend.
+    const lead = page.locator("[data-ai-run-summary-lead]");
+    await expect(lead.locator("[data-ai-role-total='unbranded_discovery']")).toHaveText("26 Fender/Squier leads of 43 resolved answers");
+    await expect(lead.locator("[data-ai-role-total='branded_consideration']")).toHaveText("40 Fender/Squier leads of 41 resolved answers");
+    await expect(lead.locator("[data-citation-pie-disc]")).toHaveCount(2);
+    for (const role of ["unbranded_discovery", "branded_consideration"]) {
+      await expect(lead.locator(`[data-ai-win-rate='${role}']`)).toBeInViewport({ ratio: 1 });
+      await expect(lead.locator(`[data-citation-pie-disc='summary-${role}']`)).toBeInViewport({ ratio: 1 });
+    }
+    const leadBox = await lead.boundingBox();
+    const trendBox = await page.locator("[data-ai-trend-section]").boundingBox();
+    expect(leadBox && trendBox && leadBox.y + leadBox.height <= trendBox.y).toBe(true);
+
     await page.locator(".drilldown-tab-btn", { hasText: "Run Details" }).click();
     await expect(trigger).toHaveText(/^October 2026/);
     await expect(page.locator("#ai-simulation-list")).toBeVisible();
@@ -171,6 +184,9 @@ test.describe("AI Search opens on the latest month", () => {
     await page.locator(".drilldown-tab-btn", { hasText: "Run Summary" }).click();
     await expect(page.locator("[data-ai-win-rate='unbranded_discovery']")).toHaveText("65.0%");
     await expect(page.locator("[data-ai-win-rate='branded_consideration']")).toHaveText("100.0%");
+    await expect(lead.locator("[data-ai-role-total='unbranded_discovery']")).toHaveText("13 Fender/Squier leads of 20 resolved answers");
+    await expect(lead.locator("[data-ai-win-rate='unbranded_discovery']")).toBeInViewport({ ratio: 1 });
+    await expect(page.locator("[data-ai-trend-section]")).toHaveCount(0);
     await expect(page.locator("[data-ai-window-completeness]")).toHaveCount(0);
 
     await trigger.click();

@@ -1,11 +1,19 @@
 "use client";
 
-import { useSyncExternalStore, type ReactNode } from "react";
+import { createContext, useContext, useSyncExternalStore, type ReactNode } from "react";
 import { useAiHistoryOptional } from "@/components/v3/live/ai-search/AiHistoryContext";
+import { useAiSearch } from "@/components/v3/live/ai-search/AiSearchContext";
 import { HistoryTrendsPanel } from "@/components/v3/live/ai-search/HistoryTrendsPanel";
 import { LegacyRunInspect } from "@/components/v3/live/ai-search/LegacyRunInspect";
 
 const TREND_OPEN_KEY = "ifai-ai-trend-open";
+
+const TrendSlot = createContext<ReactNode>(null);
+
+/** The collapsible trend, placed by Run Summary under its lead rates. Null when the tab has no trend. */
+export function useTrendSlot(): ReactNode {
+  return useContext(TrendSlot);
+}
 
 const trendListeners = new Set<() => void>();
 
@@ -18,7 +26,7 @@ function readTrendOpen() {
   return window.localStorage.getItem(TREND_OPEN_KEY) !== "0";
 }
 
-/** The trend chart opens first on Run Summary. A reader can collapse it, and the choice is kept. */
+/** The trend chart sits under Run Summary's lead rates. A reader can collapse it, and the choice is kept. */
 function CollapsibleTrend() {
   const open = useSyncExternalStore(subscribeTrendOpen, readTrendOpen, () => true);
   return (
@@ -42,7 +50,8 @@ function CollapsibleTrend() {
 /**
  * Month, range, and all open the tab children on the pooled selection. A latest month with no
  * published run skips the trend so the tab opens on that notice and the latest-run choice.
- * Run Summary opens on the collapsible trend chart, then its figures.
+ * Once the selection loads, Run Summary opens on its two lead rates and places the collapsible
+ * trend under them through useTrendSlot. While it loads or fails, the trend sits above the notice.
  * Citation Ecosystem still follows range and all through followsRange.
  * Legacy stays on LegacyRunInspect. The map stays on the published run.
  */
@@ -57,11 +66,13 @@ export function AiSearchSurface({
   followsRange?: boolean;
 }) {
   const history = useAiHistoryOptional();
+  const read = useAiSearch();
   const kind = history?.mode.kind;
   const windowed = kind === "month" || kind === "range" || kind === "all";
   const emptyMonth = kind === "month" && history?.trend.phase === "ready" && history.trend.snapshots.length === 0;
   if (windowed && followsRange) return children;
   if (windowed && trend && !emptyMonth) {
+    if (read.phase === "ready") return <TrendSlot value={<CollapsibleTrend />}>{children}</TrendSlot>;
     return (
       <>
         <CollapsibleTrend />
