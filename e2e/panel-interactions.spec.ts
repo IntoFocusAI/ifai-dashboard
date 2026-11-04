@@ -312,7 +312,9 @@ test.describe("drill-downs", () => {
     expect(led).not.toBeNull();
     await expect(page.locator("[data-ai-run-details-lead] [data-ai-win-rate='unbranded_discovery']")).toBeVisible();
     await expect(page.locator("[data-ai-battle-lead-graph]")).toBeVisible();
-    await expect(page.locator("[data-ai-history-trigger]")).toContainText("Last 30 days");
+    await expect(page.locator("[data-ai-history-trigger]")).toHaveText(
+      /^(January|February|March|April|May|June|July|August|September|October|November|December) \d{4}/,
+    );
 
     const body = page.locator(".drilldown-body");
     await expect(body).toContainText("Yamaha");
