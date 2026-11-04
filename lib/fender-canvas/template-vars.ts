@@ -34,7 +34,6 @@ export function buildTemplateVars(bundle: CanvasBundle): Record<string, string> 
   const vars: Record<string, string> = {
     catalog_skus: formatInt(m.catalog_skus),
     catalog_bundles: formatInt(m.catalog_bundles),
-    division_count: formatInt(bundle.divisions.length > 0 ? bundle.divisions.length : m.division_count),
     bb_total: formatInt(m.bb_total),
     bb_1p: formatInt(m.bb_1p),
     bb_3p: formatInt(m.bb_3p),

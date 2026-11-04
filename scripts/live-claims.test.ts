@@ -185,7 +185,7 @@ test("command center uses the retail headline and drops unsourced claims", () =>
   assert.doesNotMatch(text, /3,598/);
   assert.doesNotMatch(text, /electric SKUs|monitored electric SKUs/i);
   assert.ok(text.includes(headline));
-  assert.match(text, /13 divisions/);
+  assert.doesNotMatch(text, /\bdivisions?\b/i);
   // AI Search lines come from the published run only, never the pooled canvas_metrics sim_* fields.
   assert.doesNotMatch(text, /222|630|hallucination|Yamaha 66\.7%/i);
   assert.doesNotMatch(text, /8\.3%/);

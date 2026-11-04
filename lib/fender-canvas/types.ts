@@ -174,7 +174,29 @@ export function specFenderFoundLabel(found: boolean | null | undefined): string 
   return "";
 }
 
+/** The seven bundle reads, then the two page reads that already load beside them. */
+export type CanvasReadKey =
+  | "m"
+  | "cats"
+  | "engines"
+  | "sov"
+  | "divisions"
+  | "missing"
+  | "fresh"
+  | "specPages"
+  | "listingContent";
+
+export type CanvasReadFailure = {
+  key: CanvasReadKey;
+  /** The view the read asked for, e.g. canvas_divisions. */
+  source: string;
+  /** Plain name for the read, e.g. "Catalog division read". */
+  label: string;
+  message: string | null;
+};
+
 export type CanvasBundle = {
+  /** An all-null row when the canvas_metrics read failed; never zeros. */
   m: CanvasMetricsRow;
   cats: CanvasAiCategoryRow[];
   engines: CanvasAiEngineRow[];
@@ -186,4 +208,6 @@ export type CanvasBundle = {
   specPages?: SpecPageSummary | null;
   /** Amazon listing content on live listings. Null when that read failed. */
   listingContent?: ListingContentSummary | null;
+  /** Reads that failed on this load. A failed list piece is empty and its figures read Not available*. */
+  unavailable?: Partial<Record<CanvasReadKey, CanvasReadFailure>>;
 };

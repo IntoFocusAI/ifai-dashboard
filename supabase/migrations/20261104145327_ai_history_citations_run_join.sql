@@ -1,9 +1,5 @@
--- Not applied. Requires Brian Watson.
---
--- Worker 20.9. This file sits in docs/pending-migrations/, not supabase/migrations/, because the
--- Supabase CLI (supabase db push) and Supabase's GitHub integration apply every file in
--- supabase/migrations. If Brian Watson approves, move it there unchanged and record who applied it
--- and when.
+-- Worker 20.9, moved from docs/pending-migrations/20261103214200_ai_history_citations_run_join.sql
+-- after approval and renamed to the version recorded in the migration history.
 --
 -- Changes: replaces the definition of the existing view public.canvas_ai_history_citations so the
 -- join also matches on audit_run_id. Columns, owner, and grants stay the same. This alters an
@@ -24,7 +20,13 @@
 --      JOIN canvas_private.ai_history_calls s ON s.id = ci.simulation_id;
 --   NOTIFY pgrst, 'reload schema';
 --
--- Applied: not yet
+-- Approved: Brian Watson, 4 Nov 2026.
+-- Applied: 4 Nov 2026 (UTC) by Brian Watson's Claude Code session, through the supabase_sql_runner wrench.
+--   prod     14:53:27, recorded in migration history as version 20261104145327
+--   sandbox, mirror, claude: same statement run with execute_sql, wrapped in a DO block that skips a
+--   database without public.canvas_ai_history_citations or canvas_private.ai_history_calls
+-- Verified on prod after apply: the join includes s.audit_run_id = ci.audit_run_id; grants unchanged
+-- (anon and authenticated SELECT only).
 
 CREATE OR REPLACE VIEW public.canvas_ai_history_citations WITH (security_invoker = false) AS
  SELECT ci.audit_run_id, ci.sim_id, ci.simulation_id, s.prompt_key, s.prompt_kind, s.category, ci.engine, ci.position, ci.url, ci.domain, ci.title

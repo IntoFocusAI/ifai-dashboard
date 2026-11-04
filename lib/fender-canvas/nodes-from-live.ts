@@ -11,6 +11,7 @@ import {
 } from "@/lib/findability/lead";
 import { countFindability } from "@/lib/findability/outcomes";
 import { pageFoundHero, pageFoundTone } from "@/lib/fender-canvas/ai-readiness-lead";
+import { failedReadTip, READ_NOT_AVAILABLE } from "@/lib/fender-canvas/canvas-reads";
 import { formatInt, formatPct } from "@/lib/fender-canvas/format";
 import { bulletCounts, type BulletCounts } from "@/lib/fender-canvas/listing-content";
 import { specPageCounts, type SpecPageCounts } from "@/lib/fender-canvas/machine-readability";
@@ -148,9 +149,11 @@ export function buildLiveNodes(
   // Main AI Readiness bubble keeps its title and page-found figure; it opens Brand-Site Specs.
   const pageHero = pageFoundHero(m);
   const pageTone = pageFoundTone(m.spec_fender_found_pct);
-  const readinessStatus: NodeStatus = pageTone ?? "neutral";
-  const readinessHero =
-    pageHero.ratio != null
+  const metricsTip = failedReadTip(bundle, "m");
+  const readinessStatus: NodeStatus = metricsTip ? "warning" : (pageTone ?? "neutral");
+  const readinessHero = metricsTip
+    ? { value: READ_NOT_AVAILABLE, label: "fender.com page found" }
+    : pageHero.ratio != null
       ? { value: pageHero.percent, label: "fender.com page found" }
       : { value: pageHero.percent === "Pending data" ? "Pending data" : "Not available", label: "fender.com page found" };
 
@@ -228,7 +231,7 @@ export function buildLiveNodes(
       heroValue: readinessHero,
       spokeId: "specs",
       subTab: "Brand-Site Specs",
-      tooltip: { title: "", desc: "" },
+      tooltip: metricsTip ? { title: READ_NOT_AVAILABLE, desc: metricsTip } : { title: "", desc: "" },
     },
     {
       ...aiFaces.spokeCompetitors,
