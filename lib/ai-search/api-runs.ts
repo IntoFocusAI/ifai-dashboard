@@ -9,7 +9,7 @@ import {
   type HistoryReadOptions,
 } from "@/lib/ai-search/history-queries";
 import { PROBE_CATALOG_COLUMNS } from "@/lib/ai-search/probe-catalog";
-import { historyReadLimit } from "@/lib/ai-search/read-limit";
+import { apiReadLimit } from "@/lib/ai-search/read-limit";
 import type { AiCallRow, AiCitationRow, AiProbeRow, AiSearchSnapshot } from "@/lib/ai-search/types";
 
 /**
@@ -181,7 +181,7 @@ function messageOf(error: unknown): string {
 
 export async function loadApiRunCatalog(client: HistoryReadClient): Promise<ApiCatalogResult> {
   try {
-    const result = await historyReadLimit(() =>
+    const result = await apiReadLimit(() =>
       client.from(API_RUN_VIEW).select(API_RUN_COLUMNS).order("completed_at", { ascending: true }).limit(1000),
     );
     if (result.error) {
@@ -208,11 +208,12 @@ export async function loadApiRunSnapshot(
   options: HistoryReadOptions = {},
 ): Promise<ApiSnapshotResult> {
   const runId = run.audit_run_id;
+  const read = { ...options, limit: options.limit ?? apiReadLimit };
   try {
     const [calls, probes, citations] = await Promise.all([
-      readRunPages<AiCallRow>(client, API_CALL_VIEW, API_CALL_COLUMNS, runId, ["sim_id", "id"], options, API_REPEAT_FILTER),
-      readRunPages<AiProbeRow>(client, API_PROBE_VIEW, API_PROBE_COLUMNS, runId, ["sim_id"], options),
-      readRunPages<AiCitationRow>(client, API_CITATION_VIEW, API_CITATION_COLUMNS, runId, ["sim_id", "position"], options),
+      readRunPages<AiCallRow>(client, API_CALL_VIEW, API_CALL_COLUMNS, runId, ["sim_id", "id"], read, API_REPEAT_FILTER),
+      readRunPages<AiProbeRow>(client, API_PROBE_VIEW, API_PROBE_COLUMNS, runId, ["sim_id"], read),
+      readRunPages<AiCitationRow>(client, API_CITATION_VIEW, API_CITATION_COLUMNS, runId, ["sim_id", "position"], read),
     ]);
     for (const result of [calls, probes, citations]) {
       if (!result.error) continue;

@@ -163,6 +163,12 @@ export function useApiEngineLoad(): ApiEngineLoad {
   }, [battery, catalog, mode, windowEnd, selectedDay]);
   const load = useApiSnapshots(inScope);
 
+  // The fixed-question floor waits on the battery runs; start reading the candidates meanwhile.
+  useEffect(() => {
+    if (catalog.phase !== "ready" || battery) return;
+    for (const run of apiRunsInScope(catalog.runs, mode, windowEnd, selectedDay)) void readRun(run);
+  }, [battery, catalog, mode, windowEnd, selectedDay]);
+
   const pending = catalogLoadState(catalog);
   if (pending) return pending;
   if (!battery) return { phase: "loading" };
