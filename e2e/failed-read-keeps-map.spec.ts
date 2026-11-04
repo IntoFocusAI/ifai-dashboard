@@ -117,6 +117,36 @@ test.describe("a failed read keeps the map", () => {
     await page.screenshot({ path: testInfo.outputPath("failed-division-read.png") });
   });
 
+  test("canvas_metrics failing: the AI Readiness bubble reads Not available* and names the read on hover", async ({
+    canvas,
+    page,
+  }, testInfo) => {
+    void canvas;
+    await failReads(page, ["canvas_metrics"]);
+    await page.goto("/dashboard");
+    await expectMap(page);
+
+    const bubble = page.locator('[data-graph-node-id="spoke-specs"]');
+    await expect(bubble).toContainText("Not available*");
+    await expect(bubble).not.toContainText(/Pending data|\d+(\.\d+)?%/);
+    await expect(bubble.locator("[title]")).toHaveCount(0);
+
+    const tooltip = page.locator(".node-tooltip.visible");
+    // Bubbles drift, and hovering a main bubble pans the map toward it, so point at its
+    // current center until the pointer lands where it settles.
+    await expect(async () => {
+      const box = await bubble.boundingBox();
+      if (!box) throw new Error("AI Readiness bubble has no box");
+      await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2, { steps: 3 });
+      await expect(tooltip).toBeVisible({ timeout: 1_000 });
+    }).toPass();
+    await expect(tooltip).toContainText("Not available*");
+    await expect(tooltip).toContainText("(canvas_metrics) did not load");
+    await expect(tooltip).toHaveCSS("opacity", "1");
+
+    await page.screenshot({ path: testInfo.outputPath("failed-metrics-read.png") });
+  });
+
   for (const table of [...BUNDLE_READS, ...SEPARATE_READS]) {
     test(`${table} failing alone leaves the map on screen`, async ({ canvas, page }) => {
       void canvas;
