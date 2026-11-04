@@ -199,9 +199,7 @@ function CatalogSpecHero({
   onToggle: () => void;
 }) {
   const hero = specHero(snapshot);
-  const aria = hero.ratio
-    ? `${hero.percent}. ${hero.ratio}. Opens Amazon Specs.`
-    : `${hero.percent}. Opens Amazon Specs.`;
+  const aria = `${[hero.percent, hero.ratio, hero.tip?.replace(/\.$/, "")].filter(Boolean).join(". ")}. Opens Amazon Specs.`;
   return (
     <div
       className="content-box findability-lead-card"
@@ -239,7 +237,9 @@ function CatalogSpecHero({
               {hero.percent}
             </span>
             {hero.ratio ? (
-              <span className="findability-lead-ratio">{hero.ratio}</span>
+              <span className="findability-lead-ratio">
+                <span {...figureTipAttrs(SPECS_COMPLETE_LABEL, hero.tip, "spec-coverage")} tabIndex={-1}>{hero.ratio}</span>
+              </span>
             ) : null}
           </div>
           {hero.pie ? (
@@ -318,10 +318,9 @@ function CatalogGovernanceLead({
   );
 }
 
-/** Explainer column beside the hero pair. Incomplete / unavailable messages sit under the notes. */
+/** Explainer column beside the hero pair. A missing spec reading says why under the notes; coverage caveats stay in the figure's tooltip. */
 function CatalogGovernanceNotes({ specs }: { specs: RetailReading<unknown> }) {
-  const showMissing =
-    (specs.status === "incomplete" || specs.status === "unavailable") && Boolean(specs.missingMessage);
+  const showMissing = specs.status === "unavailable" && Boolean(specs.missingMessage);
   return (
     <div
       className="content-box"

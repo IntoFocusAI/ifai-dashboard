@@ -251,7 +251,12 @@ export function specHero(snapshot: PortfolioRetailSnapshot): RetailOverviewHeroM
     tone,
     pie: ready ? specCompletePie(complete!, missing!, checked!) : null,
     tip: ready
-      ? `${formatInt(missing)} of ${formatInt(checked)} checked listings are missing an Amazon spec field.`
+      ? [
+          `${formatInt(missing)} of ${formatInt(checked)} checked listings are missing an Amazon spec field.`,
+          reading.status === "incomplete" ? reading.missingMessage : null,
+        ]
+          .filter(Boolean)
+          .join(" ")
       : null,
     explainer: ready
       ? "Every Amazon spec field is filled."

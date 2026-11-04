@@ -127,8 +127,19 @@ function retailRows(url: URL): Row[] {
   return [];
 }
 
+/** Four Amazon spec readings: three checked (one missing a field), one not checked. */
+export const SPEC_ROWS: Row[] = [
+  { asin: "B00SPC0001", title: "Spec listing 01", amazon_checked: true, amazon_missing_fields: "scale_length" },
+  { asin: "B00SPC0002", title: "Spec listing 02", amazon_checked: true, amazon_missing_fields: null },
+  { asin: "B00SPC0003", title: "Spec listing 03", amazon_checked: true, amazon_missing_fields: null },
+  { asin: "B00SPC0004", title: "Spec listing 04", amazon_checked: false, amazon_missing_fields: null },
+];
+
 function bodyFor(url: URL, accept: string): unknown[] | Row {
   const table = url.pathname.split("/").pop() ?? "";
+  if (table === "canvas_spec_readiness" && url.searchParams.get("select") === "asin,title,amazon_checked,amazon_missing_fields") {
+    return SPEC_ROWS;
+  }
   if (table === "canvas_metrics") {
     return accept.includes("vnd.pgrst.object") ? METRICS : [{ catalog_bundles: METRICS.catalog_bundles }];
   }
