@@ -153,7 +153,9 @@ test("every copied surface carries the same Buy Box label and count", () => {
   assert.equal(roadmap?.tooltip?.desc, "");
 
   const tour = buildLiveTourSteps(bundle(), READ);
-  assert.ok(tour.some((step) => step.displays?.includes(sentence)));
+  assert.ok(
+    tour.some((step) => step.displays?.some((line) => line.startsWith(`${surface.label}: ${surface.countLabel}`))),
+  );
 
   const vars = retailTemplateVars(bundle(), READ);
   assert.equal(vars.retail_headline, sentence);

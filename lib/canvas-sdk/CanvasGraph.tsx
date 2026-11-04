@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type MouseEvent, type RefObject } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState, type MouseEvent, type RefObject } from "react";
 import { CanvasGraphNode } from "@/lib/canvas-sdk/CanvasGraphNode";
 import { ConnLine, TourSpotlight } from "@/lib/canvas-sdk/GraphPrimitives";
 import { IomGraphBackdrop } from "@/lib/canvas-sdk/IomGraphBackdrop";
@@ -38,7 +38,8 @@ type Props = {
   onHideTooltip: () => void;
 };
 
-export function CanvasGraph({
+/** Memoised: the shell re-renders on hover and panel changes that leave the map's props alone. */
+export const CanvasGraph = memo(function CanvasGraph({
   spec,
   svgRef,
   viewportRef,
@@ -106,23 +107,34 @@ export function CanvasGraph({
 
   useEffect(() => () => window.clearTimeout(hideTimer.current), []);
 
-  const revealGroup = (parentId: string) => {
-    window.clearTimeout(hideTimer.current);
-    setReveal({ nonce: overviewNonce, open: parentId, pinned: pinnedParentId });
-  };
+  const revealGroup = useCallback(
+    (parentId: string) => {
+      window.clearTimeout(hideTimer.current);
+      setReveal((prev) => {
+        const pinned = prev.nonce === overviewNonce ? prev.pinned : null;
+        if (prev.nonce === overviewNonce && prev.open === parentId) return prev;
+        return { nonce: overviewNonce, open: parentId, pinned };
+      });
+    },
+    [overviewNonce],
+  );
 
-  const holdGroup = () => {
+  const holdMs = motionMs(2000);
+  const holdGroup = useCallback(() => {
     window.clearTimeout(hideTimer.current);
     hideTimer.current = window.setTimeout(
-      () => setReveal((prev) => ({ ...prev, open: null })),
-      motionMs(2000),
+      () => setReveal((prev) => (prev.open === null ? prev : { ...prev, open: null })),
+      holdMs,
     );
-  };
+  }, [holdMs]);
 
-  const pinGroup = (parentId: string) => {
-    window.clearTimeout(hideTimer.current);
-    setReveal({ nonce: overviewNonce, open: parentId, pinned: parentId });
-  };
+  const pinGroup = useCallback(
+    (parentId: string) => {
+      window.clearTimeout(hideTimer.current);
+      setReveal({ nonce: overviewNonce, open: parentId, pinned: parentId });
+    },
+    [overviewNonce],
+  );
 
   const emphasis = spec.appearance === "iom";
   const focusedNode = focusedSpokeId
@@ -163,7 +175,10 @@ export function CanvasGraph({
     return (
       <CanvasGraphNode
         key={node.id}
-        node={{ ...node, x, y, r }}
+        node={node}
+        x={x}
+        y={y}
+        r={r}
         contentRadius={contentRadius}
         centered={emphasis}
         emphasis={emphasis && (!columnLayout || node.variant === "hub")}
@@ -173,12 +188,11 @@ export function CanvasGraph({
         onResetView={onResetView}
         onShowTooltip={onShowTooltip}
         onHideTooltip={onHideTooltip}
-        onGroupEnter={parentId ? () => revealGroup(parentId) : undefined}
+        groupId={parentId}
+        onGroupEnter={parentId ? revealGroup : undefined}
         onGroupLeave={parentId ? holdGroup : undefined}
-        onSelect={MAIN_BUBBLES.has(node.id) && node.id !== "hub" ? () => pinGroup(node.id) : undefined}
-        onInspect={
-          onInspectBubble && MAIN_BUBBLES.has(node.id) ? () => onInspectBubble(node.id) : undefined
-        }
+        onSelect={MAIN_BUBBLES.has(node.id) && node.id !== "hub" ? pinGroup : undefined}
+        onInspect={onInspectBubble && MAIN_BUBBLES.has(node.id) ? onInspectBubble : undefined}
       />
     );
   };
@@ -350,4 +364,4 @@ export function CanvasGraph({
       ) : null}
     </>
   );
-}
+});

@@ -1,72 +1,21 @@
 "use client";
 
-import { useEffect, useRef, useState, type RefObject } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type RefObject } from "react";
 import { createPortal } from "react-dom";
-
-const INTERACTIVE_SELECTOR = [
-  "button:not(:disabled)",
-  "a[href]",
-  "[role='button']:not([aria-disabled='true'])",
-  "input:not(:disabled)",
-  "select:not(:disabled)",
-  "textarea:not(:disabled)",
-  "label",
-  ".graph-node",
-  ".hud-btn-group button",
-  ".panel-toggle",
-  ".drilldown-hide-btn",
-  ".brand-home-btn",
-  ".filter-selector",
-  ".hdr-btn",
-  ".user-menu-trigger",
-  ".command-center button",
-  ".tour-modal button",
-  ".tour-dot",
-  ".strategy-roadmap-btn",
-  ".panel-tab",
-  ".search-input-wrap",
-  ".profile-modal-root button",
-  ".profile-modal-root input",
-  ".profile-modal-root select",
-  ".profile-modal-root textarea",
-  ".profile-modal-root label",
-  ".auth-form-card",
-  ".auth-form-card button",
-  ".auth-form-card input",
-  ".auth-form-card label",
-  ".auth-form-card a",
-].join(", ");
+import {
+  CANVAS_PROFILE_MODAL,
+  FINE_POINTER_QUERY,
+  opensNativePicker,
+  pointInRect,
+  targetIsInteractive,
+} from "@/lib/canvas-sdk/iom-cursor-targets";
 
 const CLICK_MS = 420;
 
-/** Profile modal portals to document.body; include when opened from the IOM canvas. */
-const CANVAS_PROFILE_MODAL = ".profile-modal-root.profile-modal-theme-canvas";
-
-function isFinePointer() {
-  if (typeof window === "undefined") return false;
-  return window.matchMedia("(pointer: fine) and (hover: hover)").matches;
-}
-
-function targetIsInteractive(target: EventTarget | null) {
-  if (!(target instanceof Element)) return false;
-  return Boolean(target.closest(INTERACTIVE_SELECTOR));
-}
-
-function pointInRect(x: number, y: number, rect: DOMRect) {
-  return x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
-}
-
-function pointerInActiveRegion(event: PointerEvent, root: HTMLElement | null) {
-  const { clientX, clientY } = event;
-  if (root) {
-    const rootRect = root.getBoundingClientRect();
-    if (pointInRect(clientX, clientY, rootRect)) return true;
-  }
-  const modal = document.querySelector(CANVAS_PROFILE_MODAL);
-  if (modal instanceof HTMLElement) {
-    return pointInRect(clientX, clientY, modal.getBoundingClientRect());
-  }
-  return false;
+function subscribeFinePointer(onChange: () => void) {
+  const query = window.matchMedia(FINE_POINTER_QUERY);
+  query.addEventListener("change", onChange);
+  return () => query.removeEventListener("change", onChange);
 }
 
 type Props = {
@@ -74,66 +23,156 @@ type Props = {
   enabled: boolean;
 };
 
+/**
+ * The reticle that replaces the system cursor on IOM canvases. It stays mounted while the
+ * canvas is up; each pointer move is coalesced into one write per frame of its transform and
+ * its `data-visible` / `data-hover` attributes, so moving the mouse renders nothing in React.
+ */
 export function IomCursor({ rootRef, enabled }: Props) {
-  const [mounted, setMounted] = useState(false);
-  const [pos, setPos] = useState({ x: 0, y: 0 });
-  const [visible, setVisible] = useState(false);
-  const [hover, setHover] = useState(false);
+  const finePointer = useSyncExternalStore(
+    subscribeFinePointer,
+    () => window.matchMedia(FINE_POINTER_QUERY).matches,
+    () => false,
+  );
+  const active = enabled && finePointer;
+  const portalRef = useRef<HTMLDivElement>(null);
   const [clicking, setClicking] = useState(false);
   const [burstKey, setBurstKey] = useState(0);
-  const clickTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => setMounted(true), []);
 
   useEffect(() => {
-    if (!enabled || !isFinePointer()) return;
+    const portal = portalRef.current;
+    if (!active || !portal) return;
 
     const html = document.documentElement;
     html.classList.add("iom-custom-cursor-active");
 
+    const root = rootRef.current;
+    let rootBox = root?.getBoundingClientRect() ?? null;
+    const measure = () => {
+      rootBox = root?.getBoundingClientRect() ?? null;
+    };
+    const observer = new ResizeObserver(measure);
+    if (root) observer.observe(root);
+    window.addEventListener("resize", measure);
+
+    /* `inside`: the last pointer event was over the canvas. `away`: the pointer left the window,
+       the window lost focus, or a native picker took the pointer; the next move inside clears it. */
+    const state = { x: 0, y: 0, inside: false, away: false, targetHover: false, target: null as EventTarget | null };
+    const painted = { visible: false, hover: false };
+    let frame = 0;
+    let rescan = false;
+    let clickTimer = 0;
+
+    const paint = () => {
+      frame = 0;
+      if (rescan) {
+        rescan = false;
+        // The page can change under a still pointer (the map slides, a click opens the panel).
+        const under = state.inside && !state.away ? document.elementFromPoint(state.x, state.y) : null;
+        if (under) {
+          state.target = under;
+          state.targetHover = targetIsInteractive(under);
+        }
+      }
+      const visible = state.inside && !state.away;
+      const hover = visible && state.targetHover;
+      if (visible) portal.style.transform = `translate3d(${state.x}px, ${state.y}px, 0)`;
+      if (painted.visible !== visible) {
+        painted.visible = visible;
+        portal.dataset.visible = visible ? "true" : "false";
+      }
+      if (painted.hover !== hover) {
+        painted.hover = hover;
+        if (hover) portal.dataset.hover = "true";
+        else delete portal.dataset.hover;
+      }
+    };
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(paint);
+    };
+    const scheduleRescan = () => {
+      rescan = true;
+      schedule();
+    };
+    const hide = () => {
+      state.away = true;
+      schedule();
+    };
+
+    const inActiveRegion = (x: number, y: number) => {
+      if (rootBox && pointInRect(x, y, rootBox)) return true;
+      const modal = document.querySelector(CANVAS_PROFILE_MODAL);
+      return modal instanceof HTMLElement && pointInRect(x, y, modal.getBoundingClientRect());
+    };
+
     const onMove = (event: PointerEvent) => {
       if (event.pointerType !== "mouse") return;
-      const root = rootRef.current;
-      if (!pointerInActiveRegion(event, root)) {
-        setVisible(false);
-        setHover(false);
-        return;
+      state.x = event.clientX;
+      state.y = event.clientY;
+      state.inside = inActiveRegion(event.clientX, event.clientY);
+      state.away = false;
+      rescan = false;
+      if (event.target !== state.target) {
+        state.target = event.target;
+        state.targetHover = targetIsInteractive(event.target);
       }
-      setPos({ x: event.clientX, y: event.clientY });
-      setVisible(true);
-      setHover(targetIsInteractive(event.target));
+      schedule();
     };
 
     const onDown = (event: PointerEvent) => {
-      if (event.pointerType !== "mouse") return;
-      const root = rootRef.current;
-      if (!pointerInActiveRegion(event, root)) return;
+      if (event.pointerType !== "mouse" || !inActiveRegion(event.clientX, event.clientY)) return;
+      if (opensNativePicker(event.target)) {
+        hide();
+        return;
+      }
       setClicking(true);
       setBurstKey((key) => key + 1);
-      if (clickTimer.current) clearTimeout(clickTimer.current);
-      clickTimer.current = setTimeout(() => setClicking(false), CLICK_MS);
+      window.clearTimeout(clickTimer);
+      clickTimer = window.setTimeout(() => setClicking(false), CLICK_MS);
     };
 
-    window.addEventListener("pointermove", onMove);
-    window.addEventListener("pointerdown", onDown);
+    const onOut = (event: PointerEvent) => {
+      if (event.pointerType === "mouse" && !event.relatedTarget) hide();
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") hide();
+    };
+
+    window.addEventListener("pointermove", onMove, { passive: true });
+    window.addEventListener("pointerdown", onDown, { passive: true });
+    window.addEventListener("pointerup", scheduleRescan, { passive: true });
+    window.addEventListener("wheel", scheduleRescan, { passive: true });
+    document.addEventListener("transitionend", scheduleRescan, { passive: true });
+    document.addEventListener("pointerout", onOut, { passive: true });
+    window.addEventListener("blur", hide);
+    document.addEventListener("visibilitychange", onVisibility);
 
     return () => {
       html.classList.remove("iom-custom-cursor-active");
+      cancelAnimationFrame(frame);
+      window.clearTimeout(clickTimer);
+      observer.disconnect();
+      window.removeEventListener("resize", measure);
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerdown", onDown);
-      if (clickTimer.current) clearTimeout(clickTimer.current);
+      window.removeEventListener("pointerup", scheduleRescan);
+      window.removeEventListener("wheel", scheduleRescan);
+      document.removeEventListener("transitionend", scheduleRescan);
+      document.removeEventListener("pointerout", onOut);
+      window.removeEventListener("blur", hide);
+      document.removeEventListener("visibilitychange", onVisibility);
     };
-  }, [enabled, rootRef]);
+  }, [active, rootRef]);
 
-  if (!mounted || !enabled || !visible) return null;
+  if (!active) return null;
 
   return createPortal(
     <div
+      ref={portalRef}
       className="iom-cursor-portal"
       aria-hidden
-      data-hover={hover ? "true" : undefined}
+      data-visible="false"
       data-click={clicking ? "true" : undefined}
-      style={{ transform: `translate3d(${pos.x}px, ${pos.y}px, 0)` }}
     >
       <span className="iom-cursor-burst" key={burstKey} />
       <span className="iom-cursor-reticle">

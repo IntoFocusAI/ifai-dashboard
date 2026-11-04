@@ -574,6 +574,9 @@
   inset: 0;
   z-index: 0;
   pointer-events: none;
+  /* Its own layer: the glow repaints on every pointer frame and nothing else should with it. */
+  will-change: transform;
+  contain: strict;
   background:
     radial-gradient(circle at var(--pointer-x) var(--pointer-y), rgba(0, 240, 255, 0.28), transparent 20%),
     radial-gradient(circle at var(--pointer-x) var(--pointer-y), rgba(99, 102, 241, 0.16), transparent 38%);
@@ -1460,15 +1463,20 @@
   }
 }
 
+/* Above every overlay, including definition tooltips (100010): the reticle is the pointer. */
 .iom-cursor-portal {
   position: fixed;
   top: 0;
   left: 0;
-  z-index: 100000;
+  z-index: 2147483647;
   width: 0;
   height: 0;
   pointer-events: none;
   will-change: transform;
+}
+
+.iom-cursor-portal[data-visible="false"] {
+  visibility: hidden;
 }
 
 .iom-cursor-reticle {
