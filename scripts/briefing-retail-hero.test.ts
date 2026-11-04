@@ -93,6 +93,7 @@ function bundle(asin: string, parent: string | null): CatalogBundleRow {
     parent_asin: parent,
     product_url: null,
     is_bundle: true,
+    featured_offer_state: "present",
   };
 }
 

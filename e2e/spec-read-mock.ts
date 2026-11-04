@@ -94,6 +94,7 @@ export const BUNDLE: Row = {
   parent_asin: null,
   product_url: "https://www.amazon.com/dp/B00BUNDLE1",
   is_bundle: true,
+  featured_offer_state: "present",
 };
 
 export function specRowsFor(url: URL): Row[] {

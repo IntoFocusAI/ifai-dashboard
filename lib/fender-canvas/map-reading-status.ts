@@ -41,10 +41,14 @@ export function musiciansFriendCheckNote(
   return `Last checked ${checkedAtFormat.format(then)}.`;
 }
 
+/**
+ * One channel line. A partial channel count carries an asterisk; its note (missing
+ * Walmart prices, a stale Musician's Friend check) goes in that figure's tooltip.
+ */
 export function channelSummaryText(count: number, note: string | null): string {
   const noun = count === 1 ? "listing" : "listings";
   const lead = `${formatInt(count)} ${noun} below MAP`;
-  return note ? `${lead}. ${note}` : lead;
+  return note ? `${lead}*` : lead;
 }
 
 export function channelReadingNote(

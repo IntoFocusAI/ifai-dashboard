@@ -91,6 +91,7 @@ function retailReady(): RetailCanvasRead {
         parent_asin: null,
         product_url: "https://www.amazon.com/dp/B000000001",
         is_bundle: true,
+        featured_offer_state: "present",
       },
     ]),
     amazonSpecGaps: {

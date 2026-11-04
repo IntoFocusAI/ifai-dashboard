@@ -75,6 +75,7 @@ function snapshot(): PortfolioRetailSnapshot {
         parent_asin: null,
         product_url: null,
         is_bundle: true,
+        featured_offer_state: "present",
       },
     ]),
     amazonSpecGaps: {

@@ -4,13 +4,14 @@ import { useState } from "react";
 import { CitationPieDisc } from "@/components/v3/live/ai-search/CitationPieDisc";
 import { CatalogGovernanceSpecTable } from "@/components/v3/live/CatalogGovernanceSpecTable";
 import { DefinedCopy } from "@/components/v3/live/DefinedTerm";
+import { figureTipAttrs } from "@/components/v3/live/FigureTip";
 import { ResizableTable, type RetailColumn } from "@/components/v3/live/ResizableTable";
 import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
 import { CATALOG_GOVERNANCE_EXPLAINER } from "@/lib/fender-canvas/catalog-governance-copy";
 import {
   catalogBundleLineLabel,
-  catalogBundleOfferLabel,
-  catalogBundleSellerLabel,
+  catalogBundleBuyBoxLabel,
+  catalogBundleSellerIdLabel,
   type PortfolioRetailSnapshot,
   type RetailReading,
   type UnnestedBundleOpportunity,
@@ -32,16 +33,14 @@ const RETAIL_PIE_SIZE = "citation-pie-disc citation-pie-disc-retail";
 const BUNDLE_COLUMNS: RetailColumn[] = [
   { id: "listing", name: "Listing", label: "Listing", width: 220, minWidth: 120, sort: "text" },
   { id: "asin", name: "ASIN", label: "ASIN", width: 118, minWidth: 108, className: "asin-col", sort: "text" },
-  { id: "seller", name: "Seller", label: "Seller", width: 160, minWidth: 100, sort: "text" },
-  { id: "offer", name: "Offer", label: "Offer", width: 100, minWidth: 80, sort: "text" },
+  { id: "buybox", name: "Buy Box", label: "Buy Box", width: 180, minWidth: 110, sort: "text" },
   { id: "line", name: "Line", label: "Line", width: 120, minWidth: 88, sort: "text" },
 ];
 
 function bundleSortValue(row: UnnestedBundleOpportunity, columnId: string): SortInput {
   if (columnId === "listing") return row.modelOrTitle?.trim() || row.bundleName?.trim() || null;
   if (columnId === "asin") return row.asin;
-  if (columnId === "seller") return catalogBundleSellerLabel(row.buyboxSellerName);
-  if (columnId === "offer") return catalogBundleOfferLabel(row.buyboxStatus, row.buyboxSellerId);
+  if (columnId === "buybox") return catalogBundleBuyBoxLabel(row.buyboxStatus, row.buyboxSellerName);
   if (columnId === "line") return catalogBundleLineLabel(row.category);
   return null;
 }
@@ -127,6 +126,16 @@ function AsinLink({ asin, href }: { asin: string; href: string | null }) {
   );
 }
 
+function BuyBoxCell({ row }: { row: UnnestedBundleOpportunity }) {
+  const sellerId = catalogBundleSellerIdLabel(row.buyboxStatus, row.buyboxSellerId);
+  return (
+    <td data-bundle-buybox="">
+      {catalogBundleBuyBoxLabel(row.buyboxStatus, row.buyboxSellerName)}
+      {sellerId ? <><br /><span className="asin-chip">{sellerId}</span></> : null}
+    </td>
+  );
+}
+
 function BundleRows({ rows }: { rows: UnnestedBundleOpportunity[] }) {
   const [page, setPage] = useState(0);
   const sorted = useClientTableSort(rows, BUNDLE_COLUMNS, bundleSortValue);
@@ -147,7 +156,7 @@ function BundleRows({ rows }: { rows: UnnestedBundleOpportunity[] }) {
           <tbody>
             {slice.length === 0 ? (
               <tr>
-                <td colSpan={5}>No unnested bundle is confirmed in this retail read.</td>
+                <td colSpan={BUNDLE_COLUMNS.length}>No unnested bundle is confirmed in this retail read.</td>
               </tr>
             ) : (
               slice.map((row) => (
@@ -164,8 +173,7 @@ function BundleRows({ rows }: { rows: UnnestedBundleOpportunity[] }) {
                   <td className="asin-col">
                     <AsinLink asin={row.asin} href={httpUrl(row.productUrl) ?? amazonHref(row.asin)} />
                   </td>
-                  <td>{catalogBundleSellerLabel(row.buyboxSellerName)}</td>
-                  <td>{catalogBundleOfferLabel(row.buyboxStatus, row.buyboxSellerId)}</td>
+                  <BuyBoxCell row={row} />
                   <td>{catalogBundleLineLabel(row.category)}</td>
                 </tr>
               ))
@@ -191,9 +199,7 @@ function CatalogSpecHero({
   onToggle: () => void;
 }) {
   const hero = specHero(snapshot);
-  const aria = hero.ratio
-    ? `${hero.percent}. ${hero.ratio}. Opens Amazon Specs.`
-    : `${hero.percent}. Opens Amazon Specs.`;
+  const aria = `${[hero.percent, hero.ratio, hero.tip?.replace(/\.$/, "")].filter(Boolean).join(". ")}. Opens Amazon Specs.`;
   return (
     <div
       className="content-box findability-lead-card"
@@ -231,7 +237,9 @@ function CatalogSpecHero({
               {hero.percent}
             </span>
             {hero.ratio ? (
-              <span className="findability-lead-ratio">{hero.ratio}</span>
+              <span className="findability-lead-ratio">
+                <span {...figureTipAttrs(SPECS_COMPLETE_LABEL, hero.tip, "spec-coverage")} tabIndex={-1}>{hero.ratio}</span>
+              </span>
             ) : null}
           </div>
           {hero.pie ? (
@@ -285,7 +293,9 @@ function CatalogGovernanceLead({
             {hero.percent}
           </span>
           {hero.ratio ? (
-            <span className="findability-lead-ratio">{hero.ratio}</span>
+            <span className="findability-lead-ratio">
+              <span {...figureTipAttrs(SPLINTERED_LISTINGS_LABEL, hero.tip, "bundle-population")}>{hero.ratio}</span>
+            </span>
           ) : null}
         </div>
         {hero.pie ? (
@@ -308,10 +318,9 @@ function CatalogGovernanceLead({
   );
 }
 
-/** Explainer column beside the hero pair. Incomplete / unavailable messages sit under the notes. */
+/** Explainer column beside the hero pair. A missing spec reading says why under the notes; coverage caveats stay in the figure's tooltip. */
 function CatalogGovernanceNotes({ specs }: { specs: RetailReading<unknown> }) {
-  const showMissing =
-    (specs.status === "incomplete" || specs.status === "unavailable") && Boolean(specs.missingMessage);
+  const showMissing = specs.status === "unavailable" && Boolean(specs.missingMessage);
   return (
     <div
       className="content-box"

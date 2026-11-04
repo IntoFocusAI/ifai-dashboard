@@ -95,6 +95,7 @@ function bundle(asin: string, parent: string | null): CatalogBundleRow {
     parent_asin: parent,
     product_url: null,
     is_bundle: true,
+    featured_offer_state: "present",
   };
 }
 
@@ -229,10 +230,10 @@ test("MAP shows the violation count and the price gap, and catalog does not repe
   assert.equal(map.subTab, "MAP");
 
   const catalog = catalogBubble(source.unnestedBundles);
-  assert.match(catalog.stats[0] ?? "", /1 bundle/);
   assert.equal(catalog.heroValue?.label, "Splintered listings");
   assert.match(catalog.heroValue?.value ?? "", /%/);
-  assert.equal(catalog.tooltip.desc, "");
+  assert.match(catalog.stats[0] ?? "", /of 2 bundles with a live offer/);
+  assert.match(catalog.tooltip.desc, /offer for sale/);
   assert.doesNotMatch(visible(catalog), /12\.50|below MAP|listing below/);
   assert.equal(catalog.subTab, "Catalog Governance");
 });
