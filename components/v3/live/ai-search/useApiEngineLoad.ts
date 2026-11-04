@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { useAiHistoryOptional } from "@/components/v3/live/ai-search/AiHistoryContext";
 import {
+  apiEngineViewsEnabled,
   apiRunsInScope,
   loadApiRunCatalog,
   loadApiRunSnapshot,
@@ -40,12 +41,17 @@ function readRun(run: ApiRunSummary): Promise<ApiSnapshotResult> {
   return read;
 }
 
+const noSubscribe = () => () => {};
+const serverOff = () => false;
+
 const MONTH: HistoryMode = { kind: "month" };
 
 /** The counted API runs dated in the selection the shared date pill names, loaded for the switch. */
 export function useApiEngineLoad(): ApiEngineLoad {
   const history = useAiHistoryOptional();
   const source = history?.source ?? "live";
+  const flagOn = useSyncExternalStore(noSubscribe, () => apiEngineViewsEnabled(), serverOff);
+  const enabled = source !== "fixture" && flagOn;
   const mode = history?.mode ?? MONTH;
   const current = history?.current;
   const publishedDay =
@@ -53,7 +59,7 @@ export function useApiEngineLoad(): ApiEngineLoad {
   const [catalog, setCatalog] = useState<ApiCatalogResult | { phase: "loading" }>({ phase: "loading" });
 
   useEffect(() => {
-    if (source === "fixture") return;
+    if (!enabled) return;
     let cancelled = false;
     void readCatalog().then((result) => {
       if (!cancelled) setCatalog(result);
@@ -61,7 +67,7 @@ export function useApiEngineLoad(): ApiEngineLoad {
     return () => {
       cancelled = true;
     };
-  }, [source]);
+  }, [enabled]);
 
   const inScope = useMemo(
     () => (catalog.phase === "ready" ? apiRunsInScope(catalog.runs, mode, publishedDay) : []),
@@ -88,7 +94,7 @@ export function useApiEngineLoad(): ApiEngineLoad {
     };
   }, [inScope]);
 
-  if (source === "fixture") return { phase: "missing" };
+  if (!enabled) return { phase: "missing" };
   if (catalog.phase === "loading") return { phase: "loading" };
   if (catalog.phase === "missing") return { phase: "missing" };
   if (catalog.phase === "error") return { phase: "error", message: catalog.message };
