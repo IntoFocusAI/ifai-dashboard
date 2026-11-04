@@ -2352,6 +2352,11 @@
       padding-left: 0;
     }
 
+    /* Four one-line bullets fit the 380px tour body at 1280x720 without a scrollbar. */
+    .tour-modal-card .tour-card-list {
+      gap: 3px;
+    }
+
     .tour-card-list li {
       position: relative;
       padding-left: 14px;

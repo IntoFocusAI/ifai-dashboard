@@ -82,6 +82,37 @@ test.describe("guided tour", () => {
     await canvas.startTour();
     await expect(page.locator(".tour-drilldown-hint")).toContainText("come back");
   });
+
+  test("every step is short bullets that fit the card without scrolling", async ({ canvas, page }) => {
+    await page.waitForLoadState("networkidle");
+    await canvas.startTour();
+    const total = await page.locator(".tour-dot").count();
+
+    for (let step = 0; step < total; step += 1) {
+      const read = await canvas.tourCard.evaluate((card) => {
+        const lines = (el: Element) => {
+          const lineHeight = parseFloat(getComputedStyle(el).lineHeight);
+          return Math.round(el.getBoundingClientRect().height / lineHeight);
+        };
+        const body = card.querySelector(".tour-modal-body")!;
+        return {
+          title: card.querySelector(".tour-spoke-title")?.textContent,
+          items: [...card.querySelectorAll(".tour-card-list li, .tour-value-text")].map((el) => ({
+            text: el.textContent ?? "",
+            lines: lines(el),
+          })),
+          overflow: body.scrollHeight - body.clientHeight,
+        };
+      });
+      for (const item of read.items) {
+        // The required failed-read line names its source table, so it may take two.
+        const allowed = /did not load/.test(item.text) ? 2 : 1;
+        expect(item.lines, `${read.title}: "${item.text}"`).toBeLessThanOrEqual(allowed);
+      }
+      expect(read.overflow, `${read.title} scrolls`).toBeLessThanOrEqual(0);
+      if (step < total - 1) await canvas.nextTourStep();
+    }
+  });
 });
 
 /* The dimmer used to be a flat sheet over everything, so the bubble each step

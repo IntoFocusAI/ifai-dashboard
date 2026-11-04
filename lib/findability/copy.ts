@@ -118,15 +118,6 @@ export function findabilityWidgetCopy(read: FindabilityRead): FindabilityWidgetC
   };
 }
 
-export function findabilityTourLine(read: FindabilityRead): string {
-  if (read.phase !== "ready") {
-    return "Official-page outcomes stay separate and load with the findability read";
-  }
-  const counts = countFindability(read.rows);
-  if (counts.total === 0) return "This official-page read has no listings";
-  return findabilityHeadline(counts);
-}
-
 export type ReadinessFace = {
   stats: string[];
   meta: string;
