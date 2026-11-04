@@ -1,5 +1,6 @@
 import type { PieDiscData } from "@/lib/ai-search/citation-pies";
 import { formatInt } from "@/lib/fender-canvas/format";
+import { leadBrand } from "@/lib/brand-copy";
 
 /** "1,064 of 1,788": the N-of-M clause the hero and the Competitive Radar sentence share. */
 export function competitorWinsCount(competitorWins: number, resolved: number): string {
@@ -23,7 +24,7 @@ export function competitorLeadPie(competitorWins: number, resolved: number): Pie
     totalLabel: "resolved unbranded discovery answers",
     slices: [
       { key: "competitor_brand", label: "Competitor led", count: competitorWins },
-      { key: "fender", label: "Fender/Squier led", count: fenderLed },
+      { key: "fender", label: `${leadBrand()} led`, count: fenderLed },
     ].filter((slice) => slice.count > 0),
   };
 }

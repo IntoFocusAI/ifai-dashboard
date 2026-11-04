@@ -25,6 +25,7 @@ import {
 } from "@/lib/ai-search/summary";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
 import { formatInt } from "@/lib/fender-canvas/format";
+import { leadBrand } from "@/lib/brand-copy";
 
 const SIM = AI_TABS.simulations;
 
@@ -85,7 +86,7 @@ export function RoleCount({
   const name = ROLE_LABELS[role];
   return (
     <span data-ai-role-count={role} data-ai-rate={figure} data-small-sample={small ? "true" : undefined}>
-      {pct(tally.fenderWins, tally.resolved)} ({roleLink(role, "fender_win", `${name}: Fender/Squier leads`, formatInt(tally.fenderWins), scope)} of{" "}
+      {pct(tally.fenderWins, tally.resolved)} ({roleLink(role, "fender_win", `${name}: ${leadBrand()} leads`, formatInt(tally.fenderWins), scope)} of{" "}
       {roleLink(role, "resolved", `${name}: resolved answers`, formatInt(tally.resolved), scope)})
       {small ? (
         <>
@@ -155,7 +156,7 @@ export function RoleSumLine({
             {": "}
             {tally.resolved > 0 ? (
               <>
-                Fender/Squier leads {roleLink(role, "fender_win", `${name}: Fender/Squier leads`, formatInt(tally.fenderWins))} of{" "}
+                {leadBrand()} leads {roleLink(role, "fender_win", `${name}: ${leadBrand()} leads`, formatInt(tally.fenderWins))} of{" "}
                 {roleLink(role, "resolved", `${name}: resolved answers`, formatInt(tally.resolved))} resolved answers (
                 {pct(tally.fenderWins, tally.resolved)}).
               </>

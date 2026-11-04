@@ -20,6 +20,7 @@ import {
   type MinimalEntry,
   type MinimalFigure,
 } from "@/lib/fender-canvas/minimal-metric-kit";
+import { brandName, leadBrand } from "@/lib/brand-copy";
 
 const NO_TAB = "No tab shows this figure yet.";
 
@@ -113,7 +114,7 @@ export const OTHER_ENTRIES: MinimalEntry[] = [
     tab: "Catalog Governance",
     label: "Stranded customer reviews",
     definition:
-      "Customer reviews that sit on partner bundle pages instead of the main Fender listing, from the catalog metrics row. Catalog Governance lists the bundles. " +
+      `Customer reviews that sit on partner bundle pages instead of the main ${brandName()} listing, from the catalog metrics row. Catalog Governance lists the bundles. ` +
       NO_TAB,
     read: (ctx) => {
       const failed = failedReadTip(ctx.bundle, "m");
@@ -129,7 +130,7 @@ export const OTHER_ENTRIES: MinimalEntry[] = [
     tab: "Category Battlecards",
     label: "Beginner share-of-voice gap",
     definition:
-      "Fender/Squier leads minus the top competitor's leads, in points of resolved Beginner unbranded discovery answers in the published AI run. Category Battlecards shows the Beginner row. " +
+      `${leadBrand()} leads minus the top competitor's leads, in points of resolved Beginner unbranded discovery answers in the published AI run. Category Battlecards shows the Beginner row. ` +
       NO_TAB,
     read: (ctx) =>
       aiFigure(ctx, (_summary, snapshot) => {
@@ -142,8 +143,8 @@ export const OTHER_ENTRIES: MinimalEntry[] = [
           value: `${gap > 0 ? "+" : ""}${gap.toFixed(1)} pts`,
           tone: gap < 0 ? "danger" : gap > 0 ? "success" : "warning",
           ratio: rival
-            ? `Fender/Squier ${formatInt(battle.fenderWins)} vs ${rival.brand} ${formatInt(rival.wins)} ${scope}`
-            : `Fender/Squier ${formatInt(battle.fenderWins)} ${scope}. No competitor led one.`,
+            ? `${leadBrand()} ${formatInt(battle.fenderWins)} vs ${rival.brand} ${formatInt(rival.wins)} ${scope}`
+            : `${leadBrand()} ${formatInt(battle.fenderWins)} ${scope}. No competitor led one.`,
           pie: null,
           tip: null,
           missing: null,
@@ -159,7 +160,7 @@ export const OTHER_ENTRIES: MinimalEntry[] = [
       return best ? `Strongest category: ${categoryLabel(best.category)}` : "Strongest category";
     },
     definition:
-      "The question category where Fender/Squier leads the largest share of resolved unbranded discovery answers in the published AI run. Categories with too few answers to compare are skipped while others qualify. Category Battlecards shows every category. " +
+      `The question category where ${leadBrand()} leads the largest share of resolved unbranded discovery answers in the published AI run. Categories with too few answers to compare are skipped while others qualify. Category Battlecards shows every category. ` +
       NO_TAB,
     read: (ctx) =>
       aiFigure(ctx, () => {

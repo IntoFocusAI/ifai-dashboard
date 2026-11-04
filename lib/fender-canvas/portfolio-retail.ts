@@ -28,6 +28,7 @@ import {
   featuredOfferHeadlineLabel,
   firstPassIncomplete,
 } from "./featured-offer-copy";
+import { brandName } from "@/lib/brand-copy";
 
 export type RetailReadingStatus =
   | "available_with_issues"
@@ -76,7 +77,7 @@ export type RetailHeadline = {
 const MAP_UNAVAILABLE = "MAP leakage has not been stored.";
 
 /** Shown when the retail read has rows and none of them store a MAP price. */
-export const MAP_PRICES_NOT_STORED = "Fender MAP prices have not been stored.";
+export const MAP_PRICES_NOT_STORED = `${brandName()} MAP prices have not been stored.`;
 const BUNDLE_UNAVAILABLE = "Catalog bundle parent ASINs have not been stored.";
 const BUNDLE_OFFER_UNAVAILABLE = "Live offer readings have not been stored for bundle listings.";
 const SPEC_UNAVAILABLE = "Amazon spec-field readings have not been stored.";

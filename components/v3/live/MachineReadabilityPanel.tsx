@@ -19,6 +19,7 @@ import {
   PAGE_FOUND_HERO_ID,
 } from "@/lib/fender-canvas/page-found-hero";
 import type { CanvasMetricsRow } from "@/lib/fender-canvas/types";
+import { brandSite } from "@/lib/brand-copy";
 
 const PAGES_TABLE_ID = "machine-readability-pages";
 const PAGE_FOUND_TABLE_ID = "brand-site-page-found-skus";
@@ -39,7 +40,7 @@ function BrandSiteSpecsNotes({ summary }: { summary: SpecPageSummary | null }) {
           <span>What is machine-readable product data?</span>
         </div>
         <div className="ceo-callout-body">
-          Shoppers read fender.com&apos;s spec tables. AI engines read the Schema.org product data
+          Shoppers read {brandSite()}&apos;s spec tables. AI engines read the Schema.org product data
           behind the page and take what is there as fact. A spec that only appears as page text has
           to be guessed. {shared}
         </div>

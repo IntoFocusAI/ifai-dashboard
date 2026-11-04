@@ -27,6 +27,7 @@ import { API_QUESTION_RULE, API_REPEAT_RULE, hasApiRows, isApiEngine } from "@/l
 import type { AiSearchRead, AiSearchSnapshot } from "@/lib/ai-search/types";
 import { selectionLine } from "@/lib/ai-search/displayed-read";
 import { isWindowHistoryKind } from "@/lib/ai-search/window-display";
+import { brandName, leadBrand } from "@/lib/brand-copy";
 
 /** Engines with resolved unbranded answers, weakest Fender-lead share first (same order as Engine Comparison). */
 function unbrandedEnginesWeakestFirst(engines: readonly RoleGroupTally[]): RoleGroupTally[] {
@@ -146,7 +147,7 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
     return {
       spokeAeo: pending("AI Search Visibility", AI_TABS.summary, true),
       satPrompts: satelliteStateFace(read, "Run Details", AI_TABS.simulations, "Brand Consideration"),
-      satCitations: satelliteStateFace(read, "Citations", AI_TABS.citations, "Fender-Owned Links"),
+      satCitations: satelliteStateFace(read, "Citations", AI_TABS.citations, `${brandName()}-Owned Links`),
       satDrift: satelliteStateFace(read, "Fact Checks", AI_TABS.drift, "Accuracy"),
       spokeCompetitors: pending("Competitive Radar", RADAR_TABS.battlecards, true),
       satGap: satelliteStateFace(read, "Competitor Wins", RADAR_TABS.wins, "competitors led"),
@@ -181,7 +182,7 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
   const citationsHero = heroPctFace(
     ratePct(citations.fenderOwnedRows, citations.rows),
     pct(citations.fenderOwnedRows, citations.rows),
-    "Fender-Owned Links",
+    `${brandName()}-Owned Links`,
     15,
     35,
   );
@@ -224,7 +225,7 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
       title: "Citations",
       stats: [
         `${citations.answersWithCitation} of ${citations.answered} answers cited sources`,
-        `Fender-owned ${pct(citations.fenderOwnedRows, citations.rows)} of links`,
+        `${brandName()}-owned ${pct(citations.fenderOwnedRows, citations.rows)} of links`,
       ],
       heroValue: citationsHero.heroValue,
       meta: `${citations.rows} cited links · ${citations.domains} domains`,
@@ -297,9 +298,9 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
         return {
           status: engineHero.status,
           title: "Engine Comparison",
-          stats: [`${tally.fenderWins} of ${tally.resolved} Fender leads`],
+          stats: [`${tally.fenderWins} of ${tally.resolved} ${brandName()} leads`],
           heroValue: engineHero.heroValue,
-          meta: "Weakest Fender lead first",
+          meta: `Weakest ${brandName()} lead first`,
           subTab: RADAR_TABS.engines,
           tooltip: { ...EMPTY_TOOLTIP },
         };
@@ -336,7 +337,7 @@ export function aiSpokeDesc(read: AiSearchRead): string {
   if (read.phase === "error" && read.selection) return `${selectionLine(read.selection, false)}.`;
   if (read.phase === "error") return `The published AI run did not load: ${read.message}`;
   if (read.phase === "no-run") return "No AI run has been published yet, so no AI Search figure is shown.";
-  return "How AI shopping answers cite the web, and whether Fender-owned pages show up.";
+  return `How AI shopping answers cite the web, and whether ${brandName()}-owned pages show up.`;
 }
 
 export type AiSpokeChip = {
@@ -423,7 +424,7 @@ export function competitorsSpokeLead(read: AiSearchRead): { figure: string; expl
   return {
     figure: competitorWinsFigure(s.competitorWins, s.roles.unbranded.resolved),
     explainer:
-      "Which brands AI engines name over Fender/Squier on unbranded discovery prompts. Branded consideration, product fact checks, provider errors, and answers with no clear leader are left out.",
+      `Which brands AI engines name over ${leadBrand()} on unbranded discovery prompts. Branded consideration, product fact checks, provider errors, and answers with no clear leader are left out.`,
   };
 }
 
@@ -441,8 +442,8 @@ export function aiPriorityItems(read: AiSearchRead): PriorityItem[] {
   if (s.drift.totalConfirmed > 0) {
     items.push({
       id: "ai-confirmed-contradiction",
-      title: `${s.drift.totalConfirmed} AI answers contradict a verified Fender fact`,
-      why: `In the published run, ${s.drift.totalConfirmed} of ${s.drift.totalChecked} checked answers stated something an official Fender page contradicts. The Product Fact Checks tab shows each question, the verified fact, its Fender source page, and the answer.`,
+      title: `${s.drift.totalConfirmed} AI answers contradict a verified ${brandName()} fact`,
+      why: `In the published run, ${s.drift.totalConfirmed} of ${s.drift.totalChecked} checked answers stated something an official ${brandName()} page contradicts. The Product Fact Checks tab shows each question, the verified fact, its ${brandName()} source page, and the answer.`,
       impact: "A shopper who reads a wrong spec may buy the wrong product or return it.",
       severity: "critical",
       spokeId: "aeo",
@@ -468,7 +469,7 @@ export function aiPriorityItems(read: AiSearchRead): PriorityItem[] {
     items.push({
       id: "ai-competitor-gap",
       title: battleSentence(gap),
-      why: `In the published run, ${engines} named ${joinBrands(gap.leaders.map((l) => l.brand))} more often than Fender/Squier in ${gap.competitorWins} of ${gap.resolved} resolved unbranded discovery ${gap.category} answers.${domains.length ? ` Those answers cited ${domains.join(", ")}.` : ""} Start with those pages: check how they describe Fender's ${gap.category} line against the brand they favor.`,
+      why: `In the published run, ${engines} named ${joinBrands(gap.leaders.map((l) => l.brand))} more often than ${leadBrand()} in ${gap.competitorWins} of ${gap.resolved} resolved unbranded discovery ${gap.category} answers.${domains.length ? ` Those answers cited ${domains.join(", ")}.` : ""} Start with those pages: check how they describe ${brandName()}'s ${gap.category} line against the brand they favor.`,
       impact: `The Competitor Wins tab lists each of the ${gap.competitorWins} answers with its engine, model, and cited pages.`,
       severity: "high",
       spokeId: "competitors",
@@ -573,7 +574,7 @@ export function aiMetrics(read: AiSearchRead): Record<AiMetricKey, CanvasMetric>
         ? `${(((beginnerBattle.fenderWins - (rival?.wins ?? 0)) * 100) / beginnerBattle.resolved).toFixed(1)} pts`
         : "No beginner prompts",
       detail: beginnerBattle
-        ? `Fender/Squier ${beginnerBattle.fenderWins} vs ${rival ? `${rival.brand} ${rival.wins}` : "no rival"} of ${beginnerBattle.resolved} resolved`
+        ? `${leadBrand()} ${beginnerBattle.fenderWins} vs ${rival ? `${rival.brand} ${rival.wins}` : "no rival"} of ${beginnerBattle.resolved} resolved`
         : "Not in this run",
       tone: "neutral",
     },
@@ -600,7 +601,7 @@ export function aiTourLines(read: AiSearchRead): AiTourLines {
     aeo: [
       `${runStateLabel(s.completeness.state)} run: ${s.completeness.answered} of ${s.completeness.expected} calls answered, completed ${s.completedAt}`,
       lead,
-      `${factsCheckedLine(s.drift.coverage)} against official Fender pages: ${factCheckShortLine(s.drift.coverage).toLowerCase()}`,
+      `${factsCheckedLine(s.drift.coverage)} against official ${brandName()} pages: ${factCheckShortLine(s.drift.coverage).toLowerCase()}`,
     ],
     competitors: [
       s.topCompetitor

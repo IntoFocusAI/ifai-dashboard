@@ -7,6 +7,7 @@ import {
   tallyCommercial,
 } from "@/lib/ai-search/run-metrics";
 import type { AiCallRow } from "@/lib/ai-search/types";
+import { leadBrand } from "@/lib/brand-copy";
 
 /** Unbranded discovery rows only (commercial buying prompts that name no brand). */
 export function isUnbrandedDiscovery(row: AiCallRow): boolean {
@@ -119,7 +120,7 @@ export function joinBrands(brands: string[]): string {
 
 export function battleSentence(battle: CategoryBattle): string {
   const names = joinBrands(battle.leaders.map((leader) => leader.brand));
-  return `${names} out-mention Fender/Squier in ${battle.competitorWins} of ${battle.resolved} resolved unbranded discovery ${categoryLabel(battle.category).toLowerCase()} answers`;
+  return `${names} out-mention ${leadBrand()} in ${battle.competitorWins} of ${battle.resolved} resolved unbranded discovery ${categoryLabel(battle.category).toLowerCase()} answers`;
 }
 
 export function engineSpread(rows: AiCallRow[]): string {

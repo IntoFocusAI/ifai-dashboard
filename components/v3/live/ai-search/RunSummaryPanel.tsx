@@ -27,6 +27,7 @@ import type { AiSearchSnapshot } from "@/lib/ai-search/types";
 import { formatInt } from "@/lib/fender-canvas/format";
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
 import { hasMixedScoringMethods, isWindowHistoryKind } from "@/lib/ai-search/window-display";
+import { brandName, leadBrand } from "@/lib/brand-copy";
 
 const ENGINE_COLUMNS = [
   clientColumn("engine", "Engine", "text", 140, 100),
@@ -69,7 +70,7 @@ function ratePie(id: string, title: string, tally: RoleTally): PieDiscInput {
     total: tally.resolved,
     totalLabel: "resolved answers",
     slices: [
-      { key: "fender", label: "Fender/Squier leads", count: tally.fenderWins },
+      { key: "fender", label: `${leadBrand()} leads`, count: tally.fenderWins },
       { key: "other", label: "Rest of resolved answers", count: tally.resolved - tally.fenderWins },
     ].filter((slice) => slice.count > 0),
   };
@@ -111,12 +112,12 @@ function RoleRate({
             </span>
             <CitationPieDisc
               pie={ratePie(`summary-${tally.role}`, label, tally)}
-              tip={`${formatInt(tally.fenderWins)} Fender/Squier leads. ${formatInt(tally.resolved - tally.fenderWins)} rest of resolved answers. Total ${formatInt(tally.resolved)} resolved answers.`}
+              tip={`${formatInt(tally.fenderWins)} ${leadBrand()} leads. ${formatInt(tally.resolved - tally.fenderWins)} rest of resolved answers. Total ${formatInt(tally.resolved)} resolved answers.`}
             />
           </div>
           <p className="ai-role-footnote" style={{ margin: "6px 0 0" }} data-ai-role-total={tally.role}>
             <EvidenceLink focus={{ field: "role", value: `${tally.role}/fender_win` }} tab={SIM}>
-              {formatInt(tally.fenderWins)} Fender/Squier leads
+              {formatInt(tally.fenderWins)} {leadBrand()} leads
             </EvidenceLink>{" "}
             of{" "}
             <EvidenceLink focus={{ field: "role", value: `${tally.role}/resolved` }} tab={SIM}>
@@ -173,7 +174,7 @@ function WinCard({ snapshot }: { snapshot: AiSearchSnapshot }) {
   return (
     <div className="content-box ai-win-card" style={{ marginTop: 12 }}>
       <div className="content-box-title">
-        <span>How often Fender/Squier is named, by the kind of question</span>
+        <span>How often {leadBrand()} is named, by the kind of question</span>
       </div>
       <ul style={{ ...mutedText, margin: "10px 0 0", paddingLeft: 16 }}>
         <li>
@@ -205,7 +206,7 @@ function WinCard({ snapshot }: { snapshot: AiSearchSnapshot }) {
         </li>
         {s.commercial.disqualified > 0 ? (
           <li>
-            {formatInt(s.commercial.disqualified)} Fender leads with a <AiTerm term="confirmed contradiction" />, not counted as wins
+            {formatInt(s.commercial.disqualified)} {brandName()} leads with a <AiTerm term="confirmed contradiction" />, not counted as wins
           </li>
         ) : null}
       </ul>

@@ -16,6 +16,7 @@ import type { PortfolioRetailSnapshot } from "@/lib/fender-canvas/portfolio-reta
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
 import type { StockLossRow } from "@/lib/fender-canvas/stock-loss";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
+import { leadBrand } from "@/lib/brand-copy";
 
 /** The Out of Stock rows, loaded once for the slots the same way the tab loads them. */
 export type StockLossRead =
@@ -229,14 +230,14 @@ export function rateLeadPie(id: string, title: string, wins: number, resolved: n
     total: resolved,
     totalLabel: "resolved answers",
     slices: [
-      { key: "fender", label: "Fender/Squier leads", count: wins },
+      { key: "fender", label: `${leadBrand()} leads`, count: wins },
       { key: "other", label: "Rest of resolved answers", count: resolved - wins },
     ].filter((slice) => slice.count > 0),
   };
 }
 
 export function rateTip(wins: number, resolved: number): string {
-  return `${wins} Fender/Squier leads. ${resolved - wins} rest of resolved answers. Total ${resolved} resolved answers.`;
+  return `${wins} ${leadBrand()} leads. ${resolved - wins} rest of resolved answers. Total ${resolved} resolved answers.`;
 }
 
 /** A Fender-lead rate. The pie is the one the tab draws, or null when the tab draws none. */

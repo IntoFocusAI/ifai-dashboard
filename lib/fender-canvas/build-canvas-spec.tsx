@@ -1,3 +1,4 @@
+import { activeClient } from "@/lib/client/active-client";
 import type { ReactNode } from "react";
 import { buildLiveSpokes } from "@/components/v3/build-live-spokes";
 import { fenderCommandCenter } from "@/components/v3/command-center-data";
@@ -97,7 +98,7 @@ export function buildFenderCanvasSpec(
   const spec = defineCanvas({
     appearance: "iom",
     commandCenter,
-    promptsEditor: (close) => <PromptsEditor onClose={close} />,
+    promptsEditor: activeClient().promptsEditable ? (close) => <PromptsEditor onClose={close} /> : undefined,
     glossary: fenderGlossary,
     hubSlots: buildHubSlots({
       suppressed: retail.phase === "ready" ? retail.snapshot.suppressedListings : retail.phase,

@@ -19,6 +19,7 @@ import {
   UNBRANDED_RATE_BANDS,
 } from "@/lib/ai-search/summary";
 import type { OutcomeTally } from "@/lib/ai-search/run-metrics";
+import { leadBrand } from "@/lib/brand-copy";
 
 const SIM = AI_TABS.simulations;
 
@@ -45,7 +46,7 @@ function ratePie(id: string, title: string, tally: Pick<OutcomeTally, "fenderWin
     total: tally.resolved,
     totalLabel: "resolved answers",
     slices: [
-      { key: "fender", label: "Fender/Squier leads", count: tally.fenderWins },
+      { key: "fender", label: `${leadBrand()} leads`, count: tally.fenderWins },
       { key: "other", label: "Rest of resolved answers", count: rest },
     ].filter((slice) => slice.count > 0),
   };
@@ -73,11 +74,11 @@ function RateSide({ role, tally, mixed }: { role: HeadlineRole; tally: OutcomeTa
             </span>
             <CitationPieDisc
               pie={ratePie(`engine-${role}`, title, tally)}
-              tip={`${tally.fenderWins} Fender/Squier leads. ${tally.resolved - tally.fenderWins} rest of resolved answers. Total ${tally.resolved} resolved answers.`}
+              tip={`${tally.fenderWins} ${leadBrand()} leads. ${tally.resolved - tally.fenderWins} rest of resolved answers. Total ${tally.resolved} resolved answers.`}
             />
           </div>
           <p className="ai-role-footnote" style={{ margin: "6px 0 0" }} data-ai-role-total={role}>
-            <EvidenceLink focus={{ field: "role", value: `${role}/fender_win` }} tab={SIM} label={`${name}: Fender/Squier leads`}>
+            <EvidenceLink focus={{ field: "role", value: `${role}/fender_win` }} tab={SIM} label={`${name}: ${leadBrand()} leads`}>
               {tally.fenderWins}
             </EvidenceLink>
             {" of "}

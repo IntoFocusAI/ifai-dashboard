@@ -1,6 +1,7 @@
 "use client";
 
 import type { CitationGap } from "@/lib/ai-search/citation-insights";
+import { brandOwned } from "@/lib/brand-copy";
 
 const KICKER = <h3 className="citation-card-kicker">Biggest actionable gaps</h3>;
 
@@ -44,10 +45,10 @@ export function GapsCard({
   return (
     <section className="citation-card citation-tile citation-card-gaps" data-citation-gaps>
       {KICKER}
-      <p className="citation-card-lead">Competitor led, no Fender-owned page cited</p>
+      <p className="citation-card-lead">Competitor led, no {brandOwned()} page cited</p>
       {visible.length === 0 ? (
         <p className="citation-card-note">
-          No competitor-led discovery or consideration answers lacked a Fender-owned citation.
+          No competitor-led discovery or consideration answers lacked a {brandOwned()} citation.
         </p>
       ) : (
         <ol className="citation-gap-list">
@@ -62,7 +63,7 @@ export function GapsCard({
                   className="citation-gap-btn"
                   data-citation-gap={gap.category}
                   data-ai-pick={`gap:${gap.category}`}
-                  aria-label={`${gap.count} ${gap.categoryLabel} answers: ${gap.competitor} led and no Fender-owned page was cited. ${domains}. Opens their cited links.`}
+                  aria-label={`${gap.count} ${gap.categoryLabel} answers: ${gap.competitor} led and no ${brandOwned()} page was cited. ${domains}. Opens their cited links.`}
                   onClick={() => onPickGap(gap)}
                 >
                   <span className="citation-gap-count">{gap.count}</span>

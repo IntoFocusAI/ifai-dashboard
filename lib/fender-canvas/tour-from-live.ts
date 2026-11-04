@@ -14,6 +14,7 @@ import { specPageCounts } from "@/lib/fender-canvas/machine-readability";
 import { headlineSurface, type RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
 import { frameTourStep } from "@/lib/fender-canvas/primary-spoke-layout";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
+import { brandName, brandSite, leadBrand } from "@/lib/brand-copy";
 
 /* Tour bullets sit in a 440px card that must not scroll at 1280x720, so each one is a
    single short line. The full sentences stay on the spokes the tour opens. */
@@ -46,7 +47,7 @@ export function retailTourLines(retail: RetailCanvasRead): string[] {
 
 function rateLine(label: string, tally: OutcomeTally): string {
   if (tally.resolved <= 0) return `${label}: no resolved answers`;
-  return `${label}: Fender/Squier named most in ${formatInt(tally.fenderWins)} of ${formatInt(tally.resolved)} (${pct(tally.fenderWins, tally.resolved)})`;
+  return `${label}: ${leadBrand()} named most in ${formatInt(tally.fenderWins)} of ${formatInt(tally.resolved)} (${pct(tally.fenderWins, tally.resolved)})`;
 }
 
 type AiTourBullets = { rates: string[]; aeo: string[]; competitors: string[] };
@@ -77,7 +78,7 @@ export function aiTourBullets(ai: AiSearchRead): AiTourBullets {
         : "No competitor named most in an unbranded answer",
       ...(gap
         ? [
-            `${category}: rivals out-mention Fender/Squier in ${formatInt(gap.competitorWins)} of ${formatInt(gap.resolved)}`,
+            `${category}: rivals out-mention ${leadBrand()} in ${formatInt(gap.competitorWins)} of ${formatInt(gap.resolved)}`,
             ...(leaders.length ? [`${category} leaders: ${joinBrands(leaders)}`] : []),
           ]
         : ["No category gap in this run"]),
@@ -120,7 +121,7 @@ export function buildLiveTourSteps(
       targetY: 500,
       radius: 185,
       title: "Brand Overview",
-      subtitle: "Fender's health across catalog divisions",
+      subtitle: `${brandName()}'s health across catalog divisions`,
       category: "BRAND CORE",
       displays: [...retailLines, ...aiLines.rates],
       value: "Amazon listing problems and AI answers, tied to revenue.",
@@ -145,10 +146,10 @@ export function buildLiveTourSteps(
       targetY: 320,
       radius: 125,
       title: "AI Search Visibility",
-      subtitle: "What AI assistants say about Fender on buying questions",
+      subtitle: `What AI assistants say about ${brandName()} on buying questions`,
       category: "AI SEARCH VISIBILITY",
       displays: aiLines.aeo,
-      value: "How often AI names Fender, what it cites, where rivals lead.",
+      value: `How often AI names ${brandName()}, what it cites, where rivals lead.`,
     },
     {
       nodeId: "specs",
@@ -160,14 +161,14 @@ export function buildLiveTourSteps(
       category: "AI READINESS",
       displays: [
         schemaPages
-          ? `${formatInt(schemaPages.missingSpecBlock)} of ${formatInt(schemaPages.pages)} fender.com pages have no spec block`
-          : "fender.com page read not available",
+          ? `${formatInt(schemaPages.missingSpecBlock)} of ${formatInt(schemaPages.pages)} ${brandSite()} pages have no spec block`
+          : `${brandSite()} page read not available`,
         ...findabilityTourBullets(findability),
         bundle.unavailable?.missing
           ? `Amazon Specs missing-field rows: ${READ_NOT_AVAILABLE} (${bundle.unavailable.missing.source} did not load)`
           : `${formatInt(bundle.missing.length)} missing-field rows are on Amazon Specs`,
       ],
-      value: "Make fender.com the spec source AI trusts.",
+      value: `Make ${brandSite()} the spec source AI trusts.`,
     },
     {
       nodeId: "competitors",
@@ -175,10 +176,10 @@ export function buildLiveTourSteps(
       targetY: 680,
       radius: 120,
       title: "Competitors",
-      subtitle: "Where rivals beat Fender, and why",
+      subtitle: `Where rivals beat ${brandName()}, and why`,
       category: "COMPETITORS",
       displays: aiLines.competitors,
-      value: "Rivals AI names over Fender, by category, with every answer.",
+      value: `Rivals AI names over ${brandName()}, by category, with every answer.`,
     },
     {
       nodeId: "suggestions",

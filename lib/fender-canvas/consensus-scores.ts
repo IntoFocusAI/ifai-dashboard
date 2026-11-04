@@ -1,3 +1,6 @@
+import { activeClient } from "@/lib/client/active-client";
+import { leadBrand } from "@/lib/brand-copy";
+
 /**
  * AI Foundation (SC-01), AI Commerce (SC-02), and AI Consensus (SC-04) scores.
  * Each component is a measured share from 0 to 100. A missing input drops that
@@ -229,7 +232,7 @@ export function isAmazonRetailSeller(row: {
  * An array, including an empty one, replaces that placeholder set.
  */
 function partnerNames(partners?: readonly string[] | null): readonly string[] {
-  return partners == null ? AUTHORIZED_BUY_BOX_PARTNERS : partners;
+  return partners == null ? activeClient().defaultBuyBoxPartners : partners;
 }
 
 /**
@@ -255,6 +258,8 @@ export function isControlledBuyBoxSeller(
   },
   partners?: readonly string[] | null,
 ): boolean {
+  // Brand-led clients: the brand's own seller accounts (client_config.brand_seller_ids) hold it.
+  if (text(row.buybox_status) === "Brand Seller") return true;
   return isAmazonRetailSeller(row) || isAuthorizedBuyBoxPartner(row, partners);
 }
 
@@ -399,7 +404,7 @@ export const FOUNDATION_COMPONENT_SPECS: ScoreComponentSpec[] = [
   },
   {
     id: "unbranded_named_most",
-    name: "Resolved unbranded answers where Fender/Squier is named most",
+    name: `Resolved unbranded answers where ${leadBrand()} is named most`,
     weight: 20,
   },
   {
@@ -513,7 +518,8 @@ export type CommerceScoreOptions = {
 };
 
 function commerceSpecs(authorizedPartners: readonly string[] | null): ScoreComponentSpec[] {
-  if (authorizedPartners == null) return COMMERCE_COMPONENT_SPECS;
+  // Brand-led: the brand's own seller accounts are known, so nothing here is a placeholder.
+  if (authorizedPartners == null && activeClient().sellerModel === "Partner-led") return COMMERCE_COMPONENT_SPECS;
   return COMMERCE_COMPONENT_SPECS.map((spec) =>
     spec.id === "controlled_buy_box"
       ? {

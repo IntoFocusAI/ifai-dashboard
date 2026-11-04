@@ -32,6 +32,7 @@ import {
   outcomeShareFigure,
 } from "@/lib/findability/lead";
 import { countFindability } from "@/lib/findability/outcomes";
+import { leadBrand } from "@/lib/brand-copy";
 
 export const BRIEFING_COUNT_MISSING = "Not available*";
 
@@ -233,7 +234,7 @@ function unbrandedPie(fenderWins: number, resolved: number): PieDiscData | null 
     total: resolved,
     totalLabel: "resolved unbranded discovery answers",
     slices: [
-      { key: "fender", label: "Fender/Squier leads", count: fenderWins },
+      { key: "fender", label: `${leadBrand()} leads`, count: fenderWins },
       { key: "rest", label: "Rest of resolved answers", count: rest },
     ].filter((slice) => slice.count > 0),
   };
@@ -275,7 +276,7 @@ function unbrandedFinding(read: AiSearchRead): BriefingFinding {
       ? `${formatInt(tally.fenderWins)} of ${formatInt(tally.resolved)} resolved unbranded discovery answers.`
       : null,
     explainer: ready
-      ? "Fender/Squier named most on unbranded shopping questions."
+      ? `${leadBrand()} named most on unbranded shopping questions.`
       : "No resolved unbranded discovery answers in this window.",
     numerator: ready ? tally.fenderWins : null,
     denominator: ready ? tally.resolved : null,

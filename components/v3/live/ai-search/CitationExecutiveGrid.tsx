@@ -13,6 +13,7 @@ import type {
 } from "@/lib/ai-search/citation-insights";
 import type { HeadlineRole } from "@/lib/ai-search/question-role";
 import { SMALL_SAMPLE_LABEL, pct } from "@/lib/ai-search/summary";
+import { brandName, brandOwned } from "@/lib/brand-copy";
 
 const count = (n: number) => n.toLocaleString("en-US");
 
@@ -73,7 +74,7 @@ function PresenceCard({
   return (
     <section className="citation-card citation-tile citation-card-presence" data-citation-presence>
       <h3 className="citation-card-kicker">
-        <AiTerm term="Fender-owned">Fender-owned</AiTerm> pages
+        <AiTerm term="Fender-owned">{brandOwned()}</AiTerm> pages
       </h3>
       <div className="citation-tile-figure">
         <div>
@@ -84,10 +85,10 @@ function PresenceCard({
             <span data-citation-hero-value>{ratio}</span>{" "}
             {unbranded ? (
               <>
-                <AiTerm term="unbranded discovery">unbranded discovery</AiTerm> answers cited a Fender-owned page
+                <AiTerm term="unbranded discovery">unbranded discovery</AiTerm> answers cited a {brandOwned()} page
               </>
             ) : (
-              `${scopeNoun} cited at least one Fender-owned page`
+              `${scopeNoun} cited at least one ${brandOwned()} page`
             )}
           </p>
         </div>
@@ -105,8 +106,8 @@ function PresenceCard({
           id="presence"
           owned={presence.answersWithOwned}
           total={presence.answered}
-          name="Answers that cited a Fender-owned page"
-          tip={`${ratio} ${scopeNoun} cited at least one Fender-owned page.`}
+          name={`Answers that cited a ${brandOwned()} page`}
+          tip={`${ratio} ${scopeNoun} cited at least one ${brandOwned()} page.`}
         />
       ) : null}
       {brands}
@@ -146,7 +147,7 @@ function RoleGroupButton({
   onPick: (role: RoleOwnedPresence, group: RoleOwnedGroup) => void;
 }) {
   if (group.resolved <= 0 || share <= 0) return null;
-  const lead = `Fender led ${group.fenderLed} of ${group.resolved}`;
+  const lead = `${brandName()} led ${group.fenderLed} of ${group.resolved}`;
   const sample = group.smallSample ? ` · ${SMALL_SAMPLE_LABEL}` : "";
   return (
     <button
@@ -175,7 +176,7 @@ function RoleOwnedCard({
   showSmallSample: boolean;
   onPickGroup: (role: RoleOwnedPresence, group: RoleOwnedGroup) => void;
 }) {
-  const kicker = <h3 className="citation-card-kicker">Fender-owned pages by question type</h3>;
+  const kicker = <h3 className="citation-card-kicker">{brandOwned()} pages by question type</h3>;
   if (!applicable) {
     return (
       <section className="citation-card citation-tile" data-citation-association>
@@ -219,8 +220,8 @@ function RoleOwnedCard({
                 role="img"
                 tabIndex={0}
                 data-ifai-tooltip-title={role.roleLabel}
-                data-ifai-tooltip-desc={`${role.withOwned} of ${role.resolved} ${role.roleLabel} answers cited a Fender-owned page. ${role.withoutOwned} did not. ${ROLE_ASSOCIATION_CAVEAT}`}
-                aria-label={`${role.roleLabel}: ${role.withOwned} of ${role.resolved} resolved answers cited a Fender-owned page. ${role.withoutOwned} did not. ${ROLE_ASSOCIATION_CAVEAT}`}
+                data-ifai-tooltip-desc={`${role.withOwned} of ${role.resolved} ${role.roleLabel} answers cited a ${brandOwned()} page. ${role.withoutOwned} did not. ${ROLE_ASSOCIATION_CAVEAT}`}
+                aria-label={`${role.roleLabel}: ${role.withOwned} of ${role.resolved} resolved answers cited a ${brandOwned()} page. ${role.withoutOwned} did not. ${ROLE_ASSOCIATION_CAVEAT}`}
               >
                 <RoleGroupButton
                   role={role}
@@ -238,8 +239,8 @@ function RoleOwnedCard({
               <ul className="citation-role-leads">
                 {role.groups.map((group) => {
                   if (group.resolved <= 0) return null;
-                  const led = `Fender led ${group.fenderLed} of ${group.resolved}`;
-                  const desc = `${led} ${role.roleLabel.toLowerCase()} answers that ${group.key === "cited_owned" ? "cited a Fender-owned page" : "cited no Fender-owned page"}. ${ROLE_ASSOCIATION_CAVEAT}`;
+                  const led = `${brandName()} led ${group.fenderLed} of ${group.resolved}`;
+                  const desc = `${led} ${role.roleLabel.toLowerCase()} answers that ${group.key === "cited_owned" ? "cited a" : "cited no"} ${brandOwned()} page. ${ROLE_ASSOCIATION_CAVEAT}`;
                   return (
                     <li key={group.key} data-citation-role-lead={`${role.role}:${group.key}`}>
                       {group.label}:{" "}

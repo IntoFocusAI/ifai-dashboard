@@ -25,6 +25,7 @@ import {
   type StockLossRow,
 } from "@/lib/fender-canvas/stock-loss";
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
+import { isFenderClient } from "@/lib/brand-copy";
 
 function sourced(name: string, ...sources: DataSource[]) {
   return (
@@ -121,8 +122,11 @@ function Explanation() {
         <DefinedTerm term="Keepa" />, and multiplies by the days it was not, for the last 30 days,
         90 days, and 12 months. Each figure is also what the next period of the same length would
         miss if the sales rate and the out-of-stock pattern hold. It is an analyst estimate, not
-        reported sales. Fender sells through dealers, so the data shows that a listing ran out but
-        not whether Fender or the dealer did. A listing with no sales source is awaiting inputs,
+        reported sales.{" "}
+        {isFenderClient()
+          ? "Fender sells through dealers, so the data shows that a listing ran out but not whether Fender or the dealer did."
+          : "The data shows that a listing ran out, not which seller ran out."}{" "}
+        A listing with no sales source is awaiting inputs,
         not $0.
       </div>
     </div>

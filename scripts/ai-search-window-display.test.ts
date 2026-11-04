@@ -145,7 +145,7 @@ test("the win-or-loss note is the lead rate's tooltip, not a sentence in the Run
   const explorer = source(`${AI_DIR}/SimulationsExplorer.tsx`).replace(/\s+/g, " ");
   assert.match(explorer, /<RunDetailsLead snapshot=\{snapshot\} \/>/);
   assert.doesNotMatch(explorer, /neither a win nor a/);
-  assert.match(explorer, /tests one published Fender fact instead\. <\/p>/);
+  assert.match(explorer, /tests one published \{brandName\(\)\} fact instead\. <\/p>/);
   for (const name of readdirSync(join(root, AI_DIR)).filter((file) => file.endsWith(".tsx"))) {
     assert.doesNotMatch(source(`${AI_DIR}/${name}`), /neither a win nor a loss/, name);
   }

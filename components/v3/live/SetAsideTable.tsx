@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type { RetailColumn } from "@/components/v3/live/ResizableTable";
 import { formatInt } from "@/lib/fender-canvas/format";
-import { FMIC_CLIENT_KEY, SET_ASIDE_CHECKS } from "@/lib/set-aside/keys";
+import { SET_ASIDE_CHECKS, activeSetAsideClientKey } from "@/lib/set-aside/keys";
 import { DoneForm, ReopenForm, SetAsideForm } from "@/lib/set-aside/SetAsideForm";
 import { formatSetAsideDate, outcomeLabel, useSetAsides, type SetAsideRow } from "@/lib/set-aside/set-aside";
 
@@ -46,7 +46,7 @@ export type CheckSetAsides = ReturnType<typeof useSetAsides> & {
 };
 
 export function useCheckSetAsides(checkKey: string, checkName: string): CheckSetAsides {
-  const setAsides = useSetAsides(FMIC_CLIENT_KEY, checkKey);
+  const setAsides = useSetAsides(activeSetAsideClientKey(), checkKey);
   const [formFor, setFormFor] = useState<{ key: string; mode: FormMode } | null>(null);
   return {
     ...setAsides,

@@ -14,6 +14,7 @@ import {
 import { metricsRowFailure, readFailureTip } from "@/lib/fender-canvas/canvas-reads";
 import { formatInt } from "@/lib/fender-canvas/format";
 import type { CanvasMetricsRow } from "@/lib/fender-canvas/types";
+import { brandSite } from "@/lib/brand-copy";
 
 export const PAGE_FOUND_HERO_ID = "page_found";
 
@@ -23,7 +24,7 @@ export const PAGE_FOUND_ANCHOR = "brand-site-page-found";
 export const PAGE_FOUND_UNAVAILABLE = "Not available*";
 
 export const PAGE_FOUND_UNAVAILABLE_TIP =
-  "The fender.com product check has not reported how many SKUs it checked or how many have a matching fender.com product page, so this share is not shown.";
+  `The ${brandSite()} product check has not reported how many SKUs it checked or how many have a matching ${brandSite()} product page, so this share is not shown.`;
 
 export type PageFoundHeroModel = {
   id: typeof PAGE_FOUND_HERO_ID;
@@ -104,8 +105,8 @@ export function brandSitePageFoundHero(
     tip: base.tip,
     explainer:
       missing === 0
-        ? "Every checked SKU has a matching fender.com product page."
-        : `${formatInt(missing)} checked SKUs have no matching fender.com product page.`,
+        ? `Every checked SKU has a matching ${brandSite()} product page.`
+        : `${formatInt(missing)} checked SKUs have no matching ${brandSite()} product page.`,
     numerator: found,
     denominator: checked,
     figureTip: null,

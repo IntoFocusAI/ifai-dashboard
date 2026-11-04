@@ -1,5 +1,7 @@
 import { callOutcome, cleanPrompt, type CallOutcome } from "@/lib/ai-search/run-metrics";
 import type { AiCallRow, AiCitationRow } from "@/lib/ai-search/types";
+import { activeClient } from "@/lib/client/active-client";
+import { brandOwned, isFenderClient } from "@/lib/brand-copy";
 
 const EMPTY_VALUES = new Set(["", "null", "undefined", "none", "nan", "n/a"]);
 
@@ -48,7 +50,9 @@ export type SourceClass =
   | "other";
 
 export const SOURCE_CLASS_LABELS: Record<SourceClass, string> = {
-  fender_owned: "Fender-owned",
+  get fender_owned() {
+    return brandOwned();
+  },
   retailer: "Retailer",
   editorial: "Editorial",
   community: "Community",
@@ -69,11 +73,15 @@ export const SOURCE_CLASS_ORDER: SourceClass[] = [
   "other",
 ];
 
-const CLASS_DOMAINS: Array<[SourceClass, string[]]> = [
-  [
-    "fender_owned",
-    ["fender.com", "fmicassets.com", "squier.com", "gretschguitars.com", "jacksonguitars.com", "charvel.com", "evhgear.com"],
-  ],
+/** FMIC's brand sites. Other clients use their own brand-site domains. */
+const FMIC_OWNED_DOMAINS = ["fender.com", "fmicassets.com", "squier.com", "gretschguitars.com", "jacksonguitars.com", "charvel.com", "evhgear.com"];
+
+/** Brand-owned domains for the active client. The class keeps its fender_owned key. */
+export function ownedDomains(): string[] {
+  return isFenderClient() ? FMIC_OWNED_DOMAINS : activeClient().brandSiteDomains;
+}
+
+const OTHER_CLASS_DOMAINS: Array<[SourceClass, string[]]> = [
   [
     "retailer",
     [
@@ -109,7 +117,8 @@ function matchesDomain(domain: string, root: string) {
 /** IntoFocus's source class for a cited domain. Not a field stored by the collector. */
 export function classifySource(domain: string): SourceClass {
   const d = domain.toLowerCase();
-  for (const [kind, roots] of CLASS_DOMAINS) {
+  if (ownedDomains().some((root) => matchesDomain(d, root))) return "fender_owned";
+  for (const [kind, roots] of OTHER_CLASS_DOMAINS) {
     if (roots.some((root) => matchesDomain(d, root))) return kind;
   }
   if (/(^|\.)forums?\.|forum/.test(d)) return "community";

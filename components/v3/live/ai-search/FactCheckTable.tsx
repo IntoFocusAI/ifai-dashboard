@@ -11,6 +11,7 @@ import { PROBE_STATE_LABELS, type ProbeEvidence, type ProbeState } from "@/lib/a
 import { AMAZON_DIFFERS_TITLE, ANCHOR_TIP, ANCHOR_TITLE, amazonDiffersTip } from "@/lib/ai-search/fact-check-copy";
 import { engineLabel, formatRunTime, modelLabel } from "@/lib/ai-search/run-metrics";
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
+import { brandName } from "@/lib/brand-copy";
 
 const STATE_TONE: Record<ProbeState, string> = {
   confirmed: "tag-danger",
@@ -30,7 +31,7 @@ const COLUMNS = [
   clientColumn("question", "Question checked", "text", 390, 240),
   clientColumn("engine", "Engine", "text", 130, 100),
   clientColumn("result", "Result", "text", 340, 240),
-  clientColumn("fact", "Verified Fender fact", "text", 700, 280),
+  clientColumn("fact", `Verified ${brandName()} fact`, "text", 700, 280),
   clientColumn("checked", "Checked", "date", 200, 160),
 ];
 
@@ -89,7 +90,7 @@ export function FactCheckTable({ rows, windowed = false }: { rows: ProbeEvidence
                 <td>
                   {row.claim ? (
                     <>
-                      {row.claim} <ExternalLink href={row.sourceUrl}>Fender source</ExternalLink>
+                      {row.claim} <ExternalLink href={row.sourceUrl}>{brandName()} source</ExternalLink>
                     </>
                   ) : (
                     "Not verified yet"

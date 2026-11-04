@@ -29,18 +29,19 @@ import {
   type MinimalFigure,
   type MinimalListItem,
 } from "@/lib/fender-canvas/minimal-metric-kit";
+import { brandName, isFenderClient, leadBrand } from "@/lib/brand-copy";
 
 const ROLE = {
   unbranded_discovery: {
     title: "Unbranded Discovery",
-    label: "Fender leads in unbranded discovery",
+    label: `${brandName()} leads in unbranded discovery`,
     noun: "resolved unbranded discovery answers",
     bands: UNBRANDED_RATE_BANDS,
     pick: (s: AiRunSummary) => s.roles.unbranded,
   },
   branded_consideration: {
     title: "Branded Consideration",
-    label: "Fender leads in branded consideration",
+    label: `${brandName()} leads in branded consideration`,
     noun: "resolved branded consideration answers",
     bands: BRANDED_RATE_BANDS,
     pick: (s: AiRunSummary) => s.roles.branded,
@@ -141,7 +142,7 @@ function categoryUnbrandedEntry(category: string): MinimalEntry {
     id: categoryId(category),
     spokeId: "competitors",
     tab: "Category Battlecards",
-    label: `${categoryLabel(category)}: Fender leads in unbranded discovery`,
+    label: `${categoryLabel(category)}: ${brandName()} leads in unbranded discovery`,
     read: (ctx) => categoryUnbrandedFigure(ctx, category),
   };
 }
@@ -150,11 +151,13 @@ function categoryUnbrandedEntry(category: string): MinimalEntry {
 const CATEGORY_UNBRANDED: MinimalEntryFamily = {
   family: "battlecards-category-unbranded",
   entries: (ctx) => {
+    // The stored battery is Fender's (p01..p37). Other clients list the categories their run stored.
+    const battery = isFenderClient() ? BATTERY_CATEGORIES : [];
     const extra = categoryRows(ctx)
       .map((row) => row.key)
-      .filter((key) => !BATTERY_CATEGORIES.includes(key));
+      .filter((key) => !battery.includes(key));
     const ids = new Set<string>();
-    return [...BATTERY_CATEGORIES, ...extra].flatMap((category) => {
+    return [...battery, ...extra].flatMap((category) => {
       const id = categoryId(category);
       if (ids.has(id)) return [];
       ids.add(id);
@@ -220,7 +223,7 @@ export const AI_SEARCH_ENTRIES: MinimalEntry[] = [
   bubbleEntry({
     id: "sat-citations",
     spokeId: "aeo",
-    label: "Cited links to Fender-owned sites",
+    label: `Cited links to ${brandName()}-owned sites`,
     tab: "Citation Ecosystem",
     read: (ctx) =>
       aiReading(ctx, (s) =>
@@ -262,7 +265,7 @@ export const COMPETITIVE_ENTRIES: MinimalListItem[] = [
       aiReading(ctx, (s) => {
         const resolved = s.roles.unbranded.resolved;
         const pie = competitorLeadPie(s.competitorWins, resolved);
-        const tip = pie ? `${s.competitorWins} competitor led. ${resolved - s.competitorWins} Fender/Squier led. Total ${resolved} resolved unbranded discovery answers.` : null;
+        const tip = pie ? `${s.competitorWins} competitor led. ${resolved - s.competitorWins} ${leadBrand()} led. Total ${resolved} resolved unbranded discovery answers.` : null;
         return counted(resolved > 0 ? `${formatInt(s.competitorWins)} of ${formatInt(resolved)}` : null, ROLE.unbranded_discovery.noun, pie, tip, "This run has no resolved unbranded answers.");
       }),
   }),
@@ -271,7 +274,7 @@ export const COMPETITIVE_ENTRIES: MinimalListItem[] = [
     spokeId: "competitors",
     label: (ctx) => {
       const engine = weakestUnbrandedEngine(ctx);
-      return engine ? `Fender leads on ${engineLabel(engine.key)}, the weakest engine` : ROLE.unbranded_discovery.label;
+      return engine ? `${brandName()} leads on ${engineLabel(engine.key)}, the weakest engine` : ROLE.unbranded_discovery.label;
     },
     tab: "Engine Comparison",
     read: (ctx) =>

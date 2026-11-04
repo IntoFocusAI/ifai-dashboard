@@ -22,6 +22,7 @@ import {
 } from "@/lib/fender-canvas/page-found-reasons";
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
 import "@/components/v3/live/page-found.css";
+import { brandSite } from "@/lib/brand-copy";
 
 const PAGE = 50;
 
@@ -33,8 +34,8 @@ const COLUMNS: RetailColumn[] = [
   { id: "status", name: "Page found", label: "Page found", width: 120, minWidth: 100, sort: "text" },
   {
     id: "evidence",
-    name: "fender.com page or reason",
-    label: "fender.com page or reason",
+    name: `${brandSite()} page or reason`,
+    label: `${brandSite()} page or reason`,
     width: 320,
     minWidth: 180,
     sort: "text",
@@ -218,7 +219,7 @@ export function PageFoundTable({
     >
       <div className="content-box-title">
         <span>
-          fender.com page by checked SKU
+          {brandSite()} page by checked SKU
           {matches ? null : (
             <span
               className="ifai-term page-found-mismatch"
