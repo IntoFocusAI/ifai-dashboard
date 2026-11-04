@@ -40,6 +40,7 @@ import { MUSICIANS_FRIEND_FRESHNESS_JOB } from "@/lib/fender-canvas/map-reading-
 import { retailTemplateVars } from "@/lib/fender-canvas/retail-copy";
 import { bindNarrativeSpoke } from "@/lib/fender-canvas/spoke-narrative";
 import { bindCopy, buildTemplateVars } from "@/lib/fender-canvas/template-vars";
+import { estimateBarsHtml } from "@/lib/fender-canvas/estimate-bars";
 import { urgentInterventionsHtml } from "@/lib/fender-canvas/urgent-interventions-html";
 
 function htmlBlock(html: string) {
@@ -184,10 +185,12 @@ export function buildLiveSpokes(
   ai: AiSearchRead = { phase: "loading" },
   findability: FindabilityRead = { phase: "loading" },
 ): Record<SpokeId, SpokeDefinition> {
+  const base = buildTemplateVars(bundle);
   const vars = {
-    ...buildTemplateVars(bundle),
+    ...base,
     ...retailTemplateVars(bundle, retail),
     urgent_interventions: urgentInterventionsHtml(retail, findability, ai),
+    estimate_bars: estimateBarsHtml(base.phase_one_lift, base.enterprise_potential),
   };
   const ids = Object.keys(spokeData) as SpokeId[];
   const out = {} as Record<SpokeId, SpokeDefinition>;

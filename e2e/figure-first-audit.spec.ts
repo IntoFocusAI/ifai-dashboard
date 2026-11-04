@@ -35,15 +35,9 @@ const TABS: Tab[] = [
   })),
 );
 
-/** Tabs that failed this audit on 4 Nov 2026, with the files that own them. */
+/** Tabs that still fail this audit, with the files that own them. */
 const KNOWN_GAPS: Record<string, { x03: boolean; x04: boolean; owner: string }> = {
-  "hub/opportunity": { x03: false, x04: false, owner: "data/fender-v3-spec.json hub tab 3 (no owner in batch 21)" },
   "aeo/run-summary": { x03: false, x04: true, owner: "components/v3/live/ai-search (worker 21.6)" },
-  "suggestions/revenue-estimates": {
-    x03: false,
-    x04: false,
-    owner: "data/fender-v3-spec.json Action Items tab 2 (no owner in batch 21)",
-  },
 };
 
 type Reading = { x03: boolean; x04: boolean };
