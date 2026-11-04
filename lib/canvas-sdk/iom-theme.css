@@ -281,8 +281,8 @@
   background-color: transparent;
   background-image: none;
   transition:
-    right calc(0.9s * var(--iom-motion-scale)) cubic-bezier(0.22, 0.9, 0.24, 1),
-    top calc(0.9s * var(--iom-motion-scale)) cubic-bezier(0.22, 0.9, 0.24, 1);
+    right calc(0.45s * var(--iom-motion-scale)) cubic-bezier(0.22, 0.9, 0.24, 1),
+    top calc(0.45s * var(--iom-motion-scale)) cubic-bezier(0.22, 0.9, 0.24, 1);
 }
 
 .ifai-canvas.theme-iom.panel-open:not(.panel-hidden) .viewport-container {
@@ -1146,9 +1146,8 @@
   border-top: 1px solid rgba(46, 183, 255, 0.28);
   border-left: 1px solid rgba(46, 183, 255, 0.28);
   box-shadow: 0 22px 48px rgba(0, 0, 0, 0.55);
-  transition:
-    transform calc(0.9s * var(--iom-motion-scale)) cubic-bezier(0.22, 0.9, 0.24, 1),
-    width calc(0.9s * var(--iom-motion-scale)) cubic-bezier(0.22, 0.9, 0.24, 1);
+  /* Slide only: animating width reflowed the whole panel on every frame. */
+  transition: transform calc(0.45s * var(--iom-motion-scale)) cubic-bezier(0.22, 0.9, 0.24, 1);
 }
 
 .ifai-canvas.theme-iom.column-layout .drilldown-panel.open {

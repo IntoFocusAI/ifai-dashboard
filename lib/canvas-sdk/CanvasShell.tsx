@@ -333,9 +333,11 @@ export function CanvasShell({ spec, children }: Props) {
   }, [graphColumnLayout, syncColumnScrollFade, activeSpoke]);
 
   /* A hidden panel keeps the width it opens at, so opening only slides it in. Growing
-     it from 0 reflowed the tabs into a tall stack that moved under the pointer. */
+     it from 0 reflowed the tabs into a tall stack that moved under the pointer. The
+     column width applies from the first frame of the open, while the panel is still
+     off screen, rather than after the map's exit, so the panel never animates width. */
   const shownDrilldownWidth = (() => {
-    if (graphColumnLayout && windowWidth > 0) {
+    if (columnLayout && windowWidth > 0) {
       return Math.max(baseDrilldownWidth, windowWidth - IOM_GRAPH_RAIL_PX);
     }
     if (!iom && (panelLayout === "narrow" || windowWidth === 0)) return baseDrilldownWidth;

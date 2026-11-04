@@ -326,6 +326,35 @@ test.describe("panel tabs right after a spoke opens", () => {
     expect(seen.tallestRow, "the tab row reflowed while the panel opened").toBeLessThanOrEqual(seen.settledRow + 1);
   });
 
+  test("the panel slides in at its final width in under half a second", async ({ canvas, page }) => {
+    const watch = page.evaluate(
+      () =>
+        new Promise<{ widths: number[]; property: string; duration: string }>((done) => {
+          const widths: number[] = [];
+          let shownAt = 0;
+          const tick = (now: number) => {
+            const panel = document.querySelector<HTMLElement>(".drilldown-panel.open");
+            const box = panel?.getBoundingClientRect();
+            if (box && box.left < innerWidth - 1) {
+              shownAt ||= now;
+              widths.push(Math.round(box.width));
+            }
+            if (!shownAt || now - shownAt < 1200) requestAnimationFrame(tick);
+            else {
+              const style = getComputedStyle(panel!);
+              done({ widths, property: style.transitionProperty, duration: style.transitionDuration });
+            }
+          };
+          requestAnimationFrame(tick);
+        }),
+    );
+    await canvas.clickBubble("spoke-retail");
+    const seen = await watch;
+    expect(new Set(seen.widths).size, `panel widths while opening: ${[...new Set(seen.widths)].join(", ")}`).toBe(1);
+    expect(seen.property).toBe("transform");
+    expect(parseFloat(seen.duration)).toBeLessThanOrEqual(0.5);
+  });
+
   test("the first tab click after opening from the map sticks", async ({ canvas, page }) => {
     await canvas.clickBubble("spoke-retail");
     const tab = page.locator(".drilldown-tab-btn").nth(2);
