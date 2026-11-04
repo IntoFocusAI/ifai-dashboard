@@ -523,7 +523,6 @@
 
 .ifai-canvas.theme-iom.column-layout .graph-hub.node-selected .hub-halo-pulse {
   opacity: 1;
-  filter: url(#auraBlur);
 }
 
 .ifai-canvas.theme-iom.column-layout .canvas-pointer-wash {
@@ -752,17 +751,9 @@
   stroke: none;
   opacity: 0.72;
   pointer-events: none;
-  filter: url(#auraBlur);
   transform-box: fill-box;
   transform-origin: center;
   animation: aura-breathe 4s ease-in-out infinite;
-}
-
-.ifai-canvas.theme-iom .node-halo.status-danger { stroke: #fb7185; }
-.ifai-canvas.theme-iom .node-halo.status-warning { stroke: #fbbf24; }
-.ifai-canvas.theme-iom .node-halo.status-success { stroke: #34d399; }
-.ifai-canvas.theme-iom .node-halo:not(.status-danger):not(.status-warning):not(.status-success) {
-  stroke: #2eb7ff;
 }
 
 .ifai-canvas.theme-iom .graph-node:hover .node-halo,
@@ -777,12 +768,40 @@
 .ifai-canvas.theme-iom .node-circle.status-success {
   fill: url(#spokeBody);
   stroke-width: 1.8px;
-  filter: drop-shadow(0 14px 18px rgba(0, 0, 0, 0.45));
+  filter: none;
   transition:
     fill calc(0.4s * var(--iom-motion-scale)) ease,
     stroke calc(0.35s * var(--iom-motion-scale)) ease,
-    stroke-width calc(0.35s * var(--iom-motion-scale)) ease,
-    filter calc(0.35s * var(--iom-motion-scale)) ease;
+    stroke-width calc(0.35s * var(--iom-motion-scale)) ease;
+}
+
+/* BubbleLift's pre-rendered shadow and selection glow, in place of drop-shadow filters. */
+.ifai-canvas.theme-iom .node-drop {
+  opacity: 0.45;
+  transform: translateY(14px);
+  transition: opacity calc(0.35s * var(--iom-motion-scale)) ease;
+}
+
+.ifai-canvas.theme-iom .node-glow {
+  opacity: 0;
+  transition: opacity calc(0.35s * var(--iom-motion-scale)) ease;
+}
+
+.ifai-canvas.theme-iom .graph-hub .node-drop {
+  opacity: 0.5;
+  transform: translateY(16px);
+}
+
+.ifai-canvas.theme-iom .graph-hub .node-glow {
+  opacity: 0.45;
+}
+
+.ifai-canvas.theme-iom .graph-node.node-selected .node-drop {
+  opacity: 0;
+}
+
+.ifai-canvas.theme-iom .graph-node.node-selected .node-glow {
+  opacity: 0.8;
 }
 
 .ifai-canvas.theme-iom .node-circle.status-danger { stroke: #fb7185; }
@@ -952,7 +971,6 @@
   fill: url(#luxHubAura);
   stroke: none;
   opacity: 0.8;
-  filter: url(#auraBlur);
   transform-box: fill-box;
   transform-origin: center;
   animation: aura-breathe 4s ease-in-out infinite;
@@ -962,13 +980,11 @@
   fill: url(#hubBody);
   stroke: #00f0ff;
   stroke-width: 2.5px;
-  filter: drop-shadow(0 0 22px rgba(0, 240, 255, 0.45)) drop-shadow(0 16px 22px rgba(0, 0, 0, 0.5));
 }
 
 .ifai-canvas.theme-iom .graph-node.node-selected .node-circle {
   stroke: #00f0ff;
   stroke-width: 2.8px;
-  filter: drop-shadow(0 0 18px rgba(0, 240, 255, 0.8));
 }
 
 .ifai-canvas.theme-iom .graph-node.node-selected .node-halo,
@@ -1426,7 +1442,28 @@
 .ifai-canvas.theme-iom.light-theme .node-circle.status-success,
 .ifai-canvas.theme-iom.light-theme .node-circle.hub-core {
   fill: rgba(255, 255, 255, 0.94);
-  filter: drop-shadow(0 8px 18px rgba(11, 31, 51, 0.12));
+}
+
+.ifai-canvas.theme-iom.light-theme .node-drop,
+.ifai-canvas.theme-iom.light-theme .graph-hub .node-drop,
+.ifai-canvas.theme-iom.light-theme .graph-hub.node-selected .node-drop,
+.ifai-canvas.theme-iom.light-theme .graph-node.node-selected .node-lift.status-danger .node-drop,
+.ifai-canvas.theme-iom.light-theme .graph-node.node-selected .node-lift.status-warning .node-drop,
+.ifai-canvas.theme-iom.light-theme .graph-node.node-selected .node-lift.status-success .node-drop {
+  opacity: 0.12;
+  transform: translateY(8px);
+}
+
+.ifai-canvas.theme-iom.light-theme .node-drop-fill stop {
+  stop-color: rgb(11, 31, 51);
+}
+
+/* In the light theme only neutral spokes glow when selected; the hub and status bubbles keep their shadow. */
+.ifai-canvas.theme-iom.light-theme .graph-hub .node-glow,
+.ifai-canvas.theme-iom.light-theme .graph-node.node-selected .node-lift.status-danger .node-glow,
+.ifai-canvas.theme-iom.light-theme .graph-node.node-selected .node-lift.status-warning .node-glow,
+.ifai-canvas.theme-iom.light-theme .graph-node.node-selected .node-lift.status-success .node-glow {
+  opacity: 0;
 }
 
 .ifai-canvas.theme-iom.light-theme .strategy-roadmap-btn {
@@ -1812,8 +1849,6 @@
   stroke: #fb7185;
 }
 
-.ifai-canvas.theme-iom .graph-node[data-graph-node-id="spoke-fixes"] .node-halo,
-.ifai-canvas.theme-iom .graph-node[data-graph-node-id="spoke-roadmap"] .node-halo,
 .ifai-canvas.theme-iom .graph-node[data-graph-node-id="spoke-fixes"].node-selected .node-circle,
 .ifai-canvas.theme-iom .graph-node[data-graph-node-id="spoke-roadmap"].node-selected .node-circle {
   stroke: #fb7185;

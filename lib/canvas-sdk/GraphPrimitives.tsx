@@ -1,6 +1,7 @@
 "use client";
 
-import type { KeyboardEvent, MouseEvent, ReactElement } from "react";
+import { useId, type KeyboardEvent, type MouseEvent, type ReactElement } from "react";
+import { blurredDiskStops } from "@/lib/canvas-sdk/blurred-disk";
 import { fitMainHero } from "@/lib/canvas-sdk/hero-fit";
 import { SatelliteHeroFace } from "@/lib/canvas-sdk/SatelliteHeroFace";
 import type { CanvasEdge, NodeStatus } from "@/lib/canvas-sdk/types";
@@ -622,6 +623,7 @@ export function GraphBubble({
       ) : null}
       {selected && emphasis ? <SelectionBurst radius={r} /> : null}
       <g className="node-inner">
+        {centered ? <BubbleLift radius={r} sigma={9} statusClass={statusClass} /> : null}
         <circle r={r} className={`node-circle${statusClass}`} filter="url(#nodeShadow)" />
         {faceScale === 1 ? face : <g transform={`scale(${faceScale})`}>{face}</g>}
       </g>
@@ -706,6 +708,7 @@ export function GraphHub({
           stroke="var(--border-dark)"
           strokeWidth="3"
         />
+        {centered ? <BubbleLift radius={r} sigma={11} /> : null}
         <circle r={r} className="node-circle hub-core" />
         {faceScale === 1 ? face : <g transform={`scale(${faceScale})`}>{face}</g>}
       </g>
@@ -717,6 +720,33 @@ export function ConnLine({ x1, y1, x2, y2, kind = "default", hot = false }: Canv
   const kindClass =
     kind === "active" ? " active-spoke" : kind !== "default" ? ` ${kind}` : "";
   return <line x1={x1} y1={y1} x2={x2} y2={y2} className={`conn-line${kindClass}${hot ? " conn-hot" : ""}`} />;
+}
+
+/**
+ * The bubble's shadow and selection glow, drawn as gradients that look like a blurred circle.
+ * A CSS drop-shadow on the circle re-ran a blur filter every time the map repainted. Offset and
+ * opacity per theme and state live in iom-theme.css (`.node-drop`, `.node-glow`).
+ */
+function BubbleLift({ radius, sigma, statusClass = "" }: { radius: number; sigma: number; statusClass?: string }) {
+  const id = useId();
+  const { reach, stops } = blurredDiskStops(radius, sigma);
+  const gradient = (suffix: string, color: string) => (
+    <radialGradient id={`${id}${suffix}`} className={`node-${suffix}-fill`}>
+      {stops.map((stop) => (
+        <stop key={stop.offset} offset={stop.offset.toFixed(4)} stopColor={color} stopOpacity={stop.opacity.toFixed(4)} />
+      ))}
+    </radialGradient>
+  );
+  return (
+    <g className={`node-lift${statusClass}`} aria-hidden="true" pointerEvents="none">
+      <defs>
+        {gradient("drop", "#000")}
+        {gradient("glow", "#00f0ff")}
+      </defs>
+      <circle className="node-drop" r={reach} fill={`url(#${id}drop)`} />
+      <circle className="node-glow" r={reach} fill={`url(#${id}glow)`} />
+    </g>
+  );
 }
 
 function RingMotes({ radius }: { radius: number }) {

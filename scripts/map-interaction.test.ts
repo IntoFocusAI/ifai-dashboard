@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { sameTooltipContent, type TooltipContent } from "../lib/canvas-sdk/tooltip-content.ts";
 import { INTERACTIVE_SELECTOR, pointInRect } from "../lib/canvas-sdk/iom-cursor-targets.ts";
+import { blurredDiskStops } from "../lib/canvas-sdk/blurred-disk.ts";
 
 const root = new URL("..", import.meta.url);
 const read = (path: string) => readFileSync(new URL(path, root), "utf8");
@@ -74,7 +75,7 @@ test("a pointer move renders nothing in React on the map", () => {
 
 /** The declarations of every rule whose selector list includes `selector`. */
 function rule(css: string, selector: string) {
-  const blocks = [...css.matchAll(/([^{}]+)\{([^}]*)\}/g)]
+  const blocks = [...css.replace(/\/\*[\s\S]*?\*\//g, "").matchAll(/([^{}]+)\{([^}]*)\}/g)]
     .filter((match) => match[1].split(",").some((part) => part.trim() === selector))
     .map((match) => match[2]);
   assert.ok(blocks.length, `no rule for ${selector}`);
@@ -88,4 +89,28 @@ test("only the metric widgets blur what is behind them on the map, at a small ra
   }
   assert.match(rule(iom, ".ifai-canvas.theme-iom .view-mode-switch"), /backdrop-filter: none;/);
   assert.match(rule(iom, ".ifai-canvas.theme-iom .canvas-metric-widget"), /backdrop-filter: blur\(8px\);/);
+});
+
+test("bubble shadows, glows, and halos are pre-rendered gradients, not blur filters", () => {
+  const iom = read("lib/canvas-sdk/iom-theme.css");
+  assert.doesNotMatch(iom, /url\(#auraBlur\)/, "the halos fade through their own gradient");
+  for (const selector of [".node-circle", ".node-circle.hub-core", ".graph-node.node-selected .node-circle"]) {
+    assert.doesNotMatch(rule(iom, `.ifai-canvas.theme-iom ${selector}`), /drop-shadow/, `${selector} has no drop-shadow`);
+  }
+  assert.doesNotMatch(rule(iom, ".ifai-canvas.theme-iom.light-theme .node-circle"), /drop-shadow/);
+  assert.match(rule(iom, ".ifai-canvas.theme-iom .node-drop"), /transform: translateY\(14px\);/);
+  assert.match(rule(iom, ".ifai-canvas.theme-iom .graph-node.node-selected .node-glow"), /opacity: 0\.8;/);
+  assert.match(read("lib/canvas-sdk/GraphPrimitives.tsx"), /<BubbleLift radius=\{r\} sigma=\{9\}/);
+});
+
+test("the pre-rendered shadow traces a blurred circle: solid inside, half at the edge, clear at its reach", () => {
+  const { reach, stops } = blurredDiskStops(100, 9);
+  assert.equal(reach, 127);
+  assert.ok(stops[0].opacity > 0.99);
+  const edge = stops.find((stop) => Math.abs(stop.offset * reach - 100) < 1e-6);
+  assert.ok(edge && Math.abs(edge.opacity - 0.5) < 1e-3, "half opacity at the circle's edge");
+  assert.ok(stops.at(-1)!.opacity < 0.002 && Math.abs(stops.at(-1)!.offset - 1) < 1e-6);
+  for (let i = 1; i < stops.length; i += 1) {
+    assert.ok(stops[i].offset > stops[i - 1].offset && stops[i].opacity < stops[i - 1].opacity);
+  }
 });
