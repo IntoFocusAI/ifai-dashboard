@@ -4,12 +4,14 @@ import { clientColumn, ResizableTable, type RetailColumn } from "@/components/v3
 import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
 import { useAiHistoryOptional } from "@/components/v3/live/ai-search/AiHistoryContext";
 import { AiReadGate } from "@/components/v3/live/ai-search/AiReadGate";
+import { EngineGroupScope } from "@/components/v3/live/ai-search/EngineGroupScope";
 import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
 import { EngineComparisonLead } from "@/components/v3/live/ai-search/EngineComparisonLead";
 import { EngineUnbrandedGraph } from "@/components/v3/live/ai-search/EngineUnbrandedGraph";
 import { EvidenceLink } from "@/components/v3/live/ai-search/EvidenceLink";
 import { KeptOutNote, RoleCount, RolePair, largestResolved, roleColumn, roleRateSort } from "@/components/v3/live/ai-search/RoleRateTable";
 import { AI_TABS } from "@/lib/ai-search/canvas-surfaces";
+import { engineGroup } from "@/lib/ai-search/engine-group";
 import {
   engineResultRoleTallies,
   headlineAside,
@@ -125,7 +127,7 @@ function Comparison({ snapshot }: { snapshot: AiSearchSnapshot }) {
             {sortedEngines.rows.map((engine) => {
               const aside = headlineAside(engine);
               return (
-                <tr key={engine.key} data-engine={engine.key}>
+                <tr key={engine.key} data-engine={engine.key} data-engine-group={engineGroup(engine.key)}>
                   <td>
                     <EvidenceLink focus={{ field: "engine", value: engine.key }} tab={AI_TABS.simulations}>
                       {engineLabel(engine.key)}
@@ -216,5 +218,9 @@ function Comparison({ snapshot }: { snapshot: AiSearchSnapshot }) {
 }
 
 export function EngineComparisonPanel() {
-  return <AiReadGate>{(snapshot) => <Comparison snapshot={snapshot} />}</AiReadGate>;
+  return (
+    <EngineGroupScope>
+      <AiReadGate>{(snapshot) => <Comparison snapshot={snapshot} />}</AiReadGate>
+    </EngineGroupScope>
+  );
 }

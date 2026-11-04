@@ -5,6 +5,7 @@ import { clientColumn, ResizableTable } from "@/components/v3/live/ResizableTabl
 import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
 import { useAiHistoryOptional } from "@/components/v3/live/ai-search/AiHistoryContext";
 import { AiReadGate, EmptyRows, mutedText } from "@/components/v3/live/ai-search/AiReadGate";
+import { EngineGroupScope } from "@/components/v3/live/ai-search/EngineGroupScope";
 import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
 import { CompetitorWinsHero } from "@/components/v3/live/ai-search/CompetitorWinsHero";
 import { EvidenceLink } from "@/components/v3/live/ai-search/EvidenceLink";
@@ -148,5 +149,9 @@ function Wins({ snapshot }: { snapshot: AiSearchSnapshot }) {
 }
 
 export function CompetitorWinsPanel() {
-  return <AiReadGate>{(snapshot) => <Wins snapshot={snapshot} />}</AiReadGate>;
+  return (
+    <EngineGroupScope>
+      <AiReadGate>{(snapshot) => <Wins snapshot={snapshot} />}</AiReadGate>
+    </EngineGroupScope>
+  );
 }
