@@ -33,6 +33,23 @@ test("the reticle region includes its edges", () => {
   assert.equal(pointInRect(640, 721, rect), false);
 });
 
+test("the reticle reads definitions, disclosures, and panel links as clickable", () => {
+  const selectors = INTERACTIVE_SELECTOR.split(", ");
+  for (const selector of [".ifai-term", "summary", "[data-ifai-open]", "[data-ifai-star]", "[data-ifai-filter]", "[role='tab']"]) {
+    assert.ok(selectors.includes(selector), selector);
+  }
+});
+
+test("the reticle hides for the window edge, focus loss, and native pickers", () => {
+  const cursor = read("lib/canvas-sdk/IomCursor.tsx");
+  assert.match(cursor, /addEventListener\("pointerout", onOut/);
+  assert.match(cursor, /addEventListener\("blur", hide\)/);
+  assert.match(cursor, /addEventListener\("visibilitychange", onVisibility\)/);
+  assert.match(cursor, /opensNativePicker\(event\.target\)/);
+  assert.match(cursor, /document\.elementFromPoint\(state\.x, state\.y\)/, "hover is re-read under a still pointer");
+  assert.match(read("lib/canvas-sdk/iom-theme.css"), /\.iom-cursor-portal \{[^}]*z-index: 2147483647;/);
+});
+
 test("a pointer move renders nothing in React on the map", () => {
   const cursor = read("lib/canvas-sdk/IomCursor.tsx");
   assert.doesNotMatch(cursor, /setPos|setVisible|setHover/, "position, visibility, and hover are written to the reticle directly");

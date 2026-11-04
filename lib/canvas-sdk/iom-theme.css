@@ -1463,11 +1463,12 @@
   }
 }
 
+/* Above every overlay, including definition tooltips (100010): the reticle is the pointer. */
 .iom-cursor-portal {
   position: fixed;
   top: 0;
   left: 0;
-  z-index: 100000;
+  z-index: 2147483647;
   width: 0;
   height: 0;
   pointer-events: none;

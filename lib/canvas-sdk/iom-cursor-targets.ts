@@ -37,11 +37,41 @@ export const INTERACTIVE_SELECTOR = [
   ".auth-form-card input",
   ".auth-form-card label",
   ".auth-form-card a",
+  "summary",
+  "[tabindex]:not([tabindex='-1'])",
+  "[role='tab']",
+  "[role='link']",
+  "[role='menuitem']",
+  "[role='option']",
+  "[role='checkbox']",
+  "[role='switch']",
+  ".ifai-term",
+  ".ticker-item",
+  "[data-ifai-open]",
+  "[data-ifai-star]",
+  "[data-ifai-filter]",
 ].join(", ");
+
+const DISABLED = ":disabled, [aria-disabled='true']";
 
 export function targetIsInteractive(target: EventTarget | null) {
   if (!(target instanceof Element)) return false;
-  return Boolean(target.closest(INTERACTIVE_SELECTOR));
+  const hit = target.closest(INTERACTIVE_SELECTOR);
+  return Boolean(hit && !hit.matches(DISABLED));
+}
+
+/** Controls whose picker is drawn by the browser; the page gets no pointer moves while it is open. */
+const NATIVE_PICKER_INPUTS = new Set(["date", "datetime-local", "month", "week", "time", "color", "file"]);
+
+export function opensNativePicker(target: EventTarget | null) {
+  if (!(target instanceof Element)) return false;
+  const control = target.closest("select, input");
+  if (!control || control.matches(DISABLED)) return false;
+  if (control.tagName === "SELECT") {
+    const select = control as HTMLSelectElement;
+    return !select.multiple && select.size <= 1;
+  }
+  return NATIVE_PICKER_INPUTS.has((control as HTMLInputElement).type);
 }
 
 export function pointInRect(

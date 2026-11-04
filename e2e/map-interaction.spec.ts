@@ -1,0 +1,233 @@
+import { expect, test, type Canvas } from "./fixtures";
+import type { Page } from "@playwright/test";
+import { INTERACTIVE_SELECTOR } from "../lib/canvas-sdk/iom-cursor-targets";
+
+/* X-32: hovering the Balanced map felt laggy and the custom reticle glitched. These run at
+   1280×720 (and 1440×900 where tagged) against the map as it loads. */
+
+const MAIN_BUBBLES = ["hub", "spoke-aeo", "spoke-retail", "spoke-competitors", "spoke-roadmap", "spoke-specs", "spoke-fixes"];
+
+async function center(canvas: Canvas, nodeId: string) {
+  const box = (await canvas.bubble(nodeId).locator(":scope > .node-inner > .node-circle").boundingBox())!;
+  return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+}
+
+/** The reticle as painted: shown or not, where, and whether it reads as over something clickable. */
+function reticle(page: Page) {
+  return page.locator(".iom-cursor-portal").evaluate((el) => {
+    const matrix = new DOMMatrix(getComputedStyle(el).transform);
+    return {
+      shown: getComputedStyle(el).visibility !== "hidden",
+      x: Math.round(matrix.m41),
+      y: Math.round(matrix.m42),
+      hover: el.getAttribute("data-hover") === "true",
+    };
+  });
+}
+
+/** Resolves after two frames, so a write scheduled for the next frame has landed. */
+function frames(page: Page) {
+  return page.evaluate(() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))));
+}
+
+test.describe("map hover", () => {
+  test("pointing at a bubble opens its signal slots in the same frame", { tag: "@1440" }, async ({ canvas, page }) => {
+    await page.mouse.move(640, 700);
+    // In the frame the pointer enters a bubble, record which slots are already on screen.
+    await page.evaluate(() => {
+      const w = window as unknown as { __arrivals: { id: string; source: string | null }[] };
+      w.__arrivals = [];
+      let last: string | null = null;
+      document.addEventListener(
+        "pointerover",
+        (event) => {
+          const id = (event.target as Element).closest?.("[data-graph-node-id]")?.getAttribute("data-graph-node-id");
+          if (!id || id === last || !/^(hub|spoke-)/.test(id)) return;
+          last = id;
+          requestAnimationFrame(() => {
+            w.__arrivals.push({ id, source: document.querySelector("[data-hub-slot-source]")?.textContent ?? null });
+          });
+        },
+        true,
+      );
+    });
+    for (const id of MAIN_BUBBLES) {
+      const at = await center(canvas, id);
+      await page.mouse.move(at.x, at.y);
+      await page.mouse.move(640, 700);
+      await page.waitForTimeout(450); // past the hover rest, so the next bubble is where it was measured
+    }
+    const arrivals = await page.evaluate(() => (window as unknown as { __arrivals: { id: string; source: string | null }[] }).__arrivals);
+    expect(arrivals.map((arrival) => arrival.id)).toEqual(MAIN_BUBBLES);
+    for (const [index, arrival] of arrivals.entries()) {
+      expect(arrival.source, `${arrival.id} had no slots in its first frame`).not.toBeNull();
+      if (index > 0) expect(arrival.source, `${arrival.id} still showed the last bubble's slots`).not.toBe(arrivals[index - 1].source);
+    }
+  });
+
+  test("a pointer sweep restyles only the glow, never the whole canvas", async ({ canvas, page }) => {
+    const from = await center(canvas, "spoke-aeo");
+    const to = await center(canvas, "spoke-competitors");
+    await page.mouse.move(from.x, from.y);
+    await page.mouse.move(to.x, to.y, { steps: 20 });
+    await frames(page);
+    const vars = await page.evaluate(() => ({
+      body: (document.querySelector(".canvas-body") as HTMLElement).style.getPropertyValue("--pointer-x"),
+      wash: (document.querySelector(".canvas-pointer-wash") as HTMLElement).style.getPropertyValue("--pointer-x"),
+    }));
+    expect(vars.body, "the canvas body carries no per-move variable").toBe("");
+    expect(parseFloat(vars.wash)).toBeCloseTo((to.x / 1280) * 100, 0);
+  });
+});
+
+test.describe("custom cursor", () => {
+  test("the reticle sits on the pointer in every frame", async ({ canvas, page }) => {
+    await page.mouse.move(600, 300);
+    await page.evaluate(() => {
+      const w = window as unknown as { __trail: { frames: number; stale: number } };
+      w.__trail = { frames: 0, stale: 0 };
+      window.addEventListener("pointermove", (event) => {
+        requestAnimationFrame(() => {
+          const portal = document.querySelector(".iom-cursor-portal")!;
+          const matrix = new DOMMatrix(getComputedStyle(portal).transform);
+          w.__trail.frames += 1;
+          if (Math.hypot(matrix.m41 - event.clientX, matrix.m42 - event.clientY) > 1) w.__trail.stale += 1;
+        });
+      });
+    });
+    let from = { x: 600, y: 300 };
+    for (const id of MAIN_BUBBLES) {
+      const to = await center(canvas, id);
+      for (let step = 1; step <= 10; step += 1) {
+        await page.mouse.move(from.x + ((to.x - from.x) * step) / 10, from.y + ((to.y - from.y) * step) / 10);
+      }
+      from = to;
+    }
+    await frames(page);
+    const trail = await page.evaluate(() => (window as unknown as { __trail: { frames: number; stale: number } }).__trail);
+    expect(trail.frames).toBeGreaterThan(40);
+    expect(trail.stale, "frames where the reticle trailed the pointer").toBe(0);
+  });
+
+  test("leaving the window or losing focus hides the reticle until the pointer is back", async ({ page }) => {
+    await page.mouse.move(640, 400);
+    await frames(page);
+    expect((await reticle(page)).shown).toBe(true);
+
+    await page.mouse.move(4, 400);
+    await page.mouse.move(-40, 400);
+    await frames(page);
+    expect((await reticle(page)).shown, "the reticle froze at the window edge").toBe(false);
+
+    await page.mouse.move(200, 400);
+    await frames(page);
+    expect(await reticle(page)).toMatchObject({ shown: true, x: 200, y: 400 });
+
+    await page.evaluate(() => window.dispatchEvent(new Event("blur")));
+    await frames(page);
+    expect((await reticle(page)).shown, "the reticle stayed up after the window lost focus").toBe(false);
+    await page.mouse.move(220, 400);
+    await frames(page);
+    expect((await reticle(page)).shown).toBe(true);
+  });
+
+  test("hover follows what is under a still pointer after a click opens the panel", async ({ canvas, page }) => {
+    await canvas.clickBubble("spoke-aeo");
+    await expect(page.locator(".ifai-canvas.column-layout")).toHaveCount(1);
+    const pointer = await reticle(page);
+    // The bubble that was clicked has moved to the rail; something else is under the pointer now.
+    const under = () =>
+      page.evaluate(
+        ([x, y, selector]) => {
+          const hit = document.elementFromPoint(x, y)?.closest(selector);
+          return Boolean(hit && !hit.matches(":disabled, [aria-disabled='true']"));
+        },
+        [pointer.x, pointer.y, INTERACTIVE_SELECTOR] as const,
+      );
+    await expect.poll(async () => (await reticle(page)).hover === (await under())).toBe(true);
+    await page.waitForTimeout(1500);
+    expect((await reticle(page)).hover).toBe(await under());
+  });
+
+  test("hover reads every clickable thing and skips disabled ones", async ({ page }) => {
+    await page.evaluate(() => {
+      const host = document.querySelector(".canvas-body")!;
+      const probe = document.createElement("div");
+      probe.id = "cursor-probe";
+      probe.style.cssText = "position:absolute;left:300px;top:200px;z-index:65;display:grid;gap:12px;background:#000";
+      probe.innerHTML = [
+        '<span class="ifai-term" data-ifai-tooltip-title="MAP" data-ifai-tooltip-desc="Minimum advertised price" tabindex="0">MAP</span>',
+        "<details><summary>Explanation</summary></details>",
+        '<div data-ifai-open="aeo">Open AI Search</div>',
+        '<button class="hdr-btn" disabled>Disabled</button>',
+        "<p>Plain text</p>",
+      ].join("");
+      host.appendChild(probe);
+    });
+    const expected: [string, boolean][] = [
+      [".ifai-term", true],
+      ["summary", true],
+      ["[data-ifai-open]", true],
+      ["button[disabled]", false],
+      ["p", false],
+    ];
+    for (const [selector, hover] of expected) {
+      const box = (await page.locator(`#cursor-probe ${selector}`).boundingBox())!;
+      await page.mouse.move(box.x + 4, box.y + box.height / 2);
+      await frames(page);
+      expect((await reticle(page)).hover, `hover over ${selector}`).toBe(hover);
+    }
+  });
+
+  test("only one cursor shows, and the reticle stacks above every overlay", async ({ canvas, page }) => {
+    const points = [await center(canvas, "hub"), await center(canvas, "spoke-retail"), { x: 1100, y: 20 }];
+    await page.mouse.move(points[0].x, points[0].y);
+    await expect(page.locator("[data-hub-slots]")).toBeVisible();
+    const slot = (await page.locator(".hub-slot").first().boundingBox())!;
+    points.push({ x: slot.x + 20, y: slot.y + 20 });
+    for (const point of points) {
+      await page.mouse.move(point.x, point.y);
+      await frames(page);
+      const native = await page.evaluate(([x, y]) => getComputedStyle(document.elementFromPoint(x, y)!).cursor, [point.x, point.y]);
+      expect((await reticle(page)).shown).toBe(true);
+      expect(native, `system cursor at ${point.x},${point.y}`).toBe("none");
+    }
+
+    const zIndex = await page.evaluate(() => {
+      let top = 0;
+      for (const el of document.querySelectorAll("body *")) {
+        if (el.closest(".iom-cursor-portal")) continue;
+        top = Math.max(top, Number(getComputedStyle(el).zIndex) || 0);
+      }
+      const tooltip = document.createElement("div");
+      tooltip.className = "node-tooltip node-tooltip-definition visible";
+      document.querySelector(".ifai-canvas")!.appendChild(tooltip);
+      top = Math.max(top, Number(getComputedStyle(tooltip).zIndex));
+      tooltip.remove();
+      return { top, reticle: Number(getComputedStyle(document.querySelector(".iom-cursor-portal")!).zIndex) };
+    });
+    expect(zIndex.reticle).toBeGreaterThan(zIndex.top);
+  });
+
+  test("a native picker hides the reticle until the pointer moves in the page again", async ({ page }) => {
+    await page.evaluate(() => {
+      const select = document.createElement("select");
+      select.id = "cursor-select";
+      select.innerHTML = "<option>ChatGPT</option><option>Gemini</option>";
+      select.style.cssText = "position:absolute;left:300px;top:200px;z-index:65";
+      document.querySelector(".canvas-body")!.appendChild(select);
+    });
+    const box = (await page.locator("#cursor-select").boundingBox())!;
+    await page.mouse.move(box.x + 10, box.y + box.height / 2);
+    await frames(page);
+    expect((await reticle(page)).shown).toBe(true);
+    await page.mouse.down();
+    await frames(page);
+    expect((await reticle(page)).shown, "the reticle stayed up beside the browser's own menu").toBe(false);
+    await page.keyboard.press("Escape");
+    await page.mouse.up();
+    await page.mouse.move(box.x + 40, box.y + 60);
+    await frames(page);
+    expect((await reticle(page)).shown).toBe(true);
+  });
+});
