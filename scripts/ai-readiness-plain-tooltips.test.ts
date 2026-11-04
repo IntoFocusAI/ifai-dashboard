@@ -59,6 +59,10 @@ test("AI Readiness hero and page-found tooltips use plain words, no internal rea
     brandSitePageFoundHero(null).explainer,
   ];
   for (const text of all) assert.doesNotMatch(text, INTERNAL, text);
+  for (const path of ["lib/fender-canvas/minimal-metrics-readiness.ts", "components/v3/live/FenderSpecNarratives.tsx"]) {
+    assert.doesNotMatch(read(path), /spec read|stored row|\bolder\b|collector/i, path);
+  }
+  assert.doesNotMatch(read("components/v3/live/FenderSpecNarratives.tsx"), /SchemaExplanation/);
 });
 
 test("each hero says what was counted, out of what, and when it was checked", () => {
