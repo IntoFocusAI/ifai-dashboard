@@ -14,6 +14,7 @@ import {
   type RetailReading,
 } from "@/lib/fender-canvas/portfolio-retail";
 import { readingLabel } from "@/lib/fender-canvas/portfolio-retail-display";
+import { approvedExceptionsSentence } from "@/lib/fender-canvas/map-approved-exceptions";
 
 const TONE_COLOR: Record<Exclude<NodeStatus, "neutral">, string> = {
   danger: "var(--danger-red)",
@@ -116,8 +117,39 @@ export function buyBoxHero(snapshot: PortfolioRetailSnapshot): RetailOverviewHer
 }
 
 /**
+ * The MAP figure's tooltip: what was counted, what the read could not compare, and how many
+ * approved exceptions were left out (R-12). This is the one place the coverage caveat lives.
+ */
+export function mapLeakageTip(snapshot: PortfolioRetailSnapshot): string | null {
+  const reading = snapshot.mapLeakage;
+  const detail = reading.detail;
+  if (reading.issueCount == null || detail == null || detail.decided <= 0) return null;
+  const uncompared = detail.population - detail.decided;
+  return [
+    `${formatInt(reading.issueCount)} of ${formatInt(detail.decided)} listings with a stored MAP price and at least one stored channel price are priced below MAP.`,
+    uncompared > 0
+      ? `${formatInt(uncompared)} other ${uncompared === 1 ? "listing" : "listings"} in the retail read ${uncompared === 1 ? "has" : "have"} no stored MAP comparison.`
+      : null,
+    approvedExceptionsSentence(detail.approvedExceptions ?? 0, snapshot.mapApprovedExceptionsFailed),
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+/** Tooltip for the average price gap below MAP: what it averages and the approved exceptions left out. */
+export function averageGapTip(snapshot: PortfolioRetailSnapshot): string | null {
+  const detail = snapshot.mapLeakage.detail;
+  if (detail?.averageLeakage == null) return null;
+  return [
+    `Average of the largest stored channel gap on each of ${formatInt(detail.violations)} ${detail.violations === 1 ? "listing" : "listings"} priced below MAP.`,
+    approvedExceptionsSentence(detail.approvedExceptions ?? 0, snapshot.mapApprovedExceptionsFailed),
+  ].join(" ");
+}
+
+/**
  * Below-MAP listings / listings with a stored MAP comparison (`decided`).
- * Listings with no MAP price cannot leak MAP and stay out of the pie.
+ * Listings with no MAP price cannot leak MAP and stay out of the pie. Approved exceptions
+ * are out of both sides, and the N of M carries an asterisk while any are left out.
  */
 export function mapHero(snapshot: PortfolioRetailSnapshot): RetailOverviewHeroModel {
   const reading = snapshot.mapLeakage;
@@ -127,17 +159,18 @@ export function mapHero(snapshot: PortfolioRetailSnapshot): RetailOverviewHeroMo
   const denominator = detail != null && detail.decided > 0 ? detail.decided : null;
   const tone = toneForShare(numerator, denominator, reading);
   const ready = numerator != null && denominator != null;
+  const filtered = (detail?.approvedExceptions ?? 0) > 0;
 
   return {
     id: "map_leakage",
     tab: RETAIL_FINDING_LABELS.map_leakage,
     label,
     percent: ready ? formatPct((100 * numerator!) / denominator!) : "Not available*",
-    ratio: ready ? formatRatio(numerator, denominator) : null,
+    ratio: ready ? `${formatRatio(numerator, denominator)}${filtered ? "*" : ""}` : null,
     color: TONE_COLOR[tone],
     tone,
     pie: ready ? sharePie("retail-map", label, "Below MAP", numerator!, denominator!) : null,
-    tip: ready ? `${formatInt(numerator)} of ${formatInt(denominator)} listings with a stored MAP price.` : null,
+    tip: ready ? mapLeakageTip(snapshot) : null,
     explainer: ready ? "Priced below MAP." : reading.missingMessage?.split(". ")[0] ?? "MAP reading not stored.",
     numerator,
     denominator,

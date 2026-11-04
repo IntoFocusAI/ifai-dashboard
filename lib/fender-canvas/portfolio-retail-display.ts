@@ -17,6 +17,7 @@ import {
   type RetailReading,
   type UnnestedBundleDetail,
 } from "./portfolio-retail";
+import { approvedExceptionsSentence } from "./map-approved-exceptions";
 import { buyBoxHero } from "./retail-overview-lead";
 
 export const RETAIL_OVERVIEW_TAB = "Retail Overview";
@@ -271,24 +272,33 @@ export function suppressedBubble(
   );
 }
 
-/** Below-MAP listings / listings with a stored MAP comparison (`decided`). */
+/**
+ * Below-MAP listings / listings with a stored MAP comparison (`decided`).
+ * Approved exceptions are already out of the reading; while any are, the figure carries an
+ * asterisk and the satellite tooltip says how many.
+ */
 export function mapBubble(reading: RetailReading<MapLeakageDetail | null>): RetailBubbleFace {
   const detail = reading.detail;
   const numerator = reading.issueCount;
   const denominator = detail != null && detail.decided > 0 ? detail.decided : null;
+  const exceptions = detail?.approvedExceptions ?? 0;
+  const mark = exceptions > 0 ? "*" : "";
   const count = countPhrase(reading, "below MAP", "below MAP");
   const gap =
     detail?.averageLeakage != null
       ? `${formatUsd(detail.averageLeakage, { signed: true })} gap`
       : null;
   const coverage = coveragePill(reading);
-  return satelliteFace(
+  const share = shareHeroValue(reading, numerator, denominator);
+  const face = satelliteFace(
     "MAP Leakage",
     reading,
-    { value: shareHeroValue(reading, numerator, denominator), label: "MAP leakage" },
-    [...(count ? [count] : []), ...(gap ? [gap] : []), ...(coverage ? [coverage] : [])],
+    { value: numerator != null && denominator != null ? `${share}${mark}` : share, label: "MAP leakage" },
+    [...(count ? [`${count}${mark}`] : []), ...(gap ? [gap] : []), ...(coverage ? [coverage] : [])],
     "MAP",
   );
+  if (exceptions > 0) face.tooltip = { title: "MAP leakage", desc: approvedExceptionsSentence(exceptions) };
+  return face;
 }
 
 /** Unnested bundles / bundles in this retail read. */

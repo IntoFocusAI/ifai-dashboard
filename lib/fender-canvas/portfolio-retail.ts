@@ -197,6 +197,8 @@ export function suppressedListingsFinding(
 }
 
 export type MapLeakageRow = {
+  /** Selected by the live read. Optional on older fixtures; a row with no ASIN cannot be an approved exception. */
+  asin?: string | null;
   map_price: number | string | null;
   offer_price: number | string | null;
   amz_leakage: number | string | null;
@@ -211,7 +213,19 @@ export type MapLeakageDetail = {
   population: number;
   /** Mean of each violation's worst stored channel leakage, in dollars. Null when no leakage is stored. Not a revenue estimate. */
   averageLeakage: number | null;
+  /**
+   * Listings in the read set aside as "Approved exception" on the MAP check. They are left
+   * out of every count above. Done and other set-aside reasons stay in.
+   */
+  approvedExceptions: number;
 };
+
+/** Upper-case trimmed ASIN, the key set-asides and MAP rows are matched on. */
+export function mapAsinKey(asin: string | null | undefined): string | null {
+  if (typeof asin !== "string") return null;
+  const key = asin.trim().toUpperCase();
+  return key ? key : null;
+}
 
 function channelLeakages(row: MapLeakageRow): number[] {
   return [row.amz_leakage, row.wmt_leakage, row.mf_leakage]
@@ -245,15 +259,18 @@ function storedMapPrice(value: unknown): number | null {
   return price;
 }
 
-/** Current MAP violations from stored channel leakage. Bundle fields are not an input. */
+/**
+ * Current MAP violations from stored channel leakage. Bundle fields are not an input.
+ * Listings whose ASIN is in `approvedExceptions` are left out of the population, the
+ * comparisons, the violations, and the average gap; the count of them is kept in the detail.
+ */
 export function mapLeakageFinding(
-  rows: MapLeakageRow[] | null,
-  options?: { truncated?: boolean },
+  allRows: MapLeakageRow[] | null,
+  options?: { truncated?: boolean; approvedExceptions?: ReadonlySet<string> | null },
 ): RetailReading<MapLeakageDetail | null> {
-  if (rows == null) return unavailable(MAP_UNAVAILABLE);
+  if (allRows == null) return unavailable(MAP_UNAVAILABLE);
 
-  const population = rows.length;
-  if (population > 0 && !rows.some((row) => storedMapPrice(row.map_price) != null)) {
+  if (allRows.length > 0 && !allRows.some((row) => storedMapPrice(row.map_price) != null)) {
     return {
       status: "unavailable",
       issueCount: null,
@@ -261,6 +278,15 @@ export function mapLeakageFinding(
       detail: null,
     };
   }
+  const exceptions = options?.approvedExceptions;
+  const rows = exceptions?.size
+    ? allRows.filter((row) => {
+        const key = mapAsinKey(row.asin);
+        return key == null || !exceptions.has(key);
+      })
+    : allRows;
+  const approvedExceptions = allRows.length - rows.length;
+  const population = rows.length;
   const violations = rows.filter(isMapViolation);
   const undecided = rows.filter(mapRowUndecided).length;
   const decided = rows.filter((row) => channelLeakages(row).length > 0).length;
@@ -276,6 +302,7 @@ export function mapLeakageFinding(
     undecided,
     population,
     averageLeakage,
+    approvedExceptions,
   };
 
   if (population === 0 && !options?.truncated) {
@@ -667,6 +694,13 @@ export type RetailQuerySource = {
 
 export type PortfolioRetailSnapshot = PortfolioRetailFindings & {
   headline: RetailHeadline | null;
+  /**
+   * The stored MAP rows behind `mapLeakage`, kept so approved exceptions can be applied
+   * when the MAP set-asides load or change. Null when that read failed. Optional on fixtures.
+   */
+  mapRead?: { rows: MapLeakageRow[]; truncated: boolean } | null;
+  /** True when the MAP set-aside read failed, so no approved exception could be left out. */
+  mapApprovedExceptionsFailed?: boolean;
 };
 
 export async function loadPortfolioRetailSnapshot(
@@ -702,5 +736,6 @@ export async function loadPortfolioRetailSnapshot(
   return {
     ...findings,
     headline: selectRetailHeadline(findings),
+    mapRead: mapRows.ok ? { rows: mapRows.rows, truncated: mapRows.truncated } : null,
   };
 }

@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { CitationPieDisc } from "@/components/v3/live/ai-search/CitationPieDisc";
 import { DefinedCopy } from "@/components/v3/live/DefinedTerm";
+import { FigureTip } from "@/components/v3/live/FigureTip";
 import { MapListingsTable } from "@/components/v3/live/MapListingsTable";
 import {
   listingChannelPricesQuery,
@@ -19,10 +20,16 @@ import {
   channelReadingNote,
   channelSummaryText,
 } from "@/lib/fender-canvas/map-reading-status";
+import {
+  approvedExceptionAsins,
+  withoutApprovedExceptions,
+} from "@/lib/fender-canvas/map-approved-exceptions";
 import { MAP_PRICES_NOT_STORED } from "@/lib/fender-canvas/portfolio-retail";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
-import { mapHero } from "@/lib/fender-canvas/retail-overview-lead";
+import { averageGapTip, mapHero } from "@/lib/fender-canvas/retail-overview-lead";
 import type { CanvasFreshnessRow } from "@/lib/fender-canvas/types";
+import { FMIC_CLIENT_KEY, SET_ASIDE_CHECKS } from "@/lib/set-aside/keys";
+import { useSetAsides } from "@/lib/set-aside/set-aside";
 
 const PAGE_SIZE = 1000;
 const RETAIL_PIE_SIZE = "citation-pie-disc citation-pie-disc-retail";
@@ -91,7 +98,9 @@ function mapPricesNotStored(read: RetailCanvasRead): boolean {
 function MapLeakageLead({ read }: { read: RetailCanvasRead }) {
   if (read.phase !== "ready") return null;
   const hero = mapHero(read.snapshot);
-  const gap = read.snapshot.mapLeakage.detail?.averageLeakage ?? null;
+  const detail = read.snapshot.mapLeakage.detail;
+  const gap = detail?.averageLeakage ?? null;
+  const gapMark = (detail?.approvedExceptions ?? 0) > 0 ? "*" : "";
   return (
     <div
       className="content-box findability-lead-card"
@@ -119,7 +128,9 @@ function MapLeakageLead({ read }: { read: RetailCanvasRead }) {
           </span>
           {hero.ratio ? (
             <span className="findability-lead-ratio" data-map-lead-ratio="">
-              {hero.ratio}
+              <FigureTip title={hero.label} desc={hero.tip} testId="map-ratio">
+                {hero.ratio}
+              </FigureTip>
             </span>
           ) : null}
         </div>
@@ -130,7 +141,14 @@ function MapLeakageLead({ read }: { read: RetailCanvasRead }) {
       <div data-map-lead-gap="">
         <span className="metric-card-label">Average price gap</span>
         <div className="metric-card-val" style={{ color: "var(--danger-red)" }} data-map-lead-gap-value="">
-          {gap == null ? "Not stored" : formatUsd(gap, { signed: true })}
+          {gap == null ? (
+            "Not stored"
+          ) : (
+            <FigureTip title="Average price gap" desc={averageGapTip(read.snapshot)} testId="map-gap">
+              {formatUsd(gap, { signed: true })}
+              {gapMark}
+            </FigureTip>
+          )}
         </div>
       </div>
     </div>
@@ -241,6 +259,8 @@ export function MapChannelPanel({
 
   const pricesNotStored = mapPricesNotStored(read);
   const musiciansFriendLastRunAt = musiciansFriendFreshness?.last_run_at;
+  const mapSetAsides = useSetAsides(FMIC_CLIENT_KEY, SET_ASIDE_CHECKS.mapPricing);
+  const exceptions = useMemo(() => approvedExceptionAsins(mapSetAsides.rows), [mapSetAsides.rows]);
 
   useEffect(() => {
     if (read.phase === "loading") return;
@@ -294,15 +314,17 @@ export function MapChannelPanel({
   }
 
   const model = mapTabModel(rows, channelPrices);
+  // The table keeps approved exceptions (with their chip); the channel counts leave them out.
+  const counted = mapTabModel(withoutApprovedExceptions(rows, exceptions), channelPrices);
   const summaryChannels: MapChannelLine[] = pricesNotStored
     ? []
     : [
-        ...model.channels.map((channel) => ({
+        ...counted.channels.map((channel) => ({
           key: channel.name,
           name: channel.name,
           count: channel.count,
         })),
-        ...model.extraChannels
+        ...counted.extraChannels
           .filter((channel) => channel.count > 0)
           .map((channel) => ({
             key: channel.channel,
