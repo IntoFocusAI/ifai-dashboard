@@ -22,6 +22,7 @@ import {
   isRotatingFactCheck,
   withApiSnapshots,
 } from "../lib/ai-search/engine-group.ts";
+import { defaultWindowBounds, defaultWindowRuns } from "../lib/ai-search/default-window.ts";
 import { engineGroupRead, engineSwitchState, type ApiEngineLoad } from "../lib/ai-search/engine-group-read.ts";
 import { sortExplorerRows } from "../lib/ai-search/explorer-filter.ts";
 import type { HistoryReadClient } from "../lib/ai-search/history-queries.ts";
@@ -305,6 +306,26 @@ test("API runs follow the shared date pill's selection", () => {
   assert.equal(apiRunsInScope(runs, { kind: "all" }, null).length, 3);
   assert.deepEqual(apiRunsInScope(runs, { kind: "run", runId: BATTERY }, "2026-11-03"), []);
   assert.deepEqual(apiRunsInScope(runs, { kind: "month" }, null), []);
+});
+
+test("Last 30 days for API runs is the battery's window: 30 UTC days ending on the published run's day", () => {
+  const bounds = defaultWindowBounds("2026-11-03");
+  assert.deepEqual(bounds, { from: "2026-10-05", to: "2026-11-03" });
+  const runs = [
+    apiRun({ audit_run_id: "a-before", completed_at: "2026-10-04T23:59:00Z" }),
+    apiRun({ audit_run_id: "a-first-day", completed_at: "2026-10-05T00:00:00Z" }),
+    apiRun({ audit_run_id: "a-last-day", completed_at: "2026-11-03T23:59:00Z" }),
+    apiRun({ audit_run_id: "a-after", completed_at: "2026-11-04T00:10:00Z" }),
+    // Unpublished, as every API run is: the API run rule decides, not the published-review rule.
+    apiRun({ audit_run_id: "a-no-answers", completed_at: "2026-10-20T10:00:00Z", answered_calls: 0 }),
+  ];
+  const ids = apiRunsInScope(runs, { kind: "month" }, "2026-11-03").map((row) => row.audit_run_id);
+  assert.deepEqual(ids, ["a-first-day", "a-last-day"]);
+  const dated = defaultWindowRuns(runs, "2026-11-03");
+  assert.deepEqual(
+    [...dated.included, ...dated.excluded.map((item) => item.run)].map((row) => row.audit_run_id).sort(),
+    ["a-first-day", "a-last-day", "a-no-answers"],
+  );
 });
 
 type Row = Record<string, unknown>;

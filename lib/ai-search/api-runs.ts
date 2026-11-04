@@ -1,4 +1,4 @@
-import { citationMonthBounds } from "@/lib/ai-search/citation-aggregate";
+import { defaultWindowRuns } from "@/lib/ai-search/default-window";
 import { compareRuns, utcDay, type HistoryRunSummary } from "@/lib/ai-search/history-eligibility";
 import type { HistoryMode } from "@/lib/ai-search/history-mode";
 import {
@@ -73,25 +73,24 @@ export function apiRunDay(run: Pick<HistoryRunSummary, "published_at" | "complet
 }
 
 /**
- * Counted API runs dated inside the selection the shared date pill names. One chosen run is a
- * single battery run, so it has no API run beside it.
+ * Counted API runs dated inside the selection the shared date pill names. Last 30 days is the
+ * battery's window: defaultWindowRuns keeps the runs dated in the 30 days ending on `windowEnd`, the
+ * published run's day. API runs are never published, so the API run rule, not the published-review
+ * rule, decides which of those count. One chosen run is a single battery run, so it has no API run.
  */
 export function apiRunsInScope(
   runs: readonly ApiRunSummary[],
   mode: HistoryMode,
-  publishedDay: string | null,
+  windowEnd: string | null,
 ): ApiRunSummary[] {
   if (mode.kind === "run" || mode.kind === "legacy") return [];
-  let from: string | null = null;
-  let to: string | null = null;
   if (mode.kind === "month") {
-    const bounds = publishedDay ? citationMonthBounds(publishedDay) : null;
-    if (!bounds) return [];
-    ({ from, to } = bounds);
-  } else if (mode.kind === "range") {
-    from = mode.from;
-    to = mode.to;
+    const { included, excluded } = defaultWindowRuns(runs, windowEnd);
+    const dated = [...included, ...excluded.map((item) => item.run)] as ApiRunSummary[];
+    return dated.filter(isCountedApiRun).sort(compareRuns);
   }
+  const from = mode.kind === "range" ? mode.from : null;
+  const to = mode.kind === "range" ? mode.to : null;
   return runs
     .filter(isCountedApiRun)
     .filter((run) => {

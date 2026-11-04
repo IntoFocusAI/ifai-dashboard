@@ -12,7 +12,6 @@ import {
   type ApiSnapshotResult,
 } from "@/lib/ai-search/api-runs";
 import type { ApiEngineLoad } from "@/lib/ai-search/engine-group-read";
-import { utcDay } from "@/lib/ai-search/history-eligibility";
 import type { HistoryMode } from "@/lib/ai-search/history-mode";
 import { getCanvasSupabase } from "@/lib/supabase/canvas-client";
 
@@ -53,9 +52,7 @@ export function useApiEngineLoad(): ApiEngineLoad {
   const flagOn = useSyncExternalStore(noSubscribe, () => apiEngineViewsEnabled(), serverOff);
   const enabled = source !== "fixture" && flagOn;
   const mode = history?.mode ?? MONTH;
-  const current = history?.current;
-  const publishedDay =
-    current?.phase === "ready" ? utcDay(current.snapshot.run.published_at ?? current.snapshot.run.completed_at) : null;
+  const windowEnd = history?.windowEnd ?? null;
   const [catalog, setCatalog] = useState<ApiCatalogResult | { phase: "loading" }>({ phase: "loading" });
 
   useEffect(() => {
@@ -70,8 +67,8 @@ export function useApiEngineLoad(): ApiEngineLoad {
   }, [enabled]);
 
   const inScope = useMemo(
-    () => (catalog.phase === "ready" ? apiRunsInScope(catalog.runs, mode, publishedDay) : []),
-    [catalog, mode, publishedDay],
+    () => (catalog.phase === "ready" ? apiRunsInScope(catalog.runs, mode, windowEnd) : []),
+    [catalog, mode, windowEnd],
   );
   const key = inScope.map((run) => run.audit_run_id).join(",");
   const [loaded, setLoaded] = useState<{ key: string; load: ApiEngineLoad }>({ key: "", load: { phase: "loading" } });
