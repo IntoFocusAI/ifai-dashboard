@@ -44,8 +44,6 @@
   position: relative;
   flex: 1;
   min-height: 0;
-  --pointer-x: 58%;
-  --pointer-y: 42%;
   background-color: #071321;
 }
 
@@ -574,12 +572,35 @@
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  /* Its own layer: the glow repaints on every pointer frame and nothing else should with it. */
-  will-change: transform;
+  overflow: hidden;
   contain: strict;
+}
+
+/* Painted once at a fixed size and moved with a transform (useIomPointerWash), so following
+   the pointer only recomposites this layer. The stops match the old full-screen wash, whose
+   20% and 38% stops were measured to the farthest corner. */
+.ifai-canvas.theme-iom .canvas-pointer-glow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  will-change: transform;
   background:
-    radial-gradient(circle at var(--pointer-x) var(--pointer-y), rgba(0, 240, 255, 0.28), transparent 20%),
-    radial-gradient(circle at var(--pointer-x) var(--pointer-y), rgba(99, 102, 241, 0.16), transparent 38%);
+    radial-gradient(circle closest-side, rgba(0, 240, 255, 0.28), transparent 52.6%),
+    radial-gradient(circle closest-side, rgba(99, 102, 241, 0.16), transparent 100%);
+}
+
+.ifai-canvas.theme-iom .canvas-pointer-glow[data-ready="true"] {
+  opacity: 1;
+}
+
+/* Screens without the pointer hook keep a still glow at the rest point. */
+.ifai-canvas.theme-iom .canvas-pointer-wash:empty {
+  background:
+    radial-gradient(circle at 58% 42%, rgba(0, 240, 255, 0.28), transparent 20%),
+    radial-gradient(circle at 58% 42%, rgba(99, 102, 241, 0.16), transparent 38%);
 }
 
 .ifai-canvas.theme-iom .top-header {
@@ -1377,10 +1398,16 @@
   background-image: none;
 }
 
-.ifai-canvas.theme-iom.light-theme .canvas-pointer-wash {
+.ifai-canvas.theme-iom.light-theme .canvas-pointer-glow {
   background:
-    radial-gradient(circle at var(--pointer-x) var(--pointer-y), rgba(14, 116, 144, 0.18), transparent 20%),
-    radial-gradient(circle at var(--pointer-x) var(--pointer-y), rgba(67, 118, 154, 0.12), transparent 36%);
+    radial-gradient(circle closest-side, rgba(14, 116, 144, 0.18), transparent 52.6%),
+    radial-gradient(circle closest-side, rgba(67, 118, 154, 0.12), transparent 94.7%);
+}
+
+.ifai-canvas.theme-iom.light-theme .canvas-pointer-wash:empty {
+  background:
+    radial-gradient(circle at 58% 42%, rgba(14, 116, 144, 0.18), transparent 20%),
+    radial-gradient(circle at 58% 42%, rgba(67, 118, 154, 0.12), transparent 36%);
 }
 
 .ifai-canvas.theme-iom.light-theme .node-circle,

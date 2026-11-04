@@ -72,12 +72,26 @@ test.describe("map hover", () => {
     await page.mouse.move(from.x, from.y);
     await page.mouse.move(to.x, to.y, { steps: 20 });
     await frames(page);
-    const vars = await page.evaluate(() => ({
-      body: (document.querySelector(".canvas-body") as HTMLElement).style.getPropertyValue("--pointer-x"),
-      wash: (document.querySelector(".canvas-pointer-wash") as HTMLElement).style.getPropertyValue("--pointer-x"),
-    }));
-    expect(vars.body, "the canvas body carries no per-move variable").toBe("");
-    expect(parseFloat(vars.wash)).toBeCloseTo((to.x / 1280) * 100, 0);
+    const glow = await page.evaluate(() => {
+      const body = document.querySelector(".canvas-body") as HTMLElement;
+      const wash = document.querySelector(".canvas-pointer-wash") as HTMLElement;
+      const el = wash.querySelector(".canvas-pointer-glow") as HTMLElement;
+      const box = el.getBoundingClientRect();
+      return {
+        body: body.getAttribute("style") ?? "",
+        wash: wash.getAttribute("style") ?? "",
+        background: getComputedStyle(el).backgroundImage,
+        center: { x: box.left + box.width / 2, y: box.top + box.height / 2 },
+        width: box.width,
+      };
+    });
+    expect(glow.body, "the canvas body is not restyled per move").not.toContain("--pointer");
+    expect(glow.wash, "the wash is not restyled per move").toBe("");
+    expect(glow.background).toContain("radial-gradient");
+    expect(glow.width).toBeGreaterThan(300);
+    expect(glow.width, "the glow is a fixed-size layer, not the whole canvas").toBeLessThan(1280);
+    expect(Math.abs(glow.center.x - to.x)).toBeLessThan(2);
+    expect(Math.abs(glow.center.y - to.y)).toBeLessThan(2);
   });
 });
 

@@ -1009,7 +1009,11 @@ export function CanvasShell({ spec, children }: Props) {
     >
       <div className="canvas-layout">
         <div className="canvas-body" ref={canvasBodyRef}>
-        {iom ? <div className="canvas-pointer-wash" aria-hidden="true" /> : null}
+        {iom ? (
+          <div className="canvas-pointer-wash" aria-hidden="true">
+            <div className="canvas-pointer-glow" />
+          </div>
+        ) : null}
         <header className="top-header" ref={headerRef}>
           <div className="brand-section">
             <button

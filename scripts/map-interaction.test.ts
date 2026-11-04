@@ -56,8 +56,10 @@ test("a pointer move renders nothing in React on the map", () => {
   assert.match(cursor, /requestAnimationFrame\(paint\)/, "moves are coalesced into one write per frame");
 
   const wash = read("lib/canvas-sdk/useIomPointerWash.ts");
-  assert.match(wash, /wash\.style\.setProperty\("--pointer-x"/, "the glow variables live on the wash, not the canvas body");
+  assert.match(wash, /glow\.style\.transform = `translate3d\(/, "the glow follows the pointer with a transform");
+  assert.doesNotMatch(wash, /setProperty\("--pointer/, "no gradient variable is rewritten per move");
   assert.match(wash, /requestAnimationFrame\(paint\)/);
+  assert.doesNotMatch(read("lib/canvas-sdk/iom-theme.css"), /var\(--pointer-[xy]\)/, "no gradient follows the pointer through a variable");
 
   const shell = read("lib/canvas-sdk/CanvasShell.tsx");
   assert.doesNotMatch(shell, /addEventListener\("pointermove"/, "the shell adds no pointermove listener of its own");
