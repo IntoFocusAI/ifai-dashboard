@@ -138,3 +138,20 @@ test("official pages still load when the view has no sheet flag yet", async () =
   assert.equal(asked.length, 2);
   resetActiveClientForTests(null);
 });
+
+test("citation sources: Ledlenser's regional sites are brand-owned and lighting sites are classed", async () => {
+  const { classifySource } = await import("@/lib/ai-search/citations");
+  resetActiveClientForTests("ledlenser");
+  for (const d of ["ledlenser.com", "media.ledlenser.com", "ledlenser.co.uk", "ledlenser.com.au", "ledlenserusa.com"]) {
+    assert.equal(classifySource(d), "fender_owned", d);
+  }
+  assert.equal(classifySource("ledlenser-fake.com"), "other");
+  assert.equal(classifySource("1lumen.com"), "editorial");
+  assert.equal(classifySource("rei.com"), "retailer");
+  assert.equal(classifySource("au.olight.com"), "competitor_brand");
+  assert.equal(classifySource("sweetwater.com"), "other");
+  resetActiveClientForTests("fender");
+  assert.equal(classifySource("ledlenser.co.uk"), "other");
+  assert.equal(classifySource("sweetwater.com"), "retailer");
+  resetActiveClientForTests(null);
+});

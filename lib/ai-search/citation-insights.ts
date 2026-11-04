@@ -1,7 +1,8 @@
 import {
   citationEvidence,
   groupCitations,
-  ownedDomains,
+  isOwnedDomain,
+  LIGHTING_BRAND_SITES,
   SOURCE_CLASS_LABELS,
   SOURCE_CLASS_ORDER,
   type CitationEvidence,
@@ -355,8 +356,8 @@ const BRAND_SITE_NAMES: Array<[string, string]> = [
 
 function brandFromDomain(domain: string): string | null {
   const host = domain.toLowerCase();
-  if (!isFenderClient() && ownedDomains().some((root) => host === root || host.endsWith(`.${root}`))) return brandName();
-  for (const [root, brand] of BRAND_SITE_NAMES) {
+  if (!isFenderClient() && isOwnedDomain(host)) return brandName();
+  for (const [root, brand] of isFenderClient() ? BRAND_SITE_NAMES : LIGHTING_BRAND_SITES) {
     if (host === root || host.endsWith(`.${root}`)) return brand;
   }
   return null;
