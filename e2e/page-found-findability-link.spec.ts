@@ -180,13 +180,19 @@ test("stored not-found reasons read as plain reasons, grouped, and still link to
 
   const table = page.locator("#brand-site-page-found-skus");
   await table.locator("[data-page-found-filter='not_found']").click();
-  await expect(table.locator("[data-page-found-reason-filter]")).toHaveText([
-    "All reasons 5",
-    "No matching fender.com product page 2",
-    "Matching fender.com page is missing 1",
-    "fender.com page did not load 1",
-    "No Defensible Page 1",
+  const reasons = table.getByRole("combobox", { name: "Reason" });
+  await expect(reasons.locator("option")).toHaveText([
+    "All reasons (5)",
+    "No matching fender.com product page (2)",
+    "Matching fender.com page is missing (1)",
+    "fender.com page did not load (1)",
+    "No Defensible Page (1)",
   ]);
+  await reasons.focus();
+  await page.keyboard.press("ArrowDown");
+  await expect(reasons).toHaveValue("No matching fender.com product page");
+  await expect(table.locator("[data-page-found-row]")).toHaveCount(2);
+  await reasons.selectOption("all");
   await expect(table.locator("tbody")).not.toContainText(/handle|rejected|not_found|page_not|\(/);
 
   const cut = table.locator("[data-asin='B09TPVQJML'] [data-page-found-stored-reason='no_matching_model'] .ifai-term");
@@ -198,7 +204,7 @@ test("stored not-found reasons read as plain reasons, grouped, and still link to
     "At least 10 fender.com pages checked.",
   );
 
-  await table.locator("[data-page-found-reason-filter='fender.com page did not load']").click();
+  await reasons.selectOption("fender.com page did not load");
   const row = table.locator("[data-page-found-row]");
   await expect(row).toHaveCount(1);
   await expect(row).toHaveAttribute("data-asin", "B0B621WX38");

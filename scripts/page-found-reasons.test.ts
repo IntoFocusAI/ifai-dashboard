@@ -188,7 +188,12 @@ test("the table reads the shared Findability loader and keeps caveats in tooltip
   }
   assert.match(table, /headerTooltip: REASON_COLUMN_TOOLTIP/);
   assert.match(REASON_COLUMN_TOOLTIP.description, /runs its own official-page check, so the two can differ\./);
-  assert.match(table, /<ReasonFilter/);
+  assert.match(table, /<FilterButtons[\s\S]*<ReasonFilter[\s\S]*<\/FilterButtons>/);
+  assert.match(cell, /<label className="filter-selector page-found-reason-select">/);
+  assert.match(cell, /<span className="page-found-reason-select-label">Reason:<\/span>/);
+  assert.match(cell, /<select\s+aria-label="Reason"/);
+  assert.match(cell, /\{label\} \(\{formatInt\(count\)\}\)/);
+  assert.doesNotMatch(cell, /segmented-btn|aria-pressed/);
   assert.match(cell, /className="ifai-term"/);
   assert.match(cell, /data-ifai-tooltip-desc=\{description\}/);
   assert.match(cell, /tabIndex=\{0\}/);

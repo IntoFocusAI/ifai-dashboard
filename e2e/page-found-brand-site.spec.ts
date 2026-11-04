@@ -78,12 +78,14 @@ test("Brand-Site Specs shows the page-found hero and opens its checked SKUs", as
 
   await table.locator("[data-page-found-filter='not_found']").click();
   await expect(table.locator("[data-page-found-row]")).toHaveCount(2);
-  const reasons = table.locator("[data-page-found-reason-filter]");
-  await expect(reasons).toHaveText(["All reasons 2", "No Defensible Page 1", "Reason not recorded 1"]);
-  await table.locator("[data-page-found-reason-filter='No Defensible Page']").click();
+  const reasons = table.locator(".page-found-filters").getByRole("combobox", { name: "Reason" });
+  await expect(reasons).toHaveValue("all");
+  await expect(reasons.locator("option")).toHaveText(["All reasons (2)", "No Defensible Page (1)", "Reason not recorded (1)"]);
+  await expect(table.locator("button[data-page-found-reason-filter]")).toHaveCount(0);
+  await reasons.selectOption("No Defensible Page");
   await expect(table.locator("[data-page-found-row]")).toHaveCount(1);
   await expect(table.locator("[data-page-found-row]")).toHaveAttribute("data-asin", "B00MISSING");
-  await table.locator("[data-page-found-reason-filter='all']").click();
+  await reasons.selectOption("all");
   await expect(table.locator("[data-page-found-row]")).toHaveCount(2);
   await expect(table).toHaveAttribute("data-page-found-not-found", "2");
   await expect(hero.locator("[data-hero-ratio]")).toHaveText("2 of 4");

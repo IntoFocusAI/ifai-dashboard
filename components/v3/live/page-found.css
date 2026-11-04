@@ -69,9 +69,18 @@ button.page-found-findability-link:focus-visible {
   outline-offset: 2px;
 }
 
-.page-found-reason-filters .segmented-control {
-  flex-wrap: wrap;
-  max-width: 100%;
+.page-found-reason-select-label {
+  color: var(--text-muted);
+}
+
+.page-found-reason-select select {
+  max-width: 46ch;
+}
+
+/* Native option lists do not inherit the pill's transparent background. */
+.page-found-reason-select option {
+  background: var(--bg-card);
+  color: var(--text-main);
 }
 
 .page-found-model {

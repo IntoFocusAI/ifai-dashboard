@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState, type ReactNode } from "react";
 import { useFindability } from "@/components/v3/live/findability/FindabilityContext";
 import { ALL_REASONS, NotFoundReasonCell, ReasonFilter } from "@/components/v3/live/PageFoundReason";
 import { ResizableTable, type RetailColumn } from "@/components/v3/live/ResizableTable";
@@ -120,10 +120,12 @@ function FilterButtons({
   evidence,
   filter,
   onFilter,
+  children,
 }: {
   evidence: PageFoundEvidence;
   filter: Filter;
   onFilter: (next: Filter) => void;
+  children?: ReactNode;
 }) {
   const options: Array<[Filter, string, number]> = [
     ["all", "All checked", evidence.checked],
@@ -147,6 +149,7 @@ function FilterButtons({
           </button>
         ))}
       </div>
+      {children}
     </div>
   );
 }
@@ -243,18 +246,19 @@ export function PageFoundTable({
             setReasonFilter(ALL_REASONS);
             setPage(0);
           }}
-        />
-      ) : null}
-      {evidence && filter === "not_found" && findability.phase !== "loading" ? (
-        <ReasonFilter
-          groups={groups}
-          total={evidence.notFound}
-          value={activeReason}
-          onChange={(next) => {
-            setReasonFilter(next);
-            setPage(0);
-          }}
-        />
+        >
+          {filter === "not_found" && findability.phase !== "loading" ? (
+            <ReasonFilter
+              groups={groups}
+              total={evidence.notFound}
+              value={activeReason}
+              onChange={(next) => {
+                setReasonFilter(next);
+                setPage(0);
+              }}
+            />
+          ) : null}
+        </FilterButtons>
       ) : null}
       <ResizableTable
         tableId="brand-site-page-found"

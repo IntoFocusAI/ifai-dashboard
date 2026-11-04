@@ -109,7 +109,7 @@ export function NotFoundReasonCell({ reason }: { reason: NotFoundReason }) {
   );
 }
 
-/** Groups the not-found rows by the first reason each one shows. */
+/** One dropdown over the not-found rows, grouped by the first reason each one shows. */
 export function ReasonFilter({
   groups,
   total,
@@ -126,22 +126,20 @@ export function ReasonFilter({
     ...groups.map((group): [string, string, number] => [group.key, group.key, group.count]),
   ];
   return (
-    <div className="page-found-filters page-found-reason-filters">
-      <div className="segmented-control" role="group" aria-label="Reason">
+    <label className="filter-selector page-found-reason-select">
+      <span className="page-found-reason-select-label">Reason:</span>
+      <select
+        aria-label="Reason"
+        value={value}
+        data-page-found-reason-filter=""
+        onChange={(event) => onChange(event.target.value)}
+      >
         {options.map(([key, label, count]) => (
-          <button
-            key={key}
-            type="button"
-            className={`segmented-btn${value === key ? " active" : ""}`}
-            aria-pressed={value === key}
-            data-page-found-reason-filter={key}
-            data-page-found-reason-filter-count={count}
-            onClick={() => onChange(key)}
-          >
-            {label} {formatInt(count)}
-          </button>
+          <option key={key} value={key} data-page-found-reason-filter-count={count}>
+            {label} ({formatInt(count)})
+          </option>
         ))}
-      </div>
-    </div>
+      </select>
+    </label>
   );
 }
