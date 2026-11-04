@@ -237,6 +237,12 @@ test.describe("custom cursor", () => {
    bubble's cluster lifted the exiting map over the panel, and the panel grew from zero
    width, so its tabs wrapped into a stack that reflowed under the pointer. */
 test.describe("panel tabs right after a spoke opens", () => {
+  /** A busy dev server can keep the network from going idle, so the wait is capped. */
+  async function liveReadsSettled(page: Page) {
+    await page.waitForLoadState("networkidle", { timeout: 15_000 }).catch(() => {});
+    await page.waitForTimeout(1000);
+  }
+
   test("in every frame of the open, a tab on screen is what a click there hits", { tag: "@1440" }, async ({ canvas, page }) => {
     const watch = page.evaluate(
       () =>
@@ -279,7 +285,7 @@ test.describe("panel tabs right after a spoke opens", () => {
     const name = (await tab.textContent())!;
     await tab.click();
     await expect(page.locator(".drilldown-tab-btn.active")).toHaveText(name, { timeout: 1500 });
-    await page.waitForLoadState("networkidle");
+    await liveReadsSettled(page);
     await expect(page.locator(".drilldown-tab-btn.active")).toHaveText(name);
   });
 
@@ -288,8 +294,7 @@ test.describe("panel tabs right after a spoke opens", () => {
     const tab = page.locator(".drilldown-tab-btn", { hasText: "Retail Overview" });
     await tab.click();
     await expect(page.locator(".drilldown-tab-btn.active")).toHaveText("Retail Overview", { timeout: 1500 });
-    await page.waitForLoadState("networkidle");
-    await page.waitForTimeout(1000);
+    await liveReadsSettled(page);
     await expect(page.locator(".drilldown-tab-btn.active")).toHaveText("Retail Overview");
     await expect(page).toHaveURL(/tab=retail-overview/);
   });

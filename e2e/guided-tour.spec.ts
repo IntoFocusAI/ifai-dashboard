@@ -84,8 +84,9 @@ test.describe("guided tour", () => {
   });
 
   test("every step is short bullets that fit the card without scrolling", async ({ canvas, page }) => {
-    await page.waitForLoadState("networkidle");
+    test.setTimeout(90_000);
     await canvas.startTour();
+    await expect(canvas.tourCard.locator(".tour-card-list")).not.toContainText(/loading/i, { timeout: 30_000 });
     const total = await page.locator(".tour-dot").count();
 
     for (let step = 0; step < total; step += 1) {
