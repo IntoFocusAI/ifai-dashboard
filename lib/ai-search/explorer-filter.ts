@@ -1,3 +1,4 @@
+import { isApiEngine } from "@/lib/ai-search/engine-group";
 import type { EvidenceFocus } from "@/lib/ai-search/evidence-focus";
 import { questionRole, type QuestionRole } from "@/lib/ai-search/question-role";
 import { callOutcome, type CallOutcome } from "@/lib/ai-search/run-metrics";
@@ -137,6 +138,7 @@ export function sortExplorerRows(rows: AiCallRow[]): AiCallRow[] {
   return [...rows].sort(
     (a, b) =>
       (a.prompt_key ?? "").localeCompare(b.prompt_key ?? "") ||
+      Number(isApiEngine(a.engine)) - Number(isApiEngine(b.engine)) ||
       (a.engine ?? "").localeCompare(b.engine ?? "") ||
       a.sim_id - b.sim_id,
   );

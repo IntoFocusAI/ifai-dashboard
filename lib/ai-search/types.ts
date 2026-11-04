@@ -1,3 +1,5 @@
+import type { EngineScope } from "@/lib/ai-search/engine-group";
+
 /** Row shapes for the `public.canvas_ai_*` views in docs/ai-search-truth-contract.md. */
 
 export type AiRunState = "completed" | "partial" | "running" | "failed" | "historical";
@@ -131,6 +133,8 @@ export type AiSearchSnapshot = {
    * Null when that read failed.
    */
   probeCoverage?: AiProbeCoverageRow[] | null;
+  /** Set once the All · Without API · API only switch has narrowed the selection. */
+  engineScope?: EngineScope;
 };
 
 /** Every surface renders one of these. A failed or missing read is never shown as zero. */

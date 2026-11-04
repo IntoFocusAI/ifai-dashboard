@@ -5,6 +5,7 @@ import { clientColumn, ResizableTable } from "@/components/v3/live/ResizableTabl
 import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
 import { useAiHistoryOptional } from "@/components/v3/live/ai-search/AiHistoryContext";
 import { AiReadGate, EmptyRows, mutedText } from "@/components/v3/live/ai-search/AiReadGate";
+import { EngineGroupScope } from "@/components/v3/live/ai-search/EngineGroupScope";
 import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
 import { RunDetailsLead } from "@/components/v3/live/ai-search/RunDetailsLead";
 import { SimulationEvidenceDrawer } from "@/components/v3/live/ai-search/SimulationEvidenceDrawer";
@@ -12,6 +13,7 @@ import { SimulationFilters } from "@/components/v3/live/ai-search/SimulationFilt
 import { useEvidenceFocus } from "@/components/v3/live/ai-search/useEvidenceFocus";
 import { citationEvidence, type CitationEvidence } from "@/lib/ai-search/citations";
 import { driftRead } from "@/lib/ai-search/drift";
+import { ENGINE_GROUP_LABELS, engineGroup } from "@/lib/ai-search/engine-group";
 import { explorerFilterFor } from "@/lib/ai-search/evidence-filter";
 import { setEvidenceFocus } from "@/lib/ai-search/evidence-focus";
 import {
@@ -190,7 +192,12 @@ function Explorer({ snapshot }: { snapshot: AiSearchSnapshot }) {
                       <td>
                         <span className={`tag-badge ${OUTCOME_TONE[outcome]}`}>{outcomeLabel}</span>
                       </td>
-                      <td>{engineLabel(row.engine)}</td>
+                      <td data-engine-group={engineGroup(row.engine)}>
+                        {engineLabel(row.engine)}
+                        {snapshot.engineScope ? (
+                          <span className="ai-engine-group-tag">{ENGINE_GROUP_LABELS[engineGroup(row.engine)]}</span>
+                        ) : null}
+                      </td>
                       <td>{modelLabel(row.model)}</td>
                       <td>{row.prompt_kind === "probe" ? "Product fact check" : categoryLabel(row.category)}</td>
                       <td>{factCheckColumnLabel(row)}</td>
@@ -226,5 +233,9 @@ function Explorer({ snapshot }: { snapshot: AiSearchSnapshot }) {
 }
 
 export function SimulationsExplorer() {
-  return <AiReadGate>{(snapshot) => <Explorer snapshot={snapshot} />}</AiReadGate>;
+  return (
+    <EngineGroupScope>
+      <AiReadGate>{(snapshot) => <Explorer snapshot={snapshot} />}</AiReadGate>
+    </EngineGroupScope>
+  );
 }
