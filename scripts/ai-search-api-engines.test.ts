@@ -381,12 +381,13 @@ function fakeClient(tables: Record<string, Row[] | { message: string; code?: str
   } as unknown as HistoryReadClient;
 }
 
-test("the API views are read only once the flag says the migration is applied", () => {
-  assert.equal(apiEngineViewsEnabled(undefined, undefined), false);
+test("the API views are read by default; the flag \"0\" turns them off and tests force either way", () => {
+  assert.equal(apiEngineViewsEnabled(undefined, undefined), true);
+  assert.equal(apiEngineViewsEnabled("1", {}), true);
   assert.equal(apiEngineViewsEnabled("0", {}), false);
-  assert.equal(apiEngineViewsEnabled("1", undefined), true);
-  assert.equal(apiEngineViewsEnabled(undefined, { __IFAI_AI_API_VIEWS__: true }), true);
-  assert.equal(apiEngineViewsEnabled(undefined, { __IFAI_AI_API_VIEWS__: "true" }), false);
+  assert.equal(apiEngineViewsEnabled("0", { __IFAI_AI_API_VIEWS__: true }), true);
+  assert.equal(apiEngineViewsEnabled(undefined, { __IFAI_AI_API_VIEWS__: false }), false);
+  assert.equal(apiEngineViewsEnabled(undefined, { __IFAI_AI_API_VIEWS__: "false" }), true);
 });
 
 test("a missing API view reads as missing, not as an error or a zero", async () => {

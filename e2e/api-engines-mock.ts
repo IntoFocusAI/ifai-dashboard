@@ -314,9 +314,16 @@ export async function mockAiSearchWithApi(
   return seen;
 }
 
-/** Turns on the API reads the way NEXT_PUBLIC_AI_API_ENGINE_VIEWS does once the migration is applied. */
+/** Forces the API reads on, whatever NEXT_PUBLIC_AI_API_ENGINE_VIEWS says. */
 export async function enableApiViews(page: Page) {
   await page.addInitScript(() => {
     (window as unknown as { __IFAI_AI_API_VIEWS__: boolean }).__IFAI_AI_API_VIEWS__ = true;
+  });
+}
+
+/** Turns the API reads off the way NEXT_PUBLIC_AI_API_ENGINE_VIEWS "0" does. */
+export async function disableApiViews(page: Page) {
+  await page.addInitScript(() => {
+    (window as unknown as { __IFAI_AI_API_VIEWS__: boolean }).__IFAI_AI_API_VIEWS__ = false;
   });
 }

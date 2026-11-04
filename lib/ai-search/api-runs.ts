@@ -14,20 +14,21 @@ import type { AiCallRow, AiCitationRow, AiProbeRow, AiSearchSnapshot } from "@/l
 /**
  * Brian Watson's API-engine runs, read from the add-only views in
  * supabase/migrations/20261104160000_ai_search_api_engine_views.sql.
- * Until those views are applied the reads come back missing, and the API engines stay absent.
  */
 
 /**
- * A read of a view that does not exist yet answers 404, which the browser logs on every page load.
- * The dashboard asks for the API views only once NEXT_PUBLIC_AI_API_ENGINE_VIEWS is "1", set after
- * the migration is applied. Browser tests that mock the views set `__IFAI_AI_API_VIEWS__` instead.
+ * The dashboard reads the API views by default. NEXT_PUBLIC_AI_API_ENGINE_VIEWS "0" turns the reads
+ * off without a code change. Browser tests set `__IFAI_AI_API_VIEWS__` to force either way.
+ * The anon key cannot list the schema, so a missing view is only found by reading it, and that
+ * 404 is logged by the browser.
  */
 export function apiEngineViewsEnabled(
   flag: string | undefined = process.env.NEXT_PUBLIC_AI_API_ENGINE_VIEWS,
   scope: unknown = typeof window === "undefined" ? undefined : window,
 ): boolean {
-  if (flag === "1") return true;
-  return (scope as { __IFAI_AI_API_VIEWS__?: unknown } | undefined)?.__IFAI_AI_API_VIEWS__ === true;
+  const forced = (scope as { __IFAI_AI_API_VIEWS__?: unknown } | undefined)?.__IFAI_AI_API_VIEWS__;
+  if (typeof forced === "boolean") return forced;
+  return flag !== "0";
 }
 
 export const API_RUN_VIEW = "canvas_ai_api_runs";
