@@ -1,9 +1,24 @@
-import type { Page } from "@playwright/test";
-import { expect, test, type Locator } from "./fixtures";
+import { expect, test, type Locator, type Page } from "@playwright/test";
+import { openCatalogHealthCanvas } from "./catalog-health-mock";
 
 /* Worker 21.4 / FDD R-12: a MAP listing set aside as "Approved exception" leaves every
    MAP violation figure; reopening it puts it back; a plain Done does not remove it.
-   Set-aside writes go to the in-memory mock (e2e/set-aside-mock.ts). */
+   Reads answer from e2e/catalog-health-mock.ts; set-aside writes go to the in-memory
+   mock (e2e/set-aside-mock.ts). */
+
+let errors: string[] = [];
+test.beforeEach(() => {
+  errors = [];
+});
+test.afterEach(() => {
+  expect(errors, `unexpected page errors:\n${errors.join("\n")}`).toEqual([]);
+});
+
+async function openCanvas(page: Page) {
+  const opened = await openCatalogHealthCanvas(page);
+  errors = opened.errors;
+  return opened;
+}
 
 async function figure(page: Page) {
   const percent = page.locator("[data-map-lead-percent]");
@@ -14,9 +29,17 @@ async function figure(page: Page) {
   };
 }
 
-async function openMapTab(canvas: { openSpokeFromMap: (t: string) => Promise<void>; openTab: (t: string) => Promise<void> }) {
-  await canvas.openSpokeFromMap("Catalog Health");
-  await canvas.openTab("MAP");
+async function openMapTab(page: Page) {
+  await page.goto("/dashboard?spoke=ecommerce&tab=map");
+  await expect(page.locator(".drilldown-tab-btn.active")).toContainText("MAP");
+}
+
+/** A tab click sent while the panel is still settling can be dropped, so retry until it sticks. */
+async function switchTab(canvas: { openTab: (t: string) => Promise<void> }, name: string, ready: Locator) {
+  await expect(async () => {
+    await canvas.openTab(name);
+    await expect(ready).toBeVisible({ timeout: 3000 });
+  }).toPass({ timeout: 20_000 });
 }
 
 function mapTable(page: Page): Locator {
@@ -29,9 +52,11 @@ async function firstRowKey(table: Locator): Promise<string> {
   return String(await button.getAttribute("data-set-aside-open"));
 }
 
-test("an approved exception leaves the MAP figure and reopening puts it back", async ({ canvas, page, setAsides }) => {
-  await openMapTab(canvas);
+test("an approved exception leaves the MAP figure and reopening puts it back", async ({ page }) => {
+  const { canvas, setAsides } = await openCanvas(page);
+  await openMapTab(page);
   const before = await figure(page);
+  expect(before).toEqual({ n: 3, m: 5 });
   const table = mapTable(page);
   const asin = await firstRowKey(table);
 
@@ -56,14 +81,14 @@ test("an approved exception leaves the MAP figure and reopening puts it back", a
   expect(setAsides.rows.map((row) => row.check_key)).toEqual(["map_pricing"]);
 
   // Retail Overview reuses the same figure.
-  await canvas.openTab("Retail Overview");
   const hero = page.locator('[data-retail-overview-hero="map_leakage"] [data-retail-hero-percent]');
+  await switchTab(canvas, "Retail Overview", hero);
   await expect(hero).toHaveAttribute("data-retail-hero-numerator", String(before.n - 1));
   await expect(page.locator('[data-retail-overview-hero="map_leakage"] [data-retail-hero-ratio]')).toHaveText(/\*$/);
 
   // Reopen from the MAP history: the row is counted again.
-  await canvas.openTab("MAP");
   const history = page.locator('[data-set-aside-history="map_pricing"]');
+  await switchTab(canvas, "MAP", history.locator("summary"));
   await history.locator("summary").click();
   await expect(history).toContainText("left out of the MAP figures above until it is reopened");
   await history.locator(`[data-set-aside-reopen="${asin}"]`).click();
@@ -74,8 +99,9 @@ test("an approved exception leaves the MAP figure and reopening puts it back", a
   await expect(page.locator("[data-map-lead-ratio]")).not.toHaveText(/\*$/);
 });
 
-test("a plain Done on a MAP row keeps it in the count", async ({ canvas, page }) => {
-  await openMapTab(canvas);
+test("a plain Done on a MAP row keeps it in the count", async ({ page }) => {
+  await openCanvas(page);
+  await openMapTab(page);
   const before = await figure(page);
   const table = mapTable(page);
   const button = table.locator("[data-done-open]").first();
