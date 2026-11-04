@@ -13,11 +13,16 @@ async function top(locator: Locator): Promise<number> {
   return box.y;
 }
 
+/** Polls because the panel widens as it opens, and text wraps taller until it settles. */
 async function expectInFirstScreen(page: Page, locator: Locator) {
-  const box = await locator.boundingBox();
   const viewport = page.viewportSize();
-  expect(box && viewport).toBeTruthy();
-  expect(box!.y + box!.height).toBeLessThanOrEqual(viewport!.height);
+  expect(viewport).toBeTruthy();
+  await expect
+    .poll(async () => {
+      const box = await locator.boundingBox();
+      return box ? box.y + box.height : Number.POSITIVE_INFINITY;
+    })
+    .toBeLessThanOrEqual(viewport!.height);
 }
 
 test.describe("Action Items lead with the figure (X-03, X-04)", () => {
