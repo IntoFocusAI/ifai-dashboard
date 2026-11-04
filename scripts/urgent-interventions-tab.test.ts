@@ -113,15 +113,19 @@ test("urgentInterventionsHtml renders five findings with N of M and not-stored a
   assert.doesNotMatch(html, /\$|lost.?revenue|since last time|what changed|fee|retainer|Austin Bazaar/i);
   assert.doesNotMatch(html, /\u2014/);
   assert.doesNotMatch(html, /\bAEO\b|JSON-LD|Schema\.org|\bSOV\b|\bASIN\b/);
-  assert.doesNotMatch(html, /class="ifai-term"|data-ifai-tooltip-/);
+  const cards = html.slice(html.indexOf("data-urgent-findings="));
+  assert.ok(html.indexOf("data-action-items-lead=") < html.indexOf("data-urgent-findings="));
+  assert.doesNotMatch(cards, /class="ifai-term"|data-ifai-tooltip-/);
   assert.equal((html.match(/data-urgent-finding=/g) ?? []).length, 5);
 
   for (const label of FINDING_LABELS) {
     const cardStart = html.indexOf(`>${label}<`);
     assert.ok(cardStart >= 0, label);
     const afterLabel = html.slice(cardStart);
+    const figureIdx = afterLabel.indexOf("data-urgent-finding-percent");
     const actionIdx = afterLabel.indexOf("data-urgent-finding-action");
     const openIdx = afterLabel.indexOf("Open details");
+    assert.ok(figureIdx >= 0 && actionIdx > figureIdx, `${label}: figure before action`);
     assert.ok(actionIdx >= 0 && openIdx > actionIdx, `${label}: action before Open details`);
   }
 });
