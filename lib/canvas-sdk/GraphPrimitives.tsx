@@ -623,7 +623,7 @@ export function GraphBubble({
       ) : null}
       {selected && emphasis ? <SelectionBurst radius={r} /> : null}
       <g className="node-inner">
-        {centered ? <BubbleLift radius={r} sigma={9} statusClass={statusClass} /> : null}
+        {centered ? <BubbleLift radius={r} sigma={18} statusClass={statusClass} /> : null}
         <circle r={r} className={`node-circle${statusClass}`} filter="url(#nodeShadow)" />
         {faceScale === 1 ? face : <g transform={`scale(${faceScale})`}>{face}</g>}
       </g>
@@ -708,7 +708,7 @@ export function GraphHub({
           stroke="var(--border-dark)"
           strokeWidth="3"
         />
-        {centered ? <BubbleLift radius={r} sigma={11} /> : null}
+        {centered ? <BubbleLift radius={r} sigma={22} /> : null}
         <circle r={r} className="node-circle hub-core" />
         {faceScale === 1 ? face : <g transform={`scale(${faceScale})`}>{face}</g>}
       </g>
