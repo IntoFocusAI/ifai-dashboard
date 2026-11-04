@@ -376,7 +376,6 @@ test("hub Briefing puts consensus in the findings row, then the essay", () => {
   assert.match(card, /aria-label=\{`\$\{finding\.label\}: \$\{finding\.explainer\}`\}/);
   assert.match(hero, /data-ifai-tooltip-desc=\{placeholder\.explainer\}/);
   assert.doesNotMatch(hero, /metric-card-sub|data-briefing-revenue-explainer/);
-  assert.doesNotMatch(read("components/v3/live/CurrentFindingsPanel.tsx"), /BriefingConsensusLead|AI Consensus/);
   assert.doesNotMatch(read("components/v3/live/RoadmapFindingsPanel.tsx"), /BriefingConsensusLead|AI Consensus/);
   assert.match(hero, /briefingFindingsLead/);
   assert.match(hero, /data-briefing-findings/);

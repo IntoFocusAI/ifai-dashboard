@@ -51,16 +51,8 @@ test("Roadmap first tab renders briefingFindingsLead via RoadmapFindingsPanel", 
   }
 });
 
-test("Action Items Current findings and Summary Briefing stay wired as before", () => {
-  assert.deepEqual(spec.spokes.suggestions.tabs, [
-    "Urgent Interventions",
-    "Revenue Estimates",
-    "Current findings",
-  ]);
-  const spokes = read("components/v3/build-live-spokes.tsx");
-  assert.match(spokes, /suggestions:\s*\{[\s\S]*2:\s*\([^)]*\)\s*=>\s*<CurrentFindingsPanel/);
-  const current = read("components/v3/live/CurrentFindingsPanel.tsx");
-  assert.match(current, /briefingFindingsLead/);
+test("Action Items has no Current findings tab, and Summary Briefing stays wired as before", () => {
+  assert.deepEqual(spec.spokes.suggestions.tabs, ["Urgent Interventions", "Revenue Estimates"]);
   const hero = read("components/v3/live/BriefingRetailHero.tsx");
   assert.match(hero, /briefingFindingsLead/);
 });

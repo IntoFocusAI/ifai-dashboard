@@ -57,6 +57,7 @@ const TAB_SLUG_ALIASES: Record<string, string> = {
   "head-to-head": "category-battlecards",
   "rival-strategies-countermeasures": "competitor-wins",
   "multi-marketplace-channel-scope-sweetwater-reverb-walmart": "engine-comparison",
+  "current-findings": "urgent-interventions",
 };
 
 /**

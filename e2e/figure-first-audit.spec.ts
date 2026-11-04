@@ -24,7 +24,7 @@ const TABS: Tab[] = [
   ],
   ["specs", "AI Readiness", ["Findability", "Amazon Specs", "Brand-Site Specs", "Amazon A+ Matrix"]],
   ["competitors", "Competitive Radar", ["Category Battlecards", "Competitor Wins", "Engine Comparison"]],
-  ["suggestions", "Action Items", ["Urgent Interventions", "Revenue Estimates", "Current findings"]],
+  ["suggestions", "Action Items", ["Urgent Interventions", "Revenue Estimates"]],
   ["roadmap", "Strategy Roadmap", ["30-60-90 Day Milestones"]],
 ].flatMap(([spoke, area, tabs]) =>
   (tabs as string[]).map((tab) => ({

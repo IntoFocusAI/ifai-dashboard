@@ -67,6 +67,13 @@ test.describe("Action Items opens on the prioritized fix list", () => {
     await expect(page.locator(".node-tooltip-definition")).toContainText("Critical findings come first");
   });
 
+  test("an old Current findings link lands on Urgent Interventions", async ({ page, baseURL }) => {
+    pageErrors = await openSpokeTab(page, baseURL, "suggestions", "current-findings");
+    await expect(page.locator(".drilldown-tab-btn")).toHaveText(["Urgent Interventions", "Revenue Estimates"]);
+    await expect(page.locator(".drilldown-tab-btn.active")).toHaveText("Urgent Interventions");
+    await expect(page.locator(".drilldown-panel [data-fix-list]")).toBeVisible();
+  });
+
   test("each row opens the evidence tab behind its finding", async ({ page, baseURL }) => {
     const rows = await openUrgentInterventions(page, baseURL);
     const first = rows.first();

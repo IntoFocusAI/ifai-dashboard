@@ -99,8 +99,7 @@
       "desc": "Action items for listing hygiene and AI search visibility, with a Phase 1 pilot at {phase_one_lift} and full-enterprise GMV at {enterprise_potential}",
       "tabs": [
         "Urgent Interventions",
-        "Revenue Estimates",
-        "Current findings"
+        "Revenue Estimates"
       ],
       "navLabel": "Action Items",
       "next": "hub",

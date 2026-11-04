@@ -15,17 +15,6 @@ function read(rel: string): string {
   return readFileSync(new URL(rel, root), "utf8");
 }
 
-function objectBlock(source: string, key: string): string {
-  const start = source.search(new RegExp(`\\b${key}:\\s*\\{`));
-  assert.ok(start >= 0, `${key}: { not found`);
-  let depth = 0;
-  for (let i = source.indexOf("{", start); i < source.length; i++) {
-    if (source[i] === "{") depth++;
-    if (source[i] === "}" && --depth === 0) return source.slice(start, i + 1);
-  }
-  assert.fail(`${key}: { is never closed`);
-}
-
 const FINDING_LABELS = [
   "Buy Box withheld",
   "MAP leakage",
@@ -130,11 +119,12 @@ test("urgentInterventionsHtml keeps the five operator action lines for stored re
   assert.match(helper, /annotateGlossary/);
 });
 
-test("build-live-spokes wires urgent_interventions and leaves CurrentFindingsPanel on tab 2", () => {
+test("build-live-spokes wires urgent_interventions and gives Action Items no React override", () => {
   const spokes = read("components/v3/build-live-spokes.tsx");
   assert.match(spokes, /urgentInterventionsHtml/);
   assert.match(spokes, /urgent_interventions:\s*urgentInterventionsHtml\(retail,\s*findability,\s*ai\)/);
-  assert.doesNotMatch(spokes, /ai_action_card|aiActionCardHtml/);
-  assert.match(spokes, /suggestions:\s*\{[\s\S]*2:\s*\([^)]*\)\s*=>\s*<CurrentFindingsPanel/);
-  assert.doesNotMatch(objectBlock(spokes, "suggestions"), /\b0:/);
+  assert.doesNotMatch(spokes, /ai_action_card|aiActionCardHtml|CurrentFindingsPanel/);
+  const overrides = spokes.slice(spokes.indexOf("const TAB_OVERRIDES"), spokes.indexOf("function wrapSpoke"));
+  assert.match(overrides, /\broadmap:\s*\{/);
+  assert.doesNotMatch(overrides, /\bsuggestions:/);
 });
