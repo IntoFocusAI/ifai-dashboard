@@ -209,7 +209,8 @@ const CURRENT_RUN: Row = {
   missing_calls: 0,
 };
 
-const strip = (rows: Row[], column: string) => rows.map(({ [column]: _drop, ...rest }) => rest);
+const strip = (rows: Row[], column: string) =>
+  rows.map((row) => Object.fromEntries(Object.entries(row).filter(([key]) => key !== column)));
 
 /** Rows for one AI read, or undefined when the table is not an AI Search read. */
 function aiRows(table: string, url: URL): Row[] | undefined {
