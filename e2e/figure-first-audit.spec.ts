@@ -37,8 +37,44 @@ const TABS: Tab[] = [
 
 /** Tabs that still fail this audit, with the files that own them. */
 const KNOWN_GAPS: Record<string, { x03: boolean; x04: boolean; owner: string }> = {
-  "aeo/run-summary": { x03: false, x04: true, owner: "components/v3/live/ai-search (worker 21.6)" },
+  "hub/opportunity": {
+    x03: true,
+    x04: false,
+    owner: "data/fender-v3-spec.json, hub Opportunity template: the estimate chart was removed on 4 Nov 2026; awaiting an exemption or a visual (PM21)",
+  },
 };
+
+/**
+ * Exempt from the lead-figure and lead-visual rule (Brian Magazu, 4 Nov 2026). Action Items tells
+ * the client what to fix and how each estimate was set, so each tab must instead open on `lead`,
+ * in the first screen and ahead of any long paragraph.
+ */
+const EXEMPT: Record<string, { leads: string; lead: string }> = {
+  "suggestions/urgent-interventions": { leads: "the prioritized fix list", lead: "[data-fix-list] [data-fix-row]" },
+  "suggestions/revenue-estimates": {
+    leads: "the two analyst estimates, then how each was set",
+    lead: "[data-estimate-method]",
+  },
+};
+
+/** True when `selector` starts in the first screen and no long paragraph below the tabs comes before it. */
+function leadsWith(selector: string): boolean {
+  const panel = document.querySelector(".drilldown-panel");
+  const lead = panel?.querySelector(selector);
+  if (!panel || !lead) return false;
+  const bodyTop = panel.querySelector(".drilldown-tab-btn.active")?.getBoundingClientRect().bottom ?? 0;
+  const top = lead.getBoundingClientRect().top;
+  if (top < bodyTop - 1 || top >= window.innerHeight) return false;
+  return ![...panel.querySelectorAll("p, li, .ceo-callout-body, .action-details, .content-box-desc")].some((el) => {
+    const elTop = el.getBoundingClientRect().top;
+    return (
+      (el as HTMLElement).innerText.trim().length >= 140 &&
+      elTop >= bodyTop - 1 &&
+      elTop < top &&
+      !el.contains(lead)
+    );
+  });
+}
 
 type Reading = { x03: boolean; x04: boolean };
 
@@ -62,7 +98,7 @@ function measure(): Reading {
       .trim();
 
   const isFigure = (el: Element) =>
-    /^[+\-$]?\$?[\d,.]+(\s*(%|K|M|of|est\.))?/.test(ownText(el)) &&
+    /^[+\-$]?\$?[\d,.]+(\s*(%|K|M|of|est\.))?|\d[\d,]* of [\d,]+|\d+(\.\d+)?%/.test(ownText(el)) &&
     parseFloat(getComputedStyle(el).fontSize) >= 18 &&
     visible(el);
   const isVisual = (el: Element) => {
@@ -102,8 +138,18 @@ test.describe("figure-first audit at 1280×720 (X-03, X-04)", () => {
   for (const tab of TABS) {
     const key = `${tab.spoke}/${tab.slug}`;
     const gap = KNOWN_GAPS[key];
+    const exempt = EXEMPT[key];
     test(`${tab.area} · ${tab.tab}`, async ({ page, baseURL }, info) => {
       const errors = await openTab(page, baseURL, tab);
+      if (exempt) {
+        info.annotations.push({ type: "figure-first exemption", description: `${key} leads with ${exempt.leads}` });
+        await expect
+          .poll(() => page.evaluate(leadsWith, exempt.lead), { timeout: LIVE_READ_TIMEOUT })
+          .toBe(true);
+        await info.attach(`${key}.png`, { body: await page.screenshot(), contentType: "image/png" });
+        expect(errors).toEqual([]);
+        return;
+      }
       if (gap) {
         info.annotations.push({ type: "figure-first gap", description: `${key}: ${gap.owner}` });
         // Wait until the tab reads at least as well as recorded, so a slow read is not logged as a gap.
