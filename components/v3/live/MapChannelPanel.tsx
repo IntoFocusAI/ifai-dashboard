@@ -82,8 +82,12 @@ async function loadChannelPrices(): Promise<ChannelPriceRow[]> {
   }
 }
 
+/**
+ * `retail-health` keeps the panel's automatic glossary marking out of this React-rendered
+ * tab (as on Retail Overview), so MAP is defined once, on the lead label.
+ */
 function RetailSurface({ children }: { children: ReactNode }) {
-  return <div className="retail-surface">{children}</div>;
+  return <div className="retail-health retail-surface">{children}</div>;
 }
 
 function mapPricesNotStored(read: RetailCanvasRead): boolean {
@@ -94,6 +98,8 @@ function mapPricesNotStored(read: RetailCanvasRead): boolean {
  * MAP share plus the average price gap under the pie.
  * The gap is copy inside this box, not a second card. Width fits the figure.
  * Static block; Retail Overview remains the click path into this tab.
+ * The one MAP explainer path (R-08): the label defines MAP, and the N of M tooltip says
+ * which listings were counted. Nothing else on the tab repeats either.
  */
 function MapLeakageLead({ read }: { read: RetailCanvasRead }) {
   if (read.phase !== "ready") return null;
@@ -113,7 +119,9 @@ function MapLeakageLead({ read }: { read: RetailCanvasRead }) {
         marginTop: 0,
       }}
     >
-      <div data-map-lead-label="">{hero.label}</div>
+      <div data-map-lead-label="">
+        <DefinedCopy text={hero.label} />
+      </div>
       <div className="findability-lead-row" data-map-lead-row="">
         <div className="findability-lead-figures">
           <span
@@ -178,7 +186,7 @@ function MapNotes({
   if (mapPricesNotStored(read)) {
     return (
       <p className="retail-missing" data-map-notes-not-stored="">
-        <DefinedCopy text={MAP_PRICES_NOT_STORED} />
+        {MAP_PRICES_NOT_STORED}
       </p>
     );
   }
@@ -187,21 +195,18 @@ function MapNotes({
 
   return (
     <ul className="tour-card-list" style={{ margin: 0 }} data-map-notes-channels="">
-      {channels.map((channel) => (
-        <li key={channel.key}>
-          <strong>{channel.name}</strong>
-          {" · "}
-          <DefinedCopy
-            text={channelSummaryText(
-              channel.count,
-              channelReadingNote(channel.name, {
-                walmartMissing,
-                musiciansFriendLastRunAt,
-              }),
-            )}
-          />
-        </li>
-      ))}
+      {channels.map((channel) => {
+        const note = channelReadingNote(channel.name, { walmartMissing, musiciansFriendLastRunAt });
+        return (
+          <li key={channel.key} data-map-channel={channel.name}>
+            <strong>{channel.name}</strong>
+            {" · "}
+            <FigureTip title={channel.name} desc={note} testId="map-channel">
+              {channelSummaryText(channel.count, note)}
+            </FigureTip>
+          </li>
+        );
+      })}
     </ul>
   );
 }
