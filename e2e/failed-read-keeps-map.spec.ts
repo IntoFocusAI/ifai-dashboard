@@ -147,6 +147,23 @@ test.describe("a failed read keeps the map", () => {
     await page.screenshot({ path: testInfo.outputPath("failed-metrics-read.png") });
   });
 
+  test("canvas_metrics failing: the Amazon Specs hero reads Not available* and names the read", async ({
+    canvas,
+    page,
+  }) => {
+    await failReads(page, ["canvas_metrics"]);
+    await page.goto("/dashboard?spoke=specs&tab=amazon-specs");
+    await expectMap(page);
+    await expect(canvas.activeTab).toContainText("Amazon Specs");
+
+    const hero = canvas.panel.locator('[data-amazon-specs-hero="amazon_completeness"]');
+    await expect(hero.locator("[data-ai-readiness-hero-percent]")).toHaveText("Not available*");
+    await expect(hero).not.toContainText(/Pending data/);
+    const term = hero.locator(".ifai-term");
+    await expect(term).toHaveAttribute("data-ifai-tooltip-desc", /^The catalog metrics read \(canvas_metrics\) did not load/);
+    await expect(term).not.toHaveAttribute("title");
+  });
+
   for (const table of [...BUNDLE_READS, ...SEPARATE_READS]) {
     test(`${table} failing alone leaves the map on screen`, async ({ canvas, page }) => {
       void canvas;
