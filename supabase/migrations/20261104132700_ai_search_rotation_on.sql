@@ -27,7 +27,9 @@
 --                                 549 (shopping 261, anchors 18, rotating 270)
 --
 -- Toolbelt wrenches changed at the same time (outside this repo):
---   battery wrench 34d68651           now v15 (was v14). While rotation is on, v15 overrides repeats = 20.
+--   battery wrench 34d68651           now v15 (was v14). While rotation is on, v15 uses the config's
+--                                     3 repeats. If schedule cb8b49c5 still passes repeats=20, v15
+--                                     ignores it and records metadata.repeats_input_overridden.
 --   subchat collector wrench 63f7c160 now v13 (was v12)
 --
 -- Why: collector v15 Step 2. Three rotating slots ask a different catalog fact each run, in place of
