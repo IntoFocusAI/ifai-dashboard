@@ -1,5 +1,5 @@
+import { activeOffersLine } from "@/lib/fender-canvas/briefing-retail-lead";
 import { formatInt } from "@/lib/fender-canvas/format";
-import { activeOfferClarity } from "@/lib/fender-canvas/offer-clarity";
 import {
   headlineSentence,
   headlineSurface,
@@ -52,7 +52,7 @@ export function retailTemplateVars(
 ): Record<string, string> {
   return {
     retail_headline: headlineSentence(headlineSurface(retail)),
-    active_offer_clarity: activeOfferClarity(bundle.m),
+    active_offer_clarity: activeOffersLine(bundle),
     map_read_line: mapReadLine(retail),
     bundle_read_line: bundleReadLine(retail),
   };

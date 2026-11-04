@@ -306,8 +306,6 @@ export function SuppressedListingsPanel({
                     <Fragment key={asin}>
                       <FeaturedOfferTableRow
                         row={row}
-                        showBuyBox={false}
-                        showSource={false}
                         trailing={<SetAsideCell ctl={setAsides} entityKey={asin} canSetAside={valid} />}
                       />
                       <SetAsideFormRow

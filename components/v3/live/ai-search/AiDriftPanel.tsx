@@ -2,6 +2,7 @@
 
 import { useAiHistoryOptional } from "@/components/v3/live/ai-search/AiHistoryContext";
 import { AiReadGate, mutedText } from "@/components/v3/live/ai-search/AiReadGate";
+import { EngineGroupScope } from "@/components/v3/live/ai-search/EngineGroupScope";
 import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
 import { CatalogCoverageTable } from "@/components/v3/live/ai-search/CatalogCoverageTable";
 import { CitationPieDisc } from "@/components/v3/live/ai-search/CitationPieDisc";
@@ -9,6 +10,7 @@ import { CopyTip } from "@/components/v3/live/ai-search/CopyTip";
 import { ExternalLink } from "@/components/v3/live/ai-search/ExternalLink";
 import { FactCheckTable } from "@/components/v3/live/ai-search/FactCheckTable";
 import { driftRead } from "@/lib/ai-search/drift";
+import { fixedFactChecksTip } from "@/lib/ai-search/engine-group";
 import {
   FACT_CHECK_ACCURACY_TITLE,
   FACT_CHECK_METHOD_TITLE,
@@ -44,6 +46,11 @@ function FactChecks({ snapshot }: { snapshot: AiSearchSnapshot }) {
   const method = factCheckMethodLine(coverage, windowed, catalogCycles(snapshot));
   const amazonNote = amazonMismatchNote(coverage);
   const rateColor = factCheckAccuracyColor(accuracy.tone);
+  const fixedTip = fixedFactChecksTip(
+    snapshot.engineScope,
+    snapshot.calls.filter((row) => row.prompt_kind === "probe").length,
+  );
+  const pieTip = fixedTip ? `${factCheckAccuracyPieTip(coverage)} ${fixedTip}` : factCheckAccuracyPieTip(coverage);
 
   const explainer = (
     <div className="ai-lead-explainer" data-ai-accuracy-lead style={{ marginTop: 0 }}>
@@ -109,11 +116,18 @@ function FactChecks({ snapshot }: { snapshot: AiSearchSnapshot }) {
                 <CopyTip label={FACT_CHECK_ACCURACY_TITLE} description={factCheckAccuracyTip(coverage, windowed)}>
                   {accuracy.rate} Accuracy
                 </CopyTip>
+                {fixedTip ? (
+                  <span data-ai-fact-fixed-only="">
+                    <CopyTip label="Fixed questions" description={fixedTip}>
+                      *
+                    </CopyTip>
+                  </span>
+                ) : null}
               </span>
               <CitationPieDisc
                 pie={pie}
                 sizeClass="citation-pie-disc citation-pie-disc-accuracy"
-                tip={factCheckAccuracyPieTip(coverage)}
+                tip={pieTip}
               />
             </div>
             <div style={{ flex: "1 1 280px", minWidth: 0 }}>{explainer}</div>
@@ -177,5 +191,9 @@ function FactChecks({ snapshot }: { snapshot: AiSearchSnapshot }) {
 }
 
 export function AiDriftPanel() {
-  return <AiReadGate>{(snapshot) => <FactChecks snapshot={snapshot} />}</AiReadGate>;
+  return (
+    <EngineGroupScope>
+      <AiReadGate>{(snapshot) => <FactChecks snapshot={snapshot} />}</AiReadGate>
+    </EngineGroupScope>
+  );
 }

@@ -16,8 +16,9 @@ import {
   type MinimalContext,
   type MinimalEntry,
 } from "@/lib/fender-canvas/minimal-metric-kit";
+import { LIVE_OFFER_BUNDLES } from "@/lib/fender-canvas/portfolio-retail";
 import { RETAIL_OVERVIEW_TAB, STOCK_LOSS_TAB } from "@/lib/fender-canvas/portfolio-retail-display";
-import { buyBoxHero, catalogHero, mapHero, specHero } from "@/lib/fender-canvas/retail-overview-lead";
+import { averageGapTip, buyBoxHero, catalogHero, mapHero, specHero } from "@/lib/fender-canvas/retail-overview-lead";
 import {
   lostSalesPopulationPie,
   REVENUE_SOURCE_LABELS,
@@ -134,12 +135,13 @@ export const RETAIL_ENTRIES: MinimalEntry[] = [
         if (detail?.averageLeakage == null) {
           return missingFigure(reading.missingMessage ?? "No listing in this read is priced below MAP.");
         }
+        const mark = (detail.approvedExceptions ?? 0) > 0 ? "*" : "";
         return {
           value: formatUsd(detail.averageLeakage, { signed: true }),
           tone: "danger",
-          ratio: `Across ${formatInt(detail.violations)} ${detail.violations === 1 ? "listing" : "listings"} below MAP`,
+          ratio: `Across ${formatInt(detail.violations)} ${detail.violations === 1 ? "listing" : "listings"} below MAP${mark}`,
           pie: null,
-          tip: null,
+          tip: averageGapTip(snapshot),
           missing: null,
         };
       }),
@@ -152,7 +154,8 @@ export const RETAIL_ENTRIES: MinimalEntry[] = [
     read: (ctx) =>
       retailReading(ctx, (snapshot) => {
         const hero = catalogHero(snapshot);
-        return counted(hero.ratio, "bundles in this retail read", hero.pie, hero.tip, hero.explainer);
+        const ratio = hero.numerator != null && hero.denominator != null ? `${formatInt(hero.numerator)} of ${formatInt(hero.denominator)}` : null;
+        return counted(ratio, LIVE_OFFER_BUNDLES, hero.pie, hero.tip, hero.explainer);
       }),
   }),
   {

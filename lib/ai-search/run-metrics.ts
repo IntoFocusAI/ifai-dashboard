@@ -1,3 +1,4 @@
+import { API_ENGINE_LABELS } from "@/lib/ai-search/engine-group";
 import type { AiCallRow, AiCurrentRun } from "@/lib/ai-search/types";
 
 const ENGINE_LABELS: Record<string, string> = {
@@ -16,7 +17,7 @@ export const MIN_COMPARABLE_RESOLVED = 10;
 export function engineLabel(engine: string | null | undefined): string {
   const key = (engine ?? "").trim().toLowerCase();
   if (!key) return "Engine not recorded";
-  return ENGINE_LABELS[key] ?? key.charAt(0).toUpperCase() + key.slice(1);
+  return ENGINE_LABELS[key] ?? API_ENGINE_LABELS[key] ?? key.charAt(0).toUpperCase() + key.slice(1);
 }
 
 export function modelLabel(model: string | null | undefined): string {

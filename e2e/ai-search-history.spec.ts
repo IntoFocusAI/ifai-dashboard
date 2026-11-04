@@ -114,8 +114,8 @@ test.describe("AI Search stored-run copy", () => {
 
   test("the copy labels the three runs and return restores the live rates", async ({ canvas, page }) => {
     await canvas.openSpokeFromMap("AI Search Visibility");
-    await expect(page.locator("[data-ai-win-rate='unbranded_discovery']")).toHaveText("58.9%");
-    await expect(page.locator("[data-ai-win-rate='branded_consideration']")).toHaveText("98.6%");
+    await expect(page.locator("[data-ai-win-rate='unbranded_discovery']")).toHaveText("56.5%");
+    await expect(page.locator("[data-ai-win-rate='branded_consideration']")).toHaveText("95.7%");
     await page.locator("[data-ai-history-trigger]").click();
     await expect(page.locator("[data-ai-history-dialog] [data-ai-history-fixture]")).toContainText("Copy of the stored runs");
     await expect(page.locator("[data-ai-history-day='2026-10-03']")).toBeDisabled();
@@ -148,8 +148,8 @@ test.describe("AI Search stored-run copy", () => {
     await returnToLast30Days(page);
     await expect(page.locator("[data-ai-history-banner]")).toHaveCount(0);
     await page.locator(".drilldown-tab-btn", { hasText: "Run Summary" }).click();
-    await expect(page.locator("[data-ai-win-rate='unbranded_discovery']")).toHaveText("58.9%");
-    await expect(page.locator("[data-ai-win-rate='branded_consideration']")).toHaveText("98.6%");
+    await expect(page.locator("[data-ai-win-rate='unbranded_discovery']")).toHaveText("56.5%");
+    await expect(page.locator("[data-ai-win-rate='branded_consideration']")).toHaveText("95.7%");
   });
 
   test("the trend connects the three runs and marks the scoring boundary", async ({ canvas, page }) => {
@@ -203,8 +203,8 @@ test.describe("AI Search stored-run copy", () => {
     );
     await returnToLast30Days(page);
     await page.locator(".drilldown-tab-btn", { hasText: "Run Summary" }).click();
-    await expect(page.locator("[data-ai-win-rate='unbranded_discovery']")).toHaveText("58.9%");
-    await expect(page.locator("[data-ai-win-rate='branded_consideration']")).toHaveText("98.6%");
+    await expect(page.locator("[data-ai-win-rate='unbranded_discovery']")).toHaveText("56.5%");
+    await expect(page.locator("[data-ai-win-rate='branded_consideration']")).toHaveText("95.7%");
   });
 });
 

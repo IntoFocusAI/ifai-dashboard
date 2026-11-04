@@ -82,6 +82,38 @@ test.describe("guided tour", () => {
     await canvas.startTour();
     await expect(page.locator(".tour-drilldown-hint")).toContainText("come back");
   });
+
+  test("every step is short bullets that fit the card without scrolling", async ({ canvas, page }) => {
+    test.setTimeout(90_000);
+    await canvas.startTour();
+    await expect(canvas.tourCard.locator(".tour-card-list")).not.toContainText(/loading/i, { timeout: 30_000 });
+    const total = await page.locator(".tour-dot").count();
+
+    for (let step = 0; step < total; step += 1) {
+      const read = await canvas.tourCard.evaluate((card) => {
+        const lines = (el: Element) => {
+          const lineHeight = parseFloat(getComputedStyle(el).lineHeight);
+          return Math.round(el.getBoundingClientRect().height / lineHeight);
+        };
+        const body = card.querySelector(".tour-modal-body")!;
+        return {
+          title: card.querySelector(".tour-spoke-title")?.textContent,
+          items: [...card.querySelectorAll(".tour-card-list li, .tour-value-text")].map((el) => ({
+            text: el.textContent ?? "",
+            lines: lines(el),
+          })),
+          overflow: body.scrollHeight - body.clientHeight,
+        };
+      });
+      for (const item of read.items) {
+        // The required failed-read line names its source table, so it may take two.
+        const allowed = /did not load/.test(item.text) ? 2 : 1;
+        expect(item.lines, `${read.title}: "${item.text}"`).toBeLessThanOrEqual(allowed);
+      }
+      expect(read.overflow, `${read.title} scrolls`).toBeLessThanOrEqual(0);
+      if (step < total - 1) await canvas.nextTourStep();
+    }
+  });
 });
 
 /* The dimmer used to be a flat sheet over everything, so the bubble each step
@@ -104,6 +136,7 @@ test.describe("tour spotlight", () => {
     await expect
       .poll(async () => (await spotlight(page)).r)
       .toBeGreaterThan(0);
+    await expect(page.locator("svg.camera-animating")).toHaveCount(0);
 
     const ring = page.locator("#tour-spotlight-ring");
     const box = (await ring.boundingBox())!;
@@ -130,15 +163,17 @@ test.describe("tour spotlight", () => {
 
     for (let step = 0; step < total; step += 1) {
       await expect.poll(async () => (await spotlight(page)).r).toBeGreaterThan(0);
+      await expect(page.locator("svg.camera-animating")).toHaveCount(0);
       const hole = await spotlight(page);
       const card = (await page.locator(".tour-modal-card").boundingBox())!;
-      expect(hole.x - hole.r, `step ${step + 1} overlaps the tour card`).toBeGreaterThan(
-        card.x + card.width,
-      );
-      if (step < total - 1) {
-        await canvas.nextTourStep();
-        await page.waitForTimeout(900); // let the camera settle on the next node
-      }
+      // The card takes whichever side keeps it off the lit circle.
+      const nearestX = Math.max(card.x, Math.min(hole.x, card.x + card.width));
+      const nearestY = Math.max(card.y, Math.min(hole.y, card.y + card.height));
+      expect(
+        Math.hypot(nearestX - hole.x, nearestY - hole.y) - hole.r,
+        `step ${step + 1} overlaps the tour card`,
+      ).toBeGreaterThan(0);
+      if (step < total - 1) await canvas.nextTourStep();
     }
   });
 

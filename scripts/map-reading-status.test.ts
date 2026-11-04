@@ -46,11 +46,14 @@ test("channel lines keep the below-MAP count and add only the Walmart and Musici
     musiciansFriendLastRunAt: CHECKED,
     now: new Date(CHECKED).getTime(),
   });
+  // R-08: the caveat moves to the figure's tooltip; the visible count keeps an asterisk.
+  assert.equal(channelSummaryText(2, walmart), "2 listings below MAP*");
   assert.equal(
-    channelSummaryText(2, walmart),
-    "2 listings below MAP. 3 listings in this read have no stored Walmart price, so they are missing from this count and are not counted as zero.",
+    walmart,
+    "3 listings in this read have no stored Walmart price, so they are missing from this count and are not counted as zero.",
   );
-  assert.match(channelSummaryText(1, friend), /^1 listing below MAP\. Last checked /);
+  assert.equal(channelSummaryText(1, friend), "1 listing below MAP*");
+  assert.match(friend ?? "", /^Last checked /);
   assert.equal(channelSummaryText(4, fresh), "4 listings below MAP");
   assert.equal(channelReadingNote("Amazon", { walmartMissing: 3 }), null);
   assert.equal(channelReadingNote("Sweetwater", { walmartMissing: 3 }), null);

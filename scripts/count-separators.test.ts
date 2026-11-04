@@ -44,7 +44,7 @@ test("Run Summary counts use the shared formatter", () => {
   );
 
   const summary = flat("components/v3/live/ai-search/RunSummaryPanel.tsx");
-  assert.match(summary, /<MixedScoringTip mixed=\{mixed\}>\{`\$\{formatInt\(tally\.fenderWins\)\} of \$\{formatInt\(tally\.resolved\)\}`\}<\/MixedScoringTip>/);
+  assert.match(summary, /tip=\{`\$\{formatInt\(tally\.fenderWins\)\} Fender\/Squier leads\. \$\{formatInt\(tally\.resolved - tally\.fenderWins\)\} rest/);
   assert.match(summary, /\{formatInt\(tally\.fenderWins\)\} Fender\/Squier leads/);
   assert.match(summary, /\{formatInt\(tally\.resolved\)\} <\/EvidenceLink>/);
   assert.match(summary, /<td>\{formatInt\(aside\.unresolved\)\}<\/td> <td>\{formatInt\(aside\.errors\)\}<\/td>/);

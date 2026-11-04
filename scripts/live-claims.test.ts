@@ -293,7 +293,8 @@ test("missing MAP prices do not become a below-MAP count or an average gap", () 
 
 test("the guided tour uses the same retail headline as the ticker", () => {
   const retail = retailReady();
-  const headline = headlineSentence(headlineSurface(retail));
+  const surface = headlineSurface(retail);
+  const headline = `${surface.label}: ${surface.countLabel}`;
   const steps = buildLiveTourSteps(bundle(), retail);
   const hub = steps.find((step) => step.nodeId === "hub");
   const roadmap = steps.find((step) => step.nodeId === "roadmap");

@@ -12,7 +12,10 @@ import {
 } from "@/lib/ai-search/summary";
 import type { AiSearchRead } from "@/lib/ai-search/types";
 import type { NodeStatus } from "@/lib/canvas-sdk/types";
+import { CANVAS_READS, failedReadTip, READ_NOT_AVAILABLE } from "@/lib/fender-canvas/canvas-reads";
 import { formatInt, formatRatio } from "@/lib/fender-canvas/format";
+import { activeOfferClarity } from "@/lib/fender-canvas/offer-clarity";
+import type { CanvasBundle } from "@/lib/fender-canvas/types";
 import {
   buyBoxHero,
   catalogHero,
@@ -277,6 +280,22 @@ function unbrandedFinding(read: AiSearchRead): BriefingFinding {
     numerator: ready ? tally.fenderWins : null,
     denominator: ready ? tally.resolved : null,
   };
+}
+
+function escapeHtml(value: string): string {
+  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+/**
+ * The Briefing "Active offers" line. The offer split comes from canvas_metrics, so a failed
+ * read is Not available* with the read named in the shared custom tooltip (HTML, for the
+ * Briefing template), never a zero or "not stored".
+ */
+export function activeOffersLine(bundle: CanvasBundle): string {
+  const tip = failedReadTip(bundle, "m");
+  if (!tip) return activeOfferClarity(bundle.m);
+  const desc = escapeHtml(tip);
+  return `<span class="ifai-term" data-ifai-tooltip-title="${READ_NOT_AVAILABLE}" data-ifai-tooltip-desc="${desc}" data-read-unavailable="${CANVAS_READS.m.source}" tabindex="0" aria-label="${READ_NOT_AVAILABLE}: ${desc}">${READ_NOT_AVAILABLE}</span>`;
 }
 
 export function briefingLostRevenuePlaceholder(): BriefingLostRevenuePlaceholder {

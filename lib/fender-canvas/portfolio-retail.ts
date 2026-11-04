@@ -5,12 +5,15 @@
  */
 
 import { tabSlug } from "../canvas-sdk/canvas-url-state";
+import { readFailureTip } from "./canvas-reads";
+import type { CanvasReadFailure } from "./types";
 import {
   buyBoxSellerCensus,
   controlledBuyBoxFinding,
   type BuyBoxSellerCensus,
   type ControlledBuyBoxDetail,
 } from "./consensus-scores";
+import { catalogDivisionCensus, type DivisionCensus } from "./division-census";
 import {
   countFeaturedOffer,
   FEATURED_OFFER_COLUMNS,
@@ -75,6 +78,7 @@ const MAP_UNAVAILABLE = "MAP leakage has not been stored.";
 /** Shown when the retail read has rows and none of them store a MAP price. */
 export const MAP_PRICES_NOT_STORED = "Fender MAP prices have not been stored.";
 const BUNDLE_UNAVAILABLE = "Catalog bundle parent ASINs have not been stored.";
+const BUNDLE_OFFER_UNAVAILABLE = "Live offer readings have not been stored for bundle listings.";
 const SPEC_UNAVAILABLE = "Amazon spec-field readings have not been stored.";
 
 export const RETAIL_SUPPRESSION_COLUMNS = FEATURED_OFFER_COLUMNS;
@@ -83,7 +87,7 @@ export const RETAIL_MAP_LEAKAGE_COLUMNS =
   "asin,map_price,offer_price,amz_leakage,wmt_leakage,mf_leakage";
 
 export const RETAIL_CATALOG_GOVERNANCE_COLUMNS =
-  "asin,model_name,title,bundle_name,parent_asin,product_url,is_bundle,category,buybox_seller_name,buybox_seller_id,buybox_status";
+  "asin,model_name,title,bundle_name,parent_asin,product_url,is_bundle,category,buybox_seller_name,buybox_seller_id,buybox_status,featured_offer_state";
 
 export const RETAIL_AMAZON_SPEC_COLUMNS =
   "asin,title,amazon_checked,amazon_missing_fields";
@@ -197,6 +201,8 @@ export function suppressedListingsFinding(
 }
 
 export type MapLeakageRow = {
+  /** Selected by the live read. Optional on older fixtures; a row with no ASIN cannot be an approved exception. */
+  asin?: string | null;
   map_price: number | string | null;
   offer_price: number | string | null;
   amz_leakage: number | string | null;
@@ -211,7 +217,19 @@ export type MapLeakageDetail = {
   population: number;
   /** Mean of each violation's worst stored channel leakage, in dollars. Null when no leakage is stored. Not a revenue estimate. */
   averageLeakage: number | null;
+  /**
+   * Listings in the read set aside as "Approved exception" on the MAP check. They are left
+   * out of every count above. Done and other set-aside reasons stay in.
+   */
+  approvedExceptions: number;
 };
+
+/** Upper-case trimmed ASIN, the key set-asides and MAP rows are matched on. */
+export function mapAsinKey(asin: string | null | undefined): string | null {
+  if (typeof asin !== "string") return null;
+  const key = asin.trim().toUpperCase();
+  return key ? key : null;
+}
 
 function channelLeakages(row: MapLeakageRow): number[] {
   return [row.amz_leakage, row.wmt_leakage, row.mf_leakage]
@@ -245,15 +263,18 @@ function storedMapPrice(value: unknown): number | null {
   return price;
 }
 
-/** Current MAP violations from stored channel leakage. Bundle fields are not an input. */
+/**
+ * Current MAP violations from stored channel leakage. Bundle fields are not an input.
+ * Listings whose ASIN is in `approvedExceptions` are left out of the population, the
+ * comparisons, the violations, and the average gap; the count of them is kept in the detail.
+ */
 export function mapLeakageFinding(
-  rows: MapLeakageRow[] | null,
-  options?: { truncated?: boolean },
+  allRows: MapLeakageRow[] | null,
+  options?: { truncated?: boolean; approvedExceptions?: ReadonlySet<string> | null },
 ): RetailReading<MapLeakageDetail | null> {
-  if (rows == null) return unavailable(MAP_UNAVAILABLE);
+  if (allRows == null) return unavailable(MAP_UNAVAILABLE);
 
-  const population = rows.length;
-  if (population > 0 && !rows.some((row) => storedMapPrice(row.map_price) != null)) {
+  if (allRows.length > 0 && !allRows.some((row) => storedMapPrice(row.map_price) != null)) {
     return {
       status: "unavailable",
       issueCount: null,
@@ -261,6 +282,15 @@ export function mapLeakageFinding(
       detail: null,
     };
   }
+  const exceptions = options?.approvedExceptions;
+  const rows = exceptions?.size
+    ? allRows.filter((row) => {
+        const key = mapAsinKey(row.asin);
+        return key == null || !exceptions.has(key);
+      })
+    : allRows;
+  const approvedExceptions = allRows.length - rows.length;
+  const population = rows.length;
   const violations = rows.filter(isMapViolation);
   const undecided = rows.filter(mapRowUndecided).length;
   const decided = rows.filter((row) => channelLeakages(row).length > 0).length;
@@ -276,6 +306,7 @@ export function mapLeakageFinding(
     undecided,
     population,
     averageLeakage,
+    approvedExceptions,
   };
 
   if (population === 0 && !options?.truncated) {
@@ -328,7 +359,23 @@ export type CatalogBundleRow = {
   buybox_seller_name?: string | null;
   buybox_seller_id?: string | null;
   buybox_status?: string | null;
+  /** Current Featured Offer state from the hourly listing read: present, withheld, or no_active_offer. */
+  featured_offer_state?: string | null;
 };
+
+/** Short label for the bundle population every bundle figure counts (R-13). */
+export const LIVE_OFFER_BUNDLES = "bundles with a live offer";
+
+export const LIVE_OFFER_RULE =
+  "A bundle counts when Amazon's current listing read shows an offer for sale on it, with or without the Buy Box. Bundles with no active offer, or with no offer reading yet, are left out.";
+
+/** Withheld still has an offer for sale, just no Buy Box. */
+const LIVE_OFFER_STATES = new Set(["present", "withheld"]);
+
+export function hasLiveOffer(row: Pick<CatalogBundleRow, "featured_offer_state">): boolean {
+  const state = text(row.featured_offer_state)?.toLowerCase();
+  return state != null && LIVE_OFFER_STATES.has(state);
+}
 
 export type UnnestedBundleReason = "missing_parent_asin" | "unusable_parent_asin";
 
@@ -354,24 +401,28 @@ function shortCell(value: string): string {
   return value.length <= 24 ? value : `${value.slice(0, 21)}...`;
 }
 
-/** Who holds the Buy Box for a catalog-governance bundle row. */
-export function catalogBundleSellerLabel(seller: string | null | undefined): string {
-  return shortCell(text(seller) ?? "Unknown");
-}
-
 /**
- * Compact offer label for a catalog-governance bundle row.
- * For 3P Confirmed, show the Amazon seller id when stored — never "Partner".
+ * Who holds the Buy Box for a catalog-governance bundle row, in one cell.
+ * A 3P holder shows its seller name, never "Partner".
  */
-export function catalogBundleOfferLabel(
+export function catalogBundleBuyBoxLabel(
   status: string | null | undefined,
-  sellerId?: string | null,
+  sellerName: string | null | undefined,
 ): string {
   const value = text(status);
-  if (value === "3P Confirmed") return shortCell(text(sellerId) ?? "Unknown");
   if (value === "Amazon 1P") return "Amazon";
-  if (value === "No Active Offer") return "No offer";
-  return "Unknown";
+  if (value === "No Active Offer") return "No active offer";
+  return shortCell(text(sellerName) ?? "Unknown");
+}
+
+/** Amazon seller id shown under a 3P Buy Box holder, when stored. */
+export function catalogBundleSellerIdLabel(
+  status: string | null | undefined,
+  sellerId: string | null | undefined,
+): string | null {
+  if (text(status) !== "3P Confirmed") return null;
+  const id = text(sellerId);
+  return id ? shortCell(id) : null;
 }
 
 /** Compact product-line label for a catalog-governance bundle row. */
@@ -385,10 +436,42 @@ export function catalogBundleLineLabel(category: string | null | undefined): str
 }
 
 export type UnnestedBundleDetail = {
+  /** Bundles with a live offer and no usable parent ASIN. */
   opportunities: UnnestedBundleOpportunity[];
+  /** Bundles in this retail read with a live offer: the population every bundle figure counts (R-13). */
   bundlesInRead: number;
+  /** Every listing flagged as a bundle in this retail read, with or without a live offer. Optional on fixtures. */
+  flaggedInRead?: number;
+  /** Flagged bundles in this read with no offer reading yet. Optional on fixtures. */
+  offerUnread?: number;
+  /** `canvas_metrics.catalog_bundles`: listings the whole catalog flags as bundles. */
   catalogBundles: number | null;
+  /** The failed canvas_metrics read behind a missing `catalogBundles`. Optional on fixtures. */
+  catalogBundlesFailure?: CanvasReadFailure | null;
 };
+
+/** The bundle figure's tooltip: what was counted, the live-offer rule, and the wider totals it was taken from. */
+export function bundlePopulationTip(reading: RetailReading<UnnestedBundleDetail | null>): string | null {
+  const detail = reading.detail;
+  if (reading.issueCount == null || detail == null || detail.bundlesInRead <= 0) return null;
+  const n = reading.issueCount;
+  const m = detail.bundlesInRead;
+  const flagged = detail.flaggedInRead;
+  const unread = detail.offerUnread ?? 0;
+  return [
+    `${countLabel(n)} of ${countLabel(m)} ${LIVE_OFFER_BUNDLES} have no usable parent ASIN.`,
+    LIVE_OFFER_RULE,
+    flagged != null
+      ? `${countLabel(flagged)} ${flagged === 1 ? "listing" : "listings"} in the retail read ${flagged === 1 ? "is" : "are"} flagged as bundles${detail.catalogBundles != null ? `, out of ${countLabel(detail.catalogBundles)} the catalog flags` : ""}.`
+      : null,
+    unread > 0 ? `${countLabel(unread)} of them ${unread === 1 ? "has" : "have"} no offer reading yet.` : null,
+    detail.catalogBundlesFailure
+      ? `${readFailureTip(detail.catalogBundlesFailure)} The catalog's own bundle total is not shown.`
+      : null,
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
 
 /** A parent ASIN can nest the bundle only when it is a different 10-character ASIN. */
 export function usableParentAsin(parentAsin: string | null | undefined, asin: string): boolean {
@@ -433,27 +516,36 @@ export function unnestedBundleOpportunities(rows: CatalogBundleRow[]): UnnestedB
 }
 
 /**
- * A bundle with no usable parent ASIN is an unnested-bundle opportunity.
+ * A bundle with a live offer and no usable parent ASIN is an unnested-bundle opportunity (R-13).
+ * Only bundles for sale now are counted; a title that matches a bundle is not enough.
  * A bundle with a usable parent is not a defect. Seller authorization is not classified here.
  */
 export function unnestedBundlesFinding(
   rows: CatalogBundleRow[] | null,
-  options?: { truncated?: boolean; catalogBundleCount?: number | null },
+  options?: { truncated?: boolean; catalogBundleCount?: number | null | CanvasReadFailure },
 ): RetailReading<UnnestedBundleDetail | null> {
   if (rows == null) return unavailable(BUNDLE_UNAVAILABLE);
 
   const bundleFlagStored = rows.some((row) => row.is_bundle === true || row.is_bundle === false);
   if (rows.length > 0 && !bundleFlagStored) return unavailable(BUNDLE_UNAVAILABLE);
 
-  const bundlesInRead = rows.filter((row) => row.is_bundle === true && text(row.asin)).length;
-  const opportunities = unnestedBundleOpportunities(rows);
-  const catalogBundles =
-    options?.catalogBundleCount == null || !Number.isFinite(options.catalogBundleCount)
-      ? null
-      : options.catalogBundleCount;
-  const detail: UnnestedBundleDetail = { opportunities, bundlesInRead, catalogBundles };
-  const catalogShort =
-    catalogBundles != null && catalogBundles > bundlesInRead && rows.length > 0;
+  const flagged = rows.filter((row) => row.is_bundle === true && text(row.asin));
+  if (flagged.length > 0 && !rows.some((row) => text(row.featured_offer_state) != null)) {
+    return unavailable(BUNDLE_OFFER_UNAVAILABLE);
+  }
+  const live = flagged.filter(hasLiveOffer);
+  const opportunities = unnestedBundleOpportunities(live);
+  const count = options?.catalogBundleCount;
+  const catalogBundlesFailure = count != null && typeof count === "object" ? count : null;
+  const catalogBundles = typeof count === "number" && Number.isFinite(count) ? count : null;
+  const detail: UnnestedBundleDetail = {
+    opportunities,
+    bundlesInRead: live.length,
+    flaggedInRead: flagged.length,
+    offerUnread: flagged.filter((row) => text(row.featured_offer_state) == null).length,
+    catalogBundles,
+    catalogBundlesFailure,
+  };
 
   if (rows.length === 0 && !options?.truncated && catalogBundles == null) {
     return { status: "available_with_zero", issueCount: 0, missingMessage: null, detail };
@@ -468,19 +560,15 @@ export function unnestedBundlesFinding(
     };
   }
 
-  if (options?.truncated || catalogShort) {
-    const coverage =
-      catalogBundles != null
-        ? `This read includes ${countLabel(bundlesInRead)} of ${countLabel(catalogBundles)} bundle listings.`
-        : `This read did not include the full bundle population.`;
+  if (options?.truncated) {
     const known =
       opportunities.length === 0
         ? "No unnested bundle is confirmed in the included listings."
-        : `${countLabel(opportunities.length)} of the included listings ${opportunities.length === 1 ? "has" : "have"} no usable parent ASIN.`;
+        : `${countLabel(opportunities.length)} of the included ${LIVE_OFFER_BUNDLES} ${opportunities.length === 1 ? "has" : "have"} no usable parent ASIN.`;
     return {
       status: "incomplete",
       issueCount: opportunities.length,
-      missingMessage: `${coverage} ${known} This is not a final count.`,
+      missingMessage: `This read did not include the full bundle population. ${known} This is not a final count.`,
       detail,
     };
   }
@@ -661,12 +749,22 @@ export type RetailQuerySource = {
   suppressionRows: () => Promise<PagedRows<SuppressionSupportRow>>;
   mapRows: () => Promise<PagedRows<MapLeakageRow>>;
   catalogRows: () => Promise<PagedRows<CatalogBundleRow>>;
-  catalogBundleCount: () => Promise<number | null>;
+  /** The failure, not null, when the canvas_metrics read itself failed. */
+  catalogBundleCount: () => Promise<number | null | CanvasReadFailure>;
   specRows: () => Promise<PagedRows<AmazonSpecRow>>;
 };
 
 export type PortfolioRetailSnapshot = PortfolioRetailFindings & {
   headline: RetailHeadline | null;
+  /**
+   * The stored MAP rows behind `mapLeakage`, kept so approved exceptions can be applied
+   * when the MAP set-asides load or change. Null when that read failed. Optional on fixtures.
+   */
+  mapRead?: { rows: MapLeakageRow[]; truncated: boolean } | null;
+  /** True when the MAP set-aside read failed, so no approved exception could be left out. */
+  mapApprovedExceptionsFailed?: boolean;
+  /** Buy Box holders per division from the catalog read. Null when that read failed. Optional on fixtures. */
+  divisionCensus?: DivisionCensus | null;
 };
 
 export async function loadPortfolioRetailSnapshot(
@@ -702,5 +800,7 @@ export async function loadPortfolioRetailSnapshot(
   return {
     ...findings,
     headline: selectRetailHeadline(findings),
+    mapRead: mapRows.ok ? { rows: mapRows.rows, truncated: mapRows.truncated } : null,
+    divisionCensus: catalogDivisionCensus(catalogRows),
   };
 }
