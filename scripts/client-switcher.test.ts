@@ -9,7 +9,14 @@ import {
   resetActiveClientForTests,
 } from "@/lib/client/active-client";
 import { toClientUrl, toDashboardBody } from "@/lib/client/column-aliases";
-import { controlledBuyBoxFinding } from "@/lib/fender-canvas/consensus-scores";
+import {
+  controlledBuyBoxFinding,
+  requiredMarketplaceSpecShare,
+  requiredSpecsPlaceholderTooltip,
+} from "@/lib/fender-canvas/consensus-scores";
+import { specFieldLabel } from "@/lib/fender-canvas/catalog-governance-findings";
+import { sheetSplit, type FindabilityRow } from "@/lib/findability/outcomes";
+import { FINDABILITY_COLUMNS, findabilityColumns, loadFindabilityRead, type FindabilityClient } from "@/lib/findability/queries";
 
 const REST = "https://example.supabase.co/rest/v1";
 
@@ -76,5 +83,58 @@ test("brand-led: the brand's own seller accounts count as a controlled Buy Box",
   ]);
   // Fender's placeholder dealers (Austin Bazaar, GearTree) are not Ledlenser's.
   assert.deepEqual(finding, { controlled: 2, known: 3, population: 3 });
+  resetActiveClientForTests(null);
+});
+
+test("required marketplace specs: guitar fields for Fender, lighting fields for Ledlenser", () => {
+  const gaps = [{ missingFields: ["beam_distance"] }, { missingFields: ["scale_length"] }];
+  resetActiveClientForTests("fender");
+  assert.deepEqual(requiredMarketplaceSpecShare(gaps, 10), { numerator: 9, denominator: 10 });
+  assert.match(requiredSpecsPlaceholderTooltip(), /guitar/);
+  resetActiveClientForTests("ledlenser");
+  assert.deepEqual(requiredMarketplaceSpecShare(gaps, 10), { numerator: 9, denominator: 10 });
+  assert.match(requiredSpecsPlaceholderTooltip(), /max lumens, beam distance/);
+  assert.equal(specFieldLabel("light_output_maximum"), "Max lumens");
+  assert.equal(specFieldLabel("water_resistance_level"), "Water resistance");
+  resetActiveClientForTests(null);
+});
+
+test("official pages: Ledlenser splits on and off the product sheet; Fender has no split", () => {
+  const row = (asin: string, confirmed: boolean, onSheet?: boolean) =>
+    ({ asin, counts_as_confirmed: confirmed, ...(onSheet === undefined ? {} : { on_brand_sheet: onSheet }) }) as FindabilityRow;
+  assert.deepEqual(sheetSplit([row("A", true, true), row("B", false, true), row("C", true, false), row("D", false, false)]), {
+    onSheet: { confirmed: 1, total: 2 },
+    offSheet: { confirmed: 1, total: 2 },
+  });
+  assert.equal(sheetSplit([row("A", true), row("B", false)]), null);
+  resetActiveClientForTests("fender");
+  assert.equal(findabilityColumns(), FINDABILITY_COLUMNS);
+  resetActiveClientForTests("ledlenser");
+  assert.ok(findabilityColumns().endsWith(",on_brand_sheet"));
+  resetActiveClientForTests(null);
+});
+
+test("official pages still load when the view has no sheet flag yet", async () => {
+  resetActiveClientForTests("ledlenser");
+  const asked: string[] = [];
+  const client = {
+    from: (view: string) => ({
+      select: (columns: string) => ({
+        order: () => {
+          const result = () => {
+            if (view === "canvas_spec_findability") asked.push(columns);
+            if (view === "canvas_spec_findability" && columns.includes("on_brand_sheet")) {
+              return Promise.resolve({ data: null, error: { message: "column on_brand_sheet does not exist" } });
+            }
+            return Promise.resolve({ data: view === "canvas_spec_findability" ? [{ asin: "B0", counts_as_confirmed: true }] : [], error: null });
+          };
+          return { range: () => result() };
+        },
+      }),
+    }),
+  } as unknown as FindabilityClient;
+  const read = await loadFindabilityRead(client);
+  assert.equal(read.phase, "ready");
+  assert.equal(asked.length, 2);
   resetActiveClientForTests(null);
 });

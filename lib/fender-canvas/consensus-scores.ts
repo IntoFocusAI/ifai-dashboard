@@ -56,6 +56,37 @@ export const AUTHORIZED_BUY_BOX_PARTNERS = ["Austin Bazaar", "GearTree"] as cons
 export const REQUIRED_SPECS_PLACEHOLDER_TOOLTIP =
   "Placeholder: this list is a default until required specs are approved by category. The guitar and instrument fields are scale length, handedness, weight, dimensions, strings, fretboard, bridge, pickups, neck, part number, body, color, and UPC.";
 
+/** Lighting fields (flashlights, headlamps, lanterns) for the same placeholder. */
+export const LIGHTING_MARKETPLACE_SPEC_FIELDS = [
+  "light_output_maximum",
+  "beam_distance",
+  "runtime",
+  "water_resistance_level",
+  "battery_type",
+  "power_source",
+  "light_source_type",
+  "item_weight",
+  "item_dimensions",
+  "material_type",
+  "color",
+  "upc",
+  "manufacturer_part_number",
+] as const;
+
+const LIGHTING_SPEC_FIELD_SET: ReadonlySet<string> = new Set(LIGHTING_MARKETPLACE_SPEC_FIELDS);
+
+export const LIGHTING_SPECS_PLACEHOLDER_TOOLTIP =
+  "Placeholder: this list is a default until required specs are approved by category. The lighting fields are max lumens, beam distance, runtime, water resistance, battery type, power source, light source, weight, dimensions, material, color, UPC, and part number.";
+
+/** Required marketplace fields for the brand on screen: guitar fields for Fender, lighting fields otherwise. */
+export function requiredMarketplaceSpecFieldSet(): ReadonlySet<string> {
+  return activeClient().key === "fender" ? REQUIRED_MARKETPLACE_SPEC_FIELD_SET : LIGHTING_SPEC_FIELD_SET;
+}
+
+export function requiredSpecsPlaceholderTooltip(): string {
+  return activeClient().key === "fender" ? REQUIRED_SPECS_PLACEHOLDER_TOOLTIP : LIGHTING_SPECS_PLACEHOLDER_TOOLTIP;
+}
+
 export const CONTROLLED_BUY_BOX_PLACEHOLDER_TOOLTIP =
   "Placeholder: Amazon Retail, Austin Bazaar, and GearTree are the set used until the authorized-partner list is confirmed.";
 
@@ -376,8 +407,9 @@ export function requiredMarketplaceSpecShare(
   checked: number | null | undefined,
 ): ShareInput | null {
   if (gaps == null || checked == null || !(checked > 0)) return null;
+  const required = requiredMarketplaceSpecFieldSet();
   const missingRequired = gaps.filter((gap) =>
-    gap.missingFields.some((field) => REQUIRED_MARKETPLACE_SPEC_FIELD_SET.has(field)),
+    gap.missingFields.some((field) => required.has(field)),
   ).length;
   const filled = Math.max(0, checked - missingRequired);
   return { numerator: filled, denominator: checked };
@@ -400,7 +432,7 @@ export const FOUNDATION_COMPONENT_SPECS: ScoreComponentSpec[] = [
     weight: 20,
     placeholder: true,
     placeholderTitle: "Required marketplace specs",
-    placeholderTooltip: REQUIRED_SPECS_PLACEHOLDER_TOOLTIP,
+    placeholderTooltip: requiredSpecsPlaceholderTooltip(),
   },
   {
     id: "unbranded_named_most",
