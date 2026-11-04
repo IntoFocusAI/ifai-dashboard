@@ -233,6 +233,68 @@ test.describe("custom cursor", () => {
   });
 });
 
+/* X-32: a tab click made right after a spoke opened was sometimes ignored. The clicked
+   bubble's cluster lifted the exiting map over the panel, and the panel grew from zero
+   width, so its tabs wrapped into a stack that reflowed under the pointer. */
+test.describe("panel tabs right after a spoke opens", () => {
+  test("in every frame of the open, a tab on screen is what a click there hits", { tag: "@1440" }, async ({ canvas, page }) => {
+    const watch = page.evaluate(
+      () =>
+        new Promise<{ blocked: string[]; tallestRow: number; settledRow: number }>((done) => {
+          const blocked: string[] = [];
+          let tallestRow = 0;
+          let shownAt = 0;
+          const tick = (now: number) => {
+            const tabs = [...document.querySelectorAll<HTMLElement>(".drilldown-tab-btn")];
+            if (tabs.length) {
+              shownAt ||= now;
+              tallestRow = Math.max(tallestRow, document.querySelector(".drilldown-tabs")!.getBoundingClientRect().height);
+              for (const tab of tabs) {
+                const box = tab.getBoundingClientRect();
+                const x = box.left + box.width / 2;
+                const y = box.top + box.height / 2;
+                if (x < 0 || y < 0 || x >= innerWidth || y >= innerHeight) continue;
+                const hit = document.elementFromPoint(x, y);
+                if (!hit || !tab.contains(hit)) {
+                  const node = hit?.closest("[data-graph-node-id]")?.getAttribute("data-graph-node-id");
+                  blocked.push(`${Math.round(now - shownAt)}ms ${tab.textContent}: ${node ? `bubble ${node}` : hit?.tagName}`);
+                }
+              }
+            }
+            if (!shownAt || now - shownAt < 1200) requestAnimationFrame(tick);
+            else done({ blocked, tallestRow, settledRow: document.querySelector(".drilldown-tabs")!.getBoundingClientRect().height });
+          };
+          requestAnimationFrame(tick);
+        }),
+    );
+    await canvas.clickBubble("spoke-retail");
+    const seen = await watch;
+    expect(seen.blocked, "something sat over a tab while the panel opened").toEqual([]);
+    expect(seen.tallestRow, "the tab row reflowed while the panel opened").toBeLessThanOrEqual(seen.settledRow + 1);
+  });
+
+  test("the first tab click after opening from the map sticks", async ({ canvas, page }) => {
+    await canvas.clickBubble("spoke-retail");
+    const tab = page.locator(".drilldown-tab-btn").nth(2);
+    const name = (await tab.textContent())!;
+    await tab.click();
+    await expect(page.locator(".drilldown-tab-btn.active")).toHaveText(name, { timeout: 1500 });
+    await page.waitForLoadState("networkidle");
+    await expect(page.locator(".drilldown-tab-btn.active")).toHaveText(name);
+  });
+
+  test("a tab clicked while a deep link's live reads arrive stays selected", async ({ page }) => {
+    await page.goto("/dashboard?spoke=ecommerce&tab=map");
+    const tab = page.locator(".drilldown-tab-btn", { hasText: "Retail Overview" });
+    await tab.click();
+    await expect(page.locator(".drilldown-tab-btn.active")).toHaveText("Retail Overview", { timeout: 1500 });
+    await page.waitForLoadState("networkidle");
+    await page.waitForTimeout(1000);
+    await expect(page.locator(".drilldown-tab-btn.active")).toHaveText("Retail Overview");
+    await expect(page).toHaveURL(/tab=retail-overview/);
+  });
+});
+
 /** Watches one camera move: the worst gap between the lit area and the card while the card shows. */
 function watchTourStep(page: Page) {
   return page.evaluate(

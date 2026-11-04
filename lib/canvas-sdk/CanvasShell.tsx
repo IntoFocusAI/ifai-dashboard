@@ -332,8 +332,9 @@ export function CanvasShell({ spec, children }: Props) {
     };
   }, [graphColumnLayout, syncColumnScrollFade, activeSpoke]);
 
-  const drilldownWidth = (() => {
-    if (panelLayout === "hidden") return 0;
+  /* A hidden panel keeps the width it opens at, so opening only slides it in. Growing
+     it from 0 reflowed the tabs into a tall stack that moved under the pointer. */
+  const shownDrilldownWidth = (() => {
     if (graphColumnLayout && windowWidth > 0) {
       return Math.max(baseDrilldownWidth, windowWidth - IOM_GRAPH_RAIL_PX);
     }
@@ -344,6 +345,7 @@ export function CanvasShell({ spec, children }: Props) {
       Math.round(Math.min(EXPANDED_WIDTH_CAP, windowWidth * EXPANDED_WIDTH_RATIO));
     return Math.max(baseDrilldownWidth, Math.min(target, windowWidth - MIN_GRAPH_RAIL));
   })();
+  const drilldownWidth = panelLayout === "hidden" ? 0 : shownDrilldownWidth;
 
   const hidePanel = useCallback(() => {
     if (panelLayout !== "hidden") {
@@ -1000,6 +1002,7 @@ export function CanvasShell({ spec, children }: Props) {
       style={
         {
           "--drilldown-width": `${drilldownWidth}px`,
+          "--drilldown-panel-width": `${shownDrilldownWidth}px`,
           ...(iom ? { "--iom-graph-rail-width": `${IOM_GRAPH_RAIL_PX}px` } : {}),
         } as CSSProperties
       }

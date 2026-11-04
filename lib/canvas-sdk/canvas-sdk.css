@@ -950,22 +950,24 @@
 
     /* Sub-bubbles live in the viewport SVG; metric widgets sit above the map by
        default. While a satellite cluster is open, lift the map and only hit-test
-       nodes so left-side orbits stay visible at any viewport size. */
-    .ifai-canvas:not(.column-layout):has(.satellite-group.visible) .viewport-container {
+       nodes so left-side orbits stay visible at any viewport size. Never above an
+       open panel: the clicked bubble's cluster is still showing while the map
+       exits, and its nodes would take clicks meant for the panel's tabs. */
+    .ifai-canvas:not(.column-layout):not(.panel-open):has(.satellite-group.visible) .viewport-container {
       z-index: 48;
       pointer-events: none;
     }
 
-    .ifai-canvas:not(.column-layout):has(.satellite-group.visible) .viewport-container .canvas-svg {
+    .ifai-canvas:not(.column-layout):not(.panel-open):has(.satellite-group.visible) .viewport-container .canvas-svg {
       pointer-events: none;
     }
 
-    .ifai-canvas:not(.column-layout):has(.satellite-group.visible) .viewport-container .graph-node,
-    .ifai-canvas:not(.column-layout):has(.satellite-group.visible) .viewport-container .strategy-roadmap-btn {
+    .ifai-canvas:not(.column-layout):not(.panel-open):has(.satellite-group.visible) .viewport-container .graph-node,
+    .ifai-canvas:not(.column-layout):not(.panel-open):has(.satellite-group.visible) .viewport-container .strategy-roadmap-btn {
       pointer-events: auto;
     }
 
-    .ifai-canvas:not(.column-layout):has(.satellite-group.visible) .canvas-metric-widgets {
+    .ifai-canvas:not(.column-layout):not(.panel-open):has(.satellite-group.visible) .canvas-metric-widgets {
       z-index: 44;
     }
 
@@ -1445,7 +1447,7 @@
       top: var(--canvas-header-height);
       right: 0;
       bottom: 0;
-      width: var(--drilldown-width);
+      width: var(--drilldown-panel-width, var(--drilldown-width));
       background: var(--bg-surface);
       border-top: 1px solid var(--border-color);
       border-left: 1px solid var(--border-color);
