@@ -93,7 +93,7 @@ function measure(): Reading {
     if ((el.tagName === "svg" || el.tagName === "CANVAS") && r.width >= 40 && r.height >= 40) return true;
     const cls = el.getAttribute("class") ?? "";
     return (
-      /bar/i.test(cls) &&
+      /bar|band|track|fill/i.test(cls) &&
       !/toolbar|filter|tab|scroll|nav|search|pill/i.test(cls) &&
       r.width >= 40 &&
       r.height >= 4 &&
@@ -126,7 +126,17 @@ test.describe("figure-first audit at 1280×720 (X-03, X-04)", () => {
       const errors = await openTab(page, baseURL, tab);
       if (gap) {
         info.annotations.push({ type: "figure-first gap", description: `${key}: ${gap.owner}` });
-        await page.waitForTimeout(8_000);
+        // Wait until the tab reads at least as well as recorded, so a slow read is not logged as a gap.
+        await expect
+          .poll(
+            async () => {
+              const now = await page.evaluate(measure);
+              return (now.x03 || !gap.x03) && (now.x04 || !gap.x04);
+            },
+            { timeout: LIVE_READ_TIMEOUT },
+          )
+          .toBe(true);
+        await page.waitForTimeout(3_000);
         await info.attach(`${key}.png`, { body: await page.screenshot(), contentType: "image/png" });
         const reading = await page.evaluate(measure);
         info.annotations.push({
