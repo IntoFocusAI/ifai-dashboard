@@ -381,24 +381,28 @@ function shortCell(value: string): string {
   return value.length <= 24 ? value : `${value.slice(0, 21)}...`;
 }
 
-/** Who holds the Buy Box for a catalog-governance bundle row. */
-export function catalogBundleSellerLabel(seller: string | null | undefined): string {
-  return shortCell(text(seller) ?? "Unknown");
-}
-
 /**
- * Compact offer label for a catalog-governance bundle row.
- * For 3P Confirmed, show the Amazon seller id when stored — never "Partner".
+ * Who holds the Buy Box for a catalog-governance bundle row, in one cell.
+ * A 3P holder shows its seller name, never "Partner".
  */
-export function catalogBundleOfferLabel(
+export function catalogBundleBuyBoxLabel(
   status: string | null | undefined,
-  sellerId?: string | null,
+  sellerName: string | null | undefined,
 ): string {
   const value = text(status);
-  if (value === "3P Confirmed") return shortCell(text(sellerId) ?? "Unknown");
   if (value === "Amazon 1P") return "Amazon";
-  if (value === "No Active Offer") return "No offer";
-  return "Unknown";
+  if (value === "No Active Offer") return "No active offer";
+  return shortCell(text(sellerName) ?? "Unknown");
+}
+
+/** Amazon seller id shown under a 3P Buy Box holder, when stored. */
+export function catalogBundleSellerIdLabel(
+  status: string | null | undefined,
+  sellerId: string | null | undefined,
+): string | null {
+  if (text(status) !== "3P Confirmed") return null;
+  const id = text(sellerId);
+  return id ? shortCell(id) : null;
 }
 
 /** Compact product-line label for a catalog-governance bundle row. */

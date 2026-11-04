@@ -12,8 +12,8 @@ import {
 import { formatPct, formatRatio } from "../lib/fender-canvas/format.ts";
 import {
   catalogBundleLineLabel,
-  catalogBundleOfferLabel,
-  catalogBundleSellerLabel,
+  catalogBundleBuyBoxLabel,
+  catalogBundleSellerIdLabel,
   mapLeakageFinding,
   RETAIL_FINDING_LABELS,
   selectRetailHeadline,
@@ -445,7 +445,7 @@ test("Catalog Governance panel source shows Splintered listings chevrons and spe
   assert.ok(specsAt > leadRowAt, "specs table sits after the lead row");
 });
 
-test("bundle Seller, Offer, and Line cells use short brand-facing labels", () => {
+test("bundle Buy Box and Line cells use short brand-facing labels", () => {
   const [row] = unnestedBundleOpportunities([
     bundle({
       asin: "B0000000K1",
@@ -457,31 +457,28 @@ test("bundle Seller, Offer, and Line cells use short brand-facing labels", () =>
     }),
   ]);
   assert.ok(row);
-  assert.equal(catalogBundleSellerLabel(row.buyboxSellerName), "Liberty Music Inc");
-  assert.equal(catalogBundleOfferLabel(row.buyboxStatus, row.buyboxSellerId), "A1B2C3D4E5F6G");
+  assert.equal(catalogBundleBuyBoxLabel(row.buyboxStatus, row.buyboxSellerName), "Liberty Music Inc");
+  assert.equal(catalogBundleSellerIdLabel(row.buyboxStatus, row.buyboxSellerId), "A1B2C3D4E5F6G");
   assert.equal(catalogBundleLineLabel(row.category), "Kits");
 
-  assert.equal(catalogBundleOfferLabel("3P Confirmed", "A1B2C3D4E5F6G"), "A1B2C3D4E5F6G");
-  assert.equal(catalogBundleOfferLabel("3P Confirmed", "  "), "Unknown");
-  assert.equal(catalogBundleOfferLabel("3P Confirmed", null), "Unknown");
-  assert.equal(catalogBundleOfferLabel("3P Confirmed", ""), "Unknown");
-  assert.equal(catalogBundleOfferLabel("Amazon 1P"), "Amazon");
-  assert.equal(catalogBundleOfferLabel("No Active Offer"), "No offer");
-  assert.equal(catalogBundleOfferLabel(""), "Unknown");
-  assert.equal(catalogBundleOfferLabel(null), "Unknown");
+  assert.equal(catalogBundleBuyBoxLabel("3P Confirmed", "  "), "Unknown");
+  assert.equal(catalogBundleBuyBoxLabel("3P Confirmed", null), "Unknown");
+  assert.equal(catalogBundleBuyBoxLabel("Amazon 1P", "Amazon.com"), "Amazon");
+  assert.equal(catalogBundleBuyBoxLabel("No Active Offer", null), "No active offer");
+  assert.equal(catalogBundleBuyBoxLabel(null, null), "Unknown");
+  assert.equal(catalogBundleSellerIdLabel("3P Confirmed", "  "), null);
+  assert.equal(catalogBundleSellerIdLabel("3P Confirmed", null), null);
+  assert.equal(catalogBundleSellerIdLabel("Amazon 1P", "ATVPDKIKX0DER"), null);
 
   assert.equal(catalogBundleLineLabel("Hollow & Semi-Hollow Body"), "Hollow");
   assert.equal(catalogBundleLineLabel("Solid Body"), "Solid Body");
-  assert.equal(catalogBundleSellerLabel("   "), "Unknown");
-  assert.equal(catalogBundleSellerLabel(null), "Unknown");
-  assert.equal(catalogBundleSellerLabel(""), "Unknown");
 
   for (const label of [
-    catalogBundleSellerLabel("Liberty Music Inc"),
-    catalogBundleOfferLabel("3P Confirmed", "A1B2C3D4E5F6G"),
-    catalogBundleOfferLabel("3P Confirmed", "ATVPDKIKX0DERTOOLONGTOFITCELL"),
-    catalogBundleOfferLabel("Amazon 1P"),
-    catalogBundleOfferLabel("No Active Offer"),
+    catalogBundleBuyBoxLabel("3P Confirmed", "Liberty Music Inc"),
+    catalogBundleBuyBoxLabel("3P Confirmed", "A seller name that is far too long for the cell"),
+    catalogBundleSellerIdLabel("3P Confirmed", "ATVPDKIKX0DERTOOLONGTOFITCELL") ?? "",
+    catalogBundleBuyBoxLabel("Amazon 1P", null),
+    catalogBundleBuyBoxLabel("No Active Offer", null),
     catalogBundleLineLabel("Electric Guitar Kits"),
     catalogBundleLineLabel("Hollow & Semi-Hollow Body"),
     catalogBundleLineLabel("A very long category name that exceeds"),
@@ -495,7 +492,8 @@ test("Catalog Governance table drops Parent ASIN and Why it is here", () => {
   assert.doesNotMatch(panel, /Parent ASIN/);
   assert.doesNotMatch(panel, /Why it is here/);
   assert.doesNotMatch(panel, /Partner/);
-  assert.match(panel, /label:\s*"Seller"/);
-  assert.match(panel, /label:\s*"Offer"/);
+  assert.match(panel, /label:\s*"Buy Box"/);
+  assert.doesNotMatch(panel, /label:\s*"Seller"/);
+  assert.doesNotMatch(panel, /label:\s*"Offer"/);
   assert.match(panel, /label:\s*"Line"/);
 });
