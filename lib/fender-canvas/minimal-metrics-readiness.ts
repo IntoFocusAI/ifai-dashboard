@@ -16,6 +16,7 @@ import {
   presentAmazonCompletenessFieldShare,
   resolveAmazonFieldTotals,
 } from "@/lib/fender-canvas/ai-readiness-lead";
+import { failedReadTip } from "@/lib/fender-canvas/canvas-reads";
 import { listingContentHeroes } from "@/lib/fender-canvas/listing-content";
 import { machineReadabilityHeroes } from "@/lib/fender-canvas/machine-readability";
 import { brandSitePageFoundHero } from "@/lib/fender-canvas/page-found-hero";
@@ -34,6 +35,12 @@ import {
 } from "@/lib/fender-canvas/minimal-metric-kit";
 
 const LISTINGS_IN_READ = "listings in this read";
+
+/** Not available* naming the page read, when that read failed. */
+function pageReadFigure(ctx: MinimalContext, key: "specPages" | "listingContent"): MinimalFigure | null {
+  const failed = failedReadTip(ctx.bundle, key);
+  return failed ? missingFigure(failed) : null;
+}
 
 function findabilityCounts(ctx: MinimalContext): OutcomeCounts | null {
   return cached(ctx, "findability-counts", () => (ctx.findability.phase === "ready" ? countFindability(ctx.findability.rows) : null));
@@ -96,6 +103,8 @@ export const READINESS_ENTRIES: MinimalEntry[] = [
     tab: "Amazon Specs",
     label: "Amazon attribute completeness",
     read: (ctx) => {
+      const failed = failedReadTip(ctx.bundle, "m");
+      if (failed) return missingFigure(failed);
       const hero = amazonCompletenessHero(ctx.bundle.m, ctx.amazonFieldTotals);
       if (isNotAvailable(hero.percent)) return missingFigure("Amazon attribute completeness is not stored in this catalog spec read.");
       const totals = resolveAmazonFieldTotals(ctx.bundle.m, ctx.amazonFieldTotals);
@@ -116,6 +125,8 @@ export const READINESS_ENTRIES: MinimalEntry[] = [
     label: PAGE_FOUND_LABEL,
     tab: "Brand-Site Specs",
     read: (ctx) => {
+      const failed = failedReadTip(ctx.bundle, "m");
+      if (failed) return counted(null, "", null, null, failed);
       const hero = brandSitePageFoundHero(ctx.bundle.m);
       return counted(hero.ratio, "checked SKUs", hero.pie, hero.tip, hero.figureTip ?? hero.explainer);
     },
@@ -127,7 +138,8 @@ export const READINESS_ENTRIES: MinimalEntry[] = [
     tab: "Brand-Site Specs",
     read: (ctx) => {
       const hero = machineReadabilityHeroes(ctx.bundle.specPages ?? null)[0];
-      return counted(hero.ratio, "found fender.com pages", hero.pie, hero.tip, hero.explainer);
+      const missing = failedReadTip(ctx.bundle, "specPages") ?? hero.explainer;
+      return counted(hero.ratio, "found fender.com pages", hero.pie, hero.tip, missing);
     },
   }),
   {
@@ -135,7 +147,9 @@ export const READINESS_ENTRIES: MinimalEntry[] = [
     spokeId: "specs",
     tab: "Brand-Site Specs",
     label: "Product basics present",
-    read: (ctx) => heroFigure(machineReadabilityHeroes(ctx.bundle.specPages ?? null)[1], "fender.com pages checked", "The fender.com page read could not be loaded."),
+    read: (ctx) =>
+      pageReadFigure(ctx, "specPages") ??
+      heroFigure(machineReadabilityHeroes(ctx.bundle.specPages ?? null)[1], "fender.com pages checked", "The fender.com page read could not be loaded."),
   },
   bubbleEntry({
     id: "sat-tables",
@@ -144,7 +158,8 @@ export const READINESS_ENTRIES: MinimalEntry[] = [
     tab: "Amazon A+ Matrix",
     read: (ctx) => {
       const hero = listingContentHeroes(ctx.bundle.listingContent ?? null)[0];
-      return counted(hero.ratio, "live Amazon listings checked", hero.pie, hero.tip, hero.explainer);
+      const missing = failedReadTip(ctx.bundle, "listingContent") ?? hero.explainer;
+      return counted(hero.ratio, "live Amazon listings checked", hero.pie, hero.tip, missing);
     },
   }),
   {
@@ -152,13 +167,17 @@ export const READINESS_ENTRIES: MinimalEntry[] = [
     spokeId: "specs",
     tab: "Amazon A+ Matrix",
     label: "A+ content",
-    read: (ctx) => heroFigure(listingContentHeroes(ctx.bundle.listingContent ?? null)[1], "live Amazon pages read", "No A+ read yet."),
+    read: (ctx) =>
+      pageReadFigure(ctx, "listingContent") ??
+      heroFigure(listingContentHeroes(ctx.bundle.listingContent ?? null)[1], "live Amazon pages read", "No A+ read yet."),
   },
   {
     id: "aplus-video",
     spokeId: "specs",
     tab: "Amazon A+ Matrix",
     label: "Product video",
-    read: (ctx) => heroFigure(listingContentHeroes(ctx.bundle.listingContent ?? null)[2], "live Amazon pages read", "No video read yet."),
+    read: (ctx) =>
+      pageReadFigure(ctx, "listingContent") ??
+      heroFigure(listingContentHeroes(ctx.bundle.listingContent ?? null)[2], "live Amazon pages read", "No video read yet."),
   },
 ];

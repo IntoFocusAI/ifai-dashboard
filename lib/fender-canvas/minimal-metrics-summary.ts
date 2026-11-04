@@ -1,5 +1,6 @@
 /** Minimal view entries for Summary and Action Items. */
 
+import { failedReadTip } from "@/lib/fender-canvas/canvas-reads";
 import { consensusFromLive } from "@/lib/fender-canvas/consensus-scores-from-live";
 import type { ConsensusScore } from "@/lib/fender-canvas/consensus-scores";
 import { formatInt, formatPct } from "@/lib/fender-canvas/format";
@@ -60,6 +61,8 @@ export const SUMMARY_ENTRIES: MinimalEntry[] = [
     tab: "Briefing",
     label: "Amazon holds the Buy Box",
     read: (ctx) => {
+      const failed = failedReadTip(ctx.bundle, "m");
+      if (failed) return missingFigure(failed);
       const split = activeOfferSplit(ctx.bundle.m);
       if (!split) return missingFigure("The offer split is not stored.");
       if (split.active <= 0) return missingFigure("No listing in this catalog read has an active Amazon offer.");

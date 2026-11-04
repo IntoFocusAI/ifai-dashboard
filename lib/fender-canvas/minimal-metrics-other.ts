@@ -8,6 +8,7 @@ import { strongestCategory } from "@/lib/ai-search/canvas-surfaces";
 import { categoryBattles } from "@/lib/ai-search/competitors";
 import { categoryLabel } from "@/lib/ai-search/run-metrics";
 import type { NodeStatus } from "@/lib/canvas-sdk/types";
+import { failedReadTip } from "@/lib/fender-canvas/canvas-reads";
 import { ACTUATION_OMITTED_REASON } from "@/lib/fender-canvas/consensus-score-display";
 import { formatInt, formatPct } from "@/lib/fender-canvas/format";
 import { categoryUnbrandedFigure } from "@/lib/fender-canvas/minimal-metrics-ai";
@@ -73,6 +74,8 @@ export const OTHER_ENTRIES: MinimalEntry[] = [
       "Listings where Amazon itself (1P) holds the Buy Box, out of every listing in the stored Buy Box count, from the catalog metrics row. That count includes listings with no offer, so this share runs lower than the active-offer share on Briefing. " +
       NO_TAB,
     read: (ctx) => {
+      const failed = failedReadTip(ctx.bundle, "m");
+      if (failed) return missingFigure(failed);
       const m = ctx.bundle.m;
       return storedShare(
         finite(m.bb_1p_pct),
@@ -91,6 +94,8 @@ export const OTHER_ENTRIES: MinimalEntry[] = [
     label: "Seller data harvested",
     definition: `Catalog listings with stored seller data, out of every catalog listing, from the catalog metrics row. ${NO_TAB}`,
     read: (ctx) => {
+      const failed = failedReadTip(ctx.bundle, "m");
+      if (failed) return missingFigure(failed);
       const m = ctx.bundle.m;
       return storedShare(
         finite(m.seller_harvested_pct),
@@ -111,6 +116,8 @@ export const OTHER_ENTRIES: MinimalEntry[] = [
       "Customer reviews that sit on partner bundle pages instead of the main Fender listing, from the catalog metrics row. Catalog Governance lists the bundles. " +
       NO_TAB,
     read: (ctx) => {
+      const failed = failedReadTip(ctx.bundle, "m");
+      if (failed) return missingFigure(failed);
       const reviews = finite(ctx.bundle.m.bundle_reviews);
       if (reviews == null) return missingFigure("The catalog metrics row does not store a stranded review count.");
       return { value: formatInt(reviews), tone: reviews > 0 ? "danger" : "success", ratio: null, pie: null, tip: null, missing: null };
