@@ -20,8 +20,12 @@
 --   GRANT ALL ON public.canvas_set_aside_events TO anon, authenticated;
 --   GRANT ALL ON public.canvas_set_aside_reasons TO anon, authenticated;
 --
--- Alters existing permissions: waits for Brian Watson to review and apply (AGENTS.md).
--- Not applied anywhere yet.
+-- Approved: Brian Watson, 4 Nov 2026.
+-- Applied: prod, 4 Nov 2026 (UTC) by Brian Watson's Claude Code session, recorded in migration
+--   history as version 20261104215427 (file renamed from 20261104152213 to match).
+--   sandbox, mirror, claude: not yet applied.
+-- Verified on prod after apply: both views anon=r and authenticated=r, postgres and service_role
+--   unchanged; as anon, both views still read (7 reasons, 2 events) and DELETE/UPDATE are denied.
 
 DO $$
 BEGIN
