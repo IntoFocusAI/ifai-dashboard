@@ -36,6 +36,10 @@ test("Brand-Site Specs shows the page-found hero and opens its checked SKUs", as
     "data-ifai-tooltip-desc",
     /fender\.com product check; the Findability tab runs its own official-page check, so the two can differ\./,
   );
+  await expect(hero.locator("span.ifai-term").first()).toHaveAttribute(
+    "data-ifai-tooltip-desc",
+    /Last checked Oct 8, 2026, 12:00 AM UTC\./,
+  );
   await expect(hero).not.toContainText(/older|spec read|Findability/);
 
   // The bubble lands with this table open.

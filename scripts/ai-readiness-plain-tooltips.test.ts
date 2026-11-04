@@ -10,7 +10,7 @@ import {
   PAGE_FOUND_DEFINITION,
   pageFoundHero,
 } from "../lib/fender-canvas/ai-readiness-lead.ts";
-import { buildSpecPages, specPagesCheckedAt } from "../lib/fender-canvas/machine-readability.ts";
+import { loadSpecCheckRunAt, SPEC_CHECK_JOB, type SpecCheckClient } from "../lib/fender-canvas/page-found-checked-at.ts";
 import { brandSitePageFoundHero, PAGE_FOUND_UNAVAILABLE_TIP } from "../lib/fender-canvas/page-found-hero.ts";
 import { REASON_COLUMN_TOOLTIP } from "../lib/fender-canvas/page-found-reasons.ts";
 import { STORED_REASONS } from "../lib/fender-canvas/page-found-stored-reason.ts";
@@ -87,15 +87,36 @@ test("the two checks can differ is said once, on the page-found figures only", (
   );
 });
 
-test("Brand-Site Specs dates the page-found tooltip from the newest found-page check", () => {
-  const summary = buildSpecPages([
-    { asin: "B0A", fender_url: "https://www.fender.com/a", fender_found: true, fender_missing_fields: null, checked_at: "2026-11-04T14:04:33Z" },
-    { asin: "B0B", fender_url: "https://www.fender.com/b", fender_found: true, fender_missing_fields: null, checked_at: AT },
-    { asin: "B0C", fender_url: "https://www.fender.com/c", fender_found: true, fender_missing_fields: null, checked_at: null },
-  ]);
-  assert.equal(specPagesCheckedAt(summary), "2026-11-04T15:04:28.676Z");
-  assert.equal(specPagesCheckedAt(null), null);
-  assert.match(read("components/v3/live/MachineReadabilityPanel.tsx"), /brandSitePageFoundHero\(metrics, specPagesCheckedAt\(summary\)\)/);
+function freshnessClient(data: unknown, error: { message: string } | null = null): SpecCheckClient {
+  return {
+    from: (view) => {
+      assert.equal(view, "canvas_freshness");
+      return {
+        select: (columns) => {
+          assert.equal(columns, "job_key,last_run_at");
+          return {
+            eq: (column, value) => {
+              assert.equal(column, "job_key");
+              assert.equal(value, SPEC_CHECK_JOB);
+              return Promise.resolve({ data, error });
+            },
+          };
+        },
+      };
+    },
+  };
+}
+
+test("Brand-Site Specs dates the page-found tooltip from the fender.com product check's last run", async () => {
+  assert.equal(SPEC_CHECK_JOB, "spec_readiness");
+  assert.equal(await loadSpecCheckRunAt(freshnessClient([{ job_key: "spec_readiness", last_run_at: AT }])), AT);
+  assert.equal(await loadSpecCheckRunAt(freshnessClient([])), null);
+  assert.equal(await loadSpecCheckRunAt(freshnessClient(null)), null);
+  assert.equal(await loadSpecCheckRunAt(freshnessClient([{ job_key: "spec_readiness", last_run_at: "not a time" }])), null);
+  assert.equal(await loadSpecCheckRunAt(freshnessClient([{ job_key: "spec_readiness", last_run_at: null }])), null);
+  await assert.rejects(loadSpecCheckRunAt(freshnessClient(null, { message: "boom" })), /canvas_freshness: boom/);
+  assert.match(read("components/v3/live/MachineReadabilityPanel.tsx"), /brandSitePageFoundHero\(metrics, useSpecCheckRunAt\(\)\)/);
+  assert.match(read("components/v3/live/useSpecCheckRunAt.ts"), /loadSpecCheckRunAt\(\)/);
   const lead = read("components/v3/live/AiReadinessLead.tsx");
   assert.match(lead, /newestAmazonSpecCheckAt\(rows\)/);
   assert.match(lead, /amazonSpecsHeroes\(bundle\.m, metricsTotals \?\? rowTotals, checkedAt\)/);

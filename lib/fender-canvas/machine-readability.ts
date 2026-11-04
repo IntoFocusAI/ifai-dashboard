@@ -6,7 +6,6 @@
 
 import type { PieDiscData } from "@/lib/ai-search/citation-pies";
 import { formatInt, formatPct, formatRatio } from "@/lib/fender-canvas/format";
-import { newestCheckTime } from "@/lib/findability/last-checked";
 import { getCanvasSupabase } from "@/lib/supabase/canvas-client";
 
 /** The spec field. Neck, pickup, and hardware specs live here. */
@@ -323,14 +322,6 @@ function missingSpecsHero(summary: SpecPageSummary | null): MachineHeroModel {
     numerator: ready ? missing : null,
     denominator: ready ? total : null,
   };
-}
-
-/**
- * When the fender.com product check last ran: the newest check time on a found page.
- * The check writes one time per run to found and not-found rows alike.
- */
-export function specPagesCheckedAt(summary: SpecPageSummary | null): string | null {
-  return summary ? newestCheckTime(summary.pages, () => true, (page) => page.checkedAt) : null;
 }
 
 /** Brand-Site Specs heroes. Missing machine-readable specs leads; product basics follow. */
