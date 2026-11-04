@@ -109,8 +109,40 @@ const CHANNEL_PRICES: Row[] = MAP_ROWS.filter((row) => row.wmt_price != null).ma
   checked_at: "2026-11-03T12:00:00.000Z",
 }));
 
+const CHECKED_AT = new Date(Date.now() - 60_000).toISOString();
+
+function suppressionRow(asin: string, withheld: boolean): Row {
+  return {
+    asin,
+    model_name: `Offer listing ${asin.slice(-2)}`,
+    title: `Offer listing ${asin.slice(-2)}`,
+    offer_price: 200,
+    buybox_status: withheld ? "Unknown/Not Harvested" : "3P Confirmed",
+    featured_offer_state: withheld ? "withheld" : "present",
+    featured_offer_withheld: withheld,
+    featured_offer_source: "keepa",
+    featured_offer_checked_at: CHECKED_AT,
+    featured_offer_attempted_at: CHECKED_AT,
+    featured_offer_last_error: null,
+    competitive_external_price_state: "present",
+    competitive_price_threshold_cents: 10000,
+    featured_offer_observed_price_cents: withheld ? 20000 : 9000,
+    featured_offer_observed_shipping_cents: null,
+    featured_offer_observed_seller: null,
+  };
+}
+
+/** Four current Buy Box readings, one withheld. */
+export const SUPPRESSION_ROWS: Row[] = [
+  suppressionRow("B00OFR0001", true),
+  suppressionRow("B00OFR0002", false),
+  suppressionRow("B00OFR0003", false),
+  suppressionRow("B00OFR0004", false),
+];
+
 function retailRows(url: URL): Row[] {
   const select = url.searchParams.get("select") ?? "";
+  if (select.includes("featured_offer_withheld")) return SUPPRESSION_ROWS;
   if (select.includes("buybox_status") && select.includes("category")) return CATALOG_ROWS;
   if (select.startsWith("asin,map_price")) return MAP_ROWS;
   if (select === "*") {

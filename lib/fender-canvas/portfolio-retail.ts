@@ -5,6 +5,8 @@
  */
 
 import { tabSlug } from "../canvas-sdk/canvas-url-state";
+import { readFailureTip } from "./canvas-reads";
+import type { CanvasReadFailure } from "./types";
 import {
   buyBoxSellerCensus,
   controlledBuyBoxFinding,
@@ -444,6 +446,8 @@ export type UnnestedBundleDetail = {
   offerUnread?: number;
   /** `canvas_metrics.catalog_bundles`: listings the whole catalog flags as bundles. */
   catalogBundles: number | null;
+  /** The failed canvas_metrics read behind a missing `catalogBundles`. Optional on fixtures. */
+  catalogBundlesFailure?: CanvasReadFailure | null;
 };
 
 /** The bundle figure's tooltip: what was counted, the live-offer rule, and the wider totals it was taken from. */
@@ -461,6 +465,9 @@ export function bundlePopulationTip(reading: RetailReading<UnnestedBundleDetail 
       ? `${countLabel(flagged)} ${flagged === 1 ? "listing" : "listings"} in the retail read ${flagged === 1 ? "is" : "are"} flagged as bundles${detail.catalogBundles != null ? `, out of ${countLabel(detail.catalogBundles)} the catalog flags` : ""}.`
       : null,
     unread > 0 ? `${countLabel(unread)} of them ${unread === 1 ? "has" : "have"} no offer reading yet.` : null,
+    detail.catalogBundlesFailure
+      ? `${readFailureTip(detail.catalogBundlesFailure)} The catalog's own bundle total is not shown.`
+      : null,
   ]
     .filter(Boolean)
     .join(" ");
@@ -515,7 +522,7 @@ export function unnestedBundleOpportunities(rows: CatalogBundleRow[]): UnnestedB
  */
 export function unnestedBundlesFinding(
   rows: CatalogBundleRow[] | null,
-  options?: { truncated?: boolean; catalogBundleCount?: number | null },
+  options?: { truncated?: boolean; catalogBundleCount?: number | null | CanvasReadFailure },
 ): RetailReading<UnnestedBundleDetail | null> {
   if (rows == null) return unavailable(BUNDLE_UNAVAILABLE);
 
@@ -528,16 +535,16 @@ export function unnestedBundlesFinding(
   }
   const live = flagged.filter(hasLiveOffer);
   const opportunities = unnestedBundleOpportunities(live);
-  const catalogBundles =
-    options?.catalogBundleCount == null || !Number.isFinite(options.catalogBundleCount)
-      ? null
-      : options.catalogBundleCount;
+  const count = options?.catalogBundleCount;
+  const catalogBundlesFailure = count != null && typeof count === "object" ? count : null;
+  const catalogBundles = typeof count === "number" && Number.isFinite(count) ? count : null;
   const detail: UnnestedBundleDetail = {
     opportunities,
     bundlesInRead: live.length,
     flaggedInRead: flagged.length,
     offerUnread: flagged.filter((row) => text(row.featured_offer_state) == null).length,
     catalogBundles,
+    catalogBundlesFailure,
   };
 
   if (rows.length === 0 && !options?.truncated && catalogBundles == null) {
@@ -742,7 +749,8 @@ export type RetailQuerySource = {
   suppressionRows: () => Promise<PagedRows<SuppressionSupportRow>>;
   mapRows: () => Promise<PagedRows<MapLeakageRow>>;
   catalogRows: () => Promise<PagedRows<CatalogBundleRow>>;
-  catalogBundleCount: () => Promise<number | null>;
+  /** The failure, not null, when the canvas_metrics read itself failed. */
+  catalogBundleCount: () => Promise<number | null | CanvasReadFailure>;
   specRows: () => Promise<PagedRows<AmazonSpecRow>>;
 };
 
