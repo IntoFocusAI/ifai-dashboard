@@ -45,7 +45,7 @@ export const STORED_REASONS: Record<StoredReasonCode, { label: string; definitio
   page_not_read: {
     label: "fender.com page did not load",
     definition:
-      "The fender.com page the Findability check found did not load for this spec read, and no fender.com search result matched this model.",
+      "The fender.com page the Findability tab found did not load during the fender.com product check, and no fender.com search result matched this model.",
   },
 };
 

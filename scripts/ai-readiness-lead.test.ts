@@ -137,8 +137,8 @@ test("Amazon Specs keeps Amazon completeness and does not invent listings at 100
   assert.equal(amazon.ratio, `${formatRatio(11_050, 12_025)} (${formatPct(91.6)})`);
   assert.match(amazon.ratio ?? "", /^\d/);
   assert.doesNotMatch(amazon.ratio ?? "", /^Across\b/);
-  assert.match(amazon.definition, /across 925 checked SKUs/i);
-  assert.match(amazon.definition, /average, not a count/i);
+  assert.match(amazon.definition, /Amazon listings of the 925 checked SKUs/i);
+  assert.match(amazon.definition, /average per listing, not the share of listings with every field filled/i);
   assert.ok(amazon.pie);
   assert.equal(amazon.pie.total, 100);
   const filled = amazon.pie.slices.find((slice) => slice.key === "matched");
@@ -170,7 +170,7 @@ test("Amazon completeness share uses stored field totals, not avg times listing 
   );
   assert.equal(hero.ratio, `${formatRatio(40, 130)} (${formatPct(50)})`);
   assert.doesNotMatch(hero.ratio ?? "", /Across/);
-  assert.match(hero.definition, /across 10 checked SKUs/i);
+  assert.match(hero.definition, /Amazon listings of the 10 checked SKUs/i);
 });
 
 test("Amazon completeness share is Not available* when field totals are missing", () => {

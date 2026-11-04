@@ -34,9 +34,9 @@ test("Brand-Site Specs shows the page-found hero and opens its checked SKUs", as
   await expect(hero.locator("[data-citation-pie-disc]")).toBeVisible();
   await expect(hero.locator("span.ifai-term").first()).toHaveAttribute(
     "data-ifai-tooltip-desc",
-    /older spec read.*Findability/,
+    /fender\.com product check; the Findability tab runs its own official-page check, so the two can differ\./,
   );
-  await expect(hero).not.toContainText(/older spec read|Findability/);
+  await expect(hero).not.toContainText(/older|spec read|Findability/);
 
   // The bubble lands with this table open.
   await expect(hero.getByRole("button", { name: "fender.com page found" })).toHaveAttribute("aria-expanded", "true");
@@ -69,8 +69,8 @@ test("Brand-Site Specs shows the page-found hero and opens its checked SKUs", as
   await expect(noRow.locator("[data-page-found-reason]")).toHaveText("Reason not recorded");
 
   const header = table.locator("th span.ifai-term", { hasText: "fender.com page or reason" });
-  await expect(header).toHaveAttribute("data-ifai-tooltip-desc", /separate official-page check/);
-  await expect(table.locator("tbody")).not.toContainText("separate official-page check");
+  await expect(header).toHaveAttribute("data-ifai-tooltip-desc", /runs its own official-page check, so the two can differ\./);
+  await expect(table.locator("tbody")).not.toContainText("runs its own official-page check");
 
   await table.locator("[data-page-found-filter='not_found']").click();
   await expect(table.locator("[data-page-found-row]")).toHaveCount(2);

@@ -6,6 +6,7 @@
  * "Reason not recorded" as plain text.
  */
 
+import { FENDER_CHECK_DIFFERS } from "@/lib/fender-canvas/ai-readiness-lead";
 import { REASON_NOT_RECORDED, type PageFoundRow } from "@/lib/fender-canvas/page-found-evidence";
 import { STORED_REASON_ORDER, type StoredNotFoundReason } from "@/lib/fender-canvas/page-found-stored-reason";
 import { OUTCOME_DEFINITION, bucketLabel, type FindabilityRead } from "@/lib/findability/copy";
@@ -26,7 +27,7 @@ export const FINDABILITY_UNAVAILABLE_TIP =
 export const REASON_COLUMN_TOOLTIP = {
   title: "fender.com page or reason",
   description:
-    "Found rows link to the fender.com page this spec read stored. Not-found rows show the reason this read stored, when it stored one, then the listing's result on the Findability tab. Findability is a separate official-page check run at a different time, so its result can differ from this read.",
+    `Found rows link to the matching fender.com product page. Not-found rows give the reason the fender.com product check recorded, when it recorded one, then the listing's result on the Findability tab. ${FENDER_CHECK_DIFFERS}`,
 } as const;
 
 export type FindabilityResult =

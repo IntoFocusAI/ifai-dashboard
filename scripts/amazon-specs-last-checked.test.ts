@@ -52,7 +52,7 @@ test("no checked listing with a usable time reads Not available*", () => {
   );
   assert.equal(lastCheckedSentence(null), null);
   assert.equal(LAST_CHECKED_UNAVAILABLE_LABEL, "Not available*");
-  assert.match(AMAZON_SPECS_LAST_CHECKED_UNAVAILABLE_DESC, /Amazon spec read/);
+  assert.match(AMAZON_SPECS_LAST_CHECKED_UNAVAILABLE_DESC, /Amazon listing check/);
 });
 
 test("the shared helper keeps the Findability sentence and accepts any checked rule", () => {

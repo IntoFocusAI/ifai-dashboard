@@ -9,6 +9,7 @@ import { usePageFoundEvidence } from "@/components/v3/live/usePageFoundEvidence"
 import {
   machineReadabilityHeroes,
   sharedGapSentence,
+  specPagesCheckedAt,
   type MachineHeroId,
   type SpecPageSummary,
 } from "@/lib/fender-canvas/machine-readability";
@@ -62,7 +63,7 @@ export function MachineReadabilityPanel({
     openedFromPageFoundBubble() ? PAGE_FOUND_HERO_ID : "missing_specs",
   );
   const heroes = machineReadabilityHeroes(summary);
-  const pageFound = brandSitePageFoundHero(metrics);
+  const pageFound = brandSitePageFoundHero(metrics, specPagesCheckedAt(summary));
   const pageFoundRead = usePageFoundEvidence(openTable === PAGE_FOUND_HERO_ID);
   useLandOnPageFoundHero(PAGE_FOUND_ANCHOR, () => setOpenTable(PAGE_FOUND_HERO_ID));
 

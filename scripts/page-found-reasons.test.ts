@@ -187,7 +187,7 @@ test("the table reads the shared Findability loader and keeps caveats in tooltip
     assert.doesNotMatch(source, /loadFindabilityRead|canvas_spec_findability"\)/);
   }
   assert.match(table, /headerTooltip: REASON_COLUMN_TOOLTIP/);
-  assert.match(REASON_COLUMN_TOOLTIP.description, /separate official-page check/);
+  assert.match(REASON_COLUMN_TOOLTIP.description, /runs its own official-page check, so the two can differ\./);
   assert.match(table, /<ReasonFilter/);
   assert.match(cell, /className="ifai-term"/);
   assert.match(cell, /data-ifai-tooltip-desc=\{description\}/);

@@ -11,6 +11,7 @@ import {
   type AiReadinessHeroModel,
 } from "@/lib/fender-canvas/ai-readiness-lead";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
+import { newestAmazonSpecCheckAt } from "@/lib/findability/last-checked";
 
 const PIE_SIZE = "citation-pie-disc citation-pie-disc-amazon-specs";
 
@@ -62,7 +63,8 @@ function ReadinessHero({ hero }: { hero: AiReadinessHeroModel }) {
 /**
  * Amazon Specs lead: Amazon attribute completeness only, with Last checked under it.
  * Page-found and brand-site figures live on the bubble / Brand-Site Specs.
- * Field totals come from the metrics row when stored; otherwise from the spec read.
+ * Field totals come from the metrics row when stored; otherwise from the listing rows.
+ * The hero's definition names the same check time as Last checked.
  */
 export function AiReadinessLead({ bundle, specRows }: { bundle: CanvasBundle; specRows: AmazonSpecRowsRead }) {
   const metricsTotals = resolveAmazonFieldTotals(bundle.m, null);
@@ -73,7 +75,8 @@ export function AiReadinessLead({ bundle, specRows }: { bundle: CanvasBundle; sp
     [needsRowTotals, rows],
   );
 
-  const heroes = amazonSpecsHeroes(bundle.m, metricsTotals ?? rowTotals);
+  const checkedAt = useMemo(() => (rows ? newestAmazonSpecCheckAt(rows) : null), [rows]);
+  const heroes = amazonSpecsHeroes(bundle.m, metricsTotals ?? rowTotals, checkedAt);
 
   return (
     <div className="ai-readiness-lead" data-ai-readiness-lead="" data-amazon-specs-lead="">

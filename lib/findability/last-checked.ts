@@ -15,10 +15,10 @@ export const LAST_CHECKED_UNAVAILABLE_DESC =
   "This official-page read has no stored check time.";
 
 export const AMAZON_SPECS_LAST_CHECKED_UNAVAILABLE_DESC =
-  "This Amazon spec read has no stored check time.";
+  "The Amazon listing check has no check time recorded for any listing whose Amazon page was checked.";
 
 export const AMAZON_SPECS_LAST_CHECKED_FAILED_DESC =
-  "The Amazon spec read did not load, so its check time is not shown. Reload to read it again.";
+  "The Amazon listings did not load, so their check time is not shown. Reload to try again.";
 
 /**
  * Newest parseable stored time among rows `checked` accepts, as ISO in UTC.

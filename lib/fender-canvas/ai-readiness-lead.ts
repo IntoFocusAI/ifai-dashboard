@@ -10,6 +10,7 @@ import { metricsRowFailure, READ_NOT_AVAILABLE, readFailureTip } from "@/lib/fen
 import { formatInt, formatPct, formatRatio, pendingLabel } from "@/lib/fender-canvas/format";
 import { MISSING_FIELD_SHARE_UNAVAILABLE } from "@/lib/fender-canvas/spec-missing-fields";
 import type { CanvasMetricsRow, CanvasSpecReadinessRow } from "@/lib/fender-canvas/types";
+import { lastCheckedSentence } from "@/lib/findability/last-checked";
 
 export type AmazonFieldTotals = { found: number; expected: number };
 
@@ -231,10 +232,25 @@ function failedReadHero(hero: AiReadinessHeroModel, m: CanvasMetricsRow): AiRead
 
 export const PAGE_FOUND_LABEL = "fender.com page found";
 
-export const PAGE_FOUND_DEFINITION =
-  "Share of checked SKUs in this older spec read where site search stored a fender.com page. Official-page outcomes are on the Findability tab.";
+/** Said once wherever the fender.com product check and Findability can disagree. */
+export const FENDER_CHECK_DIFFERS =
+  "This is the fender.com product check; the Findability tab runs its own official-page check, so the two can differ.";
 
-export function pageFoundHero(m: CanvasMetricsRow): AiReadinessHeroModel {
+/** The definition with "Last checked …" after it, when the check time is known. */
+function checkedDefinition(what: string, checkedAt: string | null | undefined, after?: string): string {
+  return [what, lastCheckedSentence(checkedAt ?? null), after].filter(Boolean).join(" ");
+}
+
+const PAGE_FOUND_WHAT =
+  "Checked SKUs with a matching fender.com product page, out of every SKU the fender.com product check covered.";
+
+export function pageFoundDefinition(checkedAt?: string | null): string {
+  return checkedDefinition(PAGE_FOUND_WHAT, checkedAt, FENDER_CHECK_DIFFERS);
+}
+
+export const PAGE_FOUND_DEFINITION = pageFoundDefinition(null);
+
+export function pageFoundHero(m: CanvasMetricsRow, checkedAt: string | null = null): AiReadinessHeroModel {
   const checked = m.spec_checked;
   const found = m.spec_fender_found;
   const pct = m.spec_fender_found_pct;
@@ -242,7 +258,7 @@ export function pageFoundHero(m: CanvasMetricsRow): AiReadinessHeroModel {
   return failedReadHero({
     id: "page_found",
     label: PAGE_FOUND_LABEL,
-    definition: PAGE_FOUND_DEFINITION,
+    definition: pageFoundDefinition(checkedAt),
     percent: ready ? formatPct(pct) : pendingLabel(),
     ratio: ready ? formatRatio(found, checked) : null,
     color: toneColor(pageFoundTone(pct)),
@@ -254,6 +270,7 @@ export function pageFoundHero(m: CanvasMetricsRow): AiReadinessHeroModel {
 export function amazonCompletenessHero(
   m: CanvasMetricsRow,
   fieldTotals: AmazonFieldTotals | null = null,
+  checkedAt: string | null = null,
 ): AiReadinessHeroModel {
   const checked = m.spec_checked;
   const pct = m.spec_avg_amazon_pct;
@@ -265,14 +282,17 @@ export function amazonCompletenessHero(
     totals?.expected,
     ready ? pct : null,
   );
-  const checkedPhrase =
+  const across =
     typeof checked === "number" && Number.isFinite(checked) && checked > 0
-      ? ` (across ${formatInt(checked)} checked SKUs)`
-      : "";
+      ? `the Amazon listings of the ${formatInt(checked)} checked SKUs`
+      : "the Amazon listings of the checked SKUs";
   return failedReadHero({
     id: "amazon_completeness",
     label: "Amazon attribute completeness",
-    definition: `Average of filled Amazon attribute fields over expected fields on the Amazon-checked listings in this catalog spec read${checkedPhrase}. This is an average, not a count of listings at 100%.`,
+    definition: checkedDefinition(
+      `Filled Amazon attribute fields out of the fields each listing should have, averaged across ${across}. It is an average per listing, not the share of listings with every field filled.`,
+      checkedAt,
+    ),
     percent: ready ? formatPct(pct) : pendingLabel(),
     ratio: share.label,
     color: tone ? TONE_COLOR[tone] : null,
@@ -281,15 +301,17 @@ export function amazonCompletenessHero(
   }, m);
 }
 
-export function fenderCompletenessHero(m: CanvasMetricsRow): AiReadinessHeroModel {
+export function fenderCompletenessHero(m: CanvasMetricsRow, checkedAt: string | null = null): AiReadinessHeroModel {
   const found = m.spec_fender_found;
   const pct = m.spec_avg_fender_pct;
   const ready = pct != null && !Number.isNaN(pct);
   return failedReadHero({
     id: "fender_completeness",
     label: "fender.com completeness when a page is found",
-    definition:
-      "Average fender.com completeness on the checked SKUs where a page was found in this older spec read.",
+    definition: checkedDefinition(
+      "Filled spec fields out of the fields each fender.com product page should have, averaged across the checked SKUs with a matching fender.com product page.",
+      checkedAt,
+    ),
     percent: ready ? formatPct(pct) : pendingLabel(),
     ratio: averageAcrossRatio(found != null && found > 0 ? found : null, "found pages"),
     color: toneColor(fenderCompletenessTone(pct)),
@@ -298,7 +320,7 @@ export function fenderCompletenessHero(m: CanvasMetricsRow): AiReadinessHeroMode
   }, m);
 }
 
-export function missingAdditionalPropertyHero(m: CanvasMetricsRow): AiReadinessHeroModel {
+export function missingAdditionalPropertyHero(m: CanvasMetricsRow, checkedAt: string | null = null): AiReadinessHeroModel {
   const found = m.spec_fender_found;
   const missing = m.spec_missing_additional_property;
   const ready = found != null && found > 0 && missing != null && missing >= 0 && missing <= found;
@@ -306,8 +328,10 @@ export function missingAdditionalPropertyHero(m: CanvasMetricsRow): AiReadinessH
   return failedReadHero({
     id: "missing_additional_property",
     label: "Found pages missing additionalProperty",
-    definition:
-      "Share of found fender.com pages in this older spec read whose stored missing fields include additionalProperty.",
+    definition: checkedDefinition(
+      "Checked SKUs whose matching fender.com product page has no machine-readable spec list (additionalProperty), out of every checked SKU with a matching page.",
+      checkedAt,
+    ),
     percent: ready ? formatPct(pct) : pendingLabel(),
     ratio: ready ? formatRatio(missing, found) : null,
     color: null,
@@ -332,8 +356,9 @@ export function missingAdditionalPropertyHero(m: CanvasMetricsRow): AiReadinessH
 export function amazonSpecsHeroes(
   m: CanvasMetricsRow,
   fieldTotals: AmazonFieldTotals | null = null,
+  checkedAt: string | null = null,
 ): AiReadinessHeroModel[] {
-  return [amazonCompletenessHero(m, fieldTotals)];
+  return [amazonCompletenessHero(m, fieldTotals, checkedAt)];
 }
 
 /** @deprecated Prefer amazonSpecsHeroes for the Amazon Specs tab. */

@@ -2,6 +2,8 @@ import { expect, test, type Page } from "@playwright/test";
 import { Canvas } from "./fixtures";
 import { mockCanvasRead, SPEC_ROWS, type Row } from "./spec-read-mock";
 
+const NO_TIME = "The Amazon listing check has no check time recorded for any listing whose Amazon page was checked.";
+
 /**
  * FDD D-04. Amazon Specs shows Last checked with its heroes before any box opens:
  * the newest stored check among listings whose Amazon page was read, in UTC.
@@ -69,6 +71,10 @@ test("Amazon Specs shows Last checked beside its heroes, from checked listings o
   await expect(line).toHaveAttribute("data-amazon-specs-last-checked", "2026-10-13T18:04:08.000Z");
   await expect(line).toBeInViewport();
   await expect(page.locator("[data-amazon-specs-hero-col]")).toContainText("Last checked");
+  const term = lead.locator("[data-amazon-specs-hero='amazon_completeness'] .ifai-term").first();
+  await expect(term).toHaveAttribute("data-ifai-tooltip-desc", /averaged across the Amazon listings of the 4 checked SKUs\./);
+  await expect(term).toHaveAttribute("data-ifai-tooltip-desc", /Last checked Oct 13, 2026, 6:04 PM UTC\./);
+  await expect(term).not.toHaveAttribute("data-ifai-tooltip-desc", /spec read|older|stored/);
 
   // Nothing had to open for it, and the heroes and table read the same rows.
   await expect(page.locator("[data-spec-missing-fields-toggle]")).toHaveAttribute("data-spec-missing-fields-toggle", "preview");
@@ -90,10 +96,10 @@ test("Amazon Specs reads Last checked Not available* when no checked listing has
   await expect(line).toHaveAttribute("data-amazon-specs-last-checked", "");
   const term = line.locator(".ifai-term");
   await expect(term).toHaveText("Not available*");
-  await expect(term).toHaveAttribute("data-ifai-tooltip-desc", "This Amazon spec read has no stored check time.");
+  await expect(term).toHaveAttribute("data-ifai-tooltip-desc", NO_TIME);
   await expect(term).not.toHaveAttribute("title");
   await term.hover();
   await expect(page.locator(".node-tooltip.node-tooltip-definition.visible")).toContainText(
-    "This Amazon spec read has no stored check time.",
+    NO_TIME,
   );
 });
