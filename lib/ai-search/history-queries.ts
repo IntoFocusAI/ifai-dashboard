@@ -140,7 +140,7 @@ export async function loadHistoryCatalog(
  * Every row one run has in a history view. The server returns at most 1,000 rows
  * per request, so the read pages by key: each page asks for the rows after the last
  * one seen. The key must be unique within a run, or a page boundary inside a tie
- * would skip rows.
+ * would skip rows. `orFilter` (PostgREST `or` syntax) narrows every page on the server.
  */
 export async function readRunPages<T>(
   client: HistoryReadClient,
@@ -149,6 +149,7 @@ export async function readRunPages<T>(
   runId: string,
   key: RunKey,
   options: HistoryReadOptions = {},
+  orFilter?: string,
 ): Promise<{ rows: T[]; error: DbError }> {
   const limit = options.limit ?? historyReadLimit;
   const rows: T[] = [];
@@ -158,6 +159,7 @@ export async function readRunPages<T>(
     const result = await limit<ReadResult>(() => {
       if (options.signal?.aborted) return Promise.resolve({ data: null, error: STOPPED });
       let query = client.from(view).select(columns).eq("audit_run_id", runId);
+      if (orFilter) query = query.or(orFilter);
       if (after) query = afterKey(query, key, after);
       for (const column of key) query = query.order(column, { ascending: true });
       return query.limit(PAGE);

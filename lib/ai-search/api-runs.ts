@@ -1,5 +1,5 @@
 import { defaultWindowRuns, runDay } from "@/lib/ai-search/default-window";
-import { capApiRepeats, fixedQuestionCount } from "@/lib/ai-search/engine-group";
+import { API_REPEAT_CAP, capApiRepeats, fixedQuestionCount } from "@/lib/ai-search/engine-group";
 import { compareRuns, utcDay, type HistoryRunSummary } from "@/lib/ai-search/history-eligibility";
 import type { HistoryMode } from "@/lib/ai-search/history-mode";
 import {
@@ -44,6 +44,9 @@ const API_CALL_COLUMNS =
   "id,audit_run_id,sim_id,engine,model,category,prompt,prompt_key,prompt_kind,call_status,outcome,primary_brand,material_hallucination,hallucination_evidence,root_cause,remediation_patch,error_message,attempt_no,repeat_no,created_at,answer_text";
 
 const API_PROBE_COLUMNS = `audit_run_id,sim_id,prompt_key,prompt,engine,model,call_status,material_hallucination,hallucination_evidence,verified_claim,verified_source_url,verified_at,created_at,answer_text,${PROBE_CATALOG_COLUMNS}`;
+
+/** Repeats past the cap are left on the server; capApiRepeats still applies the same rule to what arrives. */
+const API_REPEAT_FILTER = `repeat_no.is.null,repeat_no.lte.${API_REPEAT_CAP}`;
 
 const API_CITATION_COLUMNS =
   "audit_run_id,sim_id,simulation_id,prompt_key,prompt_kind,category,engine,position,url,domain,title";
@@ -207,7 +210,7 @@ export async function loadApiRunSnapshot(
   const runId = run.audit_run_id;
   try {
     const [calls, probes, citations] = await Promise.all([
-      readRunPages<AiCallRow>(client, API_CALL_VIEW, API_CALL_COLUMNS, runId, ["sim_id", "id"], options),
+      readRunPages<AiCallRow>(client, API_CALL_VIEW, API_CALL_COLUMNS, runId, ["sim_id", "id"], options, API_REPEAT_FILTER),
       readRunPages<AiProbeRow>(client, API_PROBE_VIEW, API_PROBE_COLUMNS, runId, ["sim_id"], options),
       readRunPages<AiCitationRow>(client, API_CITATION_VIEW, API_CITATION_COLUMNS, runId, ["sim_id", "position"], options),
     ]);
@@ -216,30 +219,28 @@ export async function loadApiRunSnapshot(
       return historyViewMissing(result.error) ? { phase: "missing" } : { phase: "error", message: result.error.message };
     }
     const mine = <T extends { audit_run_id: string }>(rows: T[]) => rows.filter((row) => row.audit_run_id === runId);
-    return {
-      phase: "ready",
-      snapshot: capApiRepeats({
-        run: {
-          audit_run_id: runId,
-          run_state: run.run_state ?? "partial",
-          collector_version: run.collector_version,
-          prompt_set_hash: run.prompt_set_hash,
-          expected_calls: run.expected_calls,
-          attempted_calls: run.attempted_calls,
-          answered_calls: run.answered_calls,
-          error_calls: run.error_calls,
-          started_at: run.started_at ?? null,
-          completed_at: run.completed_at,
-          published_at: run.published_at,
-          missing_calls: run.missing_calls ?? null,
-          is_published: run.is_published === true,
-          run_kind: run.run_kind ?? null,
-        },
-        calls: mine(calls.rows),
-        probes: mine(probes.rows),
-        citations: mine(citations.rows),
-      }),
+    const snapshot: AiSearchSnapshot = {
+      run: {
+        audit_run_id: runId,
+        run_state: run.run_state ?? "partial",
+        collector_version: run.collector_version,
+        prompt_set_hash: run.prompt_set_hash,
+        expected_calls: run.expected_calls,
+        attempted_calls: run.attempted_calls,
+        answered_calls: run.answered_calls,
+        error_calls: run.error_calls,
+        started_at: run.started_at ?? null,
+        completed_at: run.completed_at,
+        published_at: run.published_at,
+        missing_calls: run.missing_calls ?? null,
+        is_published: run.is_published === true,
+        run_kind: run.run_kind ?? null,
+      },
+      calls: mine(calls.rows),
+      probes: mine(probes.rows),
+      citations: mine(citations.rows),
     };
+    return { phase: "ready", snapshot: capApiRepeats(snapshot, API_REPEAT_CAP, run.repeats) };
   } catch (error) {
     return { phase: "error", message: messageOf(error) };
   }

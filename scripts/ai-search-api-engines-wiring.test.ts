@@ -285,8 +285,18 @@ test("the API repeat cap keeps repeats 1 to 3 and the fact checks and citations 
   assert.equal(capped.run.error_calls, 0);
   assert.equal(capped.run.expected_calls, null);
 
-  const underCap = { ...snapshot, calls: calls.slice(0, 3) };
+  // The read leaves repeats past the cap on the server; their fact checks still arrive.
+  const serverCapped = { ...snapshot, calls: [calls[0], calls[1], calls[2], calls[5]] };
+  const afterRead = capApiRepeats(serverCapped);
+  assert.deepEqual(afterRead.probes.map((row) => row.sim_id), [calls[5].sim_id]);
+  assert.equal(afterRead.citations.length, 4);
+  assert.equal(afterRead.run.attempted_calls, 4);
+
+  const underCap = { ...snapshot, calls: calls.slice(0, 3), probes: [], citations: [] };
   assert.equal(capApiRepeats(underCap), underCap);
+  // A 20-repeat run read already capped still recounts its run from the calls that count.
+  assert.equal(capApiRepeats(underCap, API_REPEAT_CAP, 20).run.attempted_calls, 3);
+  assert.equal(capApiRepeats(underCap, API_REPEAT_CAP, 20).run.expected_calls, null);
   assert.match(API_REPEAT_RULE, /repeats 1 to 3/);
 });
 

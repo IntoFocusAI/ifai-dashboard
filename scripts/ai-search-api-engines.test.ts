@@ -334,6 +334,9 @@ test("Last 30 days for API runs is the battery's window: 30 UTC days ending on t
 
 type Row = Record<string, unknown>;
 
+/** Every `or` filter the fake client was sent, as "view:filter". */
+const orFilters: string[] = [];
+
 function fakeClient(tables: Record<string, Row[] | { message: string; code?: string }>): HistoryReadClient {
   return {
     from(view: string) {
@@ -353,7 +356,8 @@ function fakeClient(tables: Record<string, Row[] | { message: string; code?: str
               filters.push((row) => (row[column] as number) >= (value as number));
               return query;
             },
-            or() {
+            or(filters: string) {
+              orFilters.push(`${view}:${filters}`);
               return query;
             },
             order() {
@@ -432,6 +436,7 @@ test("an API run loads only repeats 1 to 3 of each question per engine", async (
   assert.equal(loaded.snapshot.probes.length, 1);
   assert.equal(loaded.snapshot.citations.length, 5);
   assert.equal(loaded.snapshot.storedCitationCount, 5);
+  assert.ok(orFilters.includes("canvas_ai_api_calls:repeat_no.is.null,repeat_no.lte.3"));
 });
 
 test("Run Details lists the search engines before the API engines for the same question", () => {

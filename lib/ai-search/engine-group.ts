@@ -86,21 +86,29 @@ export const API_REPEAT_RULE = `Only repeats 1 to ${API_REPEAT_CAP} of each API 
 /**
  * An API run's calls up to the repeat cap, with the fact checks and citations of those calls.
  * The run's counts are recounted; expected and missing are not known for the capped subset.
+ * `repeats` is the run's own repeat count: above the cap, the calls may already arrive capped
+ * by the read, and the run's counts still cover every repeat.
  */
-export function capApiRepeats(snapshot: AiSearchSnapshot, cap = API_REPEAT_CAP): AiSearchSnapshot {
+export function capApiRepeats(snapshot: AiSearchSnapshot, cap = API_REPEAT_CAP, repeats?: number | null): AiSearchSnapshot {
   const calls = snapshot.calls.filter((row) => {
     const repeat = row.repeat_no ?? 1;
     return repeat >= 1 && repeat <= cap;
   });
-  if (calls.length === snapshot.calls.length) return snapshot;
   const kept = new Set(calls.map(callKey));
   const ids = new Set(calls.map((row) => row.id));
+  const probes = snapshot.probes.filter((row) => kept.has(callKey(row)));
   const citations = snapshot.citations.filter((row) => ids.has(row.simulation_id));
+  const capped =
+    (repeats ?? 0) > cap ||
+    calls.length !== snapshot.calls.length ||
+    probes.length !== snapshot.probes.length ||
+    citations.length !== snapshot.citations.length;
+  if (!capped) return snapshot;
   return {
     ...snapshot,
     run: withCallCounts(snapshot, calls),
     calls,
-    probes: snapshot.probes.filter((row) => kept.has(callKey(row))),
+    probes,
     citations,
     storedCitationCount: citations.length,
   };
