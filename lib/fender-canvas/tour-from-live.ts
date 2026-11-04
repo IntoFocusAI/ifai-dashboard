@@ -3,6 +3,7 @@ import { aiTourLines } from "@/lib/ai-search/canvas-surfaces";
 import type { AiSearchRead } from "@/lib/ai-search/types";
 import { findabilityTourLine, type FindabilityRead } from "@/lib/findability/copy";
 import { ENTERPRISE_POTENTIAL_ESTIMATE, PHASE_ONE_LIFT_ESTIMATE } from "@/lib/fender-canvas/analyst-estimates";
+import { READ_NOT_AVAILABLE } from "@/lib/fender-canvas/canvas-reads";
 import { formatInt } from "@/lib/fender-canvas/format";
 import { specPageCounts } from "@/lib/fender-canvas/machine-readability";
 import {
@@ -77,7 +78,9 @@ export function buildLiveTourSteps(
           ? `${formatInt(schemaPages.missingSpecBlock)} of ${formatInt(schemaPages.pages)} fender.com pages have no spec block`
           : "fender.com page read not available",
         findabilityTourLine(findability),
-        `${formatInt(bundle.missing.length)} missing-field rows are on Amazon Specs`,
+        bundle.unavailable?.missing
+          ? `Amazon Specs missing-field rows: ${READ_NOT_AVAILABLE} (${bundle.unavailable.missing.source} did not load)`
+          : `${formatInt(bundle.missing.length)} missing-field rows are on Amazon Specs`,
       ],
       value: "Make fender.com the source AI trusts for specs, with fewer wrong answers and fewer returns.",
     },
