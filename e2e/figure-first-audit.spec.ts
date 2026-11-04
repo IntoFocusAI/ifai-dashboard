@@ -142,4 +142,9 @@ test.describe("figure-first audit at 1280×720 (X-03, X-04)", () => {
       expect(errors).toEqual([]);
     });
   }
+
+  test("Strategy Roadmap keeps only its findings tab, with no blank tabs", async ({ page, baseURL }) => {
+    await openSpokeTab(page, baseURL, "roadmap", "30-60-90-day-milestones");
+    await expect(page.locator(".drilldown-tab-btn")).toHaveText(["30-60-90 Day Milestones"]);
+  });
 });
