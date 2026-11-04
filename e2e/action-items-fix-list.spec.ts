@@ -76,9 +76,11 @@ test.describe("Action Items opens on the prioritized fix list", () => {
 
   test("each row opens the evidence tab behind its finding", async ({ page, baseURL }) => {
     const rows = await openUrgentInterventions(page, baseURL);
-    const first = rows.first();
-    const tab = await first.getAttribute("data-ifai-tab");
-    await first.locator("[data-fix-open]").click();
+    const id = await rows.first().getAttribute("data-fix-row");
+    // A late live read can re-rank the list, so click the row that was read rather than row 1.
+    const row = page.locator(`[data-fix-row="${id}"]`);
+    const tab = await row.getAttribute("data-ifai-tab");
+    await row.locator("[data-fix-open]").click();
     await expect(page.locator(".drilldown-tab-btn.active")).toHaveText(tab!);
   });
 });
