@@ -6,6 +6,7 @@ import { clientColumn, ResizableTable } from "@/components/v3/live/ResizableTabl
 import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
 import { useAiHistoryOptional } from "@/components/v3/live/ai-search/AiHistoryContext";
 import { AiReadGate } from "@/components/v3/live/ai-search/AiReadGate";
+import { EngineGroupScope } from "@/components/v3/live/ai-search/EngineGroupScope";
 import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
 import { CategoryBattleChips } from "@/components/v3/live/ai-search/CategoryBattleChips";
 import { CategoryBattleHeroes } from "@/components/v3/live/ai-search/CategoryBattleHeroes";
@@ -206,7 +207,9 @@ function Battlecards({ snapshot }: { snapshot: AiSearchSnapshot }) {
 export function CategoryBattlecardsPanel() {
   return (
     <div className="ai-battlecards-tab" data-ai-battlecards-tab="">
-      <AiReadGate>{(snapshot) => <Battlecards snapshot={snapshot} />}</AiReadGate>
+      <EngineGroupScope>
+        <AiReadGate>{(snapshot) => <Battlecards snapshot={snapshot} />}</AiReadGate>
+      </EngineGroupScope>
     </div>
   );
 }

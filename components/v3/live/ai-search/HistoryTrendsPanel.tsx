@@ -8,9 +8,8 @@ import { HistoryPointDetail } from "@/components/v3/live/ai-search/HistoryPointD
 import { HistoryTrendChart } from "@/components/v3/live/ai-search/HistoryTrendChart";
 import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
 import { formatDay, utcDay } from "@/lib/ai-search/history-eligibility";
-import { rangeFromMode } from "@/lib/ai-search/history-mode";
 import { batteryGaps } from "@/lib/ai-search/prompt-battery";
-import { isReviewHistoryRun, SCORING_LABELS, scoringLabel } from "@/lib/ai-search/review-runs";
+import { SCORING_LABELS, scoringLabel } from "@/lib/ai-search/review-runs";
 import {
   boundaryLabel,
   buildHistoryTrend,
@@ -43,15 +42,8 @@ export function HistoryTrendsPanel() {
   const [breakdown, setBreakdown] = useState<"overall" | "engine">("overall");
   const [query, setQuery] = useState<QueryChoice>({ kind: "all" });
   const [picked, setPicked] = useState<{ runId: string; seriesKey: string } | null>(null);
-  const { from, to } = rangeFromMode(history.mode);
-  const runs = history.catalog.phase === "ready" ? history.catalog.runs : [];
-  const trusted = runs.filter(isReviewHistoryRun).filter((run) => {
-    const day = utcDay(run.published_at ?? run.completed_at);
-    if (!day) return false;
-    if (from && day < from) return false;
-    if (to && day > to) return false;
-    return true;
-  });
+  const { from, to } = history.bounds;
+  const trusted = history.windowRuns;
 
   const model = useMemo(() => {
     if (history.trend.phase !== "ready") return null;

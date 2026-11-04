@@ -126,14 +126,13 @@ test("sort direction is visible to assistive tech and toggles", () => {
 test("Suppressed Listings omits constant Buy Box and Source columns", () => {
   const row = read("components/v3/live/FeaturedOfferRow.tsx");
   assert.match(row, /SUPPRESSED_LISTINGS_TABLE_COLUMNS/);
-  assert.match(row, /column\.id !== "state"/);
-  assert.match(row, /column\.id !== "source"/);
-  assert.match(row, /showBuyBox/);
-  assert.match(row, /showSource/);
+  assert.doesNotMatch(row, /id: "state"/);
+  assert.doesNotMatch(row, /id: "source"/);
+  assert.doesNotMatch(row, /name: "Buy Box"/);
+  assert.doesNotMatch(row, /showBuyBox|showSource|FEATURED_OFFER_TABLE_COLUMNS/);
   const panel = read("components/v3/live/SuppressedListingsPanel.tsx");
   assert.match(panel, /SUPPRESSED_LISTINGS_TABLE_COLUMNS/);
-  assert.match(panel, /showBuyBox=\{false\}/);
-  assert.match(panel, /showSource=\{false\}/);
+  assert.doesNotMatch(panel, /showBuyBox|showSource/);
   assert.doesNotMatch(panel, /FEATURED_OFFER_TABLE_COLUMNS/);
   assert.doesNotMatch(panel, /columnId === "source"/);
   assert.match(panel, /Amazon listing read/);

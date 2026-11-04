@@ -83,6 +83,7 @@ function bundle(overrides: Partial<CatalogBundleRow> & Pick<CatalogBundleRow, "a
     parent_asin: null,
     product_url: "https://www.amazon.com/dp/B0D8TFXHHT",
     is_bundle: true,
+    featured_offer_state: "present",
     ...overrides,
   };
 }

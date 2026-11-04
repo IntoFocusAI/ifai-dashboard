@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type { RetailColumn } from "@/components/v3/live/ResizableTable";
 import { formatInt } from "@/lib/fender-canvas/format";
-import { FMIC_CLIENT_KEY } from "@/lib/set-aside/keys";
+import { FMIC_CLIENT_KEY, SET_ASIDE_CHECKS } from "@/lib/set-aside/keys";
 import { DoneForm, ReopenForm, SetAsideForm } from "@/lib/set-aside/SetAsideForm";
 import { formatSetAsideDate, outcomeLabel, useSetAsides, type SetAsideRow } from "@/lib/set-aside/set-aside";
 
@@ -13,7 +13,17 @@ import { formatSetAsideDate, outcomeLabel, useSetAsides, type SetAsideRow } from
    <SetAsideFormRow> after the row, and puts <SetAsideHistory> under the table.
    Done and set-aside rows stay in the table and in every count: the chip says
    what the team decided. They are not removed from the figures, because the
-   data still flags them until the next refresh shows otherwise. */
+   data still flags them until the next refresh shows otherwise. The one
+   exception is MAP: a listing set aside as "Approved exception" leaves every
+   MAP violation figure (R-12, lib/fender-canvas/map-approved-exceptions.ts). */
+
+/** The note under each check's history: what a Done or set-aside does to the figures. */
+export function setAsideHint(checkKey: string): string {
+  if (checkKey === SET_ASIDE_CHECKS.mapPricing) {
+    return "Done and set-aside rows stay in the table. A listing set aside as an approved exception is left out of the MAP figures above until it is reopened. Every other row stays in them until the data stops flagging it.";
+  }
+  return "Done and set-aside rows stay in the table and in the figures above until the data stops flagging them. They are marked so the team knows what was decided.";
+}
 
 /** Not sortable: a set-aside is an overlay on the check, not a field of its read. */
 export const SET_ASIDE_COLUMN: RetailColumn = {
@@ -193,10 +203,7 @@ export function SetAsideHistory({ ctl }: { ctl: CheckSetAsides }) {
         {reopened.length ? ` · ${formatInt(reopened.length)} reopened` : ""}
       </summary>
       {ctl.error ? <p className="set-aside-error">Statuses could not load: {ctl.error}</p> : null}
-      <p className="set-aside-form-hint">
-        Done and set-aside rows stay in the table and in the figures above until the data stops flagging them. They
-        are marked so the team knows what was decided.
-      </p>
+      <p className="set-aside-form-hint">{setAsideHint(ctl.checkKey)}</p>
       {[...setAside, ...done, ...reopened].map((row) => (
         <div key={row.id} className="cc-cleared-entry">
           <div className="cc-cleared-row">

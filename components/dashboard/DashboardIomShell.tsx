@@ -2,7 +2,7 @@
 
 import "@/lib/canvas-sdk/canvas-sdk.css";
 import "@/lib/canvas-sdk/iom-theme.css";
-import { IomCursor } from "@/lib/canvas-sdk/IomCursor";
+import { IOM_CUSTOM_CURSOR, IomCursor } from "@/lib/canvas-sdk/IomCursor";
 import { useRef, type ReactNode } from "react";
 
 type Props = {
@@ -17,7 +17,7 @@ export function DashboardIomShell({ className = "", children }: Props) {
   return (
     <div ref={rootRef} className={`ifai-canvas theme-iom ${className}`.trim()}>
       <div className="canvas-layout">{children}</div>
-      <IomCursor rootRef={rootRef} enabled />
+      {IOM_CUSTOM_CURSOR ? <IomCursor rootRef={rootRef} enabled /> : null}
     </div>
   );
 }

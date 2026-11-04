@@ -9,6 +9,7 @@ import {
   type CanvasUrlState,
 } from "@/lib/canvas-sdk/canvas-url-state";
 import type { CanvasUrlSyncSnapshot } from "@/lib/canvas-sdk/canvas-url-sync-types";
+import { createUrlEchoes } from "@/lib/canvas-sdk/url-echo";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
@@ -54,7 +55,11 @@ export function useCanvasUrlSync({
   const searchKey = searchParams.toString();
   const onDashboard = isDashboardPath(pathname);
 
-  const skipUrlSync = useRef(false);
+  const echoes = useRef(createUrlEchoes());
+  /* Live data rebuilds the spoke list on every read, so the URL is applied when the
+     query or the set of spokes changes, not whenever the array is new. */
+  const appliedKey = useRef<string | null>(null);
+  const spokeKey = spokeIds.join("|");
   const onApplyRef = useRef(onApplyFromUrl);
   const lastSpokeTab = useRef<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
@@ -65,13 +70,13 @@ export function useCanvasUrlSync({
 
   useEffect(() => {
     if (!onDashboard || !enabled) return;
-    if (skipUrlSync.current) {
-      skipUrlSync.current = false;
-      return;
-    }
+    const key = `${spokeKey}?${searchKey}`;
+    if (appliedKey.current === key) return;
+    appliedKey.current = key;
+    if (echoes.current.take(searchKey)) return;
     onApplyRef.current(parseCanvasSearchParams(searchParams, spokeIds));
     setHydrated(true);
-  }, [enabled, onDashboard, searchKey, searchParams, spokeIds]);
+  }, [enabled, onDashboard, searchKey, searchParams, spokeIds, spokeKey]);
 
   useEffect(() => {
     if (!onDashboard || !enabled || !hydrated) return;
@@ -82,13 +87,12 @@ export function useCanvasUrlSync({
     const spokeTab = `${state.spokeId ?? ""}|${state.tabSlug ?? ""}`;
     const spokeTabChanged = lastSpokeTab.current !== null && lastSpokeTab.current !== spokeTab;
     lastSpokeTab.current = spokeTab;
-    const equal = canvasUrlQueryEquals(built, current);
-    if (equal) {
-      skipUrlSync.current = false;
-      return;
-    }
-    skipUrlSync.current = true;
+    // While a write is in flight the router still reports the old query, so compare
+    // against the newest write instead.
+    const inFlight = echoes.current.latest();
+    if (canvasUrlQueryEquals(built, inFlight === null ? current : new URLSearchParams(inFlight))) return;
     const query = built.toString();
+    echoes.current.wrote(query);
     const href = query ? `${pathname}?${query}` : pathname;
     // Tab and spoke changes stay in history so Back and Forward reopen them.
     // Other canvas chrome updates replace the current entry.
