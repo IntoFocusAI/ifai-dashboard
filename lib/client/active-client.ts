@@ -51,7 +51,7 @@ export const CLIENTS: Record<ClientKey, ClientProfile> = {
     brandName: "Ledlenser",
     schema: "ledlenser",
     setAsideKey: "ledlenser",
-    logoSrc: null,
+    logoSrc: "/ledlenser-logo-white.png",
     brandSiteDomains: ["ledlenser.com", "ledlenserusa.com"],
     brandSiteLabel: "ledlenser.com",
     promptsEditable: false,
