@@ -191,16 +191,14 @@ test("Minimal slots built from the metrics row read Not available* with canvas_m
   assert.equal(failed.get("spoke-specs")?.value, READ_NOT_AVAILABLE, "the AI Readiness slot follows its bubble");
 });
 
-test("the command center drops the division sentence instead of printing Pending data", () => {
-  const failed = buildLiveCommandCenter(bundle(["m"])).summary;
-  assert.doesNotMatch(failed, /Pending data|divisions/);
-
-  const fromDivisions = buildLiveCommandCenter({
-    ...bundle(["m"]),
+test("the command center prints no division count, loaded or failed", () => {
+  const withDivisions = {
+    ...bundle(),
     divisions: [{ division: "Electric" }, { division: "Acoustic" }] as CanvasBundle["divisions"],
-  }).summary;
-  assert.match(fromDivisions, /The catalog read covers 2 divisions\./);
-  assert.match(buildLiveCommandCenter(bundle()).summary, /The catalog read covers 13 divisions\./);
+  };
+  for (const b of [bundle(), bundle(["m"]), withDivisions]) {
+    assert.doesNotMatch(buildLiveCommandCenter(b).summary, /Pending data|divisions/);
+  }
 });
 
 test("the tour names a failed missing-field read instead of counting zero rows", () => {

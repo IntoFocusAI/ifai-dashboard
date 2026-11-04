@@ -6,7 +6,9 @@ test.describe("omit catalog SKU count", () => {
     await canvas.openCommandCenter();
     await expect(canvas.commandCenter).toBeVisible();
     const panel = page.locator(".drilldown-panel");
-    await expect(panel).toContainText("catalog read covers");
+    await expect(panel).toContainText("Today's read");
+    await expect(panel).not.toContainText("catalog read covers");
+    await expect(panel).not.toContainText(/\bdivisions?\b/i);
     await expect(panel).not.toContainText("Monitored Electric SKUs");
     await expect(panel).not.toContainText("monitored electric SKUs");
     await expect(panel).not.toContainText("electric SKUs");

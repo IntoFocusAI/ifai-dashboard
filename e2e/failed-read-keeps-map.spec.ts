@@ -101,7 +101,8 @@ test.describe("a failed read keeps the map", () => {
     await expect(canvas.panel).not.toContainText(/\b0 divisions\b/);
 
     const desc = page.locator(".drilldown-desc");
-    await expect(desc.locator('[data-read-unavailable="canvas_divisions"]')).toHaveText("Not available*");
+    await expect(desc).toContainText("Overview of Fender's electric catalog health.");
+    await expect(desc).not.toContainText(/divisions?/i);
 
     await expect(canvas.panel.getByText("Loading AI Consensus scores")).toHaveCount(0, { timeout: FIRST_LOAD_MS });
     const tooltip = page.locator(".node-tooltip-definition");

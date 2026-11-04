@@ -202,7 +202,6 @@ test("the failed division read reads Not available* with a custom tooltip naming
   const fallbacks = read("components/v3/read-fallbacks.tsx");
   const mark = read("components/v3/live/ReadNotAvailable.tsx");
   assert.match(spokes, /readFallbackTab\(id, tabIdx, bundle, retail\) \?\? overrides\[tabIdx\]/);
-  assert.match(spokes, /\.\.\.readFallbackDesc\(id, spokeData\[id\]\.desc, vars, bundle\)/);
   assert.match(fallbacks, /bundle\.unavailable\?\.divisions/);
   assert.match(mark, /className="ifai-term"/);
   assert.match(mark, /data-ifai-tooltip-desc=\{tip\}/);
