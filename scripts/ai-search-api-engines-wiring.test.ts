@@ -12,7 +12,8 @@ import {
 } from "../lib/ai-search/api-runs.ts";
 import { API_REPEAT_CAP, API_REPEAT_RULE, capApiRepeats, fixedQuestionCount } from "../lib/ai-search/engine-group.ts";
 import { engineGroupTrend, engineGroupWindow, pairApiRuns } from "../lib/ai-search/engine-group-window.ts";
-import type { ApiEngineLoad } from "../lib/ai-search/engine-group-read.ts";
+import { aiNodeFaces } from "../lib/ai-search/canvas-surfaces.ts";
+import { engineGroupRead, type ApiEngineLoad } from "../lib/ai-search/engine-group-read.ts";
 import { buildHistoryTrend } from "../lib/ai-search/history-trends.ts";
 import { batteryGaps, BATTERY_ENGINES, PROMPT_BATTERY } from "../lib/ai-search/prompt-battery.ts";
 import type { AiCallRow, AiCurrentRun, AiSearchSnapshot } from "../lib/ai-search/types.ts";
@@ -287,6 +288,25 @@ test("the API repeat cap keeps repeats 1 to 3 and the fact checks and citations 
   const underCap = { ...snapshot, calls: calls.slice(0, 3) };
   assert.equal(capApiRepeats(underCap), underCap);
   assert.match(API_REPEAT_RULE, /repeats 1 to 3/);
+});
+
+test("the map's AI bubbles say when they include API engines, and stay hoverless when they do not", () => {
+  const all = engineGroupRead({ phase: "ready", snapshot: NOV3 }, { phase: "ready", snapshots: [API_NOV2] }, "all");
+  assert.equal(all.phase, "ready");
+  const faces = aiNodeFaces(all);
+  assert.equal(faces.spokeAeo.tooltip.title, "Includes API engines");
+  assert.match(faces.spokeAeo.tooltip.desc, /2 search-engine answers plus 2 answers from the API run nearest its day \(ChatGPT API\)/);
+  assert.match(faces.spokeAeo.tooltip.desc, /Only repeats 1 to 3/);
+  assert.equal(faces.spokeCompetitors.tooltip.title, "Includes API engines");
+
+  const alone = aiNodeFaces({ phase: "ready", snapshot: NOV3 });
+  assert.deepEqual(alone.spokeAeo.tooltip, { title: "", desc: "" });
+  assert.deepEqual(alone.spokeCompetitors.tooltip, { title: "", desc: "" });
+
+  const canvas = readFileSync(new URL("../components/v3/FenderBrandCanvas.tsx", import.meta.url), "utf8");
+  assert.match(canvas, /const mapAiSearch = useMapAiSearch\(aiSearch\);/);
+  assert.match(canvas, /aiSearch: mapAiSearch,/);
+  assert.match(canvas, /<AiHistoryProvider current=\{aiSearch\}>/);
 });
 
 test("Run Summary, Citation Ecosystem, the trend, and the run detail read the switch", () => {

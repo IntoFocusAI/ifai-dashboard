@@ -9,14 +9,15 @@ import {
   batteryQuestions,
   loadApiRunCatalog,
   loadApiRunSnapshot,
+  nearestApiRun,
   type ApiCatalogResult,
   type ApiRunSummary,
   type ApiSnapshotResult,
 } from "@/lib/ai-search/api-runs";
-import type { ApiEngineLoad } from "@/lib/ai-search/engine-group-read";
+import { engineGroupRead, type ApiEngineLoad } from "@/lib/ai-search/engine-group-read";
 import { runDay } from "@/lib/ai-search/default-window";
 import type { HistoryMode } from "@/lib/ai-search/history-mode";
-import type { AiSearchSnapshot } from "@/lib/ai-search/types";
+import type { AiSearchRead, AiSearchSnapshot } from "@/lib/ai-search/types";
 import { getCanvasSupabase } from "@/lib/supabase/canvas-client";
 
 /** Every tab shares one catalog read and one read per API run. A failed read is tried again next time. */
@@ -124,9 +125,12 @@ export function useApiSnapshots(runs: readonly ApiRunSummary[]): ApiEngineLoad {
     };
   }, [key, runs]);
 
-  if (runs.length === 0) return { phase: "ready", snapshots: [] };
-  return loaded.key === key ? loaded.load : { phase: "loading" };
+  if (runs.length === 0) return NO_API_RUNS;
+  return loaded.key === key ? loaded.load : LOADING;
 }
+
+const NO_API_RUNS: ApiEngineLoad = { phase: "ready", snapshots: [] };
+const LOADING: ApiEngineLoad = { phase: "loading" };
 
 /** The catalog's read state for the switch, before any run is chosen. Null once the runs are known. */
 export function catalogLoadState(catalog: ApiCatalogLoad): ApiEngineLoad | null {
@@ -163,4 +167,22 @@ export function useApiEngineLoad(): ApiEngineLoad {
   if (pending) return pending;
   if (!battery) return { phase: "loading" };
   return load;
+}
+
+/**
+ * The map's AI Search read: the published run with the counted API run nearest its day, on All,
+ * as the AI Search tabs show that run. The published run alone when no API run counts beside it.
+ */
+export function useMapAiSearch(published: AiSearchRead): AiSearchRead {
+  const catalog = useApiRunCatalog();
+  const snapshot = published.phase === "ready" ? published.snapshot : null;
+  const paired = useMemo(() => {
+    if (catalog.phase !== "ready" || !snapshot) return [];
+    const battery = batteryQuestions([snapshot]);
+    const run = nearestApiRun(apiRunsCoveringBattery(catalog.runs, battery), battery[0]?.day ?? null);
+    return run ? [run] : [];
+  }, [catalog, snapshot]);
+  const load = useApiSnapshots(paired);
+  const pending = useMemo(() => catalogLoadState(catalog), [catalog]);
+  return useMemo(() => engineGroupRead(published, pending ?? load, "all"), [published, pending, load]);
 }
