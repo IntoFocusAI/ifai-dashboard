@@ -37,10 +37,13 @@ function bound(template: string): string {
 
 test("the Phase 1 and enterprise ROI lines do not wear the live retail headline", () => {
   const roi = bound(spec.spokes.suggestions.tabTemplates[1] as string);
-  const pilot = roi.split('id="roi-content-pilot"')[1]?.split('id="roi-content-enterprise"')[0] ?? "";
-  const enterprise = roi.split('id="roi-content-enterprise"')[1] ?? "";
-  const pilotLines = listItems(pilot);
-  const enterpriseLines = listItems(enterprise);
+  const block = (attr: string) => roi.split(attr)[1]?.split("</ul>")[0] ?? "";
+  const pilot = roi.split('data-estimate-card="phase_one"')[1]?.split('data-estimate-card="enterprise"')[0] ?? "";
+  const enterprise = roi.split('data-estimate-card="enterprise"')[1] ?? "";
+  const pilotLines = listItems(block('data-estimate-lines="phase_one"'));
+  const enterpriseLines = listItems(block('data-estimate-lines="enterprise"'));
+  assert.equal(pilotLines.length, 4);
+  assert.equal(enterpriseLines.length, 4);
 
   assert.equal(
     pilotLines[0],
