@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { sameTooltipContent, type TooltipContent } from "../lib/canvas-sdk/tooltip-content.ts";
-import { pointInRect } from "../lib/canvas-sdk/iom-cursor-targets.ts";
+import { INTERACTIVE_SELECTOR, pointInRect } from "../lib/canvas-sdk/iom-cursor-targets.ts";
 
 const root = new URL("..", import.meta.url);
 const read = (path: string) => readFileSync(new URL(path, root), "utf8");
