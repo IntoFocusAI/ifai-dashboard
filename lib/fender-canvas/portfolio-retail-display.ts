@@ -7,6 +7,8 @@ import type { NodeStatus } from "../canvas-sdk/types";
 import { CONFIRMED_HIGH_PRICE_LABEL, WITHHELD_LABEL } from "./featured-offer-copy";
 import { formatInt, formatPct, formatUsd } from "./format";
 import {
+  bundlePopulationTip,
+  LIVE_OFFER_BUNDLES,
   RETAIL_FINDING_LABELS,
   type SuppressionDetail,
   selectRetailHeadline,
@@ -301,16 +303,19 @@ export function mapBubble(reading: RetailReading<MapLeakageDetail | null>): Reta
   return face;
 }
 
-/** Unnested bundles / bundles in this retail read. */
+/** Unnested bundles / bundles with a live offer (R-13). */
 export function catalogBubble(
   reading: RetailReading<UnnestedBundleDetail | null>,
 ): RetailBubbleFace {
   const detail = reading.detail;
   const numerator = reading.issueCount;
   const denominator = detail != null && detail.bundlesInRead > 0 ? detail.bundlesInRead : null;
-  const count = countPhrase(reading, "bundle");
+  const count =
+    numerator != null && denominator != null
+      ? `${formatInt(numerator)} of ${formatInt(denominator)} ${LIVE_OFFER_BUNDLES}`
+      : countPhrase(reading, "bundle");
   const coverage = coveragePill(reading);
-  return satelliteFace(
+  const face = satelliteFace(
     "Catalog Governance",
     reading,
     {
@@ -320,6 +325,9 @@ export function catalogBubble(
     [...(count ? [count] : []), ...(coverage ? [coverage] : [])],
     "Catalog Governance",
   );
+  const tip = bundlePopulationTip(reading);
+  if (tip) face.tooltip = { title: "Splintered listings", desc: tip };
+  return face;
 }
 
 function waitingFace(

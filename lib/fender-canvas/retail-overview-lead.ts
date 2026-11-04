@@ -8,6 +8,8 @@ import type { PieDiscData } from "@/lib/ai-search/citation-pies";
 import type { NodeStatus } from "@/lib/canvas-sdk/types";
 import { formatInt, formatPct, formatRatio } from "@/lib/fender-canvas/format";
 import {
+  bundlePopulationTip,
+  LIVE_OFFER_BUNDLES,
   RETAIL_FINDING_LABELS,
   type PortfolioRetailSnapshot,
   type RetailFindingId,
@@ -178,8 +180,8 @@ export function mapHero(snapshot: PortfolioRetailSnapshot): RetailOverviewHeroMo
 }
 
 /**
- * Unnested bundles / bundles in this retail read.
- * Catalog bundles outside the read are not fine and are not the rest of the pie.
+ * Unnested bundles / bundles with a live offer (R-13). The ratio names that population;
+ * the tooltip carries the live-offer rule and the wider bundle totals.
  */
 export function catalogHero(snapshot: PortfolioRetailSnapshot): RetailOverviewHeroModel {
   const reading = snapshot.unnestedBundles;
@@ -195,15 +197,13 @@ export function catalogHero(snapshot: PortfolioRetailSnapshot): RetailOverviewHe
     tab: label,
     label,
     percent: ready ? formatPct((100 * numerator!) / denominator!) : "Not available*",
-    ratio: ready ? formatRatio(numerator, denominator) : null,
+    ratio: ready ? `${formatRatio(numerator, denominator)} ${LIVE_OFFER_BUNDLES}` : null,
     color: TONE_COLOR[tone],
     tone,
     pie: ready
       ? sharePie("retail-catalog", label, "Unnested bundle", numerator!, denominator!)
       : null,
-    tip: ready
-      ? `${formatInt(numerator)} of ${formatInt(denominator)} bundles in this retail read.`
-      : null,
+    tip: ready ? bundlePopulationTip(reading) : null,
     explainer: ready
       ? "No parent listing, so the reviews stay split."
       : reading.missingMessage?.split(". ")[0] ?? "Catalog reading not stored.",

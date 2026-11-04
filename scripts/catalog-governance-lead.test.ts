@@ -14,6 +14,7 @@ import {
   catalogBundleLineLabel,
   catalogBundleBuyBoxLabel,
   catalogBundleSellerIdLabel,
+  LIVE_OFFER_BUNDLES,
   mapLeakageFinding,
   RETAIL_FINDING_LABELS,
   selectRetailHeadline,
@@ -73,6 +74,7 @@ function bundle(overrides: Partial<CatalogBundleRow> & Pick<CatalogBundleRow, "a
     parent_asin: null,
     product_url: "https://www.amazon.com/dp/B0D8TFXHHT",
     is_bundle: true,
+    featured_offer_state: "present",
     ...overrides,
   };
 }
@@ -124,7 +126,7 @@ test("ready Catalog Governance lead strings match catalogHero percent and ratio"
   assert.equal(hero.numerator, 1);
   assert.equal(hero.denominator, 3);
   assert.equal(hero.percent, formatPct(100 / 3));
-  assert.equal(hero.ratio, formatRatio(1, 3));
+  assert.equal(hero.ratio, `${formatRatio(1, 3)} ${LIVE_OFFER_BUNDLES}`);
   assert.equal(hero.percent, catalogHero(snap).percent);
   assert.equal(hero.ratio, catalogHero(snap).ratio);
   assert.ok(hero.pie);

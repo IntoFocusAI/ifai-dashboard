@@ -29,10 +29,39 @@ function listing(asin: string, category: string, status: string, seller: string 
     buybox_seller_name: seller,
     buybox_seller_id: status === "3P Confirmed" ? "A1B2C3D4E5F6G" : null,
     buybox_status: status,
+    featured_offer_state: status === "No Active Offer" ? "no_active_offer" : "present",
   };
 }
 
+/** No category, so the division census skips them. */
+function bundleRow(asin: string, parent: string | null, state: string | null): Row {
+  return {
+    asin,
+    model_name: `Bundle ${asin.slice(-2)}`,
+    title: `Bundle ${asin.slice(-2)}`,
+    bundle_name: "Guitar plus amp",
+    parent_asin: parent,
+    product_url: `https://www.amazon.com/dp/${asin}`,
+    is_bundle: true,
+    category: null,
+    buybox_seller_name: null,
+    buybox_seller_id: null,
+    buybox_status: state === "no_active_offer" ? "No Active Offer" : "3P Confirmed",
+    featured_offer_state: state,
+  };
+}
+
+/** Five bundle listings, three with a live offer; two of those three have no parent. */
+export const BUNDLE_ROWS: Row[] = [
+  bundleRow("B00BUN0001", null, "present"),
+  bundleRow("B00BUN0002", null, "withheld"),
+  bundleRow("B00BUN0003", "B00PARENT1", "present"),
+  bundleRow("B00BUN0004", null, "no_active_offer"),
+  bundleRow("B00BUN0005", null, null),
+];
+
 export const CATALOG_ROWS: Row[] = [
+  ...BUNDLE_ROWS,
   listing("B00KIT0001", "Electric Guitar Kits", "Amazon 1P", "Amazon.com"),
   listing("B00KIT0002", "Electric Guitar Kits", "3P Confirmed", "Kit Seller"),
   listing("B00HOL0001", "Hollow & Semi-Hollow Body", "3P Confirmed", "GearTree"),

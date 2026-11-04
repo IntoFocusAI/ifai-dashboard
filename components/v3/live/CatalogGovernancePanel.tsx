@@ -4,6 +4,7 @@ import { useState } from "react";
 import { CitationPieDisc } from "@/components/v3/live/ai-search/CitationPieDisc";
 import { CatalogGovernanceSpecTable } from "@/components/v3/live/CatalogGovernanceSpecTable";
 import { DefinedCopy } from "@/components/v3/live/DefinedTerm";
+import { figureTipAttrs } from "@/components/v3/live/FigureTip";
 import { ResizableTable, type RetailColumn } from "@/components/v3/live/ResizableTable";
 import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
 import { CATALOG_GOVERNANCE_EXPLAINER } from "@/lib/fender-canvas/catalog-governance-copy";
@@ -292,7 +293,9 @@ function CatalogGovernanceLead({
             {hero.percent}
           </span>
           {hero.ratio ? (
-            <span className="findability-lead-ratio">{hero.ratio}</span>
+            <span className="findability-lead-ratio">
+              <span {...figureTipAttrs(SPLINTERED_LISTINGS_LABEL, hero.tip, "bundle-population")}>{hero.ratio}</span>
+            </span>
           ) : null}
         </div>
         {hero.pie ? (

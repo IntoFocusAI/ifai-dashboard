@@ -76,6 +76,7 @@ const MAP_UNAVAILABLE = "MAP leakage has not been stored.";
 /** Shown when the retail read has rows and none of them store a MAP price. */
 export const MAP_PRICES_NOT_STORED = "Fender MAP prices have not been stored.";
 const BUNDLE_UNAVAILABLE = "Catalog bundle parent ASINs have not been stored.";
+const BUNDLE_OFFER_UNAVAILABLE = "Live offer readings have not been stored for bundle listings.";
 const SPEC_UNAVAILABLE = "Amazon spec-field readings have not been stored.";
 
 export const RETAIL_SUPPRESSION_COLUMNS = FEATURED_OFFER_COLUMNS;
@@ -84,7 +85,7 @@ export const RETAIL_MAP_LEAKAGE_COLUMNS =
   "asin,map_price,offer_price,amz_leakage,wmt_leakage,mf_leakage";
 
 export const RETAIL_CATALOG_GOVERNANCE_COLUMNS =
-  "asin,model_name,title,bundle_name,parent_asin,product_url,is_bundle,category,buybox_seller_name,buybox_seller_id,buybox_status";
+  "asin,model_name,title,bundle_name,parent_asin,product_url,is_bundle,category,buybox_seller_name,buybox_seller_id,buybox_status,featured_offer_state";
 
 export const RETAIL_AMAZON_SPEC_COLUMNS =
   "asin,title,amazon_checked,amazon_missing_fields";
@@ -356,7 +357,23 @@ export type CatalogBundleRow = {
   buybox_seller_name?: string | null;
   buybox_seller_id?: string | null;
   buybox_status?: string | null;
+  /** Current Featured Offer state from the hourly listing read: present, withheld, or no_active_offer. */
+  featured_offer_state?: string | null;
 };
+
+/** Short label for the bundle population every bundle figure counts (R-13). */
+export const LIVE_OFFER_BUNDLES = "bundles with a live offer";
+
+export const LIVE_OFFER_RULE =
+  "A bundle counts when Amazon's current listing read shows an offer for sale on it, with or without the Buy Box. Bundles with no active offer, or with no offer reading yet, are left out.";
+
+/** Withheld still has an offer for sale, just no Buy Box. */
+const LIVE_OFFER_STATES = new Set(["present", "withheld"]);
+
+export function hasLiveOffer(row: Pick<CatalogBundleRow, "featured_offer_state">): boolean {
+  const state = text(row.featured_offer_state)?.toLowerCase();
+  return state != null && LIVE_OFFER_STATES.has(state);
+}
 
 export type UnnestedBundleReason = "missing_parent_asin" | "unusable_parent_asin";
 
@@ -417,10 +434,37 @@ export function catalogBundleLineLabel(category: string | null | undefined): str
 }
 
 export type UnnestedBundleDetail = {
+  /** Bundles with a live offer and no usable parent ASIN. */
   opportunities: UnnestedBundleOpportunity[];
+  /** Bundles in this retail read with a live offer: the population every bundle figure counts (R-13). */
   bundlesInRead: number;
+  /** Every listing flagged as a bundle in this retail read, with or without a live offer. Optional on fixtures. */
+  flaggedInRead?: number;
+  /** Flagged bundles in this read with no offer reading yet. Optional on fixtures. */
+  offerUnread?: number;
+  /** `canvas_metrics.catalog_bundles`: listings the whole catalog flags as bundles. */
   catalogBundles: number | null;
 };
+
+/** The bundle figure's tooltip: what was counted, the live-offer rule, and the wider totals it was taken from. */
+export function bundlePopulationTip(reading: RetailReading<UnnestedBundleDetail | null>): string | null {
+  const detail = reading.detail;
+  if (reading.issueCount == null || detail == null || detail.bundlesInRead <= 0) return null;
+  const n = reading.issueCount;
+  const m = detail.bundlesInRead;
+  const flagged = detail.flaggedInRead;
+  const unread = detail.offerUnread ?? 0;
+  return [
+    `${countLabel(n)} of ${countLabel(m)} ${LIVE_OFFER_BUNDLES} have no usable parent ASIN.`,
+    LIVE_OFFER_RULE,
+    flagged != null
+      ? `${countLabel(flagged)} ${flagged === 1 ? "listing" : "listings"} in the retail read ${flagged === 1 ? "is" : "are"} flagged as bundles${detail.catalogBundles != null ? `, out of ${countLabel(detail.catalogBundles)} the catalog flags` : ""}.`
+      : null,
+    unread > 0 ? `${countLabel(unread)} of them ${unread === 1 ? "has" : "have"} no offer reading yet.` : null,
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
 
 /** A parent ASIN can nest the bundle only when it is a different 10-character ASIN. */
 export function usableParentAsin(parentAsin: string | null | undefined, asin: string): boolean {
@@ -465,7 +509,8 @@ export function unnestedBundleOpportunities(rows: CatalogBundleRow[]): UnnestedB
 }
 
 /**
- * A bundle with no usable parent ASIN is an unnested-bundle opportunity.
+ * A bundle with a live offer and no usable parent ASIN is an unnested-bundle opportunity (R-13).
+ * Only bundles for sale now are counted; a title that matches a bundle is not enough.
  * A bundle with a usable parent is not a defect. Seller authorization is not classified here.
  */
 export function unnestedBundlesFinding(
@@ -477,15 +522,23 @@ export function unnestedBundlesFinding(
   const bundleFlagStored = rows.some((row) => row.is_bundle === true || row.is_bundle === false);
   if (rows.length > 0 && !bundleFlagStored) return unavailable(BUNDLE_UNAVAILABLE);
 
-  const bundlesInRead = rows.filter((row) => row.is_bundle === true && text(row.asin)).length;
-  const opportunities = unnestedBundleOpportunities(rows);
+  const flagged = rows.filter((row) => row.is_bundle === true && text(row.asin));
+  if (flagged.length > 0 && !rows.some((row) => text(row.featured_offer_state) != null)) {
+    return unavailable(BUNDLE_OFFER_UNAVAILABLE);
+  }
+  const live = flagged.filter(hasLiveOffer);
+  const opportunities = unnestedBundleOpportunities(live);
   const catalogBundles =
     options?.catalogBundleCount == null || !Number.isFinite(options.catalogBundleCount)
       ? null
       : options.catalogBundleCount;
-  const detail: UnnestedBundleDetail = { opportunities, bundlesInRead, catalogBundles };
-  const catalogShort =
-    catalogBundles != null && catalogBundles > bundlesInRead && rows.length > 0;
+  const detail: UnnestedBundleDetail = {
+    opportunities,
+    bundlesInRead: live.length,
+    flaggedInRead: flagged.length,
+    offerUnread: flagged.filter((row) => text(row.featured_offer_state) == null).length,
+    catalogBundles,
+  };
 
   if (rows.length === 0 && !options?.truncated && catalogBundles == null) {
     return { status: "available_with_zero", issueCount: 0, missingMessage: null, detail };
@@ -500,19 +553,15 @@ export function unnestedBundlesFinding(
     };
   }
 
-  if (options?.truncated || catalogShort) {
-    const coverage =
-      catalogBundles != null
-        ? `This read includes ${countLabel(bundlesInRead)} of ${countLabel(catalogBundles)} bundle listings.`
-        : `This read did not include the full bundle population.`;
+  if (options?.truncated) {
     const known =
       opportunities.length === 0
         ? "No unnested bundle is confirmed in the included listings."
-        : `${countLabel(opportunities.length)} of the included listings ${opportunities.length === 1 ? "has" : "have"} no usable parent ASIN.`;
+        : `${countLabel(opportunities.length)} of the included ${LIVE_OFFER_BUNDLES} ${opportunities.length === 1 ? "has" : "have"} no usable parent ASIN.`;
     return {
       status: "incomplete",
       issueCount: opportunities.length,
-      missingMessage: `${coverage} ${known} This is not a final count.`,
+      missingMessage: `This read did not include the full bundle population. ${known} This is not a final count.`,
       detail,
     };
   }

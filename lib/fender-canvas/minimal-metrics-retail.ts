@@ -16,6 +16,7 @@ import {
   type MinimalContext,
   type MinimalEntry,
 } from "@/lib/fender-canvas/minimal-metric-kit";
+import { LIVE_OFFER_BUNDLES } from "@/lib/fender-canvas/portfolio-retail";
 import { RETAIL_OVERVIEW_TAB, STOCK_LOSS_TAB } from "@/lib/fender-canvas/portfolio-retail-display";
 import { averageGapTip, buyBoxHero, catalogHero, mapHero, specHero } from "@/lib/fender-canvas/retail-overview-lead";
 import {
@@ -153,7 +154,8 @@ export const RETAIL_ENTRIES: MinimalEntry[] = [
     read: (ctx) =>
       retailReading(ctx, (snapshot) => {
         const hero = catalogHero(snapshot);
-        return counted(hero.ratio, "bundles in this retail read", hero.pie, hero.tip, hero.explainer);
+        const ratio = hero.numerator != null && hero.denominator != null ? `${formatInt(hero.numerator)} of ${formatInt(hero.denominator)}` : null;
+        return counted(ratio, LIVE_OFFER_BUNDLES, hero.pie, hero.tip, hero.explainer);
       }),
   }),
   {
