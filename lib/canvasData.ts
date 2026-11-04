@@ -3,6 +3,8 @@ import { getCanvasSupabase } from "@/lib/supabase/canvas-client";
 import {
   assembleCanvasBundle,
   BUNDLE_READ_KEYS,
+  CANVAS_READ_TIMEOUT_MS,
+  withReadTimeout,
   type BundleReadKey,
   type CanvasReadResult,
 } from "@/lib/fender-canvas/canvas-reads";
@@ -12,14 +14,18 @@ import { loadSpecPages, type SpecPageClient } from "@/lib/fender-canvas/machine-
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
 
 /**
- * Each read settles on its own, so one failed view leaves the rest of the bundle
- * (and the map) standing. Throws only when every bundle read fails.
+ * Each read settles on its own, so one failed or hung view leaves the rest of the
+ * bundle (and the map) standing. Throws only when every bundle read fails.
  */
-export async function loadCanvas(client?: SupabaseClient): Promise<CanvasBundle> {
+export async function loadCanvas(
+  client?: SupabaseClient,
+  timeoutMs = CANVAS_READ_TIMEOUT_MS,
+): Promise<CanvasBundle> {
   const supabase = client ?? getCanvasSupabase();
-  const specPages = Promise.allSettled([loadSpecPages(supabase as unknown as SpecPageClient)]);
+  const limit = <T>(read: PromiseLike<T>) => withReadTimeout(read, timeoutMs);
+  const specPages = Promise.allSettled([limit(loadSpecPages(supabase as unknown as SpecPageClient))]);
   const listingContent = Promise.allSettled([
-    loadListingContent(supabase as unknown as ListingContentClient),
+    limit(loadListingContent(supabase as unknown as ListingContentClient)),
   ]);
   const queries: Record<BundleReadKey, PromiseLike<CanvasReadResult>> = {
     m: supabase.from("canvas_metrics").select("*").single(),
@@ -37,7 +43,7 @@ export async function loadCanvas(client?: SupabaseClient): Promise<CanvasBundle>
     fresh: supabase.from("canvas_freshness").select("*"),
   };
 
-  const settled = await Promise.allSettled(BUNDLE_READ_KEYS.map((key) => queries[key]));
+  const settled = await Promise.allSettled(BUNDLE_READ_KEYS.map((key) => limit(queries[key])));
   const reads = Object.fromEntries(
     BUNDLE_READ_KEYS.map((key, index) => [key, settled[index]]),
   ) as Record<BundleReadKey, PromiseSettledResult<CanvasReadResult>>;

@@ -34,6 +34,20 @@ export const BUNDLE_READ_KEYS: readonly BundleReadKey[] = [
 
 export const READ_NOT_AVAILABLE = "Not available*";
 
+/** A read that has not answered by then counts as failed, so a hung view cannot hold the map on Loading. */
+export const CANVAS_READ_TIMEOUT_MS = 20_000;
+
+export function withReadTimeout<T>(read: PromiseLike<T>, ms: number): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const limit = new Promise<never>((_, reject) => {
+    timer = setTimeout(
+      () => reject(new Error(`it took longer than ${Math.round(ms / 1000)} seconds`)),
+      ms,
+    );
+  });
+  return Promise.race([Promise.resolve(read), limit]).finally(() => clearTimeout(timer));
+}
+
 /** Stands in for a failed canvas_metrics read so every metric formats as missing, not zero. */
 export const EMPTY_METRICS_ROW: CanvasMetricsRow = {
   kpi: null,
@@ -110,7 +124,9 @@ export function readFailure(key: CanvasReadKey, reason: unknown): CanvasReadFail
 export function readFailureTip(failure: CanvasReadFailure): string {
   const label = failure.label.charAt(0).toLowerCase() + failure.label.slice(1);
   const read = `The ${label} (${failure.source}) did not load`;
-  return sanitizeUiText(failure.message ? `${read}: ${failure.message}` : `${read}.`);
+  if (!failure.message) return `${read}.`;
+  const end = /[.!?]$/.test(failure.message) ? "" : ".";
+  return sanitizeUiText(`${read}: ${failure.message}${end}`);
 }
 
 /** Every bundle read failed, or (for a partial load) the reads that did. */

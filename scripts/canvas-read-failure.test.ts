@@ -49,7 +49,7 @@ const ROWS: Record<string, unknown> = {
   canvas_listing_content: [],
 };
 
-type Outcome = "ok" | "error" | "reject";
+type Outcome = "ok" | "error" | "reject" | "hang";
 
 /** Answers each view from ROWS; a listed view fails with an error result or a rejection. */
 function stubClient(fail: Partial<Record<string, Outcome>> = {}): SupabaseClient {
@@ -62,6 +62,7 @@ function stubClient(fail: Partial<Record<string, Outcome>> = {}): SupabaseClient
       single: () => query,
       then: (resolve: (value: unknown) => unknown, reject: (reason: unknown) => unknown) => {
         const outcome = fail[table] ?? "ok";
+        if (outcome === "hang") return new Promise(() => {});
         if (outcome === "reject") return Promise.reject(new TypeError("Failed to fetch")).then(resolve, reject);
         if (outcome === "error") {
           return Promise.resolve({ data: null, error: { message: `forced ${table} failure` } }).then(resolve, reject);
@@ -124,6 +125,15 @@ for (const key of BUNDLE_READ_KEYS) {
     assert.equal(bundle.unavailable![key]!.message, "Failed to fetch");
   });
 }
+
+test("a hung read times out into Not available* instead of holding the map on Loading", async () => {
+  const bundle = await loadCanvas(stubClient({ canvas_metrics: "hang", canvas_spec_readiness: "hang" }), 30);
+  assert.deepEqual(Object.keys(bundle.unavailable ?? {}).sort(), ["m", "specPages"]);
+  assert.deepEqual(bundle.m, EMPTY_METRICS_ROW);
+  assert.equal(bundle.specPages, null);
+  assert.match(readFailureTip(bundle.unavailable!.m!), /\(canvas_metrics\) did not load: it took longer than \d+ seconds\.$/);
+  assert.deepEqual(bundle.divisions, ROWS.canvas_divisions);
+});
 
 test("a failed metrics read shows missing figures, never zero", async () => {
   const bundle = await loadCanvas(stubClient({ canvas_metrics: "error" }));
