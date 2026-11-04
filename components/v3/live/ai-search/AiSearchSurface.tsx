@@ -40,7 +40,8 @@ function CollapsibleTrend() {
 }
 
 /**
- * Month, range, and all open the tab children on the pooled selection.
+ * Month, range, and all open the tab children on the pooled selection. A latest month with no
+ * published run skips the trend so the tab opens on that notice and the latest-run choice.
  * Run Summary opens on the collapsible trend chart, then its figures.
  * Citation Ecosystem still follows range and all through followsRange.
  * Legacy stays on LegacyRunInspect. The map stays on the published run.
@@ -58,8 +59,9 @@ export function AiSearchSurface({
   const history = useAiHistoryOptional();
   const kind = history?.mode.kind;
   const windowed = kind === "month" || kind === "range" || kind === "all";
+  const emptyMonth = kind === "month" && history?.trend.phase === "ready" && history.trend.snapshots.length === 0;
   if (windowed && followsRange) return children;
-  if (windowed && trend) {
+  if (windowed && trend && !emptyMonth) {
     return (
       <>
         <CollapsibleTrend />

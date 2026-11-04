@@ -14,7 +14,6 @@ import {
 } from "../lib/ai-search/citation-insights.ts";
 import {
   citationAggregateCopy,
-  citationMonthBounds,
   citationSnapshotUsable,
   poolCitationSnapshots,
 } from "../lib/ai-search/citation-aggregate.ts";
@@ -390,9 +389,8 @@ test("a citation window adds usable runs and names the month", () => {
   assert.equal(pooled.calls.length, 2);
   assert.notEqual(pooled.calls[0].id, pooled.calls[1].id);
   assert.equal(pooled.citations[0].simulation_id, pooled.calls[0].id);
-  assert.deepEqual(citationMonthBounds("2026-10-18"), { from: "2026-09-19", to: "2026-10-18" });
   const copy = citationAggregateCopy({
-    window: { kind: "month", from: "2026-09-19", to: "2026-10-18" },
+    window: { kind: "month", from: "2026-10-01", to: "2026-10-31" },
     included: [listed],
     omitted: 1,
   });
@@ -401,7 +399,7 @@ test("a citation window adds usable runs and names the month", () => {
   assert.match(copy, /left out/);
   assert.equal(
     citationAggregateCopy({
-      window: { kind: "month", from: "2026-09-19", to: "2026-10-18" },
+      window: { kind: "month", from: "2026-10-01", to: "2026-10-31" },
       included: [listed],
       omitted: 0,
     }),

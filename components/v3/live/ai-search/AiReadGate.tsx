@@ -5,7 +5,9 @@ import { useAiHistoryOptional } from "@/components/v3/live/ai-search/AiHistoryCo
 import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
 import { useAiSearch } from "@/components/v3/live/ai-search/AiSearchContext";
 import { CopyTip } from "@/components/v3/live/ai-search/CopyTip";
+import { NoMonthRunNotice } from "@/components/v3/live/ai-search/NoMonthRunNotice";
 import { selectionLine, selectionSubject } from "@/lib/ai-search/displayed-read";
+import { LATEST_MONTH_LABEL } from "@/lib/ai-search/history-mode";
 import { errorLine, runStateLabel, summarizeRun } from "@/lib/ai-search/summary";
 import type { AiSearchRead, AiSearchSnapshot } from "@/lib/ai-search/types";
 import { isWindowHistoryKind } from "@/lib/ai-search/window-display";
@@ -57,7 +59,7 @@ function SelectionNotice({ read }: { read: Extract<AiSearchRead, { phase: "error
           ) : null}
           {single ? (
             <button type="button" className="segmented-btn" data-ai-history-return onClick={history?.viewMonth}>
-              Last 30 days
+              {LATEST_MONTH_LABEL}
             </button>
           ) : null}
         </span>
@@ -124,7 +126,7 @@ function GateBody({
         {history.selected.message}
         <span style={{ display: "block", marginTop: 8 }}>
           <button type="button" data-ai-history-return onClick={history.viewMonth}>
-            Last 30 days
+            {LATEST_MONTH_LABEL}
           </button>
         </span>
       </Notice>
@@ -154,6 +156,7 @@ function GateBody({
       </Notice>
     );
   }
+  if (read.phase === "error" && read.selection === "empty" && history?.mode.kind === "month") return <NoMonthRunNotice />;
   if (read.phase === "error" && read.selection) return <SelectionNotice read={read} />;
   if (read.phase === "error") {
     return (
@@ -162,7 +165,7 @@ function GateBody({
         {historical ? (
           <span style={{ display: "block", marginTop: 8 }}>
             <button type="button" data-ai-history-return onClick={history.viewMonth}>
-              Last 30 days
+              {LATEST_MONTH_LABEL}
             </button>
           </span>
         ) : null}
@@ -182,7 +185,7 @@ function GateBody({
         Call rows for this run did not load, so no rate is shown.
         <span style={{ display: "block", marginTop: 8 }}>
           <button type="button" data-ai-history-return onClick={history.viewMonth}>
-            Last 30 days
+            {LATEST_MONTH_LABEL}
           </button>
         </span>
       </Notice>

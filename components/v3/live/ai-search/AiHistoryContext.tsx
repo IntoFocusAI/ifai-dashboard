@@ -2,12 +2,18 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useSearchParams } from "next/navigation";
-import { citationMonthBounds } from "@/lib/ai-search/citation-aggregate";
 import { displayedAiRead } from "@/lib/ai-search/displayed-read";
 import { compareRuns, utcDay, type HistoryRunSummary } from "@/lib/ai-search/history-eligibility";
 import { historyFixtureSnapshot, historyFixtureSummaries } from "@/lib/ai-search/history-fixtures";
-import { historyControlLabel, rangeFromMode, type HistoryMode } from "@/lib/ai-search/history-mode";
+import {
+  DEFAULT_HISTORY_MODE,
+  historyControlLabel,
+  rangeFromMode,
+  windowBounds,
+  type HistoryMode,
+} from "@/lib/ai-search/history-mode";
 import { loadHistoryCatalog, loadHistorySnapshot, type HistorySnapshotResult } from "@/lib/ai-search/history-queries";
+import { clientMonthSnapshots, latestMonthRuns, latestPublishedDay } from "@/lib/ai-search/latest-month";
 import { isReviewHistoryRun } from "@/lib/ai-search/review-runs";
 import type { AiSearchRead, AiSearchSnapshot } from "@/lib/ai-search/types";
 import { readsWindowRemotely } from "@/lib/ai-search/window-read";
@@ -35,6 +41,12 @@ type AiHistoryValue = {
   selected: SelectedState;
   trend: TrendLoad;
   controlLabel: string;
+  /** Any day in the latest month: the published run's day, or the copy's latest published run. */
+  monthDay: string | null;
+  /** Inclusive days of the selected window. Null on either side when the window is open there. */
+  bounds: { from: string | null; to: string | null };
+  /** Catalog runs the selected window adds. Empty for a single run. */
+  windowRuns: HistoryRunSummary[];
   viewMonth: () => void;
   viewRun: (runId: string) => void;
   /** Shows the published run the map already read, without another database read. */
@@ -49,18 +61,10 @@ const AiHistoryContext = createContext<AiHistoryValue | null>(null);
 function runsInScope(
   runs: readonly HistoryRunSummary[],
   mode: HistoryMode,
-  publishedDay: string | null,
+  monthDay: string | null,
 ): HistoryRunSummary[] {
-  if (mode.kind === "month") {
-    if (!publishedDay) return [];
-    const bounds = citationMonthBounds(publishedDay);
-    if (!bounds) return [];
-    return runs.filter(isReviewHistoryRun).filter((run) => {
-      const day = utcDay(run.published_at ?? run.completed_at);
-      if (!day) return false;
-      return day >= bounds.from && day <= bounds.to;
-    });
-  }
+  if (mode.kind === "month") return latestMonthRuns(runs, monthDay).included;
+  if (mode.kind === "run" || mode.kind === "legacy") return [];
   const { from, to } = rangeFromMode(mode);
   return runs.filter(isReviewHistoryRun).filter((run) => {
     const day = utcDay(run.published_at ?? run.completed_at);
@@ -78,7 +82,7 @@ function isWindowMode(mode: HistoryMode): boolean {
 export function AiHistoryProvider({ current, children }: { current: AiSearchRead; children: ReactNode }) {
   const params = useSearchParams();
   const source = params.get("ai-history") === "fixture" ? "fixture" : "live";
-  const [mode, setMode] = useState<HistoryMode>({ kind: "month" });
+  const [mode, setMode] = useState<HistoryMode>(DEFAULT_HISTORY_MODE);
   const [liveCatalog, setLiveCatalog] = useState<CatalogState>({ phase: "loading" });
   const [selected, setSelected] = useState<SelectedState>({ phase: "idle" });
   const [remoteTrend, setRemoteTrend] = useState<{ key: string; trend: TrendLoad }>({
@@ -93,6 +97,7 @@ export function AiHistoryProvider({ current, children }: { current: AiSearchRead
   const publishedDay =
     current.phase === "ready" ? utcDay(current.snapshot.run.published_at ?? current.snapshot.run.completed_at) : null;
   const publishedRunId = current.phase === "ready" ? current.snapshot.run.audit_run_id : null;
+  const monthDay = source === "fixture" ? latestPublishedDay(fixtureRuns) : publishedDay;
 
   useEffect(() => {
     if (source === "fixture") return;
@@ -147,15 +152,18 @@ export function AiHistoryProvider({ current, children }: { current: AiSearchRead
     setSelected({ phase: "idle" });
   }, []);
 
+  const windowRuns = useMemo(
+    () => (catalog.phase === "ready" ? runsInScope(catalog.runs, mode, monthDay) : []),
+    [catalog, mode, monthDay],
+  );
   const trendKey = useMemo(() => {
-    const trusted = catalog.phase === "ready" ? runsInScope(catalog.runs, mode, publishedDay) : [];
     const range = mode.kind === "range" ? `${mode.from}:${mode.to}` : "";
-    return `${source}:${mode.kind}:${range}:${publishedDay ?? ""}:${trusted.map((run) => run.audit_run_id).join(",")}`;
-  }, [catalog, mode, publishedDay, source]);
+    return `${source}:${mode.kind}:${range}:${monthDay ?? ""}:${windowRuns.map((run) => run.audit_run_id).join(",")}`;
+  }, [mode, monthDay, source, windowRuns]);
   const localTrend = useMemo<TrendLoad | null>(() => {
-    const trusted = catalog.phase === "ready" ? runsInScope(catalog.runs, mode, publishedDay) : [];
+    const trusted = windowRuns;
     if (!isWindowMode(mode)) return { phase: "idle" };
-    if (mode.kind === "month" && !publishedDay && current.phase === "loading") return { phase: "loading" };
+    if (mode.kind === "month" && !monthDay && current.phase === "loading") return { phase: "loading" };
     if (catalog.phase === "loading") return { phase: "loading" };
     if (catalog.phase === "error") return { phase: "error", message: catalog.message };
     if (!readsWindowRemotely(source, trusted.length)) {
@@ -165,17 +173,18 @@ export function AiHistoryProvider({ current, children }: { current: AiSearchRead
       return { phase: "ready", snapshots };
     }
     return null;
-  }, [catalog, current.phase, mode, publishedDay, source]);
-  const trend = useMemo<TrendLoad>(
-    () => localTrend ?? (remoteTrend.key === trendKey ? remoteTrend.trend : { phase: "loading" }),
-    [localTrend, remoteTrend, trendKey],
-  );
+  }, [catalog, current.phase, mode, monthDay, source, windowRuns]);
+  const trend = useMemo<TrendLoad>(() => {
+    const loaded = localTrend ?? (remoteTrend.key === trendKey ? remoteTrend.trend : { phase: "loading" });
+    if (mode.kind !== "month" || loaded.phase !== "ready") return loaded;
+    return { phase: "ready", snapshots: clientMonthSnapshots(loaded.snapshots) };
+  }, [localTrend, mode.kind, remoteTrend, trendKey]);
 
   useEffect(() => {
     if (localTrend || catalog.phase !== "ready") return;
     if (!isWindowMode(mode)) return;
     const key = trendKey;
-    const trusted = [...runsInScope(catalog.runs, mode, publishedDay)].sort(compareRuns);
+    const trusted = [...windowRuns].sort(compareRuns);
     const stop = new AbortController();
     let cancelled = false;
     void (async () => {
@@ -204,7 +213,7 @@ export function AiHistoryProvider({ current, children }: { current: AiSearchRead
       cancelled = true;
       stop.abort();
     };
-  }, [catalog, localTrend, mode, publishedDay, source, trendKey]);
+  }, [catalog.phase, localTrend, mode, source, trendKey, windowRuns]);
 
   const selectedDay = useMemo(() => {
     if (catalog.phase !== "ready") return null;
@@ -222,7 +231,10 @@ export function AiHistoryProvider({ current, children }: { current: AiSearchRead
       current,
       selected,
       trend,
-      controlLabel: historyControlLabel(mode, publishedDay, selectedDay, publishedRunId),
+      controlLabel: historyControlLabel(mode, monthDay, selectedDay, publishedRunId),
+      monthDay,
+      bounds: windowBounds(mode, monthDay),
+      windowRuns,
       viewMonth,
       viewRun,
       viewPublished,
@@ -234,7 +246,7 @@ export function AiHistoryProvider({ current, children }: { current: AiSearchRead
       catalog,
       current,
       mode,
-      publishedDay,
+      monthDay,
       publishedRunId,
       selected,
       selectedDay,
@@ -246,6 +258,7 @@ export function AiHistoryProvider({ current, children }: { current: AiSearchRead
       viewPublished,
       viewRange,
       viewRun,
+      windowRuns,
     ],
   );
 

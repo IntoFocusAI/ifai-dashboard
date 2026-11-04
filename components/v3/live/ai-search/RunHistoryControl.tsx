@@ -6,6 +6,7 @@ import { READ_ERROR_TITLE } from "@/components/v3/live/ai-search/AiReadGate";
 import { CopyTip } from "@/components/v3/live/ai-search/CopyTip";
 import { RunHistoryCalendar } from "@/components/v3/live/ai-search/RunHistoryCalendar";
 import { formatDay, utcDay, type HistoryRunSummary } from "@/lib/ai-search/history-eligibility";
+import { LATEST_MONTH_LABEL } from "@/lib/ai-search/history-mode";
 import { batteryGaps } from "@/lib/ai-search/prompt-battery";
 import {
   citationStorageCaution,
@@ -172,11 +173,27 @@ export function RunHistoryControl() {
           <div className="ai-history-dialog-body">
           {history.source === "fixture" ? (
             <p className="ai-history-note" data-ai-history-fixture>
-              {STORED_RUN_COPY_LABEL} The default is Last 30 days of stored review runs. The map stays on the live published run.
+              {STORED_RUN_COPY_LABEL} The default is the latest month of published review runs. The map stays on the live published run.
             </p>
           ) : null}
           <div className="ai-history-quick" role="group" aria-label="Quick choices">
-            <button type="button" onClick={() => { history.viewMonth(); setOpen(false); }}>Last 30 days</button>
+            <button
+              type="button"
+              aria-pressed={history.mode.kind === "month"}
+              data-ai-history-latest-month
+              onClick={() => { history.viewMonth(); setOpen(false); }}
+            >
+              {LATEST_MONTH_LABEL}
+            </button>
+            <button
+              type="button"
+              disabled={history.current.phase !== "ready"}
+              aria-pressed={history.mode.kind === "run" && history.mode.runId === anchorId}
+              data-ai-history-latest-run
+              onClick={() => { history.viewPublished(); setOpen(false); }}
+            >
+              Latest run
+            </button>
             <button
               type="button"
               disabled={!previous}

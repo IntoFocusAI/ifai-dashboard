@@ -1,5 +1,5 @@
 import { formatDay } from "@/lib/ai-search/history-eligibility";
-import { citationMonthBounds } from "@/lib/ai-search/citation-aggregate";
+import { calendarMonthBounds, monthName } from "@/lib/ai-search/latest-month";
 
 export type HistoryMode =
   | { kind: "month" }
@@ -8,23 +8,24 @@ export type HistoryMode =
   | { kind: "range"; from: string; to: string }
   | { kind: "all" };
 
+/** The window a history session opens on. A window the reader picked stays until they change it. */
+export const DEFAULT_HISTORY_MODE: HistoryMode = { kind: "month" };
+
+export const LATEST_MONTH_LABEL = "Latest month";
+
+/** `monthDay` is any day in the latest month: the published run's day. */
 export function historyControlLabel(
   mode: HistoryMode,
-  currentDay: string | null,
+  monthDay: string | null,
   selectedDay: string | null,
   publishedRunId: string | null = null,
 ): string {
-  if (mode.kind === "month") {
-    if (!currentDay) return "Last 30 days";
-    const bounds = citationMonthBounds(currentDay);
-    if (!bounds) return "Last 30 days";
-    return `Last 30 days · ${formatDay(bounds.from)} to ${formatDay(bounds.to)}`;
-  }
+  if (mode.kind === "month") return monthName(monthDay) ?? LATEST_MONTH_LABEL;
   if (mode.kind === "all") return "All time";
   if (mode.kind === "range") return `${formatDay(mode.from)} to ${formatDay(mode.to)}`;
   if (mode.kind === "legacy") return selectedDay ? `Legacy run · ${formatDay(selectedDay)}` : "Legacy run";
-  if (mode.runId === publishedRunId) {
-    const day = selectedDay ?? currentDay;
+  if (mode.kind === "run" && mode.runId === publishedRunId) {
+    const day = selectedDay ?? monthDay;
     return day ? `Published run · ${formatDay(day)}` : "Published run";
   }
   return selectedDay ? `Historical run · ${formatDay(selectedDay)}` : "Historical run";
@@ -33,6 +34,15 @@ export function historyControlLabel(
 export function rangeFromMode(mode: HistoryMode): { from: string | null; to: string | null } {
   if (mode.kind === "range") return { from: mode.from, to: mode.to };
   return { from: null, to: null };
+}
+
+/** Inclusive days the window covers. All time and single runs have no bounds. */
+export function windowBounds(mode: HistoryMode, monthDay: string | null): { from: string | null; to: string | null } {
+  if (mode.kind === "month") {
+    const bounds = calendarMonthBounds(monthDay);
+    return bounds ?? { from: null, to: null };
+  }
+  return rangeFromMode(mode);
 }
 
 /**

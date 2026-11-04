@@ -12,6 +12,7 @@ import { CITED_LINK_COUNT_CAVEAT, CitationRoleNote } from "@/components/v3/live/
 import { CitationHero } from "@/components/v3/live/ai-search/CitationHero";
 import { CitationNotAvailable } from "@/components/v3/live/ai-search/CitationNotAvailable";
 import { CitationReadFailed } from "@/components/v3/live/ai-search/CitationReadFailed";
+import { NoMonthRunNotice } from "@/components/v3/live/ai-search/NoMonthRunNotice";
 import { useEvidenceFocus } from "@/components/v3/live/ai-search/useEvidenceFocus";
 import {
   citationPickLabel,
@@ -297,6 +298,7 @@ function CitationAggregateBody() {
   if (aggregate.phase === "error") {
     return <CitationReadFailed failed={aggregate.failed} message={aggregate.message} />;
   }
+  if (aggregate.phase === "empty" && aggregate.noMonthRun) return <NoMonthRunNotice />;
   if (aggregate.phase === "empty") {
     return (
       <RangeNotice heading="No citation total" tone="empty">

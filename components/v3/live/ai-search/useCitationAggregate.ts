@@ -5,19 +5,18 @@ import { useAiHistoryOptional } from "@/components/v3/live/ai-search/AiHistoryCo
 import { useAiSearch } from "@/components/v3/live/ai-search/AiSearchContext";
 import {
   citationAggregateCopy,
-  citationMonthBounds,
   citationSnapshotUsable,
   poolCitationSnapshots,
   type CitationWindow,
 } from "@/lib/ai-search/citation-aggregate";
 import type { CitationFailedRead } from "@/lib/ai-search/citation-read-failure";
-import { utcDay } from "@/lib/ai-search/history-eligibility";
+import { NO_MONTH_RUN_HEADING } from "@/lib/ai-search/latest-month";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
 
 export type CitationAggregate =
   | { phase: "loading" }
   | { phase: "error"; message: string; failed: CitationFailedRead }
-  | { phase: "empty"; message: string }
+  | { phase: "empty"; message: string; noMonthRun?: boolean }
   | { phase: "ready"; snapshot: AiSearchSnapshot; copy: string; singleRun: boolean };
 
 function finish(
@@ -29,6 +28,9 @@ function finish(
   const omitted = snapshots.length - included.length;
   const snapshot = poolCitationSnapshots(included);
   if (!snapshot) {
+    if (window.kind === "month" && snapshots.length === 0) {
+      return { phase: "empty", message: `${NO_MONTH_RUN_HEADING}.`, noMonthRun: true };
+    }
     return {
       phase: "empty",
       message:
@@ -51,18 +53,17 @@ export function useCitationAggregate(): CitationAggregate {
   const mode = history?.mode;
   const trend = history?.trend;
   const current = history?.current;
+  const monthFrom = history?.mode.kind === "month" ? history.bounds.from : null;
+  const monthTo = history?.mode.kind === "month" ? history.bounds.to : null;
 
   const window = useMemo<CitationWindow | null>(() => {
     if (!mode || mode.kind === "legacy") return null;
     if (mode.kind === "run") return { kind: "run" };
     if (mode.kind === "all") return { kind: "all" };
     if (mode.kind === "range") return { kind: "range", from: mode.from, to: mode.to };
-    if (current?.phase !== "ready") return null;
-    const endDay = utcDay(current.snapshot.run.published_at ?? current.snapshot.run.completed_at);
-    if (!endDay) return null;
-    const bounds = citationMonthBounds(endDay);
-    return bounds ? { kind: "month", ...bounds } : null;
-  }, [current, mode]);
+    if (!monthFrom || !monthTo) return null;
+    return { kind: "month", from: monthFrom, to: monthTo };
+  }, [mode, monthFrom, monthTo]);
 
   const trendAggregate = useMemo<CitationAggregate | null>(() => {
     if (!window || window.kind === "run") return null;

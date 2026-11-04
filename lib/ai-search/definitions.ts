@@ -33,7 +33,7 @@ export const AI_DEFINITIONS = {
   "partial run":
     "The run was published with some calls unanswered. Every figure covers the answered calls only, and the unanswered calls are listed.",
   "published run":
-    "The one audit run IntoFocus has published as current. The map stays on that run. AI Search tabs follow the run control, which starts on the last 30 days of stored review runs. The published run itself is not a blend of those runs.",
+    "The one audit run IntoFocus has published as current. The map stays on that run. AI Search tabs follow the run control, which starts on the published runs from the latest month. The published run itself is not a blend of those runs.",
   "question set":
     "The full list of questions sent in one AI Search run. A change means a later run asked a different list, so the rates on each side are not one continuous series.",
   "query version":

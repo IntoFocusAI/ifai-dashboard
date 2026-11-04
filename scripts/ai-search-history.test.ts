@@ -4,7 +4,8 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { isTrustworthyRun, utcDay, type HistoryRunSummary } from "../lib/ai-search/history-eligibility.ts";
 import { historyFixtureSnapshot, historyFixtureSnapshots, historyFixtureSummaries } from "../lib/ai-search/history-fixtures.ts";
-import { citationMonthBounds, poolWindowSnapshots } from "../lib/ai-search/citation-aggregate.ts";
+import { poolWindowSnapshots } from "../lib/ai-search/citation-aggregate.ts";
+import { calendarMonthBounds } from "../lib/ai-search/latest-month.ts";
 import { historyControlLabel, historySpokeDescription } from "../lib/ai-search/history-mode.ts";
 import { historyViewMissing } from "../lib/ai-search/history-queries.ts";
 import { batteryGaps, batteryPrompt } from "../lib/ai-search/prompt-battery.ts";
@@ -50,13 +51,10 @@ const october11 = byId(OCTOBER_11_RUN_ID);
 const earlier = byId(EARLIER_OCTOBER_12_RUN_ID);
 const published = byId(PUBLISHED_OCTOBER_12_RUN_ID);
 
-test("default history label names the last 30 days", () => {
-  assert.deepEqual(citationMonthBounds("2026-10-12"), { from: "2026-09-13", to: "2026-10-12" });
-  assert.equal(
-    historyControlLabel({ kind: "month" }, "2026-10-12", null),
-    "Last 30 days · Sep 13, 2026 to Oct 12, 2026",
-  );
-  assert.equal(historyControlLabel({ kind: "month" }, null, null), "Last 30 days");
+test("default history label names the latest month", () => {
+  assert.deepEqual(calendarMonthBounds("2026-10-12"), { from: "2026-10-01", to: "2026-10-31" });
+  assert.equal(historyControlLabel({ kind: "month" }, "2026-10-12", null), "October 2026");
+  assert.equal(historyControlLabel({ kind: "month" }, null, null), "Latest month");
   assert.equal(historyControlLabel({ kind: "all" }, "2026-10-12", null), "All time");
 });
 
