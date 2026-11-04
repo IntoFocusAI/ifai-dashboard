@@ -36,20 +36,20 @@ const TABS: Tab[] = [
 );
 
 /** Tabs that still fail this audit, with the files that own them. */
-const KNOWN_GAPS: Record<string, { x03: boolean; x04: boolean; owner: string }> = {
-  "hub/opportunity": {
-    x03: true,
-    x04: false,
-    owner: "data/fender-v3-spec.json, hub Opportunity template: the estimate chart was removed on 4 Nov 2026; awaiting an exemption or a visual (PM21)",
-  },
-};
+const KNOWN_GAPS: Record<string, { x03: boolean; x04: boolean; owner: string }> = {};
 
 /**
- * Exempt from the lead-figure and lead-visual rule (Brian Magazu, 4 Nov 2026). Action Items tells
- * the client what to fix and how each estimate was set, so each tab must instead open on `lead`,
- * in the first screen and ahead of any long paragraph.
+ * Stated exemptions (Brian Magazu, 4 Nov 2026). Action Items tells the client what to fix and how
+ * each estimate was set, and estimate views spend their space on how the estimates were reached
+ * rather than on charts. Each tab must instead open on `lead`, in the first screen and ahead of any
+ * long paragraph. `x04Only` tabs still need a lead figure (X-03); only the visual rule is waived.
  */
-const EXEMPT: Record<string, { leads: string; lead: string }> = {
+const EXEMPT: Record<string, { leads: string; lead: string; x04Only?: boolean }> = {
+  "hub/opportunity": {
+    leads: "the two analyst estimates, then how each was set",
+    lead: "[data-estimate-method]",
+    x04Only: true,
+  },
   "suggestions/urgent-interventions": { leads: "the prioritized fix list", lead: "[data-fix-list] [data-fix-row]" },
   "suggestions/revenue-estimates": {
     leads: "the two analyst estimates, then how each was set",
@@ -142,10 +142,16 @@ test.describe("figure-first audit at 1280×720 (X-03, X-04)", () => {
     test(`${tab.area} · ${tab.tab}`, async ({ page, baseURL }, info) => {
       const errors = await openTab(page, baseURL, tab);
       if (exempt) {
-        info.annotations.push({ type: "figure-first exemption", description: `${key} leads with ${exempt.leads}` });
+        info.annotations.push({
+          type: "figure-first exemption",
+          description: `${key} leads with ${exempt.leads}${exempt.x04Only ? " (X-04 only)" : ""}`,
+        });
         await expect
           .poll(() => page.evaluate(leadsWith, exempt.lead), { timeout: LIVE_READ_TIMEOUT })
           .toBe(true);
+        if (exempt.x04Only) {
+          await expect.poll(async () => (await page.evaluate(measure)).x03, { timeout: LIVE_READ_TIMEOUT }).toBe(true);
+        }
         await info.attach(`${key}.png`, { body: await page.screenshot(), contentType: "image/png" });
         expect(errors).toEqual([]);
         return;
