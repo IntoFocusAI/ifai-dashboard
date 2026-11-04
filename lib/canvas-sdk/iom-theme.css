@@ -747,7 +747,7 @@
 }
 
 .ifai-canvas.theme-iom .node-halo {
-  fill: url(#luxHubAura);
+  fill: var(--aura, url(#luxHubAura));
   stroke: none;
   opacity: 0.72;
   pointer-events: none;
@@ -968,7 +968,7 @@
 }
 
 .ifai-canvas.theme-iom .hub-halo-pulse {
-  fill: url(#luxHubAura);
+  fill: var(--aura, url(#luxHubAura));
   stroke: none;
   opacity: 0.8;
   transform-box: fill-box;

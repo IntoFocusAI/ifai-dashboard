@@ -613,8 +613,8 @@ export function CanvasShell({ spec, children }: Props) {
         const target = evt.currentTarget;
         if (!(target instanceof Element)) return;
         const node = target.closest(".graph-node") ?? target;
-        // The rail hides spoke halos; the soft shadow under each bubble reaches past its circle.
-        const edge = node.querySelector(":scope > .hub-halo-pulse, :scope > .node-inner > .node-circle") ?? node;
+        // The rail hides spoke halos; the soft shadow and the hub's halo reach past their circles.
+        const edge = node.querySelector(":scope > .hub-halo-edge, :scope > .node-inner > .node-circle") ?? node;
         const nodeRect = edge.getBoundingClientRect();
         tooltipRef.current?.show(
           { title, desc, hasMoreInfo, example, anchor: "column-right" },

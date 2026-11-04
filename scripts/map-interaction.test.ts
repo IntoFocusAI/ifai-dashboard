@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { sameTooltipContent, type TooltipContent } from "../lib/canvas-sdk/tooltip-content.ts";
 import { INTERACTIVE_SELECTOR, pointInRect } from "../lib/canvas-sdk/iom-cursor-targets.ts";
-import { blurredDiskOpacity, blurredDiskStops } from "../lib/canvas-sdk/blurred-disk.ts";
+import { blurredAuraStops, blurredDiskOpacity, blurredDiskStops } from "../lib/canvas-sdk/blurred-disk.ts";
 
 const root = new URL("..", import.meta.url);
 const read = (path: string) => readFileSync(new URL(path, root), "utf8");
@@ -117,6 +117,22 @@ test("the pre-rendered shadow traces a blurred circle: solid inside, half at a s
   }
   const hubEdge = blurredDiskOpacity(98, 22, 98);
   assert.ok(hubEdge > 0.4 && hubEdge < 0.5, "a small circle's edge is under half, as Chrome blurs it");
+});
+
+test("the pre-rendered halo spreads the aura and its colored edge past the circle, as the 10px blur did", () => {
+  const plain = blurredAuraStops(154, 10);
+  const ringed = blurredAuraStops(154, 10, [46, 183, 255]);
+  const at = (stops: typeof plain.stops, d: number) => stops.find((stop) => Math.abs(stop.offset * plain.reach - d) < 1e-6)!;
+  assert.equal(plain.reach, 184);
+  assert.ok(plain.stops[0].opacity > 0.5 && plain.stops[0].opacity < 0.55, "the bright center softens a little");
+  assert.ok(at(plain.stops, 164).opacity > 0.002, "the aura reaches past its circle");
+  assert.ok(plain.stops.at(-1)!.opacity < 0.005 && plain.stops.at(-1)!.offset <= 1);
+  const edge = at(ringed.stops, 154);
+  assert.ok(edge.opacity - at(plain.stops, 154).opacity > 0.03, "the 1px edge stroke adds a faint ring");
+  const green = (color: string) => Number(color.split(" ")[1]);
+  assert.ok(green(edge.color) - green(at(plain.stops, 154).color) > 40, "the edge leans to the stroke color");
+  for (let i = 1; i < plain.stops.length; i += 1) assert.ok(plain.stops[i].offset > plain.stops[i - 1].offset);
+  assert.match(read("lib/canvas-sdk/iom-theme.css"), /fill: var\(--aura, url\(#luxHubAura\)\);/);
 });
 
 test("the panel opens with a short slide and never animates its width", () => {

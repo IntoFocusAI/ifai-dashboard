@@ -1,7 +1,7 @@
 "use client";
 
-import { useId, type KeyboardEvent, type MouseEvent, type ReactElement } from "react";
-import { blurredDiskStops } from "@/lib/canvas-sdk/blurred-disk";
+import { useId, type CSSProperties, type KeyboardEvent, type MouseEvent, type ReactElement } from "react";
+import { blurredAuraStops, blurredDiskStops } from "@/lib/canvas-sdk/blurred-disk";
 import { fitMainHero } from "@/lib/canvas-sdk/hero-fit";
 import { SatelliteHeroFace } from "@/lib/canvas-sdk/SatelliteHeroFace";
 import type { CanvasEdge, NodeStatus } from "@/lib/canvas-sdk/types";
@@ -294,6 +294,16 @@ const PRIMARY_SPOKES = new Set([
   "spoke-fixes",
   "spoke-roadmap",
 ]);
+
+/** The example bubbles are drawn red whatever their status. */
+const EXAMPLE_SPOKES = new Set(["spoke-fixes", "spoke-roadmap"]);
+
+const HALO_RING: Record<NodeStatus, readonly [number, number, number]> = {
+  danger: [251, 113, 133],
+  warning: [251, 191, 36],
+  success: [52, 211, 153],
+  neutral: [46, 183, 255],
+};
 
 /** Flip on to restore the flame and red alert pill above critical bubbles. */
 const SHOW_QUEST_FLAMES = false;
@@ -616,7 +626,15 @@ export function GraphBubble({
       onMouseLeave={onMouseLeave}
       {...inspectProps(title, onInspect, onClick)}
     >
-      <circle r={emphasis ? r + 26 : r + 10} className={`node-halo${statusClass}`} />
+      {emphasis ? (
+        <BlurredAura
+          radius={r + 26}
+          ring={EXAMPLE_SPOKES.has(id) ? HALO_RING.danger : HALO_RING[status]}
+          className={`node-halo${statusClass}`}
+        />
+      ) : (
+        <circle r={r + 10} className={`node-halo${statusClass}`} />
+      )}
       {emphasis && PRIMARY_SPOKES.has(id) ? <RingMotes radius={r} /> : null}
       {SHOW_QUEST_FLAMES && emphasis && PRIMARY_SPOKES.has(id) && status === "danger" && stats[0] ? (
         <QuestFlame label={stats[0]} radius={r} />
@@ -696,7 +714,14 @@ export function GraphHub({
       onMouseLeave={onMouseLeave}
       {...inspectProps(title, onInspect, onClick)}
     >
-      <circle r={pulseR} fill="url(#brandHubGradient)" opacity="0.45" className="node-pulse-ring hub-halo-pulse" />
+      {emphasis ? (
+        <>
+          <BlurredAura radius={pulseR} className="node-pulse-ring hub-halo-pulse" />
+          <circle r={pulseR} className="hub-halo-edge" fill="none" pointerEvents="fill" />
+        </>
+      ) : (
+        <circle r={pulseR} fill="url(#brandHubGradient)" opacity="0.45" className="node-pulse-ring hub-halo-pulse" />
+      )}
       {emphasis ? <RingMotes radius={r} /> : null}
       {selected && emphasis ? <SelectionBurst radius={r} /> : null}
       <g className="node-inner">
@@ -746,6 +771,27 @@ function BubbleLift({ radius, sigma, statusClass = "" }: { radius: number; sigma
       <circle className="node-drop" r={reach} fill={`url(#${id}drop)`} />
       <circle className="node-glow" r={reach} fill={`url(#${id}glow)`} />
     </g>
+  );
+}
+
+/**
+ * The breathing halo with its 10px blur baked into the gradient. The theme reads the gradient from
+ * `--aura`, so themes without halos still hide it.
+ */
+function BlurredAura({ radius, ring, className }: { radius: number; ring?: readonly [number, number, number]; className: string }) {
+  const id = useId();
+  const { reach, stops } = blurredAuraStops(radius, 10, ring);
+  return (
+    <>
+      <defs>
+        <radialGradient id={`${id}aura`}>
+          {stops.map((stop) => (
+            <stop key={stop.offset} offset={stop.offset.toFixed(4)} stopColor={stop.color} stopOpacity={stop.opacity.toFixed(4)} />
+          ))}
+        </radialGradient>
+      </defs>
+      <circle r={reach} className={className} pointerEvents="none" style={{ "--aura": `url(#${id}aura)` } as CSSProperties} />
+    </>
   );
 }
 
