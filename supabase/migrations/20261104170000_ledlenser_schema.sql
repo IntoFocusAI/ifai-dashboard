@@ -17,7 +17,7 @@
 -- Table shapes mirror command.fmic_* as of 2026-11-04, with Fender-specific names made generic:
 --   fmic_electric_catalog      -> catalog
 --   fmic_spec_readiness.fender_* -> spec_readiness.brand_site_*
---   fmic_ai_simulations.probe_brand_sku -> ai_simulations.probe_brand_sku, outcome 'brand_win' -> 'brand_win'
+--   fmic_ai_simulations.probe_fender_sku -> ai_simulations.probe_brand_sku, outcome 'fender_win' -> 'brand_win'
 --   fmic_retail_buybox_map     -> retail_buybox_map, without the Musician's Friend (mf_*) columns
 -- brand_catalog is new: the brand's own product sheet (Plytix export), loaded without wholesale price or
 -- cost, because the canvas views are readable with the public key until login ships.
