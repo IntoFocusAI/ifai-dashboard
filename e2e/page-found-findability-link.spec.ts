@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { Canvas } from "./fixtures";
-import { mockCanvasRead, type Row } from "./spec-read-mock";
+import { mockCanvasRead, SPEC_ROWS, type Row } from "./spec-read-mock";
 
 /**
  * FDD D-08. On Brand-Site Specs, a not-found row's Findability result opens that
@@ -120,6 +120,102 @@ test("the Findability link works from the keyboard", async ({ page }) => {
   await page.keyboard.press("Enter");
   const row = await expectLandedOnMissing(page, canvas);
   await expect(row).toHaveAttribute("data-findability-landed", "");
+  expect(errors).toEqual([]);
+});
+
+/** fender_missing_fields as the fender.com spec check stored them on 4 Nov 2026. */
+const STORED: Array<[string, string]> = [
+  [
+    "B09BTVN81S",
+    "not_found: search_results_no_matching_model (affinity-series-stratocaster-fmt-hss:handle_rejected | affinity-stratocaster-fmt-hss:handle_rejected | squier-affinity-stratocaster-fmt-hss:handle_rejected)",
+  ],
+  [
+    "B09TPVQJML",
+    "not_found: search_results_no_matching_model (fender-spaghetti-logo-t-shirt-shell-pink:handle_rejected | fender-spaghetti-logo-t-shirt-surf-green:handle_rejected | fender-spaghetti-logo-t-shirt-daphne-blue:handle_rejected | fender-spaghetti-logo-t-shirt-butterscotch-blonde:handle_rejected | fender-spaghetti-logo-t-shirt-dakota-red:handle_rejected | fender-spaghetti-logo-t-shirt-black:handle_rejected | fender-spaghetti-logo-tie-dye-t-shirt-mustard:handle_rejected | fender-spaghetti-logo-tie-dye-t-shirt:handle_rejected | fender-spaghetti-logo-long-sleeve-t-shirt-black:handle_rejected | fender-spa",
+  ],
+  [
+    "B09R6WBMG9",
+    "not_found: search_candidate_page_missing (fender-digital-gift-card:handle_rejected | fender-play-prepaid-cards:handle_rejected | affinity-jazzmaster:page_not_found | squier-affinity-jazzmaster:page_not_found)",
+  ],
+  [
+    "B0B621WX38",
+    "not_found: findability_page_not_read (findability:page_not_read | american-vintage-ii-1957-stratocaster-left-hand:handle_rejected | american-vintage-ii-1957-left-handed-stratocaster-2-color-sunburst:handle_rejected | squier-american-vintage-ii-1957-left-handed-stratocaster-2-color-sunburst:handle_rejected)",
+  ],
+];
+
+const STORED_ROWS: Row[] = [
+  ...SPEC_ROWS.filter((row) => row.fender_found === true || row.asin === "B00MISSING"),
+  ...STORED.map(([asin, missing]) => ({
+    asin,
+    title: `Stored ${asin}`,
+    amazon_checked: true,
+    fender_found: false,
+    fender_missing_fields: missing,
+    fender_url: null,
+  })),
+];
+
+test("stored not-found reasons read as plain reasons, grouped, and still link to Findability", async ({ page }) => {
+  const errors = watchErrors(page);
+  await mockCanvasRead(page, {
+    findability: [
+      ...FINDABILITY,
+      { asin: "B0B621WX38", title: "Stored Strat", latest_state: "official_family_page", counts_as_confirmed: true },
+    ],
+  });
+  await page.route("**/rest/v1/canvas_spec_readiness**", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      headers: {
+        "content-range": `0-${STORED_ROWS.length - 1}/${STORED_ROWS.length}`,
+        "access-control-allow-origin": "*",
+        "access-control-expose-headers": "content-range",
+      },
+      body: JSON.stringify(STORED_ROWS),
+    });
+  });
+  const canvas = new Canvas(page);
+  await openBrandSiteSpecs(page, canvas);
+
+  const table = page.locator("#brand-site-page-found-skus");
+  await table.locator("[data-page-found-filter='not_found']").click();
+  await expect(table.locator("[data-page-found-reason-filter]")).toHaveText([
+    "All reasons 5",
+    "No matching fender.com product page 2",
+    "Matching fender.com page is missing 1",
+    "fender.com page did not load 1",
+    "No Defensible Page 1",
+  ]);
+  await expect(table.locator("tbody")).not.toContainText(/handle|rejected|not_found|page_not|\(/);
+
+  const cut = table.locator("[data-asin='B09TPVQJML'] [data-page-found-stored-reason='no_matching_model'] .ifai-term");
+  await expect(cut).toHaveText("No matching fender.com product page");
+  await expect(cut).toHaveAttribute("data-ifai-tooltip-desc", /none was for this model\. At least 10 fender\.com pages checked\.$/);
+  await expect(cut).not.toHaveAttribute("title");
+  await cut.hover();
+  await expect(page.locator(".node-tooltip.node-tooltip-definition.visible")).toContainText(
+    "At least 10 fender.com pages checked.",
+  );
+
+  await table.locator("[data-page-found-reason-filter='fender.com page did not load']").click();
+  const row = table.locator("[data-page-found-row]");
+  await expect(row).toHaveCount(1);
+  await expect(row).toHaveAttribute("data-asin", "B0B621WX38");
+  await expect(row.locator("[data-page-found-stored-reason='page_not_read']")).toHaveText("fender.com page did not load");
+  await expect(row.locator("[data-page-found-stored-reason] .ifai-term")).toHaveAttribute(
+    "data-ifai-tooltip-desc",
+    /4 fender\.com pages checked\.$/,
+  );
+  await row.locator("button[data-page-found-findability-link='asin:B0B621WX38']").click();
+  await expect(canvas.activeTab).toContainText("Findability");
+  await expect(page.locator("[data-findability-outcome='official_family_page'] button.findability-count")).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  const landed = page.locator("#findability-listings tr[data-findability-asin='B0B621WX38']");
+  await expect(landed).toBeInViewport();
+  await expect(landed).toHaveAttribute("data-findability-landed", "");
   expect(errors).toEqual([]);
 });
 

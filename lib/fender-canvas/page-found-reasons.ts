@@ -7,6 +7,7 @@
  */
 
 import { REASON_NOT_RECORDED, type PageFoundRow } from "@/lib/fender-canvas/page-found-evidence";
+import { STORED_REASON_ORDER, type StoredNotFoundReason } from "@/lib/fender-canvas/page-found-stored-reason";
 import { OUTCOME_DEFINITION, bucketLabel, type FindabilityRead } from "@/lib/findability/copy";
 import {
   FINDABILITY_OUTCOMES,
@@ -35,7 +36,7 @@ export type FindabilityResult =
   | { kind: "unavailable" };
 
 export type NotFoundReason = {
-  stored: string | null;
+  stored: StoredNotFoundReason | null;
   findability: FindabilityResult;
   /** The same listing's row on the Findability tab. Null when that read has no row for it. */
   link: FindabilityRowLink | null;
@@ -85,7 +86,7 @@ export function notFoundReason(
     stored: row.storedReason,
     findability,
     link: findabilityRowLink(row.asin, findability.kind === "outcome"),
-    group: row.storedReason ?? findabilityResultLabel(findability),
+    group: row.storedReason?.label ?? findabilityResultLabel(findability),
   };
 }
 
@@ -111,14 +112,14 @@ const RESULT_ORDER: string[] = [
 ];
 
 function groupRank(reason: NotFoundReason): number {
-  if (reason.stored) return -1;
+  if (reason.stored) return STORED_REASON_ORDER.indexOf(reason.stored.code) - STORED_REASON_ORDER.length;
   const rank = RESULT_ORDER.indexOf(reason.group);
   return rank < 0 ? RESULT_ORDER.length : rank;
 }
 
 /**
- * The not-found rows grouped by the first reason each one shows. Stored reasons lead,
- * then the Findability outcomes in that tab's order. The counts add up to the rows given.
+ * The not-found rows grouped by the first reason each one shows. Stored reasons lead in
+ * STORED_REASON_ORDER, then the Findability outcomes in that tab's order. The counts add up to the rows given.
  */
 export function reasonGroups(reasons: Iterable<NotFoundReason>): ReasonGroup[] {
   const counts = new Map<string, { count: number; rank: number }>();

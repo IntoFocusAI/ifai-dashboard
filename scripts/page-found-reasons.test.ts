@@ -124,8 +124,8 @@ test("each not-found SKU shows its Findability outcome with that tab's name and 
 test("a stored spec-check reason leads, and a SKU Findability has no row for reads Reason not recorded", () => {
   const reasons = notFoundReasons(EVIDENCE.rows, READY);
   const stored = reasons.get("B0STORED01")!;
-  assert.equal(stored.stored, "Not found on fender.com");
-  assert.equal(stored.group, "Not found on fender.com");
+  assert.equal(stored.stored?.label, "No matching fender.com product page");
+  assert.equal(stored.group, "No matching fender.com product page");
   assert.equal(stored.findability.kind, "outcome");
   assert.equal(stored.findability.kind === "outcome" && stored.findability.label, "Unchecked");
 
@@ -138,7 +138,7 @@ test("a stored spec-check reason leads, and a SKU Findability has no row for rea
 test("the reason groups split the not-found rows, stored reasons first, without changing the counts", () => {
   const groups = reasonGroups(notFoundReasons(EVIDENCE.rows, READY).values());
   assert.deepEqual(groups, [
-    { key: "Not found on fender.com", count: 1 },
+    { key: "No matching fender.com product page", count: 1 },
     { key: "Exact official product page", count: 1 },
     { key: "Official family page", count: 1 },
     { key: "No Defensible Page", count: 2 },
@@ -158,7 +158,7 @@ test("the reason groups split the not-found rows, stored reasons first, without 
 test("an unread Findability read never claims a reason was not recorded", () => {
   const loading = notFoundReasons(EVIDENCE.rows, { phase: "loading" });
   assert.equal(loading.get("B0NOROW001")?.group, FINDABILITY_LOADING);
-  assert.equal(loading.get("B0STORED01")?.group, "Not found on fender.com");
+  assert.equal(loading.get("B0STORED01")?.group, "No matching fender.com product page");
 
   const failed = notFoundReasons(EVIDENCE.rows, { phase: "error", message: "down" });
   assert.equal(failed.get("B0NOPAGE01")?.group, FINDABILITY_UNAVAILABLE);

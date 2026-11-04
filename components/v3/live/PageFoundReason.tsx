@@ -10,6 +10,7 @@ import {
   type NotFoundReason,
   type ReasonGroup,
 } from "@/lib/fender-canvas/page-found-reasons";
+import { storedReasonTooltip } from "@/lib/fender-canvas/page-found-stored-reason";
 import { setFindabilityRowFocus, type FindabilityRowLink } from "@/lib/findability/row-focus";
 
 export const ALL_REASONS = "all";
@@ -87,8 +88,10 @@ export function NotFoundReasonCell({ reason }: { reason: NotFoundReason }) {
   return (
     <span className="page-found-reason" data-page-found-reason={reason.group}>
       {stored ? (
-        <span className="page-found-reason-line" data-page-found-stored-reason="">
-          {stored}
+        <span className="page-found-reason-line" data-page-found-stored-reason={stored.code}>
+          <Term name={stored.label} description={storedReasonTooltip(stored)}>
+            {stored.label}
+          </Term>
         </span>
       ) : null}
       {showFindability ? (
