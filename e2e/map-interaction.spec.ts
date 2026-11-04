@@ -81,7 +81,40 @@ test.describe("map hover", () => {
   });
 });
 
-test.describe("custom cursor", () => {
+test.describe("native cursor", () => {
+  test("the system cursor shows: a hand on bubbles, buttons, tabs, and links, and never none", async ({ canvas, page }) => {
+    await expect(page.locator(".iom-cursor-portal")).toHaveCount(0);
+    expect(await page.evaluate(() => document.documentElement.classList.contains("iom-custom-cursor-active"))).toBe(false);
+
+    for (const id of MAIN_BUBBLES) {
+      const circle = canvas.bubble(id).locator(":scope > .node-inner > .node-circle");
+      expect(await circle.evaluate((el) => getComputedStyle(el).cursor), `cursor over ${id}`).toBe("pointer");
+    }
+    const cursorAt = ([x, y]: number[]) => getComputedStyle(document.elementFromPoint(x, y)!).cursor;
+    expect(await page.evaluate(cursorAt, [640, 400]), "cursor over the map").not.toBe("none");
+
+    await canvas.clickBubble("spoke-retail");
+    const tab = page.locator(".drilldown-tab-btn").nth(1);
+    await expect(tab).toBeVisible();
+    const kinds = await page.evaluate(() => {
+      const pick = (selector: string) => {
+        const el = [...document.querySelectorAll<HTMLElement>(selector)].find((node) => node.getClientRects().length > 0);
+        return el ? getComputedStyle(el).cursor : "missing";
+      };
+      return {
+        tab: pick(".drilldown-tab-btn"),
+        button: pick(".ifai-canvas button:not(:disabled)"),
+        link: pick(".ifai-canvas a[href]"),
+      };
+    });
+    expect(kinds.tab, "cursor over a panel tab").toBe("pointer");
+    expect(kinds.button, "cursor over a button").toBe("pointer");
+    expect(kinds.link, "cursor over a link").not.toBe("none");
+  });
+});
+
+/* The IOM reticle is switched off (IOM_CUSTOM_CURSOR in IomCursor.tsx). These run again when it returns. */
+test.describe.skip("custom cursor", () => {
   test("the reticle sits on the pointer in every frame", async ({ canvas, page }) => {
     await page.mouse.move(600, 300);
     await page.evaluate(() => {

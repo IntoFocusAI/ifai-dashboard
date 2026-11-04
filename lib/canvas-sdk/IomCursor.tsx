@@ -10,6 +10,9 @@ import {
   targetIsInteractive,
 } from "@/lib/canvas-sdk/iom-cursor-targets";
 
+/** Off: the dashboard uses the operating system's cursor. The reticle felt laggy on client laptops. */
+export const IOM_CUSTOM_CURSOR = false;
+
 const CLICK_MS = 420;
 
 function subscribeFinePointer(onChange: () => void) {
