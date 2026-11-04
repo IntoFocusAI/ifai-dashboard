@@ -23,6 +23,7 @@ import { CatalogReadinessSpec } from "@/components/v3/live/CatalogReadinessSpec"
 import { FindabilityPanel } from "@/components/v3/live/findability/FindabilityPanel";
 import { AplusMatrixPanel } from "@/components/v3/live/AplusMatrixPanel";
 import { MachineReadabilityPanel } from "@/components/v3/live/MachineReadabilityPanel";
+import { readFallbackDesc, readFallbackTab } from "@/components/v3/read-fallbacks";
 import type { SpokeDefinition, SpokeId } from "@/components/v3/spoke-data-types";
 import { spokeData } from "@/components/v3/spoke-data";
 import narrative from "@/data/fender-v3-spec.json";
@@ -166,8 +167,10 @@ function wrapSpoke(
     ...(id === "specs" ? { desc: "" } : {}),
     // Strategy Roadmap first tab opens on the five finding figures; no retail-headline preface.
     ...(id === "roadmap" ? { desc: "" } : {}),
+    ...readFallbackDesc(id, spokeData[id].desc, vars, bundle),
     render: (tabIdx) => {
-      const custom = overrides[tabIdx]?.(bundle, vars, retail);
+      const custom =
+        readFallbackTab(id, tabIdx, bundle, retail) ?? overrides[tabIdx]?.(bundle, vars, retail);
       if (custom) return custom;
       const content = bound.render(tabIdx);
       if (typeof content === "string") return htmlBlock(content);
