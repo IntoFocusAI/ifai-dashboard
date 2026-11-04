@@ -13,6 +13,11 @@ import type { Row } from "./spec-read-mock";
 
 export const SEARCH_RUN = "5e0a0000-0000-4000-8000-000000000001";
 export const API_RUN = "a9100000-0000-4000-8000-000000000002";
+/**
+ * A one-question smoke test on Nov 3, nearer the search run than API_RUN. It matched 1 question,
+ * fewer than the search run's 4 fixed questions, so no figure counts it.
+ */
+export const SMOKE_RUN = "a9100000-0000-4000-8000-000000000004";
 /** With `earlierRun`, a second published search run on Oct 20 with the same answers. */
 export const EARLIER_RUN = "5e0a0000-0000-4000-8000-000000000003";
 
@@ -155,6 +160,10 @@ function rowsFor(runId: string, plan: Plan[], day: string, firstSim: number) {
 
 const search = rowsFor(SEARCH_RUN, SEARCH_PLAN, "2026-11-03", 1001);
 const api = rowsFor(API_RUN, API_PLAN, "2026-11-02", 2001);
+const SMOKE_PLAN: Plan[] = ["openai_api", "gemini_api", "claude_api"].map(
+  (engine): Plan => ({ engine, key: "p01", result: "fender_win" }),
+);
+const smoke = rowsFor(SMOKE_RUN, SMOKE_PLAN, "2026-11-03", 4001);
 const earlier = rowsFor(EARLIER_RUN, SEARCH_PLAN, "2026-10-20", 3001);
 
 const SEARCH_SUMMARY: Row = {
@@ -203,6 +212,22 @@ const API_SUMMARY: Row = {
   questions_matched: 4,
   question_set_match: true,
   counted: true,
+};
+
+const SMOKE_SUMMARY: Row = {
+  ...API_SUMMARY,
+  audit_run_id: SMOKE_RUN,
+  run_state: "completed",
+  expected_calls: SMOKE_PLAN.length,
+  attempted_calls: SMOKE_PLAN.length,
+  answered_calls: SMOKE_PLAN.length,
+  error_calls: 0,
+  missing_calls: 0,
+  started_at: "2026-11-03T18:00:00.000Z",
+  completed_at: "2026-11-03T18:05:00.000Z",
+  engines: ["claude_api", "gemini_api", "openai_api"],
+  questions_asked: 1,
+  questions_matched: 1,
 };
 
 const CURRENT_RUN: Row = {
@@ -258,9 +283,9 @@ function aiRows(table: string, url: URL, withEarlier: boolean): Row[] | undefine
     case "canvas_ai_probe_coverage":
       return [];
     case "canvas_ai_api_runs":
-      return [API_SUMMARY];
+      return [API_SUMMARY, SMOKE_SUMMARY];
     case "canvas_ai_api_calls":
-      return only(api.calls.map((row) => ({ ...row, engine_group: "api" })));
+      return only([...api.calls, ...smoke.calls].map((row) => ({ ...row, engine_group: "api" })));
     case "canvas_ai_api_probes":
       return only(api.probes);
     case "canvas_ai_api_citations":

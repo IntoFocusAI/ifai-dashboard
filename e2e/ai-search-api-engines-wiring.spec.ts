@@ -81,6 +81,14 @@ test("Citation Ecosystem counts the API engines' cited links on All and API only
   await expect(links).toContainText("4");
 });
 
+test("a one-question smoke test on the same day is not offered beside the Nov 3 run", async ({ page }) => {
+  await page.locator("[data-ai-history-trigger]").click();
+  await page.locator("[data-ai-history-day='2026-11-03']").click();
+  const detail = page.locator(`[data-ai-history-run='${SEARCH_RUN}'] [data-ai-history-api-run='ready']`);
+  await expect(detail).toContainText("API run beside it: Nov 2, 2026 (1 day before)");
+  await expect(detail.locator(".ifai-term")).toHaveAttribute("data-ifai-tooltip-desc", /at least as many questions/);
+});
+
 test("a single run offers the API run nearest its day, labeled with its date", async ({ page }) => {
   await page.locator("[data-ai-history-trigger]").click();
   await page.locator("[data-ai-history-dialog]").getByRole("button", { name: "Previous month" }).click();

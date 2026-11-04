@@ -2,7 +2,15 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import { daysApart, nearestApiRun, type ApiRunSummary } from "../lib/ai-search/api-runs.ts";
+import {
+  apiRunsCoveringBattery,
+  apiRunsInScope,
+  batteryQuestions,
+  daysApart,
+  nearestApiRun,
+  type ApiRunSummary,
+} from "../lib/ai-search/api-runs.ts";
+import { fixedQuestionCount } from "../lib/ai-search/engine-group.ts";
 import { engineGroupTrend, engineGroupWindow, pairApiRuns } from "../lib/ai-search/engine-group-window.ts";
 import type { ApiEngineLoad } from "../lib/ai-search/engine-group-read.ts";
 import { buildHistoryTrend } from "../lib/ai-search/history-trends.ts";
@@ -197,11 +205,57 @@ test("the window waits for the API runs on All and API only; Without API and Not
   assert.deepEqual([...all.apiDays.keys()], ["b-nov3"]);
 });
 
+/** A battery run that asked all 34 questions on ChatGPT and Gemini, as the live runs do. */
+function fullBattery(id: string, day: string): AiSearchSnapshot {
+  const calls = PROMPT_BATTERY.flatMap((prompt) =>
+    ["chatgpt", "gemini"].map((engine) =>
+      call(id, engine, { prompt_key: prompt.key, prompt: prompt.text, prompt_kind: prompt.kind, category: prompt.category }),
+    ),
+  );
+  return { run: runOn(id, day), calls, probes: [], citations: [] };
+}
+
+test("a battery run's fixed questions leave out rotating fact checks and API engines", () => {
+  assert.equal(fixedQuestionCount(fullBattery("b", "2026-11-03")), 34);
+  // OCT20: p01 and the rotating p35 on two engines. Only p01 is fixed.
+  assert.equal(fixedQuestionCount(OCT20), 1);
+  const withApi = { ...OCT20, calls: [...OCT20.calls, call("b-oct20", "openai_api", { prompt_key: "p02" })] };
+  assert.equal(fixedQuestionCount(withApi), 1);
+});
+
+test("an API run counts only when it asked the fixed questions of the battery run nearest its day", () => {
+  // The live API runs on 4 Nov 2026: two one-question smoke tests and two full runs.
+  const runs = [
+    apiSummary("28028054", "2026-10-27T20:13:01Z", { run_state: "partial", questions_asked: 1, questions_matched: 1, answered_calls: 2 }),
+    apiSummary("1107bf8b", "2026-10-27T20:14:56Z", { questions_asked: 1, questions_matched: 1, answered_calls: 5 }),
+    apiSummary("fe3ada9e", "2026-10-28T18:42:03Z", { run_state: "partial", questions_asked: 34, questions_matched: 34, repeats: 20 }),
+    apiSummary("8aa2eb28", "2026-11-03T14:26:18Z", { run_state: "partial", questions_asked: 34, questions_matched: 34, repeats: 20 }),
+  ];
+  const window = batteryQuestions([fullBattery("b-oct26", "2026-10-26"), fullBattery("b-oct28", "2026-10-28"), fullBattery("b-nov3", "2026-11-03")]);
+  assert.deepEqual(window.map((item) => item.fixedQuestions), [34, 34, 34]);
+  const counted = apiRunsCoveringBattery(runs, window);
+  assert.deepEqual(counted.map((run) => run.audit_run_id), ["fe3ada9e", "8aa2eb28"]);
+  assert.deepEqual(
+    apiRunsInScope(counted, { kind: "month" }, "2026-11-03").map((run) => run.audit_run_id),
+    ["fe3ada9e", "8aa2eb28"],
+  );
+
+  // One run on Oct 26: the smoke tests a day later sit out, and the Oct 28 run is offered.
+  const single = apiRunsCoveringBattery(runs, batteryQuestions([fullBattery("b-oct26", "2026-10-26")]));
+  assert.equal(nearestApiRun(single, "2026-10-26")?.audit_run_id, "fe3ada9e");
+  assert.equal(nearestApiRun(runs, "2026-10-26")?.audit_run_id, "1107bf8b");
+
+  // A battery with one fixed question would take a one-question run; with no battery run, none counts.
+  assert.equal(apiRunsCoveringBattery(runs, [{ day: "2026-10-27", fixedQuestions: 1 }]).length, 4);
+  assert.deepEqual(apiRunsCoveringBattery(runs, []), []);
+  assert.deepEqual(apiRunsCoveringBattery([apiSummary("no-count", "2026-11-03T10:00:00Z")], window), []);
+});
+
 test("Run Summary, Citation Ecosystem, the trend, and the run detail read the switch", () => {
   const read = (path: string) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
   assert.match(read("components/v3/live/ai-search/RunSummaryPanel.tsx"), /<EngineGroupScope>\s*<AiReadGate>/);
   assert.match(read("components/v3/live/ai-search/CitationEcosystemPanel.tsx"), /<EngineGroupScope>\s*<CitationEcosystemBody \/>/);
   assert.match(read("components/v3/live/ai-search/HistoryTrendsPanel.tsx"), /useEngineGroupWindow\("trend"\)/);
   assert.match(read("components/v3/live/ai-search/useCitationAggregate.ts"), /useEngineGroupWindow\("citations"\)/);
-  assert.match(read("components/v3/live/ai-search/RunHistoryControl.tsx"), /<PairedApiRun day=\{day\} \/>/);
+  assert.match(read("components/v3/live/ai-search/RunHistoryControl.tsx"), /<PairedApiRun runId=\{run.audit_run_id\} day=\{day\} \/>/);
 });

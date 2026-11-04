@@ -1,4 +1,5 @@
-import { defaultWindowRuns } from "@/lib/ai-search/default-window";
+import { defaultWindowRuns, runDay } from "@/lib/ai-search/default-window";
+import { fixedQuestionCount } from "@/lib/ai-search/engine-group";
 import { compareRuns, utcDay, type HistoryRunSummary } from "@/lib/ai-search/history-eligibility";
 import type { HistoryMode } from "@/lib/ai-search/history-mode";
 import {
@@ -133,6 +134,37 @@ export function nearestApiRun(runs: readonly ApiRunSummary[], day: string | null
     if (!best || apart <= best.apart) best = { run, apart };
   }
   return best?.run ?? null;
+}
+
+/** A battery run's day and its fixed-question count, the floor an API run beside it must meet. */
+export type BatteryQuestions = { day: string; fixedQuestions: number };
+
+export function batteryQuestions(battery: readonly Pick<AiSearchSnapshot, "run" | "calls" | "probes">[]): BatteryQuestions[] {
+  return battery.flatMap((snapshot) => {
+    const day = runDay(snapshot.run);
+    return day ? [{ day, fixedQuestions: fixedQuestionCount(snapshot) }] : [];
+  });
+}
+
+/** The battery run nearest a day. A tie between a day before and a day after goes to the later run. */
+export function nearestBatteryDay<T extends { day: string }>(battery: readonly T[], day: string): T | null {
+  let best: T | null = null;
+  for (const item of [...battery].sort((a, b) => a.day.localeCompare(b.day))) {
+    if (!best || daysApart(item.day, day) <= daysApart(best.day, day)) best = item;
+  }
+  return best;
+}
+
+/**
+ * The API runs that asked the battery's fixed questions: each run's questions_matched covers the
+ * fixed questions of the battery run nearest its day. A one-question smoke test is left out.
+ */
+export function apiRunsCoveringBattery(runs: readonly ApiRunSummary[], battery: readonly BatteryQuestions[]): ApiRunSummary[] {
+  return runs.filter((run) => {
+    const day = apiRunDay(run);
+    const paired = day ? nearestBatteryDay(battery, day) : null;
+    return paired != null && (run.questions_matched ?? 0) >= Math.max(1, paired.fixedQuestions);
+  });
 }
 
 export type ApiCatalogResult =

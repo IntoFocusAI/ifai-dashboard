@@ -60,6 +60,24 @@ export function isRotatingFactCheck(
   return Boolean(row.probe_asin?.trim()) && row.probe_is_anchor !== true;
 }
 
+/**
+ * The battery run's fixed questions: the question keys its search engines were asked, rotating
+ * fact checks left out. An API run counts beside that run only when it matched at least as many.
+ */
+export function fixedQuestionCount(snapshot: Pick<AiSearchSnapshot, "calls" | "probes">): number {
+  const rotating = new Set(snapshot.probes.filter(isRotatingFactCheck).map(callKey));
+  const keys = new Set<string>();
+  for (const row of snapshot.calls) {
+    if (isApiEngine(row.engine) || !row.prompt_key) continue;
+    if (row.prompt_kind === "probe" && (rotating.has(callKey(row)) || isRotatingFactCheck(row))) continue;
+    keys.add(row.prompt_key.trim().toLowerCase());
+  }
+  return keys.size;
+}
+
+export const API_QUESTION_RULE =
+  "An API run counts only when it asked at least as many questions as the search run's fixed questions, so a short test run is left out.";
+
 /** What the engine switch did to the selection. Panels read it for N of M and tooltips. */
 export type EngineScope = {
   choice: EngineGroupChoice;
