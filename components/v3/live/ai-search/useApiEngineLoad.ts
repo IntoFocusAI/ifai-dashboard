@@ -12,6 +12,7 @@ import {
   type ApiSnapshotResult,
 } from "@/lib/ai-search/api-runs";
 import type { ApiEngineLoad } from "@/lib/ai-search/engine-group-read";
+import { runDay } from "@/lib/ai-search/default-window";
 import type { HistoryMode } from "@/lib/ai-search/history-mode";
 import { getCanvasSupabase } from "@/lib/supabase/canvas-client";
 
@@ -45,14 +46,13 @@ const serverOff = () => false;
 
 const MONTH: HistoryMode = { kind: "month" };
 
-/** The counted API runs dated in the selection the shared date pill names, loaded for the switch. */
-export function useApiEngineLoad(): ApiEngineLoad {
+export type ApiCatalogLoad = ApiCatalogResult | { phase: "loading" } | { phase: "off" };
+
+/** Every API run the views list, counted or not. "off" until the API views are read. */
+export function useApiRunCatalog(): ApiCatalogLoad {
   const history = useAiHistoryOptional();
-  const source = history?.source ?? "live";
   const flagOn = useSyncExternalStore(noSubscribe, () => apiEngineViewsEnabled(), serverOff);
-  const enabled = source !== "fixture" && flagOn;
-  const mode = history?.mode ?? MONTH;
-  const windowEnd = history?.windowEnd ?? null;
+  const enabled = (history?.source ?? "live") !== "fixture" && flagOn;
   const [catalog, setCatalog] = useState<ApiCatalogResult | { phase: "loading" }>({ phase: "loading" });
 
   useEffect(() => {
@@ -66,9 +66,35 @@ export function useApiEngineLoad(): ApiEngineLoad {
     };
   }, [enabled]);
 
+  return enabled ? catalog : { phase: "off" };
+}
+
+/** The battery run a single-run selection shows, by its day. */
+function selectedRunDay(history: ReturnType<typeof useAiHistoryOptional>): string | null {
+  if (!history || history.mode.kind !== "run") return null;
+  const runId = history.mode.runId;
+  const listed = history.catalog.phase === "ready" ? history.catalog.runs.find((run) => run.audit_run_id === runId) : null;
+  if (listed) return runDay(listed);
+  if (history.selected.phase === "ready" && history.selected.snapshot.run.audit_run_id === runId) {
+    return runDay(history.selected.snapshot.run);
+  }
+  return null;
+}
+
+/**
+ * The counted API runs dated in the selection the shared date pill names, loaded for the switch.
+ * A single run gets the API run nearest its day.
+ */
+export function useApiEngineLoad(): ApiEngineLoad {
+  const history = useAiHistoryOptional();
+  const mode = history?.mode ?? MONTH;
+  const windowEnd = history?.windowEnd ?? null;
+  const selectedDay = selectedRunDay(history);
+  const catalog = useApiRunCatalog();
+
   const inScope = useMemo(
-    () => (catalog.phase === "ready" ? apiRunsInScope(catalog.runs, mode, windowEnd) : []),
-    [catalog, mode, windowEnd],
+    () => (catalog.phase === "ready" ? apiRunsInScope(catalog.runs, mode, windowEnd, selectedDay) : []),
+    [catalog, mode, windowEnd, selectedDay],
   );
   const key = inScope.map((run) => run.audit_run_id).join(",");
   const [loaded, setLoaded] = useState<{ key: string; load: ApiEngineLoad }>({ key: "", load: { phase: "loading" } });
@@ -91,7 +117,7 @@ export function useApiEngineLoad(): ApiEngineLoad {
     };
   }, [inScope]);
 
-  if (!enabled) return { phase: "missing" };
+  if (catalog.phase === "off") return { phase: "missing" };
   if (catalog.phase === "loading") return { phase: "loading" };
   if (catalog.phase === "missing") return { phase: "missing" };
   if (catalog.phase === "error") return { phase: "error", message: catalog.message };

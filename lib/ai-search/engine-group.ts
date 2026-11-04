@@ -87,14 +87,18 @@ export function hasSearchRows(snapshot: Pick<AiSearchSnapshot, "calls">): boolea
  * The selection narrowed to one engine group. With API engines in the figures, fact checks keep
  * only the fixed questions, since the API job does not ask the rotating catalog checks.
  * Returns null when the choice leaves no call, so the panel never shows a zero for it.
+ * `rotating` "drop" keeps the fixed questions only on a run whose API runs sit on another point;
+ * "keep" leaves the rotating checks in for a reader that counts no fact check.
  */
 export function filterSnapshotByEngineGroup(
   snapshot: AiSearchSnapshot,
   choice: EngineGroupChoice,
+  rotating: "auto" | "drop" | "keep" = "auto",
 ): AiSearchSnapshot | null {
   const calls = snapshot.calls.filter((row) => inEngineChoice(row.engine, choice));
   if (calls.length === 0) return null;
-  const fixedFactChecksOnly = calls.some((row) => isApiEngine(row.engine));
+  const fixedFactChecksOnly =
+    rotating === "keep" ? false : (rotating === "drop" && choice !== "search") || calls.some((row) => isApiEngine(row.engine));
   const factChecksBefore = calls.filter((row) => row.prompt_kind === "probe").length;
   let probes = snapshot.probes.filter((row) => inEngineChoice(row.engine, choice));
   let kept: AiCallRow[] = calls;

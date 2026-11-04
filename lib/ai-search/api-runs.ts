@@ -76,14 +76,19 @@ export function apiRunDay(run: Pick<HistoryRunSummary, "published_at" | "complet
  * Counted API runs dated inside the selection the shared date pill names. Last 30 days is the
  * battery's window: defaultWindowRuns keeps the runs dated in the 30 days ending on `windowEnd`, the
  * published run's day. API runs are never published, so the API run rule, not the published-review
- * rule, decides which of those count. One chosen run is a single battery run, so it has no API run.
+ * rule, decides which of those count. One chosen run gets the counted API run nearest its day.
  */
 export function apiRunsInScope(
   runs: readonly ApiRunSummary[],
   mode: HistoryMode,
   windowEnd: string | null,
+  selectedDay: string | null = null,
 ): ApiRunSummary[] {
-  if (mode.kind === "run" || mode.kind === "legacy") return [];
+  if (mode.kind === "legacy") return [];
+  if (mode.kind === "run") {
+    const nearest = nearestApiRun(runs, selectedDay);
+    return nearest ? [nearest] : [];
+  }
   if (mode.kind === "month") {
     const { included, excluded } = defaultWindowRuns(runs, windowEnd);
     const dated = [...included, ...excluded.map((item) => item.run)] as ApiRunSummary[];
@@ -101,6 +106,32 @@ export function apiRunsInScope(
       return true;
     })
     .sort(compareRuns);
+}
+
+function dayNumber(day: string): number {
+  const [year, month, date] = day.split("-").map(Number);
+  return Date.UTC(year, month - 1, date) / 86_400_000;
+}
+
+/** Whole UTC days between two YYYY-MM-DD days, either order. */
+export function daysApart(a: string, b: string): number {
+  return Math.abs(dayNumber(a) - dayNumber(b));
+}
+
+/**
+ * The counted API run beside one battery run: the same day, else the nearest day. The API job
+ * runs on its own schedule. A tie between a day before and a day after goes to the later run.
+ */
+export function nearestApiRun(runs: readonly ApiRunSummary[], day: string | null): ApiRunSummary | null {
+  if (!day) return null;
+  let best: { run: ApiRunSummary; apart: number } | null = null;
+  for (const run of [...runs].filter(isCountedApiRun).sort(compareRuns)) {
+    const runDay = apiRunDay(run);
+    if (!runDay) continue;
+    const apart = daysApart(runDay, day);
+    if (!best || apart <= best.apart) best = { run, apart };
+  }
+  return best?.run ?? null;
 }
 
 export type ApiCatalogResult =

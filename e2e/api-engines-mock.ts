@@ -13,6 +13,8 @@ import type { Row } from "./spec-read-mock";
 
 export const SEARCH_RUN = "5e0a0000-0000-4000-8000-000000000001";
 export const API_RUN = "a9100000-0000-4000-8000-000000000002";
+/** With `earlierRun`, a second published search run on Oct 20 with the same answers. */
+export const EARLIER_RUN = "5e0a0000-0000-4000-8000-000000000003";
 
 const QUESTIONS = {
   p01: { kind: "commercial", category: "electrics", prompt: "Best electric guitar under $900 for versatile tones" },
@@ -153,6 +155,7 @@ function rowsFor(runId: string, plan: Plan[], day: string, firstSim: number) {
 
 const search = rowsFor(SEARCH_RUN, SEARCH_PLAN, "2026-11-03", 1001);
 const api = rowsFor(API_RUN, API_PLAN, "2026-11-02", 2001);
+const earlier = rowsFor(EARLIER_RUN, SEARCH_PLAN, "2026-10-20", 3001);
 
 const SEARCH_SUMMARY: Row = {
   audit_run_id: SEARCH_RUN,
@@ -168,6 +171,14 @@ const SEARCH_SUMMARY: Row = {
   published_at: "2026-11-03T21:31:28.000Z",
   started_at: "2026-11-03T06:00:00.000Z",
   completed_at: "2026-11-03T21:31:24.000Z",
+};
+
+const EARLIER_SUMMARY: Row = {
+  ...SEARCH_SUMMARY,
+  audit_run_id: EARLIER_RUN,
+  published_at: "2026-10-20T21:31:28.000Z",
+  started_at: "2026-10-20T06:00:00.000Z",
+  completed_at: "2026-10-20T21:31:24.000Z",
 };
 
 const API_SUMMARY: Row = {
@@ -213,9 +224,17 @@ const strip = (rows: Row[], column: string) =>
   rows.map((row) => Object.fromEntries(Object.entries(row).filter(([key]) => key !== column)));
 
 /** Rows for one AI read, or undefined when the table is not an AI Search read. */
-function aiRows(table: string, url: URL): Row[] | undefined {
+function aiRows(table: string, url: URL, withEarlier: boolean): Row[] | undefined {
   const run = url.searchParams.get("audit_run_id")?.replace(/^eq\./, "");
   const only = (rows: Row[]) => (run ? rows.filter((row) => row.audit_run_id === run) : rows);
+  const history = withEarlier
+    ? {
+        calls: [...earlier.calls, ...search.calls],
+        probes: [...earlier.probes, ...search.probes],
+        citations: [...earlier.citations, ...search.citations],
+      }
+    : search;
+  const summaries = withEarlier ? [EARLIER_SUMMARY, SEARCH_SUMMARY] : [SEARCH_SUMMARY];
   switch (table) {
     case "canvas_ai_current_run":
       return [CURRENT_RUN];
@@ -226,16 +245,16 @@ function aiRows(table: string, url: URL): Row[] | undefined {
     case "canvas_ai_citations":
       return search.citations;
     case "canvas_ai_run_history":
-      return [SEARCH_SUMMARY];
+      return summaries;
     case "canvas_ai_history_runs":
-      return only([{ ...SEARCH_SUMMARY, missing_calls: 0 }]);
+      return only(summaries.map((row) => ({ ...row, missing_calls: 0 })));
     case "canvas_ai_history_calls":
-      return only(search.calls);
+      return only(history.calls);
     case "canvas_ai_history_probes":
-      return only(search.probes);
+      return only(history.probes);
     case "canvas_ai_history_citations":
     case "canvas_ai_history_citations_by_run":
-      return only(search.citations);
+      return only(history.citations);
     case "canvas_ai_probe_coverage":
       return [];
     case "canvas_ai_api_runs":
@@ -262,7 +281,10 @@ const MISSING_VIEW = (table: string) => ({
  * Serves the AI Search reads above. Register after `mockCanvasRead`, which answers the rest.
  * `apiViews: "missing"` answers the API views the way the database does before the migration.
  */
-export async function mockAiSearchWithApi(page: Page, options: { apiViews?: "ready" | "missing" } = {}): Promise<string[]> {
+export async function mockAiSearchWithApi(
+  page: Page,
+  options: { apiViews?: "ready" | "missing"; earlierRun?: boolean } = {},
+): Promise<string[]> {
   const seen: string[] = [];
   await page.route("**/*supabase.co/rest/v1/**", async (route) => {
     const url = new URL(route.request().url());
@@ -276,7 +298,7 @@ export async function mockAiSearchWithApi(page: Page, options: { apiViews?: "rea
       await route.fulfill({ status: 404, contentType: "application/json", headers, body: JSON.stringify(MISSING_VIEW(table)) });
       return;
     }
-    const rows = aiRows(table, url);
+    const rows = aiRows(table, url, options.earlierRun === true);
     if (!rows) {
       await route.fallback();
       return;

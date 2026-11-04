@@ -305,6 +305,10 @@ test("API runs follow the shared date pill's selection", () => {
   assert.deepEqual(range.map((row) => row.audit_run_id), ["a-nov3"]);
   assert.equal(apiRunsInScope(runs, { kind: "all" }, null).length, 3);
   assert.deepEqual(apiRunsInScope(runs, { kind: "run", runId: BATTERY }, "2026-11-03"), []);
+  assert.deepEqual(
+    apiRunsInScope(runs, { kind: "run", runId: BATTERY }, "2026-11-03", "2026-11-03").map((row) => row.audit_run_id),
+    ["a-nov3"],
+  );
   assert.deepEqual(apiRunsInScope(runs, { kind: "month" }, null), []);
 });
 

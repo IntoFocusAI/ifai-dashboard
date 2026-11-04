@@ -82,6 +82,8 @@ type GapCall = {
 export function batteryGaps(calls: readonly GapCall[]): BatteryGap[] {
   const present = new Set<string>();
   for (const call of calls) {
+    // API engines are not battery engines, so their calls neither fill nor open a gap.
+    if (!BATTERY_ENGINES.includes((call.engine ?? "").toLowerCase() as BatteryEngine)) continue;
     const prompt = batteryPrompt(call.prompt_key);
     if (!prompt) return [];
     if (call.prompt_kind !== "probe" && call.prompt && call.prompt !== prompt.text) return [];
