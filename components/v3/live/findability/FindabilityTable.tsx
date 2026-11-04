@@ -1,7 +1,9 @@
 "use client";
 
 import { clientColumn, ResizableTable, type RetailColumn } from "@/components/v3/live/ResizableTable";
+import { useLandOnFindabilityRow } from "@/components/v3/live/findability/useFindabilityRowLanding";
 import { useFullPopulationSort } from "@/components/v3/live/useFullPopulationSort";
+import "@/components/v3/live/findability/findability-landing.css";
 import {
   attemptLabel,
   bucketLabel,
@@ -157,9 +159,12 @@ function ListingCell({
 export function FindabilityTable({
   rows,
   outcome,
+  landAsin = null,
 }: {
   rows: readonly FindabilityRow[];
   outcome: FindabilityBucket;
+  /** A listing linked from Brand-Site Specs. Its page opens and its row is highlighted. */
+  landAsin?: string | null;
 }) {
   const columns = columnsFor(outcome);
   const population = useFullPopulationSort(
@@ -169,6 +174,7 @@ export function FindabilityTable({
     (row) => row.asin,
     CLIENT_TABLE_PAGE_SIZE,
   );
+  const landed = useLandOnFindabilityRow(landAsin, rows, CLIENT_TABLE_PAGE_SIZE, population.setPage);
   const shownFrom = rows.length === 0 ? 0 : population.page * CLIENT_TABLE_PAGE_SIZE + 1;
   const shownTo = Math.min(rows.length, (population.page + 1) * CLIENT_TABLE_PAGE_SIZE);
 
@@ -192,7 +198,12 @@ export function FindabilityTable({
             population.pageRows.map((row) => {
               const bucket = findabilityOutcome(row);
               return (
-                <tr key={row.asin} data-findability-asin={row.asin} data-findability-row={bucket}>
+                <tr
+                  key={row.asin}
+                  data-findability-asin={row.asin}
+                  data-findability-row={bucket}
+                  data-findability-landed={landed === row.asin ? "" : undefined}
+                >
                   {columns.map((column) => (
                     <ListingCell key={column.id} columnId={column.id} row={row} bucket={bucket} />
                   ))}

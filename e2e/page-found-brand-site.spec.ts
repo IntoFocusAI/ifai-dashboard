@@ -61,7 +61,7 @@ test("Brand-Site Specs shows the page-found hero and opens its checked SKUs", as
   await expect(noPage.locator("[data-page-found-findability='completed_not_found']")).toHaveText(
     /^Findability:\s*No Defensible Page$/,
   );
-  const term = noPage.locator("[data-page-found-findability] span.ifai-term");
+  const term = noPage.locator("[data-page-found-findability] .ifai-term");
   await expect(term).toHaveAttribute("data-ifai-tooltip-title", "No Defensible Page");
   await expect(term).toHaveAttribute("data-ifai-tooltip-desc", /finished looking and did not accept a page/);
   await expect(term).not.toHaveAttribute("title");

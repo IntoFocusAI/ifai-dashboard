@@ -10,6 +10,7 @@ import {
   type NotFoundReason,
   type ReasonGroup,
 } from "@/lib/fender-canvas/page-found-reasons";
+import { setFindabilityRowFocus, type FindabilityRowLink } from "@/lib/findability/row-focus";
 
 export const ALL_REASONS = "all";
 
@@ -27,8 +28,41 @@ function Term({ name, description, children }: { name: string; description: stri
   );
 }
 
-function FindabilityResultText({ result }: { result: FindabilityResult }) {
+/**
+ * The listing's Findability result as a link to its row on that tab. The panel's
+ * `data-ifai-open` handler switches tabs; the capture click names the row first.
+ */
+function FindabilityResultLink({
+  result,
+  link,
+}: {
+  result: Extract<FindabilityResult, { kind: "outcome" }>;
+  link: FindabilityRowLink;
+}) {
+  const { label, definition } = result;
+  const opens = `Opens ${link.asin} on the ${link.tab} tab.`;
+  const tooltip = definition
+    ? { "data-ifai-tooltip-title": label, "data-ifai-tooltip-desc": `${definition} ${opens}` }
+    : {};
+  return (
+    <button
+      type="button"
+      {...tooltip}
+      className={`page-found-findability-link${definition ? " ifai-term" : ""}`}
+      data-ifai-open={link.spokeId}
+      data-ifai-tab={link.tab}
+      data-page-found-findability-link={link.evidence}
+      aria-label={definition ? `${label}: ${definition} ${opens}` : `${label}. ${opens}`}
+      onClickCapture={() => setFindabilityRowFocus(link.asin)}
+    >
+      {label}
+    </button>
+  );
+}
+
+function FindabilityResultText({ result, link }: { result: FindabilityResult; link: FindabilityRowLink | null }) {
   const label = findabilityResultLabel(result);
+  if (result.kind === "outcome" && link) return <FindabilityResultLink result={result} link={link} />;
   if (result.kind === "outcome" && result.definition) {
     return (
       <Term name={label} description={result.definition}>
@@ -65,7 +99,7 @@ export function NotFoundReasonCell({ reason }: { reason: NotFoundReason }) {
           {findability.kind === "outcome" || findability.kind === "unavailable" ? (
             <span className="page-found-reason-source">{FINDABILITY_SOURCE}:</span>
           ) : null}
-          <FindabilityResultText result={findability} />
+          <FindabilityResultText result={findability} link={reason.link} />
         </span>
       ) : null}
     </span>

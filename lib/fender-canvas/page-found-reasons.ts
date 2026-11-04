@@ -1,8 +1,9 @@
 /**
  * Why a checked SKU has no stored fender.com page. The spec read's own stored reason
  * leads; the listing's Findability result follows, matched by ASIN on the shared
- * Findability read (canvas_spec_findability). A SKU Findability has no row for, and no
- * stored reason, reads "Reason not recorded".
+ * Findability read (canvas_spec_findability), and links to that listing's row on the
+ * Findability tab. A SKU Findability has no row for, and no stored reason, reads
+ * "Reason not recorded" as plain text.
  */
 
 import { REASON_NOT_RECORDED, type PageFoundRow } from "@/lib/fender-canvas/page-found-evidence";
@@ -13,6 +14,7 @@ import {
   type FindabilityBucket,
   type FindabilityRow,
 } from "@/lib/findability/outcomes";
+import { findabilityRowLink, type FindabilityRowLink } from "@/lib/findability/row-focus";
 
 export const FINDABILITY_SOURCE = "Findability";
 export const FINDABILITY_LOADING = "Loading";
@@ -35,6 +37,8 @@ export type FindabilityResult =
 export type NotFoundReason = {
   stored: string | null;
   findability: FindabilityResult;
+  /** The same listing's row on the Findability tab. Null when that read has no row for it. */
+  link: FindabilityRowLink | null;
   /** The first reason the cell shows. The reason filter groups on it. */
   group: string;
 };
@@ -80,6 +84,7 @@ export function notFoundReason(
   return {
     stored: row.storedReason,
     findability,
+    link: findabilityRowLink(row.asin, findability.kind === "outcome"),
     group: row.storedReason ?? findabilityResultLabel(findability),
   };
 }
