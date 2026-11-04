@@ -104,6 +104,7 @@ test.describe("tour spotlight", () => {
     await expect
       .poll(async () => (await spotlight(page)).r)
       .toBeGreaterThan(0);
+    await expect(page.locator("svg.camera-animating")).toHaveCount(0);
 
     const ring = page.locator("#tour-spotlight-ring");
     const box = (await ring.boundingBox())!;
@@ -130,15 +131,17 @@ test.describe("tour spotlight", () => {
 
     for (let step = 0; step < total; step += 1) {
       await expect.poll(async () => (await spotlight(page)).r).toBeGreaterThan(0);
+      await expect(page.locator("svg.camera-animating")).toHaveCount(0);
       const hole = await spotlight(page);
       const card = (await page.locator(".tour-modal-card").boundingBox())!;
-      expect(hole.x - hole.r, `step ${step + 1} overlaps the tour card`).toBeGreaterThan(
-        card.x + card.width,
-      );
-      if (step < total - 1) {
-        await canvas.nextTourStep();
-        await page.waitForTimeout(900); // let the camera settle on the next node
-      }
+      // The card takes whichever side keeps it off the lit circle.
+      const nearestX = Math.max(card.x, Math.min(hole.x, card.x + card.width));
+      const nearestY = Math.max(card.y, Math.min(hole.y, card.y + card.height));
+      expect(
+        Math.hypot(nearestX - hole.x, nearestY - hole.y) - hole.r,
+        `step ${step + 1} overlaps the tour card`,
+      ).toBeGreaterThan(0);
+      if (step < total - 1) await canvas.nextTourStep();
     }
   });
 

@@ -2217,6 +2217,18 @@
       animation: modalSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
+    /* useTourCard flips the card to whichever side the lit node is not
+       travelling through, and holds it clear while the node slides out. */
+    .tour-modal-card[data-side="right"] {
+      left: auto;
+      right: 36px;
+    }
+
+    .tour-modal-card[data-held="true"] {
+      opacity: 0 !important;
+      pointer-events: none;
+    }
+
     @keyframes modalSlideUp {
       from { transform: translateY(20px); opacity: 0; }
       to { transform: translateY(0); opacity: 1; }

@@ -2,8 +2,9 @@ import { expect, test, type Canvas } from "./fixtures";
 import type { Page } from "@playwright/test";
 import { INTERACTIVE_SELECTOR } from "../lib/canvas-sdk/iom-cursor-targets";
 
-/* X-32: hovering the Balanced map felt laggy and the custom reticle glitched. These run at
-   1280×720 (and 1440×900 where tagged) against the map as it loads. */
+/* X-32: hovering the Balanced map felt laggy and the custom reticle glitched. H-08: the tour
+   card covered the bubble it was describing. These run at 1280×720 (and 1440×900 where
+   tagged) against the map as it loads. */
 
 const MAIN_BUBBLES = ["hub", "spoke-aeo", "spoke-retail", "spoke-competitors", "spoke-roadmap", "spoke-specs", "spoke-fixes"];
 
@@ -229,5 +230,81 @@ test.describe("custom cursor", () => {
     await page.mouse.move(box.x + 40, box.y + 60);
     await frames(page);
     expect((await reticle(page)).shown).toBe(true);
+  });
+});
+
+/** Watches one camera move: the worst gap between the lit area and the card while the card shows. */
+function watchTourStep(page: Page) {
+  return page.evaluate(
+    () =>
+      new Promise<{ title: string; worst: number; settled: number; heldAtEnd: boolean; side: string }>((done) => {
+        const started = performance.now();
+        let worst = Infinity;
+        let settled = NaN;
+        const tick = () => {
+          const overlay = document.querySelector<HTMLElement>(".tour-overlay-container")!;
+          const card = document.querySelector<HTMLElement>(".tour-modal-card")!;
+          const host = document.querySelector(".ifai-canvas")!.getBoundingClientRect();
+          const x = parseFloat(overlay.style.getPropertyValue("--tour-hole-x")) + host.left;
+          const y = parseFloat(overlay.style.getPropertyValue("--tour-hole-y")) + host.top;
+          const r = parseFloat(overlay.style.getPropertyValue("--tour-hole-r"));
+          const box = card.getBoundingClientRect();
+          if (r > 0 && card.dataset.held !== "true") {
+            const nx = Math.max(box.left, Math.min(x, box.right));
+            const ny = Math.max(box.top, Math.min(y, box.bottom));
+            settled = Math.hypot(nx - x, ny - y) - r;
+            worst = Math.min(worst, settled);
+          }
+          if (performance.now() - started < 1500) requestAnimationFrame(tick);
+          else
+            done({
+              title: card.querySelector(".tour-spoke-title")?.textContent ?? "",
+              worst,
+              settled,
+              heldAtEnd: card.dataset.held === "true",
+              side: box.left > host.left + host.width / 2 ? "right" : "left",
+            });
+        };
+        requestAnimationFrame(tick);
+      }),
+  );
+}
+
+async function walkTour(canvas: Canvas, page: Page) {
+  test.setTimeout(120_000);
+  await canvas.startTour();
+  const total = await page.locator(".tour-dot").count();
+  const seen = [];
+  for (let step = 0; step < total; step += 1) {
+    if (step > 0) await canvas.nextTourStep();
+    seen.push(await watchTourStep(page));
+  }
+  for (let step = total - 2; step >= 0; step -= 1) {
+    await page.locator(".tour-nav-btns .tour-btn").first().click();
+    seen.push(await watchTourStep(page));
+  }
+  for (const move of seen) {
+    expect(move.worst, `${move.title}: the card covered the lit area mid-move`).toBeGreaterThanOrEqual(-1);
+    expect(move.settled, `${move.title}: the card covers the lit area once framed`).toBeGreaterThan(0);
+    expect(move.heldAtEnd, `${move.title}: the card never came back`).toBe(false);
+  }
+  return seen;
+}
+
+/* H-08: the step card used to sit bottom-left on every step, so bubbles left of the hub
+   slid in from under it while the camera moved. */
+test.describe("tour card", () => {
+  test("never covers the lit area in any frame, stepping forward and back", { tag: "@1440" }, async ({ canvas, page }) => {
+    const seen = await walkTour(canvas, page);
+    const leftOfHub = seen.find((move) => move.title === "AI Search Visibility")!;
+    expect(leftOfHub.side, "a bubble left of the hub puts the card on the right").toBe("right");
+  });
+});
+
+test.describe("tour card at 1920×1080", () => {
+  test.use({ viewport: { width: 1920, height: 1080 } });
+
+  test("never covers the lit area in any frame, stepping forward and back", async ({ canvas, page }) => {
+    await walkTour(canvas, page);
   });
 });

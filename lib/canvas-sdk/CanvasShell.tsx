@@ -21,7 +21,9 @@ import { IomCursor } from "@/lib/canvas-sdk/IomCursor";
 import { NodeTooltip, type NodeTooltipHandle } from "@/lib/canvas-sdk/NodeTooltip";
 import { useIomPointerWash } from "@/lib/canvas-sdk/useIomPointerWash";
 import { CanvasHudZoomControls } from "@/lib/canvas-sdk/CanvasHudZoomControls";
+import { TourCard } from "@/lib/canvas-sdk/TourCard";
 import { TourLauncher } from "@/lib/canvas-sdk/TourLauncher";
+import { useTourCard } from "@/lib/canvas-sdk/useTourCard";
 import { useDefinitionTooltips } from "@/lib/canvas-sdk/useDefinitionTooltips";
 import { useCanvasCamera } from "@/lib/canvas-sdk/useCanvasCamera";
 import { useHoverFraming } from "@/lib/canvas-sdk/useHoverFraming";
@@ -32,7 +34,6 @@ import {
   Compass,
   ExternalLink,
   Layers,
-  Layout,
   ListChecks,
   Maximize2,
   MessageSquareText,
@@ -63,10 +64,6 @@ const EXPANDED_WIDTH_CAP = 1180;
 const EXPANDED_WIDTH_RATIO = 0.68;
 /** Never squeeze the graph rail below this. */
 const MIN_GRAPH_RAIL = 260;
-/** Footprint of .tour-modal-card (left + width + gutter), so the spotlight clears it. */
-const TOUR_CARD_ZONE = 36 + 440 + 24;
-/** Below this much clear space the offset would push the node off-screen. */
-const TOUR_CARD_MIN_ROOM = 240;
 
 type PanelLayout = "wide" | "narrow" | "hidden";
 
@@ -106,9 +103,12 @@ export function CanvasShell({ spec, children }: Props) {
   const tourStepRef = useRef(0);
   const panelViewRef = useRef<"spoke" | "command">("spoke");
   const tourOverlayRef = useRef<HTMLDivElement>(null);
+  const tourCardRef = useRef<HTMLDivElement>(null);
   const columnLayoutRef = useRef(false);
 
   const iom = spec.appearance === "iom";
+  // V3 / IOM theme: 1.1s camera transition in iom-theme.css (+ buffer), scaled by IOM_MOTION_SCALE
+  const cameraAnimationMs = iom ? iomMotionMs(1200) : undefined;
   const {
     pan,
     transform,
@@ -122,8 +122,7 @@ export function CanvasShell({ spec, children }: Props) {
     viewBox: spec.viewBox,
     viewportRef,
     svgRef,
-    // V3 / IOM theme: 1.1s camera transition in iom-theme.css (+ buffer), scaled by IOM_MOTION_SCALE
-    cameraAnimationMs: iom ? iomMotionMs(1200) : undefined,
+    cameraAnimationMs,
   });
   const roadmapOnGraph = useMemo(
     () => Boolean(spec.nodes?.some((node) => node.spokeId === "roadmap")),
@@ -131,7 +130,7 @@ export function CanvasShell({ spec, children }: Props) {
   );
   const [lightTheme, setLightTheme] = useState(!iom);
   const [promptsOpen, setPromptsOpen] = useState(false);
-  const closePrompts = useCallback(() => setPromptsOpen(false), []);
+  const closePrompts = useCallback(() => setPromptsOpen(false), [setPromptsOpen]);
   const tooltipRef = useRef<NodeTooltipHandle>(null);
   const [activeSpoke, setActiveSpoke] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState(0);
@@ -391,7 +390,7 @@ export function CanvasShell({ spec, children }: Props) {
         restoreTourLauncher();
       }, iomMotionMs(IOM_MAP_EXIT_BASE_MS));
     }, iomMotionMs(IOM_RAIL_MOTION_BASE_MS));
-  }, [frameOverview, iom, iomMapExiting, panelLayout, restoreTourLauncher]);
+  }, [frameOverview, iom, iomMapExiting, panelLayout, restoreTourLauncher, setPanelLayout]);
 
   const columnRailScrollGuardRef = useRef({ tracking: false, moved: false, startY: 0 });
 
@@ -429,7 +428,7 @@ export function CanvasShell({ spec, children }: Props) {
 
   const showPanel = useCallback(() => {
     setPanelLayout(panelLayoutBeforeHide.current);
-  }, []);
+  }, [setPanelLayout]);
 
   const closeDrilldown = useCallback(() => {
     // A suspended tour resumes on close in every appearance, including iom
@@ -547,17 +546,6 @@ export function CanvasShell({ spec, children }: Props) {
     [resetCanvasView, restoreTourLauncher],
   );
 
-  const smoothPanToNode = useCallback(
-    (targetX: number, targetY: number) => {
-      // The tour card sits bottom-left, so bias the framing right of it when
-      // there is room; a negative inset shifts the centre point rightwards.
-      const width = viewportRef.current?.clientWidth ?? 0;
-      const clearOfCard = width > TOUR_CARD_ZONE + TOUR_CARD_MIN_ROOM ? -TOUR_CARD_ZONE : 0;
-      framePoint(targetX, targetY, 1.12, clearOfCard);
-    },
-    [framePoint],
-  );
-
   const enterTour = useCallback(
     (stepIdx: number) => {
       if (!tourSteps.length) return;
@@ -570,10 +558,8 @@ export function CanvasShell({ spec, children }: Props) {
       setTourProgress(null);
       tooltipRef.current?.hide();
       if (!iom) setActiveSpoke(null);
-      const step = tourSteps[safeStep];
-      smoothPanToNode(step.targetX, step.targetY);
     },
-    [iom, smoothPanToNode, tourSteps],
+    [iom, setTourStep, tourSteps],
   );
 
   const startTour = useCallback(() => enterTour(0), [enterTour]);
@@ -588,52 +574,22 @@ export function CanvasShell({ spec, children }: Props) {
     setTourSuspended(true);
   }, []);
 
-  useEffect(() => {
-    if (!tourActive || tourSuspended) return;
-    const step = tourSteps[tourStep];
-    if (step) smoothPanToNode(step.targetX, step.targetY);
-  }, [tourActive, tourSuspended, tourStep, smoothPanToNode, tourSteps]);
-
-  /* Cut a hole in the dimmer over the node the step is describing, so the
-     bubble stays lit instead of being dimmed with everything else. The ring is
-     inside the panned/zoomed SVG and the camera eases over ~0.75s, so we track
-     its rendered box per frame rather than deriving it from camera state —
-     otherwise the hole would jump ahead of the bubble it is following. */
-  useEffect(() => {
-    const overlay = tourOverlayRef.current;
-    const root = rootRef.current;
-    if (!overlay || !root || !tourActive || tourSuspended) return;
-
-    let frame = 0;
-    const track = () => {
-      const ring = svgRef.current?.querySelector("#tour-spotlight-ring");
-      if (ring) {
-        const box = ring.getBoundingClientRect();
-        const host = root.getBoundingClientRect();
-        const radius = box.width / 2;
-        if (radius > 0) {
-          overlay.style.setProperty(
-            "--tour-hole-x",
-            `${box.left + box.width / 2 - host.left}px`,
-          );
-          overlay.style.setProperty(
-            "--tour-hole-y",
-            `${box.top + box.height / 2 - host.top}px`,
-          );
-          overlay.style.setProperty("--tour-hole-r", `${Math.round(radius * 1.5)}px`);
-        }
-      }
-      frame = requestAnimationFrame(track);
-    };
-    track();
-
-    return () => {
-      cancelAnimationFrame(frame);
-      overlay.style.removeProperty("--tour-hole-x");
-      overlay.style.removeProperty("--tour-hole-y");
-      overlay.style.removeProperty("--tour-hole-r");
-    };
-  }, [svgRef, tourActive, tourStep, tourSuspended]);
+  const tourTarget = tourSteps[tourStep];
+  useTourCard({
+    active: tourActive && !tourSuspended,
+    stepIndex: tourStep,
+    target: tourTarget
+      ? { x: tourTarget.targetX, y: tourTarget.targetY, radius: tourTarget.radius }
+      : null,
+    rootRef,
+    overlayRef: tourOverlayRef,
+    cardRef: tourCardRef,
+    svgRef,
+    viewportRef,
+    viewBox: spec.viewBox,
+    framePoint,
+    cameraMs: cameraAnimationMs,
+  });
 
   const showTooltip = useCallback(
     (evt: ReactMouseEvent, title: string, desc: string, hasMoreInfo = true) => {
@@ -1436,98 +1392,16 @@ export function CanvasShell({ spec, children }: Props) {
         >
           <div className="tour-dimmer-backdrop" onClick={() => closeTour()} />
 
-          {currentTour ? (
-            <div
-              className="tour-modal-card"
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="tour-spoke-title"
-            >
-              <div className="tour-modal-header">
-                <div className="tour-badge-group">
-                  <span className="tour-step-pill">
-                    STEP {tourStep + 1} OF {tourSteps.length}
-                  </span>
-                  <span className="tour-category-badge">{currentTour.category}</span>
-                </div>
-                <button
-                  className="tour-close-btn"
-                  onClick={() => closeTour()}
-                  title="Close Tour (ESC)"
-                >
-                  <X size={15} />
-                </button>
-              </div>
-
-              <div className="tour-progress-bar-wrap">
-                <div
-                  className="tour-progress-bar-fill"
-                  style={{ width: `${((tourStep + 1) / tourSteps.length) * 100}%` }}
-                />
-              </div>
-
-              <div className="tour-modal-body">
-                <div className="tour-title-area">
-                  <h3 className="tour-spoke-title" id="tour-spoke-title">
-                    {currentTour.title}
-                  </h3>
-                  <p className="tour-spoke-subtitle">{currentTour.subtitle}</p>
-                </div>
-
-                <div className="tour-info-card">
-                  <div className="tour-card-header">
-                    <Layout size={13} color="var(--accent-purple)" />
-                    <span>What&apos;s Inside</span>
-                  </div>
-                  <ul className="tour-card-list">
-                    {currentTour.displays.map((text) => (
-                      <li key={text}>{text}</li>
-                    ))}
-                  </ul>
-                </div>
-
-                <div className="tour-info-card primary-value">
-                  <div className="tour-card-header">
-                    <Sparkles size={13} color="var(--success-green)" />
-                    <span style={{ color: "var(--success-text)" }}>
-                      Client Value & Executive Intelligence
-                    </span>
-                  </div>
-                  <div className="tour-value-text">{currentTour.value}</div>
-                </div>
-
-                <button className="tour-drilldown-link-btn" onClick={openDrilldownFromTour}>
-                  <ExternalLink size={12} />
-                  <span>Explore Full Deep-Dive Panel →</span>
-                  <em className="tour-drilldown-hint">Tour pauses here. You&apos;ll come back to it.</em>
-                </button>
-              </div>
-
-              <div className="tour-modal-footer">
-                <div className="tour-dots-indicator">
-                  {tourSteps.map((step, idx) => (
-                    <div
-                      key={`${step.nodeId}-${idx}`}
-                      className={`tour-dot${idx === tourStep ? " active" : ""}`}
-                      onClick={() => setTourStep(idx)}
-                    />
-                  ))}
-                </div>
-                <div className="tour-nav-btns">
-                  <button
-                    className="tour-btn"
-                    onClick={prevTourStep}
-                    style={{ visibility: tourStep === 0 ? "hidden" : "visible" }}
-                  >
-                    Previous
-                  </button>
-                  <button className="tour-btn tour-btn-primary" onClick={nextTourStep}>
-                    {tourStep === tourSteps.length - 1 ? "Finish Tour 🎯" : "Next Step →"}
-                  </button>
-                </div>
-              </div>
-            </div>
-          ) : null}
+          <TourCard
+            ref={tourCardRef}
+            steps={tourSteps}
+            stepIndex={tourStep}
+            onClose={() => closeTour()}
+            onPrev={prevTourStep}
+            onNext={nextTourStep}
+            onSelectStep={(idx) => setTourStep(idx)}
+            onOpenDrilldown={openDrilldownFromTour}
+          />
         </div>
         </div>
       </div>
