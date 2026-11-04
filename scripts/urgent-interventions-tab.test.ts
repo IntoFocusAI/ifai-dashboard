@@ -67,19 +67,16 @@ test("Urgent Interventions template drops spoke-template example cards", () => {
   assert.match(template, /\{urgent_interventions\}/);
   assert.doesNotMatch(template, /Austin Bazaar|GearTree|A\+|comparison matrix|tabular spec|Bundle MAP|ai_action_card/i);
   assert.doesNotMatch(template, /\u2014/);
-  assert.match(template, /phase_one_lift/);
-  assert.match(template, /enterprise_potential/);
+  assert.equal(template.trim(), "{urgent_interventions}", "the tab opens directly on the fix list");
 
   const bound = bindCopy(template, {
-    phase_one_lift: "+$680K",
-    enterprise_potential: "+$38M to $62M",
-    urgent_interventions: "<div class=\"action-card\">placeholder</div>",
+    urgent_interventions: "<div data-fix-list=\"\">placeholder</div>",
   });
-  assert.match(bound, /action-card/);
-  assert.doesNotMatch(bound, /Austin Bazaar|\{urgent_interventions\}/);
+  assert.match(bound, /data-fix-list/);
+  assert.doesNotMatch(bound, /Austin Bazaar|\{urgent_interventions\}|Pending data/);
 });
 
-test("urgentInterventionsHtml renders five findings with N of M and not-stored actions when unread", () => {
+test("urgentInterventionsHtml renders five ranked rows with not-stored actions when unread", () => {
   const html = urgentInterventionsHtml(
     { phase: "loading" },
     { phase: "loading" },
@@ -100,34 +97,23 @@ test("urgentInterventionsHtml renders five findings with N of M and not-stored a
   for (let i = 0; i < FINDING_LABELS.length; i++) {
     const finding = lead.findings[i]!;
     assert.match(html, new RegExp(FINDING_LABELS[i]!));
-    assert.match(html, new RegExp(`data-urgent-finding="${FINDING_IDS[i]}"`));
-    assert.match(html, new RegExp(`data-ifai-open="${finding.spokeId}"`));
-    assert.match(html, new RegExp(`data-ifai-tab="${finding.tab}"`));
+    assert.match(html, new RegExp(`data-fix-row="${FINDING_IDS[i]}"`));
+    assert.match(html, new RegExp(`data-ifai-open="${finding.spokeId}" data-ifai-tab="${finding.tab}"`));
     assert.match(html, new RegExp(BRIEFING_COUNT_MISSING));
     assert.match(html, new RegExp(MISSING_ACTIONS[i]!.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   }
 
-  assert.equal((html.match(/data-urgent-finding-action=/g) ?? []).length, 5);
-  assert.equal((html.match(/action-details/g) ?? []).length, 5);
-  assert.equal((html.match(/Open details/g) ?? []).length, 5);
+  assert.equal((html.match(/data-fix-row=/g) ?? []).length, 5);
+  assert.equal((html.match(/data-fix-action=/g) ?? []).length, 5);
+  assert.equal((html.match(/data-fix-status-label="">No reading</g) ?? []).length, 5);
   assert.doesNotMatch(html, /\$|lost.?revenue|since last time|what changed|fee|retainer|Austin Bazaar/i);
   assert.doesNotMatch(html, /\u2014/);
   assert.doesNotMatch(html, /\bAEO\b|JSON-LD|Schema\.org|\bSOV\b|\bASIN\b/);
-  const cards = html.slice(html.indexOf("data-urgent-findings="));
-  assert.ok(html.indexOf("data-action-items-lead=") < html.indexOf("data-urgent-findings="));
-  assert.doesNotMatch(cards, /class="ifai-term"|data-ifai-tooltip-/);
-  assert.equal((html.match(/data-urgent-finding=/g) ?? []).length, 5);
+  assert.doesNotMatch(html, /data-action-items-lead|citation-pie-disc|>Critical findings</);
+  assert.doesNotMatch(html, /\stitle="/);
 
-  for (const label of FINDING_LABELS) {
-    const cardStart = html.indexOf(`>${label}<`);
-    assert.ok(cardStart >= 0, label);
-    const afterLabel = html.slice(cardStart);
-    const figureIdx = afterLabel.indexOf("data-urgent-finding-percent");
-    const actionIdx = afterLabel.indexOf("data-urgent-finding-action");
-    const openIdx = afterLabel.indexOf("Open details");
-    assert.ok(figureIdx >= 0 && actionIdx > figureIdx, `${label}: figure before action`);
-    assert.ok(actionIdx >= 0 && openIdx > actionIdx, `${label}: action before Open details`);
-  }
+  const body = html.slice(html.indexOf("<tbody>"));
+  assert.doesNotMatch(body, /class="ifai-term"|data-ifai-tooltip-/, "glossary terms in rows come from annotateGlossary");
 });
 
 test("urgentInterventionsHtml keeps the five operator action lines for stored readings", () => {

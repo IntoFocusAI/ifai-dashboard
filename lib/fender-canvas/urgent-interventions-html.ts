@@ -1,15 +1,12 @@
 /**
- * Action Items · Urgent Interventions work list: the critical-findings lead,
- * then the five current findings, each opening its home spoke/tab via data-ifai-open.
+ * Action Items · Urgent Interventions work list: the five current findings in priority order,
+ * each opening its home spoke/tab via data-ifai-open.
  */
 
 import type { AiSearchRead } from "@/lib/ai-search/types";
+import { fixListHtml, rankFixList } from "@/lib/fender-canvas/action-items-fix-list";
 import {
-  actionItemsLead,
-  actionItemsLeadHtml,
-  hasStoredReading,
-} from "@/lib/fender-canvas/action-items-lead";
-import {
+  BRIEFING_COUNT_MISSING,
   briefingFindingsLead,
   type BriefingFinding,
   type BriefingFindingId,
@@ -17,16 +14,13 @@ import {
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
 import type { FindabilityRead } from "@/lib/findability/copy";
 
-function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
-
-function cardClass(finding: BriefingFinding): string {
-  return finding.tone === "danger" ? "action-card critical" : "action-card";
+function hasStoredReading(finding: BriefingFinding): boolean {
+  return (
+    finding.ratio != null &&
+    finding.numerator != null &&
+    finding.denominator != null &&
+    finding.percent !== BRIEFING_COUNT_MISSING
+  );
 }
 
 /** Operator next step when the finding has a stored N of M. Two sentences at most. */
@@ -56,21 +50,10 @@ function actionCopy(finding: BriefingFinding): string {
   return hasStoredReading(finding) ? STORED_ACTIONS[finding.id] : MISSING_ACTIONS[finding.id];
 }
 
-/** Share first, then N of M, so each card leads with its figure. */
-function figureHtml(finding: BriefingFinding): string {
-  const ratio = finding.ratio
-    ? `<span class="findability-lead-ratio" data-urgent-finding-count="">${escapeHtml(finding.ratio)}</span>`
-    : "";
-  return `<div class="findability-lead-figures" data-urgent-finding-figure="" style="flex-direction:row; align-items:baseline; gap:10px;">
-      <span class="ai-lead-figure" style="color:${finding.color}; font-size:clamp(20px, 2vw, 24px);" data-urgent-finding-percent="">${escapeHtml(finding.percent)}</span>
-      ${ratio}
-    </div>`;
-}
-
 /**
- * Renders the critical-findings lead and the five briefingFindingsLead rows as
- * clickable action cards. No dollars, no lost-revenue placeholder, no history line.
- * Buy Box and MAP jargon on the cards stay for annotateGlossary (do not pre-mark them).
+ * Renders the five briefingFindingsLead rows as one ranked fix list.
+ * No per-finding dollar is computed yet, so no row carries an estimate.
+ * Buy Box and MAP jargon stay for annotateGlossary (do not pre-mark ifai-term).
  */
 export function urgentInterventionsHtml(
   retail: RetailCanvasRead,
@@ -78,17 +61,13 @@ export function urgentInterventionsHtml(
   ai: AiSearchRead,
 ): string {
   const { findings } = briefingFindingsLead(retail, findability, ai);
-  const cards = findings
-    .map((finding, index) => {
-      const style = index === 0 ? "" : ' style="margin-top:8px;"';
-      return `
-  <div class="${cardClass(finding)}"${style} data-ifai-open="${escapeHtml(finding.spokeId)}" data-ifai-tab="${escapeHtml(finding.tab)}" data-urgent-finding="${escapeHtml(finding.id)}">
-    <div class="action-head">${escapeHtml(finding.label)}</div>
-    ${figureHtml(finding)}
-    <div class="action-details" data-urgent-finding-action="">${escapeHtml(actionCopy(finding))}</div>
-    <div class="action-head"><span class="ifai-open-hint">Open details →</span></div>
-  </div>`;
-    })
-    .join("\n");
-  return `${actionItemsLeadHtml(actionItemsLead(findings))}\n<div data-urgent-findings="">${cards}\n</div>`;
+  return fixListHtml(
+    rankFixList(
+      findings.map((finding) => ({
+        finding,
+        action: actionCopy(finding),
+        stored: hasStoredReading(finding),
+      })),
+    ),
+  );
 }
