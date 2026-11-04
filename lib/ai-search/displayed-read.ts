@@ -39,7 +39,7 @@ export function displayedAiRead(
     if (selected.phase === "error") return { phase: "error", message: selected.message, selection: "failed" };
     return { phase: "ready", snapshot: selected.snapshot };
   }
-  // The latest month is the published run's month, so its own failure is the one to name.
+  // Last 30 days ends on the published run's day, so its own failure is the one to name.
   if (mode.kind === "month" && current.phase !== "ready") return current;
   if (trend.phase === "idle" || trend.phase === "loading") return { phase: "loading" };
   if (trend.phase === "error" || trend.phase === "unavailable") {

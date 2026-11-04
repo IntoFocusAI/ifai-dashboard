@@ -48,8 +48,8 @@ function CollapsibleTrend() {
 }
 
 /**
- * Month, range, and all open the tab children on the pooled selection. A latest month with no
- * published run skips the trend so the tab opens on that notice and the latest-run choice.
+ * The last 30 days, range, and all open the tab children on the pooled selection. A default window
+ * with no published run skips the trend so the tab opens on that notice and the latest-run choice.
  * Once the selection loads, Run Summary opens on its two lead rates and places the collapsible
  * trend under them through useTrendSlot. While it loads or fails, the trend sits above the notice.
  * Citation Ecosystem still follows range and all through followsRange.
@@ -69,9 +69,9 @@ export function AiSearchSurface({
   const read = useAiSearch();
   const kind = history?.mode.kind;
   const windowed = kind === "month" || kind === "range" || kind === "all";
-  const emptyMonth = kind === "month" && history?.trend.phase === "ready" && history.trend.snapshots.length === 0;
+  const emptyWindow = kind === "month" && history?.trend.phase === "ready" && history.trend.snapshots.length === 0;
   if (windowed && followsRange) return children;
-  if (windowed && trend && !emptyMonth) {
+  if (windowed && trend && !emptyWindow) {
     if (read.phase === "ready") return <TrendSlot value={<CollapsibleTrend />}>{children}</TrendSlot>;
     return (
       <>

@@ -1,7 +1,23 @@
 import { utcDay, type HistoryRunSummary } from "@/lib/ai-search/history-eligibility";
-import { monthRunExclusion } from "@/lib/ai-search/latest-month";
 import { isReviewHistoryRun, citationStorageCaution } from "@/lib/ai-search/review-runs";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
+
+/** Inclusive day count for the citation tab's default window. */
+export const CITATION_MONTH_DAYS = 30;
+
+export function addUtcDays(day: string, delta: number): string | null {
+  const [year, month, date] = day.split("-").map(Number);
+  if (!year || !month || !date) return null;
+  const next = new Date(Date.UTC(year, month - 1, date));
+  next.setUTCDate(next.getUTCDate() + delta);
+  return next.toISOString().slice(0, 10);
+}
+
+export function citationMonthBounds(endDay: string): { from: string; to: string } | null {
+  const from = addUtcDays(endDay, -(CITATION_MONTH_DAYS - 1));
+  if (!from) return null;
+  return { from, to: endDay };
+}
 
 export type CitationWindow =
   | { kind: "month"; from: string; to: string }
@@ -9,13 +25,12 @@ export type CitationWindow =
   | { kind: "all" }
   | { kind: "run" };
 
-/** Review runs whose day falls in the citation window. The latest month counts published runs only. */
+/** Review runs whose day falls in the citation window. Order follows the catalog. */
 export function runsInCitationWindow(
   runs: readonly HistoryRunSummary[],
   window: CitationWindow,
 ): HistoryRunSummary[] {
   return runs.filter(isReviewHistoryRun).filter((run) => {
-    if (window.kind === "month" && monthRunExclusion(run)) return false;
     if (window.kind === "all" || window.kind === "run") return window.kind === "all";
     const day = utcDay(run.published_at ?? run.completed_at);
     if (!day) return false;

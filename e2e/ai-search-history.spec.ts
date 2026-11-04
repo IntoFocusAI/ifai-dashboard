@@ -5,12 +5,9 @@ const OCTOBER_11 = "7c3e9f52-4b1a-4d8e-9a6f-2e5d81b0c4a7";
 const EARLIER = "e775ee16-ec5b-45b0-8918-579181b44aff";
 const PUBLISHED = "b28d6086-65f3-4d12-a775-ea724ea58f22";
 
-/** The pill names the latest month, for example "November 2026". */
-const MONTH_LABEL = /^(January|February|March|April|May|June|July|August|September|October|November|December) \d{4}/;
-
-async function returnToLatestMonth(page: Page) {
+async function returnToLast30Days(page: Page) {
   await page.locator("[data-ai-history-trigger]").click();
-  await page.locator("[data-ai-history-dialog]").getByRole("button", { name: "Latest month" }).click();
+  await page.locator("[data-ai-history-dialog]").getByRole("button", { name: "Last 30 days" }).click();
 }
 
 test.describe("AI Search history on the live run", () => {
@@ -21,7 +18,7 @@ test.describe("AI Search history on the live run", () => {
     await expect(page.locator("[data-ai-win-rate='unbranded_discovery']")).toHaveText(/\d+\.\d%/);
     await expect(page.locator("[data-ai-win-rate='branded_consideration']")).toHaveText(/\d+\.\d%/);
     const trigger = page.locator("[data-ai-history-trigger]");
-    await expect(trigger).toHaveText(MONTH_LABEL);
+    await expect(trigger).toContainText(/Last 30 days/);
     await trigger.click();
     const dialog = page.locator("[data-ai-history-dialog]");
     await expect(dialog).toBeVisible();
@@ -63,8 +60,8 @@ test.describe("AI Search history on the live run", () => {
     await expect(page.locator(".ai-run-freshness .tag-badge")).toHaveCount(0);
     await expect(page.locator("[data-ai-stat='state']")).toHaveCount(0);
     await expect(page.locator(".drilldown-desc")).not.toContainText("Historical run");
-    await returnToLatestMonth(page);
-    await expect(page.locator("[data-ai-history-trigger]")).toHaveText(MONTH_LABEL);
+    await returnToLast30Days(page);
+    await expect(page.locator("[data-ai-history-trigger]")).toContainText("Last 30 days");
     await expect(page.locator("[data-ai-window-completeness]")).toBeVisible();
   });
 
@@ -96,8 +93,8 @@ test.describe("AI Search history on the live run", () => {
     await expect(page.locator("[data-ai-citation-count], [data-ai-cited-links]").first()).toBeVisible();
     await page.locator(".drilldown-tab-btn", { hasText: "Run Summary" }).click();
     await expect(page.locator("[data-ai-history-trends]")).toBeVisible();
-    await returnToLatestMonth(page);
-    await expect(page.locator("[data-ai-history-trigger]")).toHaveText(MONTH_LABEL);
+    await returnToLast30Days(page);
+    await expect(page.locator("[data-ai-history-trigger]")).toContainText("Last 30 days");
     await page.locator(".drilldown-tab-btn", { hasText: "Run Summary" }).click();
     await expect(page.locator("[data-ai-window-completeness]")).toBeVisible();
     await expect(page.locator(".drilldown-tab-btn")).toHaveText([
@@ -148,7 +145,7 @@ test.describe("AI Search stored-run copy", () => {
       /not read as a change in the citation ecosystem/,
     );
     await expect(page.getByText("No answer in this view returned a cited link.")).toHaveCount(0);
-    await returnToLatestMonth(page);
+    await returnToLast30Days(page);
     await expect(page.locator("[data-ai-history-banner]")).toHaveCount(0);
     await page.locator(".drilldown-tab-btn", { hasText: "Run Summary" }).click();
     await expect(page.locator("[data-ai-win-rate='unbranded_discovery']")).toHaveText("56.5%");
@@ -204,7 +201,7 @@ test.describe("AI Search stored-run copy", () => {
       "data-ifai-tooltip-desc",
       /These 2 stored citations are not evidence that the citation ecosystem changed\./,
     );
-    await returnToLatestMonth(page);
+    await returnToLast30Days(page);
     await page.locator(".drilldown-tab-btn", { hasText: "Run Summary" }).click();
     await expect(page.locator("[data-ai-win-rate='unbranded_discovery']")).toHaveText("56.5%");
     await expect(page.locator("[data-ai-win-rate='branded_consideration']")).toHaveText("95.7%");
@@ -233,7 +230,7 @@ for (const viewport of [
         await expect(page.locator("[data-ai-history-trends]")).toBeVisible();
         await expect(page.locator(`[data-ai-trend-row='${OCTOBER_11}:overall']`)).toContainText("56.7%");
         await expect(page.locator("[data-ai-history-boundary='scoring']")).toBeVisible();
-        await returnToLatestMonth(page);
+        await returnToLast30Days(page);
       }
     });
   });

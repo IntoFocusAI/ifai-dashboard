@@ -1,6 +1,7 @@
 import { formatDay } from "@/lib/ai-search/history-eligibility";
-import { calendarMonthBounds, monthName } from "@/lib/ai-search/latest-month";
+import { defaultWindowBounds, defaultWindowLabel } from "@/lib/ai-search/default-window";
 
+/** `month` is the default window: the last 30 days ending on the published run's day. */
 export type HistoryMode =
   | { kind: "month" }
   | { kind: "run"; runId: string }
@@ -11,21 +12,19 @@ export type HistoryMode =
 /** The window a history session opens on. A window the reader picked stays until they change it. */
 export const DEFAULT_HISTORY_MODE: HistoryMode = { kind: "month" };
 
-export const LATEST_MONTH_LABEL = "Latest month";
-
-/** `monthDay` is any day in the latest month: the published run's day. */
+/** `windowEnd` is the last day of the default window: the published run's day. */
 export function historyControlLabel(
   mode: HistoryMode,
-  monthDay: string | null,
+  windowEnd: string | null,
   selectedDay: string | null,
   publishedRunId: string | null = null,
 ): string {
-  if (mode.kind === "month") return monthName(monthDay) ?? LATEST_MONTH_LABEL;
+  if (mode.kind === "month") return defaultWindowLabel(windowEnd);
   if (mode.kind === "all") return "All time";
   if (mode.kind === "range") return `${formatDay(mode.from)} to ${formatDay(mode.to)}`;
   if (mode.kind === "legacy") return selectedDay ? `Legacy run · ${formatDay(selectedDay)}` : "Legacy run";
   if (mode.kind === "run" && mode.runId === publishedRunId) {
-    const day = selectedDay ?? monthDay;
+    const day = selectedDay ?? windowEnd;
     return day ? `Published run · ${formatDay(day)}` : "Published run";
   }
   return selectedDay ? `Historical run · ${formatDay(selectedDay)}` : "Historical run";
@@ -37,11 +36,8 @@ export function rangeFromMode(mode: HistoryMode): { from: string | null; to: str
 }
 
 /** Inclusive days the window covers. All time and single runs have no bounds. */
-export function windowBounds(mode: HistoryMode, monthDay: string | null): { from: string | null; to: string | null } {
-  if (mode.kind === "month") {
-    const bounds = calendarMonthBounds(monthDay);
-    return bounds ?? { from: null, to: null };
-  }
+export function windowBounds(mode: HistoryMode, windowEnd: string | null): { from: string | null; to: string | null } {
+  if (mode.kind === "month") return defaultWindowBounds(windowEnd) ?? { from: null, to: null };
   return rangeFromMode(mode);
 }
 

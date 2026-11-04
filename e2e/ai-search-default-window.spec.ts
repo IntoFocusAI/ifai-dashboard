@@ -3,10 +3,10 @@ import { STORED_RUN_COPY_DATA } from "../lib/ai-search/stored-run-copy-data";
 import { expect, test as base } from "./fixtures";
 import { mockCanvasRead } from "./spec-read-mock";
 
-/* AI Search opens on the latest month (FDD X-09). The AI views are served from the stored-run
-   copy plus synthetic runs, so the month's contents are fixed: published runs with answered
-   calls count, and unpublished, failed, fragment, and all-error runs do not. The map stays on
-   the published run. */
+/* AI Search opens on the last 30 days ending on the published run's day (FDD X-09). The AI views
+   are served from the stored-run copy plus synthetic runs, so the window's contents are fixed:
+   published runs with answered calls count, and unpublished, failed, fragment, and all-error runs
+   do not. The map stays on the published run. */
 
 type Entry = (typeof STORED_RUN_COPY_DATA.runs)[number];
 type Row = Record<string, unknown>;
@@ -56,20 +56,21 @@ const OCTOBER_18_ERRORS = copyOf(
   (row) => ({ ...row, call_status: "error", outcome: "error", primary_brand: null }),
 );
 
-const SEPTEMBER_30 = copyOf(PUBLISHED_OCTOBER_12, "30303030-0000-4000-8000-000000000930", {
-  published_at: "2026-09-30T07:00:00.000Z",
-  completed_at: "2026-09-30T06:55:00.000Z",
+/** Published the day before the 30 days ending on 20 Oct begin. */
+const SEPTEMBER_20 = copyOf(PUBLISHED_OCTOBER_12, "20202020-0000-4000-8000-000000000920", {
+  published_at: "2026-09-20T07:00:00.000Z",
+  completed_at: "2026-09-20T06:55:00.000Z",
 });
 
-/** The published run on 3 Nov. Its catalog row is a fragment, so November holds no client run. */
-const NOVEMBER_3 = copyOf(EARLIER_OCTOBER_12, "03030303-0000-4000-8000-000000001103", {
+/** The published run on 3 Dec. Its catalog row is a fragment, so Nov 4 to Dec 3 holds no client run. */
+const DECEMBER_3 = copyOf(EARLIER_OCTOBER_12, "03030303-0000-4000-8000-000000001203", {
   is_published: true,
-  published_at: "2026-11-03T07:00:00.000Z",
-  started_at: "2026-11-03T06:00:00.000Z",
-  completed_at: "2026-11-03T06:55:00.000Z",
+  published_at: "2026-12-03T07:00:00.000Z",
+  started_at: "2026-12-03T06:00:00.000Z",
+  completed_at: "2026-12-03T06:55:00.000Z",
 });
 
-const OCTOBER_CATALOG = [original(OCTOBER_11), original(EARLIER_OCTOBER_12), original(PUBLISHED_OCTOBER_12), OCTOBER_18_ERRORS, OCTOBER_20, SEPTEMBER_30];
+const OCTOBER_CATALOG = [original(OCTOBER_11), original(EARLIER_OCTOBER_12), original(PUBLISHED_OCTOBER_12), OCTOBER_18_ERRORS, OCTOBER_20, SEPTEMBER_20];
 
 /** `canvas_ai_run_history` has no missing_calls column. */
 function catalogRow(entry: Run): Row {
@@ -140,14 +141,14 @@ const mapFigure = async (page: Page) => (await aiBubble(page).textContent())?.re
 
 test.use({ viewport: { width: 1280, height: 720 } });
 
-test.describe("AI Search opens on the latest month", () => {
-  test("the month adds published runs with answers only, and the latest run is one click away", async ({ canvas, page }) => {
+test.describe("AI Search opens on the last 30 days", () => {
+  test("the window adds published runs with answers only, and the latest run is one click away", async ({ canvas, page }) => {
     await expect(aiBubble(page)).toContainText("65.0%");
     const mapBefore = await mapFigure(page);
 
     await canvas.openSpokeFromMap("AI Search Visibility");
     const trigger = page.locator("[data-ai-history-trigger]");
-    await expect(trigger).toHaveText(/^October 2026/);
+    await expect(trigger).toHaveText(/^Last 30 days · Sep 21 to Oct 20, 2026/);
     await expect(page.locator("[data-ai-history-banner]")).toHaveCount(0);
 
     // 12 Oct published (13 of 23, 22 of 23) and 20 Oct published (13 of 20, 18 of 18).
@@ -173,12 +174,12 @@ test.describe("AI Search opens on the latest month", () => {
     expect(leadBox && trendBox && leadBox.y + leadBox.height <= trendBox.y).toBe(true);
 
     await page.locator(".drilldown-tab-btn", { hasText: "Run Details" }).click();
-    await expect(trigger).toHaveText(/^October 2026/);
+    await expect(trigger).toHaveText(/^Last 30 days · Sep 21 to Oct 20, 2026/);
     await expect(page.locator("#ai-simulation-list")).toBeVisible();
 
     await trigger.click();
     const dialog = page.locator("[data-ai-history-dialog]");
-    await expect(dialog.locator("[data-ai-history-latest-month]")).toHaveAttribute("aria-pressed", "true");
+    await expect(dialog.locator("[data-ai-history-last-30-days]")).toHaveAttribute("aria-pressed", "true");
     await dialog.locator("[data-ai-history-latest-run]").click();
     await expect(trigger).toHaveText(/^Published run · Oct 20, 2026/);
     await page.locator(".drilldown-tab-btn", { hasText: "Run Summary" }).click();
@@ -190,8 +191,8 @@ test.describe("AI Search opens on the latest month", () => {
     await expect(page.locator("[data-ai-window-completeness]")).toHaveCount(0);
 
     await trigger.click();
-    await dialog.locator("[data-ai-history-latest-month]").click();
-    await expect(trigger).toHaveText(/^October 2026/);
+    await dialog.locator("[data-ai-history-last-30-days]").click();
+    await expect(trigger).toHaveText(/^Last 30 days · Sep 21 to Oct 20, 2026/);
     await expect(page.locator("[data-ai-win-rate='unbranded_discovery']")).toHaveText("60.5%");
 
     await trigger.click();
@@ -204,33 +205,33 @@ test.describe("AI Search opens on the latest month", () => {
 
 });
 
-test.describe("AI Search latest month with no published run", () => {
+test.describe("AI Search last 30 days with no published run", () => {
   test.use({
     aiScenario: {
-      current: NOVEMBER_3,
+      current: DECEMBER_3,
       runs: OCTOBER_CATALOG,
-      catalogPatch: { [String(NOVEMBER_3.run.audit_run_id)]: { attempted_calls: 90 } },
+      catalogPatch: { [String(DECEMBER_3.run.audit_run_id)]: { attempted_calls: 90 } },
     },
   });
 
-  test("a month with no published run says so and offers the latest run", async ({ canvas, page }) => {
+  test("a window with no published run says so and offers the latest run", async ({ canvas, page }) => {
     await expect(aiBubble(page)).toContainText("65.0%");
     const mapBefore = await mapFigure(page);
     await canvas.openSpokeFromMap("AI Search Visibility");
     const trigger = page.locator("[data-ai-history-trigger]");
-    await expect(trigger).toHaveText(/^November 2026/);
+    await expect(trigger).toHaveText(/^Last 30 days · Nov 4 to Dec 3, 2026/);
 
-    const notice = page.locator("[data-ai-month-empty]");
-    await expect(notice).toContainText("No published run this month");
-    await expect(notice).toContainText("November 2026 has no published run with answered calls.");
+    const notice = page.locator("[data-ai-window-empty]");
+    await expect(notice).toContainText("No published run in the last 30 days");
+    await expect(notice).toContainText("No run published between Nov 4 and Dec 3, 2026 has answered calls.");
     await expect(page.locator("[data-ai-win-rate]")).toHaveCount(0);
     await expect(page.locator("[data-ai-history-trends]")).toHaveCount(0);
 
     await page.locator(".drilldown-tab-btn", { hasText: "Citation Ecosystem" }).click();
-    await expect(page.locator("[data-ai-month-empty]")).toContainText("No published run this month");
+    await expect(page.locator("[data-ai-window-empty]")).toContainText("No published run in the last 30 days");
 
-    await page.locator("[data-ai-month-empty] [data-ai-show-latest-run]").click();
-    await expect(trigger).toHaveText(/^Published run · Nov 3, 2026/);
+    await page.locator("[data-ai-window-empty] [data-ai-show-latest-run]").click();
+    await expect(trigger).toHaveText(/^Published run · Dec 3, 2026/);
     await page.locator(".drilldown-tab-btn", { hasText: "Run Summary" }).click();
     await expect(page.locator("[data-ai-win-rate='unbranded_discovery']")).toHaveText("65.0%");
     expect(await mapFigure(page)).toBe(mapBefore);
