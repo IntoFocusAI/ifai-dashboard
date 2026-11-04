@@ -1,7 +1,23 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { metricTermAttrs } from "../lib/canvas-sdk/metric-term.ts";
-import { EMPTY_METRICS_ROW, READ_NOT_AVAILABLE, readFailure } from "../lib/fender-canvas/canvas-reads.ts";
+import {
+  amazonSpecsHeroes,
+  fenderCompletenessHero,
+  missingAdditionalPropertyHero,
+  pageFoundHero,
+} from "../lib/fender-canvas/ai-readiness-lead.ts";
+import {
+  assembleCanvasBundle,
+  BUNDLE_READ_KEYS,
+  CANVAS_READS,
+  EMPTY_METRICS_ROW,
+  failedMetricsRow,
+  metricsRowFailure,
+  READ_NOT_AVAILABLE,
+  readFailure,
+  type CanvasReadResult,
+} from "../lib/fender-canvas/canvas-reads.ts";
 import { buildLiveCommandCenter } from "../lib/fender-canvas/command-center-from-live.ts";
 import { buildLiveMetrics } from "../lib/fender-canvas/metrics-from-live.ts";
 import { buildMinimalMetrics } from "../lib/fender-canvas/minimal-metrics.ts";
@@ -64,7 +80,7 @@ function bundle(failed: CanvasReadKey[] = []): CanvasBundle {
   const out: CanvasBundle = { ...loaded, unavailable: {} };
   for (const key of failed) {
     out.unavailable![key] = readFailure(key, `forced ${key} failure`);
-    if (key === "m") out.m = EMPTY_METRICS_ROW;
+    if (key === "m") out.m = failedMetricsRow(out.unavailable![key]!);
     else if (key !== "specPages" && key !== "listingContent") Object.assign(out, { [key]: [] });
   }
   return out;
@@ -196,4 +212,64 @@ test("the tour names a failed missing-field read instead of counting zero rows",
   const failed = line(bundle(["missing"]));
   assert.equal(failed, "Amazon Specs missing-field rows: Not available* (canvas_spec_missing_fields did not load)");
   assert.doesNotMatch(failed ?? "", /\b0\b/);
+});
+
+test("the loader's failed metrics row carries its failure; a loaded or plain empty row does not", () => {
+  const ok = (data: unknown): PromiseSettledResult<CanvasReadResult> => ({ status: "fulfilled", value: { data, error: null } });
+  const reads = Object.fromEntries(BUNDLE_READ_KEYS.map((key) => [key, ok(key === "m" ? METRICS : [])])) as Parameters<
+    typeof assembleCanvasBundle
+  >[0];
+  const pages = {
+    specPages: { status: "fulfilled", value: null } as unknown as PromiseSettledResult<never>,
+    listingContent: { status: "fulfilled", value: null } as unknown as PromiseSettledResult<never>,
+  };
+  const failed = assembleCanvasBundle(
+    { ...reads, m: { status: "fulfilled", value: { data: null, error: { message: "forced" } } } },
+    pages,
+  );
+  assert.deepEqual(failed.m, EMPTY_METRICS_ROW);
+  assert.equal(metricsRowFailure(failed.m)?.source, CANVAS_READS.m.source);
+  assert.equal(metricsRowFailure(assembleCanvasBundle(reads, pages).m), null);
+  assert.equal(metricsRowFailure(EMPTY_METRICS_ROW), null);
+});
+
+test("AI Readiness heroes on a failed metrics row read Not available* and name canvas_metrics in the definition", () => {
+  const failed = bundle(["m"]).m;
+  const heroes = [
+    pageFoundHero(failed),
+    fenderCompletenessHero(failed),
+    missingAdditionalPropertyHero(failed),
+    ...amazonSpecsHeroes(failed, { found: 800, expected: 1000 }),
+  ];
+  for (const hero of heroes) {
+    assert.equal(hero.percent, READ_NOT_AVAILABLE, hero.id);
+    assert.match(hero.definition ?? "", /^The catalog metrics read \(canvas_metrics\) did not load: forced m failure\. /, hero.id);
+    assert.equal(hero.ratio, null, `${hero.id} shows no N of M beside a figure it cannot show`);
+    assert.equal(hero.pie, null, hero.id);
+  }
+
+  const loaded = amazonSpecsHeroes(METRICS, { found: 800, expected: 1000 })[0];
+  assert.doesNotMatch(loaded.definition ?? "", /canvas_metrics/);
+  assert.equal(pageFoundHero(METRICS).percent, "10.8%");
+  assert.equal(pageFoundHero(EMPTY_METRICS_ROW).percent, "Pending data", "an unstored figure is not a failed read");
+});
+
+test("AI Readiness Minimal slots name the failed read that feeds them", () => {
+  const slots = (b: CanvasBundle) => new Map(minimal(b).map((metric) => [metric.id, metric]));
+  const cases: [CanvasReadKey, string, string[]][] = [
+    ["m", "canvas_metrics", ["amazon-specs-completeness", "spoke-specs"]],
+    ["specPages", "canvas_spec_readiness", ["sat-schema", "brand-site-product-basics"]],
+    ["listingContent", "canvas_listing_content", ["sat-tables", "aplus-content", "aplus-video"]],
+  ];
+  const loaded = slots(bundle());
+  for (const [key, source, ids] of cases) {
+    const failed = slots(bundle([key]));
+    for (const id of ids) {
+      const slot = failed.get(id);
+      assert.ok(slot, `${id} is offered`);
+      assert.equal(slot.value, READ_NOT_AVAILABLE, id);
+      assert.match(slot.reading.missing ?? "", new RegExp(`\\(${source}\\) did not load`), id);
+      assert.doesNotMatch(loaded.get(id)?.reading.missing ?? "", new RegExp(source), `${id} names no failure when it loaded`);
+    }
+  }
 });

@@ -103,6 +103,23 @@ export const EMPTY_METRICS_ROW: CanvasMetricsRow = {
   strongest_resolved: null,
 };
 
+const failedMetricsRows = new WeakMap<CanvasMetricsRow, CanvasReadFailure>();
+
+/**
+ * The all-null row for a failed canvas_metrics read, carrying its failure, so a lead
+ * that only receives the row can still name the read.
+ */
+export function failedMetricsRow(failure: CanvasReadFailure): CanvasMetricsRow {
+  const row = { ...EMPTY_METRICS_ROW };
+  failedMetricsRows.set(row, failure);
+  return row;
+}
+
+/** The failure behind a metrics row, or null when the row loaded. */
+export function metricsRowFailure(row: CanvasMetricsRow | null | undefined): CanvasReadFailure | null {
+  return row ? (failedMetricsRows.get(row) ?? null) : null;
+}
+
 /** What one Supabase read resolves to. */
 export type CanvasReadResult = { data: unknown; error: unknown };
 
@@ -193,7 +210,7 @@ export function assembleCanvasBundle(
 
   const list = <T>(key: BundleReadKey) => (unavailable[key] ? [] : ((data[key] ?? []) as T[]));
   return {
-    m: unavailable.m ? EMPTY_METRICS_ROW : (data.m as CanvasMetricsRow),
+    m: unavailable.m ? failedMetricsRow(unavailable.m) : (data.m as CanvasMetricsRow),
     cats: list("cats"),
     engines: list("engines"),
     sov: list("sov"),

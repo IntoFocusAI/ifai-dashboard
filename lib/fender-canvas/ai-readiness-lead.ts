@@ -6,6 +6,7 @@
 
 import type { PieDiscData } from "@/lib/ai-search/citation-pies";
 import type { NodeStatus } from "@/lib/canvas-sdk/types";
+import { metricsRowFailure, READ_NOT_AVAILABLE, readFailureTip } from "@/lib/fender-canvas/canvas-reads";
 import { formatInt, formatPct, formatRatio, pendingLabel } from "@/lib/fender-canvas/format";
 import { MISSING_FIELD_SHARE_UNAVAILABLE } from "@/lib/fender-canvas/spec-missing-fields";
 import type { CanvasMetricsRow, CanvasSpecReadinessRow } from "@/lib/fender-canvas/types";
@@ -209,6 +210,25 @@ export function averageAcrossRatio(count: number | null, unit: string): string |
   return `Across ${formatInt(count)} ${unit}`;
 }
 
+/**
+ * A hero from a failed metrics read: Not available*, no N of M or disc, and the failed
+ * read named first in the label's definition tooltip.
+ */
+function failedReadHero(hero: AiReadinessHeroModel, m: CanvasMetricsRow): AiReadinessHeroModel {
+  const failure = metricsRowFailure(m);
+  if (!failure) return hero;
+  const tip = readFailureTip(failure);
+  return {
+    ...hero,
+    definition: hero.definition ? `${tip} ${hero.definition}` : tip,
+    percent: READ_NOT_AVAILABLE,
+    ratio: null,
+    color: null,
+    pie: null,
+    tip: null,
+  };
+}
+
 export const PAGE_FOUND_LABEL = "fender.com page found";
 
 export const PAGE_FOUND_DEFINITION =
@@ -219,7 +239,7 @@ export function pageFoundHero(m: CanvasMetricsRow): AiReadinessHeroModel {
   const found = m.spec_fender_found;
   const pct = m.spec_fender_found_pct;
   const ready = checked != null && checked > 0 && found != null && pct != null;
-  return {
+  return failedReadHero({
     id: "page_found",
     label: PAGE_FOUND_LABEL,
     definition: PAGE_FOUND_DEFINITION,
@@ -228,7 +248,7 @@ export function pageFoundHero(m: CanvasMetricsRow): AiReadinessHeroModel {
     color: toneColor(pageFoundTone(pct)),
     pie: ready ? shareCountPie("ai-readiness-page-found", "fender.com page found", "Page found", found!, checked!) : null,
     tip: ready ? `${formatInt(found)} of ${formatInt(checked)} checked SKUs` : null,
-  };
+  }, m);
 }
 
 export function amazonCompletenessHero(
@@ -249,7 +269,7 @@ export function amazonCompletenessHero(
     typeof checked === "number" && Number.isFinite(checked) && checked > 0
       ? ` (across ${formatInt(checked)} checked SKUs)`
       : "";
-  return {
+  return failedReadHero({
     id: "amazon_completeness",
     label: "Amazon attribute completeness",
     definition: `Average of filled Amazon attribute fields over expected fields on the Amazon-checked listings in this catalog spec read${checkedPhrase}. This is an average, not a count of listings at 100%.`,
@@ -258,14 +278,14 @@ export function amazonCompletenessHero(
     color: tone ? TONE_COLOR[tone] : null,
     pie: averagePercentPie("ai-readiness-amazon-completeness", "Amazon attribute completeness", pct),
     tip: ready ? formatPct(pct) : null,
-  };
+  }, m);
 }
 
 export function fenderCompletenessHero(m: CanvasMetricsRow): AiReadinessHeroModel {
   const found = m.spec_fender_found;
   const pct = m.spec_avg_fender_pct;
   const ready = pct != null && !Number.isNaN(pct);
-  return {
+  return failedReadHero({
     id: "fender_completeness",
     label: "fender.com completeness when a page is found",
     definition:
@@ -275,7 +295,7 @@ export function fenderCompletenessHero(m: CanvasMetricsRow): AiReadinessHeroMode
     color: toneColor(fenderCompletenessTone(pct)),
     pie: averagePercentPie("ai-readiness-fender-completeness", "fender.com completeness", pct),
     tip: ready ? formatPct(pct) : null,
-  };
+  }, m);
 }
 
 export function missingAdditionalPropertyHero(m: CanvasMetricsRow): AiReadinessHeroModel {
@@ -283,7 +303,7 @@ export function missingAdditionalPropertyHero(m: CanvasMetricsRow): AiReadinessH
   const missing = m.spec_missing_additional_property;
   const ready = found != null && found > 0 && missing != null && missing >= 0 && missing <= found;
   const pct = ready ? (100 * missing!) / found! : null;
-  return {
+  return failedReadHero({
     id: "missing_additional_property",
     label: "Found pages missing additionalProperty",
     definition:
@@ -301,7 +321,7 @@ export function missingAdditionalPropertyHero(m: CanvasMetricsRow): AiReadinessH
         )
       : null,
     tip: ready ? `${formatInt(missing)} of ${formatInt(found)} found pages` : null,
-  };
+  }, m);
 }
 
 /**
