@@ -1,6 +1,7 @@
 import type { CanvasMetric } from "@/lib/canvas-sdk/types";
 import { ENTERPRISE_POTENTIAL_ESTIMATE, PHASE_ONE_LIFT_ESTIMATE } from "@/lib/fender-canvas/analyst-estimates";
 import { beginnerSovLine } from "@/lib/fender-canvas/beginner-sov";
+import { failedReadTip, READ_NOT_AVAILABLE } from "@/lib/fender-canvas/canvas-reads";
 import { MAP_PRICES_NOT_STORED } from "@/lib/fender-canvas/portfolio-retail";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
@@ -131,10 +132,48 @@ function findabilityMetric(read: FindabilityRead): CanvasMetric {
   };
 }
 
+/** Metrics built from the canvas_metrics row. MAP drift is one too, unless MAP prices are not stored. */
+const METRICS_ROW_KEYS = [
+  "activeOfferCoverage",
+  "buyBoxRetention",
+  "sellerDataCoverage",
+  "strandedReviews",
+  "overallAiWinRate",
+  "resolvedSimulations",
+  "confirmedHallucinations",
+  "beginnerSovGap",
+  "strongestCategorySov",
+] as const;
+
+function notAvailable(metric: CanvasMetric, tip: string): CanvasMetric {
+  return { ...metric, value: READ_NOT_AVAILABLE, detail: tip, tone: "warning" };
+}
+
+/** A metric whose read failed reads Not available* and names that read, never a blank or zero. */
+function withFailedReads(bundle: CanvasBundle, metrics: Record<string, CanvasMetric>): Record<string, CanvasMetric> {
+  const out = { ...metrics };
+  const metricsTip = failedReadTip(bundle, "m");
+  if (metricsTip) {
+    for (const key of METRICS_ROW_KEYS) out[key] = notAvailable(out[key], metricsTip);
+    if (out.amazonMapDrift.detail !== MAP_PRICES_NOT_STORED) out.amazonMapDrift = notAvailable(out.amazonMapDrift, metricsTip);
+  }
+  const categoryTip = failedReadTip(bundle, "cats");
+  if (categoryTip) out.beginnerAiWinRate = notAvailable(out.beginnerAiWinRate, categoryTip);
+  return out;
+}
+
 export function buildLiveMetrics(
   bundle: CanvasBundle,
   retail: RetailCanvasRead = { phase: "loading" },
   findability: FindabilityRead = { phase: "loading" },
+): Record<string, CanvasMetric> {
+  return withFailedReads(bundle, liveMetrics(bundle, retail, findability));
+}
+
+function liveMetrics(
+  bundle: CanvasBundle,
+  retail: RetailCanvasRead,
+  findability: FindabilityRead,
 ): Record<string, CanvasMetric> {
   const { m, cats } = bundle;
   const schemaPages = specPageCounts(bundle.specPages);

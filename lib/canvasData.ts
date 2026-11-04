@@ -1,46 +1,54 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { getCanvasSupabase } from "@/lib/supabase/canvas-client";
+import {
+  assembleCanvasBundle,
+  BUNDLE_READ_KEYS,
+  CANVAS_READ_TIMEOUT_MS,
+  withReadTimeout,
+  type BundleReadKey,
+  type CanvasReadResult,
+} from "@/lib/fender-canvas/canvas-reads";
 import { FEATURED_OFFER_COLUMNS } from "@/lib/fender-canvas/featured-offer";
-import { loadListingContent } from "@/lib/fender-canvas/listing-content";
-import { loadSpecPages } from "@/lib/fender-canvas/machine-readability";
+import { loadListingContent, type ListingContentClient } from "@/lib/fender-canvas/listing-content";
+import { loadSpecPages, type SpecPageClient } from "@/lib/fender-canvas/machine-readability";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
 
-export async function loadCanvas(): Promise<CanvasBundle> {
-  const supabase = getCanvasSupabase();
-  const specPages = loadSpecPages().catch(() => null);
-  const listingContent = loadListingContent().catch(() => null);
-  const [metrics, cats, engines, sov, divisions, missing, fresh] = await Promise.all([
-    supabase.from("canvas_metrics").select("*").single(),
-    supabase.from("canvas_ai_category").select("*").order("fender_win_pct"),
-    supabase.from("canvas_ai_engine").select("*"),
-    supabase
-      .from("canvas_competitor_sov")
-      .select("*")
-      .order("wins", { ascending: false }),
-    supabase
+/**
+ * Each read settles on its own, so one failed or hung view leaves the rest of the
+ * bundle (and the map) standing. Throws only when every bundle read fails.
+ */
+export async function loadCanvas(
+  client?: SupabaseClient,
+  timeoutMs = CANVAS_READ_TIMEOUT_MS,
+): Promise<CanvasBundle> {
+  const supabase = client ?? getCanvasSupabase();
+  const limit = <T>(read: PromiseLike<T>) => withReadTimeout(read, timeoutMs);
+  const specPages = Promise.allSettled([limit(loadSpecPages(supabase as unknown as SpecPageClient))]);
+  const listingContent = Promise.allSettled([
+    limit(loadListingContent(supabase as unknown as ListingContentClient)),
+  ]);
+  const queries: Record<BundleReadKey, PromiseLike<CanvasReadResult>> = {
+    m: supabase.from("canvas_metrics").select("*").single(),
+    cats: supabase.from("canvas_ai_category").select("*").order("fender_win_pct"),
+    engines: supabase.from("canvas_ai_engine").select("*"),
+    sov: supabase.from("canvas_competitor_sov").select("*").order("wins", { ascending: false }),
+    divisions: supabase
       .from("canvas_divisions")
       .select("*")
       .order("monitored_skus", { ascending: false }),
-    supabase
+    missing: supabase
       .from("canvas_spec_missing_fields")
       .select("*")
       .order("sku_count", { ascending: false }),
-    supabase.from("canvas_freshness").select("*"),
-  ]);
-
-  const err = [metrics, cats, engines, sov, divisions, missing, fresh].find((r) => r.error);
-  if (err?.error) throw err.error;
-
-  return {
-    m: metrics.data as CanvasBundle["m"],
-    cats: (cats.data ?? []) as CanvasBundle["cats"],
-    engines: (engines.data ?? []) as CanvasBundle["engines"],
-    sov: (sov.data ?? []) as CanvasBundle["sov"],
-    divisions: (divisions.data ?? []) as CanvasBundle["divisions"],
-    missing: (missing.data ?? []) as CanvasBundle["missing"],
-    fresh: (fresh.data ?? []) as CanvasBundle["fresh"],
-    specPages: await specPages,
-    listingContent: await listingContent,
+    fresh: supabase.from("canvas_freshness").select("*"),
   };
+
+  const settled = await Promise.allSettled(BUNDLE_READ_KEYS.map((key) => limit(queries[key])));
+  const reads = Object.fromEntries(
+    BUNDLE_READ_KEYS.map((key, index) => [key, settled[index]]),
+  ) as Record<BundleReadKey, PromiseSettledResult<CanvasReadResult>>;
+  const [[specPagesRead], [listingContentRead]] = await Promise.all([specPages, listingContent]);
+  return assembleCanvasBundle(reads, { specPages: specPagesRead, listingContent: listingContentRead });
 }
 
 export function listingsQuery(
