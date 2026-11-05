@@ -5,20 +5,30 @@ alwaysApply: true
 
 # Publishing the design documents
 
-The Functional Design Document and Technical Design Document are Google Docs. Update them from a local `.docx` in two commands. Do not invent another upload path.
+The Functional Design Document and Technical Design Document are Google Docs. Update them from a local `.docx`: download, edit, review, stage, update Drive, check, description. Do not invent another upload path.
+
+DRIVE UPDATE TOOL: <pending PM21>
+
+- FDD file id: `1PoeiXKR2twOaz_JcRN0e4ZQkUCuDD5qnnyrlt6ygkeU` (`fdd` in `design-doc-edit.py`)
+- TDD file id: `1K6-ghhSnJZcrch81DDhmHXXYU0pSF7tOGR9S9jiCUjk` (`tdd` in `design-doc-edit.py`)
 
 ```bash
-python3 scripts/stage-design-docx.py path/to/the.docx
-python3 scripts/check-design-doc.py FILE_ID path/to/the.docx
+python3 scripts/design-doc-edit.py download fdd /tmp/fdd-live.docx
+cp /tmp/fdd-live.docx /tmp/fdd-21.9.docx
+python3 scripts/design-doc-edit.py set-version /tmp/fdd-21.9.docx 21.9
+python3 scripts/design-doc-edit.py diff /tmp/fdd-live.docx /tmp/fdd-21.9.docx
+python3 scripts/stage-design-docx.py /tmp/fdd-21.9.docx
+python3 scripts/check-design-doc.py FILE_ID /tmp/fdd-21.9.docx
 ```
 
-`stage-design-docx.py` prints one https URL. The download matches the local file. The URL lasts about an hour. Pass that URL to `google_drive-update-file` as `filePath`, with `keepRevisionForever` true. Leave `mimeType` unset. Do not put the URL in a reply.
+1. **Download** with `design-doc-edit.py download fdd|tdd PATH`. It reads the public export URL, `https://docs.google.com/document/d/FILE_ID/export?format=docx`, and prints the first line. The Drive download tool writes on the tool host, not this machine, so do not use it. Give the working copy a descriptive name such as `fdd-21.9.docx`; the staging host refuses some short names.
+2. **Edit** with `design-doc-edit.py` (`set-version`, `set-status`, `get`, `set`, `append`, `replace`, `clone`, `changelog`, `add-row`, `set-cell`, `replace-all`; `rows` and `show` to read). It installs python-docx when it is missing, or prints the install command and exits 2. Do not hand-edit `word/document.xml`. Run `python3 scripts/design-doc-edit.py selftest` if an edit looks wrong.
+3. **Review** with `design-doc-edit.py diff LIVE EDITED`. It reads paragraphs the way the check does. Read every changed line before staging.
+4. **Stage** with `stage-design-docx.py`. It prints one https URL. The download matches the local file. The URL lasts about an hour. It retries network errors itself and prints one error line if it gives up. Do not put the URL in a reply.
+5. **Update Drive** with the tool on the DRIVE UPDATE TOOL line. Pass the staged URL as `filePath`, with `keepRevisionForever` true. Leave `mimeType` unset. If that tool is missing, renamed, or denied, stop and ask Brian. Do not use another upload path.
+6. **Check** with `check-design-doc.py FILE_ID PATH`. Reply with the new first line only after it exits 0. The check compares paragraph text, the header, and the footer. A byte hash of the export will not match.
+7. **Description.** If the Drive file description still names the previous documentation version, set it in a second Drive update call that has no `filePath`. When the tool has no top-level `description` field, pass it nested as `advanced.description`. A top-level `description` the tool does not list is ignored without an error.
 
-- FDD file id: `1PoeiXKR2twOaz_JcRN0e4ZQkUCuDD5qnnyrlt6ygkeU`
-- TDD file id: `1K6-ghhSnJZcrch81DDhmHXXYU0pSF7tOGR9S9jiCUjk`
+If the Drive update times out or returns "Tool execution error", it may still have landed. Run the check. If it exits 0, continue to step 7. If the live first line is still the previous version (the check's `live:` line, or a fresh download), stage again for a fresh URL and repeat step 5. Retry up to 3 times, then stop and ask Brian.
 
-Run the check after the update. Reply with the new first line only after it exits 0. The check compares paragraph text, the header, and the footer. A byte hash of the export will not match.
-
-Leave the file bytes on disk. Do not paste the `.docx`, its base64, or a data URL into a tool call. Do not send it through assistant storage. Do not create a second Google Doc.
-
-If the Drive file description still names the previous documentation version, set `description` in a second `google_drive-update-file` call that has no `filePath`.
+Leave the file bytes on disk. Do not paste the `.docx`, its base64, a data URL, or its text into a tool call. Do not send it through assistant storage. Do not create a second Google Doc.

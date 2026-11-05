@@ -45,23 +45,63 @@ If you are about to edit a product file, stop and write the brief.
 
 Edit the .docx on this machine. This is the only publish path.
 
-1. Run `python3 scripts/stage-design-docx.py path/to/the.docx`.
-   It prints one https URL. The download matches the local file. The URL
-   lasts about an hour. Do not put that URL in a reply.
-2. Call google_drive-update-file once. filePath is that URL.
-   keepRevisionForever is true. Leave mimeType unset.
-   FDD file id: 1PoeiXKR2twOaz_JcRN0e4ZQkUCuDD5qnnyrlt6ygkeU
-   TDD file id: 1K6-ghhSnJZcrch81DDhmHXXYU0pSF7tOGR9S9jiCUjk
-3. Run `python3 scripts/check-design-doc.py FILE_ID path/to/the.docx`.
-   Reply with the new first line only after it exits 0. The check compares
-   paragraph text, the header, and the footer. A byte hash of the export
-   will not match.
-4. If the Drive file description still names the previous documentation
-   version, set description in a second google_drive-update-file call that
-   has no filePath.
+DRIVE UPDATE TOOL: <pending PM21>
 
-Do not paste the .docx, its base64, or a data URL into a tool call. Do not
-send the file through assistant storage. Do not create a second Google Doc.
+FDD file id: 1PoeiXKR2twOaz_JcRN0e4ZQkUCuDD5qnnyrlt6ygkeU (`fdd`)
+TDD file id: 1K6-ghhSnJZcrch81DDhmHXXYU0pSF7tOGR9S9jiCUjk (`tdd`)
+
+1. Download. Run
+   `python3 scripts/design-doc-edit.py download fdd /tmp/fdd-live.docx`
+   (or `tdd`). It reads the public export URL,
+   docs.google.com/document/d/FILE_ID/export?format=docx, and prints the
+   first line. Do not use the Drive download tool: it writes the file on
+   the tool host, not this machine. Copy the download to a working file
+   with a descriptive name, such as /tmp/fdd-21.9.docx. The staging host
+   refuses some short names.
+2. Edit with `python3 scripts/design-doc-edit.py COMMAND FILE ...`.
+   It installs python-docx if it is missing, or prints the install command
+   and exits 2. Do not hand-edit word/document.xml. Each command saves in
+   place, and saves nothing if it fails.
+   - `set-version FILE 21.9` sets the first line, the Version and Date
+     rows, and the footer. `--date "November 5, 2026"` overrides today.
+   - `set-status FILE X-21 CURRENT` sets the status word and its color.
+   - `get`, `set`, `append`, `replace FILE X-21 Evidence ...` edit one
+     field in either row layout (table or label paragraphs).
+   - `clone FILE X-21 X-31 X-32 --status TARGET` copies X-21 to a new
+     X-32 after X-31. Then set each field.
+   - `changelog FILE CHANGE REASON REFERENCE` appends a change-log row.
+   - `add-row FILE decision|later|trace|tdd-trace VALUES...` and
+     `set-cell FILE trace X-21 Status CURRENT` edit the registers.
+   - `replace-all FILE OLD NEW`, and `rows` or `show FILE X-21` to read.
+3. Review. Run `python3 scripts/design-doc-edit.py diff /tmp/fdd-live.docx
+   /tmp/fdd-21.9.docx` and read every changed line.
+4. Stage. Run `python3 scripts/stage-design-docx.py /tmp/fdd-21.9.docx`.
+   It prints one https URL. The download matches the local file. The URL
+   lasts about an hour. Do not put that URL in a reply. It retries network
+   errors itself and prints one error line if it gives up.
+5. Update Drive once with the tool on the DRIVE UPDATE TOOL line. filePath
+   is that URL. keepRevisionForever is true. Leave mimeType unset. If the
+   tool is missing, renamed, or denied, stop and ask Brian. Do not use
+   another upload path.
+6. Check. Run `python3 scripts/check-design-doc.py FILE_ID
+   /tmp/fdd-21.9.docx`. Reply with the new first line only after it exits
+   0. The check compares paragraph text, the header, and the footer. A
+   byte hash of the export will not match.
+7. Description. If the Drive file description still names the previous
+   documentation version, set it in a second Drive update call that has no
+   filePath. When the tool has no top-level description field, pass it as
+   advanced.description. A top-level description the tool does not list
+   is ignored without an error.
+
+If the Drive update times out or returns "Tool execution error," it may
+still have landed. Run the check. If it exits 0, go on to step 7. If the
+live first line is still the previous version (the check's live: line, or
+a fresh download), stage again for a fresh URL and repeat step 5. Retry up
+to 3 times, then stop and ask Brian.
+
+Do not paste the .docx, its base64, a data URL, or its text into a tool
+call. Do not send the file through assistant storage. Do not create a
+second Google Doc.
 
 ## How to choose the next batch
 
