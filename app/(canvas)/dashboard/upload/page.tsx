@@ -46,7 +46,7 @@ export default function UploadPage() {
       fallback={
         <main className="upload-page profile-modal-theme-canvas">
           <UploadFrame>
-            <p className="upload-lead">Loading the upload page.</p>
+            <UploadWorkspace />
           </UploadFrame>
         </main>
       }
