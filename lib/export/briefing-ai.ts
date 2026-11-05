@@ -49,19 +49,20 @@ export async function loadBriefingAi(current: AiSearchRead): Promise<BriefingAi>
 
   const included = [...defaultWindowRuns(catalog.runs, windowEnd).included].sort(compareRuns);
   const stop = new AbortController();
-  let failed: Exclude<HistorySnapshotResult, { phase: "ready" }> | null = null;
+  const first: { failed: Exclude<HistorySnapshotResult, { phase: "ready" }> | null } = { failed: null };
   const loaded = await Promise.all(
     included.map((run) =>
       loadHistorySnapshot(getCanvasSupabase() as never, run.audit_run_id, { signal: stop.signal }).then((result) => {
-        if (result.phase !== "ready" && !failed && !stop.signal.aborted) {
-          failed = result;
+        if (result.phase !== "ready" && !first.failed && !stop.signal.aborted) {
+          first.failed = result;
           stop.abort();
         }
         return result;
       }),
     ),
   );
-  if (failed) {
+  if (first.failed) {
+    const failed = first.failed;
     const trend =
       failed.phase === "unavailable"
         ? { phase: "unavailable" as const, message: failed.message }
