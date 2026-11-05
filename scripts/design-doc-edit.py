@@ -59,6 +59,7 @@ import urllib.error
 import urllib.request
 
 SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.dont_write_bytecode = True
 
 FILE_IDS = {
     "fdd": "1PoeiXKR2twOaz_JcRN0e4ZQkUCuDD5qnnyrlt6ygkeU",
