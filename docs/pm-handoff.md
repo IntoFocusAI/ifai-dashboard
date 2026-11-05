@@ -118,7 +118,7 @@ Docs win if this block is stale.
   closeout. Next is PM22. Launch rows CURRENT: 54 of 92.
 - Main is d6b56e3 (header label 21.8). Publish only through the Cursor
   Google-docs plugin path in PR 137 (worker 21.9); the Toolbelt Drive
-  upload is gone. The two Drive descriptions may still say 20.9.
+  upload is gone. Drive file descriptions are no longer maintained.
 - Battery: the rotation is on (4 Nov 13:27 UTC). Runs Sun, Tue, Thu at
   06:00 UTC and publish themselves that evening ET. First rotated run
   1d73d3e9 (5 Nov): check AI Search no longer times out and Product Fact
