@@ -21,12 +21,13 @@ import {
 } from "@/lib/fender-canvas/machine-readability";
 import { schemaPageHref } from "@/lib/fender-canvas/spec-table-sort";
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
+import { brandSite } from "@/lib/brand-copy";
 
 const PAGE = 20;
 const ASIN_PREVIEW = 3;
 
 const COLUMNS: RetailColumn[] = [
-  { id: "page", name: "fender.com page", label: "fender.com page", width: 280, minWidth: 160, sort: "text" },
+  { id: "page", name: `${brandSite()} page`, label: `${brandSite()} page`, width: 280, minWidth: 160, sort: "text" },
   { id: "listings", name: "Amazon listings", label: "Amazon listings", width: 220, minWidth: 140, sort: "number" },
   { id: "missing", name: "Missing", label: "Missing", width: 160, minWidth: 110, sort: "text" },
   { id: "checked", name: "Checked", label: "Checked", width: 170, minWidth: 130, sort: "text" },
@@ -169,7 +170,7 @@ export function MachineReadabilityPageTable({
                 <Fragment key={row.url}>
                 <tr data-machine-page={row.url}>
                   <td>
-                    <strong>{row.model || "fender.com page"}</strong>
+                    <strong>{row.model || `${brandSite()} page`}</strong>
                     <br />
                     {href ? (
                       <a className="listing-link" href={href} target="_blank" rel="noopener noreferrer">

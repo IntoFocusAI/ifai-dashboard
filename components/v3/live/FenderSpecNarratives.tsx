@@ -1,16 +1,18 @@
 "use client";
 
-const ADDITIONAL_PROPERTY_DESC =
-  "The Schema.org field that can carry neck, pickup, and hardware specs. When it is missing from a found page, an assistant has no spec block to read there.";
+import { brandSite, isFenderClient } from "@/lib/brand-copy";
+
+const ADDITIONAL_PROPERTY_DESC = () =>
+  `The Schema.org field that can carry ${isFenderClient() ? "neck, pickup, and hardware specs" : "detailed product specs"}. When it is missing from a found page, an assistant has no spec block to read there.`;
 
 export function AdditionalPropertyTerm() {
   return (
     <span
       className="ifai-term"
       data-ifai-tooltip-title="additionalProperty"
-      data-ifai-tooltip-desc={ADDITIONAL_PROPERTY_DESC}
+      data-ifai-tooltip-desc={ADDITIONAL_PROPERTY_DESC()}
       tabIndex={0}
-      aria-label={`additionalProperty: ${ADDITIONAL_PROPERTY_DESC}`}
+      aria-label={`additionalProperty: ${ADDITIONAL_PROPERTY_DESC()}`}
     >
       additionalProperty
     </span>

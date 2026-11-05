@@ -275,7 +275,7 @@ test("each wrong answer carries its fender.com spec page", () => {
   assert.equal(wrong[0].catalog, true);
   assert.equal(wrong[0].sourceUrl, STRAT.url);
   const panel = readFileSync("components/v3/live/ai-search/AiDriftPanel.tsx", "utf8").replace(/\s+/g, " ");
-  assert.match(panel, /row\.catalog && row\.sourceUrl \? .*<ExternalLink href=\{row\.sourceUrl\}>fender\.com spec page<\/ExternalLink>/);
+  assert.match(panel, /row\.catalog && row\.sourceUrl \? .*<ExternalLink href=\{row\.sourceUrl\}>\{brandSite\(\)\} spec page<\/ExternalLink>/);
 });
 
 test("rows where Amazon disagrees with fender.com are flagged; spacing and case are not a disagreement", () => {
@@ -517,7 +517,7 @@ test("the drawer names the catalog product and links its Amazon listing", () => 
   const drawer = readFileSync("components/v3/live/ai-search/FactCheckEvidence.tsx", "utf8").replace(/\s+/g, " ");
   assert.match(drawer, /catalog \? \( <p style=\{\{ \.\.\.mutedText, marginTop: 0 \}\} data-ai-fact-catalog-intro>/);
   assert.match(drawer, /<td>ASIN<\/td> <td>\{listing \? <ExternalLink href=\{listing\}>\{catalog\.asin\}<\/ExternalLink> : catalog\.asin\}<\/td>/);
-  for (const label of ["Fender SKU", "Spec checked", "Amazon value"]) assert.ok(drawer.includes(`<td>${label}</td>`), label);
+  for (const label of ["{brandName()} SKU", "Spec checked", "Amazon value"]) assert.ok(drawer.includes(`<td>${label}</td>`), label);
   assert.match(drawer, /catalog\?\.amazonDiffers \?/);
   assert.match(drawer, /IntoFocus sends to every engine on purpose\./, "the fixed-question intro stays for rows without a product");
   assert.doesNotMatch(drawer, /\stitle=/);

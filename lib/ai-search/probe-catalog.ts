@@ -1,5 +1,6 @@
 import { categoryLabel, engineLabel } from "@/lib/ai-search/run-metrics";
 import type { AiProbeCoverageRow, AiProbeRow, AiSearchSnapshot } from "@/lib/ai-search/types";
+import { isFenderClient } from "@/lib/brand-copy";
 
 /** Collector v15 columns on canvas_ai_probes and canvas_ai_history_probes. NULL until the rotation is on. */
 export const PROBE_CATALOG_COLUMNS =
@@ -148,7 +149,10 @@ export type RotationSummary = { label: string; tip: string };
 
 /** "Catalog rotation, cycle 3" and the rule. Only called once a fact check names a catalog product. */
 export function rotationSummary(cycles: readonly number[], windowed = false): RotationSummary {
-  const picked = `IntoFocus picked these products by its catalog rotation rule: ${CATALOG_ROTATION_RULE}.`;
+  // The stored rule is Fender's rotation plan. Other clients name the rule without its Fender counts.
+  const picked = isFenderClient()
+    ? `IntoFocus picked these products by its catalog rotation rule: ${CATALOG_ROTATION_RULE}.`
+    : "IntoFocus picked these products by its catalog rotation rule.";
   if (cycles.length === 0) return { label: "Catalog rotation", tip: picked };
   const span = cycles.length === 1 ? `cycle ${cycles[0]}` : `cycles ${cycles[0]} to ${cycles[cycles.length - 1]}`;
   return {

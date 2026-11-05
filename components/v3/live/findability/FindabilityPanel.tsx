@@ -19,8 +19,10 @@ import {
   countFindability,
   findabilityShape,
   rowsForOutcome,
+  sheetSplit,
   type FindabilityBucket,
 } from "@/lib/findability/outcomes";
+import { brandName } from "@/lib/client/active-client";
 
 function Term({ title, description, children }: { title: string; description: string; children: ReactNode }) {
   return (
@@ -108,6 +110,7 @@ export function FindabilityPanel() {
     () => (read.phase === "ready" ? countFindability(read.rows) : null),
     [read],
   );
+  const split = useMemo(() => (read.phase === "ready" ? sheetSplit(read.rows) : null), [read]);
   const filtered = useMemo(() => {
     if (read.phase !== "ready" || !selected) return [];
     return rowsForOutcome(read.rows, selected);
@@ -138,6 +141,19 @@ export function FindabilityPanel() {
   return (
     <div className="findability-panel" data-findability-shape={shape} data-findability-total={counts!.total}>
       <FindabilityLead counts={counts!} rows={read.rows} />
+      {split ? (
+        <p className="findability-note" style={{ marginTop: 12 }} data-findability-sheet-split="true">
+          On {brandName()}&apos;s product sheet: {formatInt(split.onSheet.confirmed)} of{" "}
+          {formatInt(split.onSheet.total)} listings have an official page.{" "}
+          <Term
+            title={`Not on ${brandName()}'s product sheet`}
+            description={`Amazon listings titled ${brandName()} that are not on the brand's product sheet: older accessories, discontinued models, and imports sold by resellers. The US site carries few of them.`}
+          >
+            Other {brandName()}-titled listings
+          </Term>
+          : {formatInt(split.offSheet.confirmed)} of {formatInt(split.offSheet.total)}.
+        </p>
+      ) : null}
       <p className="findability-note" style={{ marginTop: 12 }}>
         Each listing is one outcome. {FAMILY_IS_NOT_EXACT} Open a count to see the listings, titles,
         and official pages behind it.

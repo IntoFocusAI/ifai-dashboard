@@ -33,6 +33,7 @@ import {
   type MinimalEntry,
   type MinimalFigure,
 } from "@/lib/fender-canvas/minimal-metric-kit";
+import { brandSite } from "@/lib/brand-copy";
 
 const LISTINGS_IN_READ = "listings in this read";
 
@@ -139,7 +140,7 @@ export const READINESS_ENTRIES: MinimalEntry[] = [
     read: (ctx) => {
       const hero = machineReadabilityHeroes(ctx.bundle.specPages ?? null)[0];
       const missing = failedReadTip(ctx.bundle, "specPages") ?? hero.explainer;
-      return counted(hero.ratio, "found fender.com pages", hero.pie, hero.tip, missing);
+      return counted(hero.ratio, `found ${brandSite()} pages`, hero.pie, hero.tip, missing);
     },
   }),
   {
@@ -149,7 +150,7 @@ export const READINESS_ENTRIES: MinimalEntry[] = [
     label: "Product basics present",
     read: (ctx) =>
       pageReadFigure(ctx, "specPages") ??
-      heroFigure(machineReadabilityHeroes(ctx.bundle.specPages ?? null)[1], "fender.com pages checked", "The fender.com page read could not be loaded."),
+      heroFigure(machineReadabilityHeroes(ctx.bundle.specPages ?? null)[1], `${brandSite()} pages checked`, `The ${brandSite()} page read could not be loaded.`),
   },
   bubbleEntry({
     id: "sat-tables",

@@ -4,8 +4,9 @@ import { joinBrands } from "@/lib/ai-search/competitors";
 import { formatInt } from "@/lib/fender-canvas/format";
 import { rotationSummary, type RotationSummary } from "@/lib/ai-search/probe-catalog";
 import { pct } from "@/lib/ai-search/summary";
+import { brandName, brandSite } from "@/lib/brand-copy";
 
-const FACT = (n: number) => `${n} Fender product fact${n === 1 ? "" : "s"}`;
+const FACT = (n: number) => `${n} ${brandName()} product fact${n === 1 ? "" : "s"}`;
 const ANSWER = (n: number) => `${n} answer${n === 1 ? "" : "s"}`;
 const CALL = (n: number) => `${n} fact-check call${n === 1 ? "" : "s"}`;
 
@@ -126,7 +127,7 @@ function catalogMethodLine(c: FactCheckCoverage, unit: string, rotation: Rotatio
     fixed > 0
       ? `${n} products were checked: ${c.catalogProducts} catalog products counted by ASIN, and ${fixed} fixed ${fixed === 1 ? "question" : "questions"}.`
       : `${n} catalog ${n === 1 ? "product was" : "products were"} checked, counted by ASIN.`;
-  const compared = `${c.factsChecked} of ${n} ${c.factsChecked === 1 ? "was" : "were"} compared with the product's own fender.com spec value in this ${unit}.`;
+  const compared = `${c.factsChecked} of ${n} ${c.factsChecked === 1 ? "was" : "were"} compared with the product's own ${brandSite()} spec value in this ${unit}.`;
   return {
     rotation: rotation.label,
     products: `${n} product${n === 1 ? "" : "s"} checked`,
@@ -153,11 +154,11 @@ export function factCheckMethodLine(
   if (c.catalogProducts > 0) return catalogMethodLine(c, unit, rotationSummary(cycles, windowed));
   const n = c.questionsSent;
   const one = n === 1;
-  const named = `Each fact-check question names one Fender product, and the question set names ${n}. IntoFocus sends ${one ? "it" : "them"} to every engine on purpose.`;
-  const compared = `${c.factsChecked} of ${n} ${c.factsChecked === 1 ? "was" : "were"} compared with a fact verified on an official Fender page in this ${unit}.`;
+  const named = `Each fact-check question names one ${brandName()} product, and the question set names ${n}. IntoFocus sends ${one ? "it" : "them"} to every engine on purpose.`;
+  const compared = `${c.factsChecked} of ${n} ${c.factsChecked === 1 ? "was" : "were"} compared with a fact verified on an official ${brandName()} page in this ${unit}.`;
   const picked = one
-    ? "How this product was picked, and what part of Fender's catalog it stands for, is not recorded, so this result covers this product only."
-    : `How these products were picked, and what part of Fender's catalog they stand for, is not recorded, so this result covers these ${n} products only.`;
+    ? `How this product was picked, and what part of ${brandName()}'s catalog it stands for, is not recorded, so this result covers this product only.`
+    : `How these products were picked, and what part of ${brandName()}'s catalog they stand for, is not recorded, so this result covers these ${n} products only.`;
   return {
     rotation: null,
     products: `${n} product${one ? "" : "s"} checked`,
@@ -172,18 +173,18 @@ export const AMAZON_DIFFERS_TITLE = "Amazon listing differs";
 export function amazonMismatchNote(c: FactCheckCoverage): string | null {
   if (c.amazonMismatches === 0) return null;
   const n = c.amazonMismatches;
-  return `${n} ${n === 1 ? "product's Amazon listing shows" : "products' Amazon listings show"} a different value than fender.com for the checked spec.`;
+  return `${n} ${n === 1 ? "product's Amazon listing shows" : "products' Amazon listings show"} a different value than ${brandSite()} for the checked spec.`;
 }
 
 export function amazonDiffersTip(amazon: string | null, fenderValue: string | null): string {
-  return `Amazon lists "${amazon ?? ""}". The fender.com spec page lists "${fenderValue ?? ""}".`;
+  return `Amazon lists "${amazon ?? ""}". The ${brandSite()} spec page lists "${fenderValue ?? ""}".`;
 }
 
 export const CATALOG_COVERAGE_TITLE = "Catalog models checked";
 
 /** Tooltip on each "N of M" cell of the catalog table. */
 export function catalogCoverageTip(basis: "run" | "selection", inScope: number): string {
-  const counted = "counted by fender.com spec page, then SKU";
+  const counted = `counted by ${brandSite()} spec page, then SKU`;
   return basis === "run"
     ? `Distinct catalog models checked in this run, ${counted}, of the ${formatInt(inScope)} models in scope.`
     : `Distinct catalog models checked across the runs in this selection, ${counted}, of the ${formatInt(inScope)} models in scope in the newest run.`;
@@ -195,13 +196,13 @@ export const ANCHOR_TIP = "IntoFocus asks this product in every run, on top of t
 
 /** Drawer tooltip on "catalog products", once a check names the product it asked about. */
 export const CATALOG_PICK_TIP =
-  "Catalog products are counted by ASIN. Each check compares the answer with that product's own value on its fender.com spec page.";
+  `Catalog products are counted by ASIN. Each check compares the answer with that product's own value on its ${brandSite()} spec page.`;
 
 /** Drawer tooltip on "product questions": the pick is not recorded. */
 export function factCheckPickTip(n: number): string {
   return n === 1
-    ? "This fact-check question names one Fender product. How it was picked, and what part of Fender's catalog it stands for, is not recorded."
-    : `Each fact-check question names one Fender product. How these ${n} products were picked, and what part of Fender's catalog they stand for, is not recorded.`;
+    ? `This fact-check question names one ${brandName()} product. How it was picked, and what part of ${brandName()}'s catalog it stands for, is not recorded.`
+    : `Each fact-check question names one ${brandName()} product. How these ${n} products were picked, and what part of ${brandName()}'s catalog they stand for, is not recorded.`;
 }
 
 export const FACT_CHECK_SCOPE_LINE = "These checks cover the selected facts only.";
@@ -228,7 +229,7 @@ export function factCheckAccuracyTip(c: FactCheckCoverage, windowed = false): st
 }
 
 export const UNVERIFIED_FLAG_TIP =
-  "The answer carries a flag that was never verified against a Fender page, so it is not reported as a contradiction.";
+  `The answer carries a flag that was never verified against a ${brandName()} page, so it is not reported as a contradiction.`;
 
 /** Engines that returned nothing. Secondary, never the headline. */
 export function factCheckCoverageNote(c: FactCheckCoverage): string | null {
@@ -241,7 +242,7 @@ export function factCheckPendingNote(c: FactCheckCoverage): string | null {
   if (c.answersWithoutFact === 0) return null;
   const questions = c.questionsWithoutFact.length;
   const unit = c.catalogProducts > 0 ? "product" : "question";
-  return `${questions} ${unit}${questions === 1 ? "" : "s"} ${questions === 1 ? "has" : "have"} no verified Fender fact yet, so ${ANSWER(c.answersWithoutFact)} ${c.answersWithoutFact === 1 ? "was" : "were"} not evaluated.`;
+  return `${questions} ${unit}${questions === 1 ? "" : "s"} ${questions === 1 ? "has" : "have"} no verified ${brandName()} fact yet, so ${ANSWER(c.answersWithoutFact)} ${c.answersWithoutFact === 1 ? "was" : "were"} not evaluated.`;
 }
 
 /** Short form for the map bubble and the guided tour. */

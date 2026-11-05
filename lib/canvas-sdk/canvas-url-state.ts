@@ -22,7 +22,7 @@ const CANVAS_PARAM_KEYS = [
   "profile",
 ] as const;
 
-const PRESERVED_QUERY_KEYS = ["next", "ai-history"] as const;
+const PRESERVED_QUERY_KEYS = ["next", "ai-history", "client"] as const;
 
 /** Row-level drill-down inside an open spoke, e.g. `evidence=sim:1161`. Dropped with the spoke. */
 const SPOKE_QUERY_KEYS = ["evidence"] as const;

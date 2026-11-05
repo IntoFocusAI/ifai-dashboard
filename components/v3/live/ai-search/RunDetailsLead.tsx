@@ -15,6 +15,7 @@ import type { AiSearchSnapshot } from "@/lib/ai-search/types";
 import type { RoleTally } from "@/lib/ai-search/question-role";
 import { formatInt } from "@/lib/fender-canvas/format";
 import { hasMixedScoringMethods } from "@/lib/ai-search/window-display";
+import { leadBrand } from "@/lib/brand-copy";
 
 function ratePie(
   id: string,
@@ -28,7 +29,7 @@ function ratePie(
     total: tally.resolved,
     totalLabel: "resolved answers",
     slices: [
-      { key: "fender", label: "Fender/Squier leads", count: tally.fenderWins },
+      { key: "fender", label: `${leadBrand()} leads`, count: tally.fenderWins },
       { key: "other", label: "Rest of resolved answers", count: rest },
     ].filter((slice) => slice.count > 0),
   };
@@ -71,7 +72,7 @@ function RateSide({
           </span>
           <CitationPieDisc
             pie={ratePie(pieId, label, tally)}
-            tip={`${formatInt(tally.fenderWins)} Fender/Squier leads. ${formatInt(tally.resolved - tally.fenderWins)} rest of resolved answers. Total ${formatInt(tally.resolved)} resolved answers.`}
+            tip={`${formatInt(tally.fenderWins)} ${leadBrand()} leads. ${formatInt(tally.resolved - tally.fenderWins)} rest of resolved answers. Total ${formatInt(tally.resolved)} resolved answers.`}
           />
         </div>
       ) : (

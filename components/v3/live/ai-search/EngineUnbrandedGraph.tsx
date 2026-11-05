@@ -8,6 +8,7 @@ import { AI_TABS } from "@/lib/ai-search/canvas-surfaces";
 import type { RoleGroupTally } from "@/lib/ai-search/question-role";
 import { engineLabel, isSmallSample } from "@/lib/ai-search/run-metrics";
 import { pct, SMALL_SAMPLE_LABEL } from "@/lib/ai-search/summary";
+import { leadBrand } from "@/lib/brand-copy";
 
 const SIM = AI_TABS.simulations;
 
@@ -64,7 +65,7 @@ export function EngineUnbrandedGraph({
                 <div
                   className="ai-engine-unbranded-bar"
                   role="img"
-                  aria-label={`${name}: ${tally.fenderWins} Fender/Squier leads, ${rest} rest of resolved answers, of ${tally.resolved} resolved answers.`}
+                  aria-label={`${name}: ${tally.fenderWins} ${leadBrand()} leads, ${rest} rest of resolved answers, of ${tally.resolved} resolved answers.`}
                 >
                   {tally.fenderWins > 0 ? (
                     <span
@@ -86,7 +87,7 @@ export function EngineUnbrandedGraph({
                   ) : null}
                 </div>
                 <div className="ai-engine-unbranded-legend">
-                  <span data-ai-seg-label="fender">Fender/Squier leads: {tally.fenderWins}</span>
+                  <span data-ai-seg-label="fender">{leadBrand()} leads: {tally.fenderWins}</span>
                   <span data-ai-seg-label="other">Rest of resolved answers: {rest}</span>
                 </div>
               </li>

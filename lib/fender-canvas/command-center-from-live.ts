@@ -1,4 +1,5 @@
-import { FMIC_CLIENT_KEY } from "@/lib/set-aside/keys";
+import { clientStorageKey } from "@/lib/client/active-client";
+import { activeSetAsideClientKey } from "@/lib/set-aside/keys";
 import type { CommandCenterSpec } from "@/lib/canvas-sdk/types";
 import { aiCommandSummary, aiPriorityItems } from "@/lib/ai-search/canvas-surfaces";
 import type { AiSearchRead } from "@/lib/ai-search/types";
@@ -13,12 +14,14 @@ import {
 import { MAP_PRICES_NOT_STORED } from "@/lib/fender-canvas/portfolio-retail";
 import { mapReadLine } from "@/lib/fender-canvas/retail-copy";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
+import { brandName, brandSite, isFenderClient } from "@/lib/brand-copy";
 
-const MAP_CHANNEL_WHY =
-  "Open the MAP tab for the current below-MAP listings. Amazon, Walmart, and Musician's Friend appear only when this read stored a price for that channel. Any other retailer appears only when a stored price exists for that channel.";
+const MAP_CHANNEL_WHY = isFenderClient()
+  ? "Open the MAP tab for the current below-MAP listings. Amazon, Walmart, and Musician's Friend appear only when this read stored a price for that channel. Any other retailer appears only when a stored price exists for that channel."
+  : "Open the MAP tab for the current below-MAP listings. A retailer appears only when this read stored a price for that channel.";
 
 const MAP_PRICES_NOT_STORED_WHY =
-  "Fender MAP prices have not been stored. Amazon, Walmart, and Musician's Friend prices still show when a price is stored for that channel. A missing price stays blank.";
+  `${brandName()} MAP prices have not been stored. ${isFenderClient() ? "Amazon, Walmart, and Musician's Friend prices" : "Retail prices"} still show when a price is stored for that channel. A missing price stays blank.`;
 
 /** The MAP tab shows this sentence while the reading is unfinished or missing. */
 function mapMissingSentence(retail: RetailCanvasRead): string | null {
@@ -60,8 +63,8 @@ export function buildLiveCommandCenter(
     desc: "The highest-value moves across the monitored electric catalog, ranked by what they cost you while they sit open.",
     summary: summaryParts.join(" "),
     openByDefault: true,
-    storageKey: "ifai:fender:command-center",
-    setAsideClientKey: FMIC_CLIENT_KEY,
+    storageKey: clientStorageKey("ifai:fender:command-center"),
+    setAsideClientKey: activeSetAsideClientKey(),
     items: [
       {
         id: "buybox-suppression",
@@ -77,10 +80,10 @@ export function buildLiveCommandCenter(
       ...aiCritical,
       {
         id: "schema-coverage",
-        title: "fender.com pages are missing machine-readable specs",
+        title: `${brandSite()} pages are missing machine-readable specs`,
         why: schemaPages
-          ? `${formatInt(schemaPages.missingSpecBlock)} of ${formatInt(schemaPages.pages)} fender.com product pages have no spec block, so AI engines cannot read neck, pickup, and hardware specs there as product data.`
-          : "The fender.com page read could not be loaded.",
+          ? `${formatInt(schemaPages.missingSpecBlock)} of ${formatInt(schemaPages.pages)} ${brandSite()} product pages have no spec block, so AI engines cannot read ${isFenderClient() ? "neck, pickup, and hardware specs" : "detailed specs"} there as product data.`
+          : `The ${brandSite()} page read could not be loaded.`,
         severity: "high",
         spokeId: "specs",
         subTab: "Brand-Site Specs",

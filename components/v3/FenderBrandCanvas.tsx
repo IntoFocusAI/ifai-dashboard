@@ -6,6 +6,7 @@ import { AiSearchProvider, useAiSearchRead } from "@/components/v3/live/ai-searc
 import { useMapAiSearch } from "@/components/v3/live/ai-search/useApiEngineLoad";
 import { FindabilityProvider, useFindabilityRead } from "@/components/v3/live/findability/FindabilityContext";
 import { CanvasLoadingShell } from "@/components/v3/live/CanvasLoadingShell";
+import { ClientSwitcher } from "@/components/v3/live/ClientSwitcher";
 import { DataFreshnessBar } from "@/components/v3/live/DataFreshnessBar";
 import { useAmazonFieldTotals, useStockLossRead } from "@/components/v3/live/useMinimalMetricReads";
 import { usePortfolioRetailSnapshot } from "@/components/v3/live/usePortfolioRetailSnapshot";
@@ -104,7 +105,12 @@ function FenderBrandCanvasBody({
       stockLoss,
       amazonFieldTotals,
       metricStorageSuffix: viewerStorageScope(viewerId),
-      headerSlot: <DataFreshnessBar fresh={bundle.fresh} stale={stale} />,
+      headerSlot: (
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          <ClientSwitcher />
+          <DataFreshnessBar fresh={bundle.fresh} stale={stale} />
+        </div>
+      ),
     });
     if (!panelDescription || !built.spokes.aeo) return built;
     return {

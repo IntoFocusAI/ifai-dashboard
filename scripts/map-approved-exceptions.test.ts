@@ -178,7 +178,7 @@ test("withoutApprovedExceptions keeps rows with no ASIN and matches case-insensi
 
 test("the live hook and the MAP tab both read the MAP set-aside store", () => {
   const hook = read("components/v3/live/usePortfolioRetailSnapshot.ts");
-  assert.match(hook, /useSetAsides\(FMIC_CLIENT_KEY, SET_ASIDE_CHECKS\.mapPricing\)/);
+  assert.match(hook, /useSetAsides\(activeSetAsideClientKey\(\), SET_ASIDE_CHECKS\.mapPricing\)/);
   assert.match(hook, /withMapApprovedExceptions/);
   const panel = read("components/v3/live/MapChannelPanel.tsx");
   assert.match(panel, /withoutApprovedExceptions\(rows, exceptions\)/);

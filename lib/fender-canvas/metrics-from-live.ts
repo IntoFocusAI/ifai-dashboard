@@ -14,6 +14,7 @@ import {
 } from "@/lib/fender-canvas/format";
 import { specPageCounts } from "@/lib/fender-canvas/machine-readability";
 import { findabilityWidgetCopy, type FindabilityRead } from "@/lib/findability/copy";
+import { brandSite } from "@/lib/brand-copy";
 
 function toneFromPct(pct: number | null, dangerBelow: number, warnBelow: number) {
   if (pct == null) return "neutral" as const;
@@ -291,11 +292,11 @@ function liveMetrics(
     machineReadableSpecs: {
       id: "machine-readable-specs",
       spokeId: "specs",
-      label: "fender.com Spec Block",
+      label: `${brandSite()} Spec Block`,
       value: schemaPages ? formatPct(schemaPages.specBlockPct) : "Not available*",
       detail: schemaPages
-        ? `${formatInt(schemaPages.withSpecBlock)} of ${formatInt(schemaPages.pages)} fender.com pages`
-        : "The fender.com page read could not be loaded.",
+        ? `${formatInt(schemaPages.withSpecBlock)} of ${formatInt(schemaPages.pages)} ${brandSite()} pages`
+        : `The ${brandSite()} page read could not be loaded.`,
       tone: schemaPages ? toneFromPct(schemaPages.specBlockPct, 95, 98) : "warning",
       subTab: "Brand-Site Specs",
       provenance: "live",
@@ -305,7 +306,7 @@ function liveMetrics(
       spokeId: "specs",
       label: "Pages Missing a Spec Block",
       value: schemaPages ? formatInt(schemaPages.missingSpecBlock) : "Not available*",
-      detail: "fender.com product pages",
+      detail: `${brandSite()} product pages`,
       tone: schemaPages && schemaPages.missingSpecBlock === 0 ? "success" : "warning",
       subTab: "Brand-Site Specs",
       provenance: "live",

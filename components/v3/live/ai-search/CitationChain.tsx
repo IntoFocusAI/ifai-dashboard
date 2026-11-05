@@ -6,6 +6,7 @@ import { CitationFilteredMark } from "@/components/v3/live/ai-search/CitationFil
 import { citationChain, citationOwnedLinksLead } from "@/lib/ai-search/citation-lead";
 import type { CitationRead } from "@/lib/ai-search/citations";
 import { pct } from "@/lib/ai-search/summary";
+import { brandOwned, brandSite } from "@/lib/brand-copy";
 
 export type CitationLeadInput = { owned: number; total: number };
 
@@ -14,7 +15,7 @@ export const CHAIN_DEFINITIONS = {
   showed: "Answers that listed web pages as sources. The sites and shares on this tab come from these answers.",
   none: "Answers given without showing a web page. These rely on what the model already knows.",
   links: "Every web page those answers listed. One answer can list several.",
-  owned: "Links that lead to fender.com and other Fender-owned sites.",
+  owned: `Links that lead to ${brandSite()} and other ${brandOwned()} sites.`,
   other: "Links to every other site, such as retailers, editorial and review sites, forums, and competitor brands.",
 } as const;
 
@@ -228,13 +229,13 @@ export function CitationChain({
               {ownedLead.figure}
             </span>
           ) : (
-            <NotAvailable desc="No links in this view, so there is no Fender-owned share to show." />
+            <NotAvailable desc={`No links in this view, so there is no ${brandOwned()} share to show.`} />
           )}
           {ownedLead.population ? mark : null}
         </span>
         <span className="citation-chain-label" data-citation-lead-label>
-          <Term name="To Fender-owned sites" desc={CHAIN_DEFINITIONS.owned}>
-            to Fender-owned sites
+          <Term name={`To ${brandOwned()} sites`} desc={CHAIN_DEFINITIONS.owned}>
+            to {brandOwned()} sites
           </Term>
         </span>
         <Band
@@ -251,7 +252,7 @@ export function CitationChain({
         />
         {ownedLead.population ? (
           <span className="sr-only" data-citation-lead-population>
-            {count(owned)} of {count(links)} links lead to Fender-owned sites
+            {count(owned)} of {count(links)} links lead to {brandOwned()} sites
           </span>
         ) : null}
       </section>

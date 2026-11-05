@@ -8,7 +8,7 @@ import {
 import type { PortfolioRetailSnapshot } from "@/lib/fender-canvas/portfolio-retail";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
 import { loadPortfolioRetailSnapshot } from "@/lib/fender-canvas/portfolio-retail-queries";
-import { FMIC_CLIENT_KEY, SET_ASIDE_CHECKS } from "@/lib/set-aside/keys";
+import { SET_ASIDE_CHECKS, activeSetAsideClientKey } from "@/lib/set-aside/keys";
 import { useSetAsides } from "@/lib/set-aside/set-aside";
 
 // One retail read while any caller is mounted: the canvas and the Divisions table both call this hook.
@@ -29,7 +29,7 @@ function loadSharedSnapshot(): Promise<PortfolioRetailSnapshot> {
 export function usePortfolioRetailSnapshot(): RetailCanvasRead {
   const [read, setRead] = useState<RetailCanvasRead>({ phase: "loading" });
   // Same per-check store the MAP table writes to, so a set-aside or reopen updates every MAP figure.
-  const mapSetAsides = useSetAsides(FMIC_CLIENT_KEY, SET_ASIDE_CHECKS.mapPricing);
+  const mapSetAsides = useSetAsides(activeSetAsideClientKey(), SET_ASIDE_CHECKS.mapPricing);
 
   useEffect(() => {
     let cancelled = false;

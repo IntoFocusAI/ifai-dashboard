@@ -106,7 +106,10 @@ test("urgentInterventionsHtml renders five ranked rows with not-stored actions w
 });
 
 test("urgentInterventionsHtml keeps the five operator action lines for stored readings", () => {
-  const helper = read("lib/fender-canvas/urgent-interventions-html.ts");
+  // Brand words are read at call time; Fender is the default client.
+  const helper = read("lib/fender-canvas/urgent-interventions-html.ts")
+    .replaceAll("${brandSite()}", "fender.com")
+    .replaceAll("${brandName()}", "Fender");
   for (const line of STORED_ACTIONS) {
     assert.match(helper, new RegExp(line.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   }

@@ -12,6 +12,7 @@ import { headlineCompetitorWins } from "@/lib/ai-search/question-role";
 import { summarizeRun } from "@/lib/ai-search/summary";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
 import { formatInt } from "@/lib/fender-canvas/format";
+import { leadBrand } from "@/lib/brand-copy";
 
 function brandKey(brand: string): string {
   return brand.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "other";
@@ -26,7 +27,7 @@ function HeroFigure({ snapshot, mixed }: { snapshot: AiSearchSnapshot; mixed: bo
   const at = figure.indexOf(count);
   const pie = competitorLeadPie(competitorWins, resolved);
   const tip = pie
-    ? `${formatInt(competitorWins)} competitor led. ${formatInt(resolved - competitorWins)} Fender/Squier led. Total ${formatInt(resolved)} resolved unbranded discovery answers.`
+    ? `${formatInt(competitorWins)} competitor led. ${formatInt(resolved - competitorWins)} ${leadBrand()} led. Total ${formatInt(resolved)} resolved unbranded discovery answers.`
     : undefined;
 
   return (

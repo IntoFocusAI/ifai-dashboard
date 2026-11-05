@@ -36,6 +36,7 @@ import {
 import type { AiCallRow, AiSearchSnapshot } from "@/lib/ai-search/types";
 import { isWindowHistoryKind } from "@/lib/ai-search/window-display";
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
+import { brandName, leadBrand } from "@/lib/brand-copy";
 
 const SIM_COLUMNS = [
   clientColumn("prompt", "Prompt", "text", 280, 160),
@@ -132,13 +133,13 @@ function Explorer({ snapshot }: { snapshot: AiSearchSnapshot }) {
       <RunDetailsLead snapshot={snapshot} />
       <p className="ai-lead-explainer" style={mutedText}>
         Shopping prompts are buying questions, scored by which brand the answer names most. A{" "}
-        <AiTerm term="product fact check">product fact check</AiTerm> tests one published Fender fact instead.
+        <AiTerm term="product fact check">product fact check</AiTerm> tests one published {brandName()} fact instead.
       </p>
       <SimulationFilters rows={snapshot.calls} filter={filter} onChange={changeFilter} />
       {filter.role ? (
         <p style={mutedText} data-ai-role-filter={filter.role}>
           Showing {ROLE_LABELS[filter.role]}
-          {filter.outcome === "resolved" ? " with a clear leader" : filter.outcome === "fender_win" ? " where Fender/Squier was named most" : ""}.
+          {filter.outcome === "resolved" ? " with a clear leader" : filter.outcome === "fender_win" ? ` where ${leadBrand()} was named most` : ""}.
         </p>
       ) : null}
       {filter.brand ? (

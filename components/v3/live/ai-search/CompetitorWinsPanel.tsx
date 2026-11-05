@@ -20,6 +20,7 @@ import { formatInt } from "@/lib/fender-canvas/format";
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
 import { hasMixedScoringMethods, isWindowHistoryKind } from "@/lib/ai-search/window-display";
+import { leadBrand } from "@/lib/brand-copy";
 
 const COLUMNS = [
   clientColumn("competitor", "Competitor", "text", 160, 110),
@@ -88,7 +89,7 @@ function Wins({ snapshot }: { snapshot: AiSearchSnapshot }) {
       ) : (
         <>
           <div className="content-box ai-competitor-tallies" style={{ marginTop: 12 }}>
-            <div className="content-box-title">Competitors named more than Fender/Squier</div>
+            <div className="content-box-title">Competitors named more than {leadBrand()}</div>
             <ResizableTable
               tableId="competitor-wins"
               columns={COLUMNS}

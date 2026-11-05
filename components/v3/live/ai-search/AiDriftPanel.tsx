@@ -31,6 +31,7 @@ import { catalogCycles } from "@/lib/ai-search/probe-catalog";
 import { engineLabel, formatRunTime, modelLabel } from "@/lib/ai-search/run-metrics";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
 import { isWindowHistoryKind } from "@/lib/ai-search/window-display";
+import { brandName, brandSite } from "@/lib/brand-copy";
 
 function FactChecks({ snapshot }: { snapshot: AiSearchSnapshot }) {
   const history = useAiHistoryOptional();
@@ -56,7 +57,7 @@ function FactChecks({ snapshot }: { snapshot: AiSearchSnapshot }) {
     <div className="ai-lead-explainer" data-ai-accuracy-lead style={{ marginTop: 0 }}>
       <div className="content-box-title" style={{ marginTop: 0 }}>
         <span>
-          Do AI answers match Fender&apos;s published <AiTerm term="product fact check">product facts</AiTerm>?
+          Do AI answers match {brandName()}&apos;s published <AiTerm term="product fact check">product facts</AiTerm>?
         </span>
         <span
           className={`tag-badge ${coverage.contradictions ? "tag-danger" : "tag-success"}`}
@@ -139,17 +140,17 @@ function FactChecks({ snapshot }: { snapshot: AiSearchSnapshot }) {
 
       {contradictions.length ? (
         <div className="content-box" style={{ marginTop: 12 }}>
-          <div className="content-box-title">Answers that contradict a Fender fact</div>
+          <div className="content-box-title">Answers that contradict a {brandName()} fact</div>
           {contradictions.map((row) => (
             <div key={row.key} className="action-card critical" style={{ marginTop: 6 }}>
               <div className="action-head">{row.prompt}</div>
               <div className="action-details">
-                {engineLabel(row.engine)} · {modelLabel(row.model)}. Fender publishes: {row.claim}. The answer said:{" "}
+                {engineLabel(row.engine)} · {modelLabel(row.model)}. {brandName()} publishes: {row.claim}. The answer said:{" "}
                 {row.evidence}
                 {row.catalog && row.sourceUrl ? (
                   <>
                     {" "}
-                    <ExternalLink href={row.sourceUrl}>fender.com spec page</ExternalLink>
+                    <ExternalLink href={row.sourceUrl}>{brandSite()} spec page</ExternalLink>
                   </>
                 ) : null}
               </div>
@@ -180,7 +181,7 @@ function FactChecks({ snapshot }: { snapshot: AiSearchSnapshot }) {
             ) : null}
             {drift.facts.length ? (
               <li>
-                Each verified fact was read from the linked Fender page on {formatRunTime(drift.facts[0].verifiedAt)}.
+                Each verified fact was read from the linked {brandName()} page on {formatRunTime(drift.facts[0].verifiedAt)}.
               </li>
             ) : null}
           </ul>

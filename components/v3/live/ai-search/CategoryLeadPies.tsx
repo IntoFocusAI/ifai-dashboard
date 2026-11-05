@@ -19,6 +19,7 @@ import {
 } from "@/lib/ai-search/category-on-track";
 import { isSmallSample } from "@/lib/ai-search/run-metrics";
 import { SMALL_SAMPLE_LABEL } from "@/lib/ai-search/summary";
+import { leadBrand } from "@/lib/brand-copy";
 
 /** The icon and the word carry the status. Color only repeats it. */
 export const LEAD_STATUS_ICONS: Record<CategoryLeadStatus, LucideIcon> = {
@@ -36,12 +37,12 @@ const BADGE_TAG: Record<CategoryLeadStatus, string> = {
 };
 
 const LEGEND = [
-  { key: "fender", label: "Fender/Squier" },
+  { key: "fender", label: leadBrand() },
   { key: "competitor_brand", label: "Top rival" },
   { key: "other", label: "Other brands" },
 ];
 
-const ERROR_LEGEND = { key: "none", label: "Fender/Squier with a product error" };
+const ERROR_LEGEND = { key: "none", label: `${leadBrand()} with a product error` };
 
 export function Term({
   name,
