@@ -1,5 +1,6 @@
 "use client";
 
+import { PromptHistory } from "@/components/v3/prompts/PromptHistory";
 import "@/components/v3/prompts/prompts-editor.css";
 import {
   loadPrompts,
@@ -85,6 +86,7 @@ export function PromptsEditor({ onClose }: Props) {
   const [editingKey, setEditingKey] = useState<string | null>(null);
   const [editing, setEditing] = useState<Draft>(EMPTY_DRAFT);
   const [showRemoved, setShowRemoved] = useState(false);
+  const [selectedKey, setSelectedKey] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     const data = await loadPrompts();
@@ -153,6 +155,7 @@ export function PromptsEditor({ onClose }: Props) {
   }
 
   function startEdit(p: EditablePrompt) {
+    setSelectedKey(p.prompt_key);
     setEditingKey(p.prompt_key);
     setEditing({ text: p.prompt_text, category: p.category, newCategory: "" });
     setError(null);
@@ -168,15 +171,19 @@ export function PromptsEditor({ onClose }: Props) {
   }
 
   function remove(p: EditablePrompt) {
+    setSelectedKey(p.prompt_key);
     if (!window.confirm(`Remove prompt ${p.prompt_key}? It stops being asked from the next run. You can restore it later.`)) return;
     void run(() => setPromptActive(p.prompt_key, false), `Prompt ${p.prompt_key} removed.`);
   }
 
   function restore(p: EditablePrompt) {
+    setSelectedKey(p.prompt_key);
     void run(() => setPromptActive(p.prompt_key, true), `Prompt ${p.prompt_key} restored.`);
   }
 
   const canAdd = adding.text.trim().length >= 10 && draftCategory(adding).trim().length > 0;
+  const selected =
+    prompts.find((p) => p.prompt_key === selectedKey) ?? prompts.find((p) => p.active) ?? prompts[0] ?? null;
 
   return (
     <div className="pe-backdrop" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
@@ -237,11 +244,13 @@ export function PromptsEditor({ onClose }: Props) {
             being asked and can be restored.
           </p>
 
+          <PromptHistory promptKey={selected?.prompt_key ?? null} updatedAt={selected?.updated_at ?? null} />
+
           {loading ? <p className="pe-empty">Loading prompts…</p> : null}
 
           <ul className="pe-list">
             {active.map((p) => (
-              <li key={p.prompt_key} className="pe-item">
+              <li key={p.prompt_key} className={`pe-item${selected?.prompt_key === p.prompt_key ? " pe-item-selected" : ""}`}>
                 <div className="pe-item-meta">
                   <span className="pe-key">{p.prompt_key}</span>
                   <span className="pe-chip">{p.category}</span>
@@ -278,7 +287,14 @@ export function PromptsEditor({ onClose }: Props) {
                   </div>
                 ) : (
                   <div className="pe-item-main">
-                    <p className="pe-text">{p.prompt_text}</p>
+                    <button
+                      type="button"
+                      className="pe-text pe-select"
+                      aria-pressed={selected?.prompt_key === p.prompt_key}
+                      onClick={() => setSelectedKey(p.prompt_key)}
+                    >
+                      {p.prompt_text}
+                    </button>
                     <div className="pe-item-actions">
                       <button className="pe-icon-btn" disabled={disabled} onClick={() => startEdit(p)} aria-label={`Edit ${p.prompt_key}`} title="Edit">
                         <Pencil size={14} />
@@ -301,13 +317,20 @@ export function PromptsEditor({ onClose }: Props) {
               {showRemoved ? (
                 <ul className="pe-list">
                   {removed.map((p) => (
-                    <li key={p.prompt_key} className="pe-item pe-item-removed">
+                    <li key={p.prompt_key} className={`pe-item pe-item-removed${selected?.prompt_key === p.prompt_key ? " pe-item-selected" : ""}`}>
                       <div className="pe-item-meta">
                         <span className="pe-key">{p.prompt_key}</span>
                         <span className="pe-chip">{p.category}</span>
                       </div>
                       <div className="pe-item-main">
-                        <p className="pe-text">{p.prompt_text}</p>
+                        <button
+                          type="button"
+                          className="pe-text pe-select"
+                          aria-pressed={selected?.prompt_key === p.prompt_key}
+                          onClick={() => setSelectedKey(p.prompt_key)}
+                        >
+                          {p.prompt_text}
+                        </button>
                         <div className="pe-item-actions">
                           <button className="pe-btn" disabled={disabled} onClick={() => restore(p)}>
                             <RotateCcw size={14} />
