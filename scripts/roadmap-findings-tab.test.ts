@@ -6,14 +6,11 @@ import {
   BRIEFING_COUNT_MISSING,
   briefingFindingsLead,
   type BriefingFinding,
-  type BriefingFindingId,
 } from "../lib/fender-canvas/briefing-retail-lead.ts";
 import {
   buildRoadmapPlan,
-  findingHasStoredReading,
+  ROADMAP_ACTIONS,
   ROADMAP_OWNER_SENTENCE,
-  roadmapPhaseForFinding,
-  type RoadmapPhaseId,
 } from "../lib/fender-canvas/roadmap-plan.ts";
 
 const root = new URL("..", import.meta.url);
@@ -37,14 +34,6 @@ const FINDING_LABELS = [
   "Unbranded discovery",
 ] as const;
 
-const FINDING_IDS = [
-  "buy_box",
-  "map_leakage",
-  "splintered_bundles",
-  "exact_official_product",
-  "unbranded_discovery",
-] as const;
-
 function finding(
   partial: Partial<BriefingFinding> & Pick<BriefingFinding, "id" | "label" | "tone">,
 ): BriefingFinding {
@@ -61,19 +50,6 @@ function finding(
     denominator: 32,
     ...partial,
   };
-}
-
-function unread(id: BriefingFindingId, label: string): BriefingFinding {
-  return finding({
-    id,
-    label,
-    tone: "warning",
-    percent: BRIEFING_COUNT_MISSING,
-    ratio: null,
-    numerator: null,
-    denominator: null,
-    explainer: `${label} reading not stored.`,
-  });
 }
 
 function inclusiveDays(start: Date, end: Date): number {
@@ -104,13 +80,19 @@ test("Roadmap first tab renders a dated plan from briefingFindingsLead", () => {
   assert.match(panel, /briefingFindingsLead/);
   assert.match(panel, /buildRoadmapPlan/);
   assert.match(panel, /ROADMAP_OWNER_SENTENCE/);
-  assert.doesNotMatch(panel, /BriefingFindingCard/);
+  assert.match(panel, /data-roadmap-action/);
+  assert.match(panel, /align-items:\s*flex-start/);
+  assert.match(panel, /flex-wrap:\s*wrap/);
+  assert.doesNotMatch(panel, /BriefingFindingCard|CitationPieDisc|retail-finding|retail-overview-hero/);
   assert.doesNotMatch(panel, /data-ifai-open|data-ifai-tab/);
   assert.doesNotMatch(panel, /home screen|Open details|Phase 1|since last time|what changed/i);
   assert.doesNotMatch(panel, /lostRevenue|LostRevenue|BRIEFING_LOST_REVENUE|\$680|\$38M/i);
   assert.doesNotMatch(panel, /fee|retainer|IntoFocus/i);
   assert.doesNotMatch(panel, /\u2014/);
   assert.doesNotMatch(panel, /\stitle=/);
+  const ownerAt = panel.lastIndexOf("{ROADMAP_OWNER_SENTENCE}");
+  const planAt = panel.indexOf("data-roadmap-plan");
+  assert.ok(planAt > 0 && ownerAt > planAt, "the owner sentence sits under the phases");
   assert.match(plan, /Days 1 to 30/);
   assert.match(plan, /Days 31 to 60/);
   assert.match(plan, /Days 61 to 90/);
@@ -118,8 +100,17 @@ test("Roadmap first tab renders a dated plan from briefingFindingsLead", () => {
     ROADMAP_OWNER_SENTENCE,
     "Shared plan. The activity follows the current findings. It does not set a new owner.",
   );
+  assert.deepEqual(ROADMAP_ACTIONS, {
+    buy_box: "Correct each offer so a shopper can add the product to the cart.",
+    map_leakage: "Raise advertised prices back to the agreed floor.",
+    splintered_bundles: "Nest each bundle under its official parent listing.",
+    exact_official_product: "Publish one fender.com page for each exact product that lacks one.",
+    unbranded_discovery:
+      "Confirm assistants name Fender when the shopper does not. That result moves when the offers, prices, bundles, and exact pages are fixed.",
+  });
   assert.doesNotMatch(plan, /Phase 1|\$680|\$38M|fee|retainer|IntoFocus/i);
   assert.doesNotMatch(plan, /\u2014/);
+  assert.doesNotMatch(plan, /tone === "danger"|findingHasStoredReading/);
   for (const label of FINDING_LABELS) {
     assert.match(read("lib/fender-canvas/briefing-retail-lead.ts"), new RegExp(label));
   }
@@ -130,12 +121,8 @@ test("the plan dates three 30-day windows from the day the page is opened", () =
   const opened = new Date(2026, 10, 5);
   const plan = buildRoadmapPlan([], opened);
   assert.deepEqual(
-    plan.map((phase) => phase.id),
-    ["days-1-30", "days-31-60", "days-61-90"],
-  );
-  assert.deepEqual(
-    plan.map((phase) => phase.label),
-    ["Days 1 to 30", "Days 31 to 60", "Days 61 to 90"],
+    plan.map((phase) => phase.heading),
+    ["Days 1 to 30, the offer", "Days 31 to 60, the catalog", "Days 61 to 90, the AI result"],
   );
   assert.deepEqual(
     plan.map((phase) => phase.rangeLabel),
@@ -150,68 +137,49 @@ test("the plan dates three 30-day windows from the day the page is opened", () =
   assert.equal(inclusiveDays(leap[0]!.start, leap[0]!.end), 30);
 });
 
-test("danger and unread findings lead, warning follows, success closes the plan", () => {
-  const rows = [
-    finding({ id: "buy_box", label: "Buy Box withheld", tone: "danger", percent: "40.0%", ratio: "8 of 20", numerator: 8, denominator: 20 }),
-    finding({ id: "map_leakage", label: "MAP leakage", tone: "warning", percent: "15.0%", ratio: "3 of 20", numerator: 3, denominator: 20 }),
-    unread("splintered_bundles", "Splintered bundles"),
-    finding({ id: "exact_official_product", label: "Exact official product pages", tone: "success", percent: "80.0%", ratio: "16 of 20", numerator: 16, denominator: 20 }),
-    finding({
-      id: "unbranded_discovery",
-      label: "Unbranded discovery",
-      tone: "success",
-      percent: BRIEFING_COUNT_MISSING,
-      ratio: null,
-      numerator: null,
-      denominator: null,
-    }),
-  ];
-
-  assert.equal(roadmapPhaseForFinding(rows[0]!), "days-1-30");
-  assert.equal(roadmapPhaseForFinding(rows[1]!), "days-31-60");
-  assert.equal(findingHasStoredReading(rows[2]!), false);
-  assert.equal(roadmapPhaseForFinding(rows[2]!), "days-1-30");
-  assert.equal(roadmapPhaseForFinding(rows[3]!), "days-61-90");
-  assert.equal(roadmapPhaseForFinding(rows[4]!), "days-1-30");
-
-  const plan = buildRoadmapPlan(rows, new Date(2026, 10, 5));
-  const placed = Object.fromEntries(plan.map((phase) => [phase.id, phase.findings.map((item) => item.id)])) as Record<
-    RoadmapPhaseId,
-    string[]
-  >;
-  assert.deepEqual(placed["days-1-30"], ["buy_box", "splintered_bundles", "unbranded_discovery"]);
-  assert.deepEqual(placed["days-31-60"], ["map_leakage"]);
-  assert.deepEqual(placed["days-61-90"], ["exact_official_product"]);
-  assert.equal(plan.flatMap((phase) => phase.findings).length, rows.length);
-  assert.equal(plan[0]!.findings[0]!.percent, "40.0%");
-  assert.equal(plan[0]!.findings[0]!.ratio, "8 of 20");
-  assert.equal(plan[1]!.findings[0]!.explainer, "MAP leakage explainer.");
-  assert.doesNotMatch(JSON.stringify(plan.map((phase) => phase.rangeLabel)), /\$|Phase 1/);
-});
-
-test("unread briefing findings all sit in the first 30 days and keep their labels", () => {
-  const lead = briefingFindingsLead({ phase: "loading" }, { phase: "loading" }, { phase: "loading" });
+test("findings keep their phase and sentence when the figure is Not available*", () => {
+  const unread = briefingFindingsLead({ phase: "loading" }, { phase: "loading" }, { phase: "loading" });
+  const plan = buildRoadmapPlan(unread.findings, new Date(2026, 0, 15));
   assert.deepEqual(
-    lead.findings.map((item) => item.label),
-    [...FINDING_LABELS],
+    plan.map((phase) => phase.steps.map((step) => step.finding.id)),
+    [
+      ["buy_box", "map_leakage"],
+      ["splintered_bundles", "exact_official_product"],
+      ["unbranded_discovery"],
+    ],
   );
-  assert.deepEqual(
-    lead.findings.map((item) => item.id),
-    [...FINDING_IDS],
-  );
-  const plan = buildRoadmapPlan(lead.findings, new Date(2026, 0, 15));
-  assert.deepEqual(
-    plan[0]!.findings.map((item) => item.id),
-    [...FINDING_IDS],
-  );
-  assert.equal(plan[1]!.findings.length, 0);
-  assert.equal(plan[2]!.findings.length, 0);
-  for (const item of lead.findings) {
-    assert.equal(item.percent, BRIEFING_COUNT_MISSING);
-    assert.equal(item.ratio, null);
-    assert.equal(findingHasStoredReading(item), false);
-  }
   assert.equal(plan[0]!.rangeLabel, "Jan 15, 2026 to Feb 13, 2026");
+  for (const step of plan.flatMap((phase) => phase.steps)) {
+    assert.equal(step.finding.percent, BRIEFING_COUNT_MISSING);
+    assert.equal(step.finding.ratio, null);
+    assert.equal(step.action, ROADMAP_ACTIONS[step.finding.id]);
+    assert.doesNotMatch(step.action, /\d|Not available/);
+  }
+
+  const mixed = buildRoadmapPlan(
+    [
+      finding({ id: "unbranded_discovery", label: "Unbranded discovery", tone: "danger", percent: "10.0%", ratio: "1 of 10", numerator: 1, denominator: 10 }),
+      finding({ id: "buy_box", label: "Buy Box withheld", tone: "success", percent: "0.0%", ratio: "0 of 20", numerator: 0, denominator: 20 }),
+      finding({ id: "exact_official_product", label: "Exact official product pages", tone: "danger", percent: BRIEFING_COUNT_MISSING, ratio: null, numerator: null, denominator: null }),
+      finding({ id: "map_leakage", label: "MAP leakage", tone: "warning", percent: "15.0%", ratio: "3 of 20", numerator: 3, denominator: 20 }),
+      finding({ id: "splintered_bundles", label: "Splintered bundles", tone: "success", percent: "4.0%", ratio: "1 of 25", numerator: 1, denominator: 25 }),
+    ],
+    new Date(2026, 10, 5),
+  );
+  assert.deepEqual(
+    mixed.map((phase) => phase.steps.map((step) => [step.finding.id, step.finding.percent, step.action])),
+    [
+      [
+        ["buy_box", "0.0%", ROADMAP_ACTIONS.buy_box],
+        ["map_leakage", "15.0%", ROADMAP_ACTIONS.map_leakage],
+      ],
+      [
+        ["splintered_bundles", "4.0%", ROADMAP_ACTIONS.splintered_bundles],
+        ["exact_official_product", BRIEFING_COUNT_MISSING, ROADMAP_ACTIONS.exact_official_product],
+      ],
+      [["unbranded_discovery", "10.0%", ROADMAP_ACTIONS.unbranded_discovery]],
+    ],
+  );
 });
 
 test("Action Items has no Current findings tab, and Summary Briefing stays wired as before", () => {
