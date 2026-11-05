@@ -1,7 +1,8 @@
-// node --experimental-strip-types --import ./scripts/register-alias.mjs --import ./scripts/register-ts-extensions.mjs --test scripts/current-findings-tab.test.ts
+// node --experimental-strip-types --import ./scripts/register-alias.mjs --import ./scripts/register-ts-extensions.mjs --test scripts/action-items-tabs.test.ts
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
+import { tabIndexFromSlug } from "../lib/canvas-sdk/canvas-url-state.ts";
 
 const root = new URL("..", import.meta.url);
 
@@ -15,9 +16,10 @@ const spec = JSON.parse(read("data/fender-v3-spec.json")) as {
   };
 };
 
-test("Action Items replaces Interactive ROI with Current findings", () => {
+test("Action Items has two tabs: the fix list and Revenue Estimates", () => {
   const tabs = spec.spokes.suggestions.tabs;
-  assert.deepEqual(tabs, ["Urgent Interventions", "Revenue Estimates", "Current findings"]);
+  assert.deepEqual(tabs, ["Urgent Interventions", "Revenue Estimates"]);
+  assert.equal(spec.spokes.suggestions.tabTemplates.length, tabs.length);
   assert.equal(tabs.some((tab) => /Interactive ROI/i.test(tab)), false);
 
   const joined = JSON.stringify(spec.spokes.suggestions);
@@ -33,25 +35,27 @@ test("Action Items replaces Interactive ROI with Current findings", () => {
   assert.doesNotMatch(revenue, /Monthly potential lost brand revenue|since last time|what changed/i);
 });
 
-test("Current findings reuses briefingFindingsLead and omits the lost-revenue placeholder", () => {
+test("an old Current findings link lands on Urgent Interventions, and nothing links to it", () => {
+  const tabs = spec.spokes.suggestions.tabs;
+  assert.equal(tabs[tabIndexFromSlug(tabs, "current-findings")], "Urgent Interventions");
+  assert.equal(tabs[tabIndexFromSlug(tabs, "Current-Findings")], "Urgent Interventions");
+  assert.equal(tabs[tabIndexFromSlug(tabs, "revenue-estimates")], "Revenue Estimates");
+
   const spokes = read("components/v3/build-live-spokes.tsx");
-  const panel = read("components/v3/live/CurrentFindingsPanel.tsx");
-  assert.match(spokes, /CurrentFindingsPanel/);
-  assert.match(spokes, /suggestions:\s*\{[\s\S]*2:\s*\([^)]*\)\s*=>\s*<CurrentFindingsPanel/);
-  assert.match(panel, /briefingFindingsLead/);
-  assert.match(panel, /BriefingFindingCard/);
-  assert.match(panel, /Current findings/);
-  assert.doesNotMatch(panel, /lostRevenue|LostRevenue|BRIEFING_LOST_REVENUE|since last time|what changed/i);
-  assert.doesNotMatch(panel, /\u2014/);
-  for (const label of [
-    "Buy Box withheld",
-    "MAP leakage",
-    "Splintered bundles",
-    "Exact official product pages",
-    "Unbranded discovery",
-  ]) {
-    assert.match(read("lib/fender-canvas/briefing-retail-lead.ts"), new RegExp(label));
+  assert.doesNotMatch(spokes, /CurrentFindingsPanel/);
+  const sources = [
+    "components/v3/fender-metrics.ts",
+    "lib/fender-canvas/metrics-from-live.ts",
+    "lib/fender-canvas/minimal-metrics-summary.ts",
+    "lib/fender-canvas/hub-slots.ts",
+    "lib/fender-canvas/build-canvas-spec.tsx",
+    "lib/fender-canvas/nodes-from-live.ts",
+    "lib/fender-canvas/tour-from-live.ts",
+  ];
+  for (const source of sources) {
+    assert.doesNotMatch(read(source), /Current findings|current-findings/, source);
   }
+  assert.doesNotMatch(JSON.stringify(spec.spokes.suggestions), /Current findings/);
 });
 
 test("links that opened Interactive ROI now open Revenue Estimates", () => {

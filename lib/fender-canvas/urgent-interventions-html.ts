@@ -1,9 +1,10 @@
 /**
- * Action Items · Urgent Interventions work list: the five current findings,
+ * Action Items · Urgent Interventions work list: the five current findings in priority order,
  * each opening its home spoke/tab via data-ifai-open.
  */
 
 import type { AiSearchRead } from "@/lib/ai-search/types";
+import { fixListHtml, rankFixList } from "@/lib/fender-canvas/action-items-fix-list";
 import {
   BRIEFING_COUNT_MISSING,
   briefingFindingsLead,
@@ -12,23 +13,6 @@ import {
 } from "@/lib/fender-canvas/briefing-retail-lead";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
 import type { FindabilityRead } from "@/lib/findability/copy";
-
-function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
-
-/** N of M when stored; otherwise the same missing label briefingFindingsLead already uses. */
-function countLabel(finding: BriefingFinding): string {
-  return finding.ratio ?? finding.percent;
-}
-
-function cardClass(finding: BriefingFinding): string {
-  return finding.tone === "danger" ? "action-card critical" : "action-card";
-}
 
 function hasStoredReading(finding: BriefingFinding): boolean {
   return (
@@ -67,8 +51,8 @@ function actionCopy(finding: BriefingFinding): string {
 }
 
 /**
- * Renders the five briefingFindingsLead rows as clickable action cards.
- * No dollars, no lost-revenue placeholder, no history line.
+ * Renders the five briefingFindingsLead rows as one ranked fix list.
+ * No per-finding dollar is computed yet, so no row carries an estimate.
  * Buy Box and MAP jargon stay for annotateGlossary (do not pre-mark ifai-term).
  */
 export function urgentInterventionsHtml(
@@ -77,16 +61,13 @@ export function urgentInterventionsHtml(
   ai: AiSearchRead,
 ): string {
   const { findings } = briefingFindingsLead(retail, findability, ai);
-  return findings
-    .map((finding, index) => {
-      const style = index === 0 ? "" : ' style="margin-top:8px;"';
-      return `
-  <div class="${cardClass(finding)}"${style} data-ifai-open="${escapeHtml(finding.spokeId)}" data-ifai-tab="${escapeHtml(finding.tab)}" data-urgent-finding="${escapeHtml(finding.id)}">
-    <div class="action-head">${escapeHtml(finding.label)}</div>
-    <div class="action-details" data-urgent-finding-action="">${escapeHtml(actionCopy(finding))}</div>
-    <div class="action-head"><span class="ifai-open-hint">Open details →</span></div>
-    <div class="action-impact" data-urgent-finding-count="">${escapeHtml(countLabel(finding))}</div>
-  </div>`;
-    })
-    .join("\n");
+  return fixListHtml(
+    rankFixList(
+      findings.map((finding) => ({
+        finding,
+        action: actionCopy(finding),
+        stored: hasStoredReading(finding),
+      })),
+    ),
+  );
 }
