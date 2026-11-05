@@ -1,0 +1,199 @@
+/* Story pack. Colors for the page chrome come from the profile modal theme. */
+.deck-page {
+  --deck-page-bg: #070d18;
+  --danger-red: #ef4444;
+  --success-green: #10b981;
+  --warning-amber: #f59e0b;
+  --text-main: var(--profile-text);
+  --text-muted: var(--profile-muted);
+  --bg-surface: var(--profile-surface);
+  --border-dark: var(--profile-border);
+  min-height: 100%;
+  padding: 48px 24px;
+  background: var(--deck-page-bg);
+  color: var(--profile-text);
+  font-family: var(--font-sans);
+}
+
+.deck-page.is-light {
+  --deck-page-bg: #f4f5f7;
+}
+
+.deck-card {
+  width: min(960px, 100%);
+  margin: 0 auto;
+  border-radius: 22px;
+  border: 1px solid var(--profile-border);
+  background: var(--profile-surface);
+  box-shadow: 0 24px 70px #0b122040;
+  overflow: hidden;
+}
+
+.deck-header h1 {
+  font-size: 16px;
+}
+
+.deck-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--profile-btn-border);
+  background: var(--profile-btn-bg);
+  color: var(--profile-text);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.deck-back:hover {
+  color: var(--profile-text);
+  text-decoration: none;
+  border-color: var(--profile-muted);
+}
+
+.deck-body {
+  padding: 20px 22px 26px;
+}
+
+.deck-lead {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--profile-muted);
+}
+
+.deck-section {
+  margin-top: 24px;
+}
+
+.deck-section h2 {
+  margin: 0 0 10px;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--profile-muted);
+}
+
+.deck-window {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.deck-findings {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.deck-finding,
+.deck-rate {
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--profile-border);
+  background: var(--profile-surface-2);
+}
+
+.deck-finding-label,
+.deck-rate-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.deck-finding-percent,
+.deck-rate-percent {
+  display: block;
+  margin-top: 8px;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+.deck-finding-ratio,
+.deck-rate-ratio {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--profile-muted);
+}
+
+.deck-note,
+.deck-run-copy {
+  margin: 8px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--profile-muted);
+}
+
+.deck-run-id {
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.deck-rates {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.deck-page .ifai-term {
+  border-bottom: 1px dotted currentColor;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.deck-page .ifai-term:hover,
+.deck-page .ifai-term:focus-visible {
+  border-bottom-style: solid;
+  outline: none;
+}
+
+.deck-tooltip {
+  position: fixed;
+  z-index: 100010;
+  max-width: 280px;
+  padding: 8px 12px;
+  border-radius: 16px;
+  border: 1px solid var(--profile-btn-border);
+  background: var(--profile-surface);
+  color: var(--profile-text);
+  box-shadow: 0 24px 70px #0b122040;
+  pointer-events: none;
+  transform: translate(-50%, calc(-100% - 14px));
+}
+
+.deck-tooltip-title {
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.deck-tooltip-desc {
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--profile-muted);
+}
+
+@media (max-width: 900px) {
+  .deck-findings {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .deck-findings,
+  .deck-rates {
+    grid-template-columns: 1fr;
+  }
+}
