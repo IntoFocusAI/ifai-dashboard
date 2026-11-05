@@ -1,0 +1,321 @@
+/* Catalog and MAP upload. Colors come from the profile modal theme variables. */
+.upload-page {
+  --upload-page-bg: #070d18;
+  height: 100%;
+  overflow: auto;
+  padding: 48px 24px;
+  background: var(--upload-page-bg);
+  color: var(--profile-text);
+  font-family: var(--font-sans);
+}
+
+.upload-page.is-light {
+  --upload-page-bg: #f4f5f7;
+}
+
+.upload-card {
+  width: min(920px, 100%);
+  margin: 0 auto;
+  border-radius: 22px;
+  border: 1px solid var(--profile-border);
+  background: var(--profile-surface);
+  box-shadow: 0 24px 70px #0b122040;
+  overflow: hidden;
+}
+
+.upload-header {
+  flex-wrap: wrap;
+}
+
+.upload-header h1 {
+  font-size: 16px;
+}
+
+.upload-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--profile-btn-border);
+  background: var(--profile-btn-bg);
+  color: var(--profile-text);
+  font-size: 12px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.upload-back:hover {
+  color: var(--profile-text);
+  text-decoration: none;
+  border-color: var(--profile-muted);
+}
+
+.upload-body {
+  padding: 20px 22px 26px;
+}
+
+.upload-lead,
+.upload-muted,
+.upload-reason,
+.upload-file-name {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--profile-muted);
+}
+
+.upload-approve-line {
+  margin: 14px 0 0;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--profile-border);
+  background: var(--profile-surface-2);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.upload-workspace {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.upload-kind {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--profile-border);
+}
+
+.upload-kind legend {
+  padding: 0 6px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.upload-kind label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: 16px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.upload-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.upload-field input,
+.upload-kind input {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.upload-field input[type="text"],
+.upload-field input:not([type="file"]):not([type="radio"]) {
+  width: min(360px, 100%);
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--profile-input-border);
+  background: var(--profile-input-bg);
+  color: var(--profile-text);
+}
+
+.upload-summary,
+.upload-approved,
+.upload-preview p,
+.upload-staged p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.upload-file-name {
+  font-weight: 600;
+}
+
+.upload-pending h2,
+.upload-staged h2 {
+  margin: 0 0 8px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--profile-muted);
+}
+
+.upload-pending ul,
+.upload-staged-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.upload-pending li,
+.upload-staged-list li {
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--profile-border);
+  background: var(--profile-surface-2);
+  font-size: 13px;
+}
+
+.upload-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--profile-border);
+  border-radius: 14px;
+}
+
+.upload-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.upload-table caption {
+  caption-side: bottom;
+  padding: 8px 10px 0;
+  text-align: left;
+  color: var(--profile-muted);
+  font-size: 12px;
+}
+
+.upload-table th,
+.upload-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--profile-border);
+  text-align: left;
+  vertical-align: top;
+  white-space: nowrap;
+}
+
+.upload-table th {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--profile-muted);
+}
+
+.upload-table tr[data-disposition="duplicate"] {
+  background: color-mix(in srgb, var(--profile-error) 14%, transparent);
+}
+
+.upload-status {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.upload-status[data-disposition="pending"] {
+  color: var(--profile-success);
+}
+
+.upload-status[data-disposition="duplicate"],
+.upload-status[data-disposition="missing_key"] {
+  color: var(--profile-error);
+}
+
+.upload-reason {
+  display: block;
+  margin-top: 4px;
+  white-space: normal;
+}
+
+.upload-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.upload-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--profile-btn-border);
+  background: var(--profile-btn-bg);
+  color: var(--profile-text);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.upload-button:hover:not(:disabled) {
+  border-color: var(--profile-muted);
+}
+
+.upload-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.upload-button-primary {
+  background: var(--profile-text);
+  color: var(--profile-surface);
+  border-color: transparent;
+}
+
+.upload-page .ifai-term {
+  border-bottom: 1px dotted currentColor;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.upload-page .ifai-term:hover,
+.upload-page .ifai-term:focus-visible {
+  border-bottom-style: solid;
+  outline: none;
+}
+
+.upload-definition-tip {
+  position: fixed;
+  z-index: 30;
+  max-width: 280px;
+  transform: translate(-50%, calc(-100% - 10px));
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: #101b2e;
+  color: #fff;
+  border: 1px solid #ffffff2e;
+  font-size: 12px;
+  line-height: 1.4;
+  pointer-events: none;
+}
+
+.upload-definition-tip-title {
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.upload-page.is-light .upload-definition-tip {
+  background: #fff;
+  color: #111827;
+  border-color: #0f172a24;
+}
+
+@media (max-width: 640px) {
+  .upload-page {
+    padding: 24px 12px;
+  }
+
+  .upload-header {
+    align-items: flex-start;
+  }
+}
