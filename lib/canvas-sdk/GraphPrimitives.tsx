@@ -1,6 +1,7 @@
 "use client";
 
-import { memo, useId, type CSSProperties, type KeyboardEvent, type MouseEvent, type ReactElement } from "react";
+import { createContext, memo, useContext, useId, type CSSProperties, type KeyboardEvent, type MouseEvent, type ReactElement, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { blurredAuraStops, blurredDiskStops } from "@/lib/canvas-sdk/blurred-disk";
 import { fitMainHero } from "@/lib/canvas-sdk/hero-fit";
 import { SatelliteHeroFace } from "@/lib/canvas-sdk/SatelliteHeroFace";
@@ -748,6 +749,17 @@ export function ConnLine({ x1, y1, x2, y2, kind = "default", hot = false }: Canv
 }
 
 /**
+ * Where the bubbles' shadow and halo gradients live: a `<defs>` outside the bubbles, so a hover
+ * that restyles a bubble or reveals a satellite group leaves the gradient stops alone.
+ */
+export const MapDefsContext = createContext<SVGDefsElement | null>(null);
+
+function MapDefs({ children }: { children: ReactNode }) {
+  const target = useContext(MapDefsContext);
+  return target ? createPortal(children, target) : <defs>{children}</defs>;
+}
+
+/**
  * The bubble's shadow and selection glow, drawn as gradients that look like a blurred circle.
  * A CSS drop-shadow on the circle re-ran a blur filter every time the map repainted. Offset and
  * opacity per theme and state live in iom-theme.css (`.node-drop`, `.node-glow`).
@@ -764,10 +776,10 @@ const BubbleLift = memo(function BubbleLift({ radius, sigma, statusClass = "" }:
   );
   return (
     <g className={`node-lift${statusClass}`} aria-hidden="true" pointerEvents="none">
-      <defs>
+      <MapDefs>
         {gradient("drop", "#000")}
         {gradient("glow", "#00f0ff")}
-      </defs>
+      </MapDefs>
       <circle className="node-drop" r={reach} fill={`url(#${id}drop)`} />
       <circle className="node-glow" r={reach} fill={`url(#${id}glow)`} />
     </g>
@@ -791,13 +803,13 @@ const BlurredAura = memo(function BlurredAura({
   const { reach, stops } = blurredAuraStops(radius, 10, ring);
   return (
     <>
-      <defs>
+      <MapDefs>
         <radialGradient id={`${id}aura`}>
           {stops.map((stop) => (
             <stop key={stop.offset} offset={stop.offset.toFixed(4)} stopColor={stop.color} stopOpacity={stop.opacity.toFixed(4)} />
           ))}
         </radialGradient>
-      </defs>
+      </MapDefs>
       <circle r={reach} className={className} pointerEvents="none" style={{ "--aura": `url(#${id}aura)` } as CSSProperties} />
     </>
   );
