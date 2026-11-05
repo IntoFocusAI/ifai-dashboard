@@ -95,9 +95,6 @@ TDD file id: 1K6-ghhSnJZcrch81DDhmHXXYU0pSF7tOGR9S9jiCUjk (`tdd`)
    live. Reply with the new first line only after the check exits 0. If
    it reports a paragraph, fix that paragraph in the live doc with the
    plugin and check again.
-6. Description. The Drive tools cannot set a file description. If it
-   still names the previous documentation version, ask Brian to change it
-   under File > Details > Description.
 
 Do not create a second Google Doc. Do not paste the .docx, its base64, a
 data URL, or its text into a tool call, and do not upload it.
