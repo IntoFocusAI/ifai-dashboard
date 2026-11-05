@@ -77,25 +77,8 @@ If you are about to edit a product file, stop and write the brief.
 
 ## How to update the Google Docs
 
-Edit the .docx on this machine. This is the only publish path.
-
-1. Run `python3 scripts/stage-design-docx.py path/to/the.docx`.
-   It prints one https URL. The download matches the local file. The URL
-   lasts about an hour. Do not put that URL in a reply.
-2. Call google_drive-update-file once. filePath is that URL.
-   keepRevisionForever is true. Leave mimeType unset.
-   FDD file id: 1PoeiXKR2twOaz_JcRN0e4ZQkUCuDD5qnnyrlt6ygkeU
-   TDD file id: 1K6-ghhSnJZcrch81DDhmHXXYU0pSF7tOGR9S9jiCUjk
-3. Run `python3 scripts/check-design-doc.py FILE_ID path/to/the.docx`.
-   Reply with the new first line only after it exits 0. The check compares
-   paragraph text, the header, and the footer. A byte hash of the export
-   will not match.
-4. If the Drive file description still names the previous documentation
-   version, set description in a second google_drive-update-file call that
-   has no filePath.
-
-Do not paste the .docx, its base64, or a data URL into a tool call. Do not
-send the file through assistant storage. Do not create a second Google Doc.
+Follow `.cursor/rules/design-doc-publish.mdc` and the "How to update the
+Google Docs" section of `docs/pm-handoff.md`. Those two are the only publish steps.
 
 ## How to choose the next batch
 
