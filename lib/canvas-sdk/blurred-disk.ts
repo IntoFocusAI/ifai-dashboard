@@ -21,19 +21,26 @@ export function blurredDiskOpacity(radius: number, sigma: number, distance: numb
   return Math.min(1, total);
 }
 
+const diskCache = new Map<string, { reach: number; stops: { offset: number; opacity: number }[] }>();
+
 /**
  * Radial-gradient stops that trace a disk of `radius` blurred with a Gaussian of `sigma`, the
  * way Chrome draws `filter: drop-shadow(0 0 <sigma>px ...)` on an SVG shape (the length is the
  * standard deviation, in the shape's own units). Offsets are shares of `reach`, the radius of
- * the circle the gradient fills.
+ * the circle the gradient fills. Results are cached, since every map render asks again.
  */
 export function blurredDiskStops(radius: number, sigma: number) {
+  const key = `${radius}|${sigma}`;
+  const cached = diskCache.get(key);
+  if (cached) return cached;
   const reach = radius + sigma * 3;
   const stops: { offset: number; opacity: number }[] = [];
   for (let d = Math.max(0, radius - sigma * 3); d <= reach + 1e-6; d += sigma / 2) {
     stops.push({ offset: d / reach, opacity: blurredDiskOpacity(radius, sigma, d) });
   }
-  return { reach, stops };
+  const result = { reach, stops };
+  diskCache.set(key, result);
+  return result;
 }
 
 type Rgb = readonly [number, number, number];
@@ -65,50 +72,55 @@ function ringKernel(ringRadius: number, sigma: number, distance: number) {
   return (ringRadius / s2) * Math.exp(-((ringRadius - distance) ** 2) / (2 * s2)) * besselI0Scaled((ringRadius * distance) / s2);
 }
 
-function auraAt(share: number): [number, number, number, number] {
-  if (share >= 1) return [0, 0, 0, 0];
-  const upper = AURA.findIndex((stop) => stop.at >= share);
-  const a = AURA[Math.max(0, upper - 1)];
+/** Premultiplied red, green, blue, and opacity of the aura at `share` of its radius. */
+function auraAt(share: number, out: Float64Array, at: number) {
+  let upper = 1;
+  while (upper < AURA.length - 1 && AURA[upper].at < share) upper += 1;
+  const a = AURA[upper - 1];
   const b = AURA[upper];
-  const t = b.at === a.at ? 0 : (share - a.at) / (b.at - a.at);
+  const t = Math.min(1, (share - a.at) / (b.at - a.at));
   const opacity = a.opacity + (b.opacity - a.opacity) * t;
-  return [0, 1, 2].map((c) => (a.color[c] + (b.color[c] - a.color[c]) * t) * opacity).concat(opacity) as [number, number, number, number];
+  for (let c = 0; c < 3; c += 1) out[at + c] = (a.color[c] + (b.color[c] - a.color[c]) * t) * opacity;
+  out[at + 3] = opacity;
 }
+
+type AuraStops = { reach: number; stops: { offset: number; color: string; opacity: number }[] };
+const auraCache = new Map<string, AuraStops>();
 
 /**
  * Radial-gradient stops for the breathing halo: the `luxHubAura` fill on a circle of `radius`,
  * plus an optional 1px `ring` stroke on its edge, blurred with a Gaussian of `sigma`, the way the
- * halo looked under `filter: url(#auraBlur)`. Offsets are shares of `reach`.
+ * halo looked under `filter: url(#auraBlur)`. Offsets are shares of `reach`. Results are cached,
+ * since every map render asks again.
  */
-export function blurredAuraStops(radius: number, sigma: number, ring?: Rgb) {
+export function blurredAuraStops(radius: number, sigma: number, ring?: Rgb): AuraStops {
+  const key = `${radius}|${sigma}|${ring?.join(",") ?? ""}`;
+  const cached = auraCache.get(key);
+  if (cached) return cached;
   const reach = radius + sigma * 3;
-  const step = sigma / 8;
-  const stops: { offset: number; color: string; opacity: number }[] = [];
+  const slices = Math.ceil(radius / (sigma / 8));
+  const width = radius / slices;
+  const source = new Float64Array(slices * 4);
+  for (let i = 0; i < slices; i += 1) auraAt((i + 0.5) / slices, source, i * 4);
   const distances = [0];
   for (let k = Math.ceil(reach / (sigma / 2)) - 1; k >= 0; k -= 1) distances.push(reach - k * (sigma / 2));
-  for (const d of distances) {
+  const stops = distances.map((d) => {
     const sum = [0, 0, 0, 0];
-    const from = Math.max(0, d - sigma * 5);
-    const to = Math.min(radius, d + sigma * 5);
-    const slices = Math.max(1, Math.ceil((to - from) / step));
-    const width = (to - from) / slices;
-    for (let i = 0; i < slices && to > from; i += 1) {
-      const rho = from + (i + 0.5) * width;
-      const k = ringKernel(rho, sigma, d) * width;
-      auraAt(rho / radius).forEach((value, c) => {
-        sum[c] += value * k;
-      });
+    const first = Math.max(0, Math.floor((d - sigma * 5) / width));
+    const last = Math.min(slices - 1, Math.ceil((d + sigma * 5) / width));
+    for (let i = first; i <= last; i += 1) {
+      const k = ringKernel((i + 0.5) * width, sigma, d) * width;
+      for (let c = 0; c < 4; c += 1) sum[c] += source[i * 4 + c] * k;
     }
     if (ring) {
       const k = ringKernel(radius, sigma, d);
-      ring.forEach((value, c) => {
-        sum[c] += value * k;
-      });
+      for (let c = 0; c < 3; c += 1) sum[c] += ring[c] * k;
       sum[3] += k;
     }
-    const opacity = Math.min(1, sum[3]);
     const color = sum[3] > 1e-6 ? sum.slice(0, 3).map((value) => Math.round(Math.min(255, value / sum[3]))) : [99, 102, 241];
-    stops.push({ offset: d / reach, color: `rgb(${color.join(" ")})`, opacity });
-  }
-  return { reach, stops };
+    return { offset: d / reach, color: `rgb(${color.join(" ")})`, opacity: Math.min(1, sum[3]) };
+  });
+  const result = { reach, stops };
+  auraCache.set(key, result);
+  return result;
 }

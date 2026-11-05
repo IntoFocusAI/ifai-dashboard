@@ -132,6 +132,8 @@ test("the pre-rendered halo spreads the aura and its colored edge past the circl
   const green = (color: string) => Number(color.split(" ")[1]);
   assert.ok(green(edge.color) - green(at(plain.stops, 154).color) > 40, "the edge leans to the stroke color");
   for (let i = 1; i < plain.stops.length; i += 1) assert.ok(plain.stops[i].offset > plain.stops[i - 1].offset);
+  assert.equal(blurredAuraStops(154, 10), plain, "a map render reuses the profile");
+  assert.equal(blurredDiskStops(128, 18), blurredDiskStops(128, 18));
   assert.match(read("lib/canvas-sdk/iom-theme.css"), /fill: var\(--aura, url\(#luxHubAura\)\);/);
 });
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, type CSSProperties, type KeyboardEvent, type MouseEvent, type ReactElement } from "react";
+import { memo, useId, type CSSProperties, type KeyboardEvent, type MouseEvent, type ReactElement } from "react";
 import { blurredAuraStops, blurredDiskStops } from "@/lib/canvas-sdk/blurred-disk";
 import { fitMainHero } from "@/lib/canvas-sdk/hero-fit";
 import { SatelliteHeroFace } from "@/lib/canvas-sdk/SatelliteHeroFace";
@@ -752,7 +752,7 @@ export function ConnLine({ x1, y1, x2, y2, kind = "default", hot = false }: Canv
  * A CSS drop-shadow on the circle re-ran a blur filter every time the map repainted. Offset and
  * opacity per theme and state live in iom-theme.css (`.node-drop`, `.node-glow`).
  */
-function BubbleLift({ radius, sigma, statusClass = "" }: { radius: number; sigma: number; statusClass?: string }) {
+const BubbleLift = memo(function BubbleLift({ radius, sigma, statusClass = "" }: { radius: number; sigma: number; statusClass?: string }) {
   const id = useId();
   const { reach, stops } = blurredDiskStops(radius, sigma);
   const gradient = (suffix: string, color: string) => (
@@ -772,13 +772,21 @@ function BubbleLift({ radius, sigma, statusClass = "" }: { radius: number; sigma
       <circle className="node-glow" r={reach} fill={`url(#${id}glow)`} />
     </g>
   );
-}
+});
 
 /**
  * The breathing halo with its 10px blur baked into the gradient. The theme reads the gradient from
  * `--aura`, so themes without halos still hide it.
  */
-function BlurredAura({ radius, ring, className }: { radius: number; ring?: readonly [number, number, number]; className: string }) {
+const BlurredAura = memo(function BlurredAura({
+  radius,
+  ring,
+  className,
+}: {
+  radius: number;
+  ring?: readonly [number, number, number];
+  className: string;
+}) {
   const id = useId();
   const { reach, stops } = blurredAuraStops(radius, 10, ring);
   return (
@@ -793,7 +801,7 @@ function BlurredAura({ radius, ring, className }: { radius: number; ring?: reado
       <circle r={reach} className={className} pointerEvents="none" style={{ "--aura": `url(#${id}aura)` } as CSSProperties} />
     </>
   );
-}
+});
 
 function RingMotes({ radius }: { radius: number }) {
   const motes = [8, 36, 62, 98, 128, 156, 188, 214, 248, 278, 312, 344].map((deg, index) => {
