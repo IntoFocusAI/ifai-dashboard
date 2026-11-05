@@ -1,0 +1,124 @@
+/* CSV export page. Colors come from the profile modal theme variables in globals.css. */
+.export-page {
+  --export-page-bg: #070d18;
+  min-height: 100%;
+  padding: 48px 24px;
+  background: var(--export-page-bg);
+  color: var(--profile-text);
+  font-family: var(--font-sans);
+}
+
+.export-page.is-light {
+  --export-page-bg: #f4f5f7;
+}
+
+.export-card {
+  width: min(880px, 100%);
+  margin: 0 auto;
+  border-radius: 22px;
+  border: 1px solid var(--profile-border);
+  background: var(--profile-surface);
+  box-shadow: 0 24px 70px #0b122040;
+  overflow: hidden;
+}
+
+.export-header h1 {
+  font-size: 16px;
+}
+
+.export-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--profile-btn-border);
+  background: var(--profile-btn-bg);
+  color: var(--profile-text);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.export-back:hover {
+  color: var(--profile-text);
+  text-decoration: none;
+  border-color: var(--profile-muted);
+}
+
+.export-body {
+  padding: 20px 22px 26px;
+}
+
+.export-lead {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--profile-muted);
+}
+
+.export-section {
+  margin-top: 24px;
+}
+
+.export-section h2 {
+  margin: 0 0 10px;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--profile-muted);
+}
+
+.export-facts {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.export-facts div {
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--profile-border);
+  background: var(--profile-surface-2);
+}
+
+.export-facts dt {
+  margin: 0;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--profile-muted);
+}
+
+.export-facts dd {
+  margin: 4px 0 0;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.export-failure {
+  margin: 12px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--profile-error);
+}
+
+.export-download {
+  display: inline-flex;
+  margin-top: 14px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--profile-btn-border);
+  background: var(--profile-btn-bg);
+  color: var(--profile-text);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.export-download:hover {
+  color: var(--profile-text);
+  text-decoration: none;
+  border-color: var(--profile-muted);
+}
