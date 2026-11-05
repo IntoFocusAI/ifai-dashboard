@@ -60,7 +60,8 @@ test("a pointer move renders nothing in React on the map", () => {
   assert.match(wash, /glow\.style\.transform = `translate3d\(/, "the glow follows the pointer with a transform");
   assert.doesNotMatch(wash, /setProperty\("--pointer/, "no gradient variable is rewritten per move");
   assert.match(wash, /matchMedia\("\(prefers-reduced-motion: reduce\)"\)/);
-  assert.match(wash, /if \(still\.matches\) return;/, "with reduced motion the glow does not follow the pointer");
+  assert.match(wash, /if \(reduced\) return;/, "with reduced motion the glow does not follow the pointer");
+  assert.match(wash, /reduced = still\.matches;/);
   assert.match(wash, /requestAnimationFrame\(paint\)/);
   assert.doesNotMatch(read("lib/canvas-sdk/iom-theme.css"), /var\(--pointer-[xy]\)/, "no gradient follows the pointer through a variable");
 
