@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Print an https URL for a local file that Google Drive can download.
 
-Stdout is the URL and nothing else. The Project Manager passes that URL to
-google_drive-update-file. The bytes at the URL match the local file.
+Stdout is the URL and nothing else. The bytes at the URL match the local
+file. This is not part of the design-doc publish path; see
+.cursor/rules/design-doc-publish.mdc.
 
 The host keeps the file for about an hour. Do not print the URL in a reply.
 
