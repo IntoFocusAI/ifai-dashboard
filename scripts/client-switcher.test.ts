@@ -155,3 +155,37 @@ test("citation sources: Ledlenser's regional sites are brand-owned and lighting 
   assert.equal(classifySource("sweetwater.com"), "retailer");
   resetActiveClientForTests(null);
 });
+
+test("set-asides, site copy, and API-engine reads follow the brand on screen", async () => {
+  const { activeSetAsideClientKey } = await import("@/lib/set-aside/keys");
+  const { apiEngineViewsEnabled } = await import("@/lib/ai-search/api-runs");
+  const { pagesCheckedNote } = await import("@/lib/fender-canvas/page-found-stored-reason");
+  const { leadRateTip } = await import("@/lib/ai-search/summary");
+  try {
+    resetActiveClientForTests("fender");
+    assert.equal(activeSetAsideClientKey(), "fmic");
+    assert.equal(apiEngineViewsEnabled(undefined, {}), true);
+    assert.equal(pagesCheckedNote({ pagesChecked: 2, pagesCut: false }), "2 fender.com pages checked.");
+    assert.match(leadRateTip({ fenderWins: 1, resolved: 2 }), /named Fender\/Squier most/);
+    resetActiveClientForTests("ledlenser");
+    assert.equal(activeSetAsideClientKey(), "ledlenser");
+    assert.equal(apiEngineViewsEnabled(undefined, {}), false);
+    assert.equal(pagesCheckedNote({ pagesChecked: 2, pagesCut: false }), "2 ledlenser.com pages checked.");
+    assert.match(leadRateTip({ fenderWins: 1, resolved: 2 }), /named Ledlenser most/);
+  } finally {
+    resetActiveClientForTests();
+  }
+});
+
+test("dashboard screens never read set-asides with Fender's fixed key", async () => {
+  const { readFileSync } = await import("node:fs");
+  for (const file of [
+    "components/v3/live/MapChannelPanel.tsx",
+    "components/v3/live/usePortfolioRetailSnapshot.ts",
+    "components/v3/live/SetAsideTable.tsx",
+    "lib/fender-canvas/command-center-from-live.ts",
+    "lib/fender-canvas/build-canvas-spec.tsx",
+  ]) {
+    assert.doesNotMatch(readFileSync(file, "utf8"), /useSetAsides\(FMIC_CLIENT_KEY|setAsideClientKey: FMIC_CLIENT_KEY/, file);
+  }
+});

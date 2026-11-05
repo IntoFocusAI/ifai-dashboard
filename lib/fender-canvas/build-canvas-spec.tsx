@@ -1,4 +1,5 @@
-import { activeClient } from "@/lib/client/active-client";
+import { activeClient, clientStorageKey } from "@/lib/client/active-client";
+import { activeSetAsideClientKey } from "@/lib/set-aside/keys";
 import type { ReactNode } from "react";
 import { buildLiveSpokes } from "@/components/v3/build-live-spokes";
 import { fenderCommandCenter } from "@/components/v3/command-center-data";
@@ -76,7 +77,12 @@ export function buildFenderCanvasSpec(
 
   const ai = metrics.overallAiWinRate;
   const headline = headlineSurface(retail);
-  const commandCenter = bundle ? buildLiveCommandCenter(bundle, retail, aiSearch) : fenderCommandCenter;
+  const commandCenter = bundle ? buildLiveCommandCenter(bundle, retail, aiSearch) : {
+        ...fenderCommandCenter,
+        // The offline fallback reads the set-asides and owner chips of the brand on screen.
+        storageKey: clientStorageKey(fenderCommandCenter.storageKey ?? "ifai:fender:command-center"),
+        setAsideClientKey: activeSetAsideClientKey(),
+      };
   const nodes = bundle ? buildLiveNodes(bundle, metrics, retail, aiSearch, findability) : fenderStaticNodes;
   const minimalView = bundle
     ? {
