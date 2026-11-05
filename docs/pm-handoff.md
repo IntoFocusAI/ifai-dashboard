@@ -113,22 +113,24 @@ LATER items, and the dollar formulas. Detail lives in the FDD.
 Replace this whole section on handoff. Keep it under 25 lines. The Google
 Docs win if this block is stale.
 
-- PM20 wrote this at 6:55 PM ET on 3 Nov 2026. Both docs open on
-  Documentation version: 20.9 (workers 20.1, 20.2, 20.4 to 20.9; Watson's
-  18.5 and 18.6). Do not redo that closeout. Next is PM21.
-- Main is e99e0d9 (header label 20.9); every PR runs a "Unit tests" check.
-- Held: PR 110 (worker 20.3, hover slots, X-22 TARGET); Brian will rework it.
-- Collector: the FenderTest Toolbelt agent (AEO_Product_Research-FenderTest,
-  via Lux_Connector manage_delegations) runs it. v15 Step 1 is live (3
-  repeats, Perplexity fix, empty probe columns). PM20 asked it to switch the
-  catalog rotation on (dlg_e98b9df8-c4a4-4d81-af17-470f8dbc9820). First job:
-  confirm p35 to p37 are active before 5 Nov 06:00 UTC. If that delegation
-  is stuck, Brian presses Resume. If the rotation is off, nothing breaks.
-- Waiting on Brian Watson: review of pull request 115 (four replaced views,
-  two data writes), canvas_ai_probe_coverage grants, the claude database
-  copy, docs/pending-migrations, the drift-check load, and three answers on
-  publishing his API job (engine slugs, same scoring, which runs count).
-- Next batch: hover lag and cursor glitches (Brian's top concern); the All /
-  Without API / API only switch after Watson answers; the tour card over its
-  lit area; one failed read blanking the map; page-found reasons linked to
-  Findability rows. Ask Brian: edge tab to reopen a spoke? Priorities open?
+- PM21 wrote this at 12:00 PM ET on 5 Nov 2026. Both docs open on
+  Documentation version: 21.8 (workers 21.1 to 21.8). Do not redo that
+  closeout. Next is PM22. Launch rows CURRENT: 54 of 92.
+- Main is d6b56e3 (header label 21.8). Publish only through the Cursor
+  Google-docs plugin path in PR 137 (worker 21.9); the Toolbelt Drive
+  upload is gone. The two Drive descriptions may still say 20.9.
+- Battery: the rotation is on (4 Nov 13:27 UTC). Runs Sun, Tue, Thu at
+  06:00 UTC and publish themselves that evening ET. First rotated run
+  1d73d3e9 (5 Nov): check AI Search no longer times out and Product Fact
+  Checks shows catalog coverage (A-05). Stall alert task 3c289d5a notifies
+  Brian. Perplexity is down; Ryan decides the fix.
+- API engines are live (views applied 4 Nov 21:30 UTC); the map shows the
+  published run plus its matching API run; API counts repeats 1 to 3 only.
+- Held: PR 110 (hover slots, X-22); on rebase its hub-slot input reads
+  mapAiSearch. Watson: PR 133 (client switcher) rebases after PR 137;
+  PR 125 is applied but not merged; three default-grant views are his call.
+- Next batch: one type scale (X-27) and the partial-figure asterisk rule
+  (X-25) together, since they touch every stylesheet; the Strategy Roadmap
+  rebuilt as a plan of activity (S-02, Brian's direction); the ChatGPT
+  model recorded (A-02); slow or pause the idle map animations if laptops
+  still lag (X-32).
