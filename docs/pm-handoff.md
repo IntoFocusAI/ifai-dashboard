@@ -43,25 +43,63 @@ If you are about to edit a product file, stop and write the brief.
 
 ## How to update the Google Docs
 
-Edit the .docx on this machine. This is the only publish path.
+Edit a copy of each doc on this machine, then make the same edits in the
+live doc with the Google-docs plugin. This is the only publish path.
 
-1. Run `python3 scripts/stage-design-docx.py path/to/the.docx`.
-   It prints one https URL. The download matches the local file. The URL
-   lasts about an hour. Do not put that URL in a reply.
-2. Call google_drive-update-file once. filePath is that URL.
-   keepRevisionForever is true. Leave mimeType unset.
-   FDD file id: 1PoeiXKR2twOaz_JcRN0e4ZQkUCuDD5qnnyrlt6ygkeU
-   TDD file id: 1K6-ghhSnJZcrch81DDhmHXXYU0pSF7tOGR9S9jiCUjk
-3. Run `python3 scripts/check-design-doc.py FILE_ID path/to/the.docx`.
-   Reply with the new first line only after it exits 0. The check compares
-   paragraph text, the header, and the footer. A byte hash of the export
-   will not match.
-4. If the Drive file description still names the previous documentation
-   version, set description in a second google_drive-update-file call that
-   has no filePath.
+FDD file id: 1PoeiXKR2twOaz_JcRN0e4ZQkUCuDD5qnnyrlt6ygkeU (`fdd`)
+TDD file id: 1K6-ghhSnJZcrch81DDhmHXXYU0pSF7tOGR9S9jiCUjk (`tdd`)
 
-Do not paste the .docx, its base64, or a data URL into a tool call. Do not
-send the file through assistant storage. Do not create a second Google Doc.
+1. Download. Run
+   `python3 scripts/design-doc-edit.py download fdd fdd-live.docx`
+   (or `tdd`). It reads the public export URL and prints the first line.
+   Copy it to a working file, such as fdd-21.9.docx.
+2. Edit the copy with `python3 scripts/design-doc-edit.py COMMAND FILE ...`.
+   It installs python-docx if it is missing. Do not hand-edit
+   word/document.xml. Each command saves in place, and saves nothing if it
+   fails.
+   - `set-version FILE 21.9` sets the first line, the Version and Date
+     rows, and the footer. `--date "November 5, 2026"` overrides today.
+   - `set-status FILE X-21 CURRENT` sets the status word and its color.
+   - `get`, `set`, `append`, `replace FILE X-21 Evidence ...` edit one
+     field in either row layout (table or label paragraphs).
+   - `clone FILE X-21 X-31 X-32 --status TARGET` copies X-21 to a new
+     X-32 after X-31. Then set each field.
+   - `changelog FILE CHANGE REASON REFERENCE` appends a change-log row.
+   - `add-row FILE decision|later|trace|tdd-trace VALUES...` and
+     `set-cell FILE trace X-21 Status CURRENT` edit the registers. Add
+     rows at the bottom (no `--after`): the plugin cannot add a row
+     inside a table.
+   - `replace-all FILE OLD NEW`, and `rows` or `show FILE X-21` to read.
+   Then run `python3 scripts/design-doc-edit.py diff fdd-live.docx
+   fdd-21.9.docx` and read every changed line.
+3. Plan. Run `python3 scripts/design-doc-edit.py plan fdd-live.docx
+   fdd-21.9.docx > plan.txt`. Read its Self-check line first. Go on only
+   when it says OK. If it says MISMATCH, or lists anything under Skipped
+   or Warnings, fix the copy and plan again. Published change-log rows
+   stay as they are unless Brian asks; then add `--no-keep-history`.
+4. Apply plan.txt with the Google-docs plugin, one call at a time, in
+   the order listed. documentId is the file id. The plan uses
+   replace_text, find_text, read_document, delete_content, insert_text,
+   insert_table, apply_text_style, apply_paragraph_style,
+   set_paragraph_format, and set_header_footer. Take every index from the
+   find_text or read_document call in the same step. If a replace_text
+   reports a different occurrencesChanged than its step expects, stop,
+   put back what it changed, and tell Brian. If the Google-docs namespace
+   says needsAuth, or a call fails with an authentication error, call its
+   mcp_auth, then ask Brian to reconnect Google Docs under Integrations in
+   the Cursor web dashboard (not the desktop app).
+5. Check. Run the two lines at the end of plan.txt:
+   `python3 scripts/design-doc-edit.py pub fdd-21.9.docx pub.docx --split ...`
+   and `python3 scripts/check-design-doc.py FILE_ID pub.docx`. pub puts
+   each appended row in its own table, the way insert_table leaves it
+   live. Reply with the new first line only after the check exits 0. If
+   it reports a paragraph, fix that paragraph in the live doc with the
+   plugin and check again.
+
+Do not create a second Google Doc. Do not paste the .docx, its base64, a
+data URL, or its text into a tool call, and do not upload it.
+`scripts/stage-design-docx.py` stays in the repo but is not part of the
+publish path.
 
 ## How to choose the next batch
 

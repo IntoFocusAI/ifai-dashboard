@@ -5,20 +5,26 @@ alwaysApply: true
 
 # Publishing the design documents
 
-The Functional Design Document and Technical Design Document are Google Docs. Update them from a local `.docx` in two commands. Do not invent another upload path.
+The Functional Design Document and Technical Design Document are Google Docs. Edit a local copy, then make the same edits in the live doc with the Google-docs plugin. This is the only publish path.
+
+- FDD file id: `1PoeiXKR2twOaz_JcRN0e4ZQkUCuDD5qnnyrlt6ygkeU` (`fdd` in `design-doc-edit.py`)
+- TDD file id: `1K6-ghhSnJZcrch81DDhmHXXYU0pSF7tOGR9S9jiCUjk` (`tdd` in `design-doc-edit.py`)
 
 ```bash
-python3 scripts/stage-design-docx.py path/to/the.docx
-python3 scripts/check-design-doc.py FILE_ID path/to/the.docx
+python3 scripts/design-doc-edit.py download fdd fdd-live.docx
+cp fdd-live.docx fdd-21.9.docx
+python3 scripts/design-doc-edit.py set-version fdd-21.9.docx 21.9
+python3 scripts/design-doc-edit.py diff fdd-live.docx fdd-21.9.docx
+python3 scripts/design-doc-edit.py plan fdd-live.docx fdd-21.9.docx > plan.txt
+# apply plan.txt with the Google-docs plugin, then run the two lines it prints:
+python3 scripts/design-doc-edit.py pub fdd-21.9.docx pub.docx --split 'Date|Change|Reason|Reference:1'
+python3 scripts/check-design-doc.py FILE_ID pub.docx
 ```
 
-`stage-design-docx.py` prints one https URL. The download matches the local file. The URL lasts about an hour. Pass that URL to `google_drive-update-file` as `filePath`, with `keepRevisionForever` true. Leave `mimeType` unset. Do not put the URL in a reply.
+1. **Download** each live doc with `python3 scripts/design-doc-edit.py download fdd|tdd PATH`. It reads the public export URL and prints the first line.
+2. **Edit** a copy with `design-doc-edit.py` (`set-version`, `set-status`, `get`, `set`, `append`, `replace`, `clone`, `changelog`, `add-row`, `set-cell`, `replace-all`; `rows` and `show` to read). It installs python-docx when it is missing. Do not hand-edit `word/document.xml`. Add register and change-log rows at the bottom of their table (`add-row` without `--after`); the plugin cannot add a row inside a table. Review with `design-doc-edit.py diff LIVE NEW` and read every changed line.
+3. **Plan** with `python3 scripts/design-doc-edit.py plan LIVE NEW > plan.txt`. Read its Self-check line first. Apply the plan only when it says OK. If it says MISMATCH, or the plan lists anything under Skipped or Warnings, fix NEW and plan again. Published change-log rows are never rewritten unless Brian asks; then use `--no-keep-history`.
+4. **Apply** `plan.txt` with the Google-docs plugin, one call at a time, in the order listed. `documentId` is the file id. The plan uses `replace_text`, `find_text`, `read_document`, `delete_content`, `insert_text`, `insert_table`, `apply_text_style`, `apply_paragraph_style`, `set_paragraph_format`, and `set_header_footer`. Take every index from the `find_text` or `read_document` call in the same step. If a `replace_text` reports a different `occurrencesChanged` than its step expects, stop, put back what it changed, and tell Brian. If the Google-docs namespace says `needsAuth`, or a call fails with an authentication error, call its `mcp_auth`, then ask Brian to reconnect Google Docs under Integrations in the Cursor web dashboard (not the desktop app).
+5. **Check.** Run the `pub` and `check-design-doc.py` lines that `plan.txt` prints. `pub` writes NEW with each appended row in its own table, the way `insert_table` leaves it live. Reply with the new first line only after the check exits 0. If it reports a paragraph, fix that paragraph in the live doc with the plugin and check again.
 
-- FDD file id: `1PoeiXKR2twOaz_JcRN0e4ZQkUCuDD5qnnyrlt6ygkeU`
-- TDD file id: `1K6-ghhSnJZcrch81DDhmHXXYU0pSF7tOGR9S9jiCUjk`
-
-Run the check after the update. Reply with the new first line only after it exits 0. The check compares paragraph text, the header, and the footer. A byte hash of the export will not match.
-
-Leave the file bytes on disk. Do not paste the `.docx`, its base64, or a data URL into a tool call. Do not send it through assistant storage. Do not create a second Google Doc.
-
-If the Drive file description still names the previous documentation version, set `description` in a second `google_drive-update-file` call that has no `filePath`.
+Do not create a second Google Doc. Leave the file bytes on disk: do not paste the `.docx`, its base64, a data URL, or its text into a tool call, and do not upload it. `scripts/stage-design-docx.py` stays in the repo but is not part of the publish path.
