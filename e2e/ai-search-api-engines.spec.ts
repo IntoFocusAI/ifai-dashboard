@@ -1,7 +1,7 @@
 import type { Page } from "@playwright/test";
 import { Canvas, expect, test as base } from "./fixtures";
 import { mockCanvasRead } from "./spec-read-mock";
-import { enableApiViews, mockAiSearchWithApi } from "./api-engines-mock";
+import { disableApiViews, enableApiViews, mockAiSearchWithApi } from "./api-engines-mock";
 
 /**
  * FDD A-02: API engines beside the search engines, behind an All / Without API / API only switch.
@@ -135,8 +135,9 @@ test.describe("API engines beside the search engines", () => {
   });
 });
 
-test.describe("before the API views are applied", () => {
-  test("with the flag off nothing asks for the API views and the switch reads Not available*", async ({ canvas, page }) => {
+test.describe("with the API views off or missing", () => {
+  test("with the reads turned off nothing asks for the API views and the switch reads Not available*", async ({ canvas, page }) => {
+    await disableApiViews(page);
     const seen = await mockAiSearchWithApi(page);
     await canvas.open();
     await canvas.openSimulations();
@@ -151,7 +152,6 @@ test.describe("before the API views are applied", () => {
   });
 
   test("a missing view reads as Not available*, and the search figures stand", async ({ canvas, page }) => {
-    await enableApiViews(page);
     const seen = await mockAiSearchWithApi(page, { apiViews: "missing" });
     await canvas.open();
     await canvas.openSpokeFromMap("AI Search Visibility");

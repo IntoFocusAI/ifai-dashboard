@@ -1,13 +1,16 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { useAiHistory } from "@/components/v3/live/ai-search/AiHistoryContext";
 import { READ_ERROR_TITLE } from "@/components/v3/live/ai-search/AiReadGate";
 import { CopyTip } from "@/components/v3/live/ai-search/CopyTip";
 import { RunHistoryCalendar } from "@/components/v3/live/ai-search/RunHistoryCalendar";
+import { useApiRunCatalog } from "@/components/v3/live/ai-search/useApiEngineLoad";
+import { apiRunDay, apiRunsCoveringBattery, daysApart, nearestApiRun } from "@/lib/ai-search/api-runs";
+import { API_QUESTION_RULE, API_REPEAT_RULE, fixedQuestionCount } from "@/lib/ai-search/engine-group";
 import { formatDay, utcDay, type HistoryRunSummary } from "@/lib/ai-search/history-eligibility";
 import { LAST_30_DAYS_LABEL } from "@/lib/ai-search/default-window";
-import { batteryGaps } from "@/lib/ai-search/prompt-battery";
+import { batteryGaps, PROMPT_BATTERY } from "@/lib/ai-search/prompt-battery";
 import {
   citationStorageCaution,
   hasPartialCoverage,
@@ -17,6 +20,7 @@ import {
   STORED_RUN_COPY_LABEL,
 } from "@/lib/ai-search/review-runs";
 import { historyFixtureSnapshot } from "@/lib/ai-search/history-fixtures";
+import { API_NOT_AVAILABLE_TIPS } from "@/lib/ai-search/engine-group-read";
 import { engineLabel } from "@/lib/ai-search/run-metrics";
 import { runStateLabel } from "@/lib/ai-search/summary";
 
@@ -27,6 +31,49 @@ function monthOf(day: string | null): { year: number; month: number } {
   }
   const [year, month] = day.split("-").map(Number);
   return { year, month: month - 1 };
+}
+
+const PAIRED_API_TIP = `API engines run on their own schedule. This run is shown with the counted API run nearest its day when the Engines switch is on All or API only. ${API_QUESTION_RULE} ${API_REPEAT_RULE}`;
+
+/** The counted API run the Engines switch shows beside this run. */
+function PairedApiRun({ runId, day }: { runId: string; day: string | null }) {
+  const catalog = useApiRunCatalog();
+  const history = useAiHistory();
+  const loaded =
+    (history.trend.phase === "ready" ? history.trend.snapshots.find((item) => item.run.audit_run_id === runId) : null) ??
+    (history.selected.phase === "ready" && history.selected.snapshot.run.audit_run_id === runId ? history.selected.snapshot : null);
+  if (catalog.phase === "off" || !day) return null;
+  let text: ReactNode;
+  if (catalog.phase === "loading") text = "Loading";
+  else if (catalog.phase === "missing" || catalog.phase === "error") {
+    text = (
+      <CopyTip
+        label="API run"
+        description={catalog.phase === "error" ? `${API_NOT_AVAILABLE_TIPS.failed} ${catalog.message}` : API_NOT_AVAILABLE_TIPS.missing}
+      >
+        Not available*
+      </CopyTip>
+    );
+  } else {
+    // A run outside the loaded selection has no calls read yet, so its floor is the battery's question list.
+    const fixedQuestions = loaded ? fixedQuestionCount(loaded) : PROMPT_BATTERY.length;
+    const covering = apiRunsCoveringBattery(catalog.runs, [{ day, fixedQuestions }]);
+    const paired = nearestApiRun(covering, day);
+    const pairedDay = paired ? apiRunDay(paired) : null;
+    if (!paired || !pairedDay) text = "No counted API run";
+    else {
+      const apart = daysApart(pairedDay, day);
+      const engines = (paired.engines ?? []).map(engineLabel).join(", ");
+      text = (
+        <CopyTip label="API run" description={PAIRED_API_TIP}>
+          {formatDay(pairedDay)}
+          {apart === 0 ? " (same day)" : ` (${apart} day${apart === 1 ? "" : "s"} ${pairedDay < day ? "before" : "after"})`}
+          {engines ? ` · ${engines}` : ""}
+        </CopyTip>
+      );
+    }
+  }
+  return <li data-ai-history-api-run={catalog.phase}>API run beside it: {text}</li>;
 }
 
 function RunDetail({ run }: { run: HistoryRunSummary }) {
@@ -49,6 +96,7 @@ function RunDetail({ run }: { run: HistoryRunSummary }) {
         <li>Provider errors: {run.error_calls == null ? "Not recorded" : run.error_calls}</li>
         <li>Prompt set: {run.prompt_set_hash ?? "Not recorded"}</li>
         {caution ? <li data-ai-citation-caution={run.audit_run_id}>{caution}</li> : null}
+        <PairedApiRun runId={run.audit_run_id} day={day} />
       </ul>
       {gaps.length > 0 ? (
         <div data-ai-history-gaps={run.audit_run_id}>

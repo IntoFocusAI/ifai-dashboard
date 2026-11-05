@@ -22,6 +22,7 @@ import {
   isRotatingFactCheck,
   withApiSnapshots,
 } from "../lib/ai-search/engine-group.ts";
+import { defaultWindowBounds, defaultWindowRuns } from "../lib/ai-search/default-window.ts";
 import { engineGroupRead, engineSwitchState, type ApiEngineLoad } from "../lib/ai-search/engine-group-read.ts";
 import { sortExplorerRows } from "../lib/ai-search/explorer-filter.ts";
 import type { HistoryReadClient } from "../lib/ai-search/history-queries.ts";
@@ -304,10 +305,37 @@ test("API runs follow the shared date pill's selection", () => {
   assert.deepEqual(range.map((row) => row.audit_run_id), ["a-nov3"]);
   assert.equal(apiRunsInScope(runs, { kind: "all" }, null).length, 3);
   assert.deepEqual(apiRunsInScope(runs, { kind: "run", runId: BATTERY }, "2026-11-03"), []);
+  assert.deepEqual(
+    apiRunsInScope(runs, { kind: "run", runId: BATTERY }, "2026-11-03", "2026-11-03").map((row) => row.audit_run_id),
+    ["a-nov3"],
+  );
   assert.deepEqual(apiRunsInScope(runs, { kind: "month" }, null), []);
 });
 
+test("Last 30 days for API runs is the battery's window: 30 UTC days ending on the published run's day", () => {
+  const bounds = defaultWindowBounds("2026-11-03");
+  assert.deepEqual(bounds, { from: "2026-10-05", to: "2026-11-03" });
+  const runs = [
+    apiRun({ audit_run_id: "a-before", completed_at: "2026-10-04T23:59:00Z" }),
+    apiRun({ audit_run_id: "a-first-day", completed_at: "2026-10-05T00:00:00Z" }),
+    apiRun({ audit_run_id: "a-last-day", completed_at: "2026-11-03T23:59:00Z" }),
+    apiRun({ audit_run_id: "a-after", completed_at: "2026-11-04T00:10:00Z" }),
+    // Unpublished, as every API run is: the API run rule decides, not the published-review rule.
+    apiRun({ audit_run_id: "a-no-answers", completed_at: "2026-10-20T10:00:00Z", answered_calls: 0 }),
+  ];
+  const ids = apiRunsInScope(runs, { kind: "month" }, "2026-11-03").map((row) => row.audit_run_id);
+  assert.deepEqual(ids, ["a-first-day", "a-last-day"]);
+  const dated = defaultWindowRuns(runs, "2026-11-03");
+  assert.deepEqual(
+    [...dated.included, ...dated.excluded.map((item) => item.run)].map((row) => row.audit_run_id).sort(),
+    ["a-first-day", "a-last-day", "a-no-answers"],
+  );
+});
+
 type Row = Record<string, unknown>;
+
+/** Every `or` filter the fake client was sent, as "view:filter". */
+const orFilters: string[] = [];
 
 function fakeClient(tables: Record<string, Row[] | { message: string; code?: string }>): HistoryReadClient {
   return {
@@ -328,7 +356,8 @@ function fakeClient(tables: Record<string, Row[] | { message: string; code?: str
               filters.push((row) => (row[column] as number) >= (value as number));
               return query;
             },
-            or() {
+            or(filters: string) {
+              orFilters.push(`${view}:${filters}`);
               return query;
             },
             order() {
@@ -356,12 +385,13 @@ function fakeClient(tables: Record<string, Row[] | { message: string; code?: str
   } as unknown as HistoryReadClient;
 }
 
-test("the API views are read only once the flag says the migration is applied", () => {
-  assert.equal(apiEngineViewsEnabled(undefined, undefined), false);
+test("the API views are read by default; the flag \"0\" turns them off and tests force either way", () => {
+  assert.equal(apiEngineViewsEnabled(undefined, undefined), true);
+  assert.equal(apiEngineViewsEnabled("1", {}), true);
   assert.equal(apiEngineViewsEnabled("0", {}), false);
-  assert.equal(apiEngineViewsEnabled("1", undefined), true);
-  assert.equal(apiEngineViewsEnabled(undefined, { __IFAI_AI_API_VIEWS__: true }), true);
-  assert.equal(apiEngineViewsEnabled(undefined, { __IFAI_AI_API_VIEWS__: "true" }), false);
+  assert.equal(apiEngineViewsEnabled("0", { __IFAI_AI_API_VIEWS__: true }), true);
+  assert.equal(apiEngineViewsEnabled(undefined, { __IFAI_AI_API_VIEWS__: false }), false);
+  assert.equal(apiEngineViewsEnabled(undefined, { __IFAI_AI_API_VIEWS__: "false" }), true);
 });
 
 test("a missing API view reads as missing, not as an error or a zero", async () => {
@@ -388,6 +418,25 @@ test("an API run loads its own calls, fact checks, and citations", async () => {
   assert.equal(loaded.snapshot.probes.length, 1);
   assert.equal(loaded.snapshot.citations.length, 5);
   assert.equal(loaded.snapshot.run.audit_run_id, API_RUN);
+});
+
+test("an API run loads only repeats 1 to 3 of each question per engine", async () => {
+  const snapshot = apiSnapshot();
+  const extra = [4, 20].map((repeat) => call(API_RUN, "openai_api", { repeat_no: repeat, outcome: "competitor_win" }));
+  const client = fakeClient({
+    canvas_ai_api_runs: [apiRun({})],
+    canvas_ai_api_calls: [...snapshot.calls, ...extra],
+    canvas_ai_api_probes: [...snapshot.probes, probeOf(extra[0])],
+    canvas_ai_api_citations: [...snapshot.citations, ...extra.map(citeOf)],
+  });
+  const loaded = await loadApiRunSnapshot(client, apiRun({}));
+  assert.equal(loaded.phase, "ready");
+  if (loaded.phase !== "ready") return;
+  assert.equal(loaded.snapshot.calls.length, 5);
+  assert.equal(loaded.snapshot.probes.length, 1);
+  assert.equal(loaded.snapshot.citations.length, 5);
+  assert.equal(loaded.snapshot.storedCitationCount, 5);
+  assert.ok(orFilters.includes("canvas_ai_api_calls:repeat_no.is.null,repeat_no.lte.3"));
 });
 
 test("Run Details lists the search engines before the API engines for the same question", () => {

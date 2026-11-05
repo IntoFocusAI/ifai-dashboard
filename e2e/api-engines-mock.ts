@@ -13,6 +13,13 @@ import type { Row } from "./spec-read-mock";
 
 export const SEARCH_RUN = "5e0a0000-0000-4000-8000-000000000001";
 export const API_RUN = "a9100000-0000-4000-8000-000000000002";
+/**
+ * A one-question smoke test on Nov 3, nearer the search run than API_RUN. It matched 1 question,
+ * fewer than the search run's 4 fixed questions, so no figure counts it.
+ */
+export const SMOKE_RUN = "a9100000-0000-4000-8000-000000000004";
+/** With `earlierRun`, a second published search run on Oct 20 with the same answers. */
+export const EARLIER_RUN = "5e0a0000-0000-4000-8000-000000000003";
 
 const QUESTIONS = {
   p01: { kind: "commercial", category: "electrics", prompt: "Best electric guitar under $900 for versatile tones" },
@@ -40,7 +47,13 @@ const CLAIMS: Record<string, { claim: string; url: string }> = {
 };
 
 /** answered: outcome for a buying question, or the fact-check result for a probe. */
-type Plan = { engine: string; key: Key; result: "fender_win" | "competitor_win" | "none" | "confirmed" | "error" };
+type Plan = {
+  engine: string;
+  key: Key;
+  result: "fender_win" | "competitor_win" | "none" | "confirmed" | "error";
+  /** repeat_no, 1 unless set. */
+  repeat?: number;
+};
 
 const SEARCH_PLAN: Plan[] = [
   { engine: "chatgpt", key: "p01", result: "fender_win" },
@@ -68,6 +81,10 @@ const API_PLAN: Plan[] = [
   { engine: "crescent_api", key: "p02", result: "error" },
   { engine: "crescent_api", key: "p17", result: "error" },
   { engine: "crescent_api", key: "p18", result: "error" },
+  // Repeats 4 and 5 sit past the 3-repeat cap. Counted, they would move Accuracy and Unbranded Discovery.
+  { engine: "openai_api", key: "p17", result: "confirmed", repeat: 4 },
+  { engine: "gemini_api", key: "p01", result: "competitor_win", repeat: 4 },
+  { engine: "gemini_api", key: "p02", result: "competitor_win", repeat: 5 },
 ];
 
 function rowsFor(runId: string, plan: Plan[], day: string, firstSim: number) {
@@ -101,7 +118,7 @@ function rowsFor(runId: string, plan: Plan[], day: string, firstSim: number) {
       remediation_patch: null,
       error_message: failed ? "Provider returned 503" : null,
       attempt_no: 1,
-      repeat_no: 1,
+      repeat_no: step.repeat ?? 1,
       created_at: created,
       answer_text: answer,
     });
@@ -153,6 +170,11 @@ function rowsFor(runId: string, plan: Plan[], day: string, firstSim: number) {
 
 const search = rowsFor(SEARCH_RUN, SEARCH_PLAN, "2026-11-03", 1001);
 const api = rowsFor(API_RUN, API_PLAN, "2026-11-02", 2001);
+const SMOKE_PLAN: Plan[] = ["openai_api", "gemini_api", "claude_api"].map(
+  (engine): Plan => ({ engine, key: "p01", result: "fender_win" }),
+);
+const smoke = rowsFor(SMOKE_RUN, SMOKE_PLAN, "2026-11-03", 4001);
+const earlier = rowsFor(EARLIER_RUN, SEARCH_PLAN, "2026-10-20", 3001);
 
 const SEARCH_SUMMARY: Row = {
   audit_run_id: SEARCH_RUN,
@@ -170,6 +192,14 @@ const SEARCH_SUMMARY: Row = {
   completed_at: "2026-11-03T21:31:24.000Z",
 };
 
+const EARLIER_SUMMARY: Row = {
+  ...SEARCH_SUMMARY,
+  audit_run_id: EARLIER_RUN,
+  published_at: "2026-10-20T21:31:28.000Z",
+  started_at: "2026-10-20T06:00:00.000Z",
+  completed_at: "2026-10-20T21:31:24.000Z",
+};
+
 const API_SUMMARY: Row = {
   audit_run_id: API_RUN,
   run_kind: "ai_api",
@@ -178,7 +208,7 @@ const API_SUMMARY: Row = {
   prompt_set_hash: "mock-prompt-set",
   expected_calls: API_PLAN.length,
   attempted_calls: API_PLAN.length,
-  answered_calls: 8,
+  answered_calls: 11,
   error_calls: 4,
   is_published: false,
   published_at: null,
@@ -187,11 +217,27 @@ const API_SUMMARY: Row = {
   missing_calls: 4,
   engine_group: "api",
   engines: ["crescent_api", "gemini_api", "openai_api"],
-  repeats: 1,
+  repeats: 5,
   questions_asked: 4,
   questions_matched: 4,
   question_set_match: true,
   counted: true,
+};
+
+const SMOKE_SUMMARY: Row = {
+  ...API_SUMMARY,
+  audit_run_id: SMOKE_RUN,
+  run_state: "completed",
+  expected_calls: SMOKE_PLAN.length,
+  attempted_calls: SMOKE_PLAN.length,
+  answered_calls: SMOKE_PLAN.length,
+  error_calls: 0,
+  missing_calls: 0,
+  started_at: "2026-11-03T18:00:00.000Z",
+  completed_at: "2026-11-03T18:05:00.000Z",
+  engines: ["claude_api", "gemini_api", "openai_api"],
+  questions_asked: 1,
+  questions_matched: 1,
 };
 
 const CURRENT_RUN: Row = {
@@ -213,9 +259,17 @@ const strip = (rows: Row[], column: string) =>
   rows.map((row) => Object.fromEntries(Object.entries(row).filter(([key]) => key !== column)));
 
 /** Rows for one AI read, or undefined when the table is not an AI Search read. */
-function aiRows(table: string, url: URL): Row[] | undefined {
+function aiRows(table: string, url: URL, withEarlier: boolean): Row[] | undefined {
   const run = url.searchParams.get("audit_run_id")?.replace(/^eq\./, "");
   const only = (rows: Row[]) => (run ? rows.filter((row) => row.audit_run_id === run) : rows);
+  const history = withEarlier
+    ? {
+        calls: [...earlier.calls, ...search.calls],
+        probes: [...earlier.probes, ...search.probes],
+        citations: [...earlier.citations, ...search.citations],
+      }
+    : search;
+  const summaries = withEarlier ? [EARLIER_SUMMARY, SEARCH_SUMMARY] : [SEARCH_SUMMARY];
   switch (table) {
     case "canvas_ai_current_run":
       return [CURRENT_RUN];
@@ -226,22 +280,22 @@ function aiRows(table: string, url: URL): Row[] | undefined {
     case "canvas_ai_citations":
       return search.citations;
     case "canvas_ai_run_history":
-      return [SEARCH_SUMMARY];
+      return summaries;
     case "canvas_ai_history_runs":
-      return only([{ ...SEARCH_SUMMARY, missing_calls: 0 }]);
+      return only(summaries.map((row) => ({ ...row, missing_calls: 0 })));
     case "canvas_ai_history_calls":
-      return only(search.calls);
+      return only(history.calls);
     case "canvas_ai_history_probes":
-      return only(search.probes);
+      return only(history.probes);
     case "canvas_ai_history_citations":
     case "canvas_ai_history_citations_by_run":
-      return only(search.citations);
+      return only(history.citations);
     case "canvas_ai_probe_coverage":
       return [];
     case "canvas_ai_api_runs":
-      return [API_SUMMARY];
+      return [API_SUMMARY, SMOKE_SUMMARY];
     case "canvas_ai_api_calls":
-      return only(api.calls.map((row) => ({ ...row, engine_group: "api" })));
+      return only([...api.calls, ...smoke.calls].map((row) => ({ ...row, engine_group: "api" })));
     case "canvas_ai_api_probes":
       return only(api.probes);
     case "canvas_ai_api_citations":
@@ -262,7 +316,10 @@ const MISSING_VIEW = (table: string) => ({
  * Serves the AI Search reads above. Register after `mockCanvasRead`, which answers the rest.
  * `apiViews: "missing"` answers the API views the way the database does before the migration.
  */
-export async function mockAiSearchWithApi(page: Page, options: { apiViews?: "ready" | "missing" } = {}): Promise<string[]> {
+export async function mockAiSearchWithApi(
+  page: Page,
+  options: { apiViews?: "ready" | "missing"; earlierRun?: boolean } = {},
+): Promise<string[]> {
   const seen: string[] = [];
   await page.route("**/*supabase.co/rest/v1/**", async (route) => {
     const url = new URL(route.request().url());
@@ -276,7 +333,7 @@ export async function mockAiSearchWithApi(page: Page, options: { apiViews?: "rea
       await route.fulfill({ status: 404, contentType: "application/json", headers, body: JSON.stringify(MISSING_VIEW(table)) });
       return;
     }
-    const rows = aiRows(table, url);
+    const rows = aiRows(table, url, options.earlierRun === true);
     if (!rows) {
       await route.fallback();
       return;
@@ -292,9 +349,16 @@ export async function mockAiSearchWithApi(page: Page, options: { apiViews?: "rea
   return seen;
 }
 
-/** Turns on the API reads the way NEXT_PUBLIC_AI_API_ENGINE_VIEWS does once the migration is applied. */
+/** Forces the API reads on, whatever NEXT_PUBLIC_AI_API_ENGINE_VIEWS says. */
 export async function enableApiViews(page: Page) {
   await page.addInitScript(() => {
     (window as unknown as { __IFAI_AI_API_VIEWS__: boolean }).__IFAI_AI_API_VIEWS__ = true;
+  });
+}
+
+/** Turns the API reads off the way NEXT_PUBLIC_AI_API_ENGINE_VIEWS "0" does. */
+export async function disableApiViews(page: Page) {
+  await page.addInitScript(() => {
+    (window as unknown as { __IFAI_AI_API_VIEWS__: boolean }).__IFAI_AI_API_VIEWS__ = false;
   });
 }

@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { useAiHistoryOptional } from "@/components/v3/live/ai-search/AiHistoryContext";
 import { useAiSearch } from "@/components/v3/live/ai-search/AiSearchContext";
+import { useEngineGroupWindow } from "@/components/v3/live/ai-search/EngineGroupScope";
 import {
   citationAggregateCopy,
   citationSnapshotUsable,
@@ -51,7 +52,7 @@ export function useCitationAggregate(): CitationAggregate {
   const history = useAiHistoryOptional();
   const read = useAiSearch();
   const mode = history?.mode;
-  const trend = history?.trend;
+  const { trend } = useEngineGroupWindow("citations");
   const current = history?.current;
   const windowFrom = history?.mode.kind === "month" ? history.bounds.from : null;
   const windowTo = history?.mode.kind === "month" ? history.bounds.to : null;
@@ -67,7 +68,7 @@ export function useCitationAggregate(): CitationAggregate {
 
   const trendAggregate = useMemo<CitationAggregate | null>(() => {
     if (!window || window.kind === "run") return null;
-    if (!trend || trend.phase === "loading" || trend.phase === "idle") return { phase: "loading" };
+    if (trend.phase === "loading" || trend.phase === "idle") return { phase: "loading" };
     if (trend.phase === "error" || trend.phase === "unavailable") {
       return { phase: "error", message: trend.message, failed: "period" };
     }

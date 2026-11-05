@@ -60,6 +60,60 @@ export function isRotatingFactCheck(
   return Boolean(row.probe_asin?.trim()) && row.probe_is_anchor !== true;
 }
 
+/**
+ * The battery run's fixed questions: the question keys its search engines were asked, rotating
+ * fact checks left out. An API run counts beside that run only when it matched at least as many.
+ */
+export function fixedQuestionCount(snapshot: Pick<AiSearchSnapshot, "calls" | "probes">): number {
+  const rotating = new Set(snapshot.probes.filter(isRotatingFactCheck).map(callKey));
+  const keys = new Set<string>();
+  for (const row of snapshot.calls) {
+    if (isApiEngine(row.engine) || !row.prompt_key) continue;
+    if (row.prompt_kind === "probe" && (rotating.has(callKey(row)) || isRotatingFactCheck(row))) continue;
+    keys.add(row.prompt_key.trim().toLowerCase());
+  }
+  return keys.size;
+}
+
+export const API_QUESTION_RULE =
+  "An API run counts only when it asked at least as many questions as the search run's fixed questions, so a short test run is left out.";
+
+/** Repeats of each API question per engine that count: the question set × 3 repeats (Brian Magazu). */
+export const API_REPEAT_CAP = 3;
+
+export const API_REPEAT_RULE = `Only repeats 1 to ${API_REPEAT_CAP} of each API question per engine are counted.`;
+
+/**
+ * An API run's calls up to the repeat cap, with the fact checks and citations of those calls.
+ * The run's counts are recounted; expected and missing are not known for the capped subset.
+ * `repeats` is the run's own repeat count: above the cap, the calls may already arrive capped
+ * by the read, and the run's counts still cover every repeat.
+ */
+export function capApiRepeats(snapshot: AiSearchSnapshot, cap = API_REPEAT_CAP, repeats?: number | null): AiSearchSnapshot {
+  const calls = snapshot.calls.filter((row) => {
+    const repeat = row.repeat_no ?? 1;
+    return repeat >= 1 && repeat <= cap;
+  });
+  const kept = new Set(calls.map(callKey));
+  const ids = new Set(calls.map((row) => row.id));
+  const probes = snapshot.probes.filter((row) => kept.has(callKey(row)));
+  const citations = snapshot.citations.filter((row) => ids.has(row.simulation_id));
+  const capped =
+    (repeats ?? 0) > cap ||
+    calls.length !== snapshot.calls.length ||
+    probes.length !== snapshot.probes.length ||
+    citations.length !== snapshot.citations.length;
+  if (!capped) return snapshot;
+  return {
+    ...snapshot,
+    run: withCallCounts(snapshot, calls),
+    calls,
+    probes,
+    citations,
+    storedCitationCount: citations.length,
+  };
+}
+
 /** What the engine switch did to the selection. Panels read it for N of M and tooltips. */
 export type EngineScope = {
   choice: EngineGroupChoice;
@@ -87,14 +141,18 @@ export function hasSearchRows(snapshot: Pick<AiSearchSnapshot, "calls">): boolea
  * The selection narrowed to one engine group. With API engines in the figures, fact checks keep
  * only the fixed questions, since the API job does not ask the rotating catalog checks.
  * Returns null when the choice leaves no call, so the panel never shows a zero for it.
+ * `rotating` "drop" keeps the fixed questions only on a run whose API runs sit on another point;
+ * "keep" leaves the rotating checks in for a reader that counts no fact check.
  */
 export function filterSnapshotByEngineGroup(
   snapshot: AiSearchSnapshot,
   choice: EngineGroupChoice,
+  rotating: "auto" | "drop" | "keep" = "auto",
 ): AiSearchSnapshot | null {
   const calls = snapshot.calls.filter((row) => inEngineChoice(row.engine, choice));
   if (calls.length === 0) return null;
-  const fixedFactChecksOnly = calls.some((row) => isApiEngine(row.engine));
+  const fixedFactChecksOnly =
+    rotating === "keep" ? false : (rotating === "drop" && choice !== "search") || calls.some((row) => isApiEngine(row.engine));
   const factChecksBefore = calls.filter((row) => row.prompt_kind === "probe").length;
   let probes = snapshot.probes.filter((row) => inEngineChoice(row.engine, choice));
   let kept: AiCallRow[] = calls;

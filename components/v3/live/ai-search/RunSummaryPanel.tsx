@@ -7,6 +7,7 @@ import { AiReadGate, mutedText } from "@/components/v3/live/ai-search/AiReadGate
 import { useTrendSlot } from "@/components/v3/live/ai-search/AiSearchSurface";
 import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
 import { CitationPieDisc, type PieDiscInput } from "@/components/v3/live/ai-search/CitationPieDisc";
+import { EngineGroupScope } from "@/components/v3/live/ai-search/EngineGroupScope";
 import { EvidenceLink } from "@/components/v3/live/ai-search/EvidenceLink";
 import { MixedScoringTip } from "@/components/v3/live/ai-search/MixedScoringTip";
 import { RunCompletenessCard } from "@/components/v3/live/ai-search/RunCompletenessCard";
@@ -352,5 +353,9 @@ function SummaryBody({ snapshot }: { snapshot: AiSearchSnapshot }) {
 }
 
 export function RunSummaryPanel() {
-  return <AiReadGate>{(snapshot) => <SummaryBody snapshot={snapshot} />}</AiReadGate>;
+  return (
+    <EngineGroupScope>
+      <AiReadGate>{(snapshot) => <SummaryBody snapshot={snapshot} />}</AiReadGate>
+    </EngineGroupScope>
+  );
 }

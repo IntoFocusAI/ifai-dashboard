@@ -3,6 +3,7 @@
 import { useEffect, useMemo } from "react";
 import { AiHistoryProvider, useAiHistory, useDisplayedAiSearch } from "@/components/v3/live/ai-search/AiHistoryContext";
 import { AiSearchProvider, useAiSearchRead } from "@/components/v3/live/ai-search/AiSearchContext";
+import { useMapAiSearch } from "@/components/v3/live/ai-search/useApiEngineLoad";
 import { FindabilityProvider, useFindabilityRead } from "@/components/v3/live/findability/FindabilityContext";
 import { CanvasLoadingShell } from "@/components/v3/live/CanvasLoadingShell";
 import { DataFreshnessBar } from "@/components/v3/live/DataFreshnessBar";
@@ -77,6 +78,7 @@ function FenderBrandCanvasBody({
 }) {
   const history = useAiHistory();
   const displayedAiSearch = useDisplayedAiSearch(aiSearch);
+  const mapAiSearch = useMapAiSearch(aiSearch);
   const selectedPhase = history.selected.phase;
   const selectedMessage = "message" in history.selected ? history.selected.message : null;
   const panelDescription = historySpokeDescription({
@@ -96,7 +98,7 @@ function FenderBrandCanvasBody({
       userMenu,
       viewerId,
       retail,
-      aiSearch,
+      aiSearch: mapAiSearch,
       findability,
       authorizedPartners,
       stockLoss,
@@ -112,7 +114,7 @@ function FenderBrandCanvasBody({
         aeo: { ...built.spokes.aeo, desc: panelDescription },
       },
     };
-  }, [aiSearch, amazonFieldTotals, authorizedPartners, bundle, findability, panelDescription, retail, stale, stockLoss, userMenu, viewerId]);
+  }, [amazonFieldTotals, authorizedPartners, bundle, findability, mapAiSearch, panelDescription, retail, stale, stockLoss, userMenu, viewerId]);
 
   if (loading && !spec) return <CanvasLoadingShell />;
   if (!spec) {
