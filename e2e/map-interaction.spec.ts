@@ -72,12 +72,26 @@ test.describe("map hover", () => {
     await page.mouse.move(from.x, from.y);
     await page.mouse.move(to.x, to.y, { steps: 20 });
     await frames(page);
-    const vars = await page.evaluate(() => ({
-      body: (document.querySelector(".canvas-body") as HTMLElement).style.getPropertyValue("--pointer-x"),
-      wash: (document.querySelector(".canvas-pointer-wash") as HTMLElement).style.getPropertyValue("--pointer-x"),
-    }));
-    expect(vars.body, "the canvas body carries no per-move variable").toBe("");
-    expect(parseFloat(vars.wash)).toBeCloseTo((to.x / 1280) * 100, 0);
+    const glow = await page.evaluate(() => {
+      const body = document.querySelector(".canvas-body") as HTMLElement;
+      const wash = document.querySelector(".canvas-pointer-wash") as HTMLElement;
+      const el = wash.querySelector(".canvas-pointer-glow") as HTMLElement;
+      const box = el.getBoundingClientRect();
+      return {
+        body: body.getAttribute("style") ?? "",
+        wash: wash.getAttribute("style") ?? "",
+        background: getComputedStyle(el).backgroundImage,
+        center: { x: box.left + box.width / 2, y: box.top + box.height / 2 },
+        width: box.width,
+      };
+    });
+    expect(glow.body, "the canvas body is not restyled per move").not.toContain("--pointer");
+    expect(glow.wash, "the wash is not restyled per move").toBe("");
+    expect(glow.background).toContain("radial-gradient");
+    expect(glow.width).toBeGreaterThan(300);
+    expect(glow.width, "the glow is a fixed-size layer, not the whole canvas").toBeLessThan(1280);
+    expect(Math.abs(glow.center.x - to.x)).toBeLessThan(2);
+    expect(Math.abs(glow.center.y - to.y)).toBeLessThan(2);
   });
 });
 
@@ -312,6 +326,35 @@ test.describe("panel tabs right after a spoke opens", () => {
     expect(seen.tallestRow, "the tab row reflowed while the panel opened").toBeLessThanOrEqual(seen.settledRow + 1);
   });
 
+  test("the panel slides in at its final width in under half a second", async ({ canvas, page }) => {
+    const watch = page.evaluate(
+      () =>
+        new Promise<{ widths: number[]; property: string; duration: string }>((done) => {
+          const widths: number[] = [];
+          let shownAt = 0;
+          const tick = (now: number) => {
+            const panel = document.querySelector<HTMLElement>(".drilldown-panel.open");
+            const box = panel?.getBoundingClientRect();
+            if (box && box.left < innerWidth - 1) {
+              shownAt ||= now;
+              widths.push(Math.round(box.width));
+            }
+            if (!shownAt || now - shownAt < 1200) requestAnimationFrame(tick);
+            else {
+              const style = getComputedStyle(panel!);
+              done({ widths, property: style.transitionProperty, duration: style.transitionDuration });
+            }
+          };
+          requestAnimationFrame(tick);
+        }),
+    );
+    await canvas.clickBubble("spoke-retail");
+    const seen = await watch;
+    expect(new Set(seen.widths).size, `panel widths while opening: ${[...new Set(seen.widths)].join(", ")}`).toBe(1);
+    expect(seen.property).toBe("transform");
+    expect(parseFloat(seen.duration)).toBeLessThanOrEqual(0.5);
+  });
+
   test("the first tab click after opening from the map sticks", async ({ canvas, page }) => {
     await canvas.clickBubble("spoke-retail");
     const tab = page.locator(".drilldown-tab-btn").nth(2);
@@ -393,6 +436,44 @@ async function walkTour(canvas: Canvas, page: Page) {
 
 /* H-08: the step card used to sit bottom-left on every step, so bubbles left of the hub
    slid in from under it while the camera moved. */
+test.describe("reduced motion", () => {
+  test.use({ reducedMotion: "reduce" });
+
+  test("the pointer glow stays at its rest point and the panel appears without sliding", async ({ canvas, page }) => {
+    const glowCenter = () =>
+      page.evaluate(() => {
+        const body = document.querySelector(".canvas-body")!.getBoundingClientRect();
+        const box = document.querySelector(".canvas-pointer-glow")!.getBoundingClientRect();
+        return {
+          x: (box.left + box.width / 2 - body.left) / body.width,
+          y: (box.top + box.height / 2 - body.top) / body.height,
+        };
+      });
+    const from = await center(canvas, "spoke-aeo");
+    const to = await center(canvas, "spoke-competitors");
+    await page.mouse.move(from.x, from.y);
+    await page.mouse.move(to.x, to.y, { steps: 10 });
+    await frames(page);
+    const glow = await glowCenter();
+    expect(glow.x).toBeCloseTo(0.58, 2);
+    expect(glow.y).toBeCloseTo(0.42, 2);
+
+    const firstFrame = page.evaluate(
+      () =>
+        new Promise<number>((done) => {
+          const tick = () => {
+            const box = document.querySelector(".drilldown-panel.open")?.getBoundingClientRect();
+            if (box && box.left < innerWidth - 1) done(Math.round(box.right - innerWidth));
+            else requestAnimationFrame(tick);
+          };
+          requestAnimationFrame(tick);
+        }),
+    );
+    await canvas.clickBubble("spoke-retail");
+    expect(await firstFrame, "the panel is in place on its first frame").toBe(0);
+  });
+});
+
 test.describe("tour card", () => {
   test("never covers the lit area in any frame, stepping forward and back", { tag: "@1440" }, async ({ canvas, page }) => {
     const seen = await walkTour(canvas, page);

@@ -333,9 +333,11 @@ export function CanvasShell({ spec, children }: Props) {
   }, [graphColumnLayout, syncColumnScrollFade, activeSpoke]);
 
   /* A hidden panel keeps the width it opens at, so opening only slides it in. Growing
-     it from 0 reflowed the tabs into a tall stack that moved under the pointer. */
+     it from 0 reflowed the tabs into a tall stack that moved under the pointer. The
+     column width applies from the first frame of the open, while the panel is still
+     off screen, rather than after the map's exit, so the panel never animates width. */
   const shownDrilldownWidth = (() => {
-    if (graphColumnLayout && windowWidth > 0) {
+    if (columnLayout && windowWidth > 0) {
       return Math.max(baseDrilldownWidth, windowWidth - IOM_GRAPH_RAIL_PX);
     }
     if (!iom && (panelLayout === "narrow" || windowWidth === 0)) return baseDrilldownWidth;
@@ -611,7 +613,9 @@ export function CanvasShell({ spec, children }: Props) {
         const target = evt.currentTarget;
         if (!(target instanceof Element)) return;
         const node = target.closest(".graph-node") ?? target;
-        const nodeRect = node.getBoundingClientRect();
+        // The rail hides spoke halos; the soft shadow and the hub's halo reach past their circles.
+        const edge = node.querySelector(":scope > .hub-halo-edge, :scope > .node-inner > .node-circle") ?? node;
+        const nodeRect = edge.getBoundingClientRect();
         tooltipRef.current?.show(
           { title, desc, hasMoreInfo, example, anchor: "column-right" },
           nodeRect.right - hostRect.left + 14,
@@ -1009,7 +1013,11 @@ export function CanvasShell({ spec, children }: Props) {
     >
       <div className="canvas-layout">
         <div className="canvas-body" ref={canvasBodyRef}>
-        {iom ? <div className="canvas-pointer-wash" aria-hidden="true" /> : null}
+        {iom ? (
+          <div className="canvas-pointer-wash" aria-hidden="true">
+            <div className="canvas-pointer-glow" />
+          </div>
+        ) : null}
         <header className="top-header" ref={headerRef}>
           <div className="brand-section">
             <button

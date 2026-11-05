@@ -1,6 +1,8 @@
 "use client";
 
-import type { KeyboardEvent, MouseEvent, ReactElement } from "react";
+import { createContext, memo, useContext, useId, type CSSProperties, type KeyboardEvent, type MouseEvent, type ReactElement, type ReactNode } from "react";
+import { createPortal } from "react-dom";
+import { blurredAuraStops, blurredDiskStops } from "@/lib/canvas-sdk/blurred-disk";
 import { fitMainHero } from "@/lib/canvas-sdk/hero-fit";
 import { SatelliteHeroFace } from "@/lib/canvas-sdk/SatelliteHeroFace";
 import type { CanvasEdge, NodeStatus } from "@/lib/canvas-sdk/types";
@@ -293,6 +295,16 @@ const PRIMARY_SPOKES = new Set([
   "spoke-fixes",
   "spoke-roadmap",
 ]);
+
+/** The example bubbles are drawn red whatever their status. */
+const EXAMPLE_SPOKES = new Set(["spoke-fixes", "spoke-roadmap"]);
+
+const HALO_RING: Record<NodeStatus, readonly [number, number, number]> = {
+  danger: [251, 113, 133],
+  warning: [251, 191, 36],
+  success: [52, 211, 153],
+  neutral: [46, 183, 255],
+};
 
 /** Flip on to restore the flame and red alert pill above critical bubbles. */
 const SHOW_QUEST_FLAMES = false;
@@ -615,13 +627,22 @@ export function GraphBubble({
       onMouseLeave={onMouseLeave}
       {...inspectProps(title, onInspect, onClick)}
     >
-      <circle r={emphasis ? r + 26 : r + 10} className={`node-halo${statusClass}`} />
+      {emphasis ? (
+        <BlurredAura
+          radius={r + 26}
+          ring={EXAMPLE_SPOKES.has(id) ? HALO_RING.danger : HALO_RING[status]}
+          className={`node-halo${statusClass}`}
+        />
+      ) : (
+        <circle r={r + 10} className={`node-halo${statusClass}`} />
+      )}
       {emphasis && PRIMARY_SPOKES.has(id) ? <RingMotes radius={r} /> : null}
       {SHOW_QUEST_FLAMES && emphasis && PRIMARY_SPOKES.has(id) && status === "danger" && stats[0] ? (
         <QuestFlame label={stats[0]} radius={r} />
       ) : null}
       {selected && emphasis ? <SelectionBurst radius={r} /> : null}
       <g className="node-inner">
+        {centered ? <BubbleLift radius={r} sigma={18} statusClass={statusClass} /> : null}
         <circle r={r} className={`node-circle${statusClass}`} filter="url(#nodeShadow)" />
         {faceScale === 1 ? face : <g transform={`scale(${faceScale})`}>{face}</g>}
       </g>
@@ -694,7 +715,14 @@ export function GraphHub({
       onMouseLeave={onMouseLeave}
       {...inspectProps(title, onInspect, onClick)}
     >
-      <circle r={pulseR} fill="url(#brandHubGradient)" opacity="0.45" className="node-pulse-ring hub-halo-pulse" />
+      {emphasis ? (
+        <>
+          <BlurredAura radius={pulseR} className="node-pulse-ring hub-halo-pulse" />
+          <circle r={pulseR} className="hub-halo-edge" fill="none" pointerEvents="fill" />
+        </>
+      ) : (
+        <circle r={pulseR} fill="url(#brandHubGradient)" opacity="0.45" className="node-pulse-ring hub-halo-pulse" />
+      )}
       {emphasis ? <RingMotes radius={r} /> : null}
       {selected && emphasis ? <SelectionBurst radius={r} /> : null}
       <g className="node-inner">
@@ -706,6 +734,7 @@ export function GraphHub({
           stroke="var(--border-dark)"
           strokeWidth="3"
         />
+        {centered ? <BubbleLift radius={r} sigma={22} /> : null}
         <circle r={r} className="node-circle hub-core" />
         {faceScale === 1 ? face : <g transform={`scale(${faceScale})`}>{face}</g>}
       </g>
@@ -718,6 +747,73 @@ export function ConnLine({ x1, y1, x2, y2, kind = "default", hot = false }: Canv
     kind === "active" ? " active-spoke" : kind !== "default" ? ` ${kind}` : "";
   return <line x1={x1} y1={y1} x2={x2} y2={y2} className={`conn-line${kindClass}${hot ? " conn-hot" : ""}`} />;
 }
+
+/**
+ * Where the bubbles' shadow and halo gradients live: a `<defs>` outside the bubbles, so a hover
+ * that restyles a bubble or reveals a satellite group leaves the gradient stops alone.
+ */
+export const MapDefsContext = createContext<SVGDefsElement | null>(null);
+
+function MapDefs({ children }: { children: ReactNode }) {
+  const target = useContext(MapDefsContext);
+  return target ? createPortal(children, target) : <defs>{children}</defs>;
+}
+
+/**
+ * The bubble's shadow and selection glow, drawn as gradients that look like a blurred circle.
+ * A CSS drop-shadow on the circle re-ran a blur filter every time the map repainted. Offset and
+ * opacity per theme and state live in iom-theme.css (`.node-drop`, `.node-glow`).
+ */
+const BubbleLift = memo(function BubbleLift({ radius, sigma, statusClass = "" }: { radius: number; sigma: number; statusClass?: string }) {
+  const id = useId();
+  const { reach, stops } = blurredDiskStops(radius, sigma);
+  const gradient = (suffix: string, color: string) => (
+    <radialGradient id={`${id}${suffix}`} className={`node-${suffix}-fill`}>
+      {stops.map((stop) => (
+        <stop key={stop.offset} offset={stop.offset.toFixed(4)} stopColor={color} stopOpacity={stop.opacity.toFixed(4)} />
+      ))}
+    </radialGradient>
+  );
+  return (
+    <g className={`node-lift${statusClass}`} aria-hidden="true">
+      <MapDefs>
+        {gradient("drop", "#000")}
+        {gradient("glow", "#00f0ff")}
+      </MapDefs>
+      <circle className="node-drop" r={reach} fill={`url(#${id}drop)`} />
+      <circle className="node-glow" r={reach} fill={`url(#${id}glow)`} />
+    </g>
+  );
+});
+
+/**
+ * The breathing halo with its 10px blur baked into the gradient. The theme reads the gradient from
+ * `--aura`, so themes without halos still hide it.
+ */
+const BlurredAura = memo(function BlurredAura({
+  radius,
+  ring,
+  className,
+}: {
+  radius: number;
+  ring?: readonly [number, number, number];
+  className: string;
+}) {
+  const id = useId();
+  const { reach, stops } = blurredAuraStops(radius, 10, ring);
+  return (
+    <>
+      <MapDefs>
+        <radialGradient id={`${id}aura`}>
+          {stops.map((stop) => (
+            <stop key={stop.offset} offset={stop.offset.toFixed(4)} stopColor={stop.color} stopOpacity={stop.opacity.toFixed(4)} />
+          ))}
+        </radialGradient>
+      </MapDefs>
+      <circle r={reach} className={className} style={{ "--aura": `url(#${id}aura)` } as CSSProperties} />
+    </>
+  );
+});
 
 function RingMotes({ radius }: { radius: number }) {
   const motes = [8, 36, 62, 98, 128, 156, 188, 214, 248, 278, 312, 344].map((deg, index) => {

@@ -44,8 +44,6 @@
   position: relative;
   flex: 1;
   min-height: 0;
-  --pointer-x: 58%;
-  --pointer-y: 42%;
   background-color: #071321;
 }
 
@@ -89,11 +87,21 @@
 .ifai-canvas.theme-iom .filter-selector,
 .ifai-canvas.theme-iom .search-input,
 .ifai-canvas.theme-iom .hdr-btn {
-  background: rgba(6, 16, 30, 0.78);
+  /* A slightly denser fill stands in for a backdrop blur: these pills sit on the plain canvas
+     background, where a blur shows almost nothing and costs a filter pass whenever it changes. */
+  background: rgba(6, 16, 30, 0.86);
   border: 1px solid rgba(46, 183, 255, 0.18);
   border-radius: 999px;
   box-shadow: none;
-  backdrop-filter: blur(10px);
+}
+
+.ifai-canvas.theme-iom .view-mode-switch {
+  background: rgba(6, 16, 30, 0.86);
+  backdrop-filter: none;
+}
+
+.ifai-canvas.theme-iom.light-theme .view-mode-switch {
+  background: var(--bg-glass);
 }
 
 .ifai-canvas.theme-iom .search-input {
@@ -273,8 +281,8 @@
   background-color: transparent;
   background-image: none;
   transition:
-    right calc(0.9s * var(--iom-motion-scale)) cubic-bezier(0.22, 0.9, 0.24, 1),
-    top calc(0.9s * var(--iom-motion-scale)) cubic-bezier(0.22, 0.9, 0.24, 1);
+    right calc(0.45s * var(--iom-motion-scale)) cubic-bezier(0.22, 0.9, 0.24, 1),
+    top calc(0.45s * var(--iom-motion-scale)) cubic-bezier(0.22, 0.9, 0.24, 1);
 }
 
 .ifai-canvas.theme-iom.panel-open:not(.panel-hidden) .viewport-container {
@@ -347,6 +355,8 @@
 }
 
 .ifai-canvas.theme-iom .canvas-metric-widget {
+  /* The widgets keep the frosted look, at a smaller radius that reads the same and filters less. */
+  backdrop-filter: blur(8px);
   transition:
     opacity calc(0.76s * var(--iom-motion-scale)) cubic-bezier(0.22, 0.9, 0.24, 1),
     transform calc(0.76s * var(--iom-motion-scale)) cubic-bezier(0.22, 0.9, 0.24, 1),
@@ -513,7 +523,6 @@
 
 .ifai-canvas.theme-iom.column-layout .graph-hub.node-selected .hub-halo-pulse {
   opacity: 1;
-  filter: url(#auraBlur);
 }
 
 .ifai-canvas.theme-iom.column-layout .canvas-pointer-wash {
@@ -574,12 +583,35 @@
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  /* Its own layer: the glow repaints on every pointer frame and nothing else should with it. */
-  will-change: transform;
+  overflow: hidden;
   contain: strict;
+}
+
+/* Painted once at a fixed size and moved with a transform (useIomPointerWash), so following
+   the pointer only recomposites this layer. The stops match the old full-screen wash, whose
+   20% and 38% stops were measured to the farthest corner. */
+.ifai-canvas.theme-iom .canvas-pointer-glow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  will-change: transform;
   background:
-    radial-gradient(circle at var(--pointer-x) var(--pointer-y), rgba(0, 240, 255, 0.28), transparent 20%),
-    radial-gradient(circle at var(--pointer-x) var(--pointer-y), rgba(99, 102, 241, 0.16), transparent 38%);
+    radial-gradient(circle closest-side, rgba(0, 240, 255, 0.28), transparent 52.6%),
+    radial-gradient(circle closest-side, rgba(99, 102, 241, 0.16), transparent 100%);
+}
+
+.ifai-canvas.theme-iom .canvas-pointer-glow[data-ready="true"] {
+  opacity: 1;
+}
+
+/* Screens without the pointer hook keep a still glow at the rest point. */
+.ifai-canvas.theme-iom .canvas-pointer-wash:empty {
+  background:
+    radial-gradient(circle at 58% 42%, rgba(0, 240, 255, 0.28), transparent 20%),
+    radial-gradient(circle at 58% 42%, rgba(99, 102, 241, 0.16), transparent 38%);
 }
 
 .ifai-canvas.theme-iom .top-header {
@@ -715,21 +747,13 @@
 }
 
 .ifai-canvas.theme-iom .node-halo {
-  fill: url(#luxHubAura);
+  fill: var(--aura, url(#luxHubAura));
   stroke: none;
   opacity: 0.72;
   pointer-events: none;
-  filter: url(#auraBlur);
   transform-box: fill-box;
   transform-origin: center;
   animation: aura-breathe 4s ease-in-out infinite;
-}
-
-.ifai-canvas.theme-iom .node-halo.status-danger { stroke: #fb7185; }
-.ifai-canvas.theme-iom .node-halo.status-warning { stroke: #fbbf24; }
-.ifai-canvas.theme-iom .node-halo.status-success { stroke: #34d399; }
-.ifai-canvas.theme-iom .node-halo:not(.status-danger):not(.status-warning):not(.status-success) {
-  stroke: #2eb7ff;
 }
 
 .ifai-canvas.theme-iom .graph-node:hover .node-halo,
@@ -744,12 +768,46 @@
 .ifai-canvas.theme-iom .node-circle.status-success {
   fill: url(#spokeBody);
   stroke-width: 1.8px;
-  filter: drop-shadow(0 14px 18px rgba(0, 0, 0, 0.45));
+  filter: none;
   transition:
     fill calc(0.4s * var(--iom-motion-scale)) ease,
     stroke calc(0.35s * var(--iom-motion-scale)) ease,
-    stroke-width calc(0.35s * var(--iom-motion-scale)) ease,
-    filter calc(0.35s * var(--iom-motion-scale)) ease;
+    stroke-width calc(0.35s * var(--iom-motion-scale)) ease;
+}
+
+/* BubbleLift's pre-rendered shadow and selection glow, in place of drop-shadow filters. */
+/* Keep pointer-events for the shadows and halos here: as an SVG attribute on these moving shapes,
+   Chrome lays them out again on every frame. */
+.ifai-canvas.theme-iom .node-lift {
+  pointer-events: none;
+}
+
+.ifai-canvas.theme-iom .node-drop {
+  opacity: 0.45;
+  transform: translateY(14px);
+  transition: opacity calc(0.35s * var(--iom-motion-scale)) ease;
+}
+
+.ifai-canvas.theme-iom .node-glow {
+  opacity: 0;
+  transition: opacity calc(0.35s * var(--iom-motion-scale)) ease;
+}
+
+.ifai-canvas.theme-iom .graph-hub .node-drop {
+  opacity: 0.5;
+  transform: translateY(16px);
+}
+
+.ifai-canvas.theme-iom .graph-hub .node-glow {
+  opacity: 0.45;
+}
+
+.ifai-canvas.theme-iom .graph-node.node-selected .node-drop {
+  opacity: 0;
+}
+
+.ifai-canvas.theme-iom .graph-node.node-selected .node-glow {
+  opacity: 0.8;
 }
 
 .ifai-canvas.theme-iom .node-circle.status-danger { stroke: #fb7185; }
@@ -916,10 +974,10 @@
 }
 
 .ifai-canvas.theme-iom .hub-halo-pulse {
-  fill: url(#luxHubAura);
+  fill: var(--aura, url(#luxHubAura));
   stroke: none;
   opacity: 0.8;
-  filter: url(#auraBlur);
+  pointer-events: none;
   transform-box: fill-box;
   transform-origin: center;
   animation: aura-breathe 4s ease-in-out infinite;
@@ -929,13 +987,11 @@
   fill: url(#hubBody);
   stroke: #00f0ff;
   stroke-width: 2.5px;
-  filter: drop-shadow(0 0 22px rgba(0, 240, 255, 0.45)) drop-shadow(0 16px 22px rgba(0, 0, 0, 0.5));
 }
 
 .ifai-canvas.theme-iom .graph-node.node-selected .node-circle {
   stroke: #00f0ff;
   stroke-width: 2.8px;
-  filter: drop-shadow(0 0 18px rgba(0, 240, 255, 0.8));
 }
 
 .ifai-canvas.theme-iom .graph-node.node-selected .node-halo,
@@ -1097,9 +1153,8 @@
   border-top: 1px solid rgba(46, 183, 255, 0.28);
   border-left: 1px solid rgba(46, 183, 255, 0.28);
   box-shadow: 0 22px 48px rgba(0, 0, 0, 0.55);
-  transition:
-    transform calc(0.9s * var(--iom-motion-scale)) cubic-bezier(0.22, 0.9, 0.24, 1),
-    width calc(0.9s * var(--iom-motion-scale)) cubic-bezier(0.22, 0.9, 0.24, 1);
+  /* Slide only: animating width reflowed the whole panel on every frame. */
+  transition: transform calc(0.45s * var(--iom-motion-scale)) cubic-bezier(0.22, 0.9, 0.24, 1);
 }
 
 .ifai-canvas.theme-iom.column-layout .drilldown-panel.open {
@@ -1137,10 +1192,9 @@
 
 .ifai-canvas.theme-iom .canvas-hud-legend,
 .ifai-canvas.theme-iom .hud-btn-group {
-  background: rgba(6, 16, 30, 0.78);
+  background: rgba(6, 16, 30, 0.86);
   border: 1px solid rgba(46, 183, 255, 0.18);
   border-radius: 12px;
-  backdrop-filter: blur(10px);
 }
 
 .ifai-canvas.theme-iom .map-chrome-slide.tour-launcher.hdr-btn {
@@ -1171,7 +1225,6 @@
 .ifai-canvas.theme-iom .user-menu-panel {
   background: rgba(8, 22, 40, 0.98);
   border-color: rgba(46, 183, 255, 0.28);
-  backdrop-filter: blur(12px);
 }
 
 .ifai-canvas.theme-iom.light-theme .user-menu-panel {
@@ -1377,10 +1430,16 @@
   background-image: none;
 }
 
-.ifai-canvas.theme-iom.light-theme .canvas-pointer-wash {
+.ifai-canvas.theme-iom.light-theme .canvas-pointer-glow {
   background:
-    radial-gradient(circle at var(--pointer-x) var(--pointer-y), rgba(14, 116, 144, 0.18), transparent 20%),
-    radial-gradient(circle at var(--pointer-x) var(--pointer-y), rgba(67, 118, 154, 0.12), transparent 36%);
+    radial-gradient(circle closest-side, rgba(14, 116, 144, 0.18), transparent 52.6%),
+    radial-gradient(circle closest-side, rgba(67, 118, 154, 0.12), transparent 94.7%);
+}
+
+.ifai-canvas.theme-iom.light-theme .canvas-pointer-wash:empty {
+  background:
+    radial-gradient(circle at 58% 42%, rgba(14, 116, 144, 0.18), transparent 20%),
+    radial-gradient(circle at 58% 42%, rgba(67, 118, 154, 0.12), transparent 36%);
 }
 
 .ifai-canvas.theme-iom.light-theme .node-circle,
@@ -1389,7 +1448,28 @@
 .ifai-canvas.theme-iom.light-theme .node-circle.status-success,
 .ifai-canvas.theme-iom.light-theme .node-circle.hub-core {
   fill: rgba(255, 255, 255, 0.94);
-  filter: drop-shadow(0 8px 18px rgba(11, 31, 51, 0.12));
+}
+
+.ifai-canvas.theme-iom.light-theme .node-drop,
+.ifai-canvas.theme-iom.light-theme .graph-hub .node-drop,
+.ifai-canvas.theme-iom.light-theme .graph-hub.node-selected .node-drop,
+.ifai-canvas.theme-iom.light-theme .graph-node.node-selected .node-lift.status-danger .node-drop,
+.ifai-canvas.theme-iom.light-theme .graph-node.node-selected .node-lift.status-warning .node-drop,
+.ifai-canvas.theme-iom.light-theme .graph-node.node-selected .node-lift.status-success .node-drop {
+  opacity: 0.12;
+  transform: translateY(8px);
+}
+
+.ifai-canvas.theme-iom.light-theme .node-drop-fill stop {
+  stop-color: rgb(11, 31, 51);
+}
+
+/* In the light theme only neutral spokes glow when selected; the hub and status bubbles keep their shadow. */
+.ifai-canvas.theme-iom.light-theme .graph-hub .node-glow,
+.ifai-canvas.theme-iom.light-theme .graph-node.node-selected .node-lift.status-danger .node-glow,
+.ifai-canvas.theme-iom.light-theme .graph-node.node-selected .node-lift.status-warning .node-glow,
+.ifai-canvas.theme-iom.light-theme .graph-node.node-selected .node-lift.status-success .node-glow {
+  opacity: 0;
 }
 
 .ifai-canvas.theme-iom.light-theme .strategy-roadmap-btn {
@@ -1750,6 +1830,11 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .ifai-canvas.theme-iom .drilldown-panel,
+  .ifai-canvas.theme-iom .viewport-container {
+    transition: none;
+  }
+
   .iom-cursor-ring,
   .iom-cursor-core,
   .iom-cursor-tick {
@@ -1775,8 +1860,6 @@
   stroke: #fb7185;
 }
 
-.ifai-canvas.theme-iom .graph-node[data-graph-node-id="spoke-fixes"] .node-halo,
-.ifai-canvas.theme-iom .graph-node[data-graph-node-id="spoke-roadmap"] .node-halo,
 .ifai-canvas.theme-iom .graph-node[data-graph-node-id="spoke-fixes"].node-selected .node-circle,
 .ifai-canvas.theme-iom .graph-node[data-graph-node-id="spoke-roadmap"].node-selected .node-circle {
   stroke: #fb7185;

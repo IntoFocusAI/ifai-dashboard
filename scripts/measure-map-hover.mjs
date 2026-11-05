@@ -1,13 +1,17 @@
 #!/usr/bin/env node
-/* Measures how the Balanced map responds to a pointer sweep across the main bubbles.
+/* Measures how the Balanced map responds to a pointer sweep across the main bubbles, or to
+   opening a spoke's panel from the map.
 
    Usage: node scripts/measure-map-hover.mjs [baseUrl] [--throttle=4] [--runs=3] [--size=1280x720]
+          [--scenario=sweep|panel]
 
    The page must already be served (npm run dev, or a preview URL). The sweep visits the
    hub and the six spokes three times at about 60 pointer moves per second, re-reading each
-   bubble's position before each leg because a hover rest slides the map. Reported per run:
-   React commits, long tasks, frame gaps, Chrome's script/style/layout time, and the delay
-   from entering a bubble to the first frame after its signal slots change. */
+   bubble's position before each leg because a hover rest slides the map. The panel scenario
+   clicks Catalog Health once the map is still and records the 2.5 s after the click.
+   Reported per run: React commits, long tasks, frame gaps, Chrome's script/style/layout time,
+   main-thread paint, raster, and GPU-process time from a trace, and for the sweep the delay from
+   entering a bubble to the first frame after its signal slots change. */
 import { chromium } from "@playwright/test";
 
 const args = process.argv.slice(2);
@@ -15,6 +19,7 @@ const baseUrl = args.find((arg) => !arg.startsWith("--")) ?? "http://localhost:3
 const flag = (name, fallback) => args.find((arg) => arg.startsWith(`--${name}=`))?.split("=")[1] ?? fallback;
 const throttle = Number(flag("throttle", "1"));
 const runs = Number(flag("runs", "3"));
+const scenario = flag("scenario", "sweep");
 const [width, height] = flag("size", "1280x720").split("x").map(Number);
 const BUBBLES = ["hub", "spoke-aeo", "spoke-retail", "spoke-competitors", "spoke-roadmap", "spoke-specs", "spoke-fixes"];
 const STEPS_PER_LEG = 24;
@@ -99,6 +104,54 @@ async function sweep(page) {
   }
 }
 
+async function openPanel(page) {
+  const bubble = page.locator(`[data-graph-node-id="spoke-retail"]`);
+  await bubble.hover({ force: true });
+  await page.waitForTimeout(1500);
+  await page.evaluate(() => (window.__mapHover.armed = true));
+  await bubble.click({ force: true });
+  await page.waitForTimeout(2500);
+}
+
+/* Busy time from a trace, merging nested events per thread: main-thread paint (paint,
+   pre-paint, layerize, commit), raster tasks on any thread, and the GPU process and display
+   compositor, where backdrop blur and filters are drawn. */
+const PAINT_EVENTS = new Set(["Paint", "PrePaint", "Layerize", "Commit", "UpdateLayer", "CompositeLayers"]);
+const GPU_THREADS = new Set(["CrGpuMain", "VizCompositorThread"]);
+function busyMs(spans) {
+  const byThread = new Map();
+  for (const span of spans) byThread.set(span.thread, [...(byThread.get(span.thread) ?? []), span]);
+  let total = 0;
+  for (const list of byThread.values()) {
+    list.sort((a, b) => a.ts - b.ts);
+    let end = -Infinity;
+    for (const { ts, dur } of list) {
+      if (ts >= end) total += dur;
+      else if (ts + dur > end) total += ts + dur - end;
+      end = Math.max(end, ts + dur);
+    }
+  }
+  return Math.round(total / 1000);
+}
+function paintTotals(trace) {
+  const events = JSON.parse(trace.toString()).traceEvents ?? [];
+  const names = new Map(
+    events.filter((e) => e.ph === "M" && e.name === "thread_name").map((e) => [`${e.pid}:${e.tid}`, e.args?.name]),
+  );
+  const paint = [];
+  const raster = [];
+  const gpu = [];
+  for (const e of events) {
+    if (e.ph !== "X" || typeof e.dur !== "number") continue;
+    const thread = `${e.pid}:${e.tid}`;
+    const span = { thread, ts: e.ts, dur: e.dur };
+    if (PAINT_EVENTS.has(e.name) && names.get(thread) === "CrRendererMain") paint.push(span);
+    if (e.name === "RasterTask") raster.push(span);
+    if (GPU_THREADS.has(names.get(thread))) gpu.push(span);
+  }
+  return { paintMs: busyMs(paint), rasterMs: busyMs(raster), gpuMs: busyMs(gpu) };
+}
+
 const metricNames = ["TaskDuration", "ScriptDuration", "RecalcStyleDuration", "LayoutDuration", "RecalcStyleCount", "LayoutCount"];
 async function metrics(cdp) {
   const { metrics: list } = await cdp.send("Performance.getMetrics");
@@ -136,13 +189,19 @@ for (let run = 0; run < runs; run += 1) {
   const cdp = await context.newCDPSession(page);
   await cdp.send("Performance.enable");
   if (throttle > 1) await cdp.send("Emulation.setCPUThrottlingRate", { rate: throttle });
+  await browser.startTracing(page, { categories: ["devtools.timeline", "disabled-by-default-devtools.timeline"] });
   const before = await metrics(cdp);
-  await page.evaluate(() => (window.__mapHover.armed = true));
   const started = Date.now();
-  await sweep(page);
+  if (scenario === "panel") {
+    await openPanel(page);
+  } else {
+    await page.evaluate(() => (window.__mapHover.armed = true));
+    await sweep(page);
+  }
   const wallMs = Date.now() - started;
   await page.evaluate(() => (window.__mapHover.armed = false));
   const after = await metrics(cdp);
+  const { paintMs, rasterMs, gpuMs } = paintTotals(await browser.stopTracing());
   const state = await page.evaluate(() => window.__mapHover);
   const delta = (name) => after[name] - before[name];
   results.push({
@@ -157,6 +216,9 @@ for (let run = 0; run < runs; run += 1) {
     styleMs: Math.round(delta("RecalcStyleDuration") * 1000),
     layoutMs: Math.round(delta("LayoutDuration") * 1000),
     taskMs: Math.round(delta("TaskDuration") * 1000),
+    paintMs,
+    rasterMs,
+    gpuMs,
     styleRecalcs: delta("RecalcStyleCount"),
     hoverToSlotsMedianMs: Math.round(median(state.latencies)),
     hoverToSlotsMaxMs: Math.round(Math.max(...state.latencies)),
@@ -167,4 +229,4 @@ for (let run = 0; run < runs; run += 1) {
 await browser.close();
 
 const summary = Object.fromEntries(Object.keys(results[0]).map((key) => [key, median(results.map((r) => r[key]))]));
-console.log(JSON.stringify({ baseUrl, size: `${width}x${height}`, throttle, runs, median: summary, results }, null, 2));
+console.log(JSON.stringify({ baseUrl, scenario, size: `${width}x${height}`, throttle, runs, median: summary, results }, null, 2));

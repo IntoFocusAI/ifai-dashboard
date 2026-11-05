@@ -2,7 +2,7 @@
 
 import { memo, useCallback, useEffect, useMemo, useRef, useState, type MouseEvent, type RefObject } from "react";
 import { CanvasGraphNode } from "@/lib/canvas-sdk/CanvasGraphNode";
-import { ConnLine, TourSpotlight } from "@/lib/canvas-sdk/GraphPrimitives";
+import { ConnLine, MapDefsContext, TourSpotlight } from "@/lib/canvas-sdk/GraphPrimitives";
 import { IomGraphBackdrop } from "@/lib/canvas-sdk/IomGraphBackdrop";
 import { buildColumnLayout, isColumnNode } from "@/lib/canvas-sdk/column-layout";
 import { iomMotionMs } from "@/lib/canvas-sdk/iom-motion";
@@ -63,6 +63,7 @@ export const CanvasGraph = memo(function CanvasGraph({
   onShowTooltip,
   onHideTooltip,
 }: Props) {
+  const [mapDefs, setMapDefs] = useState<SVGDefsElement | null>(null);
   const mapViewBox = spec.viewBox ?? { w: 1600, h: 1000 };
   const columnPlan = useMemo(
     () => (columnLayout ? buildColumnLayout(spec.nodes ?? []) : null),
@@ -341,7 +342,10 @@ export const CanvasGraph = memo(function CanvasGraph({
   const showMapLayer = !columnLayout || mapExiting || mapEntering;
 
   return (
-    <>
+    <MapDefsContext.Provider value={mapDefs}>
+      <svg className="map-gradient-defs" width="0" height="0" aria-hidden="true" focusable="false">
+        <defs ref={setMapDefs} />
+      </svg>
       {showMapLayer ? (
         spec.appearance === "iom" ? (
           <div
@@ -362,6 +366,6 @@ export const CanvasGraph = memo(function CanvasGraph({
           {graphSvg}
         </div>
       ) : null}
-    </>
+    </MapDefsContext.Provider>
   );
 });
