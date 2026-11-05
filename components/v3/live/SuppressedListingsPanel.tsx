@@ -17,6 +17,7 @@ import {
   SUPPRESSED_LISTINGS_TABLE_COLUMNS,
   FeaturedOfferTableRow,
 } from "@/components/v3/live/FeaturedOfferRow";
+import { PRICE_MATCH_COLUMN, PriceMatchCell } from "@/components/v3/live/PriceMatchCell";
 import {
   featuredOfferColumnProbe,
   featuredOfferReadingCountQuery,
@@ -30,6 +31,11 @@ import {
   withheldListings,
   type FeaturedOfferRow,
 } from "@/lib/fender-canvas/featured-offer";
+import {
+  loadPriceMatchSources,
+  priceMatchHrefs,
+  type PriceMatchSources,
+} from "@/lib/fender-canvas/price-matches";
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
 import {
   benchmarkCoverageSentence,
@@ -44,7 +50,7 @@ import type { CanvasFreshnessRow } from "@/lib/fender-canvas/types";
 const PAGE_SIZE = 1000;
 const RETAIL_PIE_SIZE = "citation-pie-disc citation-pie-disc-retail";
 
-const TABLE_COLUMNS = [...SUPPRESSED_LISTINGS_TABLE_COLUMNS, SET_ASIDE_COLUMN];
+const TABLE_COLUMNS = [...SUPPRESSED_LISTINGS_TABLE_COLUMNS, PRICE_MATCH_COLUMN, SET_ASIDE_COLUMN];
 
 const TOP_ROW_STYLE = {
   display: "flex",
@@ -242,16 +248,16 @@ export function SuppressedListingsPanel({
   read: RetailCanvasRead;
   freshness?: CanvasFreshnessRow[] | null;
 }) {
-  const [state, setState] = useState<"loading" | "unavailable" | { rows: FeaturedOfferRow[] }>(
-    "loading",
-  );
+  const [state, setState] = useState<
+    "loading" | "unavailable" | { rows: FeaturedOfferRow[]; sources: PriceMatchSources }
+  >("loading");
 
   useEffect(() => {
     let cancelled = false;
-    loadWithheldListings()
-      .then((next) => {
+    Promise.all([loadWithheldListings(), loadPriceMatchSources()])
+      .then(([next, sources]) => {
         if (cancelled) return;
-        setState(next.available ? { rows: next.rows } : "unavailable");
+        setState(next.available ? { rows: next.rows, sources } : "unavailable");
       })
       .catch(() => {
         if (!cancelled) setState("unavailable");
@@ -262,6 +268,7 @@ export function SuppressedListingsPanel({
   }, []);
 
   const rows = typeof state === "object" ? state.rows : null;
+  const sources = typeof state === "object" ? state.sources : null;
   const setAsides = useCheckSetAsides(SET_ASIDE_CHECKS.buyboxSuppression, "Suppressed Listings");
   const sorted = useClientTableSort(
     rows ?? [],
@@ -302,11 +309,19 @@ export function SuppressedListingsPanel({
                 sorted.rows.map((row) => {
                   const asin = typeof row.asin === "string" ? row.asin : "";
                   const valid = /^[A-Z0-9]{10}$/.test(asin);
+                  const hrefs = sources
+                    ? priceMatchHrefs(asin, sources.prices, sources.walmartUrls.get(asin))
+                    : [];
                   return (
                     <Fragment key={asin}>
                       <FeaturedOfferTableRow
                         row={row}
-                        trailing={<SetAsideCell ctl={setAsides} entityKey={asin} canSetAside={valid} />}
+                        trailing={
+                          <>
+                            <PriceMatchCell hrefs={hrefs} />
+                            <SetAsideCell ctl={setAsides} entityKey={asin} canSetAside={valid} />
+                          </>
+                        }
                       />
                       <SetAsideFormRow
                         ctl={setAsides}
