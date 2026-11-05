@@ -1,19 +1,17 @@
 "use client";
 
 import { useState, useSyncExternalStore } from "react";
-import { CitationPieDisc } from "@/components/v3/live/ai-search/CitationPieDisc";
 import { DefinedCopy } from "@/components/v3/live/DefinedTerm";
 import { useAiSearch } from "@/components/v3/live/ai-search/AiSearchContext";
 import { useFindability } from "@/components/v3/live/findability/FindabilityContext";
-import { briefingFindingsLead, type BriefingFinding } from "@/lib/fender-canvas/briefing-retail-lead";
+import { briefingFindingsLead } from "@/lib/fender-canvas/briefing-retail-lead";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
 import {
   buildRoadmapPlan,
   ROADMAP_OWNER_SENTENCE,
   type RoadmapPhasePlan,
+  type RoadmapPlanStep,
 } from "@/lib/fender-canvas/roadmap-plan";
-
-const BRIEFING_PIE_SIZE = "citation-pie-disc citation-pie-disc-retail";
 
 let pageOpenedOn: Date | null = null;
 
@@ -31,101 +29,45 @@ function usePageOpenedOn(): Date | null {
   return useSyncExternalStore(subscribeToOpenedOn, readPageOpenedOn, () => null);
 }
 
-function ExploreChevron() {
-  return (
-    <svg
-      className="retail-explore-chevron"
-      viewBox="0 0 12 12"
-      width="12"
-      height="12"
-      aria-hidden="true"
-    >
-      <path
-        d="M2.2 4.2 6 8l3.8-3.8"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function RoadmapPlanRow({ finding }: { finding: BriefingFinding }) {
+function RoadmapStep({ step }: { step: RoadmapPlanStep }) {
+  const { finding, action } = step;
   const [open, setOpen] = useState(false);
   const detailId = `roadmap-finding-${finding.id}`;
-  const figureName = finding.ratio ? `${finding.percent}. ${finding.ratio}` : finding.percent;
 
   return (
-    <div
-      className="retail-finding retail-overview-hero"
-      data-briefing-finding={finding.id}
-      data-roadmap-finding={finding.id}
-      style={{ cursor: "default" }}
-    >
-      <div className="retail-overview-hero-row" data-briefing-finding-row="" style={{ width: "100%" }}>
+    <div data-briefing-finding={finding.id} data-roadmap-finding={finding.id} data-roadmap-step={finding.id}>
+      <div className="roadmap-step-head">
         <span
-          className="metric-card-label ifai-term"
+          className="ifai-term"
           data-briefing-finding-label=""
           data-ifai-tooltip-title={finding.label}
           data-ifai-tooltip-desc={finding.explainer}
           tabIndex={0}
           aria-label={`${finding.label}: ${finding.explainer}`}
-          style={{ flex: "0 1 auto", width: "fit-content" }}
         >
           {finding.label}
         </span>
         <button
           type="button"
-          className="retail-finding-hit retail-explore"
           aria-expanded={open}
           aria-controls={detailId}
-          aria-label={`${finding.label}. ${figureName}`}
+          aria-label={finding.ratio ? `${finding.label}. ${finding.percent}. ${finding.ratio}` : `${finding.label}. ${finding.percent}`}
           onClick={() => setOpen((value) => !value)}
-          style={{
-            flex: "1 1 auto",
-            width: "auto",
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "flex-end",
-            gap: 8,
-          }}
         >
-          <span className="retail-overview-hero-figures" style={{ alignItems: "flex-end" }}>
-            <span
-              className="ai-lead-figure"
-              data-briefing-finding-percent=""
-              data-briefing-finding-tone={finding.tone}
-              data-briefing-finding-numerator={finding.numerator ?? ""}
-              data-briefing-finding-denominator={finding.denominator ?? ""}
-              style={{ color: finding.color }}
-            >
-              {finding.percent}
-            </span>
-            {finding.ratio ? (
-              <span className="retail-overview-hero-ratio" data-briefing-finding-ratio="">
-                {finding.ratio}
-              </span>
-            ) : null}
+          <span
+            data-briefing-finding-percent=""
+            data-briefing-finding-tone={finding.tone}
+            data-briefing-finding-numerator={finding.numerator ?? ""}
+            data-briefing-finding-denominator={finding.denominator ?? ""}
+            style={{ color: finding.color }}
+          >
+            {finding.percent}
           </span>
-          <ExploreChevron />
+          {finding.ratio ? <span data-briefing-finding-ratio="">{finding.ratio}</span> : null}
         </button>
-        {finding.pie ? (
-          <CitationPieDisc
-            pie={finding.pie}
-            sizeClass={BRIEFING_PIE_SIZE}
-            tip={finding.tip ?? undefined}
-          />
-        ) : null}
       </div>
-      <p
-        id={detailId}
-        className="metric-card-sub"
-        data-roadmap-finding-explainer=""
-        hidden={!open}
-        style={{ margin: 0 }}
-      >
+      <p data-roadmap-action="">{action}</p>
+      <p id={detailId} data-roadmap-finding-explainer="" hidden={!open}>
         <DefinedCopy text={finding.explainer} />
       </p>
     </div>
@@ -134,20 +76,16 @@ function RoadmapPlanRow({ finding }: { finding: BriefingFinding }) {
 
 function RoadmapPhase({ phase, showRange }: { phase: RoadmapPhasePlan; showRange: boolean }) {
   return (
-    <section className="content-box" data-roadmap-phase={phase.id}>
+    <section className="content-box roadmap-plan-phase" data-roadmap-phase={phase.id}>
       <div className="content-box-title">
-        <span data-roadmap-phase-label="">{phase.label}</span>
-        <span
-          className="metric-card-sub"
-          data-roadmap-phase-range=""
-          style={{ fontWeight: 600, letterSpacing: 0, textTransform: "none" }}
-        >
-          {showRange ? phase.rangeLabel : ""}
-        </span>
+        <span data-roadmap-phase-label="">{phase.heading}</span>
       </div>
-      <div className="retail-finding-grid">
-        {phase.findings.map((finding) => (
-          <RoadmapPlanRow key={finding.id} finding={finding} />
+      <p className="metric-card-sub" data-roadmap-phase-range="" data-roadmap-phase-focus={phase.focus}>
+        {showRange ? phase.rangeLabel : ""}
+      </p>
+      <div className="roadmap-step-list">
+        {phase.steps.map((step) => (
+          <RoadmapStep key={step.finding.id} step={step} />
         ))}
       </div>
     </section>
@@ -155,8 +93,8 @@ function RoadmapPhase({ phase, showRange }: { phase: RoadmapPhasePlan; showRange
 }
 
 /**
- * Strategy Roadmap: a dated plan built from the five Summary Briefing findings.
- * A detail opens on this plan. It does not leave for another bubble or tab.
+ * Strategy Roadmap: three phases across the panel. Each step names the finding,
+ * its current figure, and what to do. A detail opens here.
  */
 export function RoadmapFindingsPanel({ read }: { read: RetailCanvasRead }) {
   const findability = useFindability();
@@ -167,18 +105,105 @@ export function RoadmapFindingsPanel({ read }: { read: RetailCanvasRead }) {
 
   return (
     <div className="retail-health" data-roadmap-findings-panel="">
-      <p
-        className="metric-card-sub"
-        data-roadmap-owner=""
-        style={{ margin: "0 0 12px", fontSize: 13, lineHeight: 1.45, color: "var(--text-main)" }}
-      >
-        {ROADMAP_OWNER_SENTENCE}
-      </p>
-      <div data-roadmap-plan="" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <style>{`
+        .roadmap-plan-columns {
+          display: flex;
+          flex-wrap: wrap;
+          align-items: flex-start;
+          gap: 12px;
+          container-type: inline-size;
+        }
+        .roadmap-plan-phase {
+          flex: 1 1 0;
+          min-width: 0;
+          align-self: flex-start;
+          gap: 8px;
+          padding: 12px;
+        }
+        .roadmap-plan-phase .content-box-title {
+          align-items: flex-start;
+          line-height: 1.3;
+        }
+        .roadmap-plan-phase [data-roadmap-phase-range] {
+          margin: 0;
+        }
+        .roadmap-step-list {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+        .roadmap-step-head {
+          display: flex;
+          flex-wrap: wrap;
+          align-items: baseline;
+          justify-content: space-between;
+          gap: 4px 10px;
+        }
+        .roadmap-step-head .ifai-term {
+          width: fit-content;
+          max-width: 100%;
+          font-size: 13px;
+          font-weight: 700;
+          line-height: 1.3;
+          color: var(--text-main);
+        }
+        .roadmap-step-head button {
+          appearance: none;
+          display: inline-flex;
+          flex-wrap: wrap;
+          align-items: baseline;
+          justify-content: flex-end;
+          gap: 2px 8px;
+          margin-left: auto;
+          padding: 0;
+          border: 0;
+          background: transparent;
+          color: inherit;
+          font: inherit;
+          text-align: right;
+          cursor: pointer;
+        }
+        .roadmap-step-head [data-briefing-finding-percent] {
+          font-family: var(--font-mono);
+          font-size: 18px;
+          font-weight: 750;
+          letter-spacing: -0.02em;
+          line-height: 1.1;
+        }
+        .roadmap-step-head [data-briefing-finding-ratio] {
+          color: var(--text-muted);
+          font-family: var(--font-mono);
+          font-size: 12px;
+          line-height: 1.3;
+        }
+        .roadmap-step-list [data-roadmap-action],
+        .roadmap-step-list [data-roadmap-finding-explainer] {
+          margin: 4px 0 0;
+          color: var(--text-main);
+          font-size: 13px;
+          line-height: 1.4;
+        }
+        .roadmap-step-list [data-roadmap-finding-explainer] {
+          color: var(--text-muted);
+        }
+        [data-roadmap-owner] {
+          margin: 12px 0 0;
+          color: var(--text-main);
+          font-size: 13px;
+          line-height: 1.45;
+        }
+        @container (max-width: 520px) {
+          .roadmap-plan-phase {
+            flex: 1 1 100%;
+          }
+        }
+      `}</style>
+      <div className="roadmap-plan-columns" data-roadmap-plan="">
         {plan.map((phase) => (
           <RoadmapPhase key={phase.id} phase={phase} showRange={openedOn != null} />
         ))}
       </div>
+      <p data-roadmap-owner="">{ROADMAP_OWNER_SENTENCE}</p>
     </div>
   );
 }

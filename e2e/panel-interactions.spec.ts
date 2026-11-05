@@ -239,24 +239,49 @@ test.describe("drill-downs", () => {
     const panel = page.locator("[data-roadmap-findings-panel]");
     await expect(panel).toBeVisible();
     await expect(page.locator(".drilldown-tab-btn.active")).toContainText("30-60-90 Day Milestones");
-    await expect(panel).toContainText(
-      "Shared plan. The activity follows the current findings. It does not set a new owner.",
-    );
     await expect(panel.locator("[data-roadmap-phase-label]")).toHaveText([
-      "Days 1 to 30",
-      "Days 31 to 60",
-      "Days 61 to 90",
+      "Days 1 to 30, the offer",
+      "Days 31 to 60, the catalog",
+      "Days 61 to 90, the AI result",
     ]);
     await expect(panel.locator("[data-roadmap-phase-range]").first()).toContainText(/\w{3} \d{1,2}, \d{4} to /);
-    for (const label of [
-      "Buy Box withheld",
-      "MAP leakage",
-      "Splintered bundles",
-      "Exact official product pages",
-      "Unbranded discovery",
-    ]) {
-      await expect(body).toContainText(label);
-    }
+    await expect(panel.locator("[data-roadmap-phase='days-1-30'] [data-roadmap-action]")).toHaveText([
+      "Correct each offer so a shopper can add the product to the cart.",
+      "Raise advertised prices back to the agreed floor.",
+    ]);
+    await expect(panel.locator("[data-roadmap-phase='days-31-60'] [data-roadmap-action]")).toHaveText([
+      "Nest each bundle under its official parent listing.",
+      "Publish one fender.com page for each exact product that lacks one.",
+    ]);
+    await expect(panel.locator("[data-roadmap-phase='days-61-90'] [data-roadmap-action]")).toHaveText([
+      "Confirm assistants name Fender when the shopper does not. That result moves when the offers, prices, bundles, and exact pages are fixed.",
+    ]);
+    const placed = await panel.locator("[data-roadmap-phase]").evaluateAll((phases) =>
+      phases.map((phase) => ({
+        id: phase.getAttribute("data-roadmap-phase"),
+        steps: [...phase.querySelectorAll("[data-roadmap-finding]")].map((step) => step.getAttribute("data-roadmap-finding")),
+      })),
+    );
+    expect(placed).toEqual([
+      { id: "days-1-30", steps: ["buy_box", "map_leakage"] },
+      { id: "days-31-60", steps: ["splintered_bundles", "exact_official_product"] },
+      { id: "days-61-90", steps: ["unbranded_discovery"] },
+    ]);
+    const columns = await panel.locator("[data-roadmap-phase]").evaluateAll((phases) =>
+      phases.map((phase) => {
+        const box = phase.getBoundingClientRect();
+        return { y: box.y, height: box.height };
+      }),
+    );
+    expect(Math.abs(columns[0]!.y - columns[1]!.y)).toBeLessThan(2);
+    expect(Math.abs(columns[1]!.y - columns[2]!.y)).toBeLessThan(2);
+    expect(columns[2]!.height).toBeLessThan(columns[0]!.height);
+    const owner = await panel.locator("[data-roadmap-owner]").boundingBox();
+    const plan = await panel.locator("[data-roadmap-plan]").boundingBox();
+    expect(owner && plan && owner.y).toBeGreaterThan(plan.y + plan.height - 2);
+    await expect(panel.locator("[data-roadmap-owner]")).toHaveText(
+      "Shared plan. The activity follows the current findings. It does not set a new owner.",
+    );
     // Each finding shows its current percent. A stored reading also shows N of M.
     await expect(body.locator("[data-briefing-finding]")).toHaveCount(5);
     const rows = body.locator("[data-roadmap-finding]");
@@ -265,6 +290,7 @@ test.describe("drill-downs", () => {
       const finding = rows.nth(i);
       const percent = finding.locator("[data-briefing-finding-percent]");
       await expect(percent).toBeVisible();
+      await expect(finding.locator("[data-roadmap-action]")).toBeVisible();
       const numerator = await percent.getAttribute("data-briefing-finding-numerator");
       const denominator = await percent.getAttribute("data-briefing-finding-denominator");
       if (numerator && denominator) {
@@ -273,6 +299,7 @@ test.describe("drill-downs", () => {
         await expect(percent).toHaveText("Not available*");
       }
     }
+    await expect(panel.locator(".citation-pie-disc")).toHaveCount(0);
     await expect(body.locator(".ifai-open-hint")).toHaveCount(0);
     await expect(panel.locator("[data-ifai-open]")).toHaveCount(0);
     await expect(body).not.toContainText("Phase 1");
@@ -283,6 +310,7 @@ test.describe("drill-downs", () => {
 
     const row = panel.locator("[data-roadmap-finding='buy_box']");
     const explainer = row.locator("[data-roadmap-finding-explainer]");
+    await expect(row.locator("[data-roadmap-action]")).toBeVisible();
     await expect(explainer).toBeHidden();
     await row.getByRole("button").click();
     await expect(explainer).toBeVisible();

@@ -1,66 +1,80 @@
 /**
  * Strategy Roadmap plan. Three windows roll forward from the day the page is
- * opened. Placement uses each briefing finding's tone and whether a reading
- * is stored. No new findings, dollars, or owners.
+ * opened. Each finding stays in its phase. A missing figure stays Not available*
+ * and does not move the step. No new findings, dollars, or owners.
  */
 
-import {
-  BRIEFING_COUNT_MISSING,
-  type BriefingFinding,
-} from "@/lib/fender-canvas/briefing-retail-lead";
+import type { BriefingFinding, BriefingFindingId } from "@/lib/fender-canvas/briefing-retail-lead";
 
 export const ROADMAP_OWNER_SENTENCE =
   "Shared plan. The activity follows the current findings. It does not set a new owner.";
+
+export const ROADMAP_ACTIONS = {
+  buy_box: "Correct each offer so a shopper can add the product to the cart.",
+  map_leakage: "Raise advertised prices back to the agreed floor.",
+  splintered_bundles: "Nest each bundle under its official parent listing.",
+  exact_official_product: "Publish one fender.com page for each exact product that lacks one.",
+  unbranded_discovery:
+    "Confirm assistants name Fender when the shopper does not. That result moves when the offers, prices, bundles, and exact pages are fixed.",
+} as const satisfies Record<BriefingFindingId, string>;
 
 export type RoadmapPhaseId = "days-1-30" | "days-31-60" | "days-61-90";
 
 export type RoadmapPhaseWindow = {
   id: RoadmapPhaseId;
   label: string;
+  /** A few words for what this window is about. */
+  focus: string;
   /** Inclusive offset from the day the page is opened. Day 1 is offset 0. */
   startOffset: number;
   endOffset: number;
+  stepIds: readonly BriefingFindingId[];
 };
 
 export const ROADMAP_PHASE_WINDOWS: readonly RoadmapPhaseWindow[] = [
-  { id: "days-1-30", label: "Days 1 to 30", startOffset: 0, endOffset: 29 },
-  { id: "days-31-60", label: "Days 31 to 60", startOffset: 30, endOffset: 59 },
-  { id: "days-61-90", label: "Days 61 to 90", startOffset: 60, endOffset: 89 },
+  {
+    id: "days-1-30",
+    label: "Days 1 to 30",
+    focus: "the offer",
+    startOffset: 0,
+    endOffset: 29,
+    stepIds: ["buy_box", "map_leakage"],
+  },
+  {
+    id: "days-31-60",
+    label: "Days 31 to 60",
+    focus: "the catalog",
+    startOffset: 30,
+    endOffset: 59,
+    stepIds: ["splintered_bundles", "exact_official_product"],
+  },
+  {
+    id: "days-61-90",
+    label: "Days 61 to 90",
+    focus: "the AI result",
+    startOffset: 60,
+    endOffset: 89,
+    stepIds: ["unbranded_discovery"],
+  },
 ];
+
+export type RoadmapPlanStep = {
+  finding: BriefingFinding;
+  action: string;
+};
 
 export type RoadmapPhasePlan = {
   id: RoadmapPhaseId;
   label: string;
+  focus: string;
+  heading: string;
   start: Date;
   end: Date;
   rangeLabel: string;
-  findings: BriefingFinding[];
+  steps: RoadmapPlanStep[];
 };
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"] as const;
-
-export function findingHasStoredReading(
-  finding: Pick<BriefingFinding, "percent" | "numerator" | "denominator">,
-): boolean {
-  return (
-    finding.percent !== BRIEFING_COUNT_MISSING &&
-    finding.numerator != null &&
-    finding.denominator != null
-  );
-}
-
-/**
- * A danger finding, or any finding with no stored reading, is in the first
- * 30 days. A warning with a stored reading is in the next 30. A success
- * finding is in the last 30.
- */
-export function roadmapPhaseForFinding(
-  finding: Pick<BriefingFinding, "tone" | "percent" | "numerator" | "denominator">,
-): RoadmapPhaseId {
-  if (finding.tone === "danger" || !findingHasStoredReading(finding)) return "days-1-30";
-  if (finding.tone === "warning") return "days-31-60";
-  return "days-61-90";
-}
 
 function startOfLocalDay(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
@@ -80,11 +94,12 @@ export function formatRoadmapRange(start: Date, end: Date): string {
   return `${formatRoadmapDay(start)} to ${formatRoadmapDay(end)}`;
 }
 
-/** Three dated windows. Findings stay in briefing order inside each window. */
+/** Three dated windows. Steps stay in the fixed phase order. */
 export function buildRoadmapPlan(
   findings: readonly BriefingFinding[],
   openedOn: Date,
 ): RoadmapPhasePlan[] {
+  const byId = new Map(findings.map((finding) => [finding.id, finding]));
   const day = startOfLocalDay(openedOn);
   return ROADMAP_PHASE_WINDOWS.map((window) => {
     const start = addCalendarDays(day, window.startOffset);
@@ -92,10 +107,16 @@ export function buildRoadmapPlan(
     return {
       id: window.id,
       label: window.label,
+      focus: window.focus,
+      heading: `${window.label}, ${window.focus}`,
       start,
       end,
       rangeLabel: formatRoadmapRange(start, end),
-      findings: findings.filter((finding) => roadmapPhaseForFinding(finding) === window.id),
+      steps: window.stepIds.flatMap((id) => {
+        const finding = byId.get(id);
+        if (!finding) return [];
+        return [{ finding, action: ROADMAP_ACTIONS[id] }];
+      }),
     };
   });
 }
