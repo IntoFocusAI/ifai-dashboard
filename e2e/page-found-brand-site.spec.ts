@@ -34,9 +34,13 @@ test("Brand-Site Specs shows the page-found hero and opens its checked SKUs", as
   await expect(hero.locator("[data-citation-pie-disc]")).toBeVisible();
   await expect(hero.locator("span.ifai-term").first()).toHaveAttribute(
     "data-ifai-tooltip-desc",
-    /older spec read.*Findability/,
+    /fender\.com product check; the Findability tab runs its own official-page check, so the two can differ\./,
   );
-  await expect(hero).not.toContainText(/older spec read|Findability/);
+  await expect(hero.locator("span.ifai-term").first()).toHaveAttribute(
+    "data-ifai-tooltip-desc",
+    /Last checked Oct 8, 2026, 12:00 AM UTC\./,
+  );
+  await expect(hero).not.toContainText(/older|spec read|Findability/);
 
   // The bubble lands with this table open.
   await expect(hero.getByRole("button", { name: "fender.com page found" })).toHaveAttribute("aria-expanded", "true");
@@ -61,7 +65,7 @@ test("Brand-Site Specs shows the page-found hero and opens its checked SKUs", as
   await expect(noPage.locator("[data-page-found-findability='completed_not_found']")).toHaveText(
     /^Findability:\s*No Defensible Page$/,
   );
-  const term = noPage.locator("[data-page-found-findability] span.ifai-term");
+  const term = noPage.locator("[data-page-found-findability] .ifai-term");
   await expect(term).toHaveAttribute("data-ifai-tooltip-title", "No Defensible Page");
   await expect(term).toHaveAttribute("data-ifai-tooltip-desc", /finished looking and did not accept a page/);
   await expect(term).not.toHaveAttribute("title");
@@ -69,17 +73,19 @@ test("Brand-Site Specs shows the page-found hero and opens its checked SKUs", as
   await expect(noRow.locator("[data-page-found-reason]")).toHaveText("Reason not recorded");
 
   const header = table.locator("th span.ifai-term", { hasText: "fender.com page or reason" });
-  await expect(header).toHaveAttribute("data-ifai-tooltip-desc", /separate official-page check/);
-  await expect(table.locator("tbody")).not.toContainText("separate official-page check");
+  await expect(header).toHaveAttribute("data-ifai-tooltip-desc", /runs its own official-page check, so the two can differ\./);
+  await expect(table.locator("tbody")).not.toContainText("runs its own official-page check");
 
   await table.locator("[data-page-found-filter='not_found']").click();
   await expect(table.locator("[data-page-found-row]")).toHaveCount(2);
-  const reasons = table.locator("[data-page-found-reason-filter]");
-  await expect(reasons).toHaveText(["All reasons 2", "No Defensible Page 1", "Reason not recorded 1"]);
-  await table.locator("[data-page-found-reason-filter='No Defensible Page']").click();
+  const reasons = table.locator(".page-found-filters").getByRole("combobox", { name: "Reason" });
+  await expect(reasons).toHaveValue("all");
+  await expect(reasons.locator("option")).toHaveText(["All reasons (2)", "No Defensible Page (1)", "Reason not recorded (1)"]);
+  await expect(table.locator("button[data-page-found-reason-filter]")).toHaveCount(0);
+  await reasons.selectOption("No Defensible Page");
   await expect(table.locator("[data-page-found-row]")).toHaveCount(1);
   await expect(table.locator("[data-page-found-row]")).toHaveAttribute("data-asin", "B00MISSING");
-  await table.locator("[data-page-found-reason-filter='all']").click();
+  await reasons.selectOption("all");
   await expect(table.locator("[data-page-found-row]")).toHaveCount(2);
   await expect(table).toHaveAttribute("data-page-found-not-found", "2");
   await expect(hero.locator("[data-hero-ratio]")).toHaveText("2 of 4");

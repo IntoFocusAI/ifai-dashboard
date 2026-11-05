@@ -1,11 +1,14 @@
 /**
  * Why a checked SKU has no stored fender.com page. The spec read's own stored reason
  * leads; the listing's Findability result follows, matched by ASIN on the shared
- * Findability read (canvas_spec_findability). A SKU Findability has no row for, and no
- * stored reason, reads "Reason not recorded".
+ * Findability read (canvas_spec_findability), and links to that listing's row on the
+ * Findability tab. A SKU Findability has no row for, and no stored reason, reads
+ * "Reason not recorded" as plain text.
  */
 
+import { FENDER_CHECK_DIFFERS } from "@/lib/fender-canvas/ai-readiness-lead";
 import { REASON_NOT_RECORDED, type PageFoundRow } from "@/lib/fender-canvas/page-found-evidence";
+import { STORED_REASON_ORDER, type StoredNotFoundReason } from "@/lib/fender-canvas/page-found-stored-reason";
 import { OUTCOME_DEFINITION, bucketLabel, type FindabilityRead } from "@/lib/findability/copy";
 import {
   FINDABILITY_OUTCOMES,
@@ -13,6 +16,7 @@ import {
   type FindabilityBucket,
   type FindabilityRow,
 } from "@/lib/findability/outcomes";
+import { findabilityRowLink, type FindabilityRowLink } from "@/lib/findability/row-focus";
 
 export const FINDABILITY_SOURCE = "Findability";
 export const FINDABILITY_LOADING = "Loading";
@@ -23,7 +27,7 @@ export const FINDABILITY_UNAVAILABLE_TIP =
 export const REASON_COLUMN_TOOLTIP = {
   title: "fender.com page or reason",
   description:
-    "Found rows link to the fender.com page this spec read stored. Not-found rows show the reason this read stored, when it stored one, then the listing's result on the Findability tab. Findability is a separate official-page check run at a different time, so its result can differ from this read.",
+    `Found rows link to the matching fender.com product page. Not-found rows give the reason the fender.com product check recorded, when it recorded one, then the listing's result on the Findability tab. ${FENDER_CHECK_DIFFERS}`,
 } as const;
 
 export type FindabilityResult =
@@ -33,8 +37,10 @@ export type FindabilityResult =
   | { kind: "unavailable" };
 
 export type NotFoundReason = {
-  stored: string | null;
+  stored: StoredNotFoundReason | null;
   findability: FindabilityResult;
+  /** The same listing's row on the Findability tab. Null when that read has no row for it. */
+  link: FindabilityRowLink | null;
   /** The first reason the cell shows. The reason filter groups on it. */
   group: string;
 };
@@ -80,7 +86,8 @@ export function notFoundReason(
   return {
     stored: row.storedReason,
     findability,
-    group: row.storedReason ?? findabilityResultLabel(findability),
+    link: findabilityRowLink(row.asin, findability.kind === "outcome"),
+    group: row.storedReason?.label ?? findabilityResultLabel(findability),
   };
 }
 
@@ -106,14 +113,14 @@ const RESULT_ORDER: string[] = [
 ];
 
 function groupRank(reason: NotFoundReason): number {
-  if (reason.stored) return -1;
+  if (reason.stored) return STORED_REASON_ORDER.indexOf(reason.stored.code) - STORED_REASON_ORDER.length;
   const rank = RESULT_ORDER.indexOf(reason.group);
   return rank < 0 ? RESULT_ORDER.length : rank;
 }
 
 /**
- * The not-found rows grouped by the first reason each one shows. Stored reasons lead,
- * then the Findability outcomes in that tab's order. The counts add up to the rows given.
+ * The not-found rows grouped by the first reason each one shows. Stored reasons lead in
+ * STORED_REASON_ORDER, then the Findability outcomes in that tab's order. The counts add up to the rows given.
  */
 export function reasonGroups(reasons: Iterable<NotFoundReason>): ReasonGroup[] {
   const counts = new Map<string, { count: number; rank: number }>();

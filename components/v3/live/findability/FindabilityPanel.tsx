@@ -4,6 +4,7 @@ import { useMemo, useState, type ReactNode } from "react";
 import { FindabilityLead } from "@/components/v3/live/findability/FindabilityLead";
 import { FindabilityTable } from "@/components/v3/live/findability/FindabilityTable";
 import { useFindability } from "@/components/v3/live/findability/FindabilityContext";
+import { useFindabilityRowLanding } from "@/components/v3/live/findability/useFindabilityRowLanding";
 import {
   DEALER_BUNDLE_NOTE,
   FAMILY_IS_NOT_EXACT,
@@ -101,6 +102,7 @@ function OutcomeCount({
 export function FindabilityPanel() {
   const read = useFindability();
   const [selected, setSelected] = useState<FindabilityBucket | null>("exact_official_product");
+  const { landAsin, clearLanding } = useFindabilityRowLanding(read, setSelected);
 
   const counts = useMemo(
     () => (read.phase === "ready" ? countFindability(read.rows) : null),
@@ -129,6 +131,7 @@ export function FindabilityPanel() {
   const shape = findabilityShape(counts!);
 
   const choose = (outcome: FindabilityBucket) => {
+    clearLanding();
     setSelected((current) => (current === outcome ? null : outcome));
   };
 
@@ -174,7 +177,7 @@ export function FindabilityPanel() {
           <p className="findability-note">
             {read.dealerBundleLoaded ? DEALER_BUNDLE_NOTE : "Dealer bundle status did not load with this read."}
           </p>
-          <FindabilityTable key={selected} outcome={selected} rows={filtered} />
+          <FindabilityTable key={selected} outcome={selected} rows={filtered} landAsin={landAsin} />
         </div>
       ) : null}
     </div>

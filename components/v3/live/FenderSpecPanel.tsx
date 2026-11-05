@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment, useEffect, useState } from "react";
+import { ReadNotAvailableMark } from "@/components/v3/live/ReadNotAvailable";
 import { clientColumn, ResizableTable } from "@/components/v3/live/ResizableTable";
 import {
   SET_ASIDE_COLUMN,
@@ -15,6 +16,7 @@ import { CLIENT_TABLE_PAGE_SIZE, loadFilteredPages } from "@/lib/fender-canvas/f
 import { specReadinessSortValue } from "@/lib/fender-canvas/spec-table-sort";
 import {
   specModelTitle,
+  type CanvasReadFailure,
   type CanvasSpecMissingRow,
   type CanvasSpecReadinessRow,
 } from "@/lib/fender-canvas/types";
@@ -23,6 +25,7 @@ import {
   presentMissingAmazonFields,
   presentMissingFieldShare,
 } from "@/lib/fender-canvas/spec-missing-fields";
+import type { AmazonSpecCheckRow } from "@/lib/findability/last-checked";
 import { SET_ASIDE_CHECKS } from "@/lib/set-aside/keys";
 
 const SPEC_COLUMNS = [
@@ -39,6 +42,8 @@ const SPEC_TABLE_MAX_HEIGHT = 420;
 
 /** The list opens on the two heaviest fields. The title chevron reveals the rest. */
 const MISSING_FIELD_PREVIEW = 2;
+
+const MISSING_FIELDS_TITLE = "Top missing Amazon fields";
 
 function amazonMissingRows(missing: CanvasSpecMissingRow[]): CanvasSpecMissingRow[] {
   return missing.filter((row) => (row.source ?? "").toLowerCase() === "amazon");
@@ -68,13 +73,23 @@ function FieldsChevron() {
 function MissingFieldRow({
   row,
   specChecked,
+  metricsFailure,
 }: {
   row: CanvasSpecMissingRow;
   specChecked: number | null;
+  metricsFailure: CanvasReadFailure | null;
 }) {
   const share = presentMissingFieldShare(row.sku_count, specChecked);
   const countLabel =
-    share.kind === "share" ? share.label : `${share.label} · ${share.shareLabel}`;
+    share.kind === "share" ? (
+      share.label
+    ) : metricsFailure ? (
+      <>
+        {share.label} · <ReadNotAvailableMark failure={metricsFailure} />
+      </>
+    ) : (
+      `${share.label} · ${share.shareLabel}`
+    );
 
   return (
     <div
@@ -100,19 +115,45 @@ function MissingFieldRow({
   );
 }
 
-/** Top missing Amazon fields; sits beside the completeness hero on Amazon Specs. */
+/**
+ * Top missing Amazon fields; sits beside the completeness hero on Amazon Specs. A failed
+ * missing-field read keeps the box and reads Not available*; a failed metrics read
+ * names that read on each share it cannot compute.
+ */
 export function MissingFieldList({
   missing,
   specChecked,
+  missingFailure = null,
+  metricsFailure = null,
 }: {
   missing: CanvasSpecMissingRow[];
   specChecked: number | null;
+  missingFailure?: CanvasReadFailure | null;
+  metricsFailure?: CanvasReadFailure | null;
 }) {
   const [showAll, setShowAll] = useState(false);
   const amazonOnly = amazonMissingRows(missing);
   const shown = showAll ? amazonOnly : amazonOnly.slice(0, MISSING_FIELD_PREVIEW);
   const rest = amazonOnly.length - MISSING_FIELD_PREVIEW;
   const collapsed = rest > 0 && !showAll;
+
+  if (missingFailure) {
+    return (
+      <div
+        className="content-box spec-missing-fields-box"
+        data-spec-missing-fields-box=""
+        data-read-unavailable-box={missingFailure.source}
+        style={{ flex: "1 1 240px", minWidth: 200 }}
+      >
+        <div className="content-box-title spec-missing-fields-title">
+          <span>{MISSING_FIELDS_TITLE}</span>
+        </div>
+        <div>
+          <ReadNotAvailableMark failure={missingFailure} />
+        </div>
+      </div>
+    );
+  }
 
   if (amazonOnly.length === 0) return null;
 
@@ -123,7 +164,7 @@ export function MissingFieldList({
       style={{ flex: "1 1 240px", minWidth: 200 }}
     >
       <div className="content-box-title spec-missing-fields-title">
-        <span>Top missing Amazon fields</span>
+        <span>{MISSING_FIELDS_TITLE}</span>
         {rest > 0 ? (
           <button
             type="button"
@@ -147,27 +188,74 @@ export function MissingFieldList({
         className={collapsed ? "spec-missing-fields-preview" : undefined}
       >
         {shown.map((row) => (
-          <MissingFieldRow key={`${row.source}-${row.field}`} row={row} specChecked={specChecked} />
+          <MissingFieldRow
+            key={`${row.source}-${row.field}`}
+            row={row}
+            specChecked={specChecked}
+            metricsFailure={metricsFailure}
+          />
         ))}
       </div>
     </div>
   );
 }
 
+/** A spec row with the stored check time the view also serves. */
+export type AmazonSpecRow = CanvasSpecReadinessRow & AmazonSpecCheckRow;
+
+export type AmazonSpecRowsRead =
+  | { phase: "loading" }
+  | { phase: "error" }
+  | { phase: "ready"; rows: AmazonSpecRow[]; total: number | null };
+
+const NO_ROWS: AmazonSpecRow[] = [];
+
+/** Every Amazon Specs row, read once for the heroes, Last checked, and the listings table. */
+export function useAmazonSpecRows(): AmazonSpecRowsRead {
+  const [read, setRead] = useState<AmazonSpecRowsRead>({ phase: "loading" });
+
+  useEffect(() => {
+    let cancelled = false;
+    void loadFilteredPages(async (page, size) => {
+      const result = await specRowsQuery(page, size);
+      return {
+        data: (result.data ?? []) as AmazonSpecRow[],
+        error: result.error,
+        count: result.count,
+      };
+    }).then(
+      (result) => {
+        if (cancelled) return;
+        setRead(result.error ? { phase: "error" } : { phase: "ready", rows: result.rows, total: result.total });
+      },
+      () => {
+        if (!cancelled) setRead({ phase: "error" });
+      },
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return read;
+}
+
 export function FenderSpecPanel({
   catalogReadiness = false,
+  read,
 }: {
   /** Amazon Specs passes this. Brand-Site Specs has its own page panel. */
   catalogReadiness?: boolean;
+  read: AmazonSpecRowsRead;
 }) {
   if (!catalogReadiness) return null;
-  return <CatalogSpecReadiness />;
+  return <CatalogSpecReadiness read={read} />;
 }
 
-function CatalogSpecReadiness() {
-  const [rows, setRows] = useState<CanvasSpecReadinessRow[]>([]);
-  const [total, setTotal] = useState<number | null>(null);
-  const [loading, setLoading] = useState(true);
+function CatalogSpecReadiness({ read }: { read: AmazonSpecRowsRead }) {
+  const rows = read.phase === "ready" ? read.rows : NO_ROWS;
+  const total = read.phase === "ready" ? read.total : null;
+  const loading = read.phase === "loading";
   const setAsides = useCheckSetAsides(SET_ASIDE_CHECKS.amazonSpecs, "Amazon Specs");
   const population = useFullPopulationSort(
     rows,
@@ -176,38 +264,6 @@ function CatalogSpecReadiness() {
     (row) => row.asin,
     CLIENT_TABLE_PAGE_SIZE,
   );
-
-  useEffect(() => {
-    let cancelled = false;
-    void loadFilteredPages(async (page, size) => {
-      const result = await specRowsQuery(page, size);
-      return {
-        data: (result.data ?? []) as CanvasSpecReadinessRow[],
-        error: result.error,
-        count: result.count,
-      };
-    }).then(
-      (result) => {
-        if (cancelled) return;
-        if (result.error) {
-          setRows([]);
-          setTotal(null);
-          setLoading(false);
-          return;
-        }
-        setRows(result.rows);
-        setTotal(result.total);
-        setLoading(false);
-      },
-      () => {
-        if (cancelled) return;
-        setLoading(false);
-      },
-    );
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   return (
     <>

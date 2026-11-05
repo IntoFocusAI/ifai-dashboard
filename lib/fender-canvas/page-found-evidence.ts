@@ -5,8 +5,8 @@
  * A null fender_found is checked but not found, the way that count treats it.
  */
 
-import { PRODUCT_BASIC_FIELDS, SPEC_BLOCK_FIELD } from "@/lib/fender-canvas/machine-readability";
 import type { PageFoundHeroModel } from "@/lib/fender-canvas/page-found-hero";
+import { storedNotFoundReason, type StoredNotFoundReason } from "@/lib/fender-canvas/page-found-stored-reason";
 import { schemaPageHref } from "@/lib/fender-canvas/spec-table-sort";
 import { specModelTitle } from "@/lib/fender-canvas/types";
 import { getCanvasSupabase } from "@/lib/supabase/canvas-client";
@@ -31,8 +31,8 @@ export type PageFoundRow = {
   found: boolean;
   /** The stored fender.com page on a found row. Null when that address is not a web link. */
   pageHref: string | null;
-  /** The reason this spec read stored on a not-found row. Null on a found row or when none is stored. */
-  storedReason: string | null;
+  /** The plain reason this spec read stored on a not-found row. Null on a found row or when none is known. */
+  storedReason: StoredNotFoundReason | null;
   checkedAt: string | null;
 };
 
@@ -42,28 +42,6 @@ export type PageFoundEvidence = {
   notFound: number;
   checked: number;
 };
-
-/** The eight fields the spec read scores on a fender.com page. Naming one is not a reason. */
-const FENDER_SPEC_FIELDS = new Set<string>([...PRODUCT_BASIC_FIELDS, SPEC_BLOCK_FIELD]);
-
-function sentenceCase(token: string): string {
-  const words = token.replace(/_+/g, " ").replace(/\s+/g, " ").trim();
-  return words ? words.charAt(0).toUpperCase() + words.slice(1) : "";
-}
-
-/**
- * The reason a not-found row stores, in plain words. The older collector wrote it into
- * fender_missing_fields (for example "not_found_on_fender.com"). Field names are skipped.
- */
-export function storedNotFoundReason(missingFields: string | null | undefined): string | null {
-  const reasons = (missingFields ?? "")
-    .split(";")
-    .map((token) => token.trim())
-    .filter((token) => token && !FENDER_SPEC_FIELDS.has(token))
-    .map(sentenceCase)
-    .filter(Boolean);
-  return reasons.length > 0 ? reasons.join("; ") : null;
-}
 
 export function pageFoundRow(row: PageFoundSourceRow): PageFoundRow {
   const found = row.fender_found === true;

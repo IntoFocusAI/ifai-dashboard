@@ -53,7 +53,7 @@ test("the Brand-Site Specs hero shows the bubble's page-found figure with N of M
     ],
   );
   assert.equal(hero.tip, "609 of 1,036 checked SKUs");
-  assert.equal(hero.explainer, "427 checked SKUs have no stored fender.com page.");
+  assert.equal(hero.explainer, "427 checked SKUs have no matching fender.com product page.");
   assert.equal(hero.figureTip, null);
 });
 
@@ -65,13 +65,13 @@ test("the page-found hero keeps the bubble's bands: under 85 red, 85 through 95 
   assert.equal(tone(950, 95), "var(--warning-amber)");
   assert.equal(tone(951, 95.1), "var(--success-green)");
   const all = brandSitePageFoundHero(metrics({ spec_checked: 10, spec_fender_found: 10, spec_fender_found_pct: 100 }));
-  assert.equal(all.explainer, "Every checked SKU has a stored fender.com page.");
+  assert.equal(all.explainer, "Every checked SKU has a matching fender.com product page.");
 });
 
-test("older-read and Findability caveats stay in the tooltip, not on screen", () => {
+test("the fender.com product check and Findability caveat stays in the tooltip, not on screen", () => {
   const hero = brandSitePageFoundHero(metrics({}));
   assert.equal(hero.definition, PAGE_FOUND_DEFINITION);
-  assert.match(hero.definition, /older spec read/);
+  assert.match(hero.definition, /fender\.com product check; the Findability tab runs its own official-page check, so the two can differ\./);
   assert.match(hero.definition, /Findability/);
   for (const visible of [hero.label, hero.percent, hero.ratio ?? "", hero.explainer]) {
     assert.doesNotMatch(visible, /older|Findability|not a |\u2014/i, visible);
@@ -101,7 +101,7 @@ test("Brand-Site Specs renders the page-found hero first with the shared card an
   const card = read("components/v3/live/ShareHeroCard.tsx");
   const spokes = read("components/v3/build-live-spokes.tsx");
   assert.match(spokes, /<MachineReadabilityPanel summary=\{bundle\.specPages \?\? null\} metrics=\{bundle\.m\} \/>/);
-  assert.match(panel, /brandSitePageFoundHero\(metrics\)/);
+  assert.match(panel, /brandSitePageFoundHero\(metrics, useSpecCheckRunAt\(\)\)/);
   const pageFoundAt = panel.indexOf("hero={pageFound}");
   const othersAt = panel.indexOf("heroes.map(");
   assert.ok(pageFoundAt > 0 && othersAt > pageFoundAt, "page-found hero leads the row");

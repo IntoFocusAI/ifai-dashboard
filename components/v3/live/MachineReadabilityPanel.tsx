@@ -6,6 +6,7 @@ import { PageFoundTable } from "@/components/v3/live/PageFoundTable";
 import { ShareHeroCard } from "@/components/v3/live/ShareHeroCard";
 import { openedFromPageFoundBubble, useLandOnPageFoundHero } from "@/components/v3/live/useLandOnPageFoundHero";
 import { usePageFoundEvidence } from "@/components/v3/live/usePageFoundEvidence";
+import { useSpecCheckRunAt } from "@/components/v3/live/useSpecCheckRunAt";
 import {
   machineReadabilityHeroes,
   sharedGapSentence,
@@ -62,7 +63,7 @@ export function MachineReadabilityPanel({
     openedFromPageFoundBubble() ? PAGE_FOUND_HERO_ID : "missing_specs",
   );
   const heroes = machineReadabilityHeroes(summary);
-  const pageFound = brandSitePageFoundHero(metrics);
+  const pageFound = brandSitePageFoundHero(metrics, useSpecCheckRunAt());
   const pageFoundRead = usePageFoundEvidence(openTable === PAGE_FOUND_HERO_ID);
   useLandOnPageFoundHero(PAGE_FOUND_ANCHOR, () => setOpenTable(PAGE_FOUND_HERO_ID));
 

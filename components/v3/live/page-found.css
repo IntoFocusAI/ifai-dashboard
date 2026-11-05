@@ -35,9 +35,52 @@
   color: var(--text-muted);
 }
 
-.page-found-reason-filters .segmented-control {
-  flex-wrap: wrap;
-  max-width: 100%;
+/* A Findability result that opens the same listing's row on the Findability tab. */
+.page-found-findability-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: var(--accent-cyan);
+  text-align: left;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.page-found-findability-link.ifai-term {
+  text-decoration: none;
+  border-bottom: 1px dotted currentColor;
+}
+
+.page-found-findability-link:hover,
+.page-found-findability-link:focus-visible {
+  color: var(--accent-purple);
+}
+
+.page-found-findability-link.ifai-term:hover,
+.page-found-findability-link.ifai-term:focus-visible {
+  border-bottom-style: solid;
+}
+
+button.page-found-findability-link:focus-visible {
+  outline: 1px solid var(--accent-purple);
+  outline-offset: 2px;
+}
+
+.page-found-reason-select-label {
+  color: var(--text-muted);
+}
+
+.page-found-reason-select select {
+  max-width: 46ch;
+}
+
+/* Native option lists do not inherit the pill's transparent background. */
+.page-found-reason-select option {
+  background: var(--bg-card);
+  color: var(--text-main);
 }
 
 .page-found-model {

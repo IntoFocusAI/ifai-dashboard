@@ -17,24 +17,6 @@ export function AdditionalPropertyTerm() {
   );
 }
 
-export function SchemaExplanation() {
-  return (
-    <div className="ceo-callout">
-      <div className="ceo-callout-header">
-        <span>What is Schema.org, and why does AI need it?</span>
-      </div>
-      <div className="ceo-callout-body">
-        When people visit fender.com, they read marketing copy. AI crawlers need a machine-readable
-        block, Schema.org JSON-LD, to take a spec as a fact. <AdditionalPropertyTerm /> is the part
-        of that block that can carry neck, pickup, and hardware specs. The list below is the found
-        pages whose stored missing-field text includes <AdditionalPropertyTerm />. This list is a
-        separate, older spec read. The Findability tab counts whether each listing resolves to an
-        official product page. JSON-LD on that official-page read was not audited.
-      </div>
-    </div>
-  );
-}
-
 export function AplusExplanation() {
   return (
     <div className="ceo-callout">

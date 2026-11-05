@@ -158,11 +158,11 @@ test("Amazon Specs shows Amazon completeness only, with no fender.com page-found
   await expect(amazon.locator("[data-ai-readiness-hero-ratio]")).not.toContainText(/Across/i);
   await expect(amazon.locator("span.ifai-term")).toHaveAttribute(
     "data-ifai-tooltip-desc",
-    /across 4 checked SKUs/i,
+    /averaged across the Amazon listings of the 4 checked SKUs/i,
   );
   await expect(amazon.locator("span.ifai-term")).toHaveAttribute(
     "data-ifai-tooltip-desc",
-    /average, not a count of listings at 100%/i,
+    /average per listing, not the share of listings with every field filled/i,
   );
 
   await expect(page.locator("[data-ai-readiness-hero='page_found']")).toHaveCount(0);

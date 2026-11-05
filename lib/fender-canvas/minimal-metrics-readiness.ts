@@ -106,7 +106,7 @@ export const READINESS_ENTRIES: MinimalEntry[] = [
       const failed = failedReadTip(ctx.bundle, "m");
       if (failed) return missingFigure(failed);
       const hero = amazonCompletenessHero(ctx.bundle.m, ctx.amazonFieldTotals);
-      if (isNotAvailable(hero.percent)) return missingFigure("Amazon attribute completeness is not stored in this catalog spec read.");
+      if (isNotAvailable(hero.percent)) return missingFigure("The Amazon listing check has not reported an attribute completeness figure.");
       const totals = resolveAmazonFieldTotals(ctx.bundle.m, ctx.amazonFieldTotals);
       const share = presentAmazonCompletenessFieldShare(totals?.found, totals?.expected, ctx.bundle.m.spec_avg_amazon_pct);
       return {
