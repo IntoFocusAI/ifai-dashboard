@@ -5,25 +5,46 @@ Stdout is the URL and nothing else. The Project Manager passes that URL to
 google_drive-update-file. The bytes at the URL match the local file.
 
 The host keeps the file for about an hour. Do not print the URL in a reply.
+
+A network error, timeout, dropped connection, SSL error, HTTP 5xx, 408, or
+429, or a download that does not match is retried after 5, 15, and 45
+seconds. Retry notes go to stderr. After the last attempt it prints one
+error line and exits 1. Any other 4xx upload answer fails at once with the
+host's message: the host refuses some file names (a one-letter name such as
+f.docx gets "Invalid file name."), and retrying will not change that.
 """
 
 from __future__ import annotations
 
 import hashlib
+import http.client
 import json
 import os
 import re
 import sys
+import time
 import urllib.error
 import urllib.request
 
 UPLOAD_URL = "https://tmpfiles.org/api/v1/upload"
 USER_AGENT = "Mozilla/5.0"
 DOCX_TYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+RETRY_DELAYS = (5, 15, 45)
 
 
 class StageError(Exception):
-    pass
+    def __init__(self, message: str, retry: bool = True):
+        super().__init__(message)
+        self.retry = retry
+
+
+def http_error(step: str, status: int, raw: bytes) -> StageError:
+    try:
+        detail = json.loads(raw.decode()).get("message", "")
+    except (ValueError, AttributeError):
+        detail = ""
+    message = f"{step} failed with HTTP {status}" + (f": {detail}" if detail else "")
+    return StageError(message, retry=status >= 500 or status in (408, 429))
 
 
 def fail(message: str) -> None:
@@ -41,10 +62,14 @@ def request(url: str, data: bytes | None = None, headers: dict[str, str] | None 
             body = response.read()
             return response.status, response.headers.get("content-type", ""), body
     except urllib.error.HTTPError as error:
-        body = error.read()
+        try:
+            body = error.read()
+        except (http.client.HTTPException, OSError):
+            body = b""
         return error.code, error.headers.get("content-type", ""), body
-    except urllib.error.URLError as error:
-        raise StageError(f"request failed: {error.reason}") from error
+    except (http.client.HTTPException, OSError) as error:
+        reason = getattr(error, "reason", None) or error
+        raise StageError(f"request failed: {type(reason).__name__}: {reason}") from error
 
 
 def upload(path: str) -> str:
@@ -67,8 +92,8 @@ def upload(path: str) -> str:
         body,
         {"Content-Type": f"multipart/form-data; boundary={boundary}"},
     )
-    if status != 200:
-        raise StageError(f"upload failed with HTTP {status}")
+    if not 200 <= status < 300:
+        raise http_error("upload", status, raw)
     try:
         page = json.loads(raw.decode())["data"]["url"]
     except (json.JSONDecodeError, KeyError, TypeError):
@@ -105,16 +130,23 @@ def main() -> None:
     path = sys.argv[1]
     if not os.path.isfile(path):
         fail(f"file not found: {path}")
+    attempts = len(RETRY_DELAYS) + 1
     last_error = "upload did not produce a matching download"
-    for _attempt in range(3):
+    for attempt in range(1, attempts + 1):
         try:
             url = direct_url(upload(path))
             assert_same_bytes(url, path)
             print(url)
             return
         except StageError as error:
-            last_error = str(error)
-    fail(last_error)
+            last_error = " ".join(str(error).split())
+            if not error.retry:
+                fail(f"staging failed: {last_error}")
+        if attempt < attempts:
+            delay = RETRY_DELAYS[attempt - 1]
+            print(f"attempt {attempt} of {attempts} failed: {last_error}. Retrying in {delay}s.", file=sys.stderr)
+            time.sleep(delay)
+    fail(f"staging failed after {attempts} attempts: {last_error}")
 
 
 if __name__ == "__main__":

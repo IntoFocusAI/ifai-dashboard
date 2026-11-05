@@ -962,6 +962,93 @@ def _build_sample(path: str) -> None:
     doc.save(path)
 
 
+def _stage_retry_checks(check, tmp: str, sample: str) -> None:
+    import contextlib
+    import http.client
+    import io
+    import socket
+    import ssl
+
+    spec = importlib.util.spec_from_file_location("stage_design_docx", os.path.join(SCRIPTS_DIR, "stage-design-docx.py"))
+    stage = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(stage)
+    payload = open(sample, "rb").read()
+    direct = "https://tmpfiles.org/dl/123/sample.docx"
+
+    class Response:
+        def __init__(self, body: bytes, content_type: str = "application/octet-stream", status: int = 200):
+            self.body, self.status = body, status
+            self.headers = {"content-type": content_type}
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            return False
+
+        def read(self):
+            return self.body
+
+    def fake_urlopen(failures):
+        state = {"calls": 0}
+
+        def opener(req, timeout=None):
+            state["calls"] += 1
+            if failures:
+                error = failures.pop(0)
+                if isinstance(error, int):
+                    return Response(b"busy", "text/html", error)
+                raise error
+            url = req.full_url
+            if url == stage.UPLOAD_URL:
+                return Response(b'{"data":{"url":"https://tmpfiles.org/123/sample.docx"}}', "application/json")
+            if url.startswith("https://tmpfiles.org/dl/"):
+                return Response(payload)
+            return Response(f'<a href="{direct}">x</a>'.encode(), "text/html")
+
+        return opener
+
+    def run_stage(failures, opener=None):
+        delays: list[int] = []
+        out, err = io.StringIO(), io.StringIO()
+        original = (stage.urllib.request.urlopen, stage.time.sleep, sys.argv)
+        stage.urllib.request.urlopen = opener or fake_urlopen(failures)
+        stage.time.sleep = delays.append
+        sys.argv = ["stage-design-docx.py", sample]
+        code = 0
+        try:
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                stage.main()
+        except SystemExit as exit_:
+            code = exit_.code
+        finally:
+            stage.urllib.request.urlopen, stage.time.sleep, sys.argv = original
+        return code, out.getvalue(), err.getvalue(), delays
+
+    code, out, err, delays = run_stage([
+        http.client.RemoteDisconnected("Remote end closed connection"),
+        ssl.SSLError("The read operation timed out"),
+        503,
+    ])
+    check("stage retries RemoteDisconnected, SSL, and HTTP 503 with 5s/15s/45s backoff",
+          code == 0 and out == direct + "\n" and delays == [5, 15, 45])
+    code, out, err, delays = run_stage([socket.timeout("timed out"), urllib.error.URLError(socket.gaierror("DNS"))])
+    check("stage retries a timeout and a DNS failure, then prints one URL", code == 0 and out.splitlines() == [direct])
+    code, out, err, delays = run_stage([TimeoutError("timed out")] * 4)
+    check("stage stops after 4 attempts with one final error line",
+          code == 1 and out == "" and delays == [5, 15, 45]
+          and err.splitlines()[-1].startswith("staging failed after 4 attempts: "))
+
+    def refuse_name(req, timeout=None):
+        body = b'{"status":"error","message":"Invalid file name."}'
+        raise urllib.error.HTTPError(req.full_url, 422, "Unprocessable", {"content-type": "application/json"}, io.BytesIO(body))
+
+    code, out, err, delays = run_stage([], refuse_name)
+    check("stage fails at once on a refused file name and shows the host's message",
+          code == 1 and out == "" and delays == []
+          and err.strip() == "staging failed: upload failed with HTTP 422: Invalid file name.", err)
+
+
 def selftest() -> int:
     import tempfile
 
@@ -1147,6 +1234,8 @@ def selftest() -> int:
     else:
         check("every status word carries its color", True)
     check("RGBColor import works", RGBColor.from_string("166534") is not None)
+
+    _stage_retry_checks(check, tmp, base)
 
     if failures:
         print(f"selftest FAILED: {len(failures)} of {passed + len(failures)} checks")
