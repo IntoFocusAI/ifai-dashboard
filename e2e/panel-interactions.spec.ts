@@ -230,15 +230,24 @@ test.describe("drill-downs", () => {
     await expect(readings).not.toContainText("MAP");
   });
 
-  test("roadmap first tab shows current findings, not example phases", async ({ page }) => {
+  test("roadmap first tab shows a dated plan and opens a finding in place", async ({ page }) => {
     await page.context().addCookies([
       { name: "ifai_guest_fender", value: "1", domain: "localhost", path: "/" },
     ]);
     await page.goto("/dashboard?spoke=roadmap");
     const body = page.locator(".drilldown-body");
-    await expect(page.locator("[data-roadmap-findings-panel]")).toBeVisible();
+    const panel = page.locator("[data-roadmap-findings-panel]");
+    await expect(panel).toBeVisible();
     await expect(page.locator(".drilldown-tab-btn.active")).toContainText("30-60-90 Day Milestones");
-    await expect(body).toContainText("Current findings");
+    await expect(panel).toContainText(
+      "Shared plan. The activity follows the current findings. It does not set a new owner.",
+    );
+    await expect(panel.locator("[data-roadmap-phase-label]")).toHaveText([
+      "Days 1 to 30",
+      "Days 31 to 60",
+      "Days 61 to 90",
+    ]);
+    await expect(panel.locator("[data-roadmap-phase-range]").first()).toContainText(/\w{3} \d{1,2}, \d{4} to /);
     for (const label of [
       "Buy Box withheld",
       "MAP leakage",
@@ -248,12 +257,38 @@ test.describe("drill-downs", () => {
     ]) {
       await expect(body).toContainText(label);
     }
-    // Each finding shows its current N of M share.
-    await expect(body.locator("[data-briefing-finding-ratio]")).toHaveCount(5);
+    // Each finding shows its current percent. A stored reading also shows N of M.
+    await expect(body.locator("[data-briefing-finding]")).toHaveCount(5);
+    const rows = body.locator("[data-roadmap-finding]");
+    const rowCount = await rows.count();
+    for (let i = 0; i < rowCount; i++) {
+      const finding = rows.nth(i);
+      const percent = finding.locator("[data-briefing-finding-percent]");
+      await expect(percent).toBeVisible();
+      const numerator = await percent.getAttribute("data-briefing-finding-numerator");
+      const denominator = await percent.getAttribute("data-briefing-finding-denominator");
+      if (numerator && denominator) {
+        await expect(finding.locator("[data-briefing-finding-ratio]")).toBeVisible();
+      } else {
+        await expect(percent).toHaveText("Not available*");
+      }
+    }
     await expect(body.locator(".ifai-open-hint")).toHaveCount(0);
+    await expect(panel.locator("[data-ifai-open]")).toHaveCount(0);
     await expect(body).not.toContainText("Phase 1");
-    await expect(body).not.toContainText("Days 1 to 30");
     await expect(body).not.toContainText("since last time");
+    await expect(panel).not.toContainText("$680");
+    await expect(panel).not.toContainText("$38M");
+    await expect(panel).not.toContainText("home screen");
+
+    const row = panel.locator("[data-roadmap-finding='buy_box']");
+    const explainer = row.locator("[data-roadmap-finding-explainer]");
+    await expect(explainer).toBeHidden();
+    await row.getByRole("button").click();
+    await expect(explainer).toBeVisible();
+    await expect(page).toHaveURL(/spoke=roadmap/);
+    await expect(page.locator(".drilldown-tab-btn.active")).toContainText("30-60-90 Day Milestones");
+    await expect(panel.locator("[data-roadmap-plan]")).toBeVisible();
   });
 
   test("the spec sample states the live schema result", async ({ canvas, page }) => {
