@@ -22,6 +22,8 @@ export function useIomPointerWash(bodyRef: RefObject<HTMLElement | null>, enable
     if (!enabled || !body || !wash || !glow) return;
 
     const still = window.matchMedia("(prefers-reduced-motion: reduce)");
+    let reduced = still.matches;
+    let ready = false;
     let box = body.getBoundingClientRect();
     let diagonal = 0;
     let radius = 0;
@@ -39,14 +41,16 @@ export function useIomPointerWash(bodyRef: RefObject<HTMLElement | null>, enable
       const y = pointer.y - box.top;
       const scale = Math.hypot(Math.max(x, box.width - x), Math.max(y, box.height - y)) / diagonal;
       glow.style.transform = `translate3d(${x - radius}px, ${y - radius}px, 0) scale(${scale.toFixed(4)})`;
-      glow.dataset.ready = "true";
+      if (!ready) glow.dataset.ready = "true";
+      ready = true;
     };
     const measure = () => {
       box = body.getBoundingClientRect();
       diagonal = Math.hypot(box.width, box.height);
       radius = Math.round(diagonal * GLOW_REACH);
       glow.style.width = glow.style.height = `${radius * 2}px`;
-      if (still.matches) rest();
+      reduced = still.matches;
+      if (reduced) rest();
       if (!frame) frame = requestAnimationFrame(paint);
     };
     measure();
@@ -55,7 +59,7 @@ export function useIomPointerWash(bodyRef: RefObject<HTMLElement | null>, enable
     window.addEventListener("resize", measure);
 
     const onPointerMove = (event: PointerEvent) => {
-      if (still.matches) return;
+      if (reduced) return;
       pointer.x = event.clientX;
       pointer.y = event.clientY;
       if (!frame) frame = requestAnimationFrame(paint);
