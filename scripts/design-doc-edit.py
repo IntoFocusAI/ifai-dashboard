@@ -827,6 +827,8 @@ def diff_docs(before: str, after: str) -> list[str]:
 # ---------------------------------------------------------------- Google-docs plan
 
 MIN_FIND = 24
+REPLACE_FIND_MAX = 1000
+REPLACE_WITH_MAX = 10000
 ID_COLOR = "#0F2C4C"
 PHASE_HEX = "#" + PHASE_COLOR
 CHANGELOG_HEADER = "|".join(TABLES["changelog"])
@@ -1125,6 +1127,7 @@ class _Planner:
         a, b = prefix, len(o) - suffix
         mid = n[a:len(n) - suffix]
         full = self.full()
+        find = None
         if o and _count(full, o, 2) == 1:
             floor = min(MIN_FIND, len(o))
 
@@ -1144,6 +1147,9 @@ class _Planner:
                     lo = step + 1
             x, y = _word_bounds(o, *window(lo))
             find, replace = o[x:y], n[x:len(n) - (len(o) - y)]
+            if len(find) > REPLACE_FIND_MAX or len(replace) > REPLACE_WITH_MAX:
+                find = None
+        if find is not None:
             extra = _count(self.header, find) + _count(self.footer, find)
             expect = f"Expect occurrencesChanged = {1 + extra}" + (
                 f" (1 here and {extra} in the header or footer)" if extra else "") + "."
@@ -1153,13 +1159,9 @@ class _Planner:
             title = "replace_text"
         else:
             if o:
-                occurrence = _count(self.before(i), o) + 1
-                total = _count(full, o)
-                lines = [
-                    f"find_text {json.dumps({'text': o, 'occurrence': occurrence}, ensure_ascii=False)} -> M"
-                    f"   (this text occurs {total} times; this is match {occurrence})"
-                ]
-                start = "M.start"
+                _text, occurrence = self.anchor(i)
+                note = f"this text occurs {_count(full, o)} times; this is match {occurrence}" if occurrence else ""
+                lines, start = [self.find_call(i, "M", note)], "M.start"
             else:
                 lines, start, _end = self.locate(i, "M")
             if b > a:
@@ -1887,6 +1889,15 @@ def _plan_checks(check, cli, tmp: str, base: str) -> None:
     check("--no-keep-history plans the change-log edit",
           code == 0 and "Skipped" not in cli.output and "\nSelf-check: OK." in cli.output
           and '"replace": "1.0 First, reworded."' in cli.output)
+
+    long_live = os.path.join(tmp, "plan-long-live.docx")
+    long_new = os.path.join(tmp, "plan-long-new.docx")
+    cli("set", live, "X-02", "Desired", " ".join(["alpha"] * 220), "--out", long_live)
+    cli("set", long_live, "X-02", "Desired", " ".join(["omega"] * 220), "--out", long_new)
+    code = cli("plan", long_live, long_new)
+    check("a rewrite longer than replace_text accepts becomes a POSITION edit",
+          code == 0 and "POSITION edit   [row X-02 Desired]" in cli.output and "replace_text {" not in cli.output
+          and "\nSelf-check: OK." in cli.output)
 
     middle = os.path.join(tmp, "plan-middle.docx")
     shutil.copy(live, middle)
