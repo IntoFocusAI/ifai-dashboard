@@ -103,7 +103,15 @@ test("bubble shadows, glows, and halos are pre-rendered gradients, not blur filt
   assert.doesNotMatch(rule(iom, ".ifai-canvas.theme-iom.light-theme .node-circle"), /drop-shadow/);
   assert.match(rule(iom, ".ifai-canvas.theme-iom .node-drop"), /transform: translateY\(14px\);/);
   assert.match(rule(iom, ".ifai-canvas.theme-iom .graph-node.node-selected .node-glow"), /opacity: 0\.8;/);
-  assert.match(read("lib/canvas-sdk/GraphPrimitives.tsx"), /<BubbleLift radius=\{r\} sigma=\{18\}/);
+  const primitives = read("lib/canvas-sdk/GraphPrimitives.tsx");
+  assert.match(primitives, /<BubbleLift radius=\{r\} sigma=\{18\}/);
+  for (const name of ["BubbleLift", "BlurredAura"]) {
+    const body = primitives.match(new RegExp(`const ${name} = memo\\(function[\\s\\S]*?\\n\\}\\);`))?.[0] ?? "";
+    assert.ok(body, `${name} is found`);
+    assert.doesNotMatch(body, /pointerEvents=/, `${name} leaves pointer-events to the stylesheet`);
+  }
+  assert.match(rule(iom, ".ifai-canvas.theme-iom .node-lift"), /pointer-events: none;/);
+  assert.match(rule(iom, ".ifai-canvas.theme-iom .hub-halo-pulse"), /pointer-events: none;/);
 });
 
 test("the pre-rendered shadow traces a blurred circle: solid inside, half at a straight edge, clear at its reach", () => {
@@ -126,7 +134,7 @@ test("the pre-rendered halo spreads the aura and its colored edge past the circl
   const at = (stops: typeof plain.stops, d: number) => stops.find((stop) => Math.abs(stop.offset * plain.reach - d) < 1e-6)!;
   assert.equal(plain.reach, 184);
   assert.ok(plain.stops[0].opacity > 0.5 && plain.stops[0].opacity < 0.55, "the bright center softens a little");
-  assert.ok(at(plain.stops, 164).opacity > 0.002, "the aura reaches past its circle");
+  assert.ok(at(plain.stops, 169).opacity > 0.001, "the aura reaches past its circle");
   assert.ok(plain.stops.at(-1)!.opacity < 0.005 && plain.stops.at(-1)!.offset <= 1);
   const edge = at(ringed.stops, 154);
   assert.ok(edge.opacity - at(plain.stops, 154).opacity > 0.03, "the 1px edge stroke adds a faint ring");

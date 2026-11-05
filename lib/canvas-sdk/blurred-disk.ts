@@ -102,8 +102,10 @@ export function blurredAuraStops(radius: number, sigma: number, ring?: Rgb): Aur
   const width = radius / slices;
   const source = new Float64Array(slices * 4);
   for (let i = 0; i < slices; i += 1) auraAt((i + 0.5) / slices, source, i * 4);
-  const distances = [0];
-  for (let k = Math.ceil(reach / (sigma / 2)) - 1; k >= 0; k -= 1) distances.push(reach - k * (sigma / 2));
+  // Inside the blur's reach the aura is two straight ramps, so its corners carry it there.
+  const edge = radius - sigma * 3;
+  const distances = [0, ...(AURA[1].at * radius < edge ? [AURA[1].at * radius] : [])];
+  for (let d = edge > 0 ? edge : sigma * 0.75; d < reach + 1e-6; d += sigma * 0.75) distances.push(d);
   const stops = distances.map((d) => {
     const sum = [0, 0, 0, 0];
     const first = Math.max(0, Math.floor((d - sigma * 5) / width));
