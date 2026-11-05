@@ -12,6 +12,7 @@ import { AMAZON_DIFFERS_TITLE, ANCHOR_TIP, ANCHOR_TITLE, amazonDiffersTip } from
 import { engineLabel, formatRunTime, modelLabel } from "@/lib/ai-search/run-metrics";
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
 import { brandName } from "@/lib/brand-copy";
+import { TableExportButton } from "@/components/v3/live/TableExportButton";
 
 const STATE_TONE: Record<ProbeState, string> = {
   confirmed: "tag-danger",
@@ -48,7 +49,10 @@ export function FactCheckTable({ rows, windowed = false }: { rows: ProbeEvidence
   const unit = windowed ? "selection" : "run";
   return (
     <div className="content-box ai-probe-table" style={{ marginTop: 12 }}>
-      <div className="content-box-title">Every product fact check in this {unit}</div>
+      <div className="content-box-title">
+        Every product fact check in this {unit}
+        <TableExportButton table="fact-checks" />
+      </div>
       {rows.length === 0 ? <EmptyRows>This {unit} sent no product fact checks.</EmptyRows> : null}
       {rows.length ? (
         <ResizableTable

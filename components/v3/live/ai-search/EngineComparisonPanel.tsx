@@ -24,6 +24,7 @@ import type { SortInput } from "@/lib/fender-canvas/table-sort";
 import type { AiCallRow, AiSearchSnapshot } from "@/lib/ai-search/types";
 import { hasMixedScoringMethods, isWindowHistoryKind } from "@/lib/ai-search/window-display";
 import { brandName } from "@/lib/brand-copy";
+import { TableExportButton } from "@/components/v3/live/TableExportButton";
 
 function brandId(brand: string): string {
   return `brand:${brand}`;
@@ -115,7 +116,10 @@ function Comparison({ snapshot }: { snapshot: AiSearchSnapshot }) {
       <div className="content-box ai-engine-comparison ai-role-rates">
         <EngineComparisonLead engines={engines} mixed={mixed} />
         <EngineUnbrandedGraph engines={engines} showSmallSample={showSmallSample} />
-        <div className="content-box-title">Commercial outcomes by engine</div>
+        <div className="content-box-title">
+          Commercial outcomes by engine
+          <TableExportButton table="engine-comparison" />
+        </div>
         <ResizableTable
           tableId="engine-comparison"
           columns={columns}

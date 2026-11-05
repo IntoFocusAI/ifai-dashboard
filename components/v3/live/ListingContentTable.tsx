@@ -20,6 +20,7 @@ import {
   type ListingContentSummary,
 } from "@/lib/fender-canvas/listing-content";
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
+import { TableExportButton } from "@/components/v3/live/TableExportButton";
 
 const PAGE = 20;
 
@@ -111,6 +112,7 @@ export function ListingContentTable({
         <span className="tag-badge tag-neutral" data-content-count={rows.length}>
           {formatInt(rows.length)} listings
         </span>
+        <TableExportButton table="aplus" query={{ filter }} />
       </div>
       <ResizableTable
         tableId="aplus-matrix-listings"

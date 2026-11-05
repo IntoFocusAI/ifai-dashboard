@@ -26,6 +26,7 @@ import {
 } from "@/lib/fender-canvas/stock-loss";
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
 import { isFenderClient } from "@/lib/brand-copy";
+import { TableExportButton } from "@/components/v3/live/TableExportButton";
 
 function sourced(name: string, ...sources: DataSource[]) {
   return (
@@ -310,6 +311,7 @@ export function StockLossPanel() {
             <NewTag />
           </span>
           {rows ? <span className="tag-badge tag-neutral">{formatInt(rows.length)} listings</span> : null}
+          {rows ? <TableExportButton table="stock-loss" /> : null}
         </div>
         {rows && typeof state === "object" ? (
           <>

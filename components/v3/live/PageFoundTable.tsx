@@ -23,6 +23,7 @@ import {
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
 import "@/components/v3/live/page-found.css";
 import { brandSite } from "@/lib/brand-copy";
+import { TableExportButton } from "@/components/v3/live/TableExportButton";
 
 const PAGE = 50;
 
@@ -217,6 +218,7 @@ export function PageFoundTable({
       data-page-found-checked={evidence?.checked ?? ""}
       data-page-found-matches-hero={evidence ? String(matches) : ""}
     >
+      <TableExportButton table="brand-site-page-found" query={{ filter }} />
       <div className="content-box-title">
         <span>
           {brandSite()} page by checked SKU

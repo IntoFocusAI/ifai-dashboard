@@ -22,6 +22,7 @@ import {
 import { schemaPageHref } from "@/lib/fender-canvas/spec-table-sort";
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
 import { brandSite } from "@/lib/brand-copy";
+import { TableExportButton } from "@/components/v3/live/TableExportButton";
 
 const PAGE = 20;
 const ASIN_PREVIEW = 3;
@@ -145,6 +146,7 @@ export function MachineReadabilityPageTable({
         <span className="tag-badge tag-neutral" data-machine-page-count={rows.length}>
           {formatInt(rows.length)} pages
         </span>
+        <TableExportButton table="brand-site-pages" query={{ filter }} />
       </div>
       <ResizableTable
         tableId="machine-readability-pages"

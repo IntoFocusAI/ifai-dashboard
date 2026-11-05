@@ -37,6 +37,7 @@ import type { SortInput } from "@/lib/fender-canvas/table-sort";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
 import { isWindowHistoryKind } from "@/lib/ai-search/window-display";
 import { brandName, isFenderClient, leadBrand, leadBrandOr } from "@/lib/brand-copy";
+import { TableExportButton } from "@/components/v3/live/TableExportButton";
 
 function notedColumn(id: keyof typeof BATTLE_COLUMN_NOTES, name: string, sort: "text" | "number", width: number, min: number) {
   return { ...clientColumn(id, name, sort, width, min), headerTooltip: { title: name, description: BATTLE_COLUMN_NOTES[id] } };
@@ -119,7 +120,10 @@ function Battlecards({ snapshot }: { snapshot: AiSearchSnapshot }) {
           scope={engineScope}
           engineName={engineName}
         />
-        <div className="content-box-title">Category battlecards</div>
+        <div className="content-box-title">
+          Category battlecards
+          <TableExportButton table="category-battlecards" />
+        </div>
         <ResizableTable
           tableId="category-battlecards"
           columns={COLUMNS}

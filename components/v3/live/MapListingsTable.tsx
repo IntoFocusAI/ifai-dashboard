@@ -26,6 +26,7 @@ import {
   type PricedChannelCell,
 } from "@/lib/fender-canvas/map-channels";
 import { MAP_LISTING_COLUMN_WIDTH } from "@/lib/fender-canvas/retail-column-layout";
+import { TableExportButton } from "@/components/v3/live/TableExportButton";
 
 function amazonHref(asin: string): string | null {
   return /^[A-Z0-9]{10}$/.test(asin) ? `https://www.amazon.com/dp/${asin}` : null;
@@ -86,6 +87,7 @@ export function MapListingsTable({
 
   return (
     <>
+    <TableExportButton table="map" />
     <ResizableTable
       tableId="map-listings"
       columns={columns}
