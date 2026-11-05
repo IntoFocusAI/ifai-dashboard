@@ -27,6 +27,7 @@ import {
 } from "@/lib/fender-canvas/spec-missing-fields";
 import type { AmazonSpecCheckRow } from "@/lib/findability/last-checked";
 import { SET_ASIDE_CHECKS } from "@/lib/set-aside/keys";
+import { TableExportButton } from "@/components/v3/live/TableExportButton";
 
 const SPEC_COLUMNS = [
   clientColumn("asin", "ASIN", "text", 118, 100, "asin-col"),
@@ -273,6 +274,7 @@ function CatalogSpecReadiness({ read }: { read: AmazonSpecRowsRead }) {
           {total != null ? (
             <span className="tag-badge tag-neutral">{formatInt(total)} rows</span>
           ) : null}
+          <TableExportButton table="amazon-specs" />
         </div>
         <ResizableTable
           tableId="spec-readiness"

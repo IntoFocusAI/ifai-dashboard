@@ -36,6 +36,8 @@ import { categoryLabel, engineLabel } from "@/lib/ai-search/run-metrics";
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
 import { isWindowHistoryKind } from "@/lib/ai-search/window-display";
+import { brandName, isFenderClient, leadBrand, leadBrandOr } from "@/lib/brand-copy";
+import { TableExportButton } from "@/components/v3/live/TableExportButton";
 
 function notedColumn(id: keyof typeof BATTLE_COLUMN_NOTES, name: string, sort: "text" | "number", width: number, min: number) {
   return { ...clientColumn(id, name, sort, width, min), headerTooltip: { title: name, description: BATTLE_COLUMN_NOTES[id] } };
@@ -118,7 +120,10 @@ function Battlecards({ snapshot }: { snapshot: AiSearchSnapshot }) {
           scope={engineScope}
           engineName={engineName}
         />
-        <div className="content-box-title">Category battlecards</div>
+        <div className="content-box-title">
+          Category battlecards
+          <TableExportButton table="category-battlecards" />
+        </div>
         <ResizableTable
           tableId="category-battlecards"
           columns={COLUMNS}
@@ -188,16 +193,18 @@ function Battlecards({ snapshot }: { snapshot: AiSearchSnapshot }) {
 
       <div className="ceo-callout" style={{ marginTop: 12 }}>
         <div className="ceo-callout-header">
-          <span>Who out-mentions Fender/Squier in AI buying answers?</span>
+          <span>Who out-mentions {leadBrand()} in AI buying answers?</span>
         </div>
         <div className="ceo-callout-body">
-          A category is on track when Fender/Squier leads more of its resolved{" "}
+          A category is on track when {leadBrand()} leads more of its resolved{" "}
           <AiTerm term="unbranded discovery">unbranded discovery</AiTerm> answers than any single other brand, tied when
           the top other brand leads as many, and behind when one other brand leads more. Each category also shows two
-          Fender-lead rates, unbranded discovery and{" "}
+          {brandName()}-lead rates, unbranded discovery and{" "}
           <AiTerm term="branded consideration">branded consideration</AiTerm>. A <AiTerm term="Fender lead" /> means
-          Fender or Squier was named more than any other brand. Squier counts with Fender because it is Fender&apos;s
-          entry-level line against Yamaha and Ibanez.
+          {leadBrandOr()} was named more than any other brand.
+          {isFenderClient()
+            ? " Squier counts with Fender because it is Fender's entry-level line against Yamaha and Ibanez."
+            : null}
         </div>
       </div>
     </div>

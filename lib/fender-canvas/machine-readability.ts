@@ -7,6 +7,7 @@
 import type { PieDiscData } from "@/lib/ai-search/citation-pies";
 import { formatInt, formatPct, formatRatio } from "@/lib/fender-canvas/format";
 import { getCanvasSupabase } from "@/lib/supabase/canvas-client";
+import { brandSite } from "@/lib/brand-copy";
 
 /** The spec field. Neck, pickup, and hardware specs live here. */
 export const SPEC_BLOCK_FIELD = "additionalProperty";
@@ -245,7 +246,7 @@ function sharePie(
     id,
     title,
     total,
-    totalLabel: "fender.com pages checked",
+    totalLabel: `${brandSite()} pages checked`,
     slices: [
       { key: "matched", label: hasLabel, count: has },
       { key: "contradicted", label: lacksLabel, count: total - has },
@@ -272,8 +273,8 @@ function hero(
     ratio: ready ? formatRatio(has, total) : null,
     color: pct != null ? shareColor(pct) : "var(--warning-amber)",
     pie: ready ? sharePie(`machine-${id}`, label, pieLabels[0], pieLabels[1], has!, total!) : null,
-    tip: ready ? `${formatInt(has)} of ${formatInt(total)} fender.com pages checked.` : null,
-    explainer: ready ? explainer : "The fender.com page read could not be loaded.",
+    tip: ready ? `${formatInt(has)} of ${formatInt(total)} ${brandSite()} pages checked.` : null,
+    explainer: ready ? explainer : `The ${brandSite()} page read could not be loaded.`,
     numerator: ready ? has : null,
     denominator: ready ? total : null,
   };
@@ -283,7 +284,7 @@ export const SPEC_BLOCK_DEFINITION =
   "Schema.org additionalProperty on the page's product data. It carries specs such as nut width, fingerboard radius, and pickups as facts an AI engine can read.";
 
 export const MISSING_MACHINE_SPECS_DEFINITION =
-  "Share of found fender.com pages whose Schema.org product data is missing the spec block (additionalProperty) AI engines read as product facts.";
+  `Share of found ${brandSite()} pages whose Schema.org product data is missing the spec block (additionalProperty) AI engines read as product facts.`;
 
 export const PRODUCT_BASICS_DEFINITION =
   "Name, SKU, brand, UPC, description, image, and price in the page's Schema.org product data.";
@@ -299,7 +300,7 @@ function missingSpecsHero(summary: SpecPageSummary | null): MachineHeroModel {
       ? `Missing on these pages: ${named.join(", ")}.`
       : ready
         ? "Every checked page has machine-readable specs."
-        : "The fender.com page read could not be loaded.";
+        : `The ${brandSite()} page read could not be loaded.`;
   return {
     id: "missing_specs",
     label: "Found pages missing machine-readable specs",
@@ -317,7 +318,7 @@ function missingSpecsHero(summary: SpecPageSummary | null): MachineHeroModel {
           total!,
         )
       : null,
-    tip: ready ? `${formatInt(missing)} of ${formatInt(total)} found fender.com pages.` : null,
+    tip: ready ? `${formatInt(missing)} of ${formatInt(total)} found ${brandSite()} pages.` : null,
     explainer: namedLine,
     numerator: ready ? missing : null,
     denominator: ready ? total : null,
@@ -350,7 +351,7 @@ export function sharedGapSentence(summary: SpecPageSummary | null): string | nul
   const first = summary.pages[0].missingFields.join(";");
   if (!summary.pages.every((page) => page.missingFields.join(";") === first)) return null;
   if (summary.withSpecBlock === 0 && summary.withAllBasics === summary.pages.length) {
-    return `All ${formatInt(summary.pages.length)} checked pages have every basic and none has a spec block. The same gap on every page points to fender.com's shared product template, so one template change adds the spec block to every page.`;
+    return `All ${formatInt(summary.pages.length)} checked pages have every basic and none has a spec block. The same gap on every page points to ${brandSite()}'s shared product template, so one template change adds the spec block to every page.`;
   }
   return null;
 }

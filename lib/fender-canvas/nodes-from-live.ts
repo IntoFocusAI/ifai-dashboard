@@ -1,3 +1,4 @@
+import { activeClient } from "@/lib/client/active-client";
 import type { CanvasNode, NodeStatus } from "@/lib/canvas-sdk/types";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
 import type { buildLiveMetrics } from "@/lib/fender-canvas/metrics-from-live";
@@ -20,6 +21,7 @@ import {
   type RetailCanvasRead,
 } from "@/lib/fender-canvas/portfolio-retail-display";
 import { primarySpoke, satelliteNode } from "@/lib/fender-canvas/primary-spoke-layout";
+import { brandSite } from "@/lib/brand-copy";
 
 type MetricsMap = ReturnType<typeof buildLiveMetrics>;
 
@@ -152,10 +154,10 @@ export function buildLiveNodes(
   const metricsTip = failedReadTip(bundle, "m");
   const readinessStatus: NodeStatus = metricsTip ? "warning" : (pageTone ?? "neutral");
   const readinessHero = metricsTip
-    ? { value: READ_NOT_AVAILABLE, label: "fender.com page found" }
+    ? { value: READ_NOT_AVAILABLE, label: `${brandSite()} page found` }
     : pageHero.ratio != null
-      ? { value: pageHero.percent, label: "fender.com page found" }
-      : { value: pageHero.percent === "Pending data" ? "Pending data" : "Not available", label: "fender.com page found" };
+      ? { value: pageHero.percent, label: `${brandSite()} page found` }
+      : { value: pageHero.percent === "Pending data" ? "Pending data" : "Not available", label: `${brandSite()} page found` };
 
   return [
     {
@@ -264,9 +266,9 @@ export function buildLiveNodes(
       r: 98,
       status: "danger",
       variant: "hub",
-      title: "Summary",
+      title: activeClient().logoSrc ? "Summary" : `${activeClient().brandName} Summary`,
       stats: [],
-      logoSrc: "/image.png",
+      logoSrc: activeClient().logoSrc ?? undefined,
       spokeId: "hub",
       tooltip: { title: "", desc: "" },
     },

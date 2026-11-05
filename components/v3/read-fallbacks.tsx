@@ -4,6 +4,7 @@ import { ReadNotAvailableBox } from "@/components/v3/live/ReadNotAvailable";
 import type { SpokeId } from "@/components/v3/spoke-data-types";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
+import { brandName, isFenderClient } from "@/lib/brand-copy";
 
 /**
  * A tab whose table comes from one failed bundle read. The table becomes Not available*;
@@ -20,7 +21,7 @@ export function readFallbackTab(
     return (
       <>
         <ConsensusScoresPanel bundle={bundle} retail={retail} />
-        <ReadNotAvailableBox title="FMIC Catalog Division Performance Matrix" failure={divisions} />
+        <ReadNotAvailableBox title={`${isFenderClient() ? "FMIC" : brandName()} Catalog Division Performance Matrix`} failure={divisions} />
       </>
     );
   }

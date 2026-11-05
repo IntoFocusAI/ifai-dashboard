@@ -15,6 +15,7 @@ import {
   type RetailReading,
 } from "@/lib/fender-canvas/portfolio-retail";
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
+import { TableExportButton } from "@/components/v3/live/TableExportButton";
 
 const MOST_OF_THE_SPEC_DESC = "Missing 11 or more of the Amazon spec fields we check.";
 const PAGE = 20;
@@ -169,6 +170,7 @@ function SpecGapRows({ gaps }: { gaps: AmazonSpecGap[] }) {
 
   return (
     <>
+      <TableExportButton table="catalog-specs" />
       <SpecFilters
         fillFirst={findings.fillFirst}
         selectedFields={selectedFields}

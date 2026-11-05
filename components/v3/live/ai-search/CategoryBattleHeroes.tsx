@@ -18,6 +18,7 @@ import type { RoleTally } from "@/lib/ai-search/question-role";
 import { summarizeRun } from "@/lib/ai-search/summary";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
 import { formatInt } from "@/lib/fender-canvas/format";
+import { leadBrand } from "@/lib/brand-copy";
 
 const NO_LEADS_DESC =
   "No unbranded discovery answer had a clear leader in this selection, so no category can be marked on track, tied, or behind.";
@@ -84,7 +85,7 @@ function RateCaption({
   const focus = (outcome: string) => scopeEvidence({ field: "role", value: `${role}/${outcome}` }, engineScope);
   return (
     <p className="ai-battle-hero-caption" data-ai-battle-role-total={role}>
-      <EvidenceLink focus={focus("fender_win")} tab={AI_TABS.simulations} label={`${name}: Fender/Squier leads`}>
+      <EvidenceLink focus={focus("fender_win")} tab={AI_TABS.simulations} label={`${name}: ${leadBrand()} leads`}>
         {formatInt(tally.fenderWins)}
       </EvidenceLink>
       {" of "}

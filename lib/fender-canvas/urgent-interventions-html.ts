@@ -13,6 +13,7 @@ import {
 } from "@/lib/fender-canvas/briefing-retail-lead";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
 import type { FindabilityRead } from "@/lib/findability/copy";
+import { brandName, brandSite } from "@/lib/brand-copy";
 
 function hasStoredReading(finding: BriefingFinding): boolean {
   return (
@@ -32,9 +33,9 @@ const STORED_ACTIONS: Record<BriefingFindingId, string> = {
   splintered_bundles:
     "These bundles are their own listings, so their reviews stay split. Nest each bundle under the official parent listing so the reviews sit on one page.",
   exact_official_product:
-    "Publish one fender.com page for each exact product that does not have one. A page for the whole line covers more than one model, so an assistant can attach the wrong specs.",
+    `Publish one ${brandSite()} page for each exact product that does not have one. A page for the whole line covers more than one model, so an assistant can attach the wrong specs.`,
   unbranded_discovery:
-    "When someone asks what to buy without naming Fender, assistants name Fender this often. Fix the withheld offers, the prices under the floor, the split bundles, and the missing exact pages, which are what an assistant can repeat.",
+    `When someone asks what to buy without naming ${brandName()}, assistants name ${brandName()} this often. Fix the withheld offers, the prices under the floor, the split bundles, and the missing exact pages, which are what an assistant can repeat.`,
 };
 
 /** When the figure is missing, do not advise as if the count were known. */

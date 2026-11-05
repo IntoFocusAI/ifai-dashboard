@@ -1,5 +1,6 @@
 import type { FindabilityRow } from "@/lib/findability/outcomes";
 import type { FindabilityRead } from "@/lib/findability/copy";
+import { activeClient } from "@/lib/client/active-client";
 
 export const FINDABILITY_COLUMNS = [
   "asin",
@@ -93,7 +94,13 @@ function asRow(value: unknown): FindabilityRow | null {
     counts_as_timeout: row.counts_as_timeout ?? null,
     counts_as_parse_failure: row.counts_as_parse_failure ?? null,
     counts_as_unsupported: row.counts_as_unsupported ?? null,
+    ...(typeof row.on_brand_sheet === "boolean" ? { on_brand_sheet: row.on_brand_sheet } : {}),
   };
+}
+
+/** Columns for the brand on screen. Only brand-led clients' views carry on_brand_sheet. */
+export function findabilityColumns(): string {
+  return activeClient().key === "fender" ? FINDABILITY_COLUMNS : `${FINDABILITY_COLUMNS},on_brand_sheet`;
 }
 
 function dealerBundleMap(rows: unknown[]): Map<string, boolean> {
@@ -114,7 +121,15 @@ function dealerBundleMap(rows: unknown[]): Map<string, boolean> {
  */
 export async function loadFindabilityRead(client: FindabilityClient): Promise<FindabilityRead> {
   try {
-    const stored = await readAll(client, "canvas_spec_findability", FINDABILITY_COLUMNS);
+    const columns = findabilityColumns();
+    let stored: unknown[];
+    try {
+      stored = await readAll(client, "canvas_spec_findability", columns);
+    } catch (error) {
+      // A view without the sheet flag still loads; the sheet context is simply not shown.
+      if (columns === FINDABILITY_COLUMNS) throw error;
+      stored = await readAll(client, "canvas_spec_findability", FINDABILITY_COLUMNS);
+    }
     const rows = stored.map(asRow).filter((row): row is FindabilityRow => row != null);
     let bundles: Map<string, boolean> | null = null;
     try {

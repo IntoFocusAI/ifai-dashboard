@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useSyncExternalStore } from "react";
-import { getCanvasSupabase } from "@/lib/supabase/canvas-client";
+import { getPublicCanvasSupabase } from "@/lib/supabase/canvas-client";
 
 /* Server-side Done and Set aside (worker 18.5).
 
@@ -196,7 +196,7 @@ function load(clientKey: string, checkKey: string): Promise<void> {
   if (store.inflight) return store.inflight;
   store.inflight = (async () => {
     try {
-      const { data, error } = await getCanvasSupabase()
+      const { data, error } = await getPublicCanvasSupabase()
         .from("canvas_issue_set_asides")
         .select("*")
         .eq("client_key", clientKey)
@@ -255,7 +255,7 @@ export function useSetAsides(clientKey: string | null | undefined, checkKey: str
   const setAside = useCallback(
     async (input: SetAsideInput): Promise<SetAsideResult> => {
       if (!clientKey || !store) return { ok: false, error: "Set-aside is not available here." };
-      const { error } = await getCanvasSupabase().rpc("set_aside_issue", {
+      const { error } = await getPublicCanvasSupabase().rpc("set_aside_issue", {
         p_client_key: clientKey,
         p_check_key: checkKey,
         p_entity_key: input.entityKey,
@@ -276,7 +276,7 @@ export function useSetAsides(clientKey: string | null | undefined, checkKey: str
   const markDone = useCallback(
     async (input: DoneInput): Promise<SetAsideResult> => {
       if (!clientKey || !store) return { ok: false, error: "Done is not available here." };
-      const { error } = await getCanvasSupabase().rpc("mark_issue_done", {
+      const { error } = await getPublicCanvasSupabase().rpc("mark_issue_done", {
         p_client_key: clientKey,
         p_check_key: checkKey,
         p_entity_key: input.entityKey,
@@ -295,7 +295,7 @@ export function useSetAsides(clientKey: string | null | undefined, checkKey: str
   const reopen = useCallback(
     async (row: SetAsideRow, name: string, note?: string | null): Promise<SetAsideResult> => {
       if (!clientKey || !store) return { ok: false, error: "Set-aside is not available here." };
-      const { error } = await getCanvasSupabase().rpc("reopen_set_aside", {
+      const { error } = await getPublicCanvasSupabase().rpc("reopen_set_aside", {
         p_id: row.id,
         p_name: name.trim(),
         p_note: note?.trim() || null,
@@ -338,7 +338,7 @@ function loadReasons(): Promise<SetAsideReason[]> {
   if (reasonsCache) return Promise.resolve(reasonsCache);
   if (!reasonsInflight) {
     reasonsInflight = Promise.resolve(
-      getCanvasSupabase()
+      getPublicCanvasSupabase()
         .from("canvas_set_aside_reasons")
         .select("*")
         .order("sort_order"),

@@ -25,7 +25,6 @@ import { MachineReadabilityPanel } from "@/components/v3/live/MachineReadability
 import { readFallbackTab } from "@/components/v3/read-fallbacks";
 import type { SpokeDefinition, SpokeId } from "@/components/v3/spoke-data-types";
 import { spokeData } from "@/components/v3/spoke-data";
-import narrative from "@/data/fender-v3-spec.json";
 import { aiSpokeDesc, competitorsSpokeDesc } from "@/lib/ai-search/canvas-surfaces";
 import type { AiSearchRead } from "@/lib/ai-search/types";
 import type { FindabilityRead } from "@/lib/findability/copy";
@@ -37,7 +36,7 @@ import {
 } from "@/lib/fender-canvas/portfolio-retail-display";
 import { MUSICIANS_FRIEND_FRESHNESS_JOB } from "@/lib/fender-canvas/map-reading-status";
 import { retailTemplateVars } from "@/lib/fender-canvas/retail-copy";
-import { bindNarrativeSpoke } from "@/lib/fender-canvas/spoke-narrative";
+import { bindNarrativeSpoke, clientNarrative } from "@/lib/fender-canvas/spoke-narrative";
 import { bindCopy, buildTemplateVars } from "@/lib/fender-canvas/template-vars";
 import { urgentInterventionsHtml } from "@/lib/fender-canvas/urgent-interventions-html";
 
@@ -51,8 +50,7 @@ type TabOverride = (
   retail: RetailCanvasRead,
 ) => ReactNode | null;
 
-const HUB_BRIEFING_HTML = (narrative.spokes as { hub: { tabTemplates: string[] } }).hub
-  .tabTemplates[0];
+const HUB_BRIEFING_HTML = clientNarrative().spokes.hub.tabTemplates[0];
 
 const TAB_OVERRIDES: Partial<
   Record<SpokeId, Partial<Record<number, TabOverride>>>

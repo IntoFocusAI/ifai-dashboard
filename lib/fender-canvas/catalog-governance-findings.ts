@@ -15,6 +15,15 @@ const SPEC_FIELD_LABELS: Record<string, string> = {
   body_material_type: "Body",
   color: "Color",
   upc: "UPC",
+  // Lighting (Ledlenser)
+  light_output_maximum: "Max lumens",
+  beam_distance: "Beam distance",
+  runtime: "Runtime",
+  water_resistance_level: "Water resistance",
+  battery_type: "Battery type",
+  power_source: "Power source",
+  light_source_type: "Light source",
+  material_type: "Material",
 };
 
 export type SpecFieldFindingLine = {

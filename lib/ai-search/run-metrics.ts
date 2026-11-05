@@ -1,5 +1,6 @@
 import { API_ENGINE_LABELS } from "@/lib/ai-search/engine-group";
 import type { AiCallRow, AiCurrentRun } from "@/lib/ai-search/types";
+import { leadBrand } from "@/lib/brand-copy";
 
 const ENGINE_LABELS: Record<string, string> = {
   chatgpt: "ChatGPT",
@@ -81,8 +82,8 @@ export function callOutcome(row: AiCallRow): CallOutcome {
 }
 
 export const OUTCOME_LABELS: Record<CallOutcome, string> = {
-  fender_win: "Fender/Squier named most",
-  fender_win_disqualified: "Fender/Squier named most, with a confirmed error",
+  fender_win: `${leadBrand()} named most`,
+  fender_win_disqualified: `${leadBrand()} named most, with a confirmed error`,
   competitor_win: "Competitor named most",
   unresolved: "No clear leader",
   error: "Provider error",

@@ -20,6 +20,7 @@ import {
 } from "@/lib/ai-search/run-metrics";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
 import { formatInt } from "@/lib/fender-canvas/format";
+import { leadBrand } from "@/lib/brand-copy";
 
 /** Everything the map, widgets, tour, and command center say about the published run. */
 export type AiRunSummary = {
@@ -146,7 +147,7 @@ export const LEAD_RATE_BASIS = "A provider error or an answer with no clear lead
 
 /** Tooltip on a lead rate: its N of M, then what stays outside it. */
 export function leadRateTip(tally: Pick<RoleTally, "fenderWins" | "resolved">): string {
-  return `${formatInt(tally.fenderWins)} of ${formatInt(tally.resolved)} resolved answers named Fender/Squier most. ${LEAD_RATE_BASIS}`;
+  return `${formatInt(tally.fenderWins)} of ${formatInt(tally.resolved)} resolved answers named ${leadBrand()} most. ${LEAD_RATE_BASIS}`;
 }
 
 /** Visible label on a rate that is too small to rank against the rows beside it. */
@@ -213,5 +214,5 @@ export function resolvedPhrase(tally: OutcomeTally): string {
 
 /** The two rates that lead AI Search. Shopping guidance and product-fact questions are not in either one. */
 export function headlineLine(summary: AiRunSummary): string {
-  return `Unbranded discovery: Fender/Squier named most in ${resolvedPhrase(summary.roles.unbranded)}. Branded consideration: ${resolvedPhrase(summary.roles.branded)}.`;
+  return `Unbranded discovery: ${leadBrand()} named most in ${resolvedPhrase(summary.roles.unbranded)}. Branded consideration: ${resolvedPhrase(summary.roles.branded)}.`;
 }

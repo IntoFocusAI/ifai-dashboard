@@ -135,7 +135,7 @@ test("Competitor Wins panel leads with the hero before the table title", () => {
   assert.match(hero, /headlineCompetitorWins/);
   assert.match(hero, /data-ai-competitor-graph/);
   assert.match(hero, /competitorWins > 0/);
-  const titleAt = panel.indexOf("Competitors named more than Fender/Squier");
+  const titleAt = panel.indexOf("Competitors named more than {leadBrand()}");
   const heroAt = panel.indexOf("<CompetitorWinsHero");
   assert.ok(heroAt >= 0 && titleAt > heroAt, "title stays under the hero");
   assert.match(panel, /No competitor was named most/);

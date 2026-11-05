@@ -1,5 +1,7 @@
 import { callOutcome, cleanPrompt, type CallOutcome } from "@/lib/ai-search/run-metrics";
 import type { AiCallRow, AiCitationRow } from "@/lib/ai-search/types";
+import { activeClient } from "@/lib/client/active-client";
+import { brandOwned, isFenderClient } from "@/lib/brand-copy";
 
 const EMPTY_VALUES = new Set(["", "null", "undefined", "none", "nan", "n/a"]);
 
@@ -48,7 +50,9 @@ export type SourceClass =
   | "other";
 
 export const SOURCE_CLASS_LABELS: Record<SourceClass, string> = {
-  fender_owned: "Fender-owned",
+  get fender_owned() {
+    return brandOwned();
+  },
   retailer: "Retailer",
   editorial: "Editorial",
   community: "Community",
@@ -69,11 +73,27 @@ export const SOURCE_CLASS_ORDER: SourceClass[] = [
   "other",
 ];
 
-const CLASS_DOMAINS: Array<[SourceClass, string[]]> = [
-  [
-    "fender_owned",
-    ["fender.com", "fmicassets.com", "squier.com", "gretschguitars.com", "jacksonguitars.com", "charvel.com", "evhgear.com"],
-  ],
+/** FMIC's brand sites. Other clients use their own brand-site domains. */
+const FMIC_OWNED_DOMAINS = ["fender.com", "fmicassets.com", "squier.com", "gretschguitars.com", "jacksonguitars.com", "charvel.com", "evhgear.com"];
+
+/** Brand-owned domains for the active client. The class keeps its fender_owned key. */
+export function ownedDomains(): string[] {
+  return isFenderClient() ? FMIC_OWNED_DOMAINS : activeClient().brandSiteDomains;
+}
+
+/**
+ * A brand-owned site, including the brand's regional sites for brand-led clients
+ * (ledlenser.co.uk, ledlenser.com.au, media.ledlenser.com).
+ */
+export function isOwnedDomain(domain: string): boolean {
+  const d = domain.toLowerCase();
+  if (ownedDomains().some((root) => matchesDomain(d, root))) return true;
+  if (isFenderClient()) return false;
+  const stems = activeClient().brandSiteDomains.map((root) => root.split(".")[0]!.replace(/[^a-z0-9-]/g, ""));
+  return stems.some((stem) => new RegExp(`(^|\\.)${stem}\\.[a-z]{2,3}(\\.[a-z]{2})?$`).test(d));
+}
+
+const FENDER_CLASS_DOMAINS: Array<[SourceClass, string[]]> = [
   [
     "retailer",
     [
@@ -102,6 +122,82 @@ const CLASS_DOMAINS: Array<[SourceClass, string[]]> = [
   ],
 ];
 
+/** Lighting brands' own websites and the brand each belongs to (Ledlenser's competitor set first). */
+export const LIGHTING_BRAND_SITES: Array<[string, string]> = [
+  ["petzl.com", "Petzl"],
+  ["blackdiamondequipment.com", "Black Diamond"],
+  ["fenixlighting.com", "Fenix"],
+  ["fenixlight.com", "Fenix"],
+  ["fenix-store.com", "Fenix"],
+  ["nitecore.com", "Nitecore"],
+  ["nitecorestore.com", "Nitecore"],
+  ["olight.com", "Olight"],
+  ["olightstore.com", "Olight"],
+  ["streamlight.com", "Streamlight"],
+  ["coastportland.com", "Coast"],
+  ["kleintools.com", "Klein Tools"],
+  ["milwaukeetool.com", "Milwaukee"],
+  ["acgbrands.com", "Nebo"],
+  ["nebotools.com", "Nebo"],
+  ["wubenlight.com", "Wuben"],
+  ["luxpro.com", "LuxPro"],
+  ["lupinelights.com", "Lupine"],
+  ["silvasweden.com", "Silva"],
+  ["varta-ag.com", "Varta"],
+  ["princetontec.com", "Princeton Tec"],
+  ["bioliteenergy.com", "BioLite"],
+  ["goalzero.com", "Goal Zero"],
+  ["energizer.com", "Energizer"],
+  ["maglite.com", "Maglite"],
+  ["surefire.com", "SureFire"],
+  ["acebeam.com", "Acebeam"],
+  ["armytek.com", "Armytek"],
+  ["thrunite.com", "ThruNite"],
+  ["sofirnlight.com", "Sofirn"],
+  ["zebralight.com", "Zebralight"],
+  ["dewalt.com", "DeWalt"],
+];
+
+const LIGHTING_CLASS_DOMAINS: Array<[SourceClass, string[]]> = [
+  [
+    "retailer",
+    [
+      "amazon.com", "amazon.co.uk", "amazon.ca", "amazon.de", "amazon.com.au", "amazon.com.be", "walmart.com",
+      "homedepot.com", "lowes.com", "acehardware.com", "target.com", "bestbuy.com", "rei.com", "basspro.com",
+      "cabelas.com", "dickssportinggoods.com", "backcountry.com", "moosejaw.com", "zappos.com", "govx.com",
+      "screwfix.com", "toolstation.com", "knivesandtools.com", "flashlightworld.com", "batteryjunction.com",
+      "torchdirect.co.uk", "klium.com", "misterworker.com", "rs-online.com", "distrelec.com", "tendsupplies.com",
+      "valostore.com", "brightlightled.shop", "adventurekit.com.au", "eliteoutdoorgear.com.au", "lightertorch.com",
+      "campcrewlight.store", "clipandcarry.us", "ultralightoutdoorgear.co.uk", "zweibruder.co.uk", "ebay.com",
+    ],
+  ],
+  [
+    "editorial",
+    [
+      "1lumen.com", "zeroair.org", "zakreviews.com", "flashlightratings.com", "cleverhiker.com",
+      "switchbacktravel.com", "treelinereview.com", "outdoorgearlab.com", "gearjunkie.com", "backpacker.com",
+      "outdoorlife.com", "fieldandstream.com", "mensjournal.com", "t3.com", "techradar.com", "popularmechanics.com",
+      "bobvila.com", "nytimes.com", "wirecutter.com", "cnn.com", "livescience.com", "runnersworld.com",
+      "trailrunmag.com", "irunfar.com", "trailruntemple.com", "edc4me.com", "beamandbezel.com", "dailycarrylab.com",
+      "lumenandledger.com", "thegreatoutdoorsmag.com", "terraintechgear.com", "pewpewtactical.com",
+      "the-gadgeteer.com", "momgoescamping.com", "campingguidance.com", "outdoortechlab.com", "kitauthority.com",
+      "ovrmag.com", "findswetrust.com", "itechguides.com", "nurserypicks.com",
+    ],
+  ],
+  [
+    "community",
+    ["reddit.com", "budgetlightforum.com", "candlepowerforums.com", "quora.com", "trustpilot.com", "productreview.com.au"],
+  ],
+  ["video", ["youtube.com", "youtu.be", "vimeo.com", "tiktok.com"]],
+  ["reference", ["wikipedia.org", "manualslib.com", "manuals.plus", "device.report", "productsafety.gov.au"]],
+  ["competitor_brand", LIGHTING_BRAND_SITES.map(([domain]) => domain)],
+];
+
+/** Source-class domain lists for the brand on screen: music retail for Fender, lighting otherwise. */
+function classDomains(): Array<[SourceClass, string[]]> {
+  return isFenderClient() ? FENDER_CLASS_DOMAINS : LIGHTING_CLASS_DOMAINS;
+}
+
 function matchesDomain(domain: string, root: string) {
   return domain === root || domain.endsWith(`.${root}`);
 }
@@ -109,7 +205,8 @@ function matchesDomain(domain: string, root: string) {
 /** IntoFocus's source class for a cited domain. Not a field stored by the collector. */
 export function classifySource(domain: string): SourceClass {
   const d = domain.toLowerCase();
-  for (const [kind, roots] of CLASS_DOMAINS) {
+  if (isOwnedDomain(d)) return "fender_owned";
+  for (const [kind, roots] of classDomains()) {
     if (roots.some((root) => matchesDomain(d, root))) return kind;
   }
   if (/(^|\.)forums?\.|forum/.test(d)) return "community";

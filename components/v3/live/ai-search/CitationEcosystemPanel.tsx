@@ -31,6 +31,7 @@ import { citationEvidence, citedAnswers, groupCitations, type CitationScope } fr
 import { engineLabel } from "@/lib/ai-search/run-metrics";
 import { citationStorageCaution } from "@/lib/ai-search/review-runs";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
+import { brandName, brandOwned, isFenderClient } from "@/lib/brand-copy";
 
 const LINK_COLUMNS = [
   {
@@ -41,10 +42,10 @@ const LINK_COLUMNS = [
     },
   },
   {
-    ...clientColumn("owned", "Fender-owned", "number", 130, 100),
+    ...clientColumn("owned", brandOwned(), "number", 130, 100),
     headerTooltip: {
-      title: "Fender-owned links",
-      description: `Links to sites controlled by Fender or another FMIC brand. ${CITED_LINK_COUNT_CAVEAT}`,
+      title: `${brandOwned()} links`,
+      description: `Links to sites controlled by ${isFenderClient() ? "Fender or another FMIC brand" : brandName()}. ${CITED_LINK_COUNT_CAVEAT}`,
     },
   },
 ];
@@ -156,8 +157,8 @@ function Ecosystem({
                   {read.rows.length} links, so one answer can cite several pages.
                 </li>
                 <li>
-                  Fender-owned links appear in {fenderAnswers} of those answers. The other{" "}
-                  {read.rows.length - fender.length} links point to sites Fender does not control.
+                  {brandOwned()} links appear in {fenderAnswers} of those answers. The other{" "}
+                  {read.rows.length - fender.length} links point to sites {brandName()} does not control.
                 </li>
                 {read.duplicates + read.invalid > 0 ? (
                   <li>
@@ -175,7 +176,7 @@ function Ecosystem({
               </ul>
               <p style={{ ...mutedText, marginTop: 8 }}>
                 A cited link appears alongside an answer. This read does not measure whether the page
-                caused the recommendation, and a citation is not an endorsement of Fender by that source.
+                caused the recommendation, and a citation is not an endorsement of {brandName()} by that source.
               </p>
             </details>
           </>
@@ -270,7 +271,7 @@ function Ecosystem({
 
       {!caution && citationUrlsLoaded && read.rows.length > 0 ? (
         <p style={{ ...mutedText, marginTop: 10 }} data-citation-reconcile>
-          Cited links by source totals {read.rows.length}. Fender-owned and other links totals{" "}
+          Cited links by source totals {read.rows.length}. {brandOwned()} and other links totals{" "}
           {read.rows.length}.
         </p>
       ) : null}

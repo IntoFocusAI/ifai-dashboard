@@ -6,10 +6,10 @@ import { ExploreListings } from "@/components/v3/live/ExploreListings";
 import { DefinedTerm } from "@/components/v3/live/DefinedTerm";
 import { FeaturedOfferReadings } from "@/components/v3/live/FeaturedOfferReadings";
 import { authorizedSellerControlOffered } from "@/lib/fender-canvas/authorized-sellers";
+import { activeClient } from "@/lib/client/active-client";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
 import type { CanvasFreshnessRow } from "@/lib/fender-canvas/types";
 
-const RETAIL_SELLER_TYPE = "Partner-led";
 
 export function RetailOverview({
   read,
@@ -18,6 +18,7 @@ export function RetailOverview({
   read: RetailCanvasRead;
   freshness?: CanvasFreshnessRow[] | null;
 }) {
+  const RETAIL_SELLER_TYPE = activeClient().sellerModel;
   const counts =
     read.phase === "ready" ? read.snapshot.suppressedListings.detail?.counts ?? null : null;
 

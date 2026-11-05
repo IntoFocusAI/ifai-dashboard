@@ -221,7 +221,7 @@ test("Retail Overview places three heroes before the essay and drops the stacked
 
   assert.match(overview, /CommerceConsensusPanel/);
   assert.match(overview, /Seller type: \{RETAIL_SELLER_TYPE\}/);
-  assert.match(overview, /const RETAIL_SELLER_TYPE = "Partner-led"/);
+  assert.match(overview, /const RETAIL_SELLER_TYPE = activeClient\(\)\.sellerModel/);
   assert.match(overview, /authorizedSellerControlOffered\(RETAIL_SELLER_TYPE\)/);
   assert.match(overview, /AuthorizedSellersControl/);
   assert.match(overview, /How do these retail findings change AI search\?/);

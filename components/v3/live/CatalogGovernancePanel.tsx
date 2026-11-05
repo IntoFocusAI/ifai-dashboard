@@ -1,5 +1,4 @@
 "use client";
-
 import { useState } from "react";
 import { CitationPieDisc } from "@/components/v3/live/ai-search/CitationPieDisc";
 import { CatalogGovernanceSpecTable } from "@/components/v3/live/CatalogGovernanceSpecTable";
@@ -19,7 +18,7 @@ import {
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
 import { catalogHero, specHero } from "@/lib/fender-canvas/retail-overview-lead";
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
-
+import { TableExportButton } from "@/components/v3/live/TableExportButton";
 const SPLINTERED_LISTINGS_LABEL = "Splintered listings";
 const SPECS_COMPLETE_LABEL = "Specs complete";
 const SPLINTERED_TABLE_ID = "catalog-governance-splintered-table";
@@ -142,6 +141,7 @@ function BundleRows({ rows }: { rows: UnnestedBundleOpportunity[] }) {
   const slice = sorted.rows.slice(page * PAGE, page * PAGE + PAGE);
   return (
     <>
+      <TableExportButton table="catalog-splintered" />
       <ResizableTable
         tableId="catalog-bundles"
         columns={BUNDLE_COLUMNS}

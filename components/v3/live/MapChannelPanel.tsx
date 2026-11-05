@@ -28,7 +28,7 @@ import { MAP_PRICES_NOT_STORED } from "@/lib/fender-canvas/portfolio-retail";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
 import { averageGapTip, mapHero } from "@/lib/fender-canvas/retail-overview-lead";
 import type { CanvasFreshnessRow } from "@/lib/fender-canvas/types";
-import { FMIC_CLIENT_KEY, SET_ASIDE_CHECKS } from "@/lib/set-aside/keys";
+import { SET_ASIDE_CHECKS, activeSetAsideClientKey } from "@/lib/set-aside/keys";
 import { useSetAsides } from "@/lib/set-aside/set-aside";
 
 const PAGE_SIZE = 1000;
@@ -264,7 +264,7 @@ export function MapChannelPanel({
 
   const pricesNotStored = mapPricesNotStored(read);
   const musiciansFriendLastRunAt = musiciansFriendFreshness?.last_run_at;
-  const mapSetAsides = useSetAsides(FMIC_CLIENT_KEY, SET_ASIDE_CHECKS.mapPricing);
+  const mapSetAsides = useSetAsides(activeSetAsideClientKey(), SET_ASIDE_CHECKS.mapPricing);
   const exceptions = useMemo(() => approvedExceptionAsins(mapSetAsides.rows), [mapSetAsides.rows]);
 
   useEffect(() => {
