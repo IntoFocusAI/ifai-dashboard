@@ -20,7 +20,14 @@ Every edit command reads the .docx, makes one change, and saves it in place
   python3 scripts/design-doc-edit.py set-cell /tmp/fdd.docx trace X-21 Status CURRENT
   python3 scripts/design-doc-edit.py replace-all /tmp/fdd.docx "old text" "new text"
   python3 scripts/design-doc-edit.py diff /tmp/fdd-live.docx /tmp/fdd.docx
+  python3 scripts/design-doc-edit.py plan /tmp/fdd-live.docx /tmp/fdd.docx [--no-keep-history] > /tmp/plan.txt
+  python3 scripts/design-doc-edit.py pub /tmp/fdd.docx /tmp/pub.docx --split 'Date|Change|Reason|Reference:1'
   python3 scripts/design-doc-edit.py selftest
+
+plan prints numbered Google-docs plugin calls that turn the live doc into the
+edited copy, checked against a simulation of every call. pub writes the copy
+the way those calls leave the live doc (appended rows in their own table) so
+check-design-doc.py can compare it; plan prints the --split arguments to use.
 
 Fields are Current, Desired, User value, Acceptance, Evidence, Open decision,
 and Status source. A row keeps them either in a two-column table or as
@@ -50,8 +57,10 @@ import datetime
 import difflib
 import importlib
 import importlib.util
+import json
 import os
 import re
+import shlex
 import subprocess
 import sys
 import time
@@ -555,17 +564,89 @@ def set_cell_text(tc, text: str) -> None:
         previous = paragraph
 
 
-def _row_by_key(tbl, key: str):
-    for tr in tbl.findall(w("tr"))[1:]:
+def _width(tbl) -> int:
+    rows = tbl.findall(w("tr"))
+    return len(rows[0].findall(w("tc"))) if rows else 0
+
+
+def _is_header_row(tr) -> bool:
+    cells = tr.findall(w("tc")) if tr is not None else []
+    if not cells:
+        return False
+    shd = cells[0].find(f"{w('tcPr')}/{w('shd')}")
+    fill = (shd.get(w("fill")) or "").lower() if shd is not None else ""
+    if fill and fill not in ("auto", "ffffff"):
+        return True
+    for r_el in cells[0].iter(w("r")):
+        bold = r_el.find(f"{w('rPr')}/{w('b')}")
+        if bold is not None and bold.get(w("val"), "1").lower() not in ("0", "false", "off"):
+            return True
+    return False
+
+
+def table_groups(doc) -> list[list]:
+    """Tables, with each published continuation table grouped after its original.
+
+    A continuation is what insert_table leaves in the live doc: a table right
+    after another one, one empty paragraph between them, with the same column
+    count and no header row.
+    """
+    groups: list[list] = []
+    children = list(_body(doc))
+    for index, element in enumerate(children):
+        if element.tag != w("tbl"):
+            continue
+        first = element.find(w("tr"))
+        if (
+            groups
+            and index >= 2
+            and children[index - 2] is groups[-1][-1]
+            and _is_blank(children[index - 1])
+            and _width(element) == _width(groups[-1][0])
+            and not _is_header_row(first)
+        ):
+            groups[-1].append(element)
+        else:
+            groups.append([element])
+    return groups
+
+
+def group_name(group: list) -> str:
+    first = group[0].find(w("tr"))
+    return "|".join(text_of(tc).strip() for tc in first.findall(w("tc"))) if first is not None else ""
+
+
+def table_group(doc, name: str) -> list:
+    """The named table and its continuation tables, top to bottom."""
+    header = find_table(doc, name)
+    for group in table_groups(doc):
+        if group[0] is header:
+            return group
+    return [header]
+
+
+def _group_rows(group) -> list:
+    if not isinstance(group, list):
+        group = [group]
+    rows = []
+    for index, tbl in enumerate(group):
+        rows.extend(tbl.findall(w("tr"))[1 if index == 0 else 0:])
+    return rows
+
+
+def _row_by_key(group, key: str):
+    for tr in _group_rows(group):
         cells = tr.findall(w("tc"))
         if cells and text_of(cells[0]).strip() == key:
             return tr
     raise EditError(f"no row whose first cell is {key!r}")
 
 
-def add_table_row(tbl, values: list[str], after: str | None = None) -> None:
-    rows = tbl.findall(w("tr"))
-    template = rows[-1]
+def add_table_row(group, values: list[str], after: str | None = None) -> None:
+    """Add a row at the bottom of the table's last continuation, or after a row."""
+    if not isinstance(group, list):
+        group = [group]
+    template = group[-1].findall(w("tr"))[-1]
     width = len(template.findall(w("tc")))
     if len(values) != width:
         raise EditError(f"table has {width} columns; got {len(values)} values")
@@ -573,20 +654,56 @@ def add_table_row(tbl, values: list[str], after: str | None = None) -> None:
     _strip_ids(new_row)
     for tc, value in zip(new_row.findall(w("tc")), values):
         set_cell_text(tc, value)
-    anchor = _row_by_key(tbl, after) if after else template
+    anchor = _row_by_key(group, after) if after else template
     anchor.addnext(new_row)
 
 
-def set_table_cell(tbl, key: str, column: str, text: str) -> None:
-    header = [text_of(tc).strip() for tc in tbl.findall(w("tr"))[0].findall(w("tc"))]
+def set_table_cell(group, key: str, column: str, text: str) -> None:
+    if not isinstance(group, list):
+        group = [group]
+    header = [text_of(tc).strip() for tc in group[0].findall(w("tr"))[0].findall(w("tc"))]
     if column not in header:
         raise EditError(f"no column {column!r}; columns are {', '.join(header)}")
-    cells = _row_by_key(tbl, key).findall(w("tc"))
+    cells = _row_by_key(group, key).findall(w("tc"))
     set_cell_text(cells[header.index(column)], text)
 
 
 def add_changelog_row(doc, date: str, change: str, reason: str, reference: str) -> None:
-    add_table_row(find_table(doc, "changelog"), [date, change, reason, reference])
+    add_table_row(table_group(doc, "changelog"), [date, change, reason, reference])
+
+
+def split_tables(doc, specs: list[tuple[str, int]]) -> None:
+    """Move the last N rows of each named table into a new table right after it.
+
+    This is the structure insert_table leaves in the live doc: the original
+    table, one empty paragraph, the new table, then what followed before.
+    """
+    for name, count in specs:
+        group = table_group(doc, name)
+        tbl = group[-1]
+        rows = tbl.findall(w("tr"))
+        if count < 1 or count >= len(rows):
+            raise EditError(f"cannot move {count} of {len(rows)} rows out of table {group_name(group)}")
+        moved = copy.deepcopy(tbl)
+        for tr in moved.findall(w("tr")):
+            moved.remove(tr)
+        for tr in rows[-count:]:
+            moved.append(tr)
+        following = tbl.getnext()
+        if following is not None and _is_blank(following):
+            blank = copy.deepcopy(following)
+            _strip_ids(blank)
+        else:
+            blank = tbl.makeelement(w("p"), {})
+        tbl.addnext(blank)
+        blank.addnext(moved)
+
+
+def parse_split(spec: str) -> tuple[str, int]:
+    name, sep, count = spec.rpartition(":")
+    if not sep or not name or not count.strip().isdigit():
+        raise EditError(f"--split {spec!r} must look like 'Date|Change|Reason|Reference:8'")
+    return name, int(count)
 
 
 # ---------------------------------------------------------------- whole document
@@ -707,6 +824,686 @@ def diff_docs(before: str, after: str) -> list[str]:
     return lines
 
 
+# ---------------------------------------------------------------- Google-docs plan
+
+MIN_FIND = 24
+ID_COLOR = "#0F2C4C"
+PHASE_HEX = "#" + PHASE_COLOR
+CHANGELOG_HEADER = "|".join(TABLES["changelog"])
+PLAN_NOTES = (
+    "Every replace_text find occurs exactly once in the whole live text when its step runs, so it cannot"
+    " hit an older change-log row. If occurrencesChanged is not the number the step expects, stop and undo"
+    " that replace before doing anything else.",
+    "A date also appears in the footer, so a replace_text on a date reports 2 when its step says so.",
+    "Run one call at a time, in the order listed. Fill table cells bottom-to-top and right-to-left, as"
+    " listed, so a mistake shows up as text in the wrong cell instead of shifted indexes.",
+    "insert_table into the empty paragraph after a table keeps that paragraph above the new table and"
+    " adds one after it. The pub command builds that same structure for the check.",
+    "insert_text at the start of a paragraph takes that paragraph's style (often a heading). Each insert"
+    " step lists the paragraph style, indent, and text style to set afterwards.",
+)
+
+
+def _q(text: str) -> str:
+    return json.dumps(text, ensure_ascii=False)
+
+
+def _u16(text: str) -> int:
+    return len(text.encode("utf-16-le")) // 2
+
+
+def _count(hay: str, needle: str, limit: int | None = None) -> int:
+    if not needle:
+        return 1 << 30
+    found, start = 0, 0
+    while True:
+        index = hay.find(needle, start)
+        if index < 0 or (limit is not None and found >= limit):
+            return found
+        found += 1
+        start = index + 1
+
+
+def _common_affixes(old: str, new: str) -> tuple[int, int]:
+    prefix = 0
+    limit = min(len(old), len(new))
+    while prefix < limit and old[prefix] == new[prefix]:
+        prefix += 1
+    suffix = 0
+    while suffix < limit - prefix and old[len(old) - 1 - suffix] == new[len(new) - 1 - suffix]:
+        suffix += 1
+    return prefix, suffix
+
+
+def _word_bounds(text: str, x: int, y: int) -> tuple[int, int]:
+    """Widen [x, y) so the find does not start or end inside a word."""
+    while 0 < x < len(text) and text[x - 1].isalnum() and text[x].isalnum():
+        x -= 1
+    while 0 < y < len(text) and text[y - 1].isalnum() and text[y].isalnum():
+        y += 1
+    return x, y
+
+
+class _Par:
+    __slots__ = ("text", "box", "el")
+
+    def __init__(self, text: str, box: tuple, el=None):
+        self.text, self.box, self.el = text, box, el
+
+
+BODY = ("body",)
+
+
+def _read_pars(doc, prefix: str):
+    """Paragraphs in check-design-doc.py order, each with its container."""
+    group_of = {}
+    for group in table_groups(doc):
+        name = group_name(group)
+        for position, tbl in enumerate(group):
+            group_of[tbl] = (name, position, len(group))
+    pars, tables = [], {}
+    for child in _body(doc):
+        if child.tag != w("tbl"):
+            pars.extend(_Par(text_of(p), BODY, p) for p in child.iter(w("p")))
+            continue
+        key = f"{prefix}{len(tables)}"
+        rows = child.findall(w("tr"))
+        cell_of, first_col = {}, []
+        for r, tr in enumerate(rows):
+            cells = tr.findall(w("tc"))
+            first_col.append(text_of(cells[0]).strip() if cells else "")
+            for c, tc in enumerate(cells):
+                for p in tc.iter(w("p")):
+                    cell_of[p] = (r, c)
+        name, position, size = group_of.get(child, ("", 0, 1))
+        tables[key] = {
+            "rows": len(rows), "cols": _width(child), "group": name,
+            "position": position, "last": position == size - 1, "first_col": first_col,
+        }
+        for p in child.iter(w("p")):
+            r, c = cell_of.get(p, (0, 0))
+            pars.append(_Par(text_of(p), ("cell", key, r, c), p))
+    return pars, tables
+
+
+def _contexts(pars, tables) -> list[str]:
+    out, rid, label = [], None, None
+    for p in pars:
+        if p.box == BODY:
+            match = HEAD_RE.match(p.text)
+            if match:
+                rid, label = match.group(1), None
+            elif rid and p.text.strip() in FIELD_LABELS:
+                label = p.text.strip()
+            elif p.el is not None and _is_heading_style(p.el):
+                rid, label = None, None
+            out.append((f"row {rid}" + (f" {label}" if label else "")) if rid else "body text")
+            continue
+        table, r = tables[p.box[1]], p.box[2]
+        first = table["first_col"][r] if r < len(table["first_col"]) else ""
+        if rid and first in FIELD_LABELS:
+            out.append(f"row {rid} {first}")
+        else:
+            where = f"table {table['group']}" + (f" (continuation {table['position']})" if table["position"] else "")
+            out.append(f"{where}, row {r + 1}")
+    return out
+
+
+def _named_style(p_el) -> str:
+    style = _style_id(p_el).lower().replace(" ", "")
+    match = re.fullmatch(r"heading(\d)", style)
+    if match:
+        return f"HEADING_{match.group(1)}"
+    return {"title": "TITLE", "subtitle": "SUBTITLE"}.get(style, "NORMAL_TEXT")
+
+
+def _indent_pt(p_el) -> float:
+    ind = p_el.find(f"{w('pPr')}/{w('ind')}")
+    if ind is None:
+        return 0.0
+    value = ind.get(w("left")) or ind.get(w("start")) or "0"
+    try:
+        return round(float(value) / 20, 1)
+    except ValueError:
+        return 0.0
+
+
+def _run_styles(p_el) -> list[list]:
+    runs: list[list] = []
+    for r_el in p_el.iter(w("r")):
+        text = "".join(node.text or "" for node in r_el.iter(w("t")))
+        if not text:
+            continue
+        rpr = r_el.find(w("rPr"))
+        bold, color, size = False, None, None
+        if rpr is not None:
+            b = rpr.find(w("b"))
+            bold = b is not None and b.get(w("val"), "1").lower() not in ("0", "false", "off")
+            c = rpr.find(w("color"))
+            if c is not None and c.get(w("val"), "auto").lower() != "auto":
+                color = "#" + c.get(w("val")).upper()
+            s = rpr.find(w("sz"))
+            if s is not None and s.get(w("val"), "").isdigit():
+                size = int(s.get(w("val"))) / 2
+        style = (bold, color, size)
+        if runs and runs[-1][1] == style:
+            runs[-1][0] += text
+        else:
+            runs.append([text, style])
+    return runs
+
+
+def _style_args(start: str, a: int, b: int, style) -> str:
+    bold, color, size = style
+    parts = [f'"startIndex": {start} + {a}', f'"endIndex": {start} + {b}', f'"bold": {"true" if bold else "false"}']
+    if color:
+        parts.append(f'"textColor": "{color}"')
+    if size:
+        parts.append(f'"fontSize": {size:g}')
+    return "apply_text_style {" + ", ".join(parts) + "}"
+
+
+def _is_history(box, tables) -> bool:
+    if box[0] != "cell":
+        return False
+    table = tables[box[1]]
+    return table["group"].startswith(CHANGELOG_HEADER) and not (table["position"] == 0 and box[2] == 0)
+
+
+class _Planner:
+    def __init__(self, live: str, new: str, keep_history: bool):
+        check = _check_module()
+        self.check = check
+        self.live_path, self.new_path, self.keep_history = live, new, keep_history
+        self.old, self.otables = _read_pars(open_doc(live), "L")
+        self.new_doc = open_doc(new)
+        self.new, self.ntables = _read_pars(self.new_doc, "N")
+        live_pars, live_header, live_footer = check.read_docx(live)
+        new_pars, self.new_header, self.new_footer = check.read_docx(new)
+        if [p.text for p in self.old] != live_pars or [p.text for p in self.new] != new_pars:
+            raise EditError("paragraph reading differs from check-design-doc.py")
+        self.octx = _contexts(self.old, self.otables)
+        self.nctx = _contexts(self.new, self.ntables)
+        self.model = [_Par(p.text, p.box, p.el) for p in self.old]
+        self.header, self.footer = live_header, live_footer
+        self.steps: list[tuple[str, list[str]]] = []
+        self.skipped: list[str] = []
+        self.warnings: list[str] = []
+        self.splits: dict[str, int] = {}
+
+    # ---- text model
+
+    def full(self) -> str:
+        return "\n".join(p.text for p in self.model)
+
+    def before(self, i: int) -> str:
+        return "\n".join(p.text for p in self.model[:i]) + ("\n" if i else "")
+
+    def anchor(self, i: int) -> tuple[str, int | None]:
+        text, full = self.model[i].text, self.full()
+        if _count(full, text, 2) == 1:
+            lo, hi = min(MIN_FIND, len(text)), len(text)
+            while lo < hi:
+                mid = (lo + hi) // 2
+                if _count(full, text[:mid], 2) == 1:
+                    hi = mid
+                else:
+                    lo = mid + 1
+            return text[:_word_bounds(text, 0, lo)[1]], None
+        return text, _count(self.before(i), text) + 1
+
+    def find_call(self, i: int, label: str, note: str = "") -> str:
+        text, occurrence = self.anchor(i)
+        args = {"text": text}
+        if occurrence:
+            args["occurrence"] = occurrence
+        return f"find_text {json.dumps(args, ensure_ascii=False)} -> {label}" + (f"   ({note})" if note else "")
+
+    def locate(self, i: int, label: str) -> tuple[list[str], str, str]:
+        """Lines that find paragraph i, and expressions for its start and end."""
+        p = self.model[i]
+        if p.text:
+            return [self.find_call(i, label)], f"{label}.paragraph_start", f"{label}.paragraph_end"
+        j, blanks = i - 1, 0
+        while j >= 0 and self.model[j].box == p.box and not self.model[j].text:
+            j, blanks = j - 1, blanks + 1
+        if j >= 0 and self.model[j].box == p.box:
+            start = f"{label}.paragraph_end" + (f" + {blanks}" if blanks else "")
+            return [self.find_call(j, label, "the paragraph above the empty one")], start, f"{start} + 1"
+        if p.box == BODY and j >= 0 and self.model[j].box[0] == "cell":
+            key = self.model[j].box[1]
+            k = j
+            while k >= 0 and self.model[k].box[:2] == ("cell", key) and not self.model[k].text:
+                k -= 1
+            if k >= 0 and self.model[k].box[:2] == ("cell", key):
+                start = f"{label}T.end" + (f" + {blanks}" if blanks else "")
+                return [
+                    self.find_call(k, label, "a cell of the table just above"),
+                    f"read_document -> {label}T = the table element that contains {label}.start",
+                ], start, f"{start} + 1"
+        if p.box[0] == "cell":
+            key, r, c = p.box[1], p.box[2], p.box[3]
+            for k in list(range(i - 1, -1, -1)) + list(range(i + 1, len(self.model))):
+                if self.model[k].box[:2] == ("cell", key) and self.model[k].text:
+                    return [
+                        self.find_call(k, label, "a cell of the same table"),
+                        f"read_document -> {label}C = row {r + 1}, column {c + 1} of the table that contains {label}.start",
+                    ], f"{label}C.start", f"{label}C.start + 1"
+        raise EditError(f"cannot locate empty paragraph {i}; edit it by hand")
+
+    def locate_text_end(self, i: int, label: str) -> tuple[list[str], str]:
+        if self.model[i].text:
+            return [self.find_call(i, label)], f"{label}.paragraph_end - 1"
+        lines, start, _end = self.locate(i, label)
+        return lines, start
+
+    def emit(self, title: str, context: str, lines: list[str]) -> None:
+        self.steps.append((f"{title}   [{context}]", lines))
+
+    # ---- edits
+
+    def heading_styles(self, i: int) -> list[str]:
+        match = HEAD_RE.match(self.model[i].text)
+        rid, gap, status, phase = match.groups()
+        s1, s2 = _u16(rid), _u16(rid + gap)
+        s3 = s2 + _u16(status)
+        s4 = s3 + _u16(phase)
+        start = "H.paragraph_start"
+        return [
+            self.find_call(i, "H"),
+            _style_args(start, 0, s1, (True, ID_COLOR, 12)) + "   (ID)",
+            _style_args(start, s2, s3, (True, "#" + STATUS_COLORS[status], 12)) + f"   ({status})",
+            _style_args(start, s3, s4, (False, PHASE_HEX, None)) + "   (phase)",
+        ]
+
+    def change(self, i: int, j: int) -> None:
+        o, n, context = self.model[i].text, self.new[j].text, self.octx[i]
+        if self.keep_history and _is_history(self.old[i].box, self.otables):
+            self.skipped.append(f"paragraph {i} ({context}): live {_q(o)} -> new {_q(n)}")
+            return
+        prefix, suffix = _common_affixes(o, n)
+        a, b = prefix, len(o) - suffix
+        mid = n[a:len(n) - suffix]
+        full = self.full()
+        if o and _count(full, o, 2) == 1:
+            floor = min(MIN_FIND, len(o))
+
+            def window(step):
+                return max(0, a - step), min(len(o), b + step)
+
+            def unique(step):
+                x, y = window(step)
+                return y - x >= floor and _count(full, o[x:y], 2) == 1
+
+            lo, hi = 0, max(a, len(o) - b)
+            while lo < hi:
+                step = (lo + hi) // 2
+                if unique(step):
+                    hi = step
+                else:
+                    lo = step + 1
+            x, y = _word_bounds(o, *window(lo))
+            find, replace = o[x:y], n[x:len(n) - (len(o) - y)]
+            extra = _count(self.header, find) + _count(self.footer, find)
+            expect = f"Expect occurrencesChanged = {1 + extra}" + (
+                f" (1 here and {extra} in the header or footer)" if extra else "") + "."
+            lines = [f"replace_text {json.dumps({'find': find, 'replace': replace}, ensure_ascii=False)}", expect]
+            self.header = self.header.replace(find, replace)
+            self.footer = self.footer.replace(find, replace)
+            title = "replace_text"
+        else:
+            if o:
+                occurrence = _count(self.before(i), o) + 1
+                total = _count(full, o)
+                lines = [
+                    f"find_text {json.dumps({'text': o, 'occurrence': occurrence}, ensure_ascii=False)} -> M"
+                    f"   (this text occurs {total} times; this is match {occurrence})"
+                ]
+                start = "M.start"
+            else:
+                lines, start, _end = self.locate(i, "M")
+            if b > a:
+                lines.append(f'delete_content {{"startIndex": {start} + {_u16(o[:a])}, "endIndex": {start} + {_u16(o[:b])}}}')
+            if mid:
+                lines.append(f'insert_text {{"index": {start} + {_u16(o[:a])}, "text": {_q(mid)}}}')
+            title = "POSITION edit"
+        self.model[i].text = n
+        if HEAD_RE.match(n):
+            lines.append("Then style the heading:")
+            lines.extend(self.heading_styles(i))
+        self.emit(title, context, lines)
+
+    def delete(self, i: int) -> None:
+        p, context = self.model[i], self.octx[i]
+        if self.keep_history and _is_history(self.old[i].box, self.otables):
+            self.skipped.append(f"paragraph {i} ({context}): live {_q(p.text)} is removed in new")
+            return
+        same_before = i > 0 and self.model[i - 1].box == p.box
+        same_after = i + 1 < len(self.model) and self.model[i + 1].box == p.box
+        if p.box[0] == "cell" and not same_before and not same_after:
+            self.warnings.append(f"paragraph {i} ({context}) empties a table cell or removes a row; do that by hand.")
+            return
+        lines, start, end = self.locate(i, "D")
+        if same_after or not same_before:
+            lines.append(f'delete_content {{"startIndex": {start}, "endIndex": {end}}}')
+        else:
+            lines.append(f'delete_content {{"startIndex": {start} - 1, "endIndex": {end} - 1}}   (takes the newline before it)')
+        del self.model[i]
+        self.emit("delete paragraph", context, lines)
+
+    # ---- inserts
+
+    def segments(self, js: list[int]) -> list[tuple]:
+        segs: list[list] = []
+        for j in js:
+            box = self.new[j].box
+            if box == BODY:
+                kind, key = "body", None
+            else:
+                nt, r = box[1], box[2]
+                if nt not in self.tmap:
+                    kind, key = "table", nt
+                elif (nt, r) in self.rowmap:
+                    lt, orow = self.rowmap[(nt, r)]
+                    kind, key = "cell", ("cell", lt, orow, box[3])
+                else:
+                    kind, key = "rows", nt
+            if segs and segs[-1][0] == kind and segs[-1][1] == key:
+                segs[-1][2].append(j)
+            else:
+                segs.append([kind, key, [j]])
+        return [tuple(s) for s in segs]
+
+    def insert(self, q: int, js: list[int]) -> None:
+        segs = self.segments(js)
+        absorb = False
+        for index, (kind, key, items) in enumerate(segs):
+            if absorb and kind == "body" and items and not self.new[items[0]].text:
+                items = items[1:]
+            absorb = False
+            if not items:
+                continue
+            if kind == "body":
+                q = self.insert_body(q, items)
+            elif kind == "cell":
+                q = self.insert_cell(q, key, items)
+            elif kind == "table":
+                q = self.insert_table(q, key, items)
+                nxt = segs[index + 1] if index + 1 < len(segs) else None
+                if nxt and nxt[0] == "body" and not self.new[nxt[2][0]].text:
+                    absorb = True
+                else:
+                    self.warnings.append(
+                        f"new table {self.nctx[items[0]]} is not followed by an empty paragraph in NEW;"
+                        " insert_table leaves one, so the check will report it.")
+            elif kind == "rows":
+                q = self.append_rows(q, key, items)
+                if index + 1 < len(segs):
+                    self.warnings.append("text added right after appended table rows; check the order by hand.")
+
+    def text_style_lines(self, items: list[int], offset0: int) -> list[str]:
+        lines, offset = [], offset0
+        styled = False
+        per_par = []
+        for j in items:
+            runs = _run_styles(self.new[j].el) if self.new[j].el is not None else []
+            per_par.append((offset, runs))
+            styled = styled or any(style != (False, None, None) for _text, style in runs)
+            offset += _u16(self.new[j].text) + 1
+        if not styled:
+            if offset - 1 <= offset0:
+                return []
+            return [_style_args("R.start", offset0, offset - 1, (False, None, None)) + "   (plain text)"]
+        for start, runs in per_par:
+            position = start
+            for text, style in runs:
+                if not text:
+                    continue
+                lines.append(_style_args("R.start", position, position + _u16(text), style))
+                position += _u16(text)
+        return lines
+
+    def insert_body(self, q: int, items: list[int]) -> int:
+        texts = [self.new[j].text for j in items]
+        if q < len(self.model) and self.model[q].box == BODY:
+            lines, start, _end = self.locate(q, "N")
+            index, text, offset0 = start, "\n".join(texts) + "\n", 0
+            where = "at the start of the paragraph after the insertion point"
+        elif q > 0 and self.model[q - 1].box == BODY:
+            lines, index = self.locate_text_end(q - 1, "P")
+            text, offset0 = "\n" + "\n".join(texts), 1
+            where = "at the end of the paragraph before the insertion point"
+        else:
+            self.warnings.append(f"cannot place new paragraphs before {self.nctx[items[0]]}; insert them by hand.")
+            return q
+        lines.append(f'insert_text {{"index": {index}, "text": {_q(text)}}} -> R (its insertedRange)   ({where})')
+        offset = offset0
+        for j in items:
+            el, length = self.new[j].el, _u16(self.new[j].text) + 1
+            style = _named_style(el) if el is not None else "NORMAL_TEXT"
+            indent = _indent_pt(el) if el is not None else 0.0
+            lines.append(
+                f'apply_paragraph_style {{"startIndex": R.start + {offset}, "endIndex": R.start + {offset + length - offset0}, '
+                f'"namedStyleType": "{style}"}};  set_paragraph_format same range {{"indentStart": {indent:g}}}')
+            offset += length
+        lines.extend(self.text_style_lines(items, offset0))
+        for k, j in enumerate(items):
+            self.model.insert(q + k, _Par(self.new[j].text, BODY, self.new[j].el))
+        self.emit(f"insert {len(items)} paragraph(s)", self.nctx[items[0]], lines)
+        return q + len(items)
+
+    def insert_cell(self, q: int, box: tuple, items: list[int]) -> int:
+        texts = [self.new[j].text for j in items]
+        if q > 0 and self.model[q - 1].box == box:
+            lines, index = self.locate_text_end(q - 1, "P")
+            text = "\n" + "\n".join(texts)
+        elif q < len(self.model) and self.model[q].box == box:
+            lines, index, _end = self.locate(q, "N")
+            text = "\n".join(texts) + "\n"
+        else:
+            self.warnings.append(f"cannot place new cell text {self.nctx[items[0]]}; add it by hand.")
+            return q
+        lines.append(f'insert_text {{"index": {index}, "text": {_q(text)}}}')
+        for k, j in enumerate(items):
+            self.model.insert(q + k, _Par(self.new[j].text, box, self.new[j].el))
+        self.emit("add text in a table cell", self.nctx[items[0]], lines)
+        return q + len(items)
+
+    def cell_fill(self, items: list[int], label: str, rows: list[int]) -> tuple[list[str], list[_Par], int, int]:
+        cells: dict[tuple[int, int], list[int]] = {}
+        order = {r: k for k, r in enumerate(rows)}
+        for j in items:
+            _kind, _key, r, c = self.new[j].box
+            cells.setdefault((order[r], c), []).append(j)
+        columns = self.ntables[self.new[items[0]].box[1]]["cols"]
+        lines = [f"insert_text into each cell of {label}, one call at a time, bottom-to-top and right-to-left."
+                 " Where styles are listed, R is that insert_text's insertedRange:"]
+        for (r, c) in sorted(cells, reverse=True):
+            text = "\n".join(self.new[j].text for j in cells[(r, c)])
+            if not text:
+                lines.append(f"  row {r + 1}, column {c + 1}: (leave empty)")
+                continue
+            lines.append(f"  row {r + 1}, column {c + 1}: {_q(text)}")
+            styles = self.text_style_lines(cells[(r, c)], 0)
+            if not (len(styles) == 1 and styles[0].endswith("(plain text)")):
+                lines.extend("      " + line for line in styles)
+        pars = [_Par(self.new[j].text, ("cell", self.new[j].box[1], order[self.new[j].box[2]], self.new[j].box[3]), self.new[j].el)
+                for j in items]
+        return lines, pars, len(rows), columns
+
+    def insert_table(self, q: int, nt: str, items: list[int]) -> int:
+        rows = sorted({self.new[j].box[2] for j in items})
+        if not (q > 0 and self.model[q - 1].box == BODY):
+            self.warnings.append(f"new table {self.nctx[items[0]]} has no paragraph above it; insert it by hand.")
+            return q
+        lines, index = self.locate_text_end(q - 1, "P")
+        fill, pars, count, columns = self.cell_fill(items, "T", rows)
+        lines.append(f'insert_table {{"rows": {count}, "columns": {columns}, "index": {index}}}'
+                     "   (the paragraph's text stays above the table; an empty paragraph follows it)")
+        lines.append("read_document -> T = the new table (the element right after that paragraph)")
+        lines.extend(fill)
+        self.model[q:q] = pars + [_Par("", BODY)]
+        self.emit(f"new {count} x {columns} table", self.nctx[items[0]], lines)
+        return q + len(pars) + 1
+
+    def append_rows(self, q: int, nt: str, items: list[int]) -> int:
+        lt = self.tmap[nt]
+        table = self.otables[lt]
+        rows = sorted({self.new[j].box[2] for j in items})
+        if any((nt, r) in self.rowmap for r in range(rows[0], self.ntables[nt]["rows"])):
+            self.warnings.append(
+                f"rows added inside table {table['group']} instead of at the bottom; the plugin cannot insert"
+                " rows into a table. Add them at the bottom in NEW (add-row without --after).")
+            return q
+        if not (q < len(self.model) and self.model[q].box == BODY and not self.model[q].text):
+            self.warnings.append(f"table {table['group']} is not followed by an empty paragraph; add its rows by hand.")
+            return q
+        k = q - 1
+        while k >= 0 and self.model[k].box[:2] == ("cell", lt) and not self.model[k].text:
+            k -= 1
+        if not table["last"]:
+            self.warnings.append(f"rows were added to table {table['group']} above its continuation table; add them to the last one.")
+        lines = [
+            self.find_call(k, "C", "a cell near the bottom of the table"),
+            "read_document -> T = the table that contains C.start; E = the empty paragraph right after T",
+        ]
+        fill, pars, count, columns = self.cell_fill(items, "T2", rows)
+        lines.append(f'insert_table {{"rows": {count}, "columns": {columns}, "index": E.start}}'
+                     "   (E stays above the new table; a new empty paragraph follows it)")
+        lines.append("read_document -> T2 = the new table (the element right after E)")
+        lines.extend(fill)
+        self.model[q + 1:q + 1] = pars + [_Par("", BODY)]
+        self.splits[table["group"]] = self.splits.get(table["group"], 0) + count
+        self.emit(f"append {count} row(s) as a new table", f"table {table['group']}", lines)
+        return q
+
+    # ---- whole plan
+
+    def build(self) -> None:
+        def key(p):
+            return (p.box[0], p.box[3] if p.box[0] == "cell" else None, p.text)
+
+        matcher = difflib.SequenceMatcher(None, [key(p) for p in self.old], [key(p) for p in self.new], autojunk=False)
+        equal: dict[int, int] = {}
+        changes, deletes, inserts = [], [], []
+        for tag, i1, i2, j1, j2 in matcher.get_opcodes():
+            if tag == "equal":
+                equal.update({i1 + k: j1 + k for k in range(i2 - i1)})
+                continue
+            paired = min(i2 - i1, j2 - j1) if tag == "replace" else 0
+            for k in range(paired):
+                i, j = i1 + k, j1 + k
+                if self.old[i].box[0] == self.new[j].box[0]:
+                    changes.append((i, j))
+                else:
+                    deletes.append(i)
+                    inserts.append([i, [j]])
+            deletes.extend(range(i1 + paired, i2))
+            if j1 + paired < j2:
+                inserts.append([i1 + paired, list(range(j1 + paired, j2))])
+        merged: list[list] = []
+        for before, js in sorted(inserts, key=lambda item: (item[0], item[1][0])):
+            if merged and merged[-1][0] == before and merged[-1][1][-1] + 1 == js[0]:
+                merged[-1][1].extend(js)
+            else:
+                merged.append([before, js])
+        for item in merged:
+            before, js = item
+            while (
+                before < len(self.old) and equal.get(before) == js[-1] + 1
+                and self.new[js[0]].text == self.old[before].text
+                and self.new[js[0]].box == BODY == self.old[before].box
+            ):
+                equal[before] = js[0]
+                js[:] = js[1:] + [js[-1] + 1]
+                before += 1
+            item[0] = before
+        votes: dict[str, dict[str, int]] = {}
+        for i, j in list(equal.items()) + changes:
+            if self.old[i].box[0] == "cell" and self.new[j].box[0] == "cell":
+                counter = votes.setdefault(self.new[j].box[1], {})
+                counter[self.old[i].box[1]] = counter.get(self.old[i].box[1], 0) + 1
+        self.tmap = {nt: max(counter, key=counter.get) for nt, counter in votes.items()}
+        self.rowmap = {}
+        for i, j in list(equal.items()) + changes:
+            ob, nb = self.old[i].box, self.new[j].box
+            if ob[0] == "cell" and nb[0] == "cell" and self.tmap.get(nb[1]) == ob[1]:
+                self.rowmap.setdefault((nb[1], nb[2]), (ob[1], ob[2]))
+        intents = [(i, 1, "change", (i, j)) for i, j in changes]
+        intents += [(i, 1, "delete", (i,)) for i in deletes]
+        intents += [(before - 0.5, 0, "insert", (before, js)) for before, js in merged]
+        for _pos, _order, kind, args in sorted(intents, key=lambda item: (item[0], item[1]), reverse=True):
+            getattr(self, kind)(*args)
+        for kind, current, wanted in (("header", self.header, self.new_header), ("footer", self.footer, self.new_footer)):
+            if current != wanted:
+                self.emit("set_header_footer", kind, [f'set_header_footer {{"kind": "{kind}", "text": {_q(wanted)}}}'])
+                if kind == "header":
+                    self.header = wanted
+                else:
+                    self.footer = wanted
+
+    def self_check(self) -> str:
+        import tempfile
+
+        doc = open_doc(self.new_path)
+        split_tables(doc, list(self.splits.items()))
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "pub.docx")
+            doc.save(path)
+            pars, header, footer = self.check.read_docx(path)
+        difference = self.check.first_difference([p.text for p in self.model], pars)
+        todo = " Do not apply any step. Fix NEW (see Skipped and Warnings below) and run plan again."
+        if difference:
+            return ("MISMATCH: after these steps the live text would differ from pub of NEW at "
+                    + difference.replace("\n", " ").replace("live:", "plan:", 1) + "." + todo)
+        if header != self.header or footer != self.footer:
+            return "MISMATCH: header or footer differs from pub of NEW." + todo
+        return "OK. After these steps the live text matches pub of NEW, paragraph for paragraph."
+
+    def render(self) -> list[str]:
+        out = [f"Google-docs plan: {self.live_path} -> {self.new_path}"]
+        if not self.steps and not self.skipped and not self.warnings:
+            return out + ["No changes: NEW matches LIVE."]
+        out += [
+            f"{len(self.steps)} steps. documentId is the live doc's file id. Apply them in order, one call at a time.",
+            "They run from the bottom of the document up, so earlier finds stay valid. Every write shifts indexes:",
+            "take each index from the find_text or read_document call in the same step.",
+            "",
+        ]
+        for number, (title, lines) in enumerate(self.steps, 1):
+            out.append(f"{number}. {title}")
+            out.extend(f"   {line}" for line in lines)
+        splits = " ".join(f"--split {shlex.quote(f'{name}:{count}')}" for name, count in self.splits.items())
+        out += [
+            "",
+            "After the last step:",
+            f"   python3 scripts/design-doc-edit.py pub {shlex.quote(self.new_path)} pub.docx" + (f" {splits}" if splits else ""),
+            "   python3 scripts/check-design-doc.py FILE_ID pub.docx",
+            "",
+            f"Self-check: {self.self_check()}",
+        ]
+        if self.skipped:
+            out += ["", "Skipped (change-log history is never rewritten; undo these edits in NEW, or rerun with --no-keep-history if Brian asked for them):"]
+            out += [f"   {line}" for line in self.skipped]
+        if self.warnings:
+            out += ["", "Warnings:"] + [f"   {line}" for line in self.warnings]
+        out += ["", "Notes:"] + [f"   - {note}" for note in PLAN_NOTES]
+        return out
+
+
+def plan_publish(live: str, new: str, keep_history: bool = True) -> list[str]:
+    planner = _Planner(live, new, keep_history)
+    planner.build()
+    return planner.render()
+
+
+def publish_copy(new: str, out: str, specs: list[str]) -> str:
+    doc = open_doc(new)
+    split_tables(doc, [parse_split(spec) for spec in specs])
+    doc.save(out)
+    return first_line(out)
+
+
 # ---------------------------------------------------------------- CLI
 
 
@@ -799,6 +1596,18 @@ def _parser() -> argparse.ArgumentParser:
     command.add_argument("before")
     command.add_argument("after")
 
+    command = sub.add_parser("plan", help="list the Google-docs plugin steps that turn LIVE into NEW")
+    command.add_argument("live")
+    command.add_argument("new")
+    command.add_argument("--keep-history", action=argparse.BooleanOptionalAction, default=True,
+                         help="leave published change-log rows as they are live (default); --no-keep-history plans them too")
+
+    command = sub.add_parser("pub", help="write NEW with appended rows split out the way insert_table leaves them live")
+    command.add_argument("new")
+    command.add_argument("out")
+    command.add_argument("--split", action="append", default=[], metavar="'H1|H2|...:N'",
+                         help="move the last N rows of this table (or its last continuation) into a new table after it")
+
     sub.add_parser("selftest", help="build a small docx and exercise every command")
     return parser
 
@@ -814,6 +1623,12 @@ def main(argv: list[str] | None = None) -> int:
             return 0
         if args.command == "selftest":
             return selftest()
+        if args.command == "plan":
+            print("\n".join(plan_publish(args.live, args.new, args.keep_history)))
+            return 0
+        if args.command == "pub":
+            print(f"saved {args.out} ({publish_copy(args.new, args.out, args.split)})")
+            return 0
         doc = open_doc(args.docx)
         if args.command == "rows":
             for element in _body(doc):
@@ -849,9 +1664,9 @@ def main(argv: list[str] | None = None) -> int:
                 args.reference,
             )
         elif args.command == "add-row":
-            add_table_row(find_table(doc, args.table), args.values, args.after)
+            add_table_row(table_group(doc, args.table), args.values, args.after)
         elif args.command == "set-cell":
-            set_table_cell(find_table(doc, args.table), args.key, args.column, _read_text(args.text))
+            set_table_cell(table_group(doc, args.table), args.key, args.column, _read_text(args.text))
         elif args.command == "replace-all":
             count = replace_everywhere(doc, args.old, args.new)
             if count == 0:
@@ -903,21 +1718,21 @@ def _build_sample(path: str) -> None:
             tr.cells[0].text = label
             tr.cells[1].text = values.get(label, "None.")
 
-    def table(rows):
+    def table(rows, blank=True):
         t = doc.add_table(rows=len(rows), cols=len(rows[0]))
-        for tr, values in zip(t.rows, rows):
+        for r, (tr, values) in enumerate(zip(t.rows, rows)):
             for cell, value in zip(tr.cells, values):
-                cell.text = value
+                run(cell.paragraphs[0], value, True if r == 0 else None)
+        if blank:
+            doc.add_paragraph()
 
     p = doc.add_paragraph()
     run(p, "Documentation version: 1.0", True)
     run(p, "")
     doc.add_paragraph("Functional Design Document")
     table([["Field", "Value"], ["Version", "1.0"], ["Date", "November 1, 2026"], ["Purpose", "Test."]])
-    doc.add_paragraph()
     doc.add_heading("Change log", 1)
     table([["Date", "Change", "Reason", "Reference"], ["2026-11-01", "1.0 First.", "Start.", "PR 1."]])
-    doc.add_paragraph()
     doc.add_heading("5. Requirements", 1)
     p = doc.add_paragraph()
     run(p, "Former name: Brand ")
@@ -961,6 +1776,123 @@ def _build_sample(path: str) -> None:
     run(footer, "IntoFocus AI · FDD 1.0 · November 1, 2026 · Fender pilot · Confidential ")
     run(footer, "")
     doc.save(path)
+
+
+def _plan_checks(check, cli, tmp: str, base: str) -> None:
+    import shutil
+
+    from docx.shared import Pt
+    from docx.text.paragraph import Paragraph
+
+    checker = _check_module()
+    live = os.path.join(tmp, "plan-live.docx")
+    new = os.path.join(tmp, "plan-new.docx")
+    pub = os.path.join(tmp, "plan-pub.docx")
+    changelog = "|".join(TABLES["changelog"])
+
+    seeded = os.path.join(tmp, "plan-seed.docx")
+    doc = open_doc(base)
+    add_changelog_row(doc, "2026-11-02", "1.1 Second.", "Fix.", "PR 2.")
+    doc.save(seeded)
+    check("pub splits rows into a table after one empty paragraph",
+          cli("pub", seeded, live, "--split", f"{changelog}:1") == 0)
+    doc = open_doc(live)
+    group = table_group(doc, "changelog")
+    blank = group[0].getnext()
+    check("pub result reads as the table plus one continuation",
+          len(group) == 2 and blank is not None and _is_blank(blank) and blank.getnext() is group[1]
+          and [len(t.findall(w("tr"))) for t in group] == [2, 1]
+          and text_of(group[1].find(w("tr")).find(w("tc"))) == "2026-11-02")
+    check("pub keeps every paragraph's text",
+          [p for p in checker.read_docx(live)[0] if p] == [p for p in checker.read_docx(seeded)[0] if p])
+    check("pub refuses a malformed --split", cli("pub", seeded, pub, "--split", "Date|Change") == 1)
+    check("pub refuses to move every row", cli("pub", seeded, pub, "--split", f"{changelog}:9") == 1)
+
+    check("plan of a doc against itself has no steps",
+          cli("plan", live, live) == 0 and cli.output.splitlines()[-1] == "No changes: NEW matches LIVE.")
+
+    shutil.copy(live, new)
+    for argv in (
+        ("set-version", new, "2.0", "--date", "November 5, 2026"),
+        ("set-status", new, "X-01", "CURRENT"),
+        ("append", new, "X-02", "Evidence", "Pull request 9."),
+        ("set", new, "X-02", "Open decision", "Pending Brian."),
+        ("clone", new, "X-02", "X-02", "X-04", "--status", "DECISION"),
+        ("changelog", new, "2.0 Third.", "Approved.", "PR 3.", "--date", "2026-11-05"),
+        ("add-row", new, "trace", "X-04", "DECISION", "None", "Not tested"),
+    ):
+        if cli(*argv) != 0:
+            check(f"plan sample edit {argv[0]}", False)
+    doc = open_doc(new)
+    evidence = find_field(doc, "X-04", "Evidence").paragraphs[-1]
+    Paragraph(evidence, doc._body).paragraph_format.left_indent = Pt(14.4)
+    doc.save(new)
+
+    code = cli("plan", live, new)
+    out = cli.output
+    steps = re.findall(r"^\d+\. .*$", out, re.M)
+    check("plan runs and self-checks OK", code == 0 and "\nSelf-check: OK." in out, out[-400:])
+    live_text = "\n".join(checker.read_docx(live)[0])
+    live_pars = checker.read_docx(live)[0]
+    finds = [json.loads("{" + m + "}")["find"] for m in re.findall(r'^   replace_text \{("find": .*?, "replace": .*?)\}$', out, re.M)]
+    check("every replace_text find is unique, at least 24 characters or a whole paragraph, and whole words",
+          finds and all(
+              _count(live_text, f) == 1
+              and (len(f) >= MIN_FIND or f in live_pars)
+              and _word_bounds(f, 0, len(f)) == (0, len(f))
+              for f in finds), str(finds))
+    check("a status change restyles ID, status, and phase",
+          '"X-01   CURRENT   ·   Launch"' in out
+          and '"bold": true, "textColor": "#0F2C4C", "fontSize": 12}   (ID)' in out
+          and '"bold": true, "textColor": "#166534", "fontSize": 12}   (CURRENT)' in out
+          and '"bold": false, "textColor": "#64748B"}   (phase)' in out)
+    check("a date replace expects 2 changes because the footer has it too",
+          '"find": "November 1, 2026"' in out and "Expect occurrencesChanged = 2 (1 here and 1 in the header or footer)." in out)
+    check("a repeated short text becomes a POSITION edit with an occurrence",
+          any(s.startswith(tuple(f"{n}. POSITION edit" for n in range(1, 99))) for s in steps)
+          and re.search(r'find_text \{"text": "1\.0", "occurrence": \d+\}', out) is not None)
+    check("an empty field paragraph is found from the paragraph above it",
+          '"text": "Pending Brian.\\n"' in out and "the paragraph above the empty one" in out)
+    check("appended rows become a new table in the empty paragraph after the last continuation",
+          f"[table {changelog}]" in out and '"rows": 1, "columns": 4, "index": E.start}' in out
+          and out.index('row 1, column 4: "PR 3."') < out.index('row 1, column 1: "2026-11-05"'))
+    check("pub arguments list every appended table",
+          f"--split '{changelog}:1'" in out and "--split 'ID|Status|Depends on|Verification:1'" in out)
+    check("a cloned paragraph row is inserted with NORMAL_TEXT and its indent",
+          any("insert " in s and "[row X-04]" in s for s in steps)
+          and '"namedStyleType": "NORMAL_TEXT"' in out and '"indentStart": 14.4' in out
+          and '"bold": true, "textColor": "#6D28D9"}' in out)
+    check("the footer is set with set_header_footer",
+          'set_header_footer {"kind": "footer", "text": "IntoFocus AI · FDD 2.0 · November 5, 2026 · Fender pilot · Confidential "}' in out)
+    check("steps run from the bottom of the document up",
+          out.index("[table ID|Status|Depends on|Verification]") < out.index("[row X-04]")
+          < out.index("[row X-01]") < out.index(f"[table {changelog}]") < out.index("[body text]"))
+
+    planner = _Planner(live, new, True)
+    planner.build()
+    split_args = [arg for name, count in planner.splits.items() for arg in ("--split", f"{name}:{count}")]
+    check("pub with the printed splits matches the planned live text",
+          cli("pub", new, pub, *split_args) == 0
+          and checker.first_difference([p.text for p in planner.model], checker.read_docx(pub)[0]) is None
+          and checker.read_docx(pub)[2] == planner.footer)
+
+    history = os.path.join(tmp, "plan-history.docx")
+    shutil.copy(live, history)
+    cli("set-cell", history, "changelog", "2026-11-01", "Change", "1.0 First, reworded.")
+    code = cli("plan", live, history)
+    check("an edit to a published change-log row is skipped and flagged",
+          code == 0 and "\nSkipped (change-log history is never rewritten" in cli.output
+          and "1.0 First, reworded." in cli.output and not re.search(r"^1\. ", cli.output, re.M))
+    code = cli("plan", live, history, "--no-keep-history")
+    check("--no-keep-history plans the change-log edit",
+          code == 0 and "Skipped" not in cli.output and "\nSelf-check: OK." in cli.output
+          and '"replace": "1.0 First, reworded."' in cli.output)
+
+    middle = os.path.join(tmp, "plan-middle.docx")
+    shutil.copy(live, middle)
+    cli("add-row", middle, "trace", "X-09", "TARGET", "None", "Not tested", "--after", "X-01")
+    check("rows added mid-table are refused with a warning",
+          cli("plan", live, middle) == 0 and "the plugin cannot insert rows into a table" in cli.output)
 
 
 def _stage_retry_checks(check, tmp: str, sample: str) -> None:
@@ -1236,6 +2168,7 @@ def selftest() -> int:
         check("every status word carries its color", True)
     check("RGBColor import works", RGBColor.from_string("166534") is not None)
 
+    _plan_checks(check, cli, tmp, base)
     _stage_retry_checks(check, tmp, base)
 
     if failures:
