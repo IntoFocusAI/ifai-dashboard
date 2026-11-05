@@ -775,7 +775,7 @@ const BubbleLift = memo(function BubbleLift({ radius, sigma, statusClass = "" }:
     </radialGradient>
   );
   return (
-    <g className={`node-lift${statusClass}`} aria-hidden="true" pointerEvents="none">
+    <g className={`node-lift${statusClass}`} aria-hidden="true">
       <MapDefs>
         {gradient("drop", "#000")}
         {gradient("glow", "#00f0ff")}
@@ -810,7 +810,7 @@ const BlurredAura = memo(function BlurredAura({
           ))}
         </radialGradient>
       </MapDefs>
-      <circle r={reach} className={className} pointerEvents="none" style={{ "--aura": `url(#${id}aura)` } as CSSProperties} />
+      <circle r={reach} className={className} style={{ "--aura": `url(#${id}aura)` } as CSSProperties} />
     </>
   );
 });

@@ -776,6 +776,12 @@
 }
 
 /* BubbleLift's pre-rendered shadow and selection glow, in place of drop-shadow filters. */
+/* Keep pointer-events for the shadows and halos here: as an SVG attribute on these moving shapes,
+   Chrome lays them out again on every frame. */
+.ifai-canvas.theme-iom .node-lift {
+  pointer-events: none;
+}
+
 .ifai-canvas.theme-iom .node-drop {
   opacity: 0.45;
   transform: translateY(14px);
@@ -971,6 +977,7 @@
   fill: var(--aura, url(#luxHubAura));
   stroke: none;
   opacity: 0.8;
+  pointer-events: none;
   transform-box: fill-box;
   transform-origin: center;
   animation: aura-breathe 4s ease-in-out infinite;
