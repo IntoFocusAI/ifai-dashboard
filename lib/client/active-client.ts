@@ -73,8 +73,19 @@ export function clientKeyFromSearch(search: string): ClientKey {
 
 let resolved: ClientKey | null = null;
 
-/** The brand for this page load. Fender on the server and in tests. */
+type ServerClientStore = { getStore(): ClientKey | undefined };
+
+/** Set by the server export route for the length of one request. Absent in the browser. */
+function serverClientKey(): ClientKey | undefined {
+  const store = (globalThis as { __ifaiServerClient?: ServerClientStore }).__ifaiServerClient;
+  const key = store?.getStore();
+  return isClientKey(key) ? key : undefined;
+}
+
+/** The brand for this page load. Fender on the server and in tests, unless a request set one. */
 export function activeClientKey(): ClientKey {
+  const fromServer = serverClientKey();
+  if (fromServer) return fromServer;
   if (resolved) return resolved;
   if (typeof window === "undefined") return "fender";
   resolved = clientKeyFromSearch(window.location.search);
