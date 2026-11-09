@@ -8,11 +8,18 @@ import {
   ANCHOR_TITLE,
   CATALOG_COVERAGE_TITLE,
   amazonDiffersTip,
+  CATALOG_PRODUCTS_UNIT,
   amazonMismatchNote,
   catalogCoverageTip,
+  catalogProductsFigure,
+  catalogProductsPie,
+  catalogProductsSubline,
+  catalogProductsTip,
+  catalogProductsUnavailableTip,
   factCheckMethodLine,
   factCheckPendingNote,
 } from "../lib/ai-search/fact-check-copy.ts";
+import { filterSnapshotByEngineGroup } from "../lib/ai-search/engine-group.ts";
 import { historyFixtureSnapshot } from "../lib/ai-search/history-fixtures.ts";
 import { buildHistoryTrend, questionsInRun } from "../lib/ai-search/history-trends.ts";
 import {
@@ -23,6 +30,7 @@ import {
   catalogCoverage,
   catalogCycles,
   catalogModelKey,
+  catalogProductsLead,
   poolProbeCoverage,
   rotationSummary,
 } from "../lib/ai-search/probe-catalog.ts";
@@ -216,9 +224,10 @@ test("NULL catalog columns count exactly as today", () => {
     assert.equal(row.claim, row.promptKey === "p18" ? null : `Fact for ${row.promptKey}`);
     assert.equal(row.sourceUrl, "https://www.fender.com/example");
   }
-  const line = factCheckMethodLine(after.coverage, false, [3]);
+  const line = factCheckMethodLine(after.coverage);
   assert.deepEqual(line, factCheckMethodLine(before.coverage));
-  assert.equal(line?.rotation, null);
+  // No fact check names a catalog product, so the tab has no catalog lead.
+  assert.equal(catalogProductsLead(snapshot(publishedShape(true), [coverageRow({ category: "hallucinations", cycle_no: null })])), null);
   assert.equal(`${line?.products} · ${line?.verified}`, "5 products checked · 4 with a verified fact");
   assert.match(line?.tip ?? "", /^Each fact-check question names one Fender product/);
   assert.equal(amazonMismatchNote(after.coverage), null);
@@ -414,7 +423,7 @@ test("pooled coverage stays undefined, fails as a whole, or concatenates", () =>
   assert.deepEqual(poolProbeCoverage([a, b, b]), [coverageRow({}), coverageRow({})]);
 });
 
-test("the method line leads with the cycle from the coverage view and keeps the approved rule in the tooltip", () => {
+test("the tab leads with N of M catalog products checked, with the cycle and the approved rule in the tooltip", () => {
   assert.equal(
     CATALOG_ROTATION_RULE,
     "about 90 catalog models per run, each asked once per engine, all 180 in-scope guitar and bass models every 2 runs, plus anchors p17 and p33",
@@ -422,22 +431,38 @@ test("the method line leads with the cycle from the coverage view and keeps the 
   const snap = snapshot(rotationShape(), [coverageRow({ cycle_no: 3 }), coverageRow({ engine: "gemini", cycle_no: 3 })]);
   assert.deepEqual(catalogCycles(snap), [3]);
   const { coverage } = driftRead([], snap.probes);
-  const line = factCheckMethodLine(coverage, false, catalogCycles(snap));
-  assert.ok(line);
-  assert.equal(line.rotation, "Catalog rotation, cycle 3");
-  assert.equal(`${line.rotation} · ${line.products} · ${line.verified}`, "Catalog rotation, cycle 3 · 3 products checked · 3 with a verified fact");
+  const lead = catalogProductsLead(snap);
+  assert.ok(lead && lead.phase === "ready");
+  assert.deepEqual(lead, {
+    phase: "ready",
+    checked: 3,
+    compared: 3,
+    inScope: 180,
+    askingEngines: ["chatgpt", "gemini"],
+    shownEngines: ["chatgpt", "gemini"],
+  });
+  assert.equal(`${catalogProductsFigure(lead)} ${CATALOG_PRODUCTS_UNIT}`, "3 of 180 catalog products checked");
+  const rotation = rotationSummary(catalogCycles(snap));
+  assert.equal(rotation.label, "Catalog rotation, cycle 3");
+  assert.equal(catalogProductsSubline(coverage, rotation), "Catalog rotation, cycle 3");
   assert.equal(
-    line.tip,
-    "IntoFocus picked these products by its catalog rotation rule: about 90 catalog models per run, each asked once per engine, all 180 in-scope guitar and bass models every 2 runs, plus anchors p17 and p33. This run is cycle 3. 3 catalog products were checked, counted by ASIN. 3 of 3 were compared with the product's own fender.com spec value in this run.",
+    catalogProductsTip(lead, rotation),
+    "This figure covers ChatGPT and Gemini. Only ChatGPT and Gemini ask the rotating catalog questions. A product counts once an engine was asked about it, counted by fender.com spec page, then SKU. 3 of the 3 had at least one answer compared with the product's own fender.com spec value. 180 catalog products are in scope in this run. IntoFocus picked these products by its catalog rotation rule: about 90 catalog models per run, each asked once per engine, all 180 in-scope guitar and bass models every 2 runs, plus anchors p17 and p33. This run is cycle 3.",
   );
+  assert.deepEqual(catalogProductsPie(lead)?.slices.map((slice) => [slice.key, slice.count, slice.tone]), [
+    ["checked", 3, "measured"],
+    ["unchecked", 177, "rest"],
+  ]);
+
+  // Fixed questions asked beside the rotation are named under the lead.
+  const withFixed = driftRead([], [...snap.probes, ...publishedShape(true).filter((row) => row.prompt_key === "p33")]).coverage;
+  assert.equal(catalogProductsSubline(withFixed, rotation), "Catalog rotation, cycle 3 · 1 fixed question");
 
   // No recorded cycle: the rule still leads, with no cycle named.
-  const uncycled = factCheckMethodLine(coverage);
-  assert.equal(uncycled?.rotation, "Catalog rotation");
-  assert.match(uncycled?.tip ?? "", /^IntoFocus picked these products by its catalog rotation rule: about 90 .+ p33\. 3 catalog products/);
-  const selection = factCheckMethodLine(coverage, true, [3, 4]);
-  assert.equal(selection?.rotation, "Catalog rotation, cycles 3 to 4");
-  assert.match(selection?.tip ?? "", /p33\. This selection covers cycles 3 to 4\. .+ in this selection\.$/);
+  assert.equal(rotationSummary([]).label, "Catalog rotation");
+  assert.match(rotationSummary([]).tip, /^IntoFocus picked these products by its catalog rotation rule: about 90 .+ p33\.$/);
+  assert.equal(rotationSummary([3, 4], true).label, "Catalog rotation, cycles 3 to 4");
+  assert.match(catalogProductsTip(lead, rotationSummary([3, 4], true), true), /newest run of this selection\. .+ This selection covers cycles 3 to 4\.$/);
   assert.equal(rotationSummary([4], true).tip.endsWith("This selection covers cycle 4."), true);
 
   // Cycles come only from runs whose fact checks name a catalog product; a NULL cycle_no is skipped.
@@ -451,14 +476,51 @@ test("the method line leads with the cycle from the coverage view and keeps the 
   assert.deepEqual(catalogCycles(snapshot(rotationShape(), null)), []);
   assert.deepEqual(catalogCycles(snapshot(publishedShape(true), [coverageRow({ cycle_no: 2 })])), []);
 
-  for (const text of [line.rotation, line.products, line.verified, line.tip, uncycled?.tip ?? "", selection?.tip ?? ""]) {
+  for (const text of [catalogProductsTip(lead, rotation), catalogProductsSubline(coverage, rotation)]) {
     assert.doesNotMatch(text, /\u2014|representative|random|regex|collector|probe|not recorded/i);
   }
-  assert.doesNotMatch(`${line.products} · ${line.verified}`, /\bnot\b|\bno\b/i);
+  assert.doesNotMatch(`${catalogProductsFigure(lead)} ${CATALOG_PRODUCTS_UNIT}`, /\bnot\b|\bno\b/i);
   assert.match(factCheckPendingNote({ ...coverage, answersWithoutFact: 2, questionsWithoutFact: [TELE.asin] }) ?? "", /^1 product has/);
+});
 
-  const panel = readFileSync("components/v3/live/ai-search/AiDriftPanel.tsx", "utf8");
-  assert.match(panel, /method\.rotation \? `\$\{method\.rotation\} · \$\{method\.products\}` : method\.products/);
+test("every engine choice leads with the catalog products; a choice with no asking engine reads 0 of M (decision 13)", () => {
+  const coverage = [coverageRow({ models_in_scope: 181 }), coverageRow({ engine: "gemini", models_in_scope: 181 })];
+  const apiProbe = probe({ ...EMPTY_CATALOG, audit_run_id: "api-1", sim_id: 90, prompt_key: "p33", engine: "openai_api" });
+  const apiCall = { id: "api-call", audit_run_id: "api-1", sim_id: 90, engine: "openai_api", prompt_kind: "probe", prompt_key: "p33", call_status: "answered" };
+  const calls = [
+    ...rotationShape().map((row) => ({ id: `c${row.sim_id}`, audit_run_id: row.audit_run_id, sim_id: row.sim_id, engine: row.engine, prompt_kind: "probe", prompt_key: row.prompt_key, call_status: "answered" })),
+    apiCall,
+  ] as AiSearchSnapshot["calls"];
+  const merged: AiSearchSnapshot = { ...snapshot([...rotationShape(), apiProbe], coverage), calls };
+
+  const all = filterSnapshotByEngineGroup(merged, "all");
+  const search = filterSnapshotByEngineGroup(merged, "search");
+  const api = filterSnapshotByEngineGroup(merged, "api");
+  assert.ok(all && search && api);
+  for (const narrowed of [all, search]) {
+    const lead = catalogProductsLead(narrowed);
+    assert.ok(lead && lead.phase === "ready");
+    assert.equal(catalogProductsFigure(lead), "3 of 181");
+    assert.deepEqual(lead.shownEngines, ["chatgpt", "gemini"]);
+  }
+  const apiLead = catalogProductsLead(api);
+  assert.ok(apiLead && apiLead.phase === "ready");
+  assert.equal(catalogProductsFigure(apiLead), "0 of 181");
+  assert.deepEqual(apiLead.askingEngines, ["chatgpt", "gemini"]);
+  assert.deepEqual(apiLead.shownEngines, []);
+  assert.match(
+    catalogProductsTip(apiLead, rotationSummary([3])),
+    /^No engine in this engine choice asks the rotating catalog questions, so this figure reads 0\. Only ChatGPT and Gemini ask the rotating catalog questions\./,
+  );
+  // The coverage read failed: M is unknown, so the lead is Not available* and still names the engines.
+  const failed = catalogProductsLead(snapshot(rotationShape(), null));
+  assert.deepEqual(failed, { phase: "unavailable", askingEngines: ["chatgpt", "gemini"] });
+  assert.match(catalogProductsUnavailableTip(["chatgpt", "gemini"]), /did not load .+ Only ChatGPT and Gemini ask the rotating catalog questions\.$/);
+
+  const leadSource = readFileSync("components/v3/live/ai-search/FactCheckLead.tsx", "utf8");
+  assert.match(leadSource, /const catalog = catalogProductsLead\(snapshot\);/);
+  assert.match(leadSource, /\{catalogProductsFigure\(catalog\)\}/);
+  assert.match(leadSource, /Not available\*/);
 });
 
 test("trend questions group a rotating fact-check key as one question", () => {

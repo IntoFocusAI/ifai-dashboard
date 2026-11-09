@@ -1,5 +1,6 @@
 import { ownedPie, sourceMix, unbrandedBrandSites, type OwnedByQuestionType } from "@/lib/ai-search/citation-insights";
 import type { CitationRead } from "@/lib/ai-search/citations";
+import type { PieTone } from "@/lib/ai-search/pie-tones";
 import type { AiCallRow } from "@/lib/ai-search/types";
 import { brandName } from "@/lib/brand-copy";
 
@@ -9,6 +10,8 @@ export type CitationPieSlice = {
   count: number;
   /** Slice counts Fender-owned links, so bar charts draw it in Fender blue. */
   owned?: boolean;
+  /** Chart tone when the key alone does not say which slice the figure reads. */
+  tone?: PieTone;
 };
 
 /** Structural pie shape for CitationPieDisc. Citation views keep a closed id union below. */

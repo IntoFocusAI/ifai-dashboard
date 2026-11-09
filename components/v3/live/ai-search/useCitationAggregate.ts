@@ -52,7 +52,7 @@ export function useCitationAggregate(): CitationAggregate {
   const history = useAiHistoryOptional();
   const read = useAiSearch();
   const mode = history?.mode;
-  const { trend } = useEngineGroupWindow("citations");
+  const { trend } = useEngineGroupWindow();
   const current = history?.current;
   const windowFrom = history?.mode.kind === "month" ? history.bounds.from : null;
   const windowTo = history?.mode.kind === "month" ? history.bounds.to : null;

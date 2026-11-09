@@ -43,7 +43,7 @@ export function HistoryTrendsPanel() {
   const [breakdown, setBreakdown] = useState<"overall" | "engine">("overall");
   const [query, setQuery] = useState<QueryChoice>({ kind: "all" });
   const [picked, setPicked] = useState<{ runId: string; seriesKey: string } | null>(null);
-  const { trend, apiDays, runCount } = useEngineGroupWindow("trend");
+  const { trend, apiDays, runCount } = useEngineGroupWindow();
   const { from, to } = history.bounds;
 
   const model = useMemo(() => {

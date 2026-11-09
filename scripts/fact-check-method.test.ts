@@ -16,7 +16,9 @@ import {
   contradictionCount,
   factCheckAccuracyLead,
   factCheckAccuracyPieTip,
+  factCheckAccuracyStatus,
   factCheckAccuracyTip,
+  factCheckEnginesTip,
   factCheckMethodLine,
   factCheckShortLine,
   factCheckPickTip,
@@ -125,23 +127,31 @@ test("no fact-check questions means no method line", () => {
   assert.equal(factCheckMethodLine(driftRead([], []).coverage), null);
 });
 
-test("the method line leaves the Accuracy lead figure and colors unchanged", () => {
+test("the Accuracy figure keeps its rate and carries its status as color, mark, and word", () => {
   const coverage = driftRead([], publishedShape()).coverage;
   const lead = factCheckAccuracyLead(coverage);
   assert.equal(lead.rate, "100.0%");
   assert.equal(lead.tone, "success");
+  assert.equal(factCheckAccuracyStatus(lead.tone), "good");
   const panel = readFileSync("components/v3/live/ai-search/AiDriftPanel.tsx", "utf8");
-  assert.match(panel, /factCheckMethodLine\(coverage, windowed, catalogCycles\(snapshot\)\)/);
-  assert.match(panel, /color: rateColor/);
-  assert.match(panel, /\{accuracy\.rate\} Accuracy/);
-  // The line sits in the explainer beside the Accuracy figure, right under the headline.
-  const explainer = panel.slice(panel.indexOf("data-ai-accuracy-lead"), panel.indexOf("data-ai-accuracy-row"));
+  assert.match(panel, /<FactCheckLead snapshot=\{snapshot\} drift=\{drift\} windowed=\{windowed\} \/>/);
+  const leadSource = readFileSync("components/v3/live/ai-search/FactCheckLead.tsx", "utf8");
+  assert.match(leadSource, /catalog \? null : factCheckMethodLine\(coverage, windowed\)/);
+  assert.match(leadSource, /style=\{status \? \{ color: dataStatusColor\(status\) \} : undefined\}/);
+  assert.match(leadSource, /\{status \? <StatusMark status=\{status\} \/> : null\}/);
+  assert.match(leadSource, /\{accuracy\.rate\} Accuracy/);
+  assert.doesNotMatch(leadSource, /fontWeight: [7-9]00/, "no weight above 600");
+  // The catalog lead opens the card; the pre-rotation method line sits under the headline.
+  const catalogAt = leadSource.indexOf("data-ai-catalog-lead");
+  const accuracyAt = leadSource.indexOf("data-ai-accuracy-row");
+  assert.ok(catalogAt > 0 && accuracyAt > catalogAt, "catalog products lead the card");
+  const explainer = leadSource.slice(leadSource.indexOf("data-ai-accuracy-lead"));
   const headlineAt = explainer.indexOf("data-ai-fact-headline");
   const methodAt = explainer.indexOf("data-ai-fact-method");
   assert.ok(headlineAt > 0 && methodAt > headlineAt, "method follows the headline");
   const method = explainer.slice(methodAt, explainer.indexOf("</p>", methodAt));
   assert.match(method, /<CopyTip label=\{FACT_CHECK_METHOD_TITLE\} description=\{method\.tip\}>/);
-  assert.doesNotMatch(explainer, /\btitle=/);
+  assert.doesNotMatch(leadSource, /\btitle=/);
   const tip = readFileSync("components/v3/live/ai-search/CopyTip.tsx", "utf8");
   for (const attr of ['className="ifai-term"', "data-ifai-tooltip-title", "data-ifai-tooltip-desc", "tabIndex={0}", "aria-label"]) {
     assert.ok(tip.includes(attr), attr);
@@ -151,7 +161,7 @@ test("the method line leaves the Accuracy lead figure and colors unchanged", () 
 
 test("fact-check 'not' qualifiers sit in tooltips, never as on-screen sentences", () => {
   const flat = (path: string) => readFileSync(path, "utf8").replace(/\s+/g, " ");
-  const panel = flat("components/v3/live/ai-search/AiDriftPanel.tsx");
+  const panel = `${flat("components/v3/live/ai-search/AiDriftPanel.tsx")} ${flat("components/v3/live/ai-search/FactCheckLead.tsx")}`;
   const drawer = flat("components/v3/live/ai-search/FactCheckEvidence.tsx");
   const explorer = flat("components/v3/live/ai-search/SimulationsExplorer.tsx");
   const removed = [
@@ -174,15 +184,20 @@ test("fact-check 'not' qualifiers sit in tooltips, never as on-screen sentences"
   assert.doesNotMatch(panel, /FACT_CHECK_SCOPE_LINE|data-ai-fact-scope|These checks cover/);
   assert.match(
     panel,
-    /<CopyTip label=\{FACT_CHECK_ACCURACY_TITLE\} description=\{factCheckAccuracyTip\(coverage, windowed\)\}> \{accuracy\.rate\} Accuracy <\/CopyTip>/,
+    /<CopyTip label=\{FACT_CHECK_ACCURACY_TITLE\} description=\{factCheckAccuracyTip\(coverage, windowed, askingEngines\)\} > \{accuracy\.rate\} Accuracy <\/CopyTip>/,
   );
   assert.equal(FACT_CHECK_ACCURACY_TITLE, "Accuracy");
   const shape = driftRead([], publishedShape()).coverage;
   assert.equal(
     factCheckAccuracyTip(shape),
-    "8 of 8 answers matched. These checks cover the selected facts only. They do not prove every statement in each answer is accurate. This run checked selected product facts, not every factual claim in the shopping answers.",
+    "8 of 8 answers matched. This figure covers ChatGPT and Gemini. These checks cover the selected facts only. They do not prove every statement in each answer is accurate. This run checked selected product facts, not every factual claim in the shopping answers.",
   );
-  assert.match(factCheckAccuracyTip(shape, true), /^8 of 8 answers matched\. These checks cover .+ This selection checked selected product facts/);
+  assert.match(factCheckAccuracyTip(shape, true), /^8 of 8 answers matched\. This figure covers ChatGPT and Gemini\. These checks cover .+ This selection checked selected product facts/);
+  // With the rotation on, the tooltip says which engines ask the catalog questions (decision 13).
+  assert.equal(
+    factCheckEnginesTip({ ...shape, checkedEngines: ["ChatGPT", "ChatGPT API", "Gemini"] }, ["chatgpt", "gemini", "perplexity"]),
+    "This figure covers ChatGPT, ChatGPT API, and Gemini. Only ChatGPT, Gemini, and Perplexity ask the rotating catalog questions. ChatGPT API answers the fixed questions.",
+  );
   assert.match(
     factCheckAccuracyTip({ ...shape, answersChecked: 1250, contradictions: 12 }),
     /^1,238 of 1,250 answers matched\./,
@@ -214,10 +229,13 @@ test("one contradiction reads singular on the badge, the map line, and the pie t
   const one = driftRead([], rows).coverage;
   assert.equal(one.contradictions, 1);
   assert.equal(factCheckShortLine(one), "1 contradiction in 8 answers");
-  assert.equal(factCheckAccuracyPieTip(one), "7 answers matched the verified fact. 1 answer contradicted it.");
+  assert.equal(
+    factCheckAccuracyPieTip(one),
+    "7 answers matched the verified fact. 1 answer contradicted it. This figure covers ChatGPT and Gemini.",
+  );
   rows[1] = { ...rows[1], material_hallucination: "confirmed", hallucination_evidence: "says 10 inches" };
   assert.equal(factCheckShortLine(driftRead([], rows).coverage), "2 contradictions in 8 answers");
-  const panel = readFileSync("components/v3/live/ai-search/AiDriftPanel.tsx", "utf8");
+  const panel = readFileSync("components/v3/live/ai-search/FactCheckLead.tsx", "utf8");
   assert.match(panel, /coverage\.contradictions \? contradictionCount\(coverage\.contradictions\) : "No contradictions found"/);
   assert.doesNotMatch(panel, /\$\{coverage\.contradictions\} contradictions/);
 });

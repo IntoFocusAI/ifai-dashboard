@@ -2,7 +2,9 @@ import type { FactCheckCoverage } from "@/lib/ai-search/drift";
 import type { PieDiscData } from "@/lib/ai-search/citation-pies";
 import { joinBrands } from "@/lib/ai-search/competitors";
 import { formatInt } from "@/lib/fender-canvas/format";
-import { rotationSummary, type RotationSummary } from "@/lib/ai-search/probe-catalog";
+import type { CatalogProductsLead, RotationSummary } from "@/lib/ai-search/probe-catalog";
+import { engineLabel } from "@/lib/ai-search/run-metrics";
+import type { DataStatus } from "@/lib/canvas-sdk/data-status";
 import { pct } from "@/lib/ai-search/summary";
 import { brandName, brandSite } from "@/lib/brand-copy";
 
@@ -57,14 +59,15 @@ export function factCheckAccuracyLead(c: FactCheckCoverage): {
   };
 }
 
-const ACCURACY_TONE_COLOR: Record<FactCheckAccuracyTone, string> = {
-  danger: "var(--danger-red)",
-  warning: "var(--warning-amber)",
-  success: "var(--success-green)",
+const ACCURACY_TONE_STATUS: Record<FactCheckAccuracyTone, DataStatus> = {
+  danger: "bad",
+  warning: "okay",
+  success: "good",
 };
 
-export function factCheckAccuracyColor(tone: FactCheckAccuracyTone | null): string | undefined {
-  return tone ? ACCURACY_TONE_COLOR[tone] : undefined;
+/** The Accuracy figure's status: color, mark, and word travel together (StatusMark). */
+export function factCheckAccuracyStatus(tone: FactCheckAccuracyTone | null): DataStatus | null {
+  return tone ? ACCURACY_TONE_STATUS[tone] : null;
 }
 
 /** Pie for the Accuracy lead. Zero slices are omitted so a perfect rate is one full disc. */
@@ -72,8 +75,8 @@ export function factCheckAccuracyPie(c: FactCheckCoverage): PieDiscData | null {
   if (c.answersChecked === 0) return null;
   const matched = c.answersChecked - c.contradictions;
   const slices = [
-    { key: "matched", label: "Matched the verified fact", count: matched },
-    { key: "contradicted", label: "Contradicted the verified fact", count: c.contradictions },
+    { key: "matched", label: "Matched the verified fact", count: matched, tone: "measured" as const },
+    { key: "contradicted", label: "Contradicted the verified fact", count: c.contradictions, tone: "rest" as const },
   ].filter((slice) => slice.count > 0);
   return {
     id: "accuracy",
@@ -84,9 +87,12 @@ export function factCheckAccuracyPie(c: FactCheckCoverage): PieDiscData | null {
   };
 }
 
-export function factCheckAccuracyPieTip(c: FactCheckCoverage): string {
+export function factCheckAccuracyPieTip(c: FactCheckCoverage, askingEngines: readonly string[] = []): string {
   const matched = Math.max(0, c.answersChecked - c.contradictions);
-  return `${ANSWER(matched)} matched the verified fact. ${ANSWER(c.contradictions)} contradicted it.`;
+  const engines = factCheckEnginesTip(c, askingEngines);
+  return [`${ANSWER(matched)} matched the verified fact. ${ANSWER(c.contradictions)} contradicted it.`, engines]
+    .filter(Boolean)
+    .join(" ");
 }
 
 /** The business result, first: what was checked, on which engines, and what came back. */
@@ -105,11 +111,87 @@ export function factCheckHeadline(c: FactCheckCoverage, windowed = false): strin
   return `${scope} ${result}`;
 }
 
+export const CATALOG_PRODUCTS_TITLE = "Catalog products checked";
+
+/** "180 of 181", the figure the tab leads with. */
+export function catalogProductsFigure(lead: Extract<CatalogProductsLead, { phase: "ready" }>): string {
+  return `${formatInt(lead.checked)} of ${formatInt(lead.inScope)}`;
+}
+
+/** The words after the figure. */
+export const CATALOG_PRODUCTS_UNIT = "catalog products checked";
+
+/** "Only ChatGPT, Gemini, and Perplexity ask the rotating catalog questions." */
+export function rotatingEnginesSentence(askingEngines: readonly string[]): string {
+  const names = joinBrands(askingEngines.map((engine) => engineLabel(engine)));
+  return `Only ${names} ask the rotating catalog questions.`;
+}
+
+/**
+ * Tooltip on "N of M catalog products checked": which engines the figure covers, how a
+ * product is counted, what M is, and how the products were picked.
+ */
+export function catalogProductsTip(
+  lead: Extract<CatalogProductsLead, { phase: "ready" }>,
+  rotation: RotationSummary,
+  windowed = false,
+): string {
+  const covers = lead.shownEngines.length
+    ? `This figure covers ${joinBrands(lead.shownEngines.map((engine) => engineLabel(engine)))}.`
+    : `No engine in this engine choice asks the rotating catalog questions, so this figure reads 0.`;
+  const counted = `A product counts once an engine was asked about it, counted by ${brandSite()} spec page, then SKU.`;
+  const compared =
+    lead.checked > 0
+      ? `${formatInt(lead.compared)} of the ${formatInt(lead.checked)} had at least one answer compared with the product's own ${brandSite()} spec value.`
+      : "";
+  const scope = `${formatInt(lead.inScope)} catalog products are in scope in ${windowed ? "the newest run of this selection" : "this run"}.`;
+  return [covers, rotatingEnginesSentence(lead.askingEngines), counted, compared, scope, rotation.tip]
+    .filter(Boolean)
+    .join(" ");
+}
+
+/** Tooltip when the catalog coverage read failed, so M is unknown. */
+export function catalogProductsUnavailableTip(askingEngines: readonly string[]): string {
+  return `The catalog coverage view did not load for this selection, so the number of catalog products in scope is unknown. ${rotatingEnginesSentence(askingEngines)}`;
+}
+
+/** Pie beside the lead: products checked against the rest of the catalog in scope. */
+export function catalogProductsPie(lead: Extract<CatalogProductsLead, { phase: "ready" }>): PieDiscData | null {
+  if (lead.inScope <= 0 || lead.checked > lead.inScope) return null;
+  const slices = [
+    { key: "checked", label: "Checked", count: lead.checked, tone: "measured" as const },
+    { key: "unchecked", label: "Not checked yet", count: lead.inScope - lead.checked, tone: "rest" as const },
+  ].filter((slice) => slice.count > 0);
+  return { id: "catalog-products", title: CATALOG_PRODUCTS_TITLE, total: lead.inScope, totalLabel: "catalog products in scope", slices };
+}
+
+/** Under the lead: the rotation cycles, then the fixed questions asked beside them. */
+export function catalogProductsSubline(c: FactCheckCoverage, rotation: RotationSummary): string {
+  const fixed = c.questionsSent - c.catalogProducts;
+  const parts = [rotation.label];
+  if (fixed > 0) parts.push(`${formatInt(fixed)} fixed ${fixed === 1 ? "question" : "questions"}`);
+  return parts.join(" · ");
+}
+
+/**
+ * Which engines the Accuracy figure covers. With the rotation on, only the asking engines
+ * answer catalog questions; any other engine in the figure answers the fixed questions.
+ */
+export function factCheckEnginesTip(c: FactCheckCoverage, askingEngines: readonly string[] = []): string {
+  if (c.checkedEngines.length === 0) return "";
+  const covers = `This figure covers ${joinBrands(c.checkedEngines)}.`;
+  if (askingEngines.length === 0) return covers;
+  const asking = new Set(askingEngines.map((engine) => engineLabel(engine)));
+  const fixedOnly = c.checkedEngines.filter((engine) => !asking.has(engine));
+  const rest = fixedOnly.length
+    ? ` ${joinBrands(fixedOnly)} ${fixedOnly.length === 1 ? "answers" : "answer"} the fixed questions.`
+    : "";
+  return `${covers} ${rotatingEnginesSentence(askingEngines)}${rest}`;
+}
+
 export const FACT_CHECK_METHOD_TITLE = "How these products were chosen";
 
 export type FactCheckMethodLine = {
-  /** "Catalog rotation, cycle 3" once a fact check names a catalog product, else null. */
-  rotation: string | null;
   products: string;
   verified: string;
   /** How the products were picked, or that the pick is not recorded. */
@@ -117,41 +199,15 @@ export type FactCheckMethodLine = {
 };
 
 /**
- * Catalog checks count products by ASIN and compare against each product's own fender.com value.
- * The rotation rule leads, with the cycle canvas_ai_probe_coverage recorded.
+ * "5 products checked · 4 with a verified fact", for a selection from before the catalog
+ * rotation. Each fact-check question names one Fender product, so questions count as products.
+ * No stored field records how those products were picked or what part of the catalog they
+ * stand for, so the tooltip says so instead of calling them a sample.
+ * Once a check names its catalog product, the tab leads with catalogProductsLead instead.
  */
-function catalogMethodLine(c: FactCheckCoverage, unit: string, rotation: RotationSummary): FactCheckMethodLine {
-  const n = c.questionsSent;
-  const fixed = n - c.catalogProducts;
-  const counted =
-    fixed > 0
-      ? `${n} products were checked: ${c.catalogProducts} catalog products counted by ASIN, and ${fixed} fixed ${fixed === 1 ? "question" : "questions"}.`
-      : `${n} catalog ${n === 1 ? "product was" : "products were"} checked, counted by ASIN.`;
-  const compared = `${c.factsChecked} of ${n} ${c.factsChecked === 1 ? "was" : "were"} compared with the product's own ${brandSite()} spec value in this ${unit}.`;
-  return {
-    rotation: rotation.label,
-    products: `${n} product${n === 1 ? "" : "s"} checked`,
-    verified: `${c.factsChecked} with a verified fact`,
-    tip: `${rotation.tip} ${counted} ${compared}`,
-  };
-}
-
-/**
- * "5 products checked · 4 with a verified fact", from the live coverage counts.
- * Each fact-check question names one Fender product, so questions count as products.
- * No stored field records how those products were picked or what part of the catalog
- * they stand for, so the tooltip says so instead of calling them a sample.
- * Once a check names its catalog product, products are counted by ASIN instead, and the
- * rotation rule with its recorded cycles says how they were picked.
- */
-export function factCheckMethodLine(
-  c: FactCheckCoverage,
-  windowed = false,
-  cycles: readonly number[] = [],
-): FactCheckMethodLine | null {
+export function factCheckMethodLine(c: FactCheckCoverage, windowed = false): FactCheckMethodLine | null {
   if (c.questionsSent === 0) return null;
   const unit = windowed ? "selection" : "run";
-  if (c.catalogProducts > 0) return catalogMethodLine(c, unit, rotationSummary(cycles, windowed));
   const n = c.questionsSent;
   const one = n === 1;
   const named = `Each fact-check question names one ${brandName()} product, and the question set names ${n}. IntoFocus sends ${one ? "it" : "them"} to every engine on purpose.`;
@@ -160,7 +216,6 @@ export function factCheckMethodLine(
     ? `How this product was picked, and what part of ${brandName()}'s catalog it stands for, is not recorded, so this result covers this product only.`
     : `How these products were picked, and what part of ${brandName()}'s catalog they stand for, is not recorded, so this result covers these ${n} products only.`;
   return {
-    rotation: null,
     products: `${n} product${one ? "" : "s"} checked`,
     verified: `${c.factsChecked} with a verified fact`,
     tip: `${named} ${compared} ${picked}`,
@@ -222,10 +277,17 @@ export function factCheckScopeTip(windowed = false): string {
   return `${FACT_CHECK_SCOPE} ${windowed ? FACT_CHECK_SHOPPING_SCOPE_WINDOW : FACT_CHECK_SHOPPING_SCOPE}`;
 }
 
-/** Tooltip on the Accuracy figure: its N of M, then the scope of the checks. */
-export function factCheckAccuracyTip(c: FactCheckCoverage, windowed = false): string {
+/** Tooltip on the Accuracy figure: its N of M, the engines it covers, then the scope of the checks. */
+export function factCheckAccuracyTip(
+  c: FactCheckCoverage,
+  windowed = false,
+  askingEngines: readonly string[] = [],
+): string {
   const matched = Math.max(0, c.answersChecked - c.contradictions);
-  return `${formatInt(matched)} of ${formatInt(c.answersChecked)} answers matched. ${factCheckScopeTip(windowed)}`;
+  const engines = factCheckEnginesTip(c, askingEngines);
+  return [`${formatInt(matched)} of ${formatInt(c.answersChecked)} answers matched.`, engines, factCheckScopeTip(windowed)]
+    .filter(Boolean)
+    .join(" ");
 }
 
 export const UNVERIFIED_FLAG_TIP =

@@ -49,7 +49,7 @@ export function inEngineChoice(engine: string | null | undefined, choice: Engine
   return engineGroup(engine) === choice;
 }
 
-/** The rotating catalog slots. The API job asks only the fixed fact checks. */
+/** The rotating catalog slots. Only the search engines ask them; the API job asks the fixed fact checks. */
 export const ROTATING_FACT_CHECK_KEYS: ReadonlySet<string> = new Set(["p35", "p36", "p37"]);
 
 /** A fact check from the catalog rotation: a rotating slot, or a catalog product that is not an anchor. */
@@ -117,12 +117,11 @@ export function capApiRepeats(snapshot: AiSearchSnapshot, cap = API_REPEAT_CAP, 
 /** What the engine switch did to the selection. Panels read it for N of M and tooltips. */
 export type EngineScope = {
   choice: EngineGroupChoice;
-  /** Fact checks are the fixed questions only, because API engines are in the figures. */
-  fixedFactChecksOnly: boolean;
-  /** Rotating fact-check calls left out to keep the fixed questions only. */
-  rotatingLeftOut: number;
-  /** Fact-check calls before the switch: the M in "N of M" for the fixed-only figure. */
-  factChecksBefore: number;
+  /**
+   * The selection's fact checks before the switch narrowed them. A choice whose engines ask no
+   * rotating catalog question still names the engines that do, and the catalog in scope.
+   */
+  probesBefore: readonly AiProbeRow[];
 };
 
 function callKey(row: { audit_run_id: string; sim_id: number }): string {
@@ -138,55 +137,32 @@ export function hasSearchRows(snapshot: Pick<AiSearchSnapshot, "calls">): boolea
 }
 
 /**
- * The selection narrowed to one engine group. With API engines in the figures, fact checks keep
- * only the fixed questions, since the API job does not ask the rotating catalog checks.
+ * The selection narrowed to one engine group. Every choice counts the rotating catalog fact
+ * checks its engines asked (Brian Magazu, 9 Nov 2026). Only the search engines ask them, so
+ * the scope keeps the selection's fact checks for the tooltips, and the catalog coverage rows
+ * stay whole so "N of M catalog products" keeps its M on every choice.
  * Returns null when the choice leaves no call, so the panel never shows a zero for it.
- * `rotating` "drop" keeps the fixed questions only on a run whose API runs sit on another point;
- * "keep" leaves the rotating checks in for a reader that counts no fact check.
  */
 export function filterSnapshotByEngineGroup(
   snapshot: AiSearchSnapshot,
   choice: EngineGroupChoice,
-  rotating: "auto" | "drop" | "keep" = "auto",
 ): AiSearchSnapshot | null {
   const calls = snapshot.calls.filter((row) => inEngineChoice(row.engine, choice));
   if (calls.length === 0) return null;
-  const fixedFactChecksOnly =
-    rotating === "keep" ? false : (rotating === "drop" && choice !== "search") || calls.some((row) => isApiEngine(row.engine));
-  const factChecksBefore = calls.filter((row) => row.prompt_kind === "probe").length;
-  let probes = snapshot.probes.filter((row) => inEngineChoice(row.engine, choice));
-  let kept: AiCallRow[] = calls;
-  if (fixedFactChecksOnly) {
-    const rotating = new Set(probes.filter(isRotatingFactCheck).map(callKey));
-    probes = probes.filter((row) => !rotating.has(callKey(row)));
-    kept = calls.filter(
-      (row) => row.prompt_kind !== "probe" || !(rotating.has(callKey(row)) || isRotatingFactCheck(row)),
-    );
-  }
-  const keptIds = new Set(kept.map((row) => row.id));
-  const droppedIds = new Set(snapshot.calls.filter((row) => !keptIds.has(row.id)).map((row) => row.id));
+  const probes = snapshot.probes.filter((row) => inEngineChoice(row.engine, choice));
+  const keptIds = new Set(calls.map((row) => row.id));
   const citations = snapshot.citations.filter(
-    (row) => inEngineChoice(row.engine, choice) && !droppedIds.has(row.simulation_id),
+    (row) => inEngineChoice(row.engine, choice) && keptIds.has(row.simulation_id),
   );
-  const probeCoverage =
-    snapshot.probeCoverage == null
-      ? snapshot.probeCoverage
-      : snapshot.probeCoverage.filter((row) => inEngineChoice(row.engine, choice));
-  const scope: EngineScope = {
-    choice,
-    fixedFactChecksOnly,
-    rotatingLeftOut: calls.length - kept.length,
-    factChecksBefore,
-  };
-  const narrowed = kept.length !== snapshot.calls.length;
+  const scope: EngineScope = { choice, probesBefore: snapshot.probes };
+  const narrowed = calls.length !== snapshot.calls.length;
   return {
     ...snapshot,
-    run: narrowed ? withCallCounts(snapshot, kept) : snapshot.run,
-    calls: kept,
+    run: narrowed ? withCallCounts(snapshot, calls) : snapshot.run,
+    calls,
     probes,
     citations,
     storedCitationCount: narrowed ? citations.length : snapshot.storedCitationCount,
-    ...(probeCoverage === undefined ? {} : { probeCoverage }),
     engineScope: scope,
   };
 }
@@ -236,11 +212,4 @@ export function withApiSnapshots(base: AiSearchSnapshot, api: readonly AiSearchS
     citations,
     storedCitationCount: (base.storedCitationCount ?? base.citations.length) + (citations.length - base.citations.length),
   };
-}
-
-/** "With API engines included, fact checks count the fixed questions only: 120 of 150 checks." */
-export function fixedFactChecksTip(scope: EngineScope | undefined, kept: number): string | null {
-  if (!scope?.fixedFactChecksOnly) return null;
-  const counted = scope.rotatingLeftOut > 0 ? ` ${kept} of ${scope.factChecksBefore} fact-check calls are counted.` : "";
-  return `With API engines included, fact checks count the fixed questions only. The API job does not ask the rotating catalog fact checks.${counted}`;
 }
