@@ -181,19 +181,7 @@
 }
 
 .ifai-canvas.theme-iom .brand-logo-icon {
-  filter: drop-shadow(0 0 10px rgba(78, 151, 188, 0.35));
-}
-
-.ifai-canvas.theme-iom .stage-washes-light {
-  display: none;
-}
-
-.ifai-canvas.theme-iom.light-theme .stage-washes-dark {
-  display: none;
-}
-
-.ifai-canvas.theme-iom.light-theme .stage-washes-light {
-  display: inline;
+  filter: none;
 }
 
 .ifai-canvas.theme-iom svg.canvas-stage {
@@ -475,14 +463,6 @@
   transition: none;
 }
 
-.ifai-canvas.theme-iom.column-layout .graph-hub .hub-halo-pulse {
-  opacity: 0.92;
-}
-
-.ifai-canvas.theme-iom.column-layout .graph-hub.node-selected .hub-halo-pulse {
-  opacity: 1;
-}
-
 .ifai-canvas.theme-iom.column-layout .canvas-pointer-wash {
   display: none;
 }
@@ -545,32 +525,6 @@
   contain: strict;
 }
 
-/* Painted once at a fixed size and moved with a transform (useIomPointerWash), so following
-   the pointer only recomposites this layer. The stops match the old full-screen wash, whose
-   20% and 38% stops were measured to the farthest corner. */
-.ifai-canvas.theme-iom .canvas-pointer-glow {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 0;
-  height: 0;
-  opacity: 0;
-  will-change: transform;
-  background:
-    radial-gradient(circle closest-side, rgba(78, 151, 188, 0.28), transparent 52.6%),
-    radial-gradient(circle closest-side, rgba(167, 216, 240, 0.16), transparent 100%);
-}
-
-.ifai-canvas.theme-iom .canvas-pointer-glow[data-ready="true"] {
-  opacity: 1;
-}
-
-/* Screens without the pointer hook keep a still glow at the rest point. */
-.ifai-canvas.theme-iom .canvas-pointer-wash:empty {
-  background:
-    radial-gradient(circle at 58% 42%, rgba(78, 151, 188, 0.28), transparent 20%),
-    radial-gradient(circle at 58% 42%, rgba(167, 216, 240, 0.16), transparent 38%);
-}
 
 .ifai-canvas.theme-iom .top-header {
   z-index: 55;
@@ -619,13 +573,6 @@
 .ifai-canvas.theme-iom .satellite-group.visible .conn-line {
   stroke: #a7d8f0;
   stroke-dasharray: 8 5;
-  animation: spoke-dash calc(1.2s * var(--iom-motion-scale)) linear infinite;
-  filter: drop-shadow(0 0 6px rgba(167, 216, 240, 0.65));
-}
-
-@keyframes spoke-dash {
-  from { stroke-dashoffset: 26; }
-  to { stroke-dashoffset: 0; }
 }
 
 .ifai-canvas.theme-iom .conn-line {
@@ -638,41 +585,23 @@
     stroke-width calc(0.8s * var(--iom-motion-scale)) ease;
 }
 
-.ifai-canvas.theme-iom .conn-line.critical {
-  stroke: #cc5b63;
-  stroke-width: 1.8;
+.ifai-canvas.theme-iom .conn-line.critical,
+.ifai-canvas.theme-iom .conn-line.warning,
+.ifai-canvas.theme-iom .conn-line.active-spoke {
+  stroke: #4e97bc;
+  stroke-width: 1.6;
   opacity: 0.34;
-  animation: iomLineGlow 3.6s ease-in-out infinite;
 }
 
 .ifai-canvas.theme-iom .satellite-group:not(.visible) .conn-line.critical,
 .ifai-canvas.theme-iom .satellite-group:not(.visible) .conn-line.warning {
   opacity: 0;
-  animation: none;
-}
-
-.ifai-canvas.theme-iom .conn-line.warning {
-  stroke: #d4b66f;
-  stroke-width: 1.7;
-  opacity: 0.32;
-  animation: iomLineGlow 4.2s ease-in-out infinite;
-}
-
-.ifai-canvas.theme-iom .conn-line.active-spoke {
-  stroke: #6ab792;
-  stroke-width: 1.8;
-  opacity: 0.4;
 }
 
 .ifai-canvas.theme-iom .conn-path {
-  stroke: rgba(204, 91, 99, 0.7);
+  stroke: rgba(78, 151, 188, 0.7);
   stroke-width: 1.6;
   opacity: 0.55;
-}
-
-@keyframes iomLineGlow {
-  0%, 100% { opacity: 0.22; }
-  50% { opacity: 0.62; }
 }
 
 .ifai-canvas.theme-iom .graph-node {
@@ -704,68 +633,31 @@
   transform: scale(1.04);
 }
 
+/* The flat map: an outer ring in place of the old halo, brighter on hover and selection. */
 .ifai-canvas.theme-iom .node-halo {
-  fill: var(--aura, url(#luxHubAura));
-  stroke: none;
-  opacity: 0.72;
+  fill: none;
+  stroke: rgba(78, 151, 188, 0.24);
+  stroke-width: 1.25;
   pointer-events: none;
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: aura-breathe 4s ease-in-out infinite;
+  transition: stroke calc(0.35s * var(--iom-motion-scale)) ease;
 }
 
 .ifai-canvas.theme-iom .graph-node:hover .node-halo,
 .ifai-canvas.theme-iom .graph-node:focus-visible .node-halo {
-  opacity: 1;
-  transform: scale(1.18);
+  stroke: rgba(167, 216, 240, 0.6);
 }
 
 .ifai-canvas.theme-iom .node-circle,
 .ifai-canvas.theme-iom .node-circle.status-danger,
 .ifai-canvas.theme-iom .node-circle.status-warning,
 .ifai-canvas.theme-iom .node-circle.status-success {
-  fill: url(#spokeBody);
+  fill: var(--brand-card);
   stroke-width: 1.8px;
   filter: none;
   transition:
     fill calc(0.4s * var(--iom-motion-scale)) ease,
     stroke calc(0.35s * var(--iom-motion-scale)) ease,
     stroke-width calc(0.35s * var(--iom-motion-scale)) ease;
-}
-
-/* BubbleLift's pre-rendered shadow and selection glow, in place of drop-shadow filters. */
-/* Keep pointer-events for the shadows and halos here: as an SVG attribute on these moving shapes,
-   Chrome lays them out again on every frame. */
-.ifai-canvas.theme-iom .node-lift {
-  pointer-events: none;
-}
-
-.ifai-canvas.theme-iom .node-drop {
-  opacity: 0.45;
-  transform: translateY(14px);
-  transition: opacity calc(0.35s * var(--iom-motion-scale)) ease;
-}
-
-.ifai-canvas.theme-iom .node-glow {
-  opacity: 0;
-  transition: opacity calc(0.35s * var(--iom-motion-scale)) ease;
-}
-
-.ifai-canvas.theme-iom .graph-hub .node-drop {
-  opacity: 0.5;
-  transform: translateY(16px);
-}
-
-.ifai-canvas.theme-iom .graph-hub .node-glow {
-  opacity: 0.45;
-}
-
-.ifai-canvas.theme-iom .graph-node.node-selected .node-drop {
-  opacity: 0;
-}
-
-.ifai-canvas.theme-iom .graph-node.node-selected .node-glow {
-  opacity: 0.8;
 }
 
 .ifai-canvas.theme-iom .node-circle.status-danger { stroke: #cc5b63; }
@@ -823,10 +715,6 @@
   color: #a7d8f0;
 }
 
-.ifai-canvas.theme-iom .node-glyph {
-  filter: drop-shadow(0 0 6px rgba(78, 151, 188, 0.85));
-}
-
 .ifai-canvas.theme-iom .spoke-primary .node-face-stat,
 .ifai-canvas.theme-iom .spoke-primary .node-face-stat.status-danger,
 .ifai-canvas.theme-iom .spoke-primary .node-face-stat.status-warning,
@@ -854,7 +742,7 @@
   letter-spacing: 0.01em;
   line-height: 1.2;
   cursor: pointer;
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+  box-shadow: none;
 }
 
 .ifai-canvas.theme-iom .strategy-roadmap-btn:hover,
@@ -899,6 +787,17 @@
 .ifai-canvas.theme-iom .node-face-stat.status-warning { fill: #d4b66f; }
 .ifai-canvas.theme-iom .node-face-stat.status-success { fill: #6ab792; }
 
+.ifai-canvas.theme-iom .node-hero-status { color: var(--text-muted); }
+.ifai-canvas.theme-iom .node-hero-status.status-bad { color: var(--status-bad); }
+.ifai-canvas.theme-iom .node-hero-status.status-okay { color: var(--status-okay); }
+.ifai-canvas.theme-iom .node-hero-status.status-good { color: var(--status-good); }
+
+.ifai-canvas.theme-iom .node-hero-status-word {
+  fill: currentColor;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
 .ifai-canvas.theme-iom .node-face-stat.hub-stat {
   fill: #4e97bc;
 }
@@ -931,18 +830,19 @@
   display: none;
 }
 
-.ifai-canvas.theme-iom .hub-halo-pulse {
-  fill: var(--aura, url(#luxHubAura));
-  stroke: none;
-  opacity: 0.8;
-  pointer-events: none;
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: aura-breathe 4s ease-in-out infinite;
+.ifai-canvas.theme-iom .hub-halo-edge {
+  stroke: rgba(78, 151, 188, 0.24);
+  stroke-width: 1.25;
+  transition: stroke calc(0.35s * var(--iom-motion-scale)) ease;
+}
+
+.ifai-canvas.theme-iom .graph-hub:hover .hub-halo-edge,
+.ifai-canvas.theme-iom .graph-hub.node-selected .hub-halo-edge {
+  stroke: rgba(167, 216, 240, 0.6);
 }
 
 .ifai-canvas.theme-iom .node-circle.hub-core {
-  fill: url(#hubBody);
+  fill: var(--brand-card);
   stroke: #4e97bc;
   stroke-width: 2.5px;
 }
@@ -952,126 +852,23 @@
   stroke-width: 2.8px;
 }
 
-.ifai-canvas.theme-iom .graph-node.node-selected .node-halo,
-.ifai-canvas.theme-iom .graph-node.node-selected .hub-halo-pulse {
-  opacity: 1;
-  animation: aura-click-burst calc(0.55s * var(--iom-motion-scale)) cubic-bezier(0.45, 0.05, 0.55, 0.95) both;
+.ifai-canvas.theme-iom .graph-node.node-selected .node-halo {
+  stroke: var(--accent);
+  stroke-width: 2;
 }
 
 .ifai-canvas.theme-iom .conn-line.conn-hot {
   stroke: #4e97bc;
   stroke-width: 3.2px;
   opacity: 1;
-  filter: drop-shadow(0 0 8px #4e97bc);
 }
 
-.ifai-canvas.theme-iom .node-outer-ring {
-  stroke: rgba(78, 151, 188, 0.28);
-  stroke-width: 1.25;
-  pointer-events: none;
-}
-
-.ifai-canvas.theme-iom .ring-mote {
-  fill: #a7d8f0;
-  pointer-events: none;
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: mote-twinkle 2.4s ease-in-out infinite;
-}
-
-.ifai-canvas.theme-iom .quest-flame {
-  transform-box: fill-box;
-  transform-origin: center bottom;
-  animation: flame-flicker 0.38s ease-in-out infinite;
-}
-
-.ifai-canvas.theme-iom .flame-core {
-  fill: #cc5b63;
-  stroke: none;
-  filter: drop-shadow(0 0 6px #cc5b63);
-}
-
-.ifai-canvas.theme-iom .flame-ember {
-  fill: #ffe4e6;
-  animation: ember-rise 0.7s ease-out infinite;
-}
-
-.ifai-canvas.theme-iom .flame-ember-b {
-  animation-delay: 0.28s;
-}
-
-.ifai-canvas.theme-iom .quest-pill {
-  fill: rgba(35, 15, 20, 0.94);
-  stroke: #cc5b63;
-  stroke-width: 1;
-}
-
-.ifai-canvas.theme-iom .quest-pill-text {
-  fill: #fff;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-}
-
-.ifai-canvas.theme-iom .node-shockwave,
-.ifai-canvas.theme-iom .node-spark {
-  transform-box: fill-box;
-  transform-origin: center;
-  pointer-events: none;
-}
-
-.ifai-canvas.theme-iom .node-shockwave {
-  animation: shock-ring calc(0.62s * var(--iom-motion-scale)) ease-out forwards;
-}
-
-.ifai-canvas.theme-iom .node-spark {
-  animation: spark-fly calc(0.72s * var(--iom-motion-scale)) ease-out forwards;
-}
-
-@keyframes aura-breathe {
-  0%, 100% { opacity: 0.55; transform: scale(1); }
-  50% { opacity: 0.9; transform: scale(1.08); }
-}
-
-@keyframes aura-click-burst {
-  0% { opacity: 0.8; transform: scale(1.05); }
-  42% { opacity: 1; transform: scale(1.85); }
-  100% { opacity: 1; transform: scale(1.28); }
-}
-
-@keyframes shock-ring {
-  to { transform: scale(2.6); opacity: 0; }
-}
-
-@keyframes spark-fly {
-  0% { transform: translate(0, 0) scale(1); opacity: 1; }
-  100% { transform: translate(var(--dx), var(--dy)) scale(0.25); opacity: 0; }
-}
-
-@keyframes mote-twinkle {
-  0%, 100% { opacity: 0.25; }
-  50% { opacity: 1; }
-}
-
-@keyframes flame-flicker {
-  0%, 100% { transform: scale(1, 1) rotate(-4deg); }
-  50% { transform: scale(0.82, 1.16) rotate(4deg); }
-}
-
-@keyframes ember-rise {
-  0% { transform: translate(0, 0); opacity: 0.95; }
-  100% { transform: translate(0, -10px); opacity: 0; }
-}
 
 .ifai-canvas.theme-iom .graph-hub:hover .node-circle.hub-core,
 .ifai-canvas.theme-iom .graph-hub:focus-visible .node-circle.hub-core {
   stroke: #a7d8f0;
 }
 
-@keyframes iomHubBreathe {
-  0%, 100% { opacity: 0.55; transform: scale(1); }
-  50% { opacity: 0.9; transform: scale(1.08); }
-}
 
 .ifai-canvas.theme-iom .correlation-badge {
   fill: rgba(7, 11, 20, 0.9);
@@ -1376,11 +1173,11 @@
 }
 
 .ifai-canvas.theme-iom.light-theme .brand-logo-icon {
-  filter: drop-shadow(0 8px 14px rgba(11, 18, 32, 0.12));
+  filter: none;
 }
 
 .ifai-canvas.theme-iom.light-theme .canvas-body {
-  background-color: #e7f1fa;
+  background-color: #f9fafb;
 }
 
 .ifai-canvas.theme-iom.light-theme .viewport-container {
@@ -1388,17 +1185,6 @@
   background-image: none;
 }
 
-.ifai-canvas.theme-iom.light-theme .canvas-pointer-glow {
-  background:
-    radial-gradient(circle closest-side, rgba(25, 66, 87, 0.18), transparent 52.6%),
-    radial-gradient(circle closest-side, rgba(25, 66, 87, 0.12), transparent 94.7%);
-}
-
-.ifai-canvas.theme-iom.light-theme .canvas-pointer-wash:empty {
-  background:
-    radial-gradient(circle at 58% 42%, rgba(25, 66, 87, 0.18), transparent 20%),
-    radial-gradient(circle at 58% 42%, rgba(25, 66, 87, 0.12), transparent 36%);
-}
 
 .ifai-canvas.theme-iom.light-theme .node-circle,
 .ifai-canvas.theme-iom.light-theme .node-circle.status-danger,
@@ -1408,32 +1194,10 @@
   fill: rgba(255, 255, 255, 0.94);
 }
 
-.ifai-canvas.theme-iom.light-theme .node-drop,
-.ifai-canvas.theme-iom.light-theme .graph-hub .node-drop,
-.ifai-canvas.theme-iom.light-theme .graph-hub.node-selected .node-drop,
-.ifai-canvas.theme-iom.light-theme .graph-node.node-selected .node-lift.status-danger .node-drop,
-.ifai-canvas.theme-iom.light-theme .graph-node.node-selected .node-lift.status-warning .node-drop,
-.ifai-canvas.theme-iom.light-theme .graph-node.node-selected .node-lift.status-success .node-drop {
-  opacity: 0.12;
-  transform: translateY(8px);
-}
-
-.ifai-canvas.theme-iom.light-theme .node-drop-fill stop {
-  stop-color: #0b1220;
-}
-
-/* In the light theme only neutral spokes glow when selected; the hub and status bubbles keep their shadow. */
-.ifai-canvas.theme-iom.light-theme .graph-hub .node-glow,
-.ifai-canvas.theme-iom.light-theme .graph-node.node-selected .node-lift.status-danger .node-glow,
-.ifai-canvas.theme-iom.light-theme .graph-node.node-selected .node-lift.status-warning .node-glow,
-.ifai-canvas.theme-iom.light-theme .graph-node.node-selected .node-lift.status-success .node-glow {
-  opacity: 0;
-}
-
 .ifai-canvas.theme-iom.light-theme .strategy-roadmap-btn {
   background: rgba(255, 255, 255, 0.96);
   color: #0b1220;
-  box-shadow: 0 8px 18px rgba(11, 18, 32, 0.12);
+  box-shadow: none;
 }
 
 .ifai-canvas.theme-iom.light-theme .strategy-roadmap-btn:hover,
@@ -1533,9 +1297,6 @@
   height: 22px;
   border: 1px solid rgba(78, 151, 188, 0.72);
   border-radius: 50%;
-  box-shadow:
-    0 0 12px rgba(78, 151, 188, 0.35),
-    inset 0 0 8px rgba(78, 151, 188, 0.12);
   transition:
     transform 0.18s ease,
     border-color 0.18s ease,
@@ -1550,7 +1311,7 @@
   height: 4px;
   border-radius: 50%;
   background: #4e97bc;
-  box-shadow: 0 0 10px rgba(78, 151, 188, 0.95);
+  box-shadow: none;
   transition:
     transform 0.12s ease,
     box-shadow 0.12s ease;
@@ -1559,7 +1320,7 @@
 .iom-cursor-tick {
   position: absolute;
   background: rgba(78, 151, 188, 0.85);
-  box-shadow: 0 0 6px rgba(78, 151, 188, 0.5);
+  box-shadow: none;
   transition:
     transform 0.18s ease,
     opacity 0.18s ease;
@@ -1611,14 +1372,10 @@
 .iom-cursor-portal[data-hover="true"] .iom-cursor-ring {
   transform: scale(1.45);
   border-color: rgba(78, 151, 188, 0.95);
-  box-shadow:
-    0 0 18px rgba(78, 151, 188, 0.55),
-    inset 0 0 10px rgba(78, 151, 188, 0.18);
 }
 
 .iom-cursor-portal[data-hover="true"] .iom-cursor-core {
   transform: scale(1.25);
-  box-shadow: 0 0 14px rgba(78, 151, 188, 1);
 }
 
 .iom-cursor-portal[data-hover="true"] .iom-cursor-tick-n {
@@ -1644,7 +1401,6 @@
 
 .iom-cursor-portal[data-click="true"] .iom-cursor-core {
   transform: scale(0.65);
-  box-shadow: 0 0 20px rgba(255, 255, 255, 0.85);
 }
 
 @keyframes iom-cursor-burst {
@@ -1809,27 +1565,19 @@
   }
 }
 
-/* Action Items and Strategy Roadmap are example bubbles until they read live data. */
+/* Action Items and Roadmap are example bubbles until they read live data: a dashed ring, no status color. */
 .ifai-canvas.theme-iom .graph-node[data-graph-node-id="spoke-fixes"] .node-circle,
-.ifai-canvas.theme-iom .graph-node[data-graph-node-id="spoke-roadmap"] .node-circle,
-.ifai-canvas.theme-iom.light-theme .graph-node[data-graph-node-id="spoke-fixes"] .node-circle,
-.ifai-canvas.theme-iom.light-theme .graph-node[data-graph-node-id="spoke-roadmap"] .node-circle {
-  fill: #8c232f;
-  stroke: #8c232f;
+.ifai-canvas.theme-iom .graph-node[data-graph-node-id="spoke-roadmap"] .node-circle {
+  stroke: var(--brand-border);
+  stroke-dasharray: 6 5;
 }
 
 .ifai-canvas.theme-iom .graph-node[data-graph-node-id="spoke-fixes"].node-selected .node-circle,
 .ifai-canvas.theme-iom .graph-node[data-graph-node-id="spoke-roadmap"].node-selected .node-circle {
-  stroke: #cc5b63;
+  stroke: var(--accent);
 }
 
 .ifai-canvas.theme-iom .node-tooltip.node-tooltip-example {
-  background: #6e1f2a;
-  border-color: #cc5b63;
-  color: #fff1f2;
-  box-shadow: 0 18px 36px rgba(110, 31, 42, 0.45);
-}
-
-.ifai-canvas.theme-iom .node-tooltip.node-tooltip-example .node-tooltip-desc {
-  color: #ffe4e6;
+  border-style: dashed;
+  border-color: var(--brand-border);
 }

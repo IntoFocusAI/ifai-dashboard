@@ -66,32 +66,25 @@ test.describe("map hover", () => {
     }
   });
 
-  test("a pointer sweep restyles only the glow, never the whole canvas", async ({ canvas, page }) => {
+  test("the map is flat: no pointer glow, halo gradient, moving dot, or blur filter", async ({ canvas, page }) => {
     const from = await center(canvas, "spoke-aeo");
     const to = await center(canvas, "spoke-competitors");
     await page.mouse.move(from.x, from.y);
     await page.mouse.move(to.x, to.y, { steps: 20 });
     await frames(page);
-    const glow = await page.evaluate(() => {
-      const body = document.querySelector(".canvas-body") as HTMLElement;
-      const wash = document.querySelector(".canvas-pointer-wash") as HTMLElement;
-      const el = wash.querySelector(".canvas-pointer-glow") as HTMLElement;
-      const box = el.getBoundingClientRect();
+    const map = await page.evaluate(() => {
+      const svg = document.querySelector("svg.canvas-svg")!;
+      const shapes = [...svg.querySelectorAll<SVGElement>("circle, line, path, rect, ellipse")];
       return {
-        body: body.getAttribute("style") ?? "",
-        wash: wash.getAttribute("style") ?? "",
-        background: getComputedStyle(el).backgroundImage,
-        center: { x: box.left + box.width / 2, y: box.top + box.height / 2 },
-        width: box.width,
+        glow: document.querySelectorAll(".canvas-pointer-glow, .canvas-pointer-wash").length,
+        gradients: document.querySelectorAll("svg.canvas-svg :is(radialGradient, linearGradient), svg.canvas-stage :is(radialGradient, linearGradient)").length,
+        filters: shapes.filter((el) => getComputedStyle(el).filter !== "none" || el.hasAttribute("filter")).length,
+        urlFills: shapes.filter((el) => getComputedStyle(el).fill.startsWith("url(")).length,
+        moving: shapes.filter((el) => getComputedStyle(el).animationName !== "none").length,
+        effects: svg.querySelectorAll(".ring-mote, .node-spark, .node-shockwave, .quest-flame, .node-lift").length,
       };
     });
-    expect(glow.body, "the canvas body is not restyled per move").not.toContain("--pointer");
-    expect(glow.wash, "the wash is not restyled per move").toBe("");
-    expect(glow.background).toContain("radial-gradient");
-    expect(glow.width).toBeGreaterThan(300);
-    expect(glow.width, "the glow is a fixed-size layer, not the whole canvas").toBeLessThan(1280);
-    expect(Math.abs(glow.center.x - to.x)).toBeLessThan(2);
-    expect(Math.abs(glow.center.y - to.y)).toBeLessThan(2);
+    expect(map).toEqual({ glow: 0, gradients: 0, filters: 0, urlFills: 0, moving: 0, effects: 0 });
   });
 });
 
@@ -439,25 +432,7 @@ async function walkTour(canvas: Canvas, page: Page) {
 test.describe("reduced motion", () => {
   test.use({ reducedMotion: "reduce" });
 
-  test("the pointer glow stays at its rest point and the panel appears without sliding", async ({ canvas, page }) => {
-    const glowCenter = () =>
-      page.evaluate(() => {
-        const body = document.querySelector(".canvas-body")!.getBoundingClientRect();
-        const box = document.querySelector(".canvas-pointer-glow")!.getBoundingClientRect();
-        return {
-          x: (box.left + box.width / 2 - body.left) / body.width,
-          y: (box.top + box.height / 2 - body.top) / body.height,
-        };
-      });
-    const from = await center(canvas, "spoke-aeo");
-    const to = await center(canvas, "spoke-competitors");
-    await page.mouse.move(from.x, from.y);
-    await page.mouse.move(to.x, to.y, { steps: 10 });
-    await frames(page);
-    const glow = await glowCenter();
-    expect(glow.x).toBeCloseTo(0.58, 2);
-    expect(glow.y).toBeCloseTo(0.42, 2);
-
+  test("the panel appears without sliding", async ({ canvas, page }) => {
     const firstFrame = page.evaluate(
       () =>
         new Promise<number>((done) => {

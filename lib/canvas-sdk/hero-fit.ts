@@ -3,10 +3,17 @@
  * fixed radius and shrink the value (not to a crumb) so title, value, and label clear the ring.
  */
 
-export const SATELLITE_HERO_TEXT = { title: 13, value: 30, label: 12.5 } as const;
+import { DATA_STATUS_WORD, dataStatusFromNode, type DataStatus } from "@/lib/canvas-sdk/data-status";
+import type { NodeStatus } from "@/lib/canvas-sdk/types";
+
+export const SATELLITE_HERO_TEXT = { title: 13, value: 30, label: 12.5, status: 11 } as const;
 
 /** Width estimates per character, as a share of font size. Generous so text clears the ring. */
-const WIDTH_PER_CHAR = { title: 0.62, value: 0.6, valueText: 0.62, label: 0.62 } as const;
+const WIDTH_PER_CHAR = { title: 0.62, value: 0.6, valueText: 0.62, label: 0.62, status: 0.62 } as const;
+
+/** The status mark drawn ahead of the status word, as a share of the word's font size. */
+export const STATUS_MARK_EM = 1;
+export const STATUS_MARK_GAP_EM = 0.35;
 const RING_PAD = 10;
 const TITLE_GAP = 5;
 const LABEL_GAP = 4;
@@ -28,7 +35,16 @@ export type HeroFaceLayout = {
 };
 
 function rowWidth(row: Row): number {
-  return row.text.length * row.size * WIDTH_PER_CHAR[row.kind];
+  const mark = row.kind === "status" ? row.size * (STATUS_MARK_EM + STATUS_MARK_GAP_EM) : 0;
+  return mark + row.text.length * row.size * WIDTH_PER_CHAR[row.kind];
+}
+
+/**
+ * A bubble's figure carries its status color only with the mark and word beside it. Worded
+ * values ("Loading", "Not available*") have no status, so they draw in the plain text color.
+ */
+export function heroStatus(status: NodeStatus | undefined, value: string): DataStatus | null {
+  return isCompactHeroValue(value) ? dataStatusFromNode(status) : null;
 }
 
 function rowHeight(row: Row): number {
@@ -66,7 +82,7 @@ export function isCompactHeroValue(value: string): boolean {
   return false;
 }
 
-function layoutRows(titleLines: string[], value: string, labelLines: string[]): HeroFaceLayout {
+function layoutRows(titleLines: string[], value: string, labelLines: string[], status: DataStatus | null): HeroFaceLayout {
   // A worded empty state ("No resolved answers") reads at label size, not as a giant number.
   const valueRows: Row[] = isCompactHeroValue(value)
     ? [{ text: value.trim(), size: SATELLITE_HERO_TEXT.value, kind: "value" as const }]
@@ -75,12 +91,14 @@ function layoutRows(titleLines: string[], value: string, labelLines: string[]): 
     ...titleLines.map((text) => ({ text, size: SATELLITE_HERO_TEXT.title, kind: "title" as const })),
     ...valueRows,
     ...labelLines.filter((text) => text.trim()).map((text) => ({ text, size: SATELLITE_HERO_TEXT.label, kind: "label" as const })),
+    ...(status ? [{ text: DATA_STATUS_WORD[status], size: SATELLITE_HERO_TEXT.status, kind: "status" as const }] : []),
   ];
   const gaps = rows.map((row, index) => {
     if (index === 0) return 0;
     const prev = rows[index - 1];
     if (prev.kind === "title" && row.kind !== "title") return TITLE_GAP;
     if (prev.kind !== "label" && row.kind === "label") return LABEL_GAP;
+    if (row.kind === "status") return LABEL_GAP;
     return 1;
   });
   const total = rows.reduce((sum, row, index) => sum + gaps[index] + rowHeight(row), 0);
@@ -104,14 +122,19 @@ function layoutRows(titleLines: string[], value: string, labelLines: string[]): 
  * Lay out a satellite hero face around the circle's center. The title and the label may
  * each take one or two lines; whichever arrangement needs the smallest circle wins.
  */
-export function satelliteHeroLayout(title: string, value: string, label: string): HeroFaceLayout {
+export function satelliteHeroLayout(
+  title: string,
+  value: string,
+  label: string,
+  status: DataStatus | null = null,
+): HeroFaceLayout {
   const titleOptions = [[title.trim()], ...twoLineSplits(title)];
   const labelOptions = label.trim() ? [[label.trim()], ...twoLineSplits(label)] : [[""]];
   let best: HeroFaceLayout | null = null;
   let bestScore = Infinity;
   for (const titleLines of titleOptions) {
     for (const labelLines of labelOptions) {
-      const next = layoutRows(titleLines, value, labelLines);
+      const next = layoutRows(titleLines, value, labelLines, status);
       // A one-line title and label read best; a wrap has to save real room to win.
       const score = next.radius * (1 + 0.12 * (titleLines.length - 1) + 0.12 * (Math.max(0, labelLines.filter(Boolean).length - 1)));
       if (score < bestScore) {
@@ -127,10 +150,12 @@ export function satelliteHeroLayout(title: string, value: string, label: string)
 export function satelliteFitRadius(node: {
   r: number;
   title: string;
+  status?: NodeStatus;
   heroValue?: { value: string; label: string };
 }): number {
   if (!node.heroValue) return node.r;
-  return Math.max(node.r, satelliteHeroLayout(node.title, node.heroValue.value, node.heroValue.label).radius);
+  const { value, label } = node.heroValue;
+  return Math.max(node.r, satelliteHeroLayout(node.title, value, label, heroStatus(node.status, value)).radius);
 }
 
 function estimateWidth(text: string, size: number, kind: "value" | "valueText" | "label"): number {
@@ -168,6 +193,9 @@ export type MainHeroFit = {
   labelLineH: number;
   valueY: number;
   labelY: number;
+  /** Baseline of the status mark and word under the label, when the figure has a status. */
+  statusY: number;
+  statusSize: number;
   /** True when the value is a worded state rendered at label size. */
   worded: boolean;
 };
@@ -184,7 +212,13 @@ function chordWidth(radius: number, y: number): number {
   return 2 * Math.sqrt(Math.max(0, clear * clear - yClamped * yClamped));
 }
 
-export function fitMainHero(value: string, label: string, radius: number, startY: number): MainHeroFit {
+export function fitMainHero(
+  value: string,
+  label: string,
+  radius: number,
+  startY: number,
+  status: DataStatus | null = null,
+): MainHeroFit {
   const trimmed = value.trim() || "—";
   const worded = !isCompactHeroValue(trimmed);
   const bottomLimit = radius - MAIN_RING_PAD;
@@ -215,20 +249,27 @@ export function fitMainHero(value: string, label: string, radius: number, startY
     const lineH = lSize + 2;
     const labelTop = lines.length ? valueBottom + gap : valueBottom;
     const labelBottom = lines.length ? labelTop + lines.length * lineH : valueBottom;
+    const statusTop = labelBottom + gap;
+    const statusBottom = status ? statusTop + lSize * 1.12 : labelBottom;
+    const statusHalf = status
+      ? (lSize * (STATUS_MARK_EM + STATUS_MARK_GAP_EM) + estimateWidth(DATA_STATUS_WORD[status], lSize, "label")) / 2
+      : 0;
     const valueHalf = estimateWidth(trimmed, vSize, worded ? "valueText" : "value") / 2;
     const labelHalf = lines.length
       ? Math.max(...lines.map((line) => estimateWidth(line, lSize, "label"))) / 2
       : 0;
     const ok =
-      labelBottom <= bottomLimit &&
+      statusBottom <= bottomLimit &&
       boxClearsRing(valueHalf, valueTop, valueBottom, radius) &&
-      (lines.length === 0 || boxClearsRing(labelHalf, labelTop, labelBottom, radius));
+      (lines.length === 0 || boxClearsRing(labelHalf, labelTop, labelBottom, radius)) &&
+      (!status || boxClearsRing(statusHalf, statusTop, statusBottom, radius));
     return {
       ok,
       labelLines: lines,
       labelLineH: lineH,
       valueY: worded ? startY + vSize * 0.86 : startY + vSize * 0.78,
       labelY: lines.length ? valueBottom + gap + lSize * 0.82 : valueBottom,
+      statusY: statusTop + lSize * 0.86,
     };
   };
 
@@ -243,6 +284,8 @@ export function fitMainHero(value: string, label: string, radius: number, startY
         labelLineH: next.labelLineH,
         valueY: next.valueY,
         labelY: next.labelY,
+        statusY: next.statusY,
+        statusSize: labelSize,
         worded,
       };
     }
@@ -258,6 +301,8 @@ export function fitMainHero(value: string, label: string, radius: number, startY
     labelLineH: fallback.labelLineH,
     valueY: fallback.valueY,
     labelY: fallback.labelY,
+    statusY: fallback.statusY,
+    statusSize: labelSize,
     worded,
   };
 }

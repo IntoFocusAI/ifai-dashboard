@@ -2,7 +2,7 @@
 
 import { memo, useCallback, useEffect, useMemo, useRef, useState, type MouseEvent, type RefObject } from "react";
 import { CanvasGraphNode } from "@/lib/canvas-sdk/CanvasGraphNode";
-import { ConnLine, MapDefsContext, TourSpotlight } from "@/lib/canvas-sdk/GraphPrimitives";
+import { ConnLine, TourSpotlight } from "@/lib/canvas-sdk/GraphPrimitives";
 import { IomGraphBackdrop } from "@/lib/canvas-sdk/IomGraphBackdrop";
 import { buildColumnLayout, isColumnNode } from "@/lib/canvas-sdk/column-layout";
 import { iomMotionMs } from "@/lib/canvas-sdk/iom-motion";
@@ -63,7 +63,6 @@ export const CanvasGraph = memo(function CanvasGraph({
   onShowTooltip,
   onHideTooltip,
 }: Props) {
-  const [mapDefs, setMapDefs] = useState<SVGDefsElement | null>(null);
   const mapViewBox = spec.viewBox ?? { w: 1600, h: 1000 };
   const columnPlan = useMemo(
     () => (columnLayout ? buildColumnLayout(spec.nodes ?? []) : null),
@@ -223,42 +222,6 @@ export const CanvasGraph = memo(function CanvasGraph({
           })
         : null}
 
-      <defs>
-        <radialGradient id="brandHubGradient" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.25" />
-          <stop offset="70%" stopColor="#4f46e5" stopOpacity="0.12" />
-          <stop offset="100%" stopColor="#38bdf8" stopOpacity="0" />
-        </radialGradient>
-        <filter id="glow-danger" x="-30%" y="-30%" width="160%" height="160%">
-          <feGaussianBlur stdDeviation="6" result="blur" />
-          <feComposite in="SourceGraphic" in2="blur" operator="over" />
-        </filter>
-        <filter id="glow-accent" x="-30%" y="-30%" width="160%" height="160%">
-          <feGaussianBlur stdDeviation="7" result="blur" />
-          <feComposite in="SourceGraphic" in2="blur" operator="over" />
-        </filter>
-        <filter id="nodeShadow" x="-60%" y="-60%" width="220%" height="240%">
-          <feDropShadow dx="0" dy="8" stdDeviation="10" floodColor="#0b1220" floodOpacity="0.4" />
-        </filter>
-        <filter id="auraBlur" x="-80%" y="-80%" width="260%" height="260%">
-          <feGaussianBlur stdDeviation="10" />
-        </filter>
-        <radialGradient id="hubBody" cx="35%" cy="30%" r="75%">
-          <stop offset="0%" stopColor="#28375f" />
-          <stop offset="52%" stopColor="#17213d" />
-          <stop offset="100%" stopColor="#0d1222" />
-        </radialGradient>
-        <radialGradient id="spokeBody" cx="35%" cy="30%" r="75%">
-          <stop offset="0%" stopColor="#222d4a" />
-          <stop offset="55%" stopColor="#151c31" />
-          <stop offset="100%" stopColor="#0e1322" />
-        </radialGradient>
-        <radialGradient id="luxHubAura" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#00f0ff" stopOpacity="0.55" />
-          <stop offset="55%" stopColor="#6366f1" stopOpacity="0.28" />
-          <stop offset="100%" stopColor="#6366f1" stopOpacity="0" />
-        </radialGradient>
-      </defs>
 
       {!columnLayout
         ? (clusters ? clusters.trunk : (spec.edges ?? [])).map((edge, idx) => (
@@ -315,7 +278,6 @@ export const CanvasGraph = memo(function CanvasGraph({
             width={badge.width}
             height={badge.height}
             rx={badge.height / 2}
-            filter="url(#nodeShadow)"
           />
           <text className="correlation-badge-text" x="0" y="4" textAnchor="middle" fontSize="10.5">
             {badge.text}
@@ -342,10 +304,7 @@ export const CanvasGraph = memo(function CanvasGraph({
   const showMapLayer = !columnLayout || mapExiting || mapEntering;
 
   return (
-    <MapDefsContext.Provider value={mapDefs}>
-      <svg className="map-gradient-defs" width="0" height="0" aria-hidden="true" focusable="false">
-        <defs ref={setMapDefs} />
-      </svg>
+    <>
       {showMapLayer ? (
         spec.appearance === "iom" ? (
           <div
@@ -366,6 +325,6 @@ export const CanvasGraph = memo(function CanvasGraph({
           {graphSvg}
         </div>
       ) : null}
-    </MapDefsContext.Provider>
+    </>
   );
 });

@@ -242,7 +242,7 @@ export function buildLiveNodes(
     },
     {
       ...primarySpoke("spoke-fixes"),
-      status: "success",
+      status: "neutral",
       title: "Action Items",
       stats: [],
       // Phase 1 dollar figure stays an analyst estimate — never a fee or ROI multiple.
@@ -252,7 +252,7 @@ export function buildLiveNodes(
     },
     {
       ...primarySpoke("spoke-roadmap"),
-      status: "success",
+      status: "neutral",
       title: "Strategy Roadmap",
       stats: [],
       heroValue: { value: "90 Days", label: "3 phases" },
