@@ -60,9 +60,9 @@
 }
 
 .ifai-canvas.theme-iom .brand-name {
-  font-family: var(--font-mono);
-  font-weight: var(--metric-value-weight, 800);
-  letter-spacing: var(--metric-value-tracking, -0.045em);
+  font-family: var(--font-sans);
+  font-weight: 600;
+  letter-spacing: -0.01em;
   color: var(--text-main);
 }
 
@@ -823,7 +823,7 @@
 }
 
 .ifai-canvas.theme-iom .graph-node .node-title {
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.02px;
   fill: #f8fafc;
 }
@@ -834,8 +834,8 @@
 }
 
 .ifai-canvas.theme-iom .hub-title {
-  font-family: var(--font-playfair), Georgia, "Times New Roman", serif;
-  font-weight: 700;
+  font-family: var(--font-sans);
+  font-weight: 600;
   letter-spacing: 0.01em;
   fill: #ffffff;
 }
@@ -851,7 +851,7 @@
 
 .ifai-canvas.theme-iom .spoke-primary .node-title,
 .ifai-canvas.theme-iom .spoke-primary .node-face-title {
-  font-family: var(--font-playfair), Georgia, "Times New Roman", serif;
+  font-family: var(--font-sans);
   fill: #ffffff;
 }
 
@@ -890,9 +890,9 @@
   align-items: center;
   gap: 8px;
   color: #ffffff;
-  font-family: var(--font-playfair), Georgia, "Times New Roman", serif;
+  font-family: var(--font-sans);
   font-size: 15px;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.01em;
   line-height: 1.2;
   cursor: pointer;
@@ -907,7 +907,7 @@
 }
 
 .ifai-canvas.theme-iom .node-face-title {
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.01em;
   fill: #f8fafc;
 }
@@ -922,7 +922,7 @@
 
 .ifai-canvas.theme-iom .hub-kicker {
   font-size: 10px;
-  font-weight: 800;
+  font-weight: 600;
   letter-spacing: 2.4px;
   fill: #38bdf8;
 }
@@ -933,7 +933,7 @@
 }
 
 .ifai-canvas.theme-iom .node-face-stat {
-  font-weight: 800;
+  font-weight: 600;
   fill: #7dd3fc;
 }
 
@@ -956,7 +956,7 @@
 
 .ifai-canvas.theme-iom .node-stat-text {
   fill: #cbd5e1;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.01em;
 }
 
@@ -1051,7 +1051,7 @@
 .ifai-canvas.theme-iom .quest-pill-text {
   fill: #fff;
   font-size: 10px;
-  font-weight: 800;
+  font-weight: 600;
   letter-spacing: 0.04em;
 }
 
@@ -1169,8 +1169,8 @@
 }
 
 .ifai-canvas.theme-iom .drilldown-title {
-  font-family: var(--font-playfair), Georgia, "Times New Roman", serif;
-  font-weight: 700;
+  font-family: var(--font-sans);
+  font-weight: 600;
   letter-spacing: 0;
 }
 

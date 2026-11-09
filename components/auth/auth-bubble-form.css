@@ -173,9 +173,9 @@
 
 .dashboard-auth-shell .auth-form-title {
   margin-top: 0.65rem;
-  font-family: var(--font-playfair), Georgia, "Times New Roman", serif;
+  font-family: var(--font-sans);
   font-size: 1.65rem;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.01em;
   line-height: 1.15;
   color: var(--text-main, #f5f9ff);
@@ -253,7 +253,7 @@
   border-radius: 999px;
   padding: 0.62rem 1rem;
   font-size: 0.8125rem;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: #f0f9ff;
@@ -283,7 +283,7 @@
   border-radius: 999px;
   padding: 0.62rem 1rem;
   font-size: 0.8125rem;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: #fff1f2;

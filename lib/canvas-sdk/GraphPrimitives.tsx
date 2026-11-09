@@ -936,7 +936,7 @@ export function TourSpotlight({
           y="4"
           textAnchor="middle"
           fontSize="10.5"
-          fontWeight="800"
+          fontWeight="600"
           fill="#ffffff"
           letterSpacing="0.5"
           id="tour-spotlight-tag-text"
