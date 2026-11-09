@@ -20,6 +20,9 @@ closeout of each view. Open items are marked OPEN and are not built.
    it covers part of its population, an input read failed, or its data is
    older than twice its normal check schedule. The tooltip names what is
    missing, the coverage, the source, the last check, and the effect.
+   Normal check schedules (Brian, 9 Nov 2026, for now): AI Search every 2 to
+   3 days (the Sun, Tue, Thu runs); Buy Box and Keepa daily; MAP prices
+   daily; spec and Findability checks weekly.
 5. Renames (X-18, D-03). One name per figure:
    - "Unbranded SOV" becomes "Unbranded Discovery".
    - "Splintered bundles" becomes "Splintered Listings" everywhere
@@ -47,7 +50,9 @@ closeout of each view. Open items are marked OPEN and are not built.
     #6AB792 good, each with a mark (x, dash, check) and a word. Status
     colors only on data; never on buttons, links, or tabs. Pies and charts
     use ice blue for the measured slice and gray for the rest, at most two
-    blue series.
+    blue series. Status words: Poor, Fair, Good wherever a figure has no
+    word of its own; the FDD's own words stay where they exist (for example
+    On track, Tied, Behind on Category Battlecards).
 28. Map effects. A flat map in brand style: rings, no glows, halos, or
     moving dots.
 29. Voice. Client copy has no contractions, emojis, or em dashes, and none
