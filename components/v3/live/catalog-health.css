@@ -68,6 +68,13 @@
   font-weight: 600;
 }
 
+/* A Done chip carries the check mark with its word. */
+.ifai-canvas .set-aside-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
 /* Dated stretches inside an Out of Stock row sit in the shared table chrome. */
 .ifai-canvas .stock-loss-episodes .table-toolbar {
   margin-top: 4px;

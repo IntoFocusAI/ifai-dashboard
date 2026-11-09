@@ -1,6 +1,7 @@
 "use client";
 
 import { figureTipAttrs } from "@/components/v3/live/FigureTip";
+import { StatusMark } from "@/components/v3/live/StatusMark";
 import { formatInt } from "@/lib/fender-canvas/format";
 import {
   coverageExceptionLabel,
@@ -97,6 +98,7 @@ function CoverageExceptionsCard({ counts }: { counts: FeaturedOfferCounts }) {
           {coverageExceptionLabel(counts.notChecked, counts.checkFailed)}
         </span>
       </span>
+      {healthy ? <StatusMark status="good" /> : null}
       <span className="metric-card-sub">
         Unchecked listings have not been reached yet. Failed checks are counted on their own.
       </span>

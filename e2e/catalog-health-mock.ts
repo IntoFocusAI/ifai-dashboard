@@ -101,6 +101,18 @@ export const MAP_ROWS: Row[] = [
   mapRow("B00MAP0006", null, null),
 ];
 
+/**
+ * SmartScout monthly unit estimates for the listings below MAP (R-09): five units on the first,
+ * two on the second, and no SmartScout record for the third. Discounted retail value is
+ * $100 x 5 + $50 x 2 = $600 a month, with 2 of 3 listings estimated and 1 awaiting inputs.
+ */
+export const MAP_UNIT_ROWS: Row[] = [
+  { asin: "B00MAP0001", smartscout_monthly_units: 5, smartscout_snapshot_date: "2026-11-09" },
+  { asin: "B00MAP0002", smartscout_monthly_units: 2, smartscout_snapshot_date: "2026-11-09" },
+];
+
+const MAP_UNITS_SELECT = "asin,smartscout_monthly_units,smartscout_snapshot_date";
+
 const CHANNEL_PRICES: Row[] = MAP_ROWS.filter((row) => row.wmt_price != null).map((row) => ({
   asin: row.asin,
   channel: "walmart",
@@ -178,6 +190,9 @@ function bodyFor(url: URL, accept: string): unknown[] | Row {
   if (table === "canvas_divisions") return DIVISIONS;
   if (table === "canvas_retail_listings") return retailRows(url);
   if (table === "canvas_listing_channel_price") return CHANNEL_PRICES;
+  if (table === "canvas_listing_sales_loss_v2" && url.searchParams.get("select") === MAP_UNITS_SELECT) {
+    return MAP_UNIT_ROWS;
+  }
   return [];
 }
 

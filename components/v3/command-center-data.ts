@@ -36,7 +36,7 @@ export const fenderCommandCenter: CommandCenterSpec = {
     {
       id: "map-leakage",
       title: "Below-MAP listings load with the retail read",
-      why: "The MAP tab states how many stored prices are below MAP. When that reading is partial, it also states what is still missing. Amazon, Walmart, and Musician's Friend appear only when this read stored a price for that channel.",
+      why: "The MAP Leakage tab states how many stored prices are below MAP. When that reading is partial, it also states what is still missing. Amazon, Walmart, and Musician's Friend appear only when this read stored a price for that channel.",
       impact: "The summary and the listing rows are the rows returned by the latest retail listing read.",
       severity: "high",
       spokeId: "ecommerce",

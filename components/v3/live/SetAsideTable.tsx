@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { figureTipAttrs } from "@/components/v3/live/FigureTip";
 import type { RetailColumn } from "@/components/v3/live/ResizableTable";
+import { StatusGlyph } from "@/components/v3/live/StatusMark";
 import { formatInt } from "@/lib/fender-canvas/format";
 import { SET_ASIDE_CHECKS, activeSetAsideClientKey } from "@/lib/set-aside/keys";
 import { DoneForm, ReopenForm, SetAsideForm } from "@/lib/set-aside/SetAsideForm";
@@ -110,6 +111,7 @@ export function SetAsideCell({
           data-set-aside-chip={entityKey}
           data-outcome={active.outcome}
         >
+          {active.outcome === "done" ? <StatusGlyph status="good" /> : null}
           {outcomeLabel(active)}
         </span>
       ) : canSetAside && ctl.enabled ? (

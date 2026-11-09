@@ -198,9 +198,7 @@ export function FenderListingsTable() {
       </div>
 
       {error ? (
-        <p style={{ color: "var(--danger-red)", fontSize: 12 }}>
-          The listing read could not be loaded. {error}
-        </p>
+        <p className="retail-missing">The listing read could not be loaded. {error}</p>
       ) : null}
 
       <ResizableTable

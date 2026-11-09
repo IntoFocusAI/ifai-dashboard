@@ -197,7 +197,7 @@ test("command center uses the retail headline and drops unsourced claims", () =>
   );
   assert.equal(map?.title, "555 listings are below MAP in this listing read");
   assert.equal(map?.subTab, "MAP Leakage");
-  assert.match(map?.why ?? "", /Open the MAP tab/);
+  assert.match(map?.why ?? "", /Open the MAP Leakage tab/);
   assert.doesNotMatch(map?.why ?? "", /not a final count/);
 });
 
