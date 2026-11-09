@@ -1316,7 +1316,7 @@ export function CanvasShell({ spec, children }: Props) {
                 aria-label={iom ? "Show full map" : "Hide sidebar"}
               >
                 <X size={15} strokeWidth={3} aria-hidden="true" />
-                <span>Close</span>
+                <span>Close panel</span>
               </button>
               {iom ? null : (
                 <button
