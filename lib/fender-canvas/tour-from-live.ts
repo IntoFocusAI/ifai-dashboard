@@ -201,7 +201,7 @@ export function buildLiveTourSteps(
       targetX: 800,
       targetY: 820,
       radius: 115,
-      title: "90-Day Roadmap",
+      title: "Roadmap",
       subtitle: "What happens at 30, 60, and 90 days",
       category: "ROADMAP",
       displays: [...retailLines, ...aiLines.rates],

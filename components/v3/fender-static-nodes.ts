@@ -115,7 +115,7 @@ export const fenderStaticNodes: CanvasNode[] = [
     {
       ...primarySpoke("spoke-roadmap"),
       status: "neutral",
-      title: "Strategy Roadmap",
+      title: "Roadmap",
       stats: [],
       heroValue: { value: "90 Days", label: "3 phases" },
       spokeId: "roadmap",

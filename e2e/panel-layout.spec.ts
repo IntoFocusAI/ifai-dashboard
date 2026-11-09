@@ -23,7 +23,7 @@ test.describe("panel layout", () => {
     canvas,
     page,
   }) => {
-    await canvas.openSpokeFromMap("Strategy Roadmap");
+    await canvas.openSpokeFromMap("Roadmap");
     const width = await canvas.panel.evaluate((el) => el.getBoundingClientRect().width);
     const viewport = page.viewportSize()!.width;
     expect(width / viewport).toBeGreaterThan(0.6);
@@ -33,7 +33,7 @@ test.describe("panel layout", () => {
     "hides the sidebar and restores it from the edge tab",
     { annotation: edgeTabQuestion },
     async ({ canvas, page }) => {
-      await canvas.openSpokeFromMap("Strategy Roadmap");
+      await canvas.openSpokeFromMap("Roadmap");
       await page.locator(".drilldown-hide-btn").click();
       await expect(page.locator(".ifai-canvas.panel-hidden")).toHaveCount(1);
       await expect(page.locator(".ifai-canvas.column-layout")).toHaveCount(0);
@@ -56,7 +56,7 @@ test.describe("panel layout", () => {
   });
 
   test("always leaves a usable graph rail", async ({ canvas, page }) => {
-    await canvas.openSpokeFromMap("Strategy Roadmap");
+    await canvas.openSpokeFromMap("Roadmap");
     const rail = () => canvas.panel.evaluate((el) => innerWidth - el.getBoundingClientRect().width);
     for (const width of [1280, 1440, 1920]) {
       await page.setViewportSize({ width, height: 900 });

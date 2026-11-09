@@ -1187,7 +1187,7 @@ export function CanvasShell({ spec, children }: Props) {
               onClick={() => focusNode("roadmap")}
             >
               <Route size={16} strokeWidth={1.75} />
-              Strategy Roadmap
+              Open Roadmap
             </button>
           ) : null}
           {viewport}

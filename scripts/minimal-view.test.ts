@@ -373,7 +373,7 @@ const OTHER: Record<string, [spokeId: string, tab: string]> = {
   "strongest-category-sov": ["competitors", "Category Battlecards"],
   "resolved-simulations": ["aeo", "Run Summary"],
   "ai-actuation": ["hub", "Performance"],
-  "day-90-buy-box-target": ["roadmap", "30-60-90 Day Milestones"],
+  "day-90-buy-box-target": ["roadmap", "30-60-90 Days"],
 };
 
 function storedBundle(): CanvasBundle {
@@ -424,7 +424,7 @@ test("Other lists the figures no tab shows, last, each opening its closest tab w
   assert.equal(actuation.value, NOT_AVAILABLE, "AI Actuation has no records yet");
   assert.equal(actuation.reading.missing, "No owner, evidence, or dated records yet.");
   const plan = slotById(slots, "day-90-buy-box-target");
-  assert.equal(plan.value, "3 phases", "reads the Strategy Roadmap bubble");
+  assert.equal(plan.value, "3 phases", "reads the Roadmap bubble");
   assert.equal(plan.reading.ratio, "MAP, catalog nesting, and estimated lift");
   assert.match(plan.definition ?? "", /a plan, not a measured result/);
 

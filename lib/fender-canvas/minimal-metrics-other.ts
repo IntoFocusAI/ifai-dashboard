@@ -196,13 +196,13 @@ export const OTHER_ENTRIES: MinimalEntry[] = [
   other({
     id: "day-90-buy-box-target",
     spokeId: "roadmap",
-    tab: "30-60-90 Day Milestones",
+    tab: "30-60-90 Days",
     label: "90-day plan",
     definition:
-      "The Strategy Roadmap bubble's 90-day plan, in phases for MAP, catalog nesting, and estimated lift. It is a plan, not a measured result. No tab shows the phases yet.",
+      "The Roadmap bubble's 90-day plan, in phases for MAP, catalog nesting, and estimated lift. It is a plan, not a measured result. No tab shows the phases yet.",
     read: (ctx) => {
       const phases = ctx.node("spoke-roadmap")?.heroValue?.label?.trim();
-      if (!phases) return missingFigure("The Strategy Roadmap bubble has no plan stored.");
+      if (!phases) return missingFigure("The Roadmap bubble has no plan stored.");
       return { value: phases, tone: "neutral", ratio: "MAP, catalog nesting, and estimated lift", pie: null, tip: null, missing: null };
     },
   }),

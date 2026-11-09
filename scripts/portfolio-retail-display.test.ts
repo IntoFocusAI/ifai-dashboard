@@ -230,7 +230,7 @@ test("MAP shows the violation count and the price gap, and catalog does not repe
   assert.equal(map.subTab, "MAP");
 
   const catalog = catalogBubble(source.unnestedBundles);
-  assert.equal(catalog.heroValue?.label, "Splintered listings");
+  assert.equal(catalog.heroValue?.label, "Splintered Listings");
   assert.match(catalog.heroValue?.value ?? "", /%/);
   assert.match(catalog.stats[0] ?? "", /of 2 bundles with a live offer/);
   assert.match(catalog.tooltip.desc, /offer for sale/);
@@ -335,10 +335,12 @@ test("loading and error faces do not invent a count", () => {
     value: "Loading",
     label: "Buy Box withheld",
   });
-  assert.deepEqual(retailBubbleFaces({ phase: "error" }).main.heroValue, {
-    value: "Read failed",
-    label: "Buy Box withheld",
-  });
+  const failed = retailBubbleFaces({ phase: "error" });
+  assert.deepEqual(failed.main.heroValue, { value: "Not available*", label: "Buy Box withheld" });
+  for (const face of [failed.main, failed.suppressed, failed.map, failed.catalog]) {
+    assert.equal(face.status, "neutral", `${face.title} carries no status color`);
+    assert.match(face.tooltip.desc, /retail read did not load/);
+  }
 });
 
 test("channel price cells use a stored Musician's Friend URL or Not available*", async () => {

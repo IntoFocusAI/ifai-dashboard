@@ -204,7 +204,7 @@ export const FENDER_METRICS = {
     value: "3 phases",
     detail: "MAP, catalog nesting, and estimated lift",
     tone: "success",
-    subTab: "30-60-90 Day Milestones",
+    subTab: "30-60-90 Days",
     provenance: "live",
   },
 } satisfies Record<string, CanvasMetric>;

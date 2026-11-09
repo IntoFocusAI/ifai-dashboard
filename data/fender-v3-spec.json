@@ -110,12 +110,12 @@
     },
     "roadmap": {
       "badge": "STRATEGY SPOKE · 90 DAYS",
-      "title": "Executive Portfolio Roadmap",
+      "title": "Roadmap",
       "desc": "{retail_headline}",
       "tabs": [
-        "30-60-90 Day Milestones"
+        "30-60-90 Days"
       ],
-      "navLabel": "90-Day Roadmap",
+      "navLabel": "Roadmap",
       "next": "aeo",
       "tabTemplates": [
         ""

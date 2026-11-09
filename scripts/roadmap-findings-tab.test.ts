@@ -16,14 +16,14 @@ const spec = JSON.parse(read("data/fender-v3-spec.json")) as {
   };
 };
 
-test("Strategy Roadmap first tab no longer ships the example 30-60-90 phase cards", () => {
+test("Roadmap first tab no longer ships the example 30-60-90 phase cards", () => {
   const tabs = spec.spokes.roadmap.tabs;
   // The KPI and resourcing tabs had no content, so they are gone rather than blank.
-  assert.deepEqual(tabs, ["30-60-90 Day Milestones"]);
+  assert.deepEqual(tabs, ["30-60-90 Days"]);
 
   const body = spec.spokes.roadmap.tabTemplates[0] ?? "";
   assert.equal(body.trim(), "");
-  assert.doesNotMatch(body, /Phase 1|Phase 2|Phase 3|Open details|Days 1 to 30|30-60-90 Day Milestones/i);
+  assert.doesNotMatch(body, /Phase 1|Phase 2|Phase 3|Open details|Days 1 to 30|30-60-90 Days/i);
   assert.doesNotMatch(body, /since last time|what changed|\$680|\$38M/i);
   assert.equal(spec.spokes.roadmap.tabTemplates.length, 1);
   assert.doesNotMatch(JSON.stringify(spec), /Executive KPI Target Matrix|Flexible Resourcing/);
