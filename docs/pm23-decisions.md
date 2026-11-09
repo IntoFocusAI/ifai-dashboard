@@ -189,7 +189,11 @@ closeout of each view. Open items are marked OPEN and are not built.
       dashboard, pull its key findings into a sales-pitch view, with
       formatting guidance from Presentation-Assistant on Toolbelt. Earlier
       attempts were poor. It is not needed before launch.
-    - Item 16 (D-06 A+ dollar figure): still OPEN.
+    - Item 16 (D-06 A+ dollar figure): no A+ dollar figure for now. D-06
+      closes on the content shares. The lift assumptions (how much more a
+      listing sells with A+) must be worked out later and be defensible:
+      they are essential to the value of combining ecommerce and AEO
+      insight. Tracked with the parked dollar formulas.
     - Workers stay on the PM's model for now.
     - When a database change needs his approval, explain it in plain
       language.
