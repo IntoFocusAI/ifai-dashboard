@@ -162,3 +162,21 @@ closeout of each view. Open items are marked OPEN and are not built.
 24. Every Auditor runs on GPT-5.6 Sol High. Until an OpenAI option is
     connected in Claude Code, Auditors run on Fable (Brian, 9 Nov 2026).
     See docs/auditor-brief.md.
+
+## How the work runs (Brian, 9 Nov 2026, evening)
+
+31. PM24. PM23 paused after worker 23.1, when the build moved from Cursor
+    to Claude Code. The Project Manager is now PM24 and the remaining
+    workers are 24.2 to 24.7 (briefs in docs/pm24-worker-briefs.md). Work
+    already merged keeps its PM23 and 23.1 labels. These decisions keep
+    their numbers and this file keeps its name.
+32. Batch mode. Several view workers run at once. Brian gets one combined
+    review per batch. The docs close out once per batch, with one
+    header-label pull request per closeout. Detail: "Batch mode" in
+    docs/pm-handoff.md.
+33. Worker branches. Each worker pushes only to its own branch,
+    `worker/<number>-<short-name>` (for example `worker/24.4-ai-search`),
+    and opens one pull request to main.
+34. PM24 test. The first batch is two views, 24.4 AI Search and 24.3
+    Catalog Health. It runs with no audit. Decision 24 applies again when
+    Brian says so.

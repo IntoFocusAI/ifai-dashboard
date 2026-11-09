@@ -1,4 +1,4 @@
-# PM23 worker briefs
+# PM24 worker briefs
 
 Each remaining view is one worker and one pull request. Send a worker the
 common rules, then its view section. Decisions are in
@@ -9,15 +9,16 @@ with `python3 scripts/design-doc-edit.py download fdd /tmp/fdd.docx`, then
 
 ## Common rules (every worker)
 
-- You are Worker 23.N for PM23 on the IntoFocus AI client dashboard. Read
+- You are Worker 24.N for PM24 on the IntoFocus AI client dashboard. Read
   AGENTS.md, CLAUDE.md, .cursor/rules/*.mdc, and README.md first. You build
   one view to its final intended form for launch. Brian Magazu reviews only
-  finished views. You report to PM23, not to Brian.
-- One branch from the latest main, one pull request, base main. Title
-  "Worker 23.N: <View> final form (<row IDs>)". The body lists each change
+  finished views. You report to PM24, not to Brian.
+- One branch from the latest main, named `worker/24.N-<short-name>`, one
+  pull request, base main. Push only to that branch. Title
+  "Worker 24.N: <View> final form (<row IDs>)". The body lists each change
   on its own line with its FDD id and the status it moves to if Brian
   approves, then the rows the view leaves open. Rebase on main often (Brian
-  Watson merges Ledlenser work). Commit messages start "Worker 23.N:".
+  Watson merges Ledlenser work). Commit messages start "Worker 24.N:".
 - In Claude Code, run in your own git worktree so parallel workers do not
   share a checkout.
 - Both clients: correct for Fender (/dashboard) and Ledlenser
@@ -28,7 +29,7 @@ with `python3 scripts/design-doc-edit.py download fdd /tmp/fdd.docx`, then
 - A feature whose data does not exist is BLOCKED, not built. Never deliver
   a screen or column that reads Not available* on every row.
 - Never invent rules, figures, or causes. If the FDD and the decisions do
-  not say, ask PM23 in your report.
+  not say, ask PM24 in your report.
 - Standing rules: the map shows the published run plus its matching API
   run; the shared date pill is the only period label; dollar figures stay
   labeled analyst estimate and their formulas stay parked; nothing about
@@ -63,13 +64,13 @@ with `python3 scripts/design-doc-edit.py download fdd /tmp/fdd.docx`, then
   row what you see for each client, screenshots, anything BLOCKED,
   questions, files changed.
 
-## 23.2 Summary (/dashboard?spoke=hub: Briefing, Performance, Opportunity)
+## 24.2 Summary (/dashboard?spoke=hub: Briefing, Performance, Opportunity)
 
 - Briefing: equal finding cards, each N of M with a percentage. Its AI
   figures use the map's population (decision 7), so the map and the
   Briefing match. Fender today: map 66.4%, Briefing 59.4%.
 - Defect: Ledlenser Briefing reads unbranded discovery Not available* while
-  the map shows 12.3%. It may share a cause with the 23.4 window defect.
+  the map shows 12.3%. It may share a cause with the 24.4 window defect.
 - Performance (H-07): each score against target 70 ("41 vs target 70").
   AI Actuation stays Not included (SC-03 BLOCKED). H-07 stays REFINE.
 - Opportunity: unchanged; estimates stay labeled; no formulas.
@@ -80,7 +81,7 @@ with `python3 scripts/design-doc-edit.py download fdd /tmp/fdd.docx`, then
   the table rule), and lib/fender-canvas briefing-*, consensus-*,
   division-*, analyst-estimates.
 
-## 23.3 Catalog Health (/dashboard?spoke=ecommerce)
+## 24.3 Catalog Health (/dashboard?spoke=ecommerce)
 
 - Seller-type label final (R-02); verify Controlled Buy Box per SC-02 for
   Partner-led Fender and Brand-led Ledlenser.
@@ -107,7 +108,7 @@ with `python3 scripts/design-doc-edit.py download fdd /tmp/fdd.docx`, then
   SetAsideTable, RETAIL_PANEL_TABS, and lib/fender-canvas retail, MAP,
   featured-offer, catalog-governance, stock-loss, authorized-sellers files.
 
-## 23.4 AI Search Visibility (/dashboard?spoke=aeo, and the Prompts screen)
+## 24.4 AI Search Visibility (/dashboard?spoke=aeo, and the Prompts screen)
 
 - Defect first: Ledlenser AI Search says "No published run in the last 30
   days" though schema ledlenser has runs published 5 Nov 10:30 UTC
@@ -135,10 +136,10 @@ with `python3 scripts/design-doc-edit.py download fdd /tmp/fdd.docx`, then
   citation-share-bars.css, engine-group.css, AiDriftPanel.tsx; system mono
   in prompts-editor.css. CitationPieDisc needs the chart tokens.
 - Leaves open: A-02, A-04, A-06, A-07 HELD.
-- Owns components/v3/live/ai-search/* and lib/ai-search/* except the 23.6
+- Owns components/v3/live/ai-search/* and lib/ai-search/* except the 24.6
   files, and components/v3/prompts/*. Owns the shared AI reads.
 
-## 23.5 AI Readiness (/dashboard?spoke=specs)
+## 24.5 AI Readiness (/dashboard?spoke=specs)
 
 - Findability: move "Dealer bundle status comes from the retail read... That
   is a correlation, not a proven cause." into a tooltip. Last checked stays.
@@ -160,7 +161,7 @@ with `python3 scripts/design-doc-edit.py download fdd /tmp/fdd.docx`, then
   page-found.css, lib/findability/*, and lib/fender-canvas readiness,
   listing-content, machine-readability, page-found, spec files.
 
-## 23.6 Competitive Radar (/dashboard?spoke=competitors)
+## 24.6 Competitive Radar (/dashboard?spoke=competitors)
 
 - Leads unchanged (C-02, C-03, C-04). Verify Ledlenser's Engine Comparison
   ("0.0% Perplexity unbranded") and Competitor Wins ("64 of 73") against
@@ -174,7 +175,7 @@ with `python3 scripts/design-doc-edit.py download fdd /tmp/fdd.docx`, then
   WhyNotFender, and lib/ai-search category-on-track, competitors,
   competitor-wins-lead, why-not-fender.
 
-## 23.7 Roadmap and Action Items (two pull requests, after the rules)
+## 24.7 Roadmap and Action Items (two pull requests, after the rules)
 
 - Waits for Brian's answers on decision 21 (recommendation rules) in
   `docs/pm23-decisions.md`.
