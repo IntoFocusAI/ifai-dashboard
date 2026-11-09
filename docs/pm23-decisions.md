@@ -193,3 +193,6 @@ closeout of each view. Open items are marked OPEN and are not built.
     - Workers stay on the PM's model for now.
     - When a database change needs his approval, explain it in plain
       language.
+    - He may miss a request in a long message, or answer out of order.
+      Keep a short list of what is still waiting on him and remind him
+      after a while, each with a terse, plain-language explanation.
