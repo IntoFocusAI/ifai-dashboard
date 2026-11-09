@@ -27,9 +27,9 @@ number instead.
    docs using the steps below. Set the first line to the last approved
    worker label. Add a changelog row with the worker, the pull request, and
    the commit. Reply with the new first line of each doc.
-2. Choose the next batch from the FDD, using the rules below. Propose it
-   in a few sentences. Wait for "go ahead." Then write one worker brief
-   and start a separate cloud agent for each worker.
+2. Plan and build to final form, using "How to run the work" below.
+   Send the Phase 0 plan in one message. Wait for "go ahead." Then write
+   one worker brief per view and start a separate cloud agent for each.
 3. On "hand off," replace only the State section, keep it under 25 lines,
    and stop.
 
@@ -101,44 +101,92 @@ data URL, or its text into a tool call, and do not upload it.
 `scripts/stage-design-docx.py` stays in the repo but is not part of the
 publish path.
 
-## How to choose the next batch
+## How to run the work
 
-Read the FDD after the doc closeout. A batch is as many workers as the
-open work supports, run in parallel. Each worker owns one area of the
-dashboard and may make several changes there. Its pull request has one
-preview and lists each change on its own line with its FDD id, so he can
-approve or reject each change separately. A rejected change comes out
-before the merge.
+Brian Magazu set this model on 9 Nov 2026. He reviews a view only when it
+is in its final intended form, so he never wonders whether a missing FDD
+item is still unassigned.
 
-No two workers in a batch edit the same files. No worker edits a file
-that another contributor's open pull request changes.
+### Phase 0: one planning message, then wait for "go ahead"
 
-Send follow-up work in an area to the worker that already built there.
-It goes on that worker's pull request as a separate commit, after the
-worker reports its preview.
+1. Completion map. Every FDD row that is not CURRENT or LATER, grouped by
+   view: Summary, Catalog Health, AI Search Visibility, AI Readiness,
+   Competitive Radar, Action Items, Strategy Roadmap, Minimal, and
+   cross-dashboard. Give each row one class. BUILD: buildable now.
+   DECISION: needs Brian. BLOCKED: needs data, the collector, Brian Watson,
+   Ryan, or auth; name the owner and what is missing. HELD: his held list,
+   PR 110 (X-22), and the dollar formulas. Leave no row unclassified.
+2. Decisions. Every DECISION row, and any rule the FDD does not specify
+   that a build would need. For each, say what he is deciding, what the
+   screen shows under the recommendation and under the alternative, and
+   why. He replies to the ones he disagrees with and approves the rest.
+3. Final-form spec per view. What opens first, what each tab shows, which
+   rows it closes, and which rows stay BLOCKED or HELD. Specs come only
+   from the FDD and his decisions. Never invent rules.
+4. Build plan. A foundation step first for cross-cutting rows (type scale,
+   asterisk rule, renames, table rule). Then one lead worker and one pull
+   request per view, with file ownership, sequencing, at most 7 workers at
+   once, and projected completion.
 
-Prefer, in order:
+### Phase 1: build to final
 
-1. An open REFINE item whose acceptance is already partly met on screen.
-2. A TARGET item that continues the last approved screen.
-3. A TARGET item he named in this thread.
+- One pull request per view. A big view runs as sequential workers on the
+  same branch and pull request. Follow-ups go to the same worker. Rebase
+  on main often; Brian Watson merges Ledlenser work.
+- Every view is correct for both clients, Fender and Ledlenser, through
+  the client switcher.
+- Build inside the existing dashboard views. Add no standalone route or
+  page that nothing links to, unless the FDD says so.
+- A feature whose data does not exist is BLOCKED, not built. Never deliver
+  a screen or column that reads Not available* on every row as the work.
+- No two workers edit the same files. No worker edits a file that another
+  contributor's open pull request changes.
+- Before asking Brian, the PM checks the preview at 1280x720 for both
+  clients against each row's FDD acceptance text, and sends the worker
+  back until every BUILD row in the view passes.
+- Between reviews, message Brian only when a decision or blocker needs him.
 
-Skip DECISION items until he decides. Skip LATER items. Skip the held list.
-If he names a change himself, that change is the batch. Propose the worker
-split and wait. If nothing is a clear next step, ask him one question.
+### Audit gate (before any view reaches Brian)
 
-The proposal names each worker label and its area, each change with its
-FDD id and what will be visible, the status each row moves to if he
-approves the preview, and what you are leaving out. Worker labels use the number from Your number.
+When the PM believes a view is final, it starts a separate Auditor agent
+with `docs/auditor-brief.md`, the preview URL, the view's final-form spec,
+and its FDD rows. Every Auditor runs on GPT-5.6 Sol High
+(`gpt-5.6-sol-high`). If that model is unavailable, do not substitute
+another: tell Brian and wait. Workers that build stay on the PM's model.
+
+The Auditor never edits code, merges, or contacts Brian. Send its BLOCKER
+and MAJOR findings to the view's worker as follow-ups, then audit once
+more. After two audit rounds, anything still open goes on Brian's review
+checklist as Known issues, with the Auditor's evidence. Any finding that
+conflicts with the FDD, a standing rule, the brand book, or one of
+Brian's decisions goes to Brian as a question, never to a worker as a fix.
+
+### Phase 2: review and close
+
+- Review request per view: worker numbers, pull request link, preview
+  link, then a checklist with one line per FDD row: where to click from
+  the map, and what he should see. Then the view's BLOCKED and HELD rows
+  with owners. Plain language, terse.
+- On his approval, merge the pull request. Then close out the docs with
+  the publish path above: first line is the last approved worker label,
+  one change-log row per worker with pull request and commit, and a header
+  label pull request. Reply with the new first lines only after
+  check-design-doc.py exits 0 for both docs.
 
 ## Standing rules
 
-The map stays on the published run. The shared date pill is the only period
-label. Cited pages are associations. Dollar figures stay analyst estimates.
-The client portal says nothing about IntoFocus fees. Database changes
-follow "Database changes" in AGENTS.md: a migration file first; additive
-changes applied after his approval; anything else waits for Brian Watson.
-Every worker brief repeats that rule.
+The map shows the published run plus its matching API run. The shared date
+pill is the only period label. Cited pages are associations. Dollar figures
+stay analyst estimates, and their formulas stay parked. The client portal
+says nothing about IntoFocus fees. Do not build delegation or paid tiers.
+Let the data speak: caveats go in tooltips. Custom tooltips only. Database
+changes follow "Database changes" in AGENTS.md: a migration file first;
+additive changes applied only after his approval (the FenderTest agent can
+apply them); anything that alters or deletes waits for Brian Watson. Every
+worker brief repeats that rule. Merge only pull requests he approves.
+
+The brand book, `docs/brand/IntoFocus_AI_Brand_Book_V2.pdf`, is a standard
+below the FDD. Where the two conflict, ask Brian.
 
 Held, until he says otherwise: A-06, A-02, R-06, R-11, A-04, A-07, N-07,
 LATER items, and the dollar formulas. Detail lives in the FDD.
