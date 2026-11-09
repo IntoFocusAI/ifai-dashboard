@@ -87,7 +87,12 @@ TDD file id: 1K6-ghhSnJZcrch81DDhmHXXYU0pSF7tOGR9S9jiCUjk (`tdd`)
    put back what it changed, and tell Brian. If the Google-docs namespace
    says needsAuth, or a call fails with an authentication error, call its
    mcp_auth, then ask Brian to reconnect Google Docs under Integrations in
-   the Cursor web dashboard (not the desktop app).
+   the Cursor web dashboard (not the desktop app). In Claude Code the
+   plugin's tools do not exist: follow "Step 4 in Claude Code" below.
+   find_text returns at most 20
+   matches: for a step that names a later occurrence, find a unique line
+   in the same row and read_document forward to it. After filling a new
+   table, read it back before the check.
 5. Check. Run the two lines at the end of plan.txt:
    `python3 scripts/design-doc-edit.py pub fdd-21.9.docx pub.docx --split ...`
    and `python3 scripts/check-design-doc.py FILE_ID pub.docx`. pub puts
@@ -100,6 +105,33 @@ Do not create a second Google Doc. Do not paste the .docx, its base64, a
 data URL, or its text into a tool call, and do not upload it.
 `scripts/stage-design-docx.py` stays in the repo but is not part of the
 publish path.
+
+### Step 4 in Claude Code
+
+Claude Code's Google Docs connector has two calls: read_doc and update_doc
+(a Docs batchUpdate). Load the google-workspace skill before the first
+edit. Steps 1 to 3 and 5 are unchanged. Apply plan.txt with update_doc.
+Steps that only use replaceAllText may go together in one update_doc call.
+Index-based steps go one per call, in order. Translate each plan call:
+
+- replace_text: replaceAllText. Check occurrencesChanged against the step.
+- find_text and read_document: read_doc, then find the index in the saved
+  result with the google-workspace skill's `docs_index.py find`.
+- insert_text: insertText. delete_content: deleteContentRange.
+- insert_table: insertTable, then fill the cells one call at a time and
+  read the table back.
+- apply_text_style: updateTextStyle. apply_paragraph_style and
+  set_paragraph_format: updateParagraphStyle.
+- set_header_footer: insertText or replaceAllText in the header or footer
+  segment.
+
+Every update_doc call that uses an index carries
+writeControl.requiredRevisionId from a read_doc taken after your last
+write. If Google rejects it, read again and rebuild the step. If a
+replaceAllText changes a different count than the plan expects, stop, put
+back what it changed, and tell Brian. If a Google call fails with an
+authentication error, ask Brian to reconnect Google Docs in his claude.ai
+connector settings.
 
 ## How to run the work
 
@@ -146,13 +178,40 @@ item is still unassigned.
   back until every BUILD row in the view passes.
 - Between reviews, message Brian only when a decision or blocker needs him.
 
+### Batch mode (Brian Magazu, 9 Nov 2026)
+
+This overrides any per-view wording in this file.
+
+- Run several view workers at once. In Claude Code each worker is a
+  subagent with its own git worktree, on its own branch
+  `worker/<number>-<short-name>` (for example `worker/24.4-ai-search`),
+  with one pull request. Continue a worker with a message to the same
+  agent, not a new agent.
+- When every pull request in the batch passes the PM's preview check, send
+  Brian one combined review checklist, with a link to each pull request
+  and its preview.
+- Merge only the pull requests he approves, one at a time. After each
+  merge, the remaining workers rebase on main and the PM rechecks their
+  previews before the next merge.
+- Close out the docs once per batch: one version bump, every row status
+  and evidence change for the batch, one change-log row per pull request,
+  and one header-label pull request for the new version.
+- If a new pull request gets no Netlify deploy preview, tell Brian at
+  once. Every review depends on it.
+
 ### Audit gate (before any view reaches Brian)
+
+For the PM24 test batch (24.4 and 24.3), Brian skipped the audit
+(9 Nov 2026). The PM's own preview check still applies. The rest of this
+section applies again when he says so.
 
 When the PM believes a view is final, it starts a separate Auditor agent
 with `docs/auditor-brief.md`, the preview URL, the view's final-form spec,
 and its FDD rows. Every Auditor runs on GPT-5.6 Sol High
-(`gpt-5.6-sol-high`). If that model is unavailable, do not substitute
-another: tell Brian and wait. Workers that build stay on the PM's model.
+(`gpt-5.6-sol-high`). Until an OpenAI option is connected in Claude Code,
+Auditors run on Fable (Brian Magazu, 9 Nov 2026). If the chosen model is
+unavailable, do not substitute another: tell Brian and wait. Workers that
+build stay on the PM's model.
 
 The Auditor never edits code, merges, or contacts Brian. Send its BLOCKER
 and MAJOR findings to the view's worker as follow-ups, then audit once
@@ -199,24 +258,27 @@ LATER items, and the dollar formulas. Detail lives in the FDD.
 Replace this whole section on handoff. Keep it under 25 lines. The Google
 Docs win if this block is stale.
 
-- PM21 wrote this at 12:00 PM ET on 5 Nov 2026. Both docs open on
-  Documentation version: 21.8 (workers 21.1 to 21.8). Do not redo that
-  closeout. Next is PM22. Launch rows CURRENT: 54 of 92.
-- Main is d6b56e3 (header label 21.8). Publish only through the Cursor
-  Google-docs plugin path in PR 137 (worker 21.9); the Toolbelt Drive
-  upload is gone. Drive file descriptions are no longer maintained.
-- Battery: the rotation is on (4 Nov 13:27 UTC). Runs Sun, Tue, Thu at
-  06:00 UTC and publish themselves that evening ET. First rotated run
-  1d73d3e9 (5 Nov): check AI Search no longer times out and Product Fact
-  Checks shows catalog coverage (A-05). Stall alert task 3c289d5a notifies
-  Brian. Perplexity is down; Ryan decides the fix.
-- API engines are live (views applied 4 Nov 21:30 UTC); the map shows the
-  published run plus its matching API run; API counts repeats 1 to 3 only.
-- Held: PR 110 (hover slots, X-22); on rebase its hub-slot input reads
-  mapAiSearch. Watson: PR 133 (client switcher) rebases after PR 137;
-  PR 125 is applied but not merged; three default-grant views are his call.
-- Next batch: one type scale (X-27) and the partial-figure asterisk rule
-  (X-25) together, since they touch every stylesheet; the Strategy Roadmap
-  rebuilt as a plan of activity (S-02, Brian's direction); the ChatGPT
-  model recorded (A-02); slow or pause the idle map animations if laptops
-  still lag (X-32).
+- PM24 wrote this at 6:30 PM ET on 9 Nov 2026, in Claude Code. PM23
+  paused after worker 23.1. Brian renumbered the remaining workers 24.2 to
+  24.7 (the Cursor agents for 23.2 to 23.6 pushed nothing). Briefs:
+  docs/pm24-worker-briefs.md. Decisions: docs/pm23-decisions.md.
+- Repo: IntoFocusAI/ifai-dashboard (moved from brianw-ifai on 9 Nov).
+- Docs: both on 23.1. Worker 23.1 is closed out (X-02 CURRENT; X-34, X-25,
+  X-33, X-10, X-18 REFINE until the views adopt them). Launch rows
+  CURRENT: 56 of 91.
+- Main has PRs 147, 148, and 150 (header label 23.1) and commit a74878c
+  (the Claude Code permission allowlist in .claude/settings.json).
+- Now: a two-view test batch in batch mode, with no audit: 24.4 AI Search
+  and 24.3 Catalog Health. Then, as Brian directs: 24.5 AI Readiness, 24.2
+  Summary (24.4's Ledlenser window fix may fix its defect; check first),
+  24.6 Competitive Radar, 24.7 Roadmap and Action Items (after item 21).
+- Open with Brian: D-06, C-01, and the Roadmap and Action Items
+  recommendation rules (docs/pm23-decisions.md items 16, 17, 21).
+- Known: PR 110's hub-slots.ts still says "30-60-90 Day Milestones", so
+  metric-destinations.spec fails until it is rebased. The stale-data
+  asterisk is not built; its check schedules are decided (decision 4).
+- Data: battery Sun, Tue, Thu 06:00 UTC; Nov 8 run 431 of 549 (ChatGPT 82
+  errors, model still not recorded; Perplexity 147 of 183), for Ryan.
+  Ledlenser runs published 5 and 7 Nov UTC, but its AI Search says no
+  published run (24.4 fixes).
+- Watson: PRs 125, 131, 139 (migrations only).
