@@ -2,7 +2,7 @@
 
 import { ACCURACY_LABELS, DEFAULT_FILTER, type ExplorerFilter } from "@/lib/ai-search/explorer-filter";
 import { questionRole, ROLE_LABELS, type QuestionRole } from "@/lib/ai-search/question-role";
-import { categoryLabel, engineLabel, OUTCOME_LABELS } from "@/lib/ai-search/run-metrics";
+import { categoryLabel, cleanModelName, engineLabel, OUTCOME_LABELS } from "@/lib/ai-search/run-metrics";
 import type { AiCallRow } from "@/lib/ai-search/types";
 
 const OUTCOME_OPTIONS: Array<[ExplorerFilter["outcome"], string]> = [
@@ -30,7 +30,7 @@ export function SimulationFilters({
 }) {
   const set = (patch: Partial<ExplorerFilter>) => onChange({ ...filter, simId: null, ...patch });
   const engines = unique(rows.map((r) => r.engine?.toLowerCase()));
-  const models = unique(rows.map((r) => r.model));
+  const models = unique(rows.map((r) => cleanModelName(r.model)));
   const categories = unique(
     rows.filter((r) => filter.scope === "all" || r.prompt_kind === filter.scope).map((r) => r.category),
   );

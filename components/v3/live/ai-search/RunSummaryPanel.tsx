@@ -1,6 +1,7 @@
 "use client";
 
 import { clientColumn, ResizableTable } from "@/components/v3/live/ResizableTable";
+import { StatusMark } from "@/components/v3/live/StatusMark";
 import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
 import { useAiHistoryOptional } from "@/components/v3/live/ai-search/AiHistoryContext";
 import { AiReadGate, mutedText } from "@/components/v3/live/ai-search/AiReadGate";
@@ -115,6 +116,7 @@ function RoleRate({
               tip={`${formatInt(tally.fenderWins)} ${leadBrand()} leads. ${formatInt(tally.resolved - tally.fenderWins)} rest of resolved answers. Total ${formatInt(tally.resolved)} resolved answers.`}
             />
           </div>
+          {lead.status ? <StatusMark status={lead.status} /> : null}
           <p className="ai-role-footnote" style={{ margin: "6px 0 0" }} data-ai-role-total={tally.role}>
             <EvidenceLink focus={{ field: "role", value: `${tally.role}/fender_win` }} tab={SIM}>
               {formatInt(tally.fenderWins)} {leadBrand()} leads

@@ -180,6 +180,35 @@ function wrapToWidth(label: string, maxWidth: number, fontSize: number): string[
   return lines;
 }
 
+/** The two-row split of a label whose longer row is shortest. Null for a one-word label. */
+function balancedTwoLines(label: string, fontSize: number): string[] | null {
+  const words = label.trim().split(/\s+/).filter(Boolean);
+  if (words.length < 2) return null;
+  let best: string[] | null = null;
+  let bestWidth = Infinity;
+  for (let cut = 1; cut < words.length; cut += 1) {
+    const rows = [words.slice(0, cut).join(" "), words.slice(cut).join(" ")];
+    const width = Math.max(...rows.map((row) => estimateWidth(row, fontSize, "label")));
+    if (width < bestWidth) {
+      best = rows;
+      bestWidth = width;
+    }
+  }
+  return best;
+}
+
+/** How far the label rows reach past the ring's clear radius, in px. Zero or less clears it. */
+function labelSpill(lines: readonly string[], top: number, lineH: number, fontSize: number, radius: number): number {
+  const clear = radius - MAIN_RING_PAD;
+  let spill = -Infinity;
+  lines.forEach((line, index) => {
+    const half = estimateWidth(line, fontSize, "label") / 2;
+    const bottom = top + (index + 1) * lineH;
+    spill = Math.max(spill, Math.hypot(half, bottom) - clear);
+  });
+  return spill;
+}
+
 function boxClearsRing(halfWidth: number, top: number, bottom: number, radius: number): boolean {
   const clear = radius - MAIN_RING_PAD;
   if (clear <= 0) return false;
@@ -240,7 +269,7 @@ export function fitMainHero(
     ? Math.max(MAIN_MIN_LABEL, Math.min(14, radius * 0.16))
     : widthFit(trimmed, Math.max(MAIN_MIN_VALUE, radius * MAIN_MAX_VALUE_RATIO), "value", startY + radius * 0.2);
 
-  const place = (vSize: number, lSize: number, inline: boolean) => {
+  const place = (vSize: number, lSize: number, inline: boolean, lastResort = false) => {
     const gap = Math.max(3, vSize * 0.16);
     const valueTop = startY;
     const valueBottom = startY + (worded ? vSize * 1.05 : vSize * 0.82);
@@ -250,8 +279,15 @@ export function fitMainHero(
       Math.max(36, chordWidth(radius, labelTopGuess + lSize)),
     );
     // Prefer a two-line wrap for long labels so the value can stay large near the center.
-    const lines = label.trim() ? wrapToWidth(label, labelMax, lSize) : [];
+    let lines = label.trim() ? wrapToWidth(label, labelMax, lSize) : [];
     const lineH = lSize + 2;
+    if (lastResort && lines.length > 2) {
+      // Nothing clears the ring at the floor size. Three narrow rows run out of the bubble's
+      // bottom; two balanced rows usually stay inside it, so take whichever spills less.
+      const two = balancedTwoLines(label, lSize);
+      const top = valueBottom + gap;
+      if (two && labelSpill(two, top, lineH, lSize, radius) < labelSpill(lines, top, lineH, lSize, radius)) lines = two;
+    }
     const labelTop = lines.length ? valueBottom + gap : valueBottom;
     const labelBottom = lines.length ? labelTop + lines.length * lineH : valueBottom;
     const statusTop = labelBottom + gap;
@@ -317,5 +353,5 @@ export function fitMainHero(
   }
   // Nothing clears the ring: the inline status saves a row, so it overflows least.
   const smallest = Math.min(valueSize, floor);
-  return result(smallest, place(smallest, labelFor(smallest), Boolean(status)));
+  return result(smallest, place(smallest, labelFor(smallest), Boolean(status), true));
 }

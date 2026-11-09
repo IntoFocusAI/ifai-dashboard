@@ -6,6 +6,7 @@ import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
 import { useAiHistoryOptional } from "@/components/v3/live/ai-search/AiHistoryContext";
 import { AiReadGate, EmptyRows, mutedText } from "@/components/v3/live/ai-search/AiReadGate";
 import { EngineGroupScope } from "@/components/v3/live/ai-search/EngineGroupScope";
+import { AiStatusTag, tagToneOf } from "@/components/v3/live/ai-search/AiStatusTag";
 import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
 import { RunDetailsLead } from "@/components/v3/live/ai-search/RunDetailsLead";
 import { SimulationEvidenceDrawer } from "@/components/v3/live/ai-search/SimulationEvidenceDrawer";
@@ -191,7 +192,7 @@ function Explorer({ snapshot }: { snapshot: AiSearchSnapshot }) {
                         <span data-ai-prompt>{cleanPrompt(row.prompt)}</span>
                       </td>
                       <td>
-                        <span className={`tag-badge ${OUTCOME_TONE[outcome]}`}>{outcomeLabel}</span>
+                        <AiStatusTag tone={tagToneOf(OUTCOME_TONE[outcome])}>{outcomeLabel}</AiStatusTag>
                       </td>
                       <td data-engine-group={engineGroup(row.engine)}>
                         {engineLabel(row.engine)}

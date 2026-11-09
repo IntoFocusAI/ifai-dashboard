@@ -1,5 +1,6 @@
 "use client";
 
+import { StatusMark } from "@/components/v3/live/StatusMark";
 import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
 import { CitationPieDisc, type PieDiscInput } from "@/components/v3/live/ai-search/CitationPieDisc";
 import { MixedScoringTip } from "@/components/v3/live/ai-search/MixedScoringTip";
@@ -59,6 +60,7 @@ function RateSide({
         <AiTerm term={term}>{label}</AiTerm>
       </div>
       {lead.rate != null && lead.color != null ? (
+        <>
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 4 }}>
           <span
             className="ai-lead-figure"
@@ -75,6 +77,8 @@ function RateSide({
             tip={`${formatInt(tally.fenderWins)} ${leadBrand()} leads. ${formatInt(tally.resolved - tally.fenderWins)} rest of resolved answers. Total ${formatInt(tally.resolved)} resolved answers.`}
           />
         </div>
+        {lead.status ? <StatusMark status={lead.status} /> : null}
+        </>
       ) : (
         <span className="ai-lead-figure" data-ai-lead-figure={role}>
           No resolved answers
