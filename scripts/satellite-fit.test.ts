@@ -90,6 +90,21 @@ test("main-bubble heroes fit inside a fixed ring with readable size", () => {
   assert.ok(worded.valueSize <= 16);
 });
 
+test("a status mark stacks under the label when it fits and shares the value line when it does not", () => {
+  const roomy = fitMainHero("4.9%", "Buy Box withheld", 100, 30, "bad");
+  assert.equal(roomy.valueX, 0);
+  assert.equal(roomy.statusX, 0);
+  assert.ok(roomy.statusY > roomy.labelY, "status sits under the label");
+  assert.ok(roomy.statusY + roomy.statusSize * 0.3 <= 100 - 14, "status clears the ring");
+
+  const tight = fitMainHero("66.4%", "Unbranded SOV", 88, 44, "good");
+  assert.equal(tight.statusY, tight.valueY, "status moves onto the value line");
+  assert.ok(tight.valueX < 0 && tight.statusX > 0, "value and status share the line side by side");
+
+  const none = fitMainHero("66.4%", "Unbranded SOV", 88, 44, null);
+  assert.equal(none.valueX, 0);
+});
+
 test("grown satellites clear their parent, each other, and every other bubble", () => {
   const { groups } = fittedSatelliteClusters(spec());
   const circles = [

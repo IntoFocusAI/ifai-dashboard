@@ -1,10 +1,8 @@
 "use client";
 
-import { createContext, memo, useContext, useId, type CSSProperties, type KeyboardEvent, type MouseEvent, type ReactElement, type ReactNode } from "react";
-import { createPortal } from "react-dom";
-import { blurredAuraStops, blurredDiskStops } from "@/lib/canvas-sdk/blurred-disk";
-import { fitMainHero } from "@/lib/canvas-sdk/hero-fit";
-import { SatelliteHeroFace } from "@/lib/canvas-sdk/SatelliteHeroFace";
+import { type KeyboardEvent, type MouseEvent, type ReactElement } from "react";
+import { fitMainHero, heroStatus } from "@/lib/canvas-sdk/hero-fit";
+import { HeroStatusRow, SatelliteHeroFace } from "@/lib/canvas-sdk/SatelliteHeroFace";
 import type { CanvasEdge, NodeStatus } from "@/lib/canvas-sdk/types";
 
 /** Stat pill label size inside IOM / v3 bubbles (SVG units before optional face scale). */
@@ -89,8 +87,9 @@ function pillMetrics(label: string, fontSize: number, maxWidth?: number) {
 }
 
 /**
- * One big status-colored number with a short label, in place of the stacked stat pills.
- * Sizing lives in `fitMainHero` so the value and label both clear the ring at this radius.
+ * One big number with a short label, in place of the stacked stat pills. A status-colored
+ * number has its mark and word under the label. Sizing lives in `fitMainHero` so every row
+ * clears the ring at this radius.
  */
 function HeroValue({
   value,
@@ -105,12 +104,19 @@ function HeroValue({
   radius: number;
   startY: number;
 }) {
-  const fit = fitMainHero(value, label, radius, startY);
-  const statusClass = status !== "neutral" ? ` status-${status}` : "";
+  const shown = heroStatus(status, value);
+  const fit = fitMainHero(value, label, radius, startY, shown);
+  const statusClass = shown ? ` status-${status}` : "";
 
   return (
     <g className="node-hero">
-      <text className={`node-hero-value${statusClass}`} y={fit.valueY} textAnchor="middle" fontSize={fit.valueSize}>
+      <text
+        className={`node-hero-value${statusClass}`}
+        x={fit.valueX || undefined}
+        y={fit.valueY}
+        textAnchor="middle"
+        fontSize={fit.valueSize}
+      >
         {value}
       </text>
       {fit.labelLines.length ? (
@@ -122,6 +128,7 @@ function HeroValue({
           ))}
         </text>
       ) : null}
+      {shown ? <HeroStatusRow status={shown} x={fit.statusX} y={fit.statusY} size={fit.statusSize} /> : null}
     </g>
   );
 }
@@ -296,18 +303,6 @@ const PRIMARY_SPOKES = new Set([
   "spoke-roadmap",
 ]);
 
-/** The example bubbles are drawn red whatever their status. */
-const EXAMPLE_SPOKES = new Set(["spoke-fixes", "spoke-roadmap"]);
-
-const HALO_RING: Record<NodeStatus, readonly [number, number, number]> = {
-  danger: [251, 113, 133],
-  warning: [251, 191, 36],
-  success: [52, 211, 153],
-  neutral: [46, 183, 255],
-};
-
-/** Flip on to restore the flame and red alert pill above critical bubbles. */
-const SHOW_QUEST_FLAMES = false;
 
 const SPOKE_ICONS: Record<string, BubbleIcon> = {
   "spoke-aeo": "sparkles",
@@ -591,7 +586,9 @@ export function GraphBubble({
   const faceScale = faceR > 0 && r !== faceR ? r / faceR : 1;
   const headerSize = titleSize ?? (faceR >= 70 ? 14.5 : faceR >= 50 ? 13 : 12);
   const statPillFont = (PRIMARY_SPOKES.has(id) ? 13.5 : IOM_STAT_PILL_FONT) / faceScale;
-  const statusClass = status !== "neutral" ? ` status-${status}` : "";
+  /* The ring takes the status color only when the face shows the matching mark and word. */
+  const ringStatus = heroValue ? heroStatus(status, heroValue.value) : null;
+  const statusClass = ringStatus ? ` status-${status}` : "";
   const stateClass = `${selected ? " node-selected" : ""}${dimmed ? " node-dimmed" : ""}`;
 
   const face = centered ? (
@@ -627,23 +624,9 @@ export function GraphBubble({
       onMouseLeave={onMouseLeave}
       {...inspectProps(title, onInspect, onClick)}
     >
-      {emphasis ? (
-        <BlurredAura
-          radius={r + 26}
-          ring={EXAMPLE_SPOKES.has(id) ? HALO_RING.danger : HALO_RING[status]}
-          className={`node-halo${statusClass}`}
-        />
-      ) : (
-        <circle r={r + 10} className={`node-halo${statusClass}`} />
-      )}
-      {emphasis && PRIMARY_SPOKES.has(id) ? <RingMotes radius={r} /> : null}
-      {SHOW_QUEST_FLAMES && emphasis && PRIMARY_SPOKES.has(id) && status === "danger" && stats[0] ? (
-        <QuestFlame label={stats[0]} radius={r} />
-      ) : null}
-      {selected && emphasis ? <SelectionBurst radius={r} /> : null}
+      <circle r={r + (emphasis ? 12 : 10)} className="node-halo" />
       <g className="node-inner">
-        {centered ? <BubbleLift radius={r} sigma={18} statusClass={statusClass} /> : null}
-        <circle r={r} className={`node-circle${statusClass}`} filter="url(#nodeShadow)" />
+        <circle r={r} className={`node-circle${statusClass}`} />
         {faceScale === 1 ? face : <g transform={`scale(${faceScale})`}>{face}</g>}
       </g>
     </g>
@@ -664,7 +647,6 @@ export function GraphHub({
   heroValue,
   centered = false,
   logoSrc,
-  emphasis = false,
   selected = false,
   dimmed = false,
   onClick,
@@ -715,26 +697,9 @@ export function GraphHub({
       onMouseLeave={onMouseLeave}
       {...inspectProps(title, onInspect, onClick)}
     >
-      {emphasis ? (
-        <>
-          <BlurredAura radius={pulseR} className="node-pulse-ring hub-halo-pulse" />
-          <circle r={pulseR} className="hub-halo-edge" fill="none" pointerEvents="fill" />
-        </>
-      ) : (
-        <circle r={pulseR} fill="url(#brandHubGradient)" opacity="0.45" className="node-pulse-ring hub-halo-pulse" />
-      )}
-      {emphasis ? <RingMotes radius={r} /> : null}
-      {selected && emphasis ? <SelectionBurst radius={r} /> : null}
+      <circle r={pulseR} className="hub-halo-edge" fill="none" pointerEvents="fill" />
       <g className="node-inner">
-        <circle
-          className="hub-mid-ring"
-          r={midR}
-          fill="url(#brandHubGradient)"
-          filter="url(#nodeShadow)"
-          stroke="var(--border-dark)"
-          strokeWidth="3"
-        />
-        {centered ? <BubbleLift radius={r} sigma={22} /> : null}
+        <circle className="hub-mid-ring" r={midR} fill="none" />
         <circle r={r} className="node-circle hub-core" />
         {faceScale === 1 ? face : <g transform={`scale(${faceScale})`}>{face}</g>}
       </g>
@@ -746,139 +711,6 @@ export function ConnLine({ x1, y1, x2, y2, kind = "default", hot = false }: Canv
   const kindClass =
     kind === "active" ? " active-spoke" : kind !== "default" ? ` ${kind}` : "";
   return <line x1={x1} y1={y1} x2={x2} y2={y2} className={`conn-line${kindClass}${hot ? " conn-hot" : ""}`} />;
-}
-
-/**
- * Where the bubbles' shadow and halo gradients live: a `<defs>` outside the bubbles, so a hover
- * that restyles a bubble or reveals a satellite group leaves the gradient stops alone.
- */
-export const MapDefsContext = createContext<SVGDefsElement | null>(null);
-
-function MapDefs({ children }: { children: ReactNode }) {
-  const target = useContext(MapDefsContext);
-  return target ? createPortal(children, target) : <defs>{children}</defs>;
-}
-
-/**
- * The bubble's shadow and selection glow, drawn as gradients that look like a blurred circle.
- * A CSS drop-shadow on the circle re-ran a blur filter every time the map repainted. Offset and
- * opacity per theme and state live in iom-theme.css (`.node-drop`, `.node-glow`).
- */
-const BubbleLift = memo(function BubbleLift({ radius, sigma, statusClass = "" }: { radius: number; sigma: number; statusClass?: string }) {
-  const id = useId();
-  const { reach, stops } = blurredDiskStops(radius, sigma);
-  const gradient = (suffix: string, color: string) => (
-    <radialGradient id={`${id}${suffix}`} className={`node-${suffix}-fill`}>
-      {stops.map((stop) => (
-        <stop key={stop.offset} offset={stop.offset.toFixed(4)} stopColor={color} stopOpacity={stop.opacity.toFixed(4)} />
-      ))}
-    </radialGradient>
-  );
-  return (
-    <g className={`node-lift${statusClass}`} aria-hidden="true">
-      <MapDefs>
-        {gradient("drop", "#000")}
-        {gradient("glow", "#00f0ff")}
-      </MapDefs>
-      <circle className="node-drop" r={reach} fill={`url(#${id}drop)`} />
-      <circle className="node-glow" r={reach} fill={`url(#${id}glow)`} />
-    </g>
-  );
-});
-
-/**
- * The breathing halo with its 10px blur baked into the gradient. The theme reads the gradient from
- * `--aura`, so themes without halos still hide it.
- */
-const BlurredAura = memo(function BlurredAura({
-  radius,
-  ring,
-  className,
-}: {
-  radius: number;
-  ring?: readonly [number, number, number];
-  className: string;
-}) {
-  const id = useId();
-  const { reach, stops } = blurredAuraStops(radius, 10, ring);
-  return (
-    <>
-      <MapDefs>
-        <radialGradient id={`${id}aura`}>
-          {stops.map((stop) => (
-            <stop key={stop.offset} offset={stop.offset.toFixed(4)} stopColor={stop.color} stopOpacity={stop.opacity.toFixed(4)} />
-          ))}
-        </radialGradient>
-      </MapDefs>
-      <circle r={reach} className={className} style={{ "--aura": `url(#${id}aura)` } as CSSProperties} />
-    </>
-  );
-});
-
-function RingMotes({ radius }: { radius: number }) {
-  const motes = [8, 36, 62, 98, 128, 156, 188, 214, 248, 278, 312, 344].map((deg, index) => {
-    const point = polar(radius + 16 + (index % 3) * 7, deg - 90);
-    return { ...point, size: index % 4 === 0 ? 2.1 : 1.25, delay: (index % 6) * 0.28 };
-  });
-  return (
-    <g className="ring-motes" pointerEvents="none">
-      <circle className="node-outer-ring" r={radius + 18} fill="none" />
-      {motes.map((mote, index) => (
-        <circle
-          key={index}
-          className="ring-mote"
-          cx={mote.x.toFixed(2)}
-          cy={mote.y.toFixed(2)}
-          r={mote.size}
-          style={{ animationDelay: `${mote.delay}s` }}
-        />
-      ))}
-    </g>
-  );
-}
-
-function QuestFlame({ label, radius }: { label: string; radius: number }) {
-  const width = Math.max(76, label.length * 7.1 + 18);
-  return (
-    <g className="quest-beacon" transform={`translate(0, ${-radius - 36})`} pointerEvents="none">
-      <g className="quest-flame">
-        <ellipse className="flame-core" cx="0" cy="-2" rx="5" ry="9" />
-        <circle className="flame-ember" cx="-4" cy="2" r="1.5" />
-        <circle className="flame-ember flame-ember-b" cx="4" cy="1" r="1.3" />
-      </g>
-      <rect className="quest-pill" x={-width / 2} y={7} width={width} height={18} rx={9} />
-      <text className="quest-pill-text" y={19.5} textAnchor="middle">
-        {label}
-      </text>
-    </g>
-  );
-}
-
-function SelectionBurst({ radius }: { radius: number }) {
-  const sparks = Array.from({ length: 12 }, (_, index) => {
-    const angle = (Math.PI * 2 * index) / 12;
-    const dist = radius + 78;
-    return {
-      dx: Math.cos(angle) * dist,
-      dy: Math.sin(angle) * dist,
-      delay: (index % 3) * 28,
-      color: index % 2 === 0 ? "#00f0ff" : "#818cf8",
-    };
-  });
-  return (
-    <g className="node-firework" pointerEvents="none">
-      <circle className="node-shockwave" r={radius * 0.72} fill="none" stroke="#00f0ff" strokeWidth="2" />
-      {sparks.map((spark, index) => (
-        <circle
-          key={index}
-          className="node-spark"
-          r="3.2"
-          fill={spark.color}
-          style={{ ["--dx" as string]: `${spark.dx.toFixed(2)}px`, ["--dy" as string]: `${spark.dy.toFixed(2)}px`, animationDelay: `${spark.delay}ms` }}
-        />
-      ))}
-    </g>
-  );
 }
 
 export function TourSpotlight({
@@ -914,9 +746,8 @@ export function TourSpotlight({
         id="tour-spotlight-ring"
         r={radius}
         fill="none"
-        stroke="var(--color-indigo)"
+        stroke="var(--accent)"
         strokeWidth="2.5"
-        filter="url(#glow-accent)"
       />
       <g id="tour-spotlight-tag" transform={`translate(0, -${radius + 10})`}>
         <rect
@@ -925,10 +756,9 @@ export function TourSpotlight({
           width="190"
           height="28"
           rx="14"
-          fill="#070d18"
+          fill="var(--brand-card)"
           stroke="var(--accent-purple)"
           strokeWidth="1.8"
-          filter="url(#nodeShadow)"
         />
         <circle cx="-75" cy="0" r="4" fill="var(--accent-purple)" />
         <text
@@ -936,8 +766,8 @@ export function TourSpotlight({
           y="4"
           textAnchor="middle"
           fontSize="10.5"
-          fontWeight="800"
-          fill="#ffffff"
+          fontWeight="600"
+          fill="var(--brand-headline)"
           letterSpacing="0.5"
           id="tour-spotlight-tag-text"
         >

@@ -1,6 +1,6 @@
 import { activeClient } from "@/lib/client/active-client";
 import type { CanvasNode, NodeStatus } from "@/lib/canvas-sdk/types";
-import type { CanvasBundle } from "@/lib/fender-canvas/types";
+import type { CanvasBundle, CanvasReadFailure } from "@/lib/fender-canvas/types";
 import type { buildLiveMetrics } from "@/lib/fender-canvas/metrics-from-live";
 import { aiNodeFaces } from "@/lib/ai-search/canvas-surfaces";
 import type { AiSearchRead } from "@/lib/ai-search/types";
@@ -12,7 +12,12 @@ import {
 } from "@/lib/findability/lead";
 import { countFindability } from "@/lib/findability/outcomes";
 import { pageFoundHero, pageFoundTone } from "@/lib/fender-canvas/ai-readiness-lead";
-import { failedReadTip, READ_NOT_AVAILABLE } from "@/lib/fender-canvas/canvas-reads";
+import {
+  PARTIAL_TITLE,
+  READ_NOT_AVAILABLE,
+  partialFigureTip,
+  readFailedPartial,
+} from "@/lib/fender-canvas/canvas-reads";
 import { formatInt, formatPct } from "@/lib/fender-canvas/format";
 import { bulletCounts, type BulletCounts } from "@/lib/fender-canvas/listing-content";
 import { specPageCounts, type SpecPageCounts } from "@/lib/fender-canvas/machine-readability";
@@ -26,6 +31,19 @@ import { brandSite } from "@/lib/brand-copy";
 type MetricsMap = ReturnType<typeof buildLiveMetrics>;
 
 const EMPTY_TOOLTIP = { title: "", desc: "" } as const;
+
+/** The hover box on a Not available* face: which read failed and what that leaves out. */
+function failedReadTooltip(failure: CanvasReadFailure) {
+  return { title: PARTIAL_TITLE["read-failed"], desc: partialFigureTip(readFailedPartial(failure)) };
+}
+
+/** The hover box on a Not available* face whose read loaded with no rows to count. */
+function emptyReadTooltip(source: string, missing: string) {
+  return {
+    title: READ_NOT_AVAILABLE,
+    desc: partialFigureTip({ reason: "coverage", missing, source, effect: "No share is shown until rows arrive." }),
+  };
+}
 
 /** Exact official product page share — same figure the Findability tab leads with. */
 function findabilitySatellite(findability: FindabilityRead): Pick<
@@ -44,12 +62,17 @@ function findabilitySatellite(findability: FindabilityRead): Pick<
   }
   if (findability.phase === "error") {
     return {
-      status: "danger",
+      status: "neutral",
       title: "Findability",
-      stats: ["Read failed"],
-      heroValue: { value: "Read failed", label: "exact official product page" },
+      stats: [READ_NOT_AVAILABLE],
+      heroValue: { value: READ_NOT_AVAILABLE, label: "exact official product page" },
       subTab: "Findability",
-      tooltip: { ...EMPTY_TOOLTIP },
+      tooltip: failedReadTooltip({
+        key: "specPages",
+        source: "canvas_spec_findability",
+        label: "Findability read",
+        message: findability.message,
+      }),
     };
   }
   const counts = countFindability(findability.rows);
@@ -92,15 +115,17 @@ type SatelliteFace = Pick<
 >;
 
 /** Missing machine-readable specs on found fender.com pages. Opens Brand-Site Specs. */
-function machineReadabilityFace(counts: SpecPageCounts | null): SatelliteFace {
+function machineReadabilityFace(counts: SpecPageCounts | null, failure: CanvasReadFailure | undefined): SatelliteFace {
   if (!counts) {
     return {
-      status: "warning",
+      status: "neutral",
       title: "Brand-Site Specs",
-      stats: ["Not available*"],
-      heroValue: { value: "Not available*", label: "missing machine-readable specs" },
+      stats: [READ_NOT_AVAILABLE],
+      heroValue: { value: READ_NOT_AVAILABLE, label: "missing machine-readable specs" },
       subTab: "Brand-Site Specs",
-      tooltip: { ...EMPTY_TOOLTIP },
+      tooltip: failure
+        ? failedReadTooltip(failure)
+        : emptyReadTooltip("canvas_spec_readiness", `The read returned no found ${brandSite()} pages`),
     };
   }
   const missingPct = (100 * counts.missingSpecBlock) / counts.pages;
@@ -115,15 +140,17 @@ function machineReadabilityFace(counts: SpecPageCounts | null): SatelliteFace {
 }
 
 /** Five-bullet share of live Amazon listings. Same figure as the A+ Matrix hero. */
-function aplusFace(counts: BulletCounts | null): SatelliteFace {
+function aplusFace(counts: BulletCounts | null, failure: CanvasReadFailure | undefined): SatelliteFace {
   if (!counts) {
     return {
-      status: "warning",
+      status: "neutral",
       title: "Amazon A+ Matrix",
-      stats: ["Not available*"],
-      heroValue: { value: "Not available*", label: "Five bullets filled" },
+      stats: [READ_NOT_AVAILABLE],
+      heroValue: { value: READ_NOT_AVAILABLE, label: "Five bullets filled" },
       subTab: "Amazon A+ Matrix",
-      tooltip: { ...EMPTY_TOOLTIP },
+      tooltip: failure
+        ? failedReadTooltip(failure)
+        : emptyReadTooltip("canvas_listing_content", "The read returned no Amazon listing bullets"),
     };
   }
   return {
@@ -151,8 +178,9 @@ export function buildLiveNodes(
   // Main AI Readiness bubble keeps its title and page-found figure; it opens Brand-Site Specs.
   const pageHero = pageFoundHero(m);
   const pageTone = pageFoundTone(m.spec_fender_found_pct);
-  const metricsTip = failedReadTip(bundle, "m");
-  const readinessStatus: NodeStatus = metricsTip ? "warning" : (pageTone ?? "neutral");
+  const metricsFailure = bundle.unavailable?.m;
+  const metricsTip = metricsFailure ? failedReadTooltip(metricsFailure) : null;
+  const readinessStatus: NodeStatus = metricsTip ? "neutral" : (pageTone ?? "neutral");
   const readinessHero = metricsTip
     ? { value: READ_NOT_AVAILABLE, label: `${brandSite()} page found` }
     : pageHero.ratio != null
@@ -198,12 +226,12 @@ export function buildLiveNodes(
     {
       ...satelliteNode("sat-schema"),
       spokeId: "specs",
-      ...machineReadabilityFace(schemaPages),
+      ...machineReadabilityFace(schemaPages, bundle.unavailable?.specPages),
     },
     {
       ...satelliteNode("sat-tables"),
       spokeId: "specs",
-      ...aplusFace(bullets),
+      ...aplusFace(bullets, bundle.unavailable?.listingContent),
     },
     {
       ...satelliteNode("sat-taylor"),
@@ -233,7 +261,7 @@ export function buildLiveNodes(
       heroValue: readinessHero,
       spokeId: "specs",
       subTab: "Brand-Site Specs",
-      tooltip: metricsTip ? { title: READ_NOT_AVAILABLE, desc: metricsTip } : { title: "", desc: "" },
+      tooltip: metricsTip ?? { title: "", desc: "" },
     },
     {
       ...aiFaces.spokeCompetitors,
@@ -242,7 +270,7 @@ export function buildLiveNodes(
     },
     {
       ...primarySpoke("spoke-fixes"),
-      status: "success",
+      status: "neutral",
       title: "Action Items",
       stats: [],
       // Phase 1 dollar figure stays an analyst estimate — never a fee or ROI multiple.
@@ -252,8 +280,8 @@ export function buildLiveNodes(
     },
     {
       ...primarySpoke("spoke-roadmap"),
-      status: "success",
-      title: "Strategy Roadmap",
+      status: "neutral",
+      title: "Roadmap",
       stats: [],
       heroValue: { value: "90 Days", label: "3 phases" },
       spokeId: "roadmap",

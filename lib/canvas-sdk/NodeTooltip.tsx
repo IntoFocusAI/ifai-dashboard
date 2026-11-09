@@ -68,7 +68,7 @@ export function NodeTooltip({ ref }: { ref: Ref<NodeTooltipHandle> }) {
       ref={boxRef}
       className={`node-tooltip${content?.anchor === "column-right" ? " node-tooltip-column" : ""}${content?.anchor === "definition" ? " node-tooltip-definition" : ""}${content?.example ? " node-tooltip-example" : ""}${visible ? " visible" : ""}`}
     >
-      {content?.title ? <div style={{ fontWeight: 700, marginBottom: 2 }}>{content.title}</div> : null}
+      {content?.title ? <div style={{ fontWeight: 600, marginBottom: 2 }}>{content.title}</div> : null}
       {content?.desc ? (
         <div className="node-tooltip-desc" style={{ color: "var(--text-muted)", fontSize: 11 }}>
           {content.desc}
@@ -79,7 +79,7 @@ export function NodeTooltip({ ref }: { ref: Ref<NodeTooltipHandle> }) {
           style={{
             marginTop: 6,
             color: "var(--accent-purple)",
-            fontWeight: 700,
+            fontWeight: 600,
             fontSize: 10,
           }}
         >

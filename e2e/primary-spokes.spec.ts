@@ -2,7 +2,7 @@ import { expect, test } from "./fixtures";
 
 const PRIMARY_TITLES = [
   "Action Items",
-  "Strategy Roadmap",
+  "Roadmap",
   "AI Search Visibility",
   "Catalog Health",
   "AI Readiness",

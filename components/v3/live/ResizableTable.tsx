@@ -2,6 +2,8 @@
 
 import "@/components/v3/live/resizable-table.css";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { TableToolbar, withSearchEmpty } from "@/components/v3/live/TableToolbar";
+import { sourceRowKey, tableControlsFor, type TableControls } from "@/components/v3/live/table-controls";
 import { useTableRowLimit } from "@/components/v3/live/TableRowLimit";
 import { useHeaderFloors } from "@/components/v3/live/useHeaderFloors";
 import {
@@ -195,6 +197,9 @@ export function ResizableTable({
   sort = null,
   onSort,
   tableClassName,
+  toolbar = true,
+  filterLabel = null,
+  controls: controlsProp,
   children,
 }: {
   tableId: string;
@@ -209,10 +214,17 @@ export function ResizableTable({
   onSort?: (columnId: string) => void;
   /** Extra classes on the table (e.g. table-no-row-hover). */
   tableClassName?: string;
+  /** Search box and Download CSV above the table. */
+  toolbar?: boolean;
+  /** Plain words for the view filter this table sits under, written into the download. */
+  filterLabel?: string | null;
+  /** The sort hook's `controls`, for a table that wraps the hook's `onSort` in its own handler. */
+  controls?: TableControls | null;
   children: ReactNode;
 }) {
   const { widths, setWidth, signature } = useColumnWidths(tableId, columns);
-  const rowLimit = useTableRowLimit(children);
+  const controls = controlsProp ?? tableControlsFor(onSort);
+  const rowLimit = useTableRowLimit(withSearchEmpty(children, controls, columns.length));
   const tableRef = useRef<HTMLTableElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
@@ -372,6 +384,12 @@ export function ResizableTable({
   // Always the same fragment, so the table is not remounted when the footer appears or goes.
   return (
     <>
+      {toolbar && (
+        <TableToolbar
+          {...{ tableId, columns, sort, controls, filterLabel }}
+          shownKeys={rowLimit.keys.map(sourceRowKey)}
+        />
+      )}
       {scroller}
       {rowLimit.footer}
     </>

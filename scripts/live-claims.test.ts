@@ -145,7 +145,7 @@ test("A+ Matrix reads listing content and never borrows Amazon attribute complet
   assert.ok(readiness);
   assert.equal(satellite.title, "Amazon A+ Matrix");
   assert.deepEqual(satellite.heroValue, { value: "Not available*", label: "Five bullets filled" });
-  assert.equal(satellite.tooltip.desc, "");
+  assert.match(satellite.tooltip.desc, /no Amazon listing bullets\. Source: canvas_listing_content\./, "the tooltip says what is missing");
   const satelliteText = [
     satellite.meta,
     satellite.tooltip.title,

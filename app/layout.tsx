@@ -1,12 +1,19 @@
 import type { Metadata } from "next";
-import { Playfair_Display } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
-const playfair = Playfair_Display({
+/* Only these weights load, so a heavier request in any stylesheet draws at 600. */
+const geist = Geist({
   subsets: ["latin"],
-  weight: ["600", "700"],
-  style: ["normal", "italic"],
-  variable: "--font-playfair",
+  weight: ["400", "500", "600"],
+  variable: "--font-geist",
+  display: "swap",
+});
+
+const geistMono = Geist_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  variable: "--font-geist-mono",
   display: "swap",
 });
 
@@ -24,7 +31,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`h-full antialiased ${playfair.variable}`}>
+    <html lang="en" className={`h-full antialiased ${geist.variable} ${geistMono.variable}`}>
       <body className="min-h-full font-sans">{children}</body>
     </html>
   );

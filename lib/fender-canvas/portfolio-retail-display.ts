@@ -20,6 +20,7 @@ import {
   type UnnestedBundleDetail,
 } from "./portfolio-retail";
 import { approvedExceptionsSentence } from "./map-approved-exceptions";
+import { PARTIAL_TITLE, READ_NOT_AVAILABLE } from "./canvas-reads";
 import { buyBoxHero } from "./retail-overview-lead";
 
 export const RETAIL_OVERVIEW_TAB = "Retail Overview";
@@ -320,13 +321,13 @@ export function catalogBubble(
     reading,
     {
       value: shareHeroValue(reading, numerator, denominator),
-      label: "Splintered listings",
+      label: "Splintered Listings",
     },
     [...(count ? [count] : []), ...(coverage ? [coverage] : [])],
     "Catalog Governance",
   );
   const tip = bundlePopulationTip(reading);
-  if (tip) face.tooltip = { title: "Splintered listings", desc: tip };
+  if (tip) face.tooltip = { title: "Splintered Listings", desc: tip };
   return face;
 }
 
@@ -347,6 +348,8 @@ function waitingFace(
   };
 }
 
+const RETAIL_READ_FAILED = "The retail read did not load. The figure is left out rather than shown as zero.";
+
 /**
  * Catalog Health main spoke: Buy Box withheld share of current readings (same figure as the
  * Retail Overview lead pie). Status follows that share's tone bands. Never invents a 0%.
@@ -366,10 +369,10 @@ export function catalogHealthMainFace(read: RetailCanvasRead): RetailBubbleFace 
     return {
       title: "Catalog Health",
       stats: [],
-      heroValue: { value: "Read failed", label: "Buy Box withheld" },
-      status: "danger",
+      heroValue: { value: READ_NOT_AVAILABLE, label: "Buy Box withheld" },
+      status: "neutral",
       subTab: RETAIL_OVERVIEW_TAB,
-      tooltip: { title: "", desc: "" },
+      tooltip: { title: PARTIAL_TITLE["read-failed"], desc: RETAIL_READ_FAILED },
     };
   }
 
@@ -400,17 +403,21 @@ export function retailBubbleFaces(read: RetailCanvasRead): {
       main: catalogHealthMainFace(read),
       suppressed: waitingFace("Suppressed Listings", "Suppressed Listings", ["Loading"], desc, "confirmed high-price"),
       map: waitingFace("MAP Leakage", "MAP", ["Loading"], desc, "MAP leakage"),
-      catalog: waitingFace("Catalog Governance", "Catalog Governance", ["Loading"], desc, "Splintered listings"),
+      catalog: waitingFace("Catalog Governance", "Catalog Governance", ["Loading"], desc, "Splintered Listings"),
     };
   }
 
   if (read.phase === "error") {
-    const desc = "The retail read could not be loaded.";
+    const failed = (face: RetailBubbleFace): RetailBubbleFace => ({
+      ...face,
+      status: "neutral",
+      tooltip: { title: PARTIAL_TITLE["read-failed"], desc: RETAIL_READ_FAILED },
+    });
     return {
       main: catalogHealthMainFace(read),
-      suppressed: waitingFace("Suppressed Listings", "Suppressed Listings", ["Read failed"], desc, "confirmed high-price"),
-      map: waitingFace("MAP Leakage", "MAP", ["Read failed"], desc, "MAP leakage"),
-      catalog: waitingFace("Catalog Governance", "Catalog Governance", ["Read failed"], desc, "Splintered listings"),
+      suppressed: failed(waitingFace("Suppressed Listings", "Suppressed Listings", [READ_NOT_AVAILABLE], RETAIL_READ_FAILED, "confirmed high-price")),
+      map: failed(waitingFace("MAP Leakage", "MAP", [READ_NOT_AVAILABLE], RETAIL_READ_FAILED, "MAP leakage")),
+      catalog: failed(waitingFace("Catalog Governance", "Catalog Governance", [READ_NOT_AVAILABLE], RETAIL_READ_FAILED, "Splintered Listings")),
     };
   }
 

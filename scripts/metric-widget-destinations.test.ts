@@ -43,7 +43,7 @@ const EXPECTED_SUBTAB: Record<string, string> = {
   "prioritized-fixes": "Urgent Interventions",
   "phase-one-lift": "Revenue Estimates",
   "enterprise-potential": "Revenue Estimates",
-  "day-90-buy-box-target": "30-60-90 Day Milestones",
+  "day-90-buy-box-target": "30-60-90 Days",
 };
 
 const RETIRED = [

@@ -165,9 +165,12 @@ test("the AI Readiness bubble reads Not available* with canvas_metrics in its ho
   const node = buildLiveNodes(b, buildLiveMetrics(b)).find((item) => item.id === "spoke-specs");
   assert.equal(node?.heroValue?.value, READ_NOT_AVAILABLE);
   assert.equal(node?.heroValue?.label, "fender.com page found");
-  assert.equal(node?.status, "warning");
+  assert.equal(node?.status, "neutral", "Not available* carries no status color");
   assert.equal(node?.tooltip.title, READ_NOT_AVAILABLE);
-  assert.match(node?.tooltip.desc ?? "", METRICS_TIP);
+  assert.equal(
+    node?.tooltip.desc,
+    "The catalog metrics read (canvas_metrics) did not load: forced m failure. The figure is left out rather than shown as zero.",
+  );
 
   const loaded = buildLiveNodes(bundle(), buildLiveMetrics(bundle())).find((item) => item.id === "spoke-specs");
   assert.equal(loaded?.heroValue?.label, "fender.com page found", "the bubble shows the same figure");

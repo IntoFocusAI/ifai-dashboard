@@ -237,7 +237,7 @@ test.describe("drill-downs", () => {
     await page.goto("/dashboard?spoke=roadmap");
     const body = page.locator(".drilldown-body");
     await expect(page.locator("[data-roadmap-findings-panel]")).toBeVisible();
-    await expect(page.locator(".drilldown-tab-btn.active")).toContainText("30-60-90 Day Milestones");
+    await expect(page.locator(".drilldown-tab-btn.active")).toContainText("30-60-90 Days");
     await expect(body).toContainText("Current findings");
     for (const label of [
       "Buy Box withheld",

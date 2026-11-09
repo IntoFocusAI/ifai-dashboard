@@ -19,7 +19,6 @@ import {
 } from "@/lib/canvas-sdk/iom-motion";
 import { IOM_CUSTOM_CURSOR, IomCursor } from "@/lib/canvas-sdk/IomCursor";
 import { NodeTooltip, type NodeTooltipHandle } from "@/lib/canvas-sdk/NodeTooltip";
-import { useIomPointerWash } from "@/lib/canvas-sdk/useIomPointerWash";
 import { CanvasHudZoomControls } from "@/lib/canvas-sdk/CanvasHudZoomControls";
 import { TourCard } from "@/lib/canvas-sdk/TourCard";
 import { TourLauncher } from "@/lib/canvas-sdk/TourLauncher";
@@ -738,8 +737,6 @@ export function CanvasShell({ spec, children }: Props) {
     return () => root.removeEventListener("scroll", lockScroll, true);
   }, []);
 
-  useIomPointerWash(canvasBodyRef, iom);
-
   useEffect(() => {
     const viewport = viewportRef.current;
     if (!viewport) return;
@@ -1013,11 +1010,6 @@ export function CanvasShell({ spec, children }: Props) {
     >
       <div className="canvas-layout">
         <div className="canvas-body" ref={canvasBodyRef}>
-        {iom ? (
-          <div className="canvas-pointer-wash" aria-hidden="true">
-            <div className="canvas-pointer-glow" />
-          </div>
-        ) : null}
         <header className="top-header" ref={headerRef}>
           <div className="brand-section">
             <button
@@ -1037,7 +1029,7 @@ export function CanvasShell({ spec, children }: Props) {
                 <div className="brand-name">
                   {spec.brand.name}
                   {spec.brand.badge ? (
-                    <span className="tag-badge tag-danger" style={{ fontSize: "10px" }}>
+                    <span className="tag-badge tag-version">
                       {spec.brand.badge}
                     </span>
                   ) : null}
@@ -1195,7 +1187,7 @@ export function CanvasShell({ spec, children }: Props) {
               onClick={() => focusNode("roadmap")}
             >
               <Route size={16} strokeWidth={1.75} />
-              Strategy Roadmap
+              Open Roadmap
             </button>
           ) : null}
           {viewport}
@@ -1324,7 +1316,7 @@ export function CanvasShell({ spec, children }: Props) {
                 aria-label={iom ? "Show full map" : "Hide sidebar"}
               >
                 <X size={15} strokeWidth={3} aria-hidden="true" />
-                <span>Close</span>
+                <span>Close panel</span>
               </button>
               {iom ? null : (
                 <button

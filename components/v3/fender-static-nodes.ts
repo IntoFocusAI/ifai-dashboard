@@ -105,7 +105,7 @@ export const fenderStaticNodes: CanvasNode[] = [
     },
     {
       ...primarySpoke("spoke-fixes"),
-      status: "success",
+      status: "neutral",
       title: "Action Items",
       stats: [],
       heroValue: { value: FENDER_METRICS.phaseOneLift.value, label: "Phase 1 lift" },
@@ -114,8 +114,8 @@ export const fenderStaticNodes: CanvasNode[] = [
     },
     {
       ...primarySpoke("spoke-roadmap"),
-      status: "success",
-      title: "Strategy Roadmap",
+      status: "neutral",
+      title: "Roadmap",
       stats: [],
       heroValue: { value: "90 Days", label: "3 phases" },
       spokeId: "roadmap",
