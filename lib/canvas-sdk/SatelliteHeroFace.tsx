@@ -16,11 +16,22 @@ const ROW_CLASS = {
 const WORD_WIDTH_EM = 0.56;
 
 /** The x, dash, or check and the status word, centered on one baseline inside the bubble. */
-export function HeroStatusRow({ status, y, size }: { status: DataStatus; y: number; size: number }) {
+export function HeroStatusRow({
+  status,
+  y,
+  size,
+  x = 0,
+}: {
+  status: DataStatus;
+  y: number;
+  size: number;
+  /** Center of the row. */
+  x?: number;
+}) {
   const word = DATA_STATUS_WORD[status];
   const mark = size * STATUS_MARK_EM;
   const gap = size * STATUS_MARK_GAP_EM;
-  const left = -(mark + gap + word.length * size * WORD_WIDTH_EM) / 2;
+  const left = x - (mark + gap + word.length * size * WORD_WIDTH_EM) / 2;
   const scale = mark / 12;
   return (
     <g className={`node-hero-status status-${status}`} data-status={status} data-status-mark={DATA_STATUS_MARK_NAME[status]}>

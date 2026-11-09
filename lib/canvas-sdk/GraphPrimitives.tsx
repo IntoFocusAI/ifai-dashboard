@@ -110,7 +110,13 @@ function HeroValue({
 
   return (
     <g className="node-hero">
-      <text className={`node-hero-value${statusClass}`} y={fit.valueY} textAnchor="middle" fontSize={fit.valueSize}>
+      <text
+        className={`node-hero-value${statusClass}`}
+        x={fit.valueX || undefined}
+        y={fit.valueY}
+        textAnchor="middle"
+        fontSize={fit.valueSize}
+      >
         {value}
       </text>
       {fit.labelLines.length ? (
@@ -122,7 +128,7 @@ function HeroValue({
           ))}
         </text>
       ) : null}
-      {shown ? <HeroStatusRow status={shown} y={fit.statusY} size={fit.statusSize} /> : null}
+      {shown ? <HeroStatusRow status={shown} x={fit.statusX} y={fit.statusY} size={fit.statusSize} /> : null}
     </g>
   );
 }

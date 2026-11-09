@@ -196,6 +196,12 @@ export type MainHeroFit = {
   /** Baseline of the status mark and word under the label, when the figure has a status. */
   statusY: number;
   statusSize: number;
+  /**
+   * Center x of the value and of the status row. Both are 0 when the status sits under the
+   * label; when that row cannot clear the ring, the status shares the value's line instead.
+   */
+  valueX: number;
+  statusX: number;
   /** True when the value is a worded state rendered at label size. */
   worded: boolean;
 };
@@ -230,12 +236,11 @@ export function fitMainHero(
     return width > maxWidth ? size * (maxWidth / width) : size;
   };
 
-  let valueSize = worded
+  const valueSize = worded
     ? Math.max(MAIN_MIN_LABEL, Math.min(14, radius * 0.16))
     : widthFit(trimmed, Math.max(MAIN_MIN_VALUE, radius * MAIN_MAX_VALUE_RATIO), "value", startY + radius * 0.2);
-  let labelSize = worded ? valueSize : Math.max(MAIN_MIN_LABEL, valueSize * 0.36);
 
-  const place = (vSize: number, lSize: number) => {
+  const place = (vSize: number, lSize: number, inline: boolean) => {
     const gap = Math.max(3, vSize * 0.16);
     const valueTop = startY;
     const valueBottom = startY + (worded ? vSize * 1.05 : vSize * 0.82);
@@ -258,51 +263,59 @@ export function fitMainHero(
     const labelHalf = lines.length
       ? Math.max(...lines.map((line) => estimateWidth(line, lSize, "label"))) / 2
       : 0;
-    const ok =
+    const labelOk = lines.length === 0 || boxClearsRing(labelHalf, labelTop, labelBottom, radius);
+    const valueY = worded ? startY + vSize * 0.86 : startY + vSize * 0.78;
+    const labelY = lines.length ? valueBottom + gap + lSize * 0.82 : valueBottom;
+    const stacked =
+      labelBottom <= bottomLimit &&
       statusBottom <= bottomLimit &&
       boxClearsRing(valueHalf, valueTop, valueBottom, radius) &&
-      (lines.length === 0 || boxClearsRing(labelHalf, labelTop, labelBottom, radius)) &&
+      labelOk &&
       (!status || boxClearsRing(statusHalf, statusTop, statusBottom, radius));
+    const base = { labelLines: lines, labelLineH: lineH, valueY, labelY };
+    if (!inline || !status) {
+      return { ...base, ok: stacked, statusY: statusTop + lSize * 0.86, valueX: 0, statusX: 0 };
+    }
+    // Inline: "66.4%  [mark] Good" on the value's line, label rows below.
+    const inlineGap = lSize * 0.6;
+    const half = valueHalf + statusHalf + inlineGap / 2;
+    const inlineOk =
+      labelBottom <= bottomLimit && boxClearsRing(half, valueTop, valueBottom, radius) && labelOk;
     return {
-      ok,
-      labelLines: lines,
-      labelLineH: lineH,
-      valueY: worded ? startY + vSize * 0.86 : startY + vSize * 0.78,
-      labelY: lines.length ? valueBottom + gap + lSize * 0.82 : valueBottom,
-      statusY: statusTop + lSize * 0.86,
+      ...base,
+      ok: inlineOk,
+      statusY: valueY,
+      valueX: -(statusHalf + inlineGap / 2),
+      statusX: valueHalf + inlineGap / 2,
     };
   };
 
   const floor = worded ? MAIN_MIN_LABEL : MAIN_MIN_VALUE;
-  for (let pass = 0; pass < 12; pass += 1) {
-    const next = place(valueSize, labelSize);
-    if (next.ok || valueSize <= floor) {
-      return {
-        valueSize,
-        labelSize,
-        labelLines: next.labelLines,
-        labelLineH: next.labelLineH,
-        valueY: next.valueY,
-        labelY: next.labelY,
-        statusY: next.statusY,
-        statusSize: labelSize,
-        worded,
-      };
-    }
-    valueSize = Math.max(floor, valueSize * 0.88);
-    labelSize = worded ? valueSize : Math.max(MAIN_MIN_LABEL, valueSize * 0.36);
-  }
-
-  const fallback = place(valueSize, labelSize);
-  return {
-    valueSize,
-    labelSize,
-    labelLines: fallback.labelLines,
-    labelLineH: fallback.labelLineH,
-    valueY: fallback.valueY,
-    labelY: fallback.labelY,
-    statusY: fallback.statusY,
-    statusSize: labelSize,
+  const labelFor = (vSize: number) => (worded ? vSize : Math.max(MAIN_MIN_LABEL, vSize * 0.36));
+  const result = (vSize: number, placed: ReturnType<typeof place>): MainHeroFit => ({
+    valueSize: vSize,
+    labelSize: labelFor(vSize),
+    labelLines: placed.labelLines,
+    labelLineH: placed.labelLineH,
+    valueY: placed.valueY,
+    labelY: placed.labelY,
+    statusY: placed.statusY,
+    statusSize: labelFor(vSize),
+    valueX: placed.valueX,
+    statusX: placed.statusX,
     worded,
-  };
+  });
+  // The status row stacks under the label at any size that fits; only then does it move inline.
+  for (const inline of status ? [false, true] : [false]) {
+    let size = valueSize;
+    for (let pass = 0; pass < 12; pass += 1) {
+      const next = place(size, labelFor(size), inline);
+      if (next.ok) return result(size, next);
+      if (size <= floor) break;
+      size = Math.max(floor, size * 0.88);
+    }
+  }
+  // Nothing clears the ring: the inline status saves a row, so it overflows least.
+  const smallest = Math.min(valueSize, floor);
+  return result(smallest, place(smallest, labelFor(smallest), Boolean(status)));
 }
