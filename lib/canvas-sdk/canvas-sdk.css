@@ -5551,3 +5551,13 @@
     .ifai-canvas.light-theme .data-status-tile {
       background: #fff;
     }
+
+    /* Partial figures (PartialFigureMark): the asterisk sits on the figure and opens its tooltip. */
+    .partial-figure {
+      white-space: nowrap;
+    }
+
+    .partial-figure-mark {
+      margin-left: 1px;
+      cursor: help;
+    }

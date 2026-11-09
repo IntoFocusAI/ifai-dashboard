@@ -40,11 +40,11 @@ function rowWidth(row: Row): number {
 }
 
 /**
- * A bubble's figure carries its status color only with the mark and word beside it. Worded
- * values ("Loading", "Not available*") have no status, so they draw in the plain text color.
+ * A bubble's figure carries its status color only with the mark and word beside it. A value
+ * with no number ("Loading", "Not available*") has no status, so it draws in the plain text color.
  */
 export function heroStatus(status: NodeStatus | undefined, value: string): DataStatus | null {
-  return isCompactHeroValue(value) ? dataStatusFromNode(status) : null;
+  return /\d/.test(value) && isCompactHeroValue(value) ? dataStatusFromNode(status) : null;
 }
 
 function rowHeight(row: Row): number {
