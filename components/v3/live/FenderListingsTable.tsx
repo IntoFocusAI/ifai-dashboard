@@ -8,15 +8,16 @@ import { listingChannelPricesQuery, listingsQuery } from "@/lib/canvasData";
 import { CLIENT_TABLE_PAGE_SIZE, loadFilteredPages } from "@/lib/fender-canvas/full-result-sort";
 import { featuredOfferState } from "@/lib/fender-canvas/featured-offer";
 import { formatInt, formatUsd, pendingLabel } from "@/lib/fender-canvas/format";
-import { listingReviewLabel } from "@/lib/fender-canvas/listing-reviews";
+import { anyListingReviewCount, listingReviewLabel } from "@/lib/fender-canvas/listing-reviews";
 import {
-  channelDisplayName,
   channelPriceLookup,
+  exploreChannelColumns,
   listingChannelFacts,
+  mapSourceRow as asMapRow,
   musiciansFriendCheckedPageUrl,
   storedHttpUrl,
   type ChannelPriceRow,
-  type MapSourceRow,
+  type ExploreChannelColumn,
   type PricedChannelCell,
 } from "@/lib/fender-canvas/map-channels";
 import { exploreListingSortValue } from "@/lib/fender-canvas/listing-table-sort";
@@ -24,8 +25,13 @@ import { MAP_LISTING_COLUMN_WIDTH } from "@/lib/fender-canvas/retail-column-layo
 import type { CanvasRetailListingRow } from "@/lib/fender-canvas/types";
 
 const PRICE_PAGE = 1000;
-const PREFERRED_EXTRAS = ["sweetwater", "reverb"];
-const FIXED_CHANNEL_KEYS = new Set(["amazon", "walmart", "musicians-friend"]);
+
+/** The filter in plain words, written into the download. Null with no filter. */
+function filterLabel(filter: Filter): string | null {
+  if (filter.violationsOnly) return "MAP violations only";
+  if (filter.bundlesOnly) return "Bundles only";
+  return null;
+}
 
 type Filter = {
   status?: string;
@@ -41,26 +47,7 @@ function moneyColumn(id: string, name: string, width = 164): RetailColumn {
   return { id, name, label: name, width, minWidth: 148, className: "money", sort: "number" };
 }
 
-function extraChannels(prices: ChannelPriceRow[]): { channel: string; name: string }[] {
-  const slugs = new Set<string>();
-  for (const byChannel of channelPriceLookup(prices).values()) {
-    for (const slug of byChannel.keys()) {
-      if (!FIXED_CHANNEL_KEYS.has(slug)) slugs.add(slug);
-    }
-  }
-  return [...slugs]
-    .sort((a, b) => {
-      const ai = PREFERRED_EXTRAS.indexOf(a);
-      const bi = PREFERRED_EXTRAS.indexOf(b);
-      const ao = ai === -1 ? PREFERRED_EXTRAS.length : ai;
-      const bo = bi === -1 ? PREFERRED_EXTRAS.length : bi;
-      if (ao !== bo) return ao - bo;
-      return a.localeCompare(b);
-    })
-    .map((channel) => ({ channel, name: channelDisplayName(channel) }));
-}
-
-function exploreColumns(extras: { channel: string; name: string }[]): RetailColumn[] {
+function exploreColumns(channels: ExploreChannelColumn[], showReviews: boolean): RetailColumn[] {
   return [
     {
       id: "listing",
@@ -74,11 +61,10 @@ function exploreColumns(extras: { channel: string; name: string }[]): RetailColu
     { id: "asin", name: "ASIN", label: "ASIN", width: 118, minWidth: 108, className: "asin-col", sort: "text" },
     { id: "partner", name: "Partner / Bundle", label: "Partner / Bundle", width: 150, minWidth: 100, sort: "text" },
     { id: "map", name: "MAP", label: "MAP", width: 104, minWidth: 88, className: "money", sort: "number" },
-    moneyColumn("amazon", "Amazon"),
-    moneyColumn("walmart", "Walmart"),
-    moneyColumn("musicians-friend", "Musician's Friend", 176),
-    ...extras.map((channel) => moneyColumn(channel.channel, channel.name)),
-    { id: "reviews", name: "Reviews", label: "Reviews", width: 124, minWidth: 112, sort: "number" },
+    ...channels.map((channel) => moneyColumn(channel.key, channel.name, channel.key === "musicians-friend" ? 176 : 164)),
+    ...(showReviews
+      ? [{ id: "reviews", name: "Reviews", label: "Reviews", width: 124, minWidth: 112, sort: "number" } as RetailColumn]
+      : []),
     { id: "channels", name: "Channels", label: "Channels", width: 120, minWidth: 80, sort: "text" },
   ];
 }
@@ -89,23 +75,6 @@ function exploreColumns(extras: { channel: string; name: string }[]): RetailColu
  */
 function lastSeenNote(row: CanvasRetailListingRow): string | null {
   return featuredOfferState(row) === "no_active_offer" ? "Last seen, no active offer" : null;
-}
-
-function asMapRow(row: CanvasRetailListingRow): MapSourceRow {
-  return {
-    asin: row.asin,
-    model_name: row.model_name,
-    title: row.title,
-    map_price: row.map_price,
-    offer_price: row.offer_price,
-    amz_leakage: row.amz_leakage ?? null,
-    worst_leakage: row.worst_leakage,
-    wmt_price: row.wmt_price,
-    wmt_leakage: row.wmt_leakage,
-    wmt_url: row.wmt_url,
-    mf_price: row.mf_price,
-    mf_leakage: row.mf_leakage,
-  };
 }
 
 async function loadChannelPrices(): Promise<ChannelPriceRow[]> {
@@ -164,9 +133,12 @@ export function FenderListingsTable() {
     };
   }, []);
 
-  const extras = useMemo(() => extraChannels(channelPrices), [channelPrices]);
-  const columns = useMemo(() => exploreColumns(extras), [extras]);
   const prices = useMemo(() => channelPriceLookup(channelPrices), [channelPrices]);
+  // A retailer column appears only when this client stores a price for it.
+  const channels = useMemo(() => exploreChannelColumns(rows, prices), [rows, prices]);
+  // No job writes review counts yet. The column appears once a listing stores one.
+  const showReviews = useMemo(() => anyListingReviewCount(rows), [rows]);
+  const columns = useMemo(() => exploreColumns(channels, showReviews), [channels, showReviews]);
   const sortValue = useCallback(
     (row: CanvasRetailListingRow, columnId: string) =>
       exploreListingSortValue(row, columnId, (id) => {
@@ -238,6 +210,7 @@ export function FenderListingsTable() {
         maxHeight={520}
         sort={population.sort}
         onSort={population.onSort}
+        filterLabel={filterLabel(filter)}
       >
         <tbody>
           {loading && rows.length === 0 ? (
@@ -287,25 +260,24 @@ export function FenderListingsTable() {
                 </td>
                 <td>{partner}</td>
                 <td className="money">{row.map_price != null ? formatUsd(row.map_price) : pendingLabel()}</td>
-                <ChannelPriceCell fact={facts.get("amazon")} note={lastSeenNote(row)} />
-                <ChannelPriceCell fact={facts.get("walmart")} href={walmartUrl} requireCheckedPage />
-                <ChannelPriceCell
-                  fact={facts.get("musicians-friend")}
-                  href={musiciansFriendUrl}
-                  requireCheckedPage
-                />
-                {extras.map((channel) => {
-                  const cell: PricedChannelCell | undefined = prices.get(row.asin.trim())?.get(channel.channel);
+                {channels.map((channel) => {
+                  if (channel.key === "amazon") {
+                    return <ChannelPriceCell key={channel.key} fact={facts.get("amazon")} note={lastSeenNote(row)} />;
+                  }
+                  const cell: PricedChannelCell | undefined = prices.get(row.asin.trim())?.get(channel.key);
+                  const href =
+                    channel.key === "walmart"
+                      ? walmartUrl
+                      : channel.key === "musicians-friend"
+                        ? musiciansFriendUrl
+                        : cell
+                          ? storedHttpUrl(cell.url)
+                          : null;
                   return (
-                    <ChannelPriceCell
-                      key={channel.channel}
-                      fact={facts.get(channel.channel)}
-                      href={cell ? storedHttpUrl(cell.url) : null}
-                      requireCheckedPage
-                    />
+                    <ChannelPriceCell key={channel.key} fact={facts.get(channel.key)} href={href} requireCheckedPage />
                   );
                 })}
-                <td>{listingReviewLabel(row.reviews_count)}</td>
+                {showReviews ? <td>{listingReviewLabel(row.reviews_count)}</td> : null}
                 <td>{row.channels?.trim() || "n/a"}</td>
               </tr>
             );

@@ -251,6 +251,23 @@ export const EPISODE_STATE_LABELS: Record<StockEpisode["state"], string> = {
   no_buy_box: "No Buy Box",
 };
 
+/** The dated-stretch table's columns, shared by the screen and its CSV. */
+export const EPISODE_COLUMNS = [
+  { id: "state", name: "What happened", sort: "text", width: 150 },
+  { id: "started", name: "Started", sort: "date", width: 130 },
+  { id: "ended", name: "Ended", sort: "date", width: 130 },
+  { id: "days", name: "Days", sort: "number", width: 90 },
+] as const;
+
+/** The React key of one stretch, and its row key in a download. */
+export function episodeKey(episode: Pick<StockEpisode, "state" | "start_day">): string {
+  return `${episode.state}-${episode.start_day}`;
+}
+
+export function episodeEndLabel(episode: Pick<StockEpisode, "ongoing" | "end_day">): string {
+  return episode.ongoing ? "Still going" : (formatDay(episode.end_day) ?? "");
+}
+
 export function keepaHref(asin: string): string | null {
   return /^[A-Z0-9]{10}$/.test(asin) ? `https://keepa.com/#!product/1-${asin}` : null;
 }

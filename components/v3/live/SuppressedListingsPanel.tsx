@@ -19,6 +19,7 @@ import {
   SUPPRESSED_LISTINGS_TABLE_COLUMNS,
   FeaturedOfferTableRow,
 } from "@/components/v3/live/FeaturedOfferRow";
+import { BenchmarkCoverageText } from "@/components/v3/live/FeaturedOfferReadings";
 import {
   featuredOfferColumnProbe,
   featuredOfferReadingCountQuery,
@@ -34,7 +35,6 @@ import {
 } from "@/lib/fender-canvas/featured-offer";
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
 import {
-  benchmarkCoverageSentence,
   confirmedSuppressionSentence,
   featuredOfferFreshnessSentence,
   featuredOfferJob,
@@ -74,7 +74,7 @@ const TABLE_BLOCK_STYLE = {
 };
 
 const OBSERVED_OFFER_NOTE =
-  "The observed offer and the Competitive External Price come from the same Amazon listing read, so the gap compares one moment. A blank gap means this reading has no comparable pair yet, not a gap of zero.";
+  "The observed offer and the Competitive External Price come from the same Amazon listing read, so the gap compares one moment. A blank gap means this reading has no comparable pair yet.";
 
 function suppressedSortValue(row: FeaturedOfferRow, columnId: string): SortInput {
   if (columnId === "listing") return listingLabel(row).trim() || null;
@@ -108,24 +108,27 @@ async function loadWithheldListings(): Promise<
 }
 
 /** Reading passages for the notes callout body (one paragraph, space-separated). */
-function readingNotesText(
-  read: RetailCanvasRead,
-  freshness?: CanvasFreshnessRow[] | null,
-): string {
-  if (read.phase === "loading") return "Loading the Buy Box reading…";
-  if (read.phase === "error") return "The retail read could not be loaded.";
+function ReadingNotes({
+  read,
+  freshness,
+}: {
+  read: RetailCanvasRead;
+  freshness?: CanvasFreshnessRow[] | null;
+}) {
+  if (read.phase === "loading") return <>Loading the Buy Box reading…</>;
+  if (read.phase === "error") return <>The retail read could not be loaded.</>;
   const counts = read.snapshot.suppressedListings.detail?.counts;
   if (!counts) {
     return (
-      read.snapshot.suppressedListings.missingMessage ??
-      "The Buy Box reading has not been stored."
+      <>{read.snapshot.suppressedListings.missingMessage ?? "The Buy Box reading has not been stored."}</>
     );
   }
-  return [
-    confirmedSuppressionSentence(counts),
-    benchmarkCoverageSentence(counts),
-    featuredOfferFreshnessSentence(counts, featuredOfferJob(freshness)),
-  ].join(" ");
+  return (
+    <>
+      {confirmedSuppressionSentence(counts)} <BenchmarkCoverageText counts={counts} />{" "}
+      {featuredOfferFreshnessSentence(counts, featuredOfferJob(freshness))}
+    </>
+  );
 }
 
 /**
@@ -209,8 +212,6 @@ function SuppressedListingsNotes({
   read: RetailCanvasRead;
   freshness?: CanvasFreshnessRow[] | null;
 }) {
-  const reading = readingNotesText(read, freshness);
-
   return (
     <div
       className="ceo-callout"
@@ -224,8 +225,9 @@ function SuppressedListingsNotes({
         Amazon withholds the <DefinedTerm term="Buy Box" /> when the offer it observed,
         including shipping, is above the Competitive External Price: the lowest price it
         recently found outside Amazon. Amazon does not name that retailer, and a listing can
-        be withheld for other reasons too, so a withheld listing with no published benchmark
-        is not a confirmed price problem. {reading} {OBSERVED_OFFER_NOTE}
+        be withheld for other reasons too. A price cause is confirmed only where Amazon
+        published a benchmark. <ReadingNotes read={read} freshness={freshness} />{" "}
+        {OBSERVED_OFFER_NOTE}
       </div>
     </div>
   );

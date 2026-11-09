@@ -5,7 +5,8 @@ import { CommerceConsensusPanel } from "@/components/v3/live/CommerceConsensusPa
 import { ExploreListings } from "@/components/v3/live/ExploreListings";
 import { DefinedTerm } from "@/components/v3/live/DefinedTerm";
 import { FeaturedOfferReadings } from "@/components/v3/live/FeaturedOfferReadings";
-import { authorizedSellerControlOffered } from "@/lib/fender-canvas/authorized-sellers";
+import { figureTipAttrs } from "@/components/v3/live/FigureTip";
+import { authorizedSellerControlOffered, sellerTypeDefinition } from "@/lib/fender-canvas/authorized-sellers";
 import { activeClient } from "@/lib/client/active-client";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
 import type { CanvasFreshnessRow } from "@/lib/fender-canvas/types";
@@ -29,7 +30,10 @@ export function RetailOverview({
         data-seller-type={RETAIL_SELLER_TYPE}
         style={{ margin: "0 0 10px", fontSize: 11, letterSpacing: "0.02em" }}
       >
-        Seller type: {RETAIL_SELLER_TYPE}
+        Seller type:{" "}
+        <span {...figureTipAttrs(RETAIL_SELLER_TYPE, sellerTypeDefinition(RETAIL_SELLER_TYPE), "seller-type")}>
+          {RETAIL_SELLER_TYPE}
+        </span>
       </p>
       {authorizedSellerControlOffered(RETAIL_SELLER_TYPE) ? (
         <AuthorizedSellersControl read={read} />

@@ -220,7 +220,9 @@ test("Retail Overview places three heroes before the essay and drops the stacked
   const readings = read("components/v3/live/FeaturedOfferReadings.tsx");
 
   assert.match(overview, /CommerceConsensusPanel/);
-  assert.match(overview, /Seller type: \{RETAIL_SELLER_TYPE\}/);
+  assert.match(overview, /Seller type:/);
+  assert.match(overview, /data-seller-type=\{RETAIL_SELLER_TYPE\}/);
+  assert.match(overview, /sellerTypeDefinition\(RETAIL_SELLER_TYPE\)/);
   assert.match(overview, /const RETAIL_SELLER_TYPE = activeClient\(\)\.sellerModel/);
   assert.match(overview, /authorizedSellerControlOffered\(RETAIL_SELLER_TYPE\)/);
   assert.match(overview, /AuthorizedSellersControl/);
@@ -251,7 +253,8 @@ test("Retail Overview places three heroes before the essay and drops the stacked
 
   assert.doesNotMatch(readings, /confirmedSuppressionSentence/);
   assert.doesNotMatch(readings, /classificationCoverageSentence/);
-  assert.match(readings, /benchmarkCoverageSentence/);
+  assert.match(readings, /BenchmarkCoverageText/);
+  assert.match(readings, /benchmarkCoverageParts/);
   assert.match(readings, /Buy Box readings/);
 
   assert.doesNotMatch(overview, /\u2014/);

@@ -1,6 +1,7 @@
 "use client";
 
-import { CitationPieDisc } from "@/components/v3/live/ai-search/CitationPieDisc";
+import { RetailShareDisc } from "@/components/v3/live/RetailOverviewFigure";
+import { isFenderClient } from "@/lib/brand-copy";
 import { formatInt, formatUsd } from "@/lib/fender-canvas/format";
 import {
   lostSalesPopulationPie,
@@ -10,8 +11,6 @@ import {
   type RevenueSource,
   type StockLossRow,
 } from "@/lib/fender-canvas/stock-loss";
-
-const RETAIL_PIE_SIZE = "citation-pie-disc citation-pie-disc-retail";
 
 function estimateTooltipDesc(sum: LostSalesSum, populationCount: number | null): string {
   const population =
@@ -26,7 +25,11 @@ function estimateTooltipDesc(sum: LostSalesSum, populationCount: number | null):
     `The rate uses 12-month revenue when at least 30 of those days were in stock, ` +
     `otherwise revenue from the last 30 days when at least 7 of those days were in stock. ` +
     `Each window is also what the next period of the same length would miss if the sales rate and the out-of-stock pattern hold. ` +
-    `Totals from different sales sources are never added together.`
+    `Totals from different sales sources are never added together. ` +
+    `It is an analyst estimate, not reported sales. ` +
+    (isFenderClient()
+      ? "Fender sells through dealers, so the data shows that a listing ran out but not whether Fender or the dealer did."
+      : "The data shows that a listing ran out, not which seller ran out.")
   );
 }
 
@@ -65,21 +68,13 @@ export function StockLossHero({
       <div className="findability-lead-row" data-stock-loss-hero-row="">
         <div className="findability-lead-figures">
           {sources.length === 0 ? (
-            <span
-              className="ai-lead-figure"
-              style={{ color: "var(--warning-amber)" }}
-              data-stock-loss-hero-figure=""
-            >
+            <span className="ai-lead-figure" data-stock-loss-hero-figure="">
               Awaiting inputs
             </span>
           ) : (
             sources.map((source) => (
               <span key={source} className="stock-loss-hero-source" data-stock-loss-hero-source={source}>
-                <span
-                  className="ai-lead-figure"
-                  style={{ color: "var(--danger-red)" }}
-                  data-stock-loss-hero-figure=""
-                >
+                <span className="ai-lead-figure" data-stock-loss-hero-figure="">
                   {formatUsd(sourceTotal(year, source))}
                 </span>
                 <span className="findability-lead-ratio">
@@ -110,7 +105,7 @@ export function StockLossHero({
             </span>
           ) : null}
         </div>
-        {pie ? <CitationPieDisc pie={pie} sizeClass={RETAIL_PIE_SIZE} tip={tip} /> : null}
+        {pie ? <RetailShareDisc pie={pie} measuredKey="matched" tip={tip} /> : null}
       </div>
     </div>
   );

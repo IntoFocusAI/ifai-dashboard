@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import "@/components/v3/live/catalog-health.css";
+import { figureTipAttrs } from "@/components/v3/live/FigureTip";
 import type { RetailColumn } from "@/components/v3/live/ResizableTable";
 import { StatusGlyph } from "@/components/v3/live/StatusMark";
 import { formatUsd } from "@/lib/fender-canvas/format";
@@ -13,7 +14,11 @@ import {
   observedOfferDollars,
   type FeaturedOfferRow as Row,
 } from "@/lib/fender-canvas/featured-offer";
-import { formatCheckedAt } from "@/lib/fender-canvas/featured-offer-copy";
+import {
+  NO_COMPARABLE_PAIR_LABEL,
+  NO_COMPARABLE_PAIR_TIP,
+  formatCheckedAt,
+} from "@/lib/fender-canvas/featured-offer-copy";
 
 /**
  * Suppressed Listings only shows withheld offers, so a Buy Box column would never vary.
@@ -114,7 +119,12 @@ export function FeaturedOfferTableRow({
             <span className="data-status-word">{formatUsd(gap, { signed: true })} above</span>
           </span>
         ) : (
-          <span className="fo-note">No comparable pair</span>
+          <span
+            {...figureTipAttrs(NO_COMPARABLE_PAIR_LABEL, NO_COMPARABLE_PAIR_TIP, "no-comparable-pair")}
+            className="ifai-term fo-note"
+          >
+            {NO_COMPARABLE_PAIR_LABEL}
+          </span>
         )}
       </td>
       <td>{checkedAt ?? <span className="fo-note">Never</span>}</td>

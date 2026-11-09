@@ -307,6 +307,70 @@ export function mapTabModel(rows: MapSourceRow[], channelPrices: ChannelPriceRow
   };
 }
 
+/** The fields of a retail listing row the channel facts read. */
+export type ChannelSourceRow = {
+  asin: string;
+  model_name: string | null;
+  title: string | null;
+  map_price: number | null;
+  offer_price: number | null;
+  amz_leakage?: number | null;
+  worst_leakage: number | null;
+  wmt_price: number | null;
+  wmt_leakage?: number | null;
+  wmt_url: string | null;
+  mf_price?: number | null;
+  mf_leakage?: number | null;
+};
+
+export function mapSourceRow(row: ChannelSourceRow): MapSourceRow {
+  return {
+    asin: row.asin,
+    model_name: row.model_name,
+    title: row.title,
+    map_price: row.map_price,
+    offer_price: row.offer_price,
+    amz_leakage: row.amz_leakage ?? null,
+    worst_leakage: row.worst_leakage,
+    wmt_price: row.wmt_price,
+    wmt_leakage: row.wmt_leakage,
+    wmt_url: row.wmt_url,
+    mf_price: row.mf_price ?? null,
+    mf_leakage: row.mf_leakage ?? null,
+  };
+}
+
+export type ExploreChannelColumn = { key: string; name: string };
+
+/**
+ * The retailer columns Explore all listings shows: a fixed retailer only when at least one
+ * listing stores a price or gap for it, then the extra retailers in their preferred order.
+ * A client with no Musician's Friend data gets no Musician's Friend column.
+ */
+export function exploreChannelColumns(
+  rows: readonly ChannelSourceRow[],
+  prices: Map<string, Map<string, PricedChannelCell>>,
+): ExploreChannelColumn[] {
+  const present = new Set<string>();
+  const extras = new Set<string>();
+  for (const row of rows) {
+    for (const fact of listingChannelFacts(mapSourceRow(row), prices.get(row.asin.trim()))) {
+      if (FIXED_CHANNELS.some((channel) => channel.key === fact.key)) present.add(fact.key);
+      else extras.add(fact.key);
+    }
+  }
+  return [
+    ...FIXED_CHANNELS.filter((channel) => present.has(channel.key)).map((channel) => ({
+      key: channel.key as string,
+      name: channel.name as string,
+    })),
+    ...[...extras]
+      .map((channel) => ({ channel, name: channelDisplayName(channel), count: 0 }))
+      .sort(channelSort)
+      .map((channel) => ({ key: channel.channel, name: channel.name })),
+  ];
+}
+
 export function listingLabel(row: MapSourceRow): string {
   return row.model_name?.trim() || row.title?.trim() || "Listing";
 }

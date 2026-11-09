@@ -157,7 +157,7 @@ test("Suppressed Listings places one callout body beside the share", () => {
   assert.match(panel, /width:\s*"fit-content"/);
   assert.match(panel, /Why can a listing lose the Buy Box\?/);
   assert.match(panel, /confirmedSuppressionSentence/);
-  assert.match(panel, /benchmarkCoverageSentence/);
+  assert.match(panel, /BenchmarkCoverageText/);
   assert.match(panel, /featuredOfferFreshnessSentence/);
   assert.match(
     panel,
@@ -178,7 +178,7 @@ test("Suppressed Listings places one callout body beside the share", () => {
     1,
     "one callout body holds the why text and reading sentences",
   );
-  assert.match(panel, /\.join\(" "\)/);
+  assert.match(panel, /<ReadingNotes read=\{read\} freshness=\{freshness\} \/>/);
   assert.doesNotMatch(
     panel,
     /retail-missing">\{confirmedSuppressionSentence|retail-missing">\{benchmarkCoverageSentence|retail-missing">\s*\{featuredOfferFreshnessSentence/,
