@@ -347,8 +347,8 @@ test("Catalog Governance places notes beside the share and the table under that 
   assert.match(panel, /data-catalog-governance-notes/);
   assert.match(panel, /data-catalog-governance-table/);
   assert.match(panel, /data-catalog-spec-hero/);
-  assert.match(panel, /CitationPieDisc/);
-  assert.match(panel, /citation-pie-disc citation-pie-disc-retail/);
+  assert.match(panel, /RetailShareDisc/);
+  assert.match(read("components/v3/live/RetailOverviewFigure.tsx"), /citation-pie-disc citation-pie-disc-retail/);
   assert.match(panel, /hero\.label/);
   assert.match(panel, /hero\.percent/);
   assert.match(panel, /hero\.ratio/);
@@ -410,10 +410,10 @@ test("Catalog Governance places notes beside the share and the table under that 
   assert.ok(lines <= 400, `CatalogGovernancePanel.tsx is ${lines} lines`);
 });
 
-test("Catalog Governance panel source shows Splintered listings chevrons and specs table", () => {
+test("Catalog Governance panel source shows Splintered Listings chevrons and specs table", () => {
   const panel = read("components/v3/live/CatalogGovernancePanel.tsx");
   const specs = read("components/v3/live/CatalogGovernanceSpecTable.tsx");
-  assert.match(panel, /Splintered listings/);
+  assert.match(panel, /Splintered Listings/);
   assert.match(panel, /Specs complete/);
   assert.match(panel, /retail-explore-chevron/);
   assert.match(panel, /aria-expanded=\{open\}/);
@@ -490,7 +490,8 @@ test("bundle Buy Box and Line cells use short brand-facing labels", () => {
 });
 
 test("Catalog Governance table drops Parent ASIN and Why it is here", () => {
-  const panel = read("components/v3/live/CatalogGovernancePanel.tsx");
+  // The bundle table lives beside the panel so both files stay under 400 lines.
+  const panel = read("components/v3/live/CatalogGovernanceBundleTable.tsx");
   assert.doesNotMatch(panel, /Parent ASIN/);
   assert.doesNotMatch(panel, /Why it is here/);
   assert.doesNotMatch(panel, /Partner/);

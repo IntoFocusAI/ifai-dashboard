@@ -1,0 +1,74 @@
+/* Catalog Health view styles. Shared tokens and table chrome stay in canvas-sdk.css. */
+
+/* MAP exposure card: label with its estimate tag, the monthly figure, then source and coverage. */
+.ifai-canvas .map-exposure-card {
+  flex: 0 1 auto;
+  width: fit-content;
+  max-width: 100%;
+  margin-top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ifai-canvas .map-exposure-label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.ifai-canvas .map-exposure-figure {
+  color: var(--text-main);
+  white-space: nowrap;
+}
+
+.ifai-canvas .map-exposure-period {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--text-muted);
+}
+
+/* A tag or chip that opens a tooltip keeps its pill border; no dotted underline on top of it. */
+.ifai-canvas .source-tag.ifai-term,
+.ifai-canvas .tag-badge.ifai-term {
+  border-bottom-style: solid;
+  cursor: help;
+}
+
+.ifai-canvas .tag-badge.ifai-term {
+  border-bottom: 0;
+}
+
+.ifai-canvas .source-tag-estimate.ifai-term {
+  border-bottom: 1px dashed currentColor;
+}
+
+/* The mark and word under a lead figure. */
+.ifai-canvas .findability-lead-figures > .data-status,
+.ifai-canvas .retail-overview-hero-figures > .data-status {
+  margin-top: 2px;
+}
+
+/* A below-MAP gap in a price cell: price on the first line, mark and gap beneath it. */
+.ifai-canvas .channel-gap.data-status {
+  display: flex;
+  justify-content: flex-start;
+  margin-left: 0;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* A gap above a benchmark on Suppressed Listings: the mark travels with the amount. */
+.ifai-canvas .fo-gap.data-status {
+  font-size: inherit;
+  font-weight: 600;
+}
+
+/* Dated stretches inside an Out of Stock row sit in the shared table chrome. */
+.ifai-canvas .stock-loss-episodes .table-toolbar {
+  margin-top: 4px;
+}

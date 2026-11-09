@@ -65,7 +65,9 @@ test("a channel cell prints the signed gap and does not name it Amazon gap", () 
     "utf8",
   );
   assert.doesNotMatch(source, /Amazon gap/);
-  assert.match(source, /danger-red/);
+  assert.match(source, /data-status-bad/);
+  assert.match(source, /StatusGlyph/);
+  assert.match(source, /below MAP/);
   assert.match(source, /gap < 0/);
 });
 

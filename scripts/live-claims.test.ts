@@ -196,7 +196,7 @@ test("command center uses the retail headline and drops unsourced claims", () =>
     ["buybox-suppression", "schema-coverage", "map-leakage", "aplus-tables"],
   );
   assert.equal(map?.title, "555 listings are below MAP in this listing read");
-  assert.equal(map?.subTab, "MAP");
+  assert.equal(map?.subTab, "MAP Leakage");
   assert.match(map?.why ?? "", /Open the MAP tab/);
   assert.doesNotMatch(map?.why ?? "", /not a final count/);
 });
@@ -243,7 +243,7 @@ test("the MAP violations widget follows the listing read", () => {
   const ready = buildLiveMetrics(bundle(), retailReady()).flaggedAsins;
   assert.equal(ready.label, "MAP violations");
   assert.equal(ready.value, "555");
-  assert.equal(ready.subTab, "MAP");
+  assert.equal(ready.subTab, "MAP Leakage");
   assert.doesNotMatch(ready.detail, /48/);
 
   const failed = buildLiveMetrics(bundle(), { phase: "error" }).flaggedAsins;

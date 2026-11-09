@@ -427,7 +427,7 @@ test("a confirmed zero is skipped and the next finding is used", () => {
     }),
   );
   assert.equal(selected?.findingId, "map_leakage");
-  assert.equal(selected?.tabSlug, "map");
+  assert.equal(selected?.tabSlug, "map-leakage");
   assert.equal(selected?.label, RETAIL_FINDING_LABELS.map_leakage);
 
   const bundles = selectRetailHeadline(

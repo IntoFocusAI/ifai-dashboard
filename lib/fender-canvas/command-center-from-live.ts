@@ -96,7 +96,7 @@ export function buildLiveCommandCenter(
         impact: "The summary and the listing rows are the rows returned by the latest retail listing read.",
         severity: "high",
         spokeId: "ecommerce",
-        subTab: "MAP",
+        subTab: "MAP Leakage",
         defaultOwner: "client",
       },
       ...aiOther,

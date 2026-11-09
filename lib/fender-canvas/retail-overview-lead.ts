@@ -44,6 +44,23 @@ export type RetailOverviewHeroModel = {
   denominator: number | null;
 };
 
+/**
+ * The figure's status, or null when it reads Not available*. A missing figure carries no
+ * status color, mark, or word: status marks data only.
+ */
+export function heroFigureTone(
+  hero: Pick<RetailOverviewHeroModel, "numerator" | "denominator" | "tone">,
+): Exclude<NodeStatus, "neutral"> | null {
+  return hero.numerator != null && hero.denominator != null ? hero.tone : null;
+}
+
+/** The figure's color: its status color, or muted text when there is no figure to grade. */
+export function heroFigureColor(
+  hero: Pick<RetailOverviewHeroModel, "numerator" | "denominator" | "tone" | "color">,
+): string {
+  return heroFigureTone(hero) ? hero.color : "var(--text-muted)";
+}
+
 function toneForShare(
   numerator: number | null,
   denominator: number | null,

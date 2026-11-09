@@ -239,7 +239,7 @@ test("Retail Overview places three heroes before the essay and drops the stacked
   assert.match(lead, /leading/);
   assert.match(lead, /retailOverviewHeroes/);
   assert.match(lead, /ai-lead-figure/);
-  assert.match(lead, /CitationPieDisc/);
+  assert.match(lead, /RetailShareDisc/);
   assert.match(lead, /data-ifai-open="ecommerce"/);
   assert.match(lead, /data-ifai-tab=\{hero\.tab\}/);
   assert.match(lead, /retail-overview-heroes/);

@@ -298,7 +298,7 @@ export function mapBubble(reading: RetailReading<MapLeakageDetail | null>): Reta
     reading,
     { value: numerator != null && denominator != null ? `${share}${mark}` : share, label: "MAP leakage" },
     [...(count ? [`${count}${mark}`] : []), ...(gap ? [gap] : []), ...(coverage ? [coverage] : [])],
-    "MAP",
+    RETAIL_FINDING_LABELS.map_leakage,
   );
   if (exceptions > 0) face.tooltip = { title: "MAP leakage", desc: approvedExceptionsSentence(exceptions) };
   return face;
@@ -402,7 +402,7 @@ export function retailBubbleFaces(read: RetailCanvasRead): {
     return {
       main: catalogHealthMainFace(read),
       suppressed: waitingFace("Suppressed Listings", "Suppressed Listings", ["Loading"], desc, "confirmed high-price"),
-      map: waitingFace("MAP Leakage", "MAP", ["Loading"], desc, "MAP leakage"),
+      map: waitingFace("MAP Leakage", RETAIL_FINDING_LABELS.map_leakage, ["Loading"], desc, "MAP leakage"),
       catalog: waitingFace("Catalog Governance", "Catalog Governance", ["Loading"], desc, "Splintered Listings"),
     };
   }
@@ -416,7 +416,7 @@ export function retailBubbleFaces(read: RetailCanvasRead): {
     return {
       main: catalogHealthMainFace(read),
       suppressed: failed(waitingFace("Suppressed Listings", "Suppressed Listings", [READ_NOT_AVAILABLE], RETAIL_READ_FAILED, "confirmed high-price")),
-      map: failed(waitingFace("MAP Leakage", "MAP", [READ_NOT_AVAILABLE], RETAIL_READ_FAILED, "MAP leakage")),
+      map: failed(waitingFace("MAP Leakage", RETAIL_FINDING_LABELS.map_leakage, [READ_NOT_AVAILABLE], RETAIL_READ_FAILED, "MAP leakage")),
       catalog: failed(waitingFace("Catalog Governance", "Catalog Governance", [READ_NOT_AVAILABLE], RETAIL_READ_FAILED, "Splintered Listings")),
     };
   }

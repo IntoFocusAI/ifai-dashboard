@@ -1,7 +1,9 @@
 "use client";
 
 import type { ReactNode } from "react";
+import "@/components/v3/live/catalog-health.css";
 import type { RetailColumn } from "@/components/v3/live/ResizableTable";
+import { StatusGlyph } from "@/components/v3/live/StatusMark";
 import { formatUsd } from "@/lib/fender-canvas/format";
 import {
   aboveBenchmarkDollars,
@@ -105,9 +107,12 @@ export function FeaturedOfferTableRow({
       <td className="money">
         {benchmark != null ? formatUsd(benchmark) : <span className="fo-note">{benchmarkNote(row)}</span>}
       </td>
-      <td className="money" style={gap != null ? { color: "var(--danger-red)", fontWeight: 700 } : undefined}>
+      <td className="money">
         {gap != null ? (
-          formatUsd(gap, { signed: true })
+          <span className="fo-gap data-status data-status-bad" data-status="bad">
+            <StatusGlyph status="bad" />
+            <span className="data-status-word">{formatUsd(gap, { signed: true })} above</span>
+          </span>
         ) : (
           <span className="fo-note">No comparable pair</span>
         )}

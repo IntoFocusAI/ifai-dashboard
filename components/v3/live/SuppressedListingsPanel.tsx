@@ -1,15 +1,17 @@
 "use client";
 
 import { Fragment, useEffect, useState } from "react";
-import { CitationPieDisc } from "@/components/v3/live/ai-search/CitationPieDisc";
 import { DefinedTerm } from "@/components/v3/live/DefinedTerm";
+import { RetailShareDisc, RetailStatusMark } from "@/components/v3/live/RetailOverviewFigure";
 import { ResizableTable } from "@/components/v3/live/ResizableTable";
 import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
 import {
-  SET_ASIDE_COLUMN,
+  SET_ASIDE_COLUMN_ID,
+  SET_ASIDE_SORT_COLUMN,
   SetAsideCell,
   SetAsideFormRow,
   SetAsideHistory,
+  setAsideSortValue,
   useCheckSetAsides,
 } from "@/components/v3/live/SetAsideTable";
 import { SET_ASIDE_CHECKS } from "@/lib/set-aside/keys";
@@ -38,13 +40,12 @@ import {
   featuredOfferJob,
 } from "@/lib/fender-canvas/featured-offer-copy";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
-import { buyBoxHero } from "@/lib/fender-canvas/retail-overview-lead";
+import { buyBoxHero, heroFigureColor, heroFigureTone } from "@/lib/fender-canvas/retail-overview-lead";
 import type { CanvasFreshnessRow } from "@/lib/fender-canvas/types";
 
 const PAGE_SIZE = 1000;
-const RETAIL_PIE_SIZE = "citation-pie-disc citation-pie-disc-retail";
 
-const TABLE_COLUMNS = [...SUPPRESSED_LISTINGS_TABLE_COLUMNS, SET_ASIDE_COLUMN];
+const TABLE_COLUMNS = [...SUPPRESSED_LISTINGS_TABLE_COLUMNS, SET_ASIDE_SORT_COLUMN];
 
 const TOP_ROW_STYLE = {
   display: "flex",
@@ -170,7 +171,7 @@ function SuppressedListingsLead({ read }: { read: RetailCanvasRead }) {
         <div className="findability-lead-figures">
           <span
             className="ai-lead-figure"
-            style={{ color: hero.color }}
+            style={{ color: heroFigureColor(hero) }}
             data-suppressed-listings-lead-percent=""
             data-suppressed-listings-lead-tone={hero.tone}
             data-suppressed-listings-lead-numerator={hero.numerator ?? ""}
@@ -186,14 +187,9 @@ function SuppressedListingsLead({ read }: { read: RetailCanvasRead }) {
               {hero.ratio}
             </span>
           ) : null}
+          <RetailStatusMark tone={heroFigureTone(hero)} />
         </div>
-        {hero.pie ? (
-          <CitationPieDisc
-            pie={hero.pie}
-            sizeClass={RETAIL_PIE_SIZE}
-            tip={hero.tip ?? undefined}
-          />
-        ) : null}
+        {hero.pie ? <RetailShareDisc pie={hero.pie} measuredKey="contradicted" tip={hero.tip} /> : null}
       </div>
       <span className="metric-card-sub" data-suppressed-listings-lead-explainer="">
         {hero.explainer}
@@ -263,10 +259,10 @@ export function SuppressedListingsPanel({
 
   const rows = typeof state === "object" ? state.rows : null;
   const setAsides = useCheckSetAsides(SET_ASIDE_CHECKS.buyboxSuppression, "Suppressed Listings");
-  const sorted = useClientTableSort(
-    rows ?? [],
-    SUPPRESSED_LISTINGS_TABLE_COLUMNS,
-    suppressedSortValue,
+  const sorted = useClientTableSort(rows ?? [], TABLE_COLUMNS, (row, columnId) =>
+    columnId === SET_ASIDE_COLUMN_ID
+      ? setAsideSortValue(setAsides, typeof row.asin === "string" ? row.asin : "")
+      : suppressedSortValue(row, columnId),
   );
 
   return (

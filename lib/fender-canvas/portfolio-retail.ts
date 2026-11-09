@@ -56,7 +56,7 @@ export type RetailFindingId = "suppressed_listings" | "map_leakage" | "unnested_
 
 export const RETAIL_FINDING_LABELS = {
   suppressed_listings: "Suppressed Listings",
-  map_leakage: "MAP",
+  map_leakage: "MAP Leakage",
   unnested_bundles: "Catalog Governance",
 } as const satisfies Record<RetailFindingId, string>;
 

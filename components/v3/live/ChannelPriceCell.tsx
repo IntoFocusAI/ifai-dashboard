@@ -1,5 +1,7 @@
 "use client";
 
+import "@/components/v3/live/catalog-health.css";
+import { StatusGlyph } from "@/components/v3/live/StatusMark";
 import { formatUsd } from "@/lib/fender-canvas/format";
 import {
   MISSING_CHECKED_PAGE_DESC,
@@ -9,7 +11,8 @@ import {
 } from "@/lib/fender-canvas/map-channels";
 
 /**
- * Price and signed gap on one line. A missing price stays blank.
+ * Price and signed gap. A gap below MAP sits under the price with its status mark and words.
+ * A missing price stays blank.
  * `note` marks a stored price that is not a current observation.
  * When `requireCheckedPage` is set and no stored URL exists, the cell keeps
  * the price and shows Not available* instead of inventing a retailer link.
@@ -43,10 +46,14 @@ export function ChannelPriceCell({
         </a>
       ) : null}
       {price != null && !href ? <span>{price}</span> : null}
-      {fact.gap != null ? (
-        <span className="channel-gap" style={below ? { color: "var(--danger-red)" } : undefined}>
-          {formatUsd(fact.gap, { signed: true })}
+      {fact.gap != null && below ? (
+        <span className="channel-gap data-status data-status-bad" data-status="bad">
+          <StatusGlyph status="bad" />
+          <span className="data-status-word">{formatUsd(fact.gap, { signed: true })} below MAP</span>
         </span>
+      ) : null}
+      {fact.gap != null && !below ? (
+        <span className="channel-gap">{formatUsd(fact.gap, { signed: true })}</span>
       ) : null}
       {missingSource ? (
         <span

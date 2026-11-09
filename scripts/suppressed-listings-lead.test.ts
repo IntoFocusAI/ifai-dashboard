@@ -147,8 +147,8 @@ test("Suppressed Listings places one callout body beside the share", () => {
   assert.match(panel, /data-suppressed-listings-notes/);
   assert.match(panel, /data-suppressed-listings-top/);
   assert.match(panel, /data-suppressed-listings-table/);
-  assert.match(panel, /CitationPieDisc/);
-  assert.match(panel, /citation-pie-disc citation-pie-disc-retail/);
+  assert.match(panel, /RetailShareDisc/);
+  assert.match(read("components/v3/live/RetailOverviewFigure.tsx"), /citation-pie-disc citation-pie-disc-retail/);
   assert.match(panel, /hero\.label/);
   assert.match(panel, /hero\.percent/);
   assert.match(panel, /hero\.ratio/);

@@ -256,7 +256,7 @@ test("five findings reuse Retail Overview / Findability / Run Details population
   assert.equal(lead.findings[1].denominator, map.denominator);
   assert.equal(lead.findings[1].percent, map.percent);
   assert.equal(lead.findings[1].label, "MAP leakage");
-  assert.equal(lead.findings[1].tab, "MAP");
+  assert.equal(lead.findings[1].tab, "MAP Leakage");
 
   assert.equal(lead.findings[2].numerator, catalog.numerator);
   assert.equal(lead.findings[2].denominator, catalog.denominator);

@@ -12,7 +12,9 @@ test("catalog governance explains the review record without promising a win", ()
   assert.match(copy, /improves how Amazon evaluates the listing/);
   assert.match(copy, /stronger evidence when they decide what to recommend/);
   assert.doesNotMatch(copy, /does not guarantee a higher rank or an AI recommendation/);
-  assert.match(copy, /reflects the retail read, not the full catalog/);
+  assert.match(copy, /counts the bundles in the retail read/);
+  // Let the data speak: what the group is not lives in the figure's tooltip, not on screen.
+  assert.doesNotMatch(copy, /not the full catalog/);
   assert.doesNotMatch(copy, FORBIDDEN);
   assert.doesNotMatch(copy, /\u2014/);
 });

@@ -16,8 +16,26 @@ import {
 import {
   approvedExceptionAsins,
   withMapApprovedExceptions,
+  withoutApprovedExceptions,
   type MapSetAsideFields,
 } from "@/lib/fender-canvas/map-approved-exceptions";
+import {
+  ANALYST_ESTIMATE_LABEL,
+  AWAITING_INPUTS_LABEL,
+  MAP_EXPOSURE_LABEL,
+  MAP_EXPOSURE_ORDER,
+  MAP_UNITS_LABEL,
+  MAP_UNITS_SOURCE,
+  awaitingReasonSentence,
+  loadMapUnits,
+  mapAwaitingSentence,
+  mapExposure,
+  mapExposureCoverage,
+  mapExposureOrder,
+  mapExposureSummary,
+  mapUnitsLookup,
+  type MapExposure,
+} from "@/lib/fender-canvas/map-exposure";
 import { MAP_PRICES_NOT_STORED } from "@/lib/fender-canvas/portfolio-retail";
 import { loadPortfolioRetailSnapshot } from "@/lib/fender-canvas/portfolio-retail-queries";
 import { mapHero, mapLeakageTip } from "@/lib/fender-canvas/retail-overview-lead";
@@ -72,23 +90,39 @@ function cellText(price: number | null, gap: number | null, note: string | null)
     .join(" ");
 }
 
+/** The exposure cell as the screen reads it: the dollars, or Awaiting inputs with its reason. */
+function exposureText(exposure: MapExposure): string {
+  if (exposure.status === "estimated") return formatUsd(exposure.value);
+  return `${AWAITING_INPUTS_LABEL}. ${awaitingReasonSentence(exposure.reason)}`;
+}
+
 /** MAP listings in the same order and columns the tab shows before a column header is clicked. */
 export async function loadMapSource(): Promise<SourceRead> {
   try {
     const snapshot = await loadPortfolioRetailSnapshot();
     const pricesNotStored = snapshot.mapLeakage.missingMessage === MAP_PRICES_NOT_STORED;
-    const [rows, prices, exceptions, asOf] = await Promise.all([
+    const [readRows, prices, exceptions, asOf] = await Promise.all([
       loadRows(!pricesNotStored),
       loadPrices(),
       loadExceptions(),
       loadDashboardAsOf(),
     ]);
+    // R-09: the same unit read the tab makes. A failed read adds no exposure column.
+    const unitRows = pricesNotStored ? null : await loadMapUnits(readRows.map((row) => row.asin));
+    const units = unitRows ? mapUnitsLookup(unitRows) : null;
+    const rows = units ? mapExposureOrder(readRows, units) : readRows;
     const counted = withMapApprovedExceptions(snapshot, exceptions.asins, { failed: exceptions.failed });
     const hero = mapHero(counted);
     const model = mapTabModel(rows, prices);
     const lookup = channelPriceLookup(prices);
     const header = ["Listing", "ASIN", "MAP"];
     if (model.showAmazon) header.push("Amazon");
+    if (units) {
+      header.push(
+        `${MAP_UNITS_LABEL} (${MAP_UNITS_SOURCE})`,
+        `${MAP_EXPOSURE_LABEL} a month (${ANALYST_ESTIMATE_LABEL})`,
+      );
+    }
     if (model.showWalmart) header.push("Walmart");
     if (model.showMusiciansFriend) header.push("Musician's Friend");
     for (const channel of model.extraChannels) header.push(channel.name);
@@ -106,6 +140,10 @@ export async function loadMapSource(): Promise<SourceRead> {
         line.push(cellText(fact?.price ?? null, fact?.gap ?? null, note));
       };
       if (model.showAmazon) push("amazon", null, false);
+      if (units) {
+        const exposure = mapExposure(row, units);
+        line.push(exposure.units != null ? String(exposure.units) : "", exposureText(exposure));
+      }
       if (model.showWalmart) push("walmart", storedHttpUrl(row.wmt_url), true);
       if (model.showMusiciansFriend) push("musicians-friend", musiciansFriendCheckedPageUrl(lookup, row.asin), true);
       for (const channel of model.extraChannels) {
@@ -115,9 +153,22 @@ export async function loadMapSource(): Promise<SourceRead> {
       return { key: row.asin, cells: line };
     });
 
-    const population =
+    const violations =
       mapLeakageTip(counted) ??
       (hero.ratio ? `${hero.label}: ${hero.ratio}.` : hero.explainer);
+    const summary = units ? mapExposureSummary(withoutApprovedExceptions(rows, exceptions.asins), units) : null;
+    const exposureSentence = summary
+      ? [
+          summary.totalValue != null
+            ? `${MAP_EXPOSURE_LABEL} (${ANALYST_ESTIMATE_LABEL}, ${MAP_UNITS_SOURCE} units): ${formatUsd(summary.totalValue)} a month.`
+            : null,
+          `${mapExposureCoverage(summary)}.`,
+          mapAwaitingSentence(summary),
+        ]
+          .filter(Boolean)
+          .join(" ")
+      : null;
+    const population = [violations, exposureSentence].filter(Boolean).join(" ");
     return {
       ok: true,
       source: {
@@ -125,7 +176,7 @@ export async function loadMapSource(): Promise<SourceRead> {
         header,
         rows: body,
         filter: pricesNotStored ? null : "Priced below MAP.",
-        sort: "Worst leakage, lowest first.",
+        sort: units ? `${MAP_EXPOSURE_ORDER}.` : "Worst leakage, lowest first.",
         population,
         asOf: asOf.asOf,
         setAsideCheck: SET_ASIDE_CHECKS.mapPricing,
