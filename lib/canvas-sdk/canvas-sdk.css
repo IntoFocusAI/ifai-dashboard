@@ -26,15 +26,15 @@
       --status-bad-main: #cc5b63;
       --status-bad-deep: #6e1f2a;
       --status-bad-night: #230f14;
-      --status-bad-ink: #cc5b63;
+      --status-bad-ink: #8c232f;
       --status-okay-main: #d4b66f;
       --status-okay-deep: #7f6420;
       --status-okay-night: #262010;
-      --status-okay-ink: #7f6420;
+      --status-okay-ink: #6e5617;
       --status-good-main: #6ab792;
       --status-good-deep: #17583f;
       --status-good-night: #0e2420;
-      --status-good-ink: #17583f;
+      --status-good-ink: #1f6b4f;
       /* The value for this theme: Main on dark pages, Ink on light pages. */
       --status-bad: var(--status-bad-main);
       --status-okay: var(--status-okay-main);
@@ -2711,8 +2711,9 @@
       background: rgba(78, 151, 188, 0.05);
     }
 
-    .channel-amz { background: rgba(212, 182, 111, 0.15); color: #d4b66f; border: 1px solid rgba(212, 182, 111, 0.3); }
-    .channel-rev { background: rgba(204, 91, 99, 0.15); color: #cc5b63; border: 1px solid rgba(204, 91, 99, 0.3); }
+    /* Channel chips are links, so they stay neutral: status colors mark data only. */
+    .channel-amz,
+    .channel-rev { background: transparent; color: var(--text-main); border: 1px solid var(--border-dark); }
     .channel-wmt { background: rgba(78, 151, 188, 0.15); color: #a7d8f0; border: 1px solid rgba(78, 151, 188, 0.3); }
 
     .ifai-canvas.light-theme .ceo-callout {
@@ -4841,7 +4842,7 @@
     }
 
     .citation-hero-pct-figure {
-      color: #cc5b63;
+      color: var(--status-bad);
       font-size: clamp(28px, 3vw, 40px);
       font-weight: 600;
       font-variant-numeric: tabular-nums;
