@@ -87,7 +87,11 @@ TDD file id: 1K6-ghhSnJZcrch81DDhmHXXYU0pSF7tOGR9S9jiCUjk (`tdd`)
    put back what it changed, and tell Brian. If the Google-docs namespace
    says needsAuth, or a call fails with an authentication error, call its
    mcp_auth, then ask Brian to reconnect Google Docs under Integrations in
-   the Cursor web dashboard (not the desktop app).
+   the Cursor web dashboard (not the desktop app). In Claude Code, use its
+   Google Docs connector with the same tools. find_text returns at most 20
+   matches: for a step that names a later occurrence, find a unique line
+   in the same row and read_document forward to it. After filling a new
+   table, read it back before the check.
 5. Check. Run the two lines at the end of plan.txt:
    `python3 scripts/design-doc-edit.py pub fdd-21.9.docx pub.docx --split ...`
    and `python3 scripts/check-design-doc.py FILE_ID pub.docx`. pub puts
@@ -151,8 +155,10 @@ item is still unassigned.
 When the PM believes a view is final, it starts a separate Auditor agent
 with `docs/auditor-brief.md`, the preview URL, the view's final-form spec,
 and its FDD rows. Every Auditor runs on GPT-5.6 Sol High
-(`gpt-5.6-sol-high`). If that model is unavailable, do not substitute
-another: tell Brian and wait. Workers that build stay on the PM's model.
+(`gpt-5.6-sol-high`). Until an OpenAI option is connected in Claude Code,
+Auditors run on Fable (Brian Magazu, 9 Nov 2026). If the chosen model is
+unavailable, do not substitute another: tell Brian and wait. Workers that
+build stay on the PM's model.
 
 The Auditor never edits code, merges, or contacts Brian. Send its BLOCKER
 and MAJOR findings to the view's worker as follow-ups, then audit once
@@ -199,24 +205,24 @@ LATER items, and the dollar formulas. Detail lives in the FDD.
 Replace this whole section on handoff. Keep it under 25 lines. The Google
 Docs win if this block is stale.
 
-- PM21 wrote this at 12:00 PM ET on 5 Nov 2026. Both docs open on
-  Documentation version: 21.8 (workers 21.1 to 21.8). Do not redo that
-  closeout. Next is PM22. Launch rows CURRENT: 54 of 92.
-- Main is d6b56e3 (header label 21.8). Publish only through the Cursor
-  Google-docs plugin path in PR 137 (worker 21.9); the Toolbelt Drive
-  upload is gone. Drive file descriptions are no longer maintained.
-- Battery: the rotation is on (4 Nov 13:27 UTC). Runs Sun, Tue, Thu at
-  06:00 UTC and publish themselves that evening ET. First rotated run
-  1d73d3e9 (5 Nov): check AI Search no longer times out and Product Fact
-  Checks shows catalog coverage (A-05). Stall alert task 3c289d5a notifies
-  Brian. Perplexity is down; Ryan decides the fix.
-- API engines are live (views applied 4 Nov 21:30 UTC); the map shows the
-  published run plus its matching API run; API counts repeats 1 to 3 only.
-- Held: PR 110 (hover slots, X-22); on rebase its hub-slot input reads
-  mapAiSearch. Watson: PR 133 (client switcher) rebases after PR 137;
-  PR 125 is applied but not merged; three default-grant views are his call.
-- Next batch: one type scale (X-27) and the partial-figure asterisk rule
-  (X-25) together, since they touch every stylesheet; the Strategy Roadmap
-  rebuilt as a plan of activity (S-02, Brian's direction); the ChatGPT
-  model recorded (A-02); slow or pause the idle map animations if laptops
-  still lag (X-32).
+- PM23 wrote this at 3:00 PM ET on 9 Nov 2026, moving from Cursor to
+  Claude Code. Continue as PM23; do not take a new number. Workers 23.2 to
+  23.7 are unused (the Cursor agents for 23.2 to 23.6 were stopped and
+  pushed nothing). Briefs: docs/pm23-worker-briefs.md.
+- Docs: both on 21.8, with Brian's 9 Nov decisions recorded (change log
+  2026-11-09; X-33 and X-34 new). Launch rows CURRENT: 55 of 91.
+- Main c8561cb: PR 147 (operating model, decisions, brand book) and PR 148
+  (worker 23.1 foundation) merged on Brian's approval. Worker 23.1 is not
+  yet in a docs closeout, and the header label still reads 21.8.
+- Next: views 23.2 Summary, 23.3 Catalog Health, 23.4 AI Search, 23.5 AI
+  Readiness, 23.6 Competitive Radar, then 23.7 Roadmap and Action Items.
+  Run one or two at a time (usage). Open with Brian: D-06, C-01, and the
+  Roadmap and Action Items recommendation rules (docs/pm23-decisions.md).
+- Known: PR 110's hub-slots.ts still says "30-60-90 Day Milestones", so
+  metric-destinations.spec fails until it is rebased. The stale-data
+  asterisk is not built; its check schedules are now decided.
+- Data: battery Sun, Tue, Thu 06:00 UTC; Nov 8 run 431 of 549 (ChatGPT 82
+  errors, model still not recorded; Perplexity 147 of 183). Ledlenser runs
+  published 5 and 7 Nov UTC, but its AI Search says no published run.
+- Watson: PRs 125, 131, 139 (migrations only). The repo is moving from
+  brianw-ifai to an organization; update remotes and links after.

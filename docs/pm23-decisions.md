@@ -39,7 +39,8 @@ closeout of each view. Open items are marked OPEN and are not built.
    its matching API run). The AI Search and Competitive Radar tabs follow
    the date pill.
 23. Bubble pulse (X-24) is LATER.
-25. Foundation review. OPEN (clarification requested).
+25. Foundation review. Done: Brian approved the foundation alone and it
+    merged first (PR 148, 9 Nov 2026). Views build on it.
 
 ## Brand book (docs/brand/IntoFocus_AI_Brand_Book_V2.pdf)
 
@@ -92,11 +93,24 @@ closeout of each view. Open items are marked OPEN and are not built.
 15. Required specs (D-05). Fender uses the guitar and instrument list;
     Ledlenser uses the lighting fields Brian Watson loaded. Both stay marked
     placeholder, and Amazon Specs names the list it used.
-16. A+ content (D-06). OPEN (clarification requested).
+16. A+ content (D-06). OPEN. Sales data exists (SmartScout revenue per
+    listing). What is missing is the lift: how much more a listing sells
+    with A+ than without, which is an assumption, not data. PM23
+    recommended: close D-06 on the content shares and move the A+ dollar
+    figure to LATER. Fender: 345 listings with A+, 574 without.
 
 ## Competitive Radar
 
-17. Story pack (C-01). OPEN (clarification requested).
+17. Story pack (C-01). OPEN. PM23's reading: a deck an IntoFocus seller
+    or the client's sponsor takes into a meeting, built from live data, in
+    the brand book's dark sales-deck style, about six slides: where the
+    brand stands against top rivals; where it loses (categories, engines,
+    rivals); why (Buy Box, MAP, splintered listings, official pages,
+    specs); two or three captured AI answers with platform and date; the
+    sites AI cites most; the 30-60-90 plan. PM22's version only repeated
+    the Briefing on a page. Questions for Brian: is the audience a prospect
+    or a client sponsor, and is it needed for launch? PM23 recommended
+    building it last, after the Roadmap rules.
 
 ## Action Items and Roadmap
 
@@ -104,9 +118,39 @@ closeout of each view. Open items are marked OPEN and are not built.
 20. The Roadmap stays, with one tab, "30-60-90 Days". A Progress tab is
     LATER.
 21. How the plan is built (S-02), and what Action Items recommends beyond
-    the five findings. OPEN: Brian asked for recommendations drawn from
+    the five findings. OPEN. Brian asked for recommendations drawn from
     intelligence that is not a hero figure (for example, cited community
-    sites and publications), and for questions to set those rules.
+    sites and publications) and for questions to set those rules. Fender,
+    Nov 8, of 201 shopping answers with sources: Guitar World 96 (48%),
+    Guitar Player 48 (24%), fender.com 44 (22%), MusicRadar 31, Guitar
+    Center 30, Reddit 27 (13%). Ledlenser, Nov 6: 1Lumen 10%, CleverHiker
+    9%, GearJunkie and REI 8%, Olight (competitor) 6%. Questions sent at
+    12:00 PM ET, each with PM23's recommendation:
+    a. Site types: brand-owned, retailer, publication or review, community
+       or forum, video, competitor brand, reference, other. Kept as data
+       (an additive table, needs approval); unlisted sites read Unclassified.
+    b. Consistently: cited in at least 10% of shopping answers with sources,
+       in at least 2 of the last 3 published runs.
+    c. Action per type (Brian approves wording): publication, PR and review
+       outreach into buying guides; community, a plan to keep the brand's
+       presence accurate; retailer, listings match brand facts; video,
+       creator outreach; competitor site, comparison content on the brand
+       site; reference, correct the entry; brand-owned cited rarely,
+       official-page work.
+    d. Other signals as actions, where the client has the figure: rival-led
+       categories, weakest engine, fact-check contradictions, products with
+       no official page, missing specs, out-of-stock listings.
+    e. Wording: the stored fact, then the action, no promised result; the
+       evidence opens the cited links.
+    f. Ranking: the ecommerce fixes keep their order; source and competitor
+       actions follow, by share of answers affected.
+    g. Phases: Days 1 to 30 listing fixes; 31 to 60 catalog and site
+       content; 61 to 90 outreach programs.
+    h. Refresh with each published run; an action leaves when its trigger
+       drops below the threshold or it is Done or Set aside.
+    i. AI Actuation: a Done PR or community action with name, evidence
+       link, and date counts toward SC-03 in principle, built after launch.
+    j. Each source action names the categories where that site is cited most.
 22. Owner sentence (S-04): "IntoFocus's recommended plan for {brand}".
 
 ## Minimal
@@ -115,4 +159,6 @@ closeout of each view. Open items are marked OPEN and are not built.
 
 ## Auditor
 
-24. Every Auditor runs on GPT-5.6 Sol High. See docs/auditor-brief.md.
+24. Every Auditor runs on GPT-5.6 Sol High. Until an OpenAI option is
+    connected in Claude Code, Auditors run on Fable (Brian, 9 Nov 2026).
+    See docs/auditor-brief.md.
