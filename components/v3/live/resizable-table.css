@@ -22,14 +22,14 @@
   font-family: var(--font-sans);
   font-size: 12px;
   font-weight: 400;
-  color: var(--brand-headline, var(--text-main));
-  background: var(--brand-card, var(--bg-card));
-  border: 1px solid var(--brand-border, var(--border-color));
+  color: var(--text-main);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-dark);
   border-radius: var(--radius-button, 6px);
 }
 
 .table-search::placeholder {
-  color: var(--brand-caption, var(--text-muted));
+  color: var(--text-subtle);
 }
 
 .table-search:focus-visible,
@@ -41,7 +41,7 @@
 .table-toolbar-count {
   font-family: var(--font-mono);
   font-size: 11px;
-  color: var(--brand-body, var(--text-muted));
+  color: var(--text-muted);
 }
 
 .table-download-btn {
@@ -51,16 +51,16 @@
   font-family: var(--font-sans);
   font-size: 12px;
   font-weight: 500;
-  color: var(--brand-headline, var(--text-main));
+  color: var(--text-main);
   background: transparent;
-  border: 1px solid var(--brand-border, var(--border-color));
+  border: 1px solid var(--border-dark);
   border-radius: var(--radius-button, 6px);
   cursor: pointer;
 }
 
 .table-download-btn:hover:not(:disabled) {
   border-color: var(--accent);
-  background: var(--brand-hover, transparent);
+  background: var(--bg-surface-hover);
 }
 
 .table-download-btn:disabled {
@@ -71,5 +71,5 @@
 .table-toolbar-error {
   flex-basis: 100%;
   font-size: 12px;
-  color: var(--brand-body, var(--text-muted));
+  color: var(--text-muted);
 }
