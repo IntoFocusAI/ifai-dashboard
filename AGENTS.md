@@ -60,3 +60,12 @@ The client portal never discusses IntoFocus fees, retainers, monthly charges, or
 ## Parked follow-up
 
 Phase 1 and full-enterprise dollar figures stay labeled as analyst estimates. Opening each figure to its inputs and formula is a later pass. Do not invent that formula, and do not hold other fixes for it.
+
+## Design documents
+
+The Functional Design Document (FDD) and Technical Design Document (TDD) live in this repo, not Google Docs (moved 10 Nov 2026 at version 24.4; the Google Docs are frozen there).
+
+- `docs/fdd/register.md` lists every FDD row with its status, milestone, and file. Read it first; open only the view file you need.
+- Each FDD row starts with a line like `**X-01 CURRENT** · Launch`. To change a status, edit that line, update the row's Evidence, add a row to `docs/fdd/changelog.md`, run `python3 scripts/fdd-register.py`, and commit all of it in the same pull request as the work.
+- Brian Magazu approves status changes. Agents propose them in the pull request body.
+- The TDD is `docs/tdd/README.md`, with its change log in `docs/tdd/changelog.md`.
