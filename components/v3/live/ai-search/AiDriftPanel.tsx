@@ -20,6 +20,13 @@ import type { AiSearchSnapshot } from "@/lib/ai-search/types";
 import { isWindowHistoryKind } from "@/lib/ai-search/window-display";
 import { brandName, brandSite } from "@/lib/brand-copy";
 
+/** The stored fact as one sentence: a claim that already ends in a period gets no second one. */
+function sentence(text: string | null): string {
+  const trimmed = (text ?? "").trim();
+  if (!trimmed) return "";
+  return /[.!?]$/.test(trimmed) ? trimmed : `${trimmed}.`;
+}
+
 function FactChecks({ snapshot }: { snapshot: AiSearchSnapshot }) {
   const history = useAiHistoryOptional();
   const windowed = isWindowHistoryKind(history?.mode.kind);
@@ -41,7 +48,7 @@ function FactChecks({ snapshot }: { snapshot: AiSearchSnapshot }) {
             <div key={row.key} className="action-card critical" style={{ marginTop: 6 }}>
               <div className="action-head">{row.prompt}</div>
               <div className="action-details">
-                {engineLabel(row.engine)} · {modelLabel(row.model)}. {brandName()} publishes: {row.claim}. The answer said:{" "}
+                {engineLabel(row.engine)} · {modelLabel(row.model)}. {brandName()} publishes: {sentence(row.claim)} The answer said:{" "}
                 {row.evidence}
                 {row.catalog && row.sourceUrl ? (
                   <>

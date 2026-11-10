@@ -190,7 +190,8 @@ test("commercial win rate: exact numerator and denominator, probes and errors ap
   assert.equal(t.winPct, 40);
   const s = summarizeRun(snapshot);
   assert.equal(s.probesAnswered, 1);
-  assert.match(aiSpokeDesc(ready), /whether Fender-owned pages show up/);
+  // The line sits above all four tabs, so it names the area, not the Citation Ecosystem alone.
+  assert.equal(aiSpokeDesc(ready), "How AI assistants name and cite Fender.");
   assert.doesNotMatch(aiSpokeDesc(ready), /Partial/);
   assert.doesNotMatch(aiSpokeDesc(ready), /2 of 5/);
   assert.match(aiSpokeFullDesc(ready), /Unbranded discovery: Fender\/Squier named most in 0 of 1 resolved answers \(0\.0%\)/);

@@ -346,7 +346,7 @@ export function aiSpokeDesc(read: AiSearchRead): string {
   if (read.phase === "error" && read.selection) return `${selectionLine(read.selection, false)}.`;
   if (read.phase === "error") return `The published AI run did not load: ${read.message}`;
   if (read.phase === "no-run") return "No AI run has been published yet, so no AI Search figure is shown.";
-  return `How AI shopping answers cite the web, and whether ${brandName()}-owned pages show up.`;
+  return `How AI assistants name and cite ${brandName()}.`;
 }
 
 export type AiSpokeChip = {
