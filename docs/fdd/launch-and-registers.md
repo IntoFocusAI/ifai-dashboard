@@ -36,10 +36,10 @@
 | N-03 | Client-editable assumptions later? | Decided 9 Nov 2026: LATER. |
 | X-02 | Satellite click? | Decided 9 Nov 2026: open the tab. |
 
-| PM24-1 | No hover tooltips on the AI Search Visibility and Competitive Radar map bubbles; the API-engine detail is clear once the view is open. | Open, to do. Raised by Brian Magazu on 10 Nov 2026. |
+| PM24-1 | No hover tooltips on the AI Search Visibility and Competitive Radar map bubbles; the API-engine detail is clear once the view is open. | Done. Worker 24.8, PR 158 (main 77e4c7e), merged 10 Nov 2026: the AI Search Visibility and Competitive Radar map bubbles have no hover tooltip. |
 |---|---|---|
-| PM24-2 | Competitive Radar disagrees with itself: the map bubble says “Yamaha leads Acoustics” while Category Battlecards shows Taylor as the top Acoustics rival. Find the cause (likely two populations or two rules for “leads”) before changing anything. | Open, to do. Raised by Brian Magazu on 10 Nov 2026. |
-| PM24-3 | Product Fact Checks: put the accuracy figure to the right of the “catalog products checked” figure, not below it. | Open, to do. Raised by Brian Magazu on 10 Nov 2026. |
+| PM24-2 | Competitive Radar disagrees with itself: the map bubble says “Yamaha leads Acoustics” while Category Battlecards shows Taylor as the top Acoustics rival. Find the cause (likely two populations or two rules for “leads”) before changing anything. | Done, option A (decision 40). Cause: two populations. The bubble now reads the Battlecards rows for the date-pill window with the tab's category-lead function; Fender reads “Taylor leads Acoustics”. Worker 24.8, PR 158 (main 77e4c7e). The longer bubble load (about 32 s Fender, 16 s Ledlenser) is accepted for now (decision 41). |
+| PM24-3 | Product Fact Checks: put the accuracy figure to the right of the “catalog products checked” figure, not below it. | Done (decision 42). The lead is one row: catalog figure, accuracy, then the question, its sentence and the contradictions badge; no lower box. Worker 24.8, PR 158 (main 77e4c7e). |
 
 # 17. LATER register
 

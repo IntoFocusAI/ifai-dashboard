@@ -78,3 +78,9 @@
 |---|---|---|---|
 | 2026-11-10 | 24.4 Documentation version 24.4. Worker 24.4 AI Search: catalog fact checks across engine choices, prompt change history, Ledlenser window and roles. | Brian Magazu approved the merge of worker 24.4 on 10 Nov 2026. | PR 151, main f1df1f5. |
 | 2026-11-10 | FDD and TDD moved from Google Docs into the repo (docs/fdd, docs/tdd) at version 24.4. X-15, X-16, and R-19 milestones move to Launch. | Cheaper, reviewable updates in the same pull request as the work; Brian Magazu put login, the tenant split, and the per-client seller list in launch scope. | Brian Magazu, 10 Nov 2026 |
+
+| Date | Change | Reason | Reference |
+|---|---|---|---|
+| 2026-11-10 | 24.8 Documentation version 24.9. Worker 24.8 closes PM24-1 to PM24-3: no hover tooltip on the AI Search and Radar map bubbles; the Radar bubble reads the Battlecards rows (option A, decision 40, exception to the published-run map rule; slower load accepted, decision 41); Product Fact Checks lead is one row (decision 42). C-03 and A-05 Current and Evidence updated; X-09 notes the exception. | Brian Magazu approved PR 158 and decisions 40 to 43 on 10 Nov 2026. | PR 158, main 77e4c7e; decisions PR 163, main 141b825; Worker 24.8 |
+| 2026-11-10 | 24.9 Documentation version 24.9. Worker 24.9 e2e cleanup: AI Search tests wait AI_READ_MS (90 s); the Battlecards pie height check and the history method-change marker are loosened until the reads are faster. metric-destinations still fails on PR 110's wording. No status change. | Decision 43, option B: one cleanup worker clears failing e2e tests. | PR 159, main b192365; Worker 24.9 |
+| 2026-11-10 | Tooling Worker: `npm run lint:brand` and e2e/overflow-1280.spec.ts. Baseline on main: 73 lint:brand issues; no page scrolls sideways at 1280 px, six tables scroll inside their panels for both clients. No status change. | Cheap, repeatable checks for brand rules and the 1280 layout before each view build. | PR 161, main be18730 |

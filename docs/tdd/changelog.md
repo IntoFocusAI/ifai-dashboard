@@ -77,3 +77,8 @@
 |---|---|---|---|
 | 2026-11-10 | 24.4 Documentation version 24.4. Worker 24.4 AI Search: new read-only function public.ai_prompt_edits_list (migration 20261109233000) and the server CSV loaders. | Brian Magazu approved the merge of worker 24.4 on 10 Nov 2026. | PR 151, main f1df1f5. |
 | 2026-11-10 | TDD moved from Google Docs into the repo (docs/tdd) at version 24.4. | Updates ride the same pull request as the work. | Brian Magazu, 10 Nov 2026 |
+
+| Date | Change | Reason | Reference |
+|---|---|---|---|
+| 2026-11-10 | 24.8 Documentation version 24.9. The Competitive Radar map bubble reads the Battlecards rows for the 30-day window at map load (lib/ai-search/radar-bubble.ts), the one exception to the published-run map read. | Decision 40 (PM24-2 option A). | PR 158, main 77e4c7e; Worker 24.8 |
+| 2026-11-10 | 24.9 and Tooling Worker: test strategy adds lint:brand, overflow-1280, and AI_READ_MS; two loosened checks to restore. | Repeatable brand and layout checks; e2e cleanup. | PR 159 (main b192365), PR 161 (main be18730) |

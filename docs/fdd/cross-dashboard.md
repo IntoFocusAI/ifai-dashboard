@@ -253,7 +253,7 @@ None. Status words are Poor, Fair, and Good where a figure has no word of its ow
 - **User value:** Trends are comparable.
 - **Acceptance:** Default month does not include failed/empty runs as client results.
 - **Evidence:** Approved by Brian Magazu on 4 Nov 2026. Worker 21.6, pull request 120 (main 3828b41). Brian chose a rolling 30 days over a calendar month, anchored on the published run. Worker 24.4, pull request 151 (main f1df1f5): the Ledlenser AI Search window is fixed, and Ledlenser question roles follow ledlenser.ai_prompts.analytical_intent (Brian, 10 Nov 2026).
-- **Open decision:** None. Decided by Brian Magazu on 9 Nov 2026: Summary Briefing, the Roadmap, and Action Items use the map's population for AI figures (the published run plus its matching API run), so one figure shows one number. The AI Search and Competitive Radar tabs follow the date pill.
+- **Open decision:** None. Decided by Brian Magazu on 9 Nov 2026: Summary Briefing, the Roadmap, and Action Items use the map's population for AI figures (the published run plus its matching API run), so one figure shows one number. The AI Search and Competitive Radar tabs follow the date pill. Exception (decision 40, 10 Nov 2026): the Competitive Radar map bubble follows the Category Battlecards date-pill window and lead rule (C-03).
 
 **X-10 REFINE** · Launch
 

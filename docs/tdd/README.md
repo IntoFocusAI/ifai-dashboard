@@ -1,4 +1,4 @@
-**Documentation version: 24.4**
+**Documentation version: 24.9**
 
 > **Source of truth.** This TDD moved from Google Docs into the repo on 10 Nov 2026 at version 24.4. History: [changelog.md](changelog.md). FDD: [../fdd/README.md](../fdd/README.md).
 
@@ -128,7 +128,7 @@ One row per client, listing, retailer, check. Do not add Sweetwater/Reverb as an
 >
 > • An engine that failed every call is omitted from result tallies. Provider errors stay on errorLine. No IntoFocus alert (A-09 CURRENT).
 >
-> • AI Search and Competitive Radar default to the last 30 days ending on the published run's date, counting published review runs with answered calls only (defaultWindowBounds and defaultWindowRuns, X-09 CURRENT, worker 21.6, PR 120). One run, the previous run, a range, or all time come from the same pill. The map shows the published run and its matching API run. A period shared by every spoke remains TARGET. History compares like prompt-set versions.
+> • AI Search and Competitive Radar default to the last 30 days ending on the published run's date, counting published review runs with answered calls only (defaultWindowBounds and defaultWindowRuns, X-09 CURRENT, worker 21.6, PR 120). One run, the previous run, a range, or all time come from the same pill. The map shows the published run and its matching API run, except the Competitive Radar bubble: it reads the Battlecards rows for the 30-day window at map load with the tab's category-lead function (lib/ai-search/radar-bubble.ts, canvas-surfaces.ts; decision 40, worker 24.8, PR 158). A period shared by every spoke remains TARGET. History compares like prompt-set versions.
 >
 > • Fact checks require coverage or stated sample (A-05). In Run Details, factCheckColumnLabel returns the stored accuracy label for probe rows and exactly “n/a” for non-fact-check rows. The same helper drives display, sorting, and the shopping drawer (A-03; implemented in 7.5).
 >
@@ -224,6 +224,10 @@ Server-side from the same published query as the screen; CSV for rows at launch,
 > • N-08: Done needs a name; set-aside needs a reason and a name; reopen keeps one row; e2e mocks the Done and set-aside endpoints so tests never write the live audit log.
 >
 > • A-09: failed run not renderable in client fixture.
+>
+> • Brand and layout checks (Tooling Worker, PR 161): `npm run lint:brand` (scripts/lint-brand.mjs) flags font weights, native title tooltips, TSX files over 400 lines, and em dashes in client copy; 73 issues on main at 10 Nov 2026. e2e/overflow-1280.spec.ts checks that no page scrolls sideways at 1280 px and reports tables that scroll inside their panels.
+>
+> • e2e cleanup (worker 24.9, PR 159): AI Search tests wait up to AI_READ_MS (90 s) in e2e/fixtures. Temporarily loosened: the Battlecards pies 720 px height check and the history test's Scoring method changed marker; restore both, and lower AI_READ_MS, once the AI Search reads are faster.
 >
 > • Do not freeze Oct 21 counts as product copy. Consensus score tests cover rescale, a dropped input is not zero, and the Partner-led placeholder sellers. Do not freeze a live score percentage as product copy.
 
