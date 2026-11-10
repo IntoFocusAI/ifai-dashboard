@@ -11,7 +11,8 @@ import {
   pageFoundDefinition,
   pageFoundHero,
 } from "@/lib/fender-canvas/ai-readiness-lead";
-import { metricsRowFailure, readFailureTip } from "@/lib/fender-canvas/canvas-reads";
+import { metricsRowFailure, readFailureTip, type PartialFigure } from "@/lib/fender-canvas/canvas-reads";
+import { weeklyCheckStale } from "@/lib/findability/last-checked";
 import { formatInt } from "@/lib/fender-canvas/format";
 import type { CanvasMetricsRow } from "@/lib/fender-canvas/types";
 import { brandSite } from "@/lib/brand-copy";
@@ -39,6 +40,8 @@ export type PageFoundHeroModel = {
   numerator: number | null;
   denominator: number | null;
   figureTip: string | null;
+  /** Stale figure (X-25) when the product check is past its weekly schedule. */
+  partial?: PartialFigure | null;
 };
 
 function pageFoundPie(found: number, checked: number): PieDiscData {
@@ -110,5 +113,10 @@ export function brandSitePageFoundHero(
     numerator: found,
     denominator: checked,
     figureTip: null,
+    partial: weeklyCheckStale(checkedAt, {
+      check: `${brandSite()} product check`,
+      source: "canvas_metrics",
+      figure: "page-found figures",
+    }),
   };
 }

@@ -8,7 +8,9 @@
 
 import type { PieDiscData } from "@/lib/ai-search/citation-pies";
 import type { ShareHeroModel } from "@/components/v3/live/ShareHeroCard";
+import type { PartialFigure } from "@/lib/fender-canvas/canvas-reads";
 import { formatInt, formatPct, formatRatio } from "@/lib/fender-canvas/format";
+import { newestCheckTime, weeklyCheckStale } from "@/lib/findability/last-checked";
 import { getCanvasSupabase } from "@/lib/supabase/canvas-client";
 
 /** Amazon's standard bullet slots on a listing. */
@@ -121,6 +123,54 @@ function sharePie(id: string, title: string, labels: [string, string], has: numb
   };
 }
 
+/** Listings on the content view whose check left this hero's state unknown (R-03). */
+function uncheckedCount(summary: ListingContentSummary, id: ContentHeroId): number {
+  const read = id === "bullets" ? summary.bulletsRead : id === "aplus" ? summary.aplusLiveRead : summary.videoLiveRead;
+  return Math.max(0, summary.rows.length - read);
+}
+
+const HERO_NOUN: Record<ContentHeroId, string> = {
+  bullets: "bullets",
+  aplus: "A+",
+  video: "video",
+};
+
+const HERO_UNCHECKED: Record<ContentHeroId, string> = {
+  bullets: "no bullet count yet",
+  aplus: "no A+ check on the listing page yet",
+  video: "no video check on the listing page yet",
+};
+
+/**
+ * The partial reading (X-25) for one content share: stale when the newest check is past the
+ * weekly schedule, else coverage when some live listings are unchecked. Null when neither.
+ */
+export function contentSharePartial(
+  summary: ListingContentSummary,
+  id: ContentHeroId,
+  now: number = Date.now(),
+): PartialFigure | null {
+  const checkedAt = newestCheckTime(summary.rows, () => true, (row) => row.checked_at);
+  const stale = weeklyCheckStale(
+    checkedAt,
+    { check: "Amazon listing check", source: "canvas_listing_content", figure: "content shares" },
+    now,
+  );
+  if (stale) return stale;
+  const unchecked = uncheckedCount(summary, id);
+  const total = summary.rows.length;
+  if (unchecked === 0 || total === 0) return null;
+  const noun = HERO_NOUN[id];
+  return {
+    reason: "coverage",
+    missing: `${formatInt(unchecked)} of ${formatInt(total)} live Amazon listings have ${HERO_UNCHECKED[id]}`,
+    coverage: `${formatInt(total - unchecked)} of ${formatInt(total)} live Amazon listings`,
+    source: "canvas_listing_content",
+    lastCheck: checkedAt,
+    effect: `Unchecked listings are left out of the share, not counted as missing ${noun}`,
+  };
+}
+
 function shareHero(
   id: ContentHeroId,
   label: string,
@@ -170,7 +220,14 @@ export function listingContentHeroes(summary: ListingContentSummary | null): Sha
       empty("video", "Product video", VIDEO_DEFINITION),
     ];
   }
-  return [
+  // R-03: an unchecked listing is named as unchecked and never counted as a gap.
+  const explain = (id: ContentHeroId, whenAllChecked: string) => {
+    const unchecked = uncheckedCount(summary, id);
+    return unchecked > 0
+      ? `${formatInt(unchecked)} of ${formatInt(summary.rows.length)} live listings unchecked.`
+      : whenAllChecked;
+  };
+  const heroes = [
     shareHero(
       "bullets",
       "Five bullets filled",
@@ -178,7 +235,7 @@ export function listingContentHeroes(summary: ListingContentSummary | null): Sha
       summary.fullBullets,
       summary.bulletsRead,
       ["Five bullets", "Fewer than five"],
-      "Every bullet slot carries copy.",
+      explain("bullets", "Every bullet slot carries copy."),
       "No bullet read yet.",
     ),
     shareHero(
@@ -188,7 +245,7 @@ export function listingContentHeroes(summary: ListingContentSummary | null): Sha
       summary.aplusLivePresent,
       summary.aplusLiveRead,
       ["A+ present", "No A+"],
-      "A+ modules are on the listing.",
+      explain("aplus", "A+ modules are on the listing."),
       pendingNote(summary.aplusPresent, "A+"),
     ),
     shareHero(
@@ -198,10 +255,13 @@ export function listingContentHeroes(summary: ListingContentSummary | null): Sha
       summary.videoLivePresent,
       summary.videoLiveRead,
       ["Video present", "No video"],
-      "A video is on the listing.",
+      explain("video", "A video is on the listing."),
       pendingNote(summary.videoPresent, "video"),
     ),
   ];
+  return heroes.map((hero) =>
+    hero.denominator == null ? hero : { ...hero, partial: contentSharePartial(summary, hero.id as ContentHeroId) },
+  );
 }
 
 /** Rows the open hero's table lists: the gap for that hero, never an unknown state. */
@@ -211,11 +271,14 @@ export function contentGapRows(summary: ListingContentSummary, hero: ContentHero
   return summary.rows.filter((row) => row.video_state === "absent");
 }
 
+/**
+ * A+ or video state in the listing table. Present and None are confirmed. Every other state
+ * (not reported, not collected, or not read) is Unchecked, never a fail (R-03).
+ */
 export function contentStateLabel(state: string | null): string {
   if (state === "present") return "Present";
   if (state === "absent") return "None";
-  if (state === "none_reported") return "Not confirmed";
-  return "Not read";
+  return "Unchecked";
 }
 
 export type BulletCounts = { listings: number; fullBullets: number; short: number; pct: number };

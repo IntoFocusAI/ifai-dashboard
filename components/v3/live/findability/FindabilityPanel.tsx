@@ -6,7 +6,6 @@ import { FindabilityTable } from "@/components/v3/live/findability/FindabilityTa
 import { useFindability } from "@/components/v3/live/findability/FindabilityContext";
 import { useFindabilityRowLanding } from "@/components/v3/live/findability/useFindabilityRowLanding";
 import {
-  DEALER_BUNDLE_NOTE,
   FAMILY_IS_NOT_EXACT,
   MACHINE_READABILITY_POINTER,
   OUTCOME_DEFINITION,
@@ -190,10 +189,13 @@ export function FindabilityPanel() {
             <span>{bucketLabel(selected)}</span>
             <span className="tag-badge tag-neutral">{formatInt(filtered.length)} listings</span>
           </div>
-          <p className="findability-note">
-            {read.dealerBundleLoaded ? DEALER_BUNDLE_NOTE : "Dealer bundle status did not load with this read."}
-          </p>
-          <FindabilityTable key={selected} outcome={selected} rows={filtered} landAsin={landAsin} />
+          <FindabilityTable
+            key={selected}
+            outcome={selected}
+            rows={filtered}
+            bundleLoaded={read.dealerBundleLoaded}
+            landAsin={landAsin}
+          />
         </div>
       ) : null}
     </div>
