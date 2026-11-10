@@ -9,7 +9,7 @@ import { useApiEngineLoad } from "@/components/v3/live/ai-search/useApiEngineLoa
 import { apiRunDay } from "@/lib/ai-search/api-runs";
 import type { EngineGroupChoice } from "@/lib/ai-search/engine-group";
 import { engineGroupRead, engineSwitchState, type EngineSwitchState } from "@/lib/ai-search/engine-group-read";
-import { engineGroupTrend, type EngineWindowLoad } from "@/lib/ai-search/engine-group-window";
+import { engineGroupTrend, type EngineWindowLoad, type EngineWindowReader } from "@/lib/ai-search/engine-group-window";
 import type { AiSearchRead, AiSearchSnapshot } from "@/lib/ai-search/types";
 import "@/components/v3/live/ai-search/engine-group.css";
 
@@ -40,7 +40,7 @@ const NO_HISTORY: EngineWindowLoad<AiSearchSnapshot> = { phase: "idle" };
  * The window's battery runs for the trend and the citation totals, each with the API runs nearest
  * its day, narrowed by the shared switch. `runCount` is the number of points the trend can draw.
  */
-export function useEngineGroupWindow(): {
+export function useEngineGroupWindow(reader: EngineWindowReader = "trend"): {
   trend: EngineWindowLoad<AiSearchSnapshot>;
   apiDays: ReadonlyMap<string, string[]>;
   runCount: number;
@@ -51,11 +51,11 @@ export function useEngineGroupWindow(): {
   const trend = history?.trend ?? NO_HISTORY;
   const windowRuns = history?.windowRuns.length ?? 0;
   return useMemo(() => {
-    const narrowed = engineGroupTrend(trend, load, choice);
+    const narrowed = engineGroupTrend(trend, load, choice, reader);
     const runCount =
       narrowed.trend === trend || narrowed.trend.phase !== "ready" ? windowRuns : narrowed.trend.snapshots.length;
     return { ...narrowed, runCount };
-  }, [choice, load, trend, windowRuns]);
+  }, [choice, load, reader, trend, windowRuns]);
 }
 
 /**

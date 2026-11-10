@@ -9,6 +9,7 @@ import {
 import { pooledCitationSnapshot } from "@/lib/ai-search/citation-aggregate";
 import { clientWindowSnapshots, runDay } from "@/lib/ai-search/default-window";
 import { displayedAiRead } from "@/lib/ai-search/displayed-read";
+import { citationPopulation } from "@/lib/ai-search/engine-group";
 import { engineGroupRead, engineSwitchState, type ApiEngineLoad } from "@/lib/ai-search/engine-group-read";
 import { engineGroupTrend } from "@/lib/ai-search/engine-group-window";
 import { compareRuns, utcDay } from "@/lib/ai-search/history-eligibility";
@@ -139,12 +140,14 @@ export async function loadAiSelection(
       ? { trend: { phase: "idle" as const }, apiDays: new Map<string, string[]>() }
       : engineGroupTrend({ phase: "ready", snapshots: battery }, load, scope.engines);
   const windowSnapshots = window.trend.phase === "ready" ? window.trend.snapshots : [];
+  const citationWindow =
+    mode.kind === "run" ? null : engineGroupTrend({ phase: "ready", snapshots: battery }, load, scope.engines, "citations");
   const citationSnapshot =
     mode.kind === "run"
       ? narrowed.phase === "ready"
-        ? narrowed.snapshot
+        ? citationPopulation(narrowed.snapshot)
         : null
-      : pooledCitationSnapshot(windowSnapshots);
+      : pooledCitationSnapshot(citationWindow?.trend.phase === "ready" ? citationWindow.trend.snapshots : []);
   const newest = [...battery].sort((a, b) => compareRuns(a.run as never, b.run as never)).at(-1) ?? null;
 
   return {

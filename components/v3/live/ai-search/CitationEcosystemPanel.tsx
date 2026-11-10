@@ -29,6 +29,7 @@ import {
   snapshotInCategory,
 } from "@/lib/ai-search/citation-top-sources";
 import { citationEvidence, citedAnswers, groupCitations, type CitationScope } from "@/lib/ai-search/citations";
+import { citationPopulation } from "@/lib/ai-search/engine-group";
 import { engineLabel } from "@/lib/ai-search/run-metrics";
 import { citationStorageCaution } from "@/lib/ai-search/review-runs";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
@@ -341,7 +342,7 @@ function CitationEcosystemBody() {
   if (history?.mode.kind === "run") {
     return (
       <AiReadGate showFreshness={false}>
-        {(snapshot) => <Ecosystem snapshot={snapshot} copy="" singleRun />}
+        {(snapshot) => <Ecosystem snapshot={citationPopulation(snapshot)} copy="" singleRun />}
       </AiReadGate>
     );
   }

@@ -1,15 +1,27 @@
 import { apiRunDay, daysApart } from "@/lib/ai-search/api-runs";
 import { runDay } from "@/lib/ai-search/default-window";
-import { filterSnapshotByEngineGroup, isApiEngine, withApiSnapshots, type EngineGroupChoice } from "@/lib/ai-search/engine-group";
+import {
+  citationPopulation,
+  filterSnapshotByEngineGroup,
+  isApiEngine,
+  withApiSnapshots,
+  type EngineGroupChoice,
+} from "@/lib/ai-search/engine-group";
 import { engineSwitchState, type ApiEngineLoad } from "@/lib/ai-search/engine-group-read";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
 
 /**
  * The trend and Citation Ecosystem read one snapshot per battery run. An API run joins the battery
  * run nearest its day, so each point is that run's search engines and the API engines beside it,
- * and the point keeps the battery run's date, question set, and scoring method. Every point keeps
- * the rotating catalog fact checks its search engines asked, on every switch position.
+ * and the point keeps the battery run's date, question set, and scoring method.
  */
+
+/**
+ * The trend keeps the rotating catalog fact checks on every switch position. Citation totals
+ * count fact-check citations, so with API engines in the window they keep the fixed questions
+ * on every point (citationPopulation).
+ */
+export type EngineWindowReader = "trend" | "citations";
 
 export type EngineWindowLoad<T> =
   | { phase: "idle" }
@@ -54,6 +66,7 @@ export function engineGroupWindow(
   search: readonly AiSearchSnapshot[],
   api: readonly AiSearchSnapshot[],
   choice: EngineGroupChoice,
+  reader: EngineWindowReader = "trend",
 ): EngineWindow {
   if (choice === "search" || (choice === "all" && api.length === 0)) {
     return { snapshots: [...search], apiDays: NO_API_DAYS };
@@ -75,6 +88,9 @@ export function engineGroupWindow(
     const days = paired.map((run) => apiRunDay(run.run)).filter((day): day is string => day != null);
     if (days.length) apiDays.set(id, days);
   }
+  if (reader === "citations") {
+    return { snapshots: snapshots.map((snapshot) => citationPopulation(snapshot, pairs.size > 0)), apiDays };
+  }
   return { snapshots, apiDays };
 }
 
@@ -86,6 +102,7 @@ export function engineGroupTrend(
   trend: EngineWindowLoad<AiSearchSnapshot>,
   load: ApiEngineLoad,
   choice: EngineGroupChoice,
+  reader: EngineWindowReader = "trend",
 ): { trend: EngineWindowLoad<AiSearchSnapshot>; apiDays: ReadonlyMap<string, string[]> } {
   const passthrough = { trend, apiDays: NO_API_DAYS };
   if (trend.phase !== "ready") return passthrough;
@@ -94,6 +111,6 @@ export function engineGroupTrend(
     return choice === "search" ? passthrough : { trend: { phase: "loading" }, apiDays: NO_API_DAYS };
   }
   if (state.kind === "unavailable" || load.phase !== "ready") return passthrough;
-  const window = engineGroupWindow(trend.snapshots, load.snapshots, choice);
+  const window = engineGroupWindow(trend.snapshots, load.snapshots, choice, reader);
   return { trend: { phase: "ready", snapshots: window.snapshots }, apiDays: window.apiDays };
 }

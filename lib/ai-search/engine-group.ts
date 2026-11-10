@@ -167,6 +167,32 @@ export function filterSnapshotByEngineGroup(
   };
 }
 
+/**
+ * Citation Ecosystem's population. With API engines in the figures, its fact-check answers are
+ * the fixed questions only: the API job does not ask the rotating catalog checks, so their cited
+ * links sit out, as they always have on this tab. Decision 13 (every engine choice counts the
+ * rotating questions) is about Product Fact Checks, not about citation totals.
+ * `apiInWindow` is true when any run of the window has an API run beside it.
+ */
+export function citationPopulation(snapshot: AiSearchSnapshot, apiInWindow = false): AiSearchSnapshot {
+  if (!apiInWindow && !hasApiRows(snapshot)) return snapshot;
+  const rotating = new Set(snapshot.probes.filter(isRotatingFactCheck).map(callKey));
+  const calls = snapshot.calls.filter(
+    (row) => row.prompt_kind !== "probe" || !(rotating.has(callKey(row)) || isRotatingFactCheck(row)),
+  );
+  if (calls.length === snapshot.calls.length) return snapshot;
+  const kept = new Set(calls.map((row) => row.id));
+  const citations = snapshot.citations.filter((row) => kept.has(row.simulation_id));
+  return {
+    ...snapshot,
+    run: withCallCounts(snapshot, calls),
+    calls,
+    probes: snapshot.probes.filter((row) => !rotating.has(callKey(row))),
+    citations,
+    storedCitationCount: citations.length,
+  };
+}
+
 /** Run counts recounted from the calls the switch kept. Expected and missing are not known for a subset. */
 function withCallCounts(snapshot: AiSearchSnapshot, calls: readonly AiCallRow[]): AiSearchSnapshot["run"] {
   const answered = calls.filter((row) => row.call_status === "answered").length;

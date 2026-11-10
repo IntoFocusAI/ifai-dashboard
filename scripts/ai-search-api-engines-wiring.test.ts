@@ -10,7 +10,14 @@ import {
   nearestApiRun,
   type ApiRunSummary,
 } from "../lib/ai-search/api-runs.ts";
-import { API_REPEAT_CAP, API_REPEAT_RULE, capApiRepeats, fixedQuestionCount } from "../lib/ai-search/engine-group.ts";
+import {
+  API_REPEAT_CAP,
+  API_REPEAT_RULE,
+  capApiRepeats,
+  citationPopulation,
+  fixedQuestionCount,
+  withApiSnapshots,
+} from "../lib/ai-search/engine-group.ts";
 import { engineGroupTrend, engineGroupWindow, pairApiRuns } from "../lib/ai-search/engine-group-window.ts";
 import { aiNodeFaces } from "../lib/ai-search/canvas-surfaces.ts";
 import { engineGroupRead, type ApiEngineLoad } from "../lib/ai-search/engine-group-read.ts";
@@ -149,6 +156,24 @@ test("All keeps every battery point, puts the API calls on the nearest one, and 
   // Every engine choice keeps the rotating fact checks the search engines asked (decision 13).
   assert.ok(window.snapshots.every((row) => row.calls.some((item) => item.prompt_key === "p35")));
   assert.ok(window.snapshots.every((row) => row.calls.filter((item) => item.prompt_key === "p35").every((item) => item.engine !== "openai_api")));
+});
+
+test("Citation Ecosystem keeps main's population: with API engines in the window, rotating fact checks sit out", () => {
+  // Decision 13 is about Product Fact Checks. Citation totals count the fixed questions on every point.
+  const all = engineGroupWindow([OCT20, NOV3], [API_NOV2], "all", "citations");
+  assert.deepEqual(all.snapshots.map((row) => row.run.audit_run_id), ["b-oct20", "b-nov3"]);
+  assert.deepEqual(all.snapshots[1].calls.map((row) => row.engine).sort(), ["chatgpt", "gemini", "openai_api", "openai_api"]);
+  assert.ok(all.snapshots.every((row) => !row.calls.some((item) => item.prompt_key === "p35")));
+  assert.ok(all.snapshots.every((row) => !row.citations.some((item) => item.prompt_key === "p35")));
+  // Without API is the battery runs as they are, rotating checks included.
+  assert.deepEqual(engineGroupWindow([OCT20, NOV3], [API_NOV2], "search", "citations").snapshots, [OCT20, NOV3]);
+  // No API run in the window: nothing is dropped.
+  assert.deepEqual(engineGroupWindow([OCT20, NOV3], [], "all", "citations").snapshots, [OCT20, NOV3]);
+  // A single run: the rule follows whether its figures hold an API engine.
+  assert.equal(citationPopulation(NOV3), NOV3);
+  const withApi = withApiSnapshots(NOV3, [API_NOV2]);
+  assert.equal(citationPopulation(withApi).calls.some((item) => item.prompt_key === "p35"), false);
+  assert.equal(citationPopulation(withApi).calls.length, withApi.calls.filter((item) => item.prompt_key !== "p35").length);
 });
 
 test("Without API leaves the battery runs as they are; API only keeps the points with an API run", () => {
@@ -325,6 +350,6 @@ test("Run Summary, Citation Ecosystem, the trend, and the run detail read the sw
   assert.match(read("components/v3/live/ai-search/RunSummaryPanel.tsx"), /<EngineGroupScope>\s*<AiReadGate>/);
   assert.match(read("components/v3/live/ai-search/CitationEcosystemPanel.tsx"), /<EngineGroupScope>\s*<CitationEcosystemBody \/>/);
   assert.match(read("components/v3/live/ai-search/HistoryTrendsPanel.tsx"), /useEngineGroupWindow\(\)/);
-  assert.match(read("components/v3/live/ai-search/useCitationAggregate.ts"), /useEngineGroupWindow\(\)/);
+  assert.match(read("components/v3/live/ai-search/useCitationAggregate.ts"), /useEngineGroupWindow\("citations"\)/);
   assert.match(read("components/v3/live/ai-search/RunHistoryControl.tsx"), /<PairedApiRun runId=\{run.audit_run_id\} day=\{day\} \/>/);
 });
