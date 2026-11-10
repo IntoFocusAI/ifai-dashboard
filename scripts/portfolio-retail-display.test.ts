@@ -131,12 +131,12 @@ test("panel tab labels keep the reading slugs", () => {
   assert.deepEqual(RETAIL_PANEL_TABS, [
     "Retail Overview",
     "Suppressed Listings",
-    "MAP",
+    "MAP Leakage",
     "Catalog Governance",
     "Out of Stock",
   ]);
   assert.equal(tabSlug(RETAIL_FINDING_LABELS.suppressed_listings), "suppressed-listings");
-  assert.equal(tabSlug(RETAIL_FINDING_LABELS.map_leakage), "map");
+  assert.equal(tabSlug(RETAIL_FINDING_LABELS.map_leakage), "map-leakage");
   assert.equal(tabSlug(RETAIL_FINDING_LABELS.unnested_bundles), "catalog-governance");
   assert.equal(tabSlug("Retail Overview"), "retail-overview");
 });
@@ -227,7 +227,7 @@ test("MAP shows the violation count and the price gap, and catalog does not repe
   assert.equal(map.heroValue?.label, "MAP leakage");
   assert.match(map.heroValue?.value ?? "", /%/);
   assert.equal(map.tooltip.desc, "");
-  assert.equal(map.subTab, "MAP");
+  assert.equal(map.subTab, "MAP Leakage");
 
   const catalog = catalogBubble(source.unnestedBundles);
   assert.equal(catalog.heroValue?.label, "Splintered Listings");
@@ -249,7 +249,7 @@ test("MAP satellite names missing prices and does not count or average a gap", (
   assert.match(text, /Fender MAP prices have not been stored/);
   assert.equal(map.heroValue?.value, shortCoverageLine(MAP_PRICES_NOT_STORED));
   assert.equal(map.tooltip.desc, "");
-  assert.equal(map.subTab, "MAP");
+  assert.equal(map.subTab, "MAP Leakage");
   assert.doesNotMatch(text, /below MAP|gap|\$|\d/);
 });
 
@@ -292,9 +292,9 @@ test("the shared headline keeps the count, the missing message, and the command-
       headline: null,
     },
   });
-  assert.equal(mapHeadline.label, "MAP");
-  assert.equal(mapHeadline.commandTab, "MAP");
-  assert.equal(mapHeadline.tab, "MAP");
+  assert.equal(mapHeadline.label, "MAP Leakage");
+  assert.equal(mapHeadline.commandTab, "MAP Leakage");
+  assert.equal(mapHeadline.tab, "MAP Leakage");
 });
 
 test("Catalog Health main spoke leads with Buy Box withheld share", () => {

@@ -25,6 +25,8 @@ import {
   type FeaturedOfferRow,
 } from "../lib/fender-canvas/featured-offer.ts";
 import {
+  BENCHMARK_UNPUBLISHED_TIP,
+  benchmarkCoverageParts,
   benchmarkCoverageSentence,
   classificationCoverageSentence,
   confirmedSuppressionSentence,
@@ -311,7 +313,12 @@ test("coverage keeps failures and unchecked rows in the denominator", () => {
 
   const benchmark = benchmarkCoverageSentence(counts);
   assert.match(benchmark, /2 of 4/);
-  assert.match(benchmark, /not a failed check and not a price of zero/);
+  // Let the data speak: the sentence states what was found. What an unpublished benchmark
+  // is not lives in the tooltip on its count.
+  assert.match(benchmark, /did not publish a benchmark for the other 2\.$/);
+  assert.doesNotMatch(benchmark, /not a failed check/);
+  assert.match(BENCHMARK_UNPUBLISHED_TIP, /not a failed check and not a price of zero/);
+  assert.deepEqual(benchmarkCoverageParts(counts).figure, "the other 2");
   assert.match(benchmark, /does not name/i);
 
   const confirmed = confirmedSuppressionSentence(counts);

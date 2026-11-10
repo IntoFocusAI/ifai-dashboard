@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ResizableTable, type RetailColumn } from "@/components/v3/live/ResizableTable";
+import { ListingName } from "@/components/v3/live/RetailOverviewFigure";
 import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
 import {
   listingMatchesSpecFilters,
@@ -18,6 +19,25 @@ import type { SortInput } from "@/lib/fender-canvas/table-sort";
 
 const MOST_OF_THE_SPEC_DESC = "Missing 11 or more of the Amazon spec fields we check.";
 const PAGE = 20;
+
+const HOW_CLOSE_LABELS: Record<Exclude<SpecHowCloseFilter, null>, string> = {
+  one: "One field",
+  two: "Two fields",
+  most: "Most of the spec",
+};
+
+/** The pressed filter buttons in plain words, written into the download. Null with none pressed. */
+function specFilterLabel(
+  fillFirst: { field: string; label: string }[],
+  selectedFields: string[],
+  howClose: SpecHowCloseFilter,
+): string | null {
+  const parts = [
+    ...fillFirst.filter((line) => selectedFields.includes(line.field)).map((line) => line.label),
+    ...(howClose ? [HOW_CLOSE_LABELS[howClose]] : []),
+  ];
+  return parts.length ? `Missing: ${parts.join(", ")}` : null;
+}
 
 const SPEC_COLUMNS: RetailColumn[] = [
   { id: "listing", name: "Listing", label: "Listing", width: 220, minWidth: 120, sort: "text" },
@@ -161,7 +181,10 @@ function SpecGapRows({ gaps }: { gaps: AmazonSpecGap[] }) {
 
   const filtered = gaps.filter((gap) => listingMatchesSpecFilters(gap, selectedFields, howClose));
   const sorted = useClientTableSort(filtered, SPEC_COLUMNS, specSortValue);
-  const slice = sorted.rows.slice(page * PAGE, page * PAGE + PAGE);
+  // A search or a filter can leave fewer pages than the one on screen.
+  const lastPage = Math.max(0, Math.ceil(sorted.rows.length / PAGE) - 1);
+  const shown = Math.min(page, lastPage);
+  const slice = sorted.rows.slice(shown * PAGE, shown * PAGE + PAGE);
 
   function resetPage() {
     setPage(0);
@@ -190,6 +213,8 @@ function SpecGapRows({ gaps }: { gaps: AmazonSpecGap[] }) {
         freezeHeader
         maxHeight={520}
         sort={sorted.sort}
+        controls={sorted.controls}
+        filterLabel={specFilterLabel(findings.fillFirst, selectedFields, howClose)}
         onSort={(columnId) => {
           resetPage();
           sorted.onSort(columnId);
@@ -204,7 +229,7 @@ function SpecGapRows({ gaps }: { gaps: AmazonSpecGap[] }) {
             slice.map((row) => (
               <tr key={row.asin}>
                 <td>
-                  <strong>{row.modelOrTitle?.trim() || "Listing"}</strong>
+                  <ListingName name={row.modelOrTitle?.trim() || "Listing"} />
                 </td>
                 <td className="asin-col">
                   <AsinLink asin={row.asin} />
@@ -215,7 +240,7 @@ function SpecGapRows({ gaps }: { gaps: AmazonSpecGap[] }) {
           )}
         </tbody>
       </ResizableTable>
-      <Pager page={page} total={filtered.length} onPage={setPage} />
+      <Pager page={shown} total={sorted.rows.length} onPage={setPage} />
     </>
   );
 }

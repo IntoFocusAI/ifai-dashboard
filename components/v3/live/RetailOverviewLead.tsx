@@ -1,14 +1,14 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { CitationPieDisc } from "@/components/v3/live/ai-search/CitationPieDisc";
+import { RetailShareDisc, RetailStatusMark } from "@/components/v3/live/RetailOverviewFigure";
 import {
+  heroFigureColor,
+  heroFigureTone,
   retailOverviewHeroes,
   type RetailOverviewHeroModel,
 } from "@/lib/fender-canvas/retail-overview-lead";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
-
-const RETAIL_PIE_SIZE = "citation-pie-disc citation-pie-disc-retail";
 
 /**
  * One compact Retail Overview hero: label, share %, N of M, pie, short explainer.
@@ -34,7 +34,7 @@ function RetailHeroCard({ hero }: { hero: RetailOverviewHeroModel }) {
               data-retail-hero-tone={hero.tone}
               data-retail-hero-numerator={hero.numerator ?? ""}
               data-retail-hero-denominator={hero.denominator ?? ""}
-              style={{ color: hero.color }}
+              style={{ color: heroFigureColor(hero) }}
             >
               {hero.percent}
             </span>
@@ -43,10 +43,9 @@ function RetailHeroCard({ hero }: { hero: RetailOverviewHeroModel }) {
                 {hero.ratio}
               </span>
             ) : null}
+            <RetailStatusMark tone={heroFigureTone(hero)} />
           </span>
-          {hero.pie ? (
-            <CitationPieDisc pie={hero.pie} sizeClass={RETAIL_PIE_SIZE} tip={hero.tip ?? undefined} />
-          ) : null}
+          {hero.pie ? <RetailShareDisc pie={hero.pie} measuredKey="contradicted" tip={hero.tip} /> : null}
         </span>
         <span className="metric-card-sub" data-retail-hero-explainer="">
           {hero.explainer}

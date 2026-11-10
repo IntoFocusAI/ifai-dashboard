@@ -116,7 +116,7 @@ export const RETAIL_ENTRIES: MinimalEntry[] = [
     id: "sat-map",
     spokeId: "ecommerce",
     label: "MAP leakage",
-    tab: "MAP",
+    tab: "MAP Leakage",
     read: (ctx) =>
       retailReading(ctx, (snapshot) => {
         const hero = mapHero(snapshot);
@@ -126,7 +126,7 @@ export const RETAIL_ENTRIES: MinimalEntry[] = [
   {
     id: "map-average-gap",
     spokeId: "ecommerce",
-    tab: "MAP",
+    tab: "MAP Leakage",
     label: "Average price gap below MAP",
     read: (ctx) =>
       retailFigure(ctx, (snapshot) => {
