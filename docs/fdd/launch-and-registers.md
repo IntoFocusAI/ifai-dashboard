@@ -32,7 +32,7 @@
 | A-04 | Raw/canonical URLs inline or drawer? | Drawer only. |
 | A-07 | Model-column hover copy? | “not recorded” is enough. |
 | D-05 | Required marketplace specs by category? | Decided 9 Nov 2026: guitar list for Fender, lighting fields for Ledlenser, both marked placeholder. |
-| D-06 | A+ source and dollar effect? | Content shares are on screen. Keep the sales effect unestimated until the source is chosen. |
+| D-06 | A+ source and dollar effect? | Decided 10 Nov 2026: closed on the content shares; no dollar figure for now. |
 | N-03 | Client-editable assumptions later? | Decided 9 Nov 2026: LATER. |
 | X-02 | Satellite click? | Decided 9 Nov 2026: open the tab. |
 

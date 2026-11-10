@@ -77,16 +77,16 @@
 - **Evidence:** Open for category lists.
 - **Open decision:** None. Decided by Brian Magazu on 9 Nov 2026: Fender uses the guitar and instrument list; Ledlenser uses the lighting spec fields loaded by Brian Watson. Both stay marked placeholder, and Amazon Specs names the list it used.
 
-**D-06 REFINE** · Launch
+**D-06 CURRENT** · Launch
 
 **Status source:** Explicit
 
 - **Current:** Amazon A+ Matrix opens on the content shares. The sales effect of missing A+ content is not estimated.
-- **Desired:** Measure A+; dollar effect and source still DECISION.
+- **Desired:** Measure A+ as content shares. No dollar figure for now; the lift assumptions are worked out later with the parked dollar formulas.
 - **User value:** Content gap the brand controls becomes visible.
 - **Acceptance:** A+ leaves “Not measured yet” only until measured.
-- **Evidence:** Figure-first layout approved by Brian Magazu on 29 Oct 2026. Pull request 90, commits 7eecc0c and 295bcc0. Published on main at 86a5d91. The dollar effect and its source remain open.
-- **Open decision:** A+ source and dollar effect?
+- **Evidence:** Figure-first layout approved by Brian Magazu on 29 Oct 2026. Pull request 90, commits 7eecc0c and 295bcc0. Published on main at 86a5d91. Closed on the content shares by Brian Magazu on 10 Nov 2026 (decisions 35 and 45).
+- **Open decision:** None. Decided by Brian Magazu on 9 and 10 Nov 2026: no A+ dollar figure for now. The lift assumptions (how much more a listing sells with A+) must be defensible and are tracked with the parked dollar formulas.
 
 **D-09 REFINE** · Launch
 

@@ -117,7 +117,7 @@ screenshots by path only. List the files changed.
 - Amazon Specs (D-05): name the required-spec list per category (Fender
   guitar list, Ledlenser lighting fields), both marked placeholder.
 - A+ Matrix (R-03): unchecked shows as unchecked, never a fail. No A+
-  dollar figure (D-06 OPEN).
+  dollar figure (D-06 closed on the content shares, decisions 35 and 45).
 - D-03: no renames; check the map's satellite names match the tabs.
 - Defect: the Brand-Site Specs satellite reads "100.0% missing
   machine-readable specs" for both clients; verify against
@@ -148,7 +148,7 @@ screenshots by path only. List the files changed.
 
 ## 24.7 Roadmap and Action Items (two pull requests, after the rules)
 
-- Waits for Brian's answers on decision 21 (recommendation rules) in
+- Decision 21 (recommendation rules) stands as written (decisions 35 and 44) in
   `docs/pm23-decisions.md`.
 - Roadmap: one tab, "30-60-90 Days" (S-03), built per S-02 once the rules
   are set; owner sentence "IntoFocus's recommended plan for {brand}"

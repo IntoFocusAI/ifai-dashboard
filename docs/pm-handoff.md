@@ -161,7 +161,8 @@ The brand book, `docs/brand/IntoFocus_AI_Brand_Book_V2.pdf`, is a standard
 below the FDD. Where the two conflict, ask Brian.
 
 Held, until he says otherwise: A-06, A-02, R-06, R-11, A-04, A-07, N-07,
-LATER rows, and the dollar formulas.
+LATER rows, and the dollar formulas. X-15, X-16, and R-19 are held until
+the rest of the launch build is complete (decision 46).
 
 ## State
 
