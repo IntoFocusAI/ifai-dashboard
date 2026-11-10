@@ -214,3 +214,16 @@ closeout of each view. Open items are marked OPEN and are not built.
     public.ai_prompt_edits_list was applied to production with his
     approval (migration 20261109233000_ai_prompt_edits_list.sql, PR 151).
     PRs 151 and 152 approved and merged.
+40. PM24-2, option A: the Competitive Radar map bubble reads the same rows
+    as the Category Battlecards tab (the date-pill window) with the tab's
+    category-lead function, so the two cannot disagree. Fender now reads
+    "Taylor leads Acoustics". This bubble only; every other bubble stays on
+    the published run plus its matching API run. PR 158.
+41. The Radar bubble's longer load (about 32 s for Fender on the preview,
+    16 s for Ledlenser, showing "Loading run" until then) is accepted for
+    now. Speeding up the AI Search reads is a follow-up.
+42. PM24-3 correction: the Product Fact Checks lead is one row: catalog
+    figure, accuracy, then the question, its sentence and the
+    contradictions badge. No lower box. PR 158.
+43. Workers run in parallel when they do not edit the same files.
+    Failing e2e tests: one cleanup worker clears them (option B, 24.9).
