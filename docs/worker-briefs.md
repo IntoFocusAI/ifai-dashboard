@@ -1,26 +1,28 @@
-# PM24 worker briefs
+# Worker briefs
 
 Each remaining view is one worker and one pull request. Send a worker the
 common rules, then its view section. Decisions are in
 `docs/pm23-decisions.md`; the audit is `docs/auditor-brief.md`; the brand
-book is `docs/brand/IntoFocus_AI_Brand_Book_V2.pdf`. FDD rows: download
-with `python3 scripts/design-doc-edit.py download fdd /tmp/fdd.docx`, then
-`show /tmp/fdd.docx <ID>`. Workers never edit the Google Docs.
+book is `docs/brand/IntoFocus_AI_Brand_Book_V2.pdf`. FDD rows are in
+`docs/fdd/<view>.md`; find a row with `grep -n '^\*\*R-09 ' docs/fdd/*.md`
+and read from that line. Workers never change an FDD status line; they
+propose status changes in the pull request body.
 
 ## Common rules (every worker)
 
-- You are Worker 24.N for PM24 on the IntoFocus AI client dashboard. Read
-  AGENTS.md, CLAUDE.md, .cursor/rules/*.mdc, and README.md first. You build
-  one view to its final intended form for launch. Brian Magazu reviews only
-  finished views. You report to PM24, not to Brian.
-- One branch from the latest main, named `worker/24.N-<short-name>`, one
+- You are Worker N.M for the PM on the IntoFocus AI client dashboard,
+  running on the model the PM named. AGENTS.md and CLAUDE.md are already
+  loaded; do not reread them. Read only the FDD rows and files your view
+  needs. Read the Next.js docs in node_modules only for an API you have not
+  used in this repo. You build one view to its final intended form for
+  launch. You report to the PM, not to Brian.
+- One branch from the latest main, named `worker/N.M-<short-name>`, one
   pull request, base main. Push only to that branch. Title
-  "Worker 24.N: <View> final form (<row IDs>)". The body lists each change
+  "Worker N.M: <View> final form (<row IDs>)". The body lists each change
   on its own line with its FDD id and the status it moves to if Brian
   approves, then the rows the view leaves open. Rebase on main often (Brian
-  Watson merges Ledlenser work). Commit messages start "Worker 24.N:".
-- In Claude Code, run in your own git worktree so parallel workers do not
-  share a checkout.
+  Watson merges Ledlenser work). Commit messages start "Worker N.M:".
+- Run in your own git worktree so parallel workers do not share a checkout.
 - Both clients: correct for Fender (/dashboard) and Ledlenser
   (/dashboard?client=ledlenser). Ledlenser has no API-engine views and no
   set-aside views; handle that as the code already does.
@@ -29,7 +31,7 @@ with `python3 scripts/design-doc-edit.py download fdd /tmp/fdd.docx`, then
 - A feature whose data does not exist is BLOCKED, not built. Never deliver
   a screen or column that reads Not available* on every row.
 - Never invent rules, figures, or causes. If the FDD and the decisions do
-  not say, ask PM24 in your report.
+  not say, ask the PM in your report.
 - Standing rules: the map shows the published run plus its matching API
   run; the shared date pill is the only period label; dollar figures stay
   labeled analyst estimate and their formulas stay parked; nothing about
@@ -56,13 +58,40 @@ with `python3 scripts/design-doc-edit.py download fdd /tmp/fdd.docx`, then
   `FigureTip`; the table toolbar in `ResizableTable` (search, N of M rows,
   Download CSV); weights at or under 600; Geist Mono only for labels and
   table numbers.
-- Verify: `npm test` passes; Playwright for your changes at 1280x720; look
-  at every tab yourself at 1280x720 and 1920x1080 for both clients against
-  each row's FDD Acceptance text.
-- Final report: PR and preview URL
-  (https://deploy-preview-<PR>--ifai-dashboard.netlify.app/dashboard), per
-  row what you see for each client, screenshots, anything BLOCKED,
-  questions, files changed.
+
+### Cost rules
+
+- Read files by range (`grep -n`, `sed -n`), never `cat` a whole large
+  file. Edit files; do not rewrite whole files.
+- Check screenshots with a script (overflow, text present); look at an image
+  only when the script cannot decide.
+- Run `npm test`, builds, and e2e in the background and check back within 5
+  minutes. Compare e2e results with the baseline on main the PM gives you;
+  do not re-baseline main yourself.
+- Before any wait longer than 5 minutes (a review, Brian, a long run), write
+  your state into the pull request body and end. A fresh worker continues
+  from it.
+
+### Acceptance checklist (check every item before you hand back)
+
+- Every tab at 1280x720 and 1920x1080, both clients: no sideways scroll, no
+  clipped or overlapping text.
+- "analyst estimate" on every dollar figure; the asterisk and its tooltip on
+  every partial or stale figure (X-25); `StatusMark` on every status color.
+- No new tooltips on the map bubbles; no on-screen qualifiers (they go in
+  tooltips); no internal terms in client copy.
+- `npm test` passes; e2e for your view passes, with no new failures against
+  the main baseline; `npm run lint:brand` passes once it exists.
+- Each row's FDD Acceptance text holds for both clients.
+
+### Hand back
+
+Pull request and preview URL
+(https://deploy-preview-<PR>--ifai-dashboard.netlify.app/dashboard), then an
+evidence table: one line per FDD row with what you see for Fender and for
+Ledlenser, the test counts (unit and e2e, against the main baseline), the
+proposed status change, and anything BLOCKED or a question. Attach
+screenshots by path only. List the files changed.
 
 ## 24.2 Summary (/dashboard?spoke=hub: Briefing, Performance, Opportunity)
 
@@ -80,64 +109,6 @@ with `python3 scripts/design-doc-edit.py download fdd /tmp/fdd.docx`, then
   ConsensusComponentBars, FenderDivisionsTable (not on ResizableTable; add
   the table rule), and lib/fender-canvas briefing-*, consensus-*,
   division-*, analyst-estimates.
-
-## 24.3 Catalog Health (/dashboard?spoke=ecommerce)
-
-- Seller-type label final (R-02); verify Controlled Buy Box per SC-02 for
-  Partner-led Fender and Brand-led Ledlenser.
-- The MAP tab becomes "MAP Leakage". R-09 exposure: violations N of M,
-  price gap, estimated monthly units (SmartScout `smartscout_monthly_units`
-  in canvas_listing_sales_loss_v2 by ASIN, both schemas), discounted retail
-  value = gap times units, labeled analyst estimate, never lost revenue.
-  Dollars name their source and are never summed across sources; no units
-  means an awaiting-inputs count, never $0. Approved MAP exceptions stay
-  out (R-12). No duration column (BLOCKED on MAP history, Brian Watson).
-  R-09 moves to REFINE.
-- "Splintered listings" becomes "Splintered Listings"
-  (CatalogGovernancePanel). Move on-screen qualifiers into tooltips (for
-  example Ledlenser's "That is not a failed check and not a price of zero.").
-- Table toolbar: `catalog-bundles` passes its own sort handler and needs
-  the toolbar prop; the Out of Stock episodes detail table is not on
-  ResizableTable; SetAsideTable's Status column does not sort.
-  FeaturedOfferRow uses weight 700 or more.
-- Leaves open: R-06, R-07, R-11 HELD; R-10, R-15 BLOCKED (Brian Watson).
-- Owns: RetailOverview*, FeaturedOffer*, SuppressedListingsPanel,
-  MapChannelPanel, MapListingsTable, ChannelPriceCell, CatalogGovernance*,
-  StockLoss*, usePortfolioRetailSnapshot, AuthorizedSellersControl,
-  CommerceConsensusPanel, FenderListingsTable, ExploreListings,
-  SetAsideTable, RETAIL_PANEL_TABS, and lib/fender-canvas retail, MAP,
-  featured-offer, catalog-governance, stock-loss, authorized-sellers files.
-
-## 24.4 AI Search Visibility (/dashboard?spoke=aeo, and the Prompts screen)
-
-- Defect first: Ledlenser AI Search says "No published run in the last 30
-  days" though schema ledlenser has runs published 5 Nov 10:30 UTC
-  (4a5eda65) and 7 Nov 02:30 UTC (807cea45). Fix the window code.
-- A-05 (decision 13): every engine choice, All included, counts the
-  rotating catalog questions and leads with "N of M catalog products
-  checked" (M from canvas_ai_probe_coverage, about 181 for Fender). Only
-  ChatGPT, Gemini, and Perplexity ask the rotating questions; the tooltip
-  says which engines a figure covers. A-05 moves to CURRENT.
-- A-08 (decision 14): the Prompts screen shows each prompt's change history
-  from command.fmic_ai_prompt_edits through one additive read function in a
-  new migration (closed PR 141 has a draft). Not applied by the worker.
-  Ledlenser's prompt list stays read-only.
-- Map faces in `lib/ai-search/canvas-surfaces.ts`: "Unbranded SOV" becomes
-  "Unbranded Discovery"; "Brand Consideration" becomes "Branded
-  Consideration"; the radar bubble reads like "Yamaha leads Acoustics".
-  Fix the "Flashlights · Fenix" sidebar overflow at 1280.
-- Server CSV loaders for the AI Search tables that follow the date pill
-  (X-10). `citation-evidence` needs the toolbar prop. Not on ResizableTable:
-  RunCompletenessCard (2 tables), HistoryTrendsPanel, FactCheckEvidence,
-  CatalogCoverageTable, HistoryPointDetail, LegacyRunInspect,
-  SimulationEvidenceDrawer.
-- Normalize invisible characters in model names for display (Gemini).
-- Weights 700+: citation-chain.css, citation-glance.css,
-  citation-share-bars.css, engine-group.css, AiDriftPanel.tsx; system mono
-  in prompts-editor.css. CitationPieDisc needs the chart tokens.
-- Leaves open: A-02, A-04, A-06, A-07 HELD.
-- Owns components/v3/live/ai-search/* and lib/ai-search/* except the 24.6
-  files, and components/v3/prompts/*. Owns the shared AI reads.
 
 ## 24.5 AI Readiness (/dashboard?spoke=specs)
 

@@ -1,5 +1,7 @@
 # Brian's review notes on the PM24 test batch (10 Nov 2026)
 
+Recorded in the FDD as decision rows PM24-1 to PM24-3 (docs/fdd/launch-and-registers.md). The docs closeout below is done.
+
 From the previews of PR 151 (AI Search) and PR 152 (Catalog Health). He
 approved merging both as they are. These are for a later session; none is
 built. Put them into the FDD at the next docs closeout.
