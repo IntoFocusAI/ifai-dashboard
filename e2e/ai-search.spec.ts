@@ -414,7 +414,7 @@ test.describe("Competitive Radar", () => {
     await expect(heroes).toHaveAttribute("data-ai-battle-heroes", "");
     const desc = page.locator(".drilldown-desc");
     await expect(desc).toBeHidden();
-    const sentence = (await desc.textContent())?.match(/Competitors led ([\d,]+) of ([\d,]+) resolved unbranded discovery answers/);
+    const sentence = (await desc.textContent())?.match(/Competitors led (\d+) of (\d+) resolved unbranded discovery answers/);
     expect(sentence).not.toBeNull();
     await expect(heroes.locator("[data-ai-battle-competitor-led]")).toHaveText(
       `Competitors led ${sentence?.[1]} of ${sentence?.[2]}`,
