@@ -258,27 +258,22 @@ LATER items, and the dollar formulas. Detail lives in the FDD.
 Replace this whole section on handoff. Keep it under 25 lines. The Google
 Docs win if this block is stale.
 
-- PM24 wrote this at 6:30 PM ET on 9 Nov 2026, in Claude Code. PM23
-  paused after worker 23.1. Brian renumbered the remaining workers 24.2 to
-  24.7 (the Cursor agents for 23.2 to 23.6 pushed nothing). Briefs:
-  docs/pm24-worker-briefs.md. Decisions: docs/pm23-decisions.md.
-- Repo: IntoFocusAI/ifai-dashboard (moved from brianw-ifai on 9 Nov).
-- Docs: both on 23.1. Worker 23.1 is closed out (X-02 CURRENT; X-34, X-25,
-  X-33, X-10, X-18 REFINE until the views adopt them). Launch rows
-  CURRENT: 56 of 91.
-- Main has PRs 147, 148, and 150 (header label 23.1) and commit a74878c
-  (the Claude Code permission allowlist in .claude/settings.json).
-- Now: a two-view test batch in batch mode, with no audit: 24.4 AI Search
-  and 24.3 Catalog Health. Then, as Brian directs: 24.5 AI Readiness, 24.2
-  Summary (24.4's Ledlenser window fix may fix its defect; check first),
-  24.6 Competitive Radar, 24.7 Roadmap and Action Items (after item 21).
-- Open with Brian: D-06, C-01, and the Roadmap and Action Items
-  recommendation rules (docs/pm23-decisions.md items 16, 17, 21).
-- Known: PR 110's hub-slots.ts still says "30-60-90 Day Milestones", so
-  metric-destinations.spec fails until it is rebased. The stale-data
-  asterisk is not built; its check schedules are decided (decision 4).
-- Data: battery Sun, Tue, Thu 06:00 UTC; Nov 8 run 431 of 549 (ChatGPT 82
-  errors, model still not recorded; Perplexity 147 of 183), for Ryan.
-  Ledlenser runs published 5 and 7 Nov UTC, but its AI Search says no
-  published run (24.4 fixes).
-- Watson: PRs 125, 131, 139 (migrations only).
+- PM24 (second session) wrote this on 10 Nov 2026, in Claude Code.
+  Workers 24.3 and 24.4 are merged. Unused: 24.2, 24.5, 24.6, 24.7.
+- Main f1df1f5: PRs 149 to 153. Live check 10 Nov: Catalog Health and AI
+  Search open for both clients, CSV downloads work.
+- Docs: both still on 23.1. The batch closeout for PRs 151 and 152 is owed
+  (one version bump, row status and evidence, one change-log row each,
+  Brian's three review notes), then one header-label pull request.
+- Database: public.ai_prompt_edits_list applied 10 Nov (PR 151).
+- Held until Brian says go: his three review notes
+  (docs/pm24-review-notes.md).
+- Next, when he says go: 24.5 AI Readiness, 24.2 Summary, 24.6 Competitive
+  Radar, 24.7 Roadmap and Action Items. Update the 24.5 and 24.7 briefs for
+  decision 35 first. One worker at a time; ask Brian which model.
+- No audit until Brian brings it back.
+- Known: 28 of 244 e2e tests fail on main (fix or retire: ask Brian).
+  Fender AI Search is slow (about 14 to 24 s). Stale asterisk missing on
+  map bubbles and Minimal. Fender listings below MAP moved 118, 210, 120
+  of 633 between 9 and 10 Nov: unexplained, for Brian Watson or Ryan.
+  PR 110 still breaks metric-destinations.spec. Watson: PRs 125, 131, 139.
