@@ -131,7 +131,7 @@ test("Amazon Specs opens on Amazon fields and the title chevron reveals the rest
   await expect(reveal).toHaveAttribute("aria-expanded", "true");
   await expect(page.locator("#spec-missing-fields")).not.toHaveClass(/spec-missing-fields-preview/);
   await expect(fields).toHaveCount(amazonFieldCount);
-  await expect(fields.last()).toContainText("pickup_configuration");
+  await expect(fields.last()).toContainText("Pickup Configuration");
   await expect(fields.last().locator("[data-spec-missing-count]")).toHaveText("1 of 4 (25.0%)");
 
   await reveal.click();

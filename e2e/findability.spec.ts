@@ -156,7 +156,7 @@ test("the five outcome counts stay distinct and open the listings behind them", 
     "data-ifai-tooltip-desc",
     /runs weekly and has not run since Oct 12, 2026/,
   );
-  await expect(exactHero.locator("[data-status='bad']")).toContainText("Poor");
+  await expect(exactHero.locator("[data-status='okay']")).toContainText("Fair");
   await expect(exactHero.locator("[data-findability-lead-figure]")).toHaveAttribute("data-findability-exact", "2");
   await expect(exactHero.locator("[data-findability-lead-ratio]")).toHaveText("2 of 6");
   await expect(exactHero.locator("[data-citation-pie-disc='findability-exact_official_product']")).toBeVisible();
@@ -272,7 +272,7 @@ test("the five outcome counts stay distinct and open the listings behind them", 
   await expect(zebra.locator("td").nth(2)).toContainText("Variant SKU 0140000001");
   await expect(zebra.locator("td").nth(2).locator(".findability-cell-sub a")).toHaveCount(0);
 
-  await table.locator("thead").getByRole("button", { name: "Listing" }).click();
+  await table.locator("thead th[data-col-id='title']").getByRole("button").click();
   await expect(table.locator("tbody tr").first()).toContainText("Alpha Exact");
 
   await page.locator("[data-findability-outcome='official_family_page'] [data-findability-count]").click();
