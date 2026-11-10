@@ -41,11 +41,9 @@ test("the AI Search bubble adds the Nov 2 API run and matches AI Search on All f
   const bubble = canvas.bubble("spoke-aeo");
   await expect(bubble.locator(".node-hero-value")).toHaveText("62.5%");
   await bubble.hover({ force: true });
-  const tip = page.locator(".node-tooltip");
-  await expect(tip).toContainText("Includes API engines");
-  await expect(tip).toContainText("Only repeats 1 to 3 of each API question per engine are counted.");
   await canvas.bubble("spoke-competitors").hover({ force: true });
-  await expect(tip).toContainText("Includes API engines");
+  await page.waitForTimeout(400);
+  await expect(page.locator(".node-tooltip", { hasText: /\S/ })).toHaveCount(0);
 
   await canvas.openSpokeFromMap("AI Search Visibility");
   await page.locator("[data-ai-history-trigger]").click();

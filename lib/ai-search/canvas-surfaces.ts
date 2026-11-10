@@ -23,8 +23,8 @@ import {
   summarizeRun,
   UNBRANDED_RATE_BANDS,
 } from "@/lib/ai-search/summary";
-import { API_QUESTION_RULE, API_REPEAT_RULE, hasApiRows, isApiEngine } from "@/lib/ai-search/engine-group";
-import type { AiSearchRead, AiSearchSnapshot } from "@/lib/ai-search/types";
+import type { AiSearchRead } from "@/lib/ai-search/types";
+import { radarBubbleLead } from "@/lib/ai-search/radar-bubble";
 import { selectionLine } from "@/lib/ai-search/displayed-read";
 import { isWindowHistoryKind } from "@/lib/ai-search/window-display";
 import { brandName, leadBrand } from "@/lib/brand-copy";
@@ -132,18 +132,6 @@ function heroPctFace(rate: number | null, formatted: string, label: string, redB
   return { status, heroValue: { value: formatted, label } };
 }
 
-/** The main AI bubbles' hover when the map's read carries the API run beside the published run. */
-function withApiEnginesTooltip(snapshot: AiSearchSnapshot): NodeFace["tooltip"] | null {
-  if (!hasApiRows(snapshot)) return null;
-  const answered = (api: boolean) =>
-    snapshot.calls.filter((row) => isApiEngine(row.engine) === api && row.call_status === "answered").length;
-  const engines = [...new Set(snapshot.calls.filter((row) => isApiEngine(row.engine)).map((row) => engineLabel(row.engine)))];
-  return {
-    title: "Includes API engines",
-    desc: `The published run's ${answered(false)} search-engine answers plus ${answered(true)} answers from the API run nearest its day (${engines.join(", ")}), as AI Search shows them on All. ${API_QUESTION_RULE} ${API_REPEAT_RULE}`,
-  };
-}
-
 export type AiNodeFaces = Record<
   "spokeAeo" | "satPrompts" | "satCitations" | "satDrift" | "spokeCompetitors" | "satGap" | "satLead",
   NodeFace
@@ -167,9 +155,7 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
   const s = summarizeRun(read.snapshot);
   const { completeness: run, drift, citations } = s;
   const state = runStateLabel(run.state);
-  const gap = s.largestGap;
   const weakestEngine = unbrandedEnginesWeakestFirst(engineResultRoleTallies(read.snapshot.calls))[0] ?? null;
-  const apiTooltip = withApiEnginesTooltip(read.snapshot);
 
   // The main bubble and its three satellites each lead with one scored headline value.
   // Bands are a first draft per metric; a later pass may let intelligence choose the
@@ -215,7 +201,7 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
       meta: `${state} run · ${run.answered ?? "?"} of ${run.expected ?? "?"} answered`,
       subTab: AI_TABS.summary,
       // The hero value above is the whole explanation. Open Run Summary for the engine and run detail.
-      tooltip: apiTooltip ?? { title: "", desc: "" },
+      tooltip: { ...EMPTY_TOOLTIP },
     },
     satPrompts: {
       status: brandedHero.status,
@@ -257,11 +243,13 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
       title: "Competitive Radar",
       stats: [],
       heroValue: (() => {
-        const rival = gap?.leaders[0];
-        if (gap && rival != null && gap.resolved > 0) {
+        if (read.radarPending) return { value: "Loading run", label: "Unbranded discovery" };
+        // Same rows and same category-lead rule as the Category Battlecards tab.
+        const lead = radarBubbleLead((read.radarSnapshot ?? read.snapshot).calls);
+        if (lead?.topRival && lead.resolved > 0) {
           return {
-            value: pct(rival.wins, gap.resolved),
-            label: rivalLeadsLabel(rival.brand, gap.category),
+            value: pct(lead.topRival.wins, lead.resolved),
+            label: rivalLeadsLabel(lead.topRival.brand, lead.key),
           };
         }
         if (s.topCompetitor) {
@@ -274,7 +262,7 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
       })(),
       meta: `${s.competitorWins} competitor wins · unbranded discovery`,
       subTab: RADAR_TABS.battlecards,
-      tooltip: apiTooltip ?? { title: "", desc: "" },
+      tooltip: { ...EMPTY_TOOLTIP },
     },
     satGap: {
       status: s.competitorWins > 0 ? "warning" : "success",

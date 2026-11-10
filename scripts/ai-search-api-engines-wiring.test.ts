@@ -326,14 +326,12 @@ test("the API repeat cap keeps repeats 1 to 3 and the fact checks and citations 
   assert.match(API_REPEAT_RULE, /repeats 1 to 3/);
 });
 
-test("the map's AI bubbles say when they include API engines, and stay hoverless when they do not", () => {
+test("the map's AI bubbles carry no hover tooltip, with or without API engines", () => {
   const all = engineGroupRead({ phase: "ready", snapshot: NOV3 }, { phase: "ready", snapshots: [API_NOV2] }, "all");
   assert.equal(all.phase, "ready");
   const faces = aiNodeFaces(all);
-  assert.equal(faces.spokeAeo.tooltip.title, "Includes API engines");
-  assert.match(faces.spokeAeo.tooltip.desc, /3 search-engine answers plus 2 answers from the API run nearest its day \(ChatGPT API\)/);
-  assert.match(faces.spokeAeo.tooltip.desc, /Only repeats 1 to 3/);
-  assert.equal(faces.spokeCompetitors.tooltip.title, "Includes API engines");
+  assert.deepEqual(faces.spokeAeo.tooltip, { title: "", desc: "" });
+  assert.deepEqual(faces.spokeCompetitors.tooltip, { title: "", desc: "" });
 
   const alone = aiNodeFaces({ phase: "ready", snapshot: NOV3 });
   assert.deepEqual(alone.spokeAeo.tooltip, { title: "", desc: "" });
@@ -352,4 +350,18 @@ test("Run Summary, Citation Ecosystem, the trend, and the run detail read the sw
   assert.match(read("components/v3/live/ai-search/HistoryTrendsPanel.tsx"), /useEngineGroupWindow\(\)/);
   assert.match(read("components/v3/live/ai-search/useCitationAggregate.ts"), /useEngineGroupWindow\("citations"\)/);
   assert.match(read("components/v3/live/ai-search/RunHistoryControl.tsx"), /<PairedApiRun runId=\{run.audit_run_id\} day=\{day\} \/>/);
+});
+
+test("the Competitive Radar bubble names the rival the Battlecards tab names, from the window rows when given", () => {
+  const rivalCalls = (brand: string, n: number) =>
+    Array.from({ length: n }, () => call("w", "chatgpt", { outcome: "competitor_win", primary_brand: brand }));
+  // The published run alone: Yamaha ahead. The window it sits in: Taylor ahead.
+  const published = { ...NOV3, calls: [...rivalCalls("Yamaha", 3), ...rivalCalls("Taylor", 2)] };
+  const window = { ...NOV3, calls: [...rivalCalls("Yamaha", 3), ...rivalCalls("Taylor", 6)] };
+  const hero = (read: Parameters<typeof aiNodeFaces>[0]) => aiNodeFaces(read).spokeCompetitors.heroValue;
+  assert.match(String(hero({ phase: "ready", snapshot: published })?.label), /^Yamaha leads/);
+  const both = hero({ phase: "ready", snapshot: published, radarSnapshot: window });
+  assert.match(String(both?.label), /^Taylor leads/);
+  const wiring = readFileSync(new URL("../components/v3/live/ai-search/useApiEngineLoad.ts", import.meta.url), "utf8");
+  assert.match(wiring, /radarSnapshot: radar\.snapshot/);
 });

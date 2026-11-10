@@ -1,9 +1,20 @@
 /* Product Fact Checks lead: catalog coverage first, then Accuracy beside its explainer. */
 
+/* Catalog coverage and Accuracy sit side by side; they wrap only when the card is too narrow. */
+.ai-fact-figures {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 16px 24px;
+}
+
+.ai-fact-figures:empty {
+  display: none;
+}
+
 .ai-fact-catalog-lead {
-  padding-bottom: 14px;
-  margin-bottom: 14px;
-  border-bottom: 1px solid var(--border-color);
+  flex: 0 1 auto;
+  min-width: 0;
 }
 
 .ai-fact-figure-row {
@@ -43,7 +54,7 @@
 }
 
 .ai-fact-explainer {
-  flex: 1 1 280px;
+  flex: 1 1 220px;
   min-width: 0;
   margin-top: 0;
 }
