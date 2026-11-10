@@ -232,9 +232,9 @@ test("the window waits for the API runs on All and API only; Without API and Not
   assert.deepEqual([...all.apiDays.keys()], ["b-nov3"]);
 });
 
-/** A battery run that asked all 34 questions on ChatGPT and Gemini, as the live runs do. */
+/** A battery run that asked all 34 wave 1 questions on ChatGPT and Gemini, as the live runs before wave 2 did. */
 function fullBattery(id: string, day: string): AiSearchSnapshot {
-  const calls = PROMPT_BATTERY.flatMap((prompt) =>
+  const calls = PROMPT_BATTERY.filter((prompt) => prompt.wave === undefined).flatMap((prompt) =>
     ["chatgpt", "gemini"].map((engine) =>
       call(id, engine, { prompt_key: prompt.key, prompt: prompt.text, prompt_kind: prompt.kind, category: prompt.category }),
     ),
