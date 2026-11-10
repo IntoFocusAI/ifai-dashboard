@@ -235,14 +235,14 @@ export function amazonDiffersTip(amazon: string | null, fenderValue: string | nu
   return `Amazon lists "${amazon ?? ""}". The ${brandSite()} spec page lists "${fenderValue ?? ""}".`;
 }
 
-export const CATALOG_COVERAGE_TITLE = "Catalog models checked";
+export const CATALOG_COVERAGE_TITLE = "Catalog products checked, by category and engine";
 
 /** Tooltip on each "N of M" cell of the catalog table. */
 export function catalogCoverageTip(basis: "run" | "selection", inScope: number): string {
   const counted = `counted by ${brandSite()} spec page, then SKU`;
   return basis === "run"
-    ? `Distinct catalog models checked in this run, ${counted}, of the ${formatInt(inScope)} models in scope.`
-    : `Distinct catalog models checked across the runs in this selection, ${counted}, of the ${formatInt(inScope)} models in scope in the newest run.`;
+    ? `Distinct catalog products checked in this run, ${counted}, of the ${formatInt(inScope)} products in scope.`
+    : `Distinct catalog products checked across the runs in this selection, ${counted}, of the ${formatInt(inScope)} products in scope in the newest run.`;
 }
 
 export const ANCHOR_TITLE = "Anchor";

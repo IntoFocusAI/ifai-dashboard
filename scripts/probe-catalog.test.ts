@@ -351,14 +351,14 @@ test("one run counts catalog models by spec page, then SKU, against its models i
     /<CopyTip label=\{CATALOG_COVERAGE_TITLE\} description=\{catalogCoverageTip\(coverage\.basis, cell\.inScope\)\}> \{formatInt\(cell\.checked\)\} of \{formatInt\(cell\.inScope\)\} <\/CopyTip>/,
   );
   assert.doesNotMatch(table, /"None"/);
-  assert.equal(CATALOG_COVERAGE_TITLE, "Catalog models checked");
+  assert.equal(CATALOG_COVERAGE_TITLE, "Catalog products checked, by category and engine");
   assert.equal(
     catalogCoverageTip("run", 180),
-    "Distinct catalog models checked in this run, counted by fender.com spec page, then SKU, of the 180 models in scope.",
+    "Distinct catalog products checked in this run, counted by fender.com spec page, then SKU, of the 180 products in scope.",
   );
   assert.equal(
     catalogCoverageTip("selection", 1250),
-    "Distinct catalog models checked across the runs in this selection, counted by fender.com spec page, then SKU, of the 1,250 models in scope in the newest run.",
+    "Distinct catalog products checked across the runs in this selection, counted by fender.com spec page, then SKU, of the 1,250 products in scope in the newest run.",
   );
 });
 
