@@ -33,7 +33,8 @@ propose status changes in the pull request body.
 - Never invent rules, figures, or causes. If the FDD and the decisions do
   not say, ask the PM in your report.
 - Standing rules: the map shows the published run plus its matching API
-  run; the shared date pill is the only period label; dollar figures stay
+  run, except the Competitive Radar bubble, which reads the Category
+  Battlecards rows for the date-pill window (decision 40; do not change it); the shared date pill is the only period label; dollar figures stay
   labeled analyst estimate and their formulas stay parked; nothing about
   IntoFocus fees; no delegation or paid tiers; let the data speak (caveats
   in tooltips; "analyst estimate", "Not available*", and the asterisk stay
@@ -81,7 +82,8 @@ propose status changes in the pull request body.
 - No new tooltips on the map bubbles; no on-screen qualifiers (they go in
   tooltips); no internal terms in client copy.
 - `npm test` passes; e2e for your view passes, with no new failures against
-  the main baseline; `npm run lint:brand` passes once it exists.
+  the main baseline; `npm run lint:brand` reports no issue in the files you own or touch
+  (main has 73 issues elsewhere; do not fix files you do not own).
 - Each row's FDD Acceptance text holds for both clients.
 
 ### Hand back
