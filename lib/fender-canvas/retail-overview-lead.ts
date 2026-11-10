@@ -44,6 +44,23 @@ export type RetailOverviewHeroModel = {
   denominator: number | null;
 };
 
+/**
+ * The figure's status, or null when it reads Not available*. A missing figure carries no
+ * status color, mark, or word: status marks data only.
+ */
+export function heroFigureTone(
+  hero: Pick<RetailOverviewHeroModel, "numerator" | "denominator" | "tone">,
+): Exclude<NodeStatus, "neutral"> | null {
+  return hero.numerator != null && hero.denominator != null ? hero.tone : null;
+}
+
+/** The figure's color: its status color, or muted text when there is no figure to grade. */
+export function heroFigureColor(
+  hero: Pick<RetailOverviewHeroModel, "numerator" | "denominator" | "tone" | "color">,
+): string {
+  return heroFigureTone(hero) ? hero.color : "var(--text-muted)";
+}
+
 function toneForShare(
   numerator: number | null,
   denominator: number | null,
@@ -130,7 +147,7 @@ export function mapLeakageTip(snapshot: PortfolioRetailSnapshot): string | null 
   return [
     `${formatInt(reading.issueCount)} of ${formatInt(detail.decided)} listings with a stored MAP price and at least one stored channel price are priced below MAP.`,
     uncompared > 0
-      ? `${formatInt(uncompared)} other ${uncompared === 1 ? "listing" : "listings"} in the retail read ${uncompared === 1 ? "has" : "have"} no stored MAP comparison.`
+      ? `${formatInt(uncompared)} other ${uncompared === 1 ? "monitored listing" : "monitored listings"} ${uncompared === 1 ? "has" : "have"} no stored MAP comparison.`
       : null,
     approvedExceptionsSentence(detail.approvedExceptions ?? 0, snapshot.mapApprovedExceptionsFailed),
   ]
@@ -259,7 +276,7 @@ export function specHero(snapshot: PortfolioRetailSnapshot): RetailOverviewHeroM
           .join(" ")
       : null,
     explainer: ready
-      ? "Every Amazon spec field is filled."
+      ? "Listings with every Amazon spec field filled."
       : reading.missingMessage?.split(". ")[0] ?? "Amazon spec-field reading not stored.",
     numerator: complete,
     denominator: checked,

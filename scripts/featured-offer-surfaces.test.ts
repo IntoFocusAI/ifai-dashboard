@@ -192,7 +192,7 @@ test("the client-facing label holds even when the confirmed count clears", () =>
 test("the suppressed tab keeps its slug so old deep links still resolve", () => {
   assert.equal(RETAIL_FINDING_LABELS.suppressed_listings, "Suppressed Listings");
   assert.equal(tabSlug(RETAIL_FINDING_LABELS.suppressed_listings), "suppressed-listings");
-  assert.equal(tabSlug(RETAIL_FINDING_LABELS.map_leakage), "map");
+  assert.equal(tabSlug(RETAIL_FINDING_LABELS.map_leakage), "map-leakage");
   assert.equal(tabSlug(RETAIL_FINDING_LABELS.unnested_bundles), "catalog-governance");
   // The label on screen changed; the tab the link opens did not.
   assert.equal(headlineSurface(READ).tab, "Suppressed Listings");

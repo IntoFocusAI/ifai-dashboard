@@ -197,7 +197,7 @@ test("the catalog control copy stays on the live rollup and the custom tooltip",
   assert.match(schemaList, /dataAttr="data-machine-hero"/);
   assert.match(governance, /data-ifai-open="specs"/);
   assert.match(governance, /data-ifai-tab="Amazon Specs"/);
-  assert.match(governance, /Splintered listings/);
+  assert.match(governance, /Splintered Listings/);
   assert.doesNotMatch(governance, /catalog-specs/);
   assert.doesNotMatch(governance, /Missing Amazon spec fields/);
   assert.doesNotMatch(governance, /\b435\b/);

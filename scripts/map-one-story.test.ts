@@ -48,7 +48,7 @@ test("the N of M tooltip says which listings were counted and what the read coul
   });
   const tip = mapLeakageTip(snapshot) ?? "";
   assert.match(tip, /^1 of 2 listings with a stored MAP price and at least one stored channel price are priced below MAP\./);
-  assert.match(tip, /2 other listings in the retail read have no stored MAP comparison\./);
+  assert.match(tip, /2 other monitored listings have no stored MAP comparison\./);
   assert.match(tip, /0 listings set aside as approved exceptions/);
   assert.equal(mapHero(snapshot).tip, tip);
   assert.match(panel, /<FigureTip title=\{hero\.label\} desc=\{hero\.tip\} testId="map-ratio">/);

@@ -52,7 +52,7 @@ export async function loadStockSource(): Promise<SourceRead> {
     const rows = defaultStockLossOrder(loaded.rows);
     const population =
       loaded.populationCount != null
-        ? `${formatInt(rows.length)} listings out of stock at least one day in the last 12 months, of ${formatInt(loaded.populationCount)} listings in the sales read.`
+        ? `${formatInt(rows.length)} listings out of stock at least one day in the last 12 months, of ${formatInt(loaded.populationCount)} monitored listings.`
         : `${formatInt(rows.length)} listings out of stock at least one day in the last 12 months.`;
     return {
       ok: true,

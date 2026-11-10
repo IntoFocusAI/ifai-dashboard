@@ -80,7 +80,7 @@ function mapViolationsMetric(retail: RetailCanvasRead): CanvasMetric {
     id: "flagged-asins",
     spokeId: "ecommerce" as const,
     label: "MAP violations",
-    subTab: "MAP",
+    subTab: "MAP Leakage",
     provenance: "live" as const,
   };
   if (retail.phase === "loading") {
@@ -235,7 +235,7 @@ function liveMetrics(
             value: "Not stored",
             detail: MAP_PRICES_NOT_STORED,
             tone: "warning",
-            subTab: "MAP",
+            subTab: "MAP Leakage",
             provenance: "live",
           }
         : {
@@ -245,7 +245,7 @@ function liveMetrics(
             value: formatUsd(m.amz_avg_drift, { signed: true }),
             detail: `Across ${formatInt(m.amz_below_map)} ASINs below MAP on Amazon`,
             tone: "danger",
-            subTab: "MAP",
+            subTab: "MAP Leakage",
             provenance: "live",
           },
     overallAiWinRate: {

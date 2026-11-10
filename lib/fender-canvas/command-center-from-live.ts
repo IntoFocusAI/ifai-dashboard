@@ -17,8 +17,8 @@ import type { CanvasBundle } from "@/lib/fender-canvas/types";
 import { brandName, brandSite, isFenderClient } from "@/lib/brand-copy";
 
 const MAP_CHANNEL_WHY = isFenderClient()
-  ? "Open the MAP tab for the current below-MAP listings. Amazon, Walmart, and Musician's Friend appear only when this read stored a price for that channel. Any other retailer appears only when a stored price exists for that channel."
-  : "Open the MAP tab for the current below-MAP listings. A retailer appears only when this read stored a price for that channel.";
+  ? "Open the MAP Leakage tab for the current below-MAP listings. Amazon, Walmart, and Musician's Friend appear only when this read stored a price for that channel. Any other retailer appears only when a stored price exists for that channel."
+  : "Open the MAP Leakage tab for the current below-MAP listings. A retailer appears only when this read stored a price for that channel.";
 
 const MAP_PRICES_NOT_STORED_WHY =
   `${brandName()} MAP prices have not been stored. ${isFenderClient() ? "Amazon, Walmart, and Musician's Friend prices" : "Retail prices"} still show when a price is stored for that channel. A missing price stays blank.`;
@@ -96,7 +96,7 @@ export function buildLiveCommandCenter(
         impact: "The summary and the listing rows are the rows returned by the latest retail listing read.",
         severity: "high",
         spokeId: "ecommerce",
-        subTab: "MAP",
+        subTab: "MAP Leakage",
         defaultOwner: "client",
       },
       ...aiOther,

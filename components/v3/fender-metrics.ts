@@ -44,7 +44,7 @@ export const FENDER_METRICS = {
     value: "Unavailable",
     detail: "The MAP listing read did not succeed.",
     tone: "warning",
-    subTab: "MAP",
+    subTab: "MAP Leakage",
     provenance: "live",
   },
   suppressedListings: {
@@ -74,7 +74,7 @@ export const FENDER_METRICS = {
     value: "Unavailable",
     detail: "The live MAP read is not available.",
     tone: "danger",
-    subTab: "MAP",
+    subTab: "MAP Leakage",
     provenance: "live",
   },
   overallAiWinRate: {

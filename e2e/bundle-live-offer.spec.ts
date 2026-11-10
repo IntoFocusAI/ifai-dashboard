@@ -17,7 +17,7 @@ test("Catalog Governance shows the live-offer bundle set with the rule in its to
   const tip = lead.locator('[data-figure-tip="bundle-population"]');
   await expect(tip).toHaveText(RATIO);
   await expect(tip).toHaveAttribute("data-ifai-tooltip-desc", /offer for sale on it, with or without the Buy Box/);
-  await expect(tip).toHaveAttribute("data-ifai-tooltip-desc", /5 listings in the retail read are flagged as bundles/);
+  await expect(tip).toHaveAttribute("data-ifai-tooltip-desc", /5 monitored listings are flagged as bundles/);
   await expect(tip).not.toHaveAttribute("title", /.+/);
   await tip.hover();
   await expect(page.locator(".node-tooltip-definition")).toContainText("with or without the Buy Box");

@@ -1,8 +1,12 @@
 "use client";
 
-import { CitationPieDisc } from "@/components/v3/live/ai-search/CitationPieDisc";
+import { PartialFigureMark } from "@/components/v3/live/FigureTip";
+import { RetailShareDisc } from "@/components/v3/live/RetailOverviewFigure";
+import type { PartialFigure } from "@/lib/fender-canvas/canvas-reads";
+import { isFenderClient } from "@/lib/brand-copy";
 import { formatInt, formatUsd } from "@/lib/fender-canvas/format";
 import {
+  awaitingInputsBreakdown,
   lostSalesPopulationPie,
   REVENUE_SOURCE_LABELS,
   sumLostSales,
@@ -10,8 +14,6 @@ import {
   type RevenueSource,
   type StockLossRow,
 } from "@/lib/fender-canvas/stock-loss";
-
-const RETAIL_PIE_SIZE = "citation-pie-disc citation-pie-disc-retail";
 
 function estimateTooltipDesc(sum: LostSalesSum, populationCount: number | null): string {
   const population =
@@ -26,8 +28,27 @@ function estimateTooltipDesc(sum: LostSalesSum, populationCount: number | null):
     `The rate uses 12-month revenue when at least 30 of those days were in stock, ` +
     `otherwise revenue from the last 30 days when at least 7 of those days were in stock. ` +
     `Each window is also what the next period of the same length would miss if the sales rate and the out-of-stock pattern hold. ` +
-    `Totals from different sales sources are never added together.`
+    `Totals from different sales sources are never added together. ` +
+    `It is an analyst estimate, not reported sales. ` +
+    (isFenderClient()
+      ? "Fender sells through dealers, so the data shows that a listing ran out but not whether Fender or the dealer did."
+      : "The data shows that a listing ran out, not which seller ran out.")
   );
+}
+
+const ANALYST_ESTIMATE = "analyst estimate";
+
+/** The X-25 asterisk on the 12-month total: the listings it leaves out, and what that does to it. */
+function coveragePartial(rows: readonly StockLossRow[], sum: LostSalesSum): PartialFigure | null {
+  const missing = awaitingInputsBreakdown(rows, sum.window);
+  if (!missing) return null;
+  return {
+    reason: "coverage",
+    missing,
+    coverage: `${formatInt(sum.estimatedCount)} of ${formatInt(sum.affectedCount)} listings out of stock at least one day in the last 12 months`,
+    source: "SmartScout sales and Keepa stock history",
+    effect: "The total covers only the estimated listings, so it is lower than the full figure.",
+  };
 }
 
 function sourceTotal(sum: LostSalesSum, source: RevenueSource): number | null {
@@ -54,6 +75,7 @@ export function StockLossHero({
       ? `${formatInt(year.estimatedCount)} estimated, ${formatInt(year.awaitingCount)} awaiting inputs, of ${formatInt(year.affectedCount)} out-of-stock listings.`
       : undefined;
   const estimateDesc = estimateTooltipDesc(year, populationCount);
+  const partial = coveragePartial(rows, year);
   const sources = year.bySource.map((entry) => entry.source);
 
   return (
@@ -65,22 +87,16 @@ export function StockLossHero({
       <div className="findability-lead-row" data-stock-loss-hero-row="">
         <div className="findability-lead-figures">
           {sources.length === 0 ? (
-            <span
-              className="ai-lead-figure"
-              style={{ color: "var(--warning-amber)" }}
-              data-stock-loss-hero-figure=""
-            >
+            <span className="ai-lead-figure" data-stock-loss-hero-figure="">
               Awaiting inputs
             </span>
           ) : (
             sources.map((source) => (
               <span key={source} className="stock-loss-hero-source" data-stock-loss-hero-source={source}>
-                <span
-                  className="ai-lead-figure"
-                  style={{ color: "var(--danger-red)" }}
-                  data-stock-loss-hero-figure=""
-                >
-                  {formatUsd(sourceTotal(year, source))}
+                <span className="ai-lead-figure" data-stock-loss-hero-figure="">
+                  <PartialFigureMark partial={partial} testId="stock-loss-partial">
+                    {formatUsd(sourceTotal(year, source))}
+                  </PartialFigureMark>
                 </span>
                 <span className="findability-lead-ratio">
                   {REVENUE_SOURCE_LABELS[source]} · 90 days {formatUsd(sourceTotal(quarter, source))} · 30 days{" "}
@@ -95,22 +111,24 @@ export function StockLossHero({
               className="source-tag source-tag-estimate ifai-term"
               data-source="Estimate"
               data-stock-loss-estimate-tip=""
-              data-ifai-tooltip-title="Estimate"
+              data-ifai-tooltip-title={ANALYST_ESTIMATE}
               data-ifai-tooltip-desc={estimateDesc}
               tabIndex={0}
-              aria-label={`Estimate: ${estimateDesc}`}
+              aria-label={`${ANALYST_ESTIMATE}: ${estimateDesc}`}
             >
-              Estimate
+              {ANALYST_ESTIMATE}
             </span>
           </span>
           {year.affectedCount > 0 ? (
             <span className="findability-lead-ratio" data-stock-loss-hero-ratio="">
-              {formatInt(year.estimatedCount)} of {formatInt(year.affectedCount)} estimated ·{" "}
-              {formatInt(year.awaitingCount)} awaiting inputs
+              Covers {formatInt(year.estimatedCount)} of {formatInt(year.affectedCount)} out-of-stock listings.
+              {year.awaitingCount > 0
+                ? ` ${formatInt(year.awaitingCount)} ${year.awaitingCount === 1 ? "is" : "are"} awaiting inputs.`
+                : ""}
             </span>
           ) : null}
         </div>
-        {pie ? <CitationPieDisc pie={pie} sizeClass={RETAIL_PIE_SIZE} tip={tip} /> : null}
+        {pie ? <RetailShareDisc pie={pie} measuredKey="matched" tip={tip} /> : null}
       </div>
     </div>
   );

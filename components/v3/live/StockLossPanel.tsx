@@ -2,30 +2,26 @@
 
 import { Fragment, useEffect, useState } from "react";
 import { DefinedTerm } from "@/components/v3/live/DefinedTerm";
+import { figureTipAttrs } from "@/components/v3/live/FigureTip";
 import { ResizableTable, type RetailColumn } from "@/components/v3/live/ResizableTable";
+import { ListingName, RETAIL_FIT_TABLE, wrapColumnIdsAfterFirst } from "@/components/v3/live/RetailOverviewFigure";
 import { NewTag, SourceTag, type DataSource } from "@/components/v3/live/SourceTag";
+import { StockLossDetail } from "@/components/v3/live/StockLossDetail";
 import { StockLossHero } from "@/components/v3/live/StockLossHero";
 import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
 import { formatInt, formatUsd } from "@/lib/fender-canvas/format";
 import {
-  amazonHref,
-  baselineInput,
-  defaultStockLossOrder,
-  EPISODE_STATE_LABELS,
-  formatDay,
-  keepaHref,
   awaitingInputsReason,
+  defaultStockLossOrder,
   loadStockLossRows,
   lostSales,
   noActiveOffer,
   num,
-  REVENUE_SOURCE_LABELS,
-  stockEpisodesQuery,
-  type StockEpisode,
   type StockLossRow,
 } from "@/lib/fender-canvas/stock-loss";
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
-import { isFenderClient } from "@/lib/brand-copy";
+
+const NO_ACTIVE_OFFER_TIP = "The retail read found no active offer on this listing.";
 
 function sourced(name: string, ...sources: DataSource[]) {
   return (
@@ -39,13 +35,13 @@ function sourced(name: string, ...sources: DataSource[]) {
 }
 
 const STOCK_LOSS_COLUMNS: RetailColumn[] = [
-  { id: "listing", name: "Listing", label: "Listing", width: 260, minWidth: 160, sort: "text" },
+  { id: "listing", name: "Listing", label: "Listing", width: 260, minWidth: 220, sort: "text" },
   {
     id: "lost",
     name: "Est. lost sales, 12 months",
     label: sourced("Est. lost sales, 12 months", "Estimate"),
-    width: 210,
-    minWidth: 150,
+    width: 138,
+    minWidth: 124,
     className: "money",
     sort: "number",
   },
@@ -53,8 +49,8 @@ const STOCK_LOSS_COLUMNS: RetailColumn[] = [
     id: "lost90",
     name: "Est. lost sales, 90 days",
     label: sourced("Est. lost sales, 90 days", "Estimate"),
-    width: 200,
-    minWidth: 140,
+    width: 138,
+    minWidth: 124,
     className: "money",
     sort: "number",
   },
@@ -62,8 +58,8 @@ const STOCK_LOSS_COLUMNS: RetailColumn[] = [
     id: "lost30",
     name: "Est. lost sales, 30 days",
     label: sourced("Est. lost sales, 30 days", "Estimate"),
-    width: 200,
-    minWidth: 140,
+    width: 138,
+    minWidth: 124,
     className: "money",
     sort: "number",
   },
@@ -71,16 +67,16 @@ const STOCK_LOSS_COLUMNS: RetailColumn[] = [
     id: "oos365",
     name: "Out-of-stock days, 12 months",
     label: sourced("Out-of-stock days, 12 months", "Keepa"),
-    width: 210,
-    minWidth: 150,
+    width: 112,
+    minWidth: 104,
     sort: "number",
   },
   {
     id: "rate",
     name: "Sales per in-stock day",
     label: sourced("Sales per in-stock day", "SmartScout", "Keepa"),
-    width: 250,
-    minWidth: 170,
+    width: 104,
+    minWidth: 96,
     className: "money",
     sort: "number",
   },
@@ -88,8 +84,8 @@ const STOCK_LOSS_COLUMNS: RetailColumn[] = [
     id: "nobb",
     name: "No Buy Box days, 12 months",
     label: sourced("No Buy Box days, 12 months", "Keepa"),
-    width: 210,
-    minWidth: 150,
+    width: 96,
+    minWidth: 88,
     sort: "number",
   },
 ];
@@ -121,139 +117,8 @@ function Explanation() {
         <DefinedTerm term="SmartScout" />, divides by the days it was in stock according to{" "}
         <DefinedTerm term="Keepa" />, and multiplies by the days it was not, for the last 30 days,
         90 days, and 12 months. Each figure is also what the next period of the same length would
-        miss if the sales rate and the out-of-stock pattern hold. It is an analyst estimate, not
-        reported sales.{" "}
-        {isFenderClient()
-          ? "Fender sells through dealers, so the data shows that a listing ran out but not whether Fender or the dealer did."
-          : "The data shows that a listing ran out, not which seller ran out."}{" "}
-        A listing with no sales source is awaiting inputs,
-        not $0.
-      </div>
-    </div>
-  );
-}
-
-function EpisodeList({ asin }: { asin: string }) {
-  const [state, setState] = useState<"loading" | "unavailable" | StockEpisode[]>("loading");
-
-  useEffect(() => {
-    let cancelled = false;
-    Promise.resolve(stockEpisodesQuery(asin))
-      .then(({ data, error }) => {
-        if (cancelled) return;
-        setState(error ? "unavailable" : ((data ?? []) as StockEpisode[]));
-      })
-      .catch(() => {
-        if (!cancelled) setState("unavailable");
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [asin]);
-
-  if (state === "loading") return <p className="retail-missing">Loading the dated stretches…</p>;
-  if (state === "unavailable") {
-    return <p className="retail-missing">The dated stretches could not be loaded.</p>;
-  }
-  if (state.length === 0) {
-    return <p className="retail-missing">No out-of-stock or no-Buy-Box stretch in the last 12 months.</p>;
-  }
-  return (
-    <table className="stock-episodes">
-      <thead>
-        <tr>
-          <th>What happened</th>
-          <th>Started</th>
-          <th>Ended</th>
-          <th>Days</th>
-        </tr>
-      </thead>
-      <tbody>
-        {state.map((episode) => (
-          <tr key={`${episode.state}-${episode.start_day}`} data-episode-state={episode.state}>
-            <td>{EPISODE_STATE_LABELS[episode.state]}</td>
-            <td>{formatDay(episode.start_day)}</td>
-            <td>{episode.ongoing ? "Still going" : formatDay(episode.end_day)}</td>
-            <td>{formatInt(episode.days)}</td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  );
-}
-
-function EstimateInputs({ row }: { row: StockLossRow }) {
-  const input = baselineInput(row);
-  const rate = num(row.baseline_daily_revenue);
-  const windows = [
-    { label: "last 30 days", days: num(row.oos_days_30), lost: lostSales(row, 30) },
-    { label: "last 90 days", days: num(row.oos_days_90), lost: lostSales(row, 90) },
-    { label: "last 12 months", days: num(row.oos_days_365), lost: lostSales(row, 365) },
-  ];
-  const nobb = num(row.no_buy_box_days_365);
-  const keepa = keepaHref(row.asin);
-  const amazon = amazonHref(row.asin);
-
-  return (
-    <div className="stock-loss-drawer" data-stock-loss-drawer={row.asin}>
-      <div className="stock-loss-inputs">
-        <h4>How this estimate is built</h4>
-        {row.revenue_source ? (
-          <ol>
-            <li>
-              Sales source: <strong>{REVENUE_SOURCE_LABELS[row.revenue_source]}</strong>
-            </li>
-            <li>
-              {input.label}: <strong>{formatUsd(input.value)}</strong> <SourceTag source="SmartScout" />
-            </li>
-            <li>
-              Days in stock in that window: <strong>{formatInt(input.days)}</strong> <SourceTag source="Keepa" />
-            </li>
-            <li>
-              Sales per in-stock day: {formatUsd(input.value)} ÷ {formatInt(input.days)} ={" "}
-              <strong>{formatUsd(rate)}</strong>
-            </li>
-            {windows.map((w) => (
-              <li key={w.label}>
-                Estimated lost sales, {w.label}: {formatUsd(rate)} × {formatInt(w.days)} out-of-stock days{" "}
-                <SourceTag source="Keepa" /> = <strong>{formatUsd(w.lost)}</strong> <SourceTag source="Estimate" />
-              </li>
-            ))}
-            {nobb ? (
-              <li>
-                No Buy Box days, last 12 months: {formatInt(nobb)} <SourceTag source="Keepa" />. Listed for
-                reference. They are not part of this estimate.
-              </li>
-            ) : null}
-          </ol>
-        ) : (
-          <p className="retail-missing">
-            Awaiting inputs. {awaitingInputsReason(row)} The out-of-stock days below are still from Keepa.
-          </p>
-        )}
-        <p className="stock-loss-sources">
-          Keepa history through {formatDay(row.history_through) ?? "an unknown date"}
-          {row.smartscout_snapshot_date
-            ? `. SmartScout read ${formatDay(row.smartscout_snapshot_date)}.`
-            : "."}{" "}
-          {keepa ? (
-            <a href={keepa} target="_blank" rel="noopener noreferrer">
-              Open the Keepa chart
-            </a>
-          ) : null}
-          {keepa && amazon ? " · " : null}
-          {amazon ? (
-            <a href={amazon} target="_blank" rel="noopener noreferrer">
-              Open the Amazon listing
-            </a>
-          ) : null}
-        </p>
-      </div>
-      <div className="stock-loss-episodes">
-        <h4>
-          Dated stretches, last 12 months <SourceTag source="Keepa" />
-        </h4>
-        <EpisodeList asin={row.asin} />
+        miss if the sales rate and the out-of-stock pattern hold. It is an analyst estimate. A
+        listing with no sales source is awaiting inputs.
       </div>
     </div>
   );
@@ -323,6 +188,8 @@ export function StockLossPanel() {
               maxHeight={560}
               sort={sorted.sort}
               onSort={sorted.onSort}
+              wrapColumnIds={wrapColumnIdsAfterFirst(STOCK_LOSS_COLUMNS)}
+              tableClassName={RETAIL_FIT_TABLE}
             >
               <tbody>
                 {sorted.rows.length === 0 ? (
@@ -334,7 +201,16 @@ export function StockLossPanel() {
                 ) : (
                   sorted.rows.map((row) => {
                     const open = openAsin === row.asin;
-                    const awaiting = <span className="fo-note">Awaiting inputs</span>;
+                    const awaiting = row.revenue_source ? (
+                      <span className="fo-note">Awaiting inputs</span>
+                    ) : (
+                      <span
+                        {...figureTipAttrs("Awaiting inputs", awaitingInputsReason(row), "stock-loss-awaiting")}
+                        className="ifai-term fo-note"
+                      >
+                        Awaiting inputs
+                      </span>
+                    );
                     const money = (value: number | null) => (value != null ? formatUsd(value) : awaiting);
                     const toggle = () => setOpenAsin(open ? null : row.asin);
                     return (
@@ -352,14 +228,13 @@ export function StockLossPanel() {
                           }}
                         >
                           <td>
-                            <strong>{row.title ?? row.asin}</strong>
-                            <br />
+                            <ListingName name={row.title ?? row.asin} />
                             <span className="asin-chip">{row.asin}</span>
                             {noActiveOffer(row) ? (
                               <span
-                                className="tag-badge tag-neutral stock-loss-offer-chip"
+                                {...figureTipAttrs("No active offer", NO_ACTIVE_OFFER_TIP, "no-active-offer")}
+                                className="tag-badge tag-neutral stock-loss-offer-chip ifai-term"
                                 data-no-active-offer=""
-                                title="The retail read found no active offer on this listing."
                               >
                                 No active offer
                               </span>
@@ -377,7 +252,7 @@ export function StockLossPanel() {
                         {open ? (
                           <tr className="stock-loss-detail">
                             <td colSpan={STOCK_LOSS_COLUMNS.length}>
-                              <EstimateInputs row={row} />
+                              <StockLossDetail row={row} />
                             </td>
                           </tr>
                         ) : null}

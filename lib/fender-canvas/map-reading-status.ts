@@ -1,10 +1,17 @@
+import { isPastCheckSchedule } from "@/lib/fender-canvas/canvas-reads";
 import { formatInt } from "@/lib/fender-canvas/format";
 
 /** Same job the freshness bar labels MF MAP. */
 export const MUSICIANS_FRIEND_FRESHNESS_JOB = "map_parity_musiciansfriend";
 
-/** Matches the freshness bar: a job older than 26 hours is stale. */
+/** Matches the freshness bar: a job older than 26 hours is stale. Buy Box readings use it. */
 export const READING_STALE_AFTER_MS = 26 * 60 * 60 * 1000;
+
+/**
+ * MAP prices are checked daily (decision 4, 9 Nov 2026). A channel count gets its asterisk
+ * when the check is older than twice that schedule (X-25).
+ */
+export const MAP_PRICE_CHECK_SCHEDULE_MS = 24 * 60 * 60 * 1000;
 
 const checkedAtFormat = new Intl.DateTimeFormat("en-US", {
   month: "short",
@@ -28,7 +35,7 @@ export function walmartMissingPriceNote(missing: number | null): string | null {
   return `${formatInt(missing)} listings in this read have no stored Walmart price, so they are missing from this count and are not counted as zero.`;
 }
 
-/** Last check time, only when the Musician's Friend job is more than 26 hours old. */
+/** Last check time, only when the Musician's Friend job is older than twice the daily MAP check schedule. */
 export function musiciansFriendCheckNote(
   lastRunAt: string | null | undefined,
   now = Date.now(),
@@ -37,8 +44,8 @@ export function musiciansFriendCheckNote(
   const then = new Date(lastRunAt);
   const at = then.getTime();
   if (!Number.isFinite(at)) return null;
-  if (now - at <= READING_STALE_AFTER_MS) return null;
-  return `Last checked ${checkedAtFormat.format(then)}.`;
+  if (!isPastCheckSchedule(lastRunAt, MAP_PRICE_CHECK_SCHEDULE_MS, now)) return null;
+  return `Last checked ${checkedAtFormat.format(then)}. MAP prices are checked daily, and this check is older than twice that schedule, so these prices may have changed.`;
 }
 
 /**
