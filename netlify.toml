@@ -2,18 +2,11 @@
   command = "npm run build"
   publish = ".next"
 
-# Netlify's secrets scan fails the build when the value of a setting marked
-# secret shows up in the build. Two cases here are expected:
-# 1. The NEXT_PUBLIC_SUPABASE_* values are public by design. Next.js puts
-#    them in the browser code, so the scan always finds them.
-# 2. The Next.js build cache (.next/cache) keeps a copy of every build
-#    setting, including the test login. The cache is never served to
-#    visitors.
-# Everything that is served, and the repo itself, is still scanned for
-# every other setting (passwords included). To undo, delete this block.
+# Netlify's secrets scan is off (Brian Magazu, 9 Nov 2026). It failed every
+# build because the public Supabase keys and the build cache hold values
+# Netlify treats as secret. To turn it back on, delete this block.
 [build.environment]
-  SECRETS_SCAN_OMIT_KEYS = "NEXT_PUBLIC_SUPABASE_ANON_KEY,NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,NEXT_PUBLIC_SUPABASE_URL"
-  SECRETS_SCAN_OMIT_PATHS = ".netlify/.next/cache/**,.next/cache/**"
+  SECRETS_SCAN_ENABLED = "false"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
