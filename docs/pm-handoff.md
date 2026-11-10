@@ -262,9 +262,8 @@ Docs win if this block is stale.
   Workers 24.3 and 24.4 are merged. Unused: 24.2, 24.5, 24.6, 24.7.
 - Main f1df1f5: PRs 149 to 153. Live check 10 Nov: Catalog Health and AI
   Search open for both clients, CSV downloads work.
-- Docs: both still on 23.1. The batch closeout for PRs 151 and 152 is owed
-  (one version bump, row status and evidence, one change-log row each,
-  Brian's three review notes), then one header-label pull request.
+- Docs: both on 24.4 (closeout for PRs 151 and 152 done 10 Nov; Brian's
+  three review notes are FDD decision rows PM24-1 to PM24-3).
 - Database: public.ai_prompt_edits_list applied 10 Nov (PR 151).
 - Held until Brian says go: his three review notes
   (docs/pm24-review-notes.md).
