@@ -11,7 +11,9 @@ import {
   type EditablePrompt,
   type PromptEditorStatus,
 } from "@/lib/ai-search/prompt-editor";
-import { Lock, Pencil, Plus, RotateCcw, Trash2, X } from "lucide-react";
+import { DASHBOARD_PATH } from "@/lib/auth/dashboard-path";
+import { Lock, Pencil, Plus, RotateCcw, Trash2, Wand2, X } from "lucide-react";
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 const NEW_CATEGORY = "__new__";
@@ -214,6 +216,15 @@ export function PromptsEditor({ onClose }: Props) {
                   AI calls per run).
                 </>
               ) : null}
+            </p>
+            <p className="pe-sub">
+              <Link
+                className="pe-link"
+                href={`${DASHBOARD_PATH}/battery-builder${typeof window === "undefined" ? "" : window.location.search}`}
+                data-pe-builder-link
+              >
+                <Wand2 size={13} aria-hidden /> Build prompts from shopper details
+              </Link>
             </p>
           </div>
           <button className="pe-icon-btn" onClick={onClose} aria-label="Close">
