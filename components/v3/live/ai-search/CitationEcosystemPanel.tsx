@@ -5,6 +5,7 @@ import { clientColumn } from "@/components/v3/live/ResizableTable";
 import { AiReadGate, EmptyRows, mutedText } from "@/components/v3/live/ai-search/AiReadGate";
 import { useAiHistoryOptional } from "@/components/v3/live/ai-search/AiHistoryContext";
 import { useCitationAggregate } from "@/components/v3/live/ai-search/useCitationAggregate";
+import { useAiExportScope } from "@/components/v3/live/ai-search/useAiExport";
 import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
 import { CountTable, PickButton } from "@/components/v3/live/ai-search/CitationCountTable";
 import { CitationEvidenceTable } from "@/components/v3/live/ai-search/CitationEvidenceTable";
@@ -28,6 +29,7 @@ import {
   snapshotInCategory,
 } from "@/lib/ai-search/citation-top-sources";
 import { citationEvidence, citedAnswers, groupCitations, type CitationScope } from "@/lib/ai-search/citations";
+import { citationPopulation } from "@/lib/ai-search/engine-group";
 import { engineLabel } from "@/lib/ai-search/run-metrics";
 import { citationStorageCaution } from "@/lib/ai-search/review-runs";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
@@ -49,6 +51,8 @@ const LINK_COLUMNS = [
     },
   },
 ];
+
+const groupKey = (group: { key: string }) => group.key;
 
 const ENGINE_COLUMNS = [
   clientColumn("engine", "Engine", "text", 140, 100),
@@ -88,6 +92,7 @@ function Ecosystem({
   }
 
   const [category, setCategory] = useState<string | null>(null);
+  const exportScope = useAiExportScope({ citations: { scope, category } });
   const full = useMemo(
     () => citationEvidence(snapshot.calls, snapshot.citations, scope),
     [snapshot, scope],
@@ -204,6 +209,8 @@ function Ecosystem({
               tableId="citation-engines"
               columns={ENGINE_COLUMNS}
               rows={byEngine}
+              keyOf={groupKey}
+              exportScope={exportScope}
               value={(g, id) => {
                 if (id === "engine") return engineLabel(g.key);
                 if (id === "cited") return g.cited;
@@ -235,6 +242,8 @@ function Ecosystem({
                 tableId="citation-categories"
                 columns={CATEGORY_COLUMNS}
                 rows={byCategory}
+                keyOf={groupKey}
+                exportScope={exportScope}
                 value={(g, id) => {
                   if (id === "category") return citationCategoryLabel(g.key);
                   if (id === "cited") return g.cited;
@@ -266,6 +275,8 @@ function Ecosystem({
           rows={filtered}
           label={citationPickLabel(pick, category)}
           onClear={pick ? () => setPick(null) : undefined}
+          exportScope={exportScope}
+          narrowed={pick != null}
         />
       ) : null}
 
@@ -331,7 +342,7 @@ function CitationEcosystemBody() {
   if (history?.mode.kind === "run") {
     return (
       <AiReadGate showFreshness={false}>
-        {(snapshot) => <Ecosystem snapshot={snapshot} copy="" singleRun />}
+        {(snapshot) => <Ecosystem snapshot={citationPopulation(snapshot)} copy="" singleRun />}
       </AiReadGate>
     );
   }

@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { useAiHistoryOptional } from "@/components/v3/live/ai-search/AiHistoryContext";
+import { AiStatusTag } from "@/components/v3/live/ai-search/AiStatusTag";
 import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
 import { useAiSearch } from "@/components/v3/live/ai-search/AiSearchContext";
 import { CopyTip } from "@/components/v3/live/ai-search/CopyTip";
@@ -79,9 +80,9 @@ export function RunFreshness({ snapshot, stale }: { snapshot: AiSearchSnapshot; 
       style={{ ...mutedText, fontSize: 11, display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 10 }}
     >
       {showState ? (
-        <span className={`tag-badge ${run.isPartial ? "tag-warning" : "tag-success"}`}>
+        <AiStatusTag tone={run.isPartial ? "warning" : "success"}>
           {run.isPartial ? <AiTerm term="partial run">Partial run</AiTerm> : runStateLabel(run.state)}
-        </span>
+        </AiStatusTag>
       ) : null}
       <span>
         {s.shortRunId} · completed {s.completedAt}
@@ -89,7 +90,7 @@ export function RunFreshness({ snapshot, stale }: { snapshot: AiSearchSnapshot; 
       <span>
         {run.answered ?? "Unknown"} of {run.expected ?? "unknown"} calls answered · {errorLine(s)}
       </span>
-      {stale ? <span className="tag-badge tag-warning">Refresh failed, showing the last good read</span> : null}
+      {stale ? <AiStatusTag tone="warning">Refresh failed, showing the last good read</AiStatusTag> : null}
     </div>
   );
 }

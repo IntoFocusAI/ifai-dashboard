@@ -25,8 +25,9 @@ test.describe("AI Search Visibility", () => {
     await expect(page.locator("[data-ai-role='unbranded_discovery']")).toContainText(/of \d+/);
     await expect(page.locator("[data-ai-role='branded_consideration']")).toContainText(/\d+ Fender\/Squier leads/);
     await expect(page.locator("[data-ai-role='branded_consideration']")).toContainText(/of \d+/);
-    await expect(body).toContainText("not inside unbranded discovery");
-    await expect(body).toContainText("Not in either rate above");
+    // What a figure is not lives in its term's tooltip, never as a line on screen.
+    await expect(body).not.toContainText("not inside unbranded discovery");
+    await expect(body).not.toContainText("Not in either rate above");
     await expect(body).not.toContainText("51 of 63");
     await expect(page.locator(".ai-engine-table tbody tr")).not.toHaveCount(0);
     await expect(page.locator(".ai-category-table [data-category='hallucinations']")).toHaveCount(0);
@@ -301,11 +302,12 @@ test.describe("AI Search Visibility", () => {
     await expect(page.locator("[data-ai-accuracy-figure]")).toHaveText(/\d+\.\d% Accuracy/, { timeout: 60_000 });
     const badge = page.locator("[data-ai-fact-result]");
     await expect(badge).toHaveText(/^(No contradictions found|1 contradiction|([2-9]|\d{2,}) contradictions)$/);
-    const method = page.locator("[data-ai-accuracy-lead] [data-ai-fact-method]");
-    await expect(method).toHaveText(/^\d+ products? checked · \d+ with a verified fact$/);
-    const term = method.locator(".ifai-term").first();
-    await expect(term).toHaveAttribute("data-ifai-tooltip-title", "How these products were chosen");
-    await expect(term).toHaveAttribute("data-ifai-tooltip-desc", /is not recorded, so this result covers/);
+    // With the catalog rotation on, the method statement is the lead: N of M catalog products checked.
+    await expect(page.locator("[data-ai-catalog-lead='ready']")).toContainText(/^[\d,]+ of [\d,]+\s*catalog products checked/);
+    await expect(page.locator("[data-ai-accuracy-lead] [data-ai-fact-method]")).toHaveCount(0);
+    const term = page.locator("[data-ai-catalog-figure] .ifai-term");
+    await expect(term).toHaveAttribute("data-ifai-tooltip-title", "Catalog products checked");
+    await expect(term).toHaveAttribute("data-ifai-tooltip-desc", /IntoFocus picked these products by its catalog rotation rule/);
     await expect(term).not.toHaveAttribute("data-ifai-tooltip-desc", /representative|random/i);
     await expect(term).not.toHaveAttribute("title");
     await term.focus();
@@ -314,7 +316,7 @@ test.describe("AI Search Visibility", () => {
     await expect(accuracy).toHaveAttribute("data-ifai-tooltip-title", "Accuracy");
     await expect(accuracy).toHaveAttribute(
       "data-ifai-tooltip-desc",
-      /^[\d,]+ of [\d,]+ answers matched\. These checks cover the selected facts only\. They do not prove every statement/,
+      /^[\d,]+ of [\d,]+ answers matched\. This figure covers .+ These checks cover the selected facts only\. They do not prove every statement/,
     );
     await expect(page.locator("[data-ai-fact-scope]")).toHaveCount(0);
     const body = page.locator(".drilldown-body");

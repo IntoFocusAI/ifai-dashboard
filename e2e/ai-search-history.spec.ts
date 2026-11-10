@@ -69,7 +69,7 @@ test.describe("AI Search history on the live run", () => {
     await canvas.openSpokeFromMap("AI Search Visibility");
     await page.locator("[data-ai-history-trigger]").click();
     await page.getByRole("button", { name: "All time" }).click();
-    await expect(page.locator(".drilldown-desc")).toContainText("whether Fender-owned pages show up");
+    await expect(page.locator(".drilldown-desc")).toContainText("How AI assistants name and cite Fender.");
     await expect(page.locator(".drilldown-desc")).not.toContainText("Trends use the stored review runs");
     await expect(page.locator(".drilldown-desc")).not.toContainText("Copy of the stored runs");
     await expect(page.locator("[data-ai-history-banner]")).toHaveCount(0);
@@ -157,7 +157,7 @@ test.describe("AI Search stored-run copy", () => {
     await page.locator("[data-ai-history-trigger]").click();
     await page.getByRole("button", { name: "All time" }).click();
     await expect(page.locator("[data-ai-history-trends]")).toBeVisible();
-    await expect(page.locator(".drilldown-desc")).toContainText("whether Fender-owned pages show up");
+    await expect(page.locator(".drilldown-desc")).toContainText("How AI assistants name and cite Fender.");
     await expect(page.locator(".drilldown-desc")).not.toContainText("Copy of the stored runs");
     await expect(page.locator(".drilldown-desc")).not.toContainText("56.5%");
     await expect(page.locator("[data-ai-history-banner]")).toHaveCount(0);

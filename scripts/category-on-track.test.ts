@@ -287,10 +287,14 @@ test("caveats on this tab sit in tooltips, and the screen shows no line saying w
   assert.doesNotMatch(read("components/v3/live/ai-search/CategoryBattleChips.tsx"), /No filter is on/);
 
   const shared = read("components/v3/live/ai-search/RoleRateTable.tsx");
-  assert.match(shared, /inlineCaveats = true,/, "Run Summary and Engine Comparison keep the inline wording");
+  assert.match(shared, /inlineCaveats = true,/, "Engine Comparison keeps the inline wording");
   assert.match(shared, /caveat\("Counted on its own, not inside unbranded discovery\."\)/);
-  for (const other of ["RunSummaryPanel.tsx", "EngineComparisonPanel.tsx"]) {
-    assert.doesNotMatch(read(`components/v3/live/ai-search/${other}`), /inlineCaveats/, other);
+  assert.doesNotMatch(read("components/v3/live/ai-search/EngineComparisonPanel.tsx"), /inlineCaveats/);
+  // Run Summary leaves each caveat to its term's tooltip too (Worker 24.4, let the data speak).
+  const summary = read("components/v3/live/ai-search/RunSummaryPanel.tsx");
+  assert.match(summary, /<KeptOutNote snapshot=\{snapshot\} inlineCaveats=\{false\} \/>/);
+  for (const gone of [/not inside unbranded discovery/, /Not in either rate above/, /, not counted as wins/]) {
+    assert.doesNotMatch(summary.replace(/const DISQUALIFIED_TIP = .*/, ""), gone);
   }
 });
 

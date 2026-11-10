@@ -195,8 +195,9 @@
   border-color: var(--border-color, rgba(100, 160, 207, 0.24));
 }
 
+/* Status colors mark data only, never a button (decision 27). */
 .pe-danger:hover:not(:disabled) {
-  color: var(--danger-red, #fb7185);
+  color: var(--text-main);
 }
 
 .pe-btn:disabled,
@@ -242,7 +243,7 @@
 }
 
 .pe-key {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--font-mono);
   font-size: 11.5px;
   color: var(--text-subtle, #5e7894);
 }
@@ -256,8 +257,28 @@
 }
 
 .pe-chip-probe {
-  border-color: var(--warning-border, rgba(251, 191, 36, 0.42));
-  color: var(--warning-text, #fde68a);
+  border-color: var(--accent-cyan, #a7d8f0);
+  color: var(--text-main);
+}
+
+.pe-history-toggle {
+  margin-left: auto;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.pe-history {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-color);
+}
+
+.pe-history .pe-hint {
+  margin: 0 0 8px;
+}
+
+.pe-history-side {
+  white-space: pre-line;
 }
 
 .pe-item-main {

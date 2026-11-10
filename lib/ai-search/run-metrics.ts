@@ -21,8 +21,22 @@ export function engineLabel(engine: string | null | undefined): string {
   return ENGINE_LABELS[key] ?? API_ENGINE_LABELS[key] ?? key.charAt(0).toUpperCase() + key.slice(1);
 }
 
+/** Zero-width and direction marks some engines store inside a model name. */
+const INVISIBLE_CHARS = /[\u00AD\u200B-\u200F\u202A-\u202E\u2060-\u2064\uFEFF]/g;
+
+/** No-break and other Unicode spaces, which read as a plain space. */
+const UNICODE_SPACES = /[\u00A0\u1680\u2000-\u200A\u202F\u205F\u3000]/g;
+
+/**
+ * A stored model name without its invisible characters: "\u200e3.5\u00a0Flash-Lite" reads
+ * "3.5 Flash-Lite". Visible characters are kept as stored. Empty when nothing visible is left.
+ */
+export function cleanModelName(model: string | null | undefined): string {
+  return (model ?? "").replace(INVISIBLE_CHARS, "").replace(UNICODE_SPACES, " ").replace(/\s+/g, " ").trim();
+}
+
 export function modelLabel(model: string | null | undefined): string {
-  const text = model?.trim();
+  const text = cleanModelName(model);
   return text ? text : "not recorded";
 }
 
@@ -194,7 +208,7 @@ export function enginesAndModels(rows: AiCallRow[]): EngineModel[] {
   for (const row of rows) {
     const engine = (row.engine ?? "").toLowerCase();
     const set = map.get(engine) ?? new Set<string>();
-    if (row.model?.trim()) set.add(row.model.trim());
+    if (cleanModelName(row.model)) set.add(cleanModelName(row.model));
     map.set(engine, set);
   }
   return [...map.entries()]

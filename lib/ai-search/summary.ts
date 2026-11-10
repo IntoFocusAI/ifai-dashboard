@@ -1,4 +1,5 @@
 import { citationEvidence, groupCitations } from "@/lib/ai-search/citations";
+import type { DataStatus } from "@/lib/canvas-sdk/data-status";
 import { largestCompetitorGap, type CategoryBattle, competitorTallies } from "@/lib/ai-search/competitors";
 import { driftRead, type DriftRead } from "@/lib/ai-search/drift";
 import { roleTally, type RoleTally } from "@/lib/ai-search/question-role";
@@ -120,6 +121,13 @@ export const UNBRANDED_RATE_BANDS = { redBelow: 30, greenAbove: 65 } as const;
 /** Map hero bands for Branded Consideration (red below 70, green above 90). */
 export const BRANDED_RATE_BANDS = { redBelow: 70, greenAbove: 90 } as const;
 
+/** The theme's status colors, by the names the panels already use. */
+const STATUS_COLOR: Record<DataStatus, string> = {
+  bad: "var(--danger-red)",
+  okay: "var(--warning-amber)",
+  good: "var(--success-green)",
+};
+
 /**
  * One Run Details lead rate: pct() string and the same traffic-light color as the map
  * heroes (red below redBelow, yellow through greenAbove inclusive, green above).
@@ -128,18 +136,14 @@ export const BRANDED_RATE_BANDS = { redBelow: 70, greenAbove: 90 } as const;
 export function roleRateLead(
   tally: Pick<RoleTally, "fenderWins" | "resolved">,
   bands: { redBelow: number; greenAbove: number },
-): { rate: string | null; color: string | null } {
+): { rate: string | null; color: string | null; status: DataStatus | null } {
   if (tally.resolved <= 0) {
-    return { rate: null, color: null };
+    return { rate: null, color: null, status: null };
   }
   const rateNum = (100 * tally.fenderWins) / tally.resolved;
-  const color =
-    rateNum < bands.redBelow
-      ? "var(--danger-red)"
-      : rateNum > bands.greenAbove
-        ? "var(--success-green)"
-        : "var(--warning-amber)";
-  return { rate: pct(tally.fenderWins, tally.resolved), color };
+  const status: DataStatus = rateNum < bands.redBelow ? "bad" : rateNum > bands.greenAbove ? "good" : "okay";
+  // The figure's color, mark, and word travel together: render `status` with StatusMark.
+  return { rate: pct(tally.fenderWins, tally.resolved), color: STATUS_COLOR[status], status };
 }
 
 /** Lives in the lead rate's tooltip, never as a line under the rates. */

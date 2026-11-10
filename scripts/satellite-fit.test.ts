@@ -13,7 +13,7 @@ import { fittedSatelliteClusters, groupBounds } from "../lib/canvas-sdk/satellit
 import type { CanvasNode, CanvasSpec } from "../lib/canvas-sdk/types.ts";
 
 const HEROES: Record<SatelliteId, { title: string; value: string; label: string }> = {
-  "sat-prompts": { title: "Run Details", value: "95.7%", label: "Brand Consideration" },
+  "sat-prompts": { title: "Run Details", value: "95.7%", label: "Branded Consideration" },
   "sat-citations": { title: "Citations", value: "19.1%", label: "Fender-Owned Links" },
   "sat-drift": { title: "Fact Checks", value: "100.0%", label: "Accuracy" },
   "sat-buybox": { title: "Suppressed Listings", value: "12.4%", label: "confirmed high-price" },
@@ -66,7 +66,7 @@ test("hero text stays at its readable size and the ring clears every row", () =>
 });
 
 test("a worded empty value reads at label size, not as a giant number", () => {
-  const layout = satelliteHeroLayout("Run Details", "No resolved answers", "Brand Consideration");
+  const layout = satelliteHeroLayout("Run Details", "No resolved answers", "Branded Consideration");
   assert.ok(layout.rows.every((row) => row.kind !== "value"));
   assert.ok(layout.radius < 90);
 });
@@ -79,11 +79,11 @@ test("main-bubble heroes fit inside a fixed ring with readable size", () => {
   const aeo = primarySpokeLayouts().find((spoke) => spoke.id === "spoke-aeo")!;
   // Icon + two-line title leave the hero stack starting near the center.
   const startY = 4 + 2 * 23 + 5;
-  const fit = fitMainHero("61.2%", "Unbranded SOV", aeo.r, startY);
+  const fit = fitMainHero("61.2%", "Unbranded Discovery", aeo.r, startY);
   assert.ok(fit.valueSize >= 16, `value shrunk to a crumb (${fit.valueSize})`);
   assert.ok(fit.valueSize <= aeo.r * 0.4, `value still too large for the ring (${fit.valueSize})`);
   assert.ok(fit.labelY + fit.labelLineH <= aeo.r - 8, "label spills past the ring");
-  assert.deepEqual(fit.labelLines, ["Unbranded SOV"]);
+  assert.deepEqual(fit.labelLines, ["Unbranded Discovery"]);
 
   const worded = fitMainHero("Loading run", "", aeo.r, startY);
   assert.equal(worded.worded, true);
@@ -97,11 +97,11 @@ test("a status mark stacks under the label when it fits and shares the value lin
   assert.ok(roomy.statusY > roomy.labelY, "status sits under the label");
   assert.ok(roomy.statusY + roomy.statusSize * 0.3 <= 100 - 14, "status clears the ring");
 
-  const tight = fitMainHero("66.4%", "Unbranded SOV", 88, 44, "good");
+  const tight = fitMainHero("66.4%", "Unbranded Discovery", 88, 44, "good");
   assert.equal(tight.statusY, tight.valueY, "status moves onto the value line");
   assert.ok(tight.valueX < 0 && tight.statusX > 0, "value and status share the line side by side");
 
-  const none = fitMainHero("66.4%", "Unbranded SOV", 88, 44, null);
+  const none = fitMainHero("66.4%", "Unbranded Discovery", 88, 44, null);
   assert.equal(none.valueX, 0);
 });
 

@@ -34,4 +34,9 @@ export type ShownRequest = {
   sort: string | null;
   /** Plain words for a view filter the table sits under, when its view supplies them. */
   filter: string | null;
+  /**
+   * What the view was showing when the table needs more than its id to read the same rows,
+   * such as the AI Search date pill and engine switch. Null for a table that needs none.
+   */
+  scope: Record<string, unknown> | null;
 };

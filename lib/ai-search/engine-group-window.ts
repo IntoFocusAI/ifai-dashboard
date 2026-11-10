@@ -1,6 +1,12 @@
 import { apiRunDay, daysApart } from "@/lib/ai-search/api-runs";
 import { runDay } from "@/lib/ai-search/default-window";
-import { filterSnapshotByEngineGroup, isApiEngine, withApiSnapshots, type EngineGroupChoice } from "@/lib/ai-search/engine-group";
+import {
+  citationPopulation,
+  filterSnapshotByEngineGroup,
+  isApiEngine,
+  withApiSnapshots,
+  type EngineGroupChoice,
+} from "@/lib/ai-search/engine-group";
 import { engineSwitchState, type ApiEngineLoad } from "@/lib/ai-search/engine-group-read";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
 
@@ -11,9 +17,9 @@ import type { AiSearchSnapshot } from "@/lib/ai-search/types";
  */
 
 /**
- * The trend reads the two headline rates only, so it keeps the rotating fact checks and its
- * Partial coverage reads the same in every switch position. Citation totals count fact-check
- * citations, so with API engines in the window they keep the fixed questions on every point.
+ * The trend keeps the rotating catalog fact checks on every switch position. Citation totals
+ * count fact-check citations, so with API engines in the window they keep the fixed questions
+ * on every point (citationPopulation).
  */
 export type EngineWindowReader = "trend" | "citations";
 
@@ -60,13 +66,12 @@ export function engineGroupWindow(
   search: readonly AiSearchSnapshot[],
   api: readonly AiSearchSnapshot[],
   choice: EngineGroupChoice,
-  reader: EngineWindowReader,
+  reader: EngineWindowReader = "trend",
 ): EngineWindow {
   if (choice === "search" || (choice === "all" && api.length === 0)) {
     return { snapshots: [...search], apiDays: NO_API_DAYS };
   }
   const pairs = pairApiRuns(search, api);
-  const rotating = reader === "trend" ? "keep" : pairs.size > 0 ? "drop" : "auto";
   const snapshots: AiSearchSnapshot[] = [];
   const apiDays = new Map<string, string[]>();
   for (const base of search) {
@@ -77,11 +82,14 @@ export function engineGroupWindow(
     // The trend counts a point's calls by run id, so the API calls carry their point's id.
     // Their call ids keep the API run's id as a prefix.
     const calls = merged.calls.map((call) => (isApiEngine(call.engine) ? { ...call, audit_run_id: id } : call));
-    const filtered = filterSnapshotByEngineGroup({ ...merged, calls }, choice, rotating);
+    const filtered = filterSnapshotByEngineGroup({ ...merged, calls }, choice);
     if (!filtered) continue;
     snapshots.push({ ...filtered, run: base.run });
     const days = paired.map((run) => apiRunDay(run.run)).filter((day): day is string => day != null);
     if (days.length) apiDays.set(id, days);
+  }
+  if (reader === "citations") {
+    return { snapshots: snapshots.map((snapshot) => citationPopulation(snapshot, pairs.size > 0)), apiDays };
   }
   return { snapshots, apiDays };
 }
@@ -94,7 +102,7 @@ export function engineGroupTrend(
   trend: EngineWindowLoad<AiSearchSnapshot>,
   load: ApiEngineLoad,
   choice: EngineGroupChoice,
-  reader: EngineWindowReader,
+  reader: EngineWindowReader = "trend",
 ): { trend: EngineWindowLoad<AiSearchSnapshot>; apiDays: ReadonlyMap<string, string[]> } {
   const passthrough = { trend, apiDays: NO_API_DAYS };
   if (trend.phase !== "ready") return passthrough;

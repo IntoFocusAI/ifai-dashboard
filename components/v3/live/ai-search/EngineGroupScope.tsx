@@ -40,7 +40,7 @@ const NO_HISTORY: EngineWindowLoad<AiSearchSnapshot> = { phase: "idle" };
  * The window's battery runs for the trend and the citation totals, each with the API runs nearest
  * its day, narrowed by the shared switch. `runCount` is the number of points the trend can draw.
  */
-export function useEngineGroupWindow(reader: EngineWindowReader): {
+export function useEngineGroupWindow(reader: EngineWindowReader = "trend"): {
   trend: EngineWindowLoad<AiSearchSnapshot>;
   apiDays: ReadonlyMap<string, string[]>;
   runCount: number;

@@ -3,140 +3,43 @@
 import { useAiHistoryOptional } from "@/components/v3/live/ai-search/AiHistoryContext";
 import { AiReadGate, mutedText } from "@/components/v3/live/ai-search/AiReadGate";
 import { EngineGroupScope } from "@/components/v3/live/ai-search/EngineGroupScope";
-import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
 import { CatalogCoverageTable } from "@/components/v3/live/ai-search/CatalogCoverageTable";
-import { CitationPieDisc } from "@/components/v3/live/ai-search/CitationPieDisc";
 import { CopyTip } from "@/components/v3/live/ai-search/CopyTip";
 import { ExternalLink } from "@/components/v3/live/ai-search/ExternalLink";
+import { FactCheckLead } from "@/components/v3/live/ai-search/FactCheckLead";
 import { FactCheckTable } from "@/components/v3/live/ai-search/FactCheckTable";
 import { driftRead } from "@/lib/ai-search/drift";
-import { fixedFactChecksTip } from "@/lib/ai-search/engine-group";
 import {
-  FACT_CHECK_ACCURACY_TITLE,
-  FACT_CHECK_METHOD_TITLE,
   UNVERIFIED_FLAG_TIP,
   amazonMismatchNote,
-  contradictionCount,
-  factCheckAccuracyColor,
-  factCheckAccuracyLead,
-  factCheckAccuracyPie,
-  factCheckAccuracyPieTip,
-  factCheckAccuracyTip,
   factCheckCoverageNote,
-  factCheckHeadline,
-  factCheckMethodLine,
   factCheckPendingNote,
 } from "@/lib/ai-search/fact-check-copy";
-import { catalogCycles } from "@/lib/ai-search/probe-catalog";
 import { engineLabel, formatRunTime, modelLabel } from "@/lib/ai-search/run-metrics";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
 import { isWindowHistoryKind } from "@/lib/ai-search/window-display";
 import { brandName, brandSite } from "@/lib/brand-copy";
+
+/** The stored fact as one sentence: a claim that already ends in a period gets no second one. */
+function sentence(text: string | null): string {
+  const trimmed = (text ?? "").trim();
+  if (!trimmed) return "";
+  return /[.!?]$/.test(trimmed) ? trimmed : `${trimmed}.`;
+}
 
 function FactChecks({ snapshot }: { snapshot: AiSearchSnapshot }) {
   const history = useAiHistoryOptional();
   const windowed = isWindowHistoryKind(history?.mode.kind);
   const drift = driftRead(snapshot.calls, snapshot.probes);
   const { coverage } = drift;
-  const accuracy = factCheckAccuracyLead(coverage);
-  const pie = factCheckAccuracyPie(coverage);
   const contradictions = drift.probes.filter((row) => row.state === "confirmed");
   const coverageNote = factCheckCoverageNote(coverage);
   const pendingNote = factCheckPendingNote(coverage);
-  const headline = factCheckHeadline(coverage, windowed);
-  const method = factCheckMethodLine(coverage, windowed, catalogCycles(snapshot));
   const amazonNote = amazonMismatchNote(coverage);
-  const rateColor = factCheckAccuracyColor(accuracy.tone);
-  const fixedTip = fixedFactChecksTip(
-    snapshot.engineScope,
-    snapshot.calls.filter((row) => row.prompt_kind === "probe").length,
-  );
-  const pieTip = fixedTip ? `${factCheckAccuracyPieTip(coverage)} ${fixedTip}` : factCheckAccuracyPieTip(coverage);
-
-  const explainer = (
-    <div className="ai-lead-explainer" data-ai-accuracy-lead style={{ marginTop: 0 }}>
-      <div className="content-box-title" style={{ marginTop: 0 }}>
-        <span>
-          Do AI answers match {brandName()}&apos;s published <AiTerm term="product fact check">product facts</AiTerm>?
-        </span>
-        <span
-          className={`tag-badge ${coverage.contradictions ? "tag-danger" : "tag-success"}`}
-          data-ai-fact-result
-        >
-          {coverage.contradictions ? contradictionCount(coverage.contradictions) : "No contradictions found"}
-        </span>
-      </div>
-      <p style={{ fontSize: 13, lineHeight: 1.5, margin: "0 0 6px" }} data-ai-fact-headline>
-        {headline}
-      </p>
-      {method ? (
-        <p style={{ fontSize: 12, lineHeight: 1.45, margin: "0 0 6px" }} data-ai-fact-method>
-          <CopyTip label={FACT_CHECK_METHOD_TITLE} description={method.tip}>
-            {method.rotation ? `${method.rotation} · ${method.products}` : method.products}
-          </CopyTip>{" "}
-          · {method.verified}
-        </p>
-      ) : null}
-    </div>
-  );
 
   return (
     <>
-      <div className="content-box ai-drift-summary">
-        {accuracy.rate && pie ? (
-          <div
-            data-ai-accuracy-row
-            style={{
-              display: "flex",
-              flexWrap: "wrap",
-              alignItems: "flex-start",
-              gap: "20px 28px",
-            }}
-          >
-            <div
-              data-ai-accuracy-figure-col
-              style={{
-                display: "flex",
-                flex: "0 0 auto",
-                flexWrap: "wrap",
-                alignItems: "center",
-                gap: 12,
-                maxWidth: "100%",
-              }}
-            >
-              <span
-                className="ai-lead-figure"
-                data-ai-accuracy-figure
-                style={{
-                  color: rateColor,
-                  fontSize: "clamp(22px, 2.2vw, 28px)",
-                  fontWeight: 800,
-                  lineHeight: 1.05,
-                }}
-              >
-                <CopyTip label={FACT_CHECK_ACCURACY_TITLE} description={factCheckAccuracyTip(coverage, windowed)}>
-                  {accuracy.rate} Accuracy
-                </CopyTip>
-                {fixedTip ? (
-                  <span data-ai-fact-fixed-only="">
-                    <CopyTip label="Fixed questions" description={fixedTip}>
-                      *
-                    </CopyTip>
-                  </span>
-                ) : null}
-              </span>
-              <CitationPieDisc
-                pie={pie}
-                sizeClass="citation-pie-disc citation-pie-disc-accuracy"
-                tip={pieTip}
-              />
-            </div>
-            <div style={{ flex: "1 1 280px", minWidth: 0 }}>{explainer}</div>
-          </div>
-        ) : (
-          explainer
-        )}
-      </div>
+      <FactCheckLead snapshot={snapshot} drift={drift} windowed={windowed} />
 
       {contradictions.length ? (
         <div className="content-box" style={{ marginTop: 12 }}>
@@ -145,7 +48,7 @@ function FactChecks({ snapshot }: { snapshot: AiSearchSnapshot }) {
             <div key={row.key} className="action-card critical" style={{ marginTop: 6 }}>
               <div className="action-head">{row.prompt}</div>
               <div className="action-details">
-                {engineLabel(row.engine)} · {modelLabel(row.model)}. {brandName()} publishes: {row.claim}. The answer said:{" "}
+                {engineLabel(row.engine)} · {modelLabel(row.model)}. {brandName()} publishes: {sentence(row.claim)} The answer said:{" "}
                 {row.evidence}
                 {row.catalog && row.sourceUrl ? (
                   <>

@@ -56,6 +56,15 @@ export const RADAR_TABS = {
   engines: "Engine Comparison",
 } as const;
 
+/** One name per figure (decision 5): the map, the tabs, and the Briefing all use these. */
+export const UNBRANDED_DISCOVERY_LABEL = "Unbranded Discovery";
+export const BRANDED_CONSIDERATION_LABEL = "Branded Consideration";
+
+/** The radar bubble's label: "Yamaha leads Acoustics". */
+export function rivalLeadsLabel(brand: string, category: string | null | undefined): string {
+  return `${brand} leads ${categoryLabel(category)}`;
+}
+
 const EMPTY_TOOLTIP = { title: "", desc: "" } as const;
 
 /**
@@ -146,7 +155,7 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
   if (read.phase !== "ready") {
     return {
       spokeAeo: pending("AI Search Visibility", AI_TABS.summary, true),
-      satPrompts: satelliteStateFace(read, "Run Details", AI_TABS.simulations, "Brand Consideration"),
+      satPrompts: satelliteStateFace(read, "Run Details", AI_TABS.simulations, BRANDED_CONSIDERATION_LABEL),
       satCitations: satelliteStateFace(read, "Citations", AI_TABS.citations, `${brandName()}-Owned Links`),
       satDrift: satelliteStateFace(read, "Fact Checks", AI_TABS.drift, "Accuracy"),
       spokeCompetitors: pending("Competitive Radar", RADAR_TABS.battlecards, true),
@@ -168,14 +177,14 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
   const unbrandedHero = heroPctFace(
     ratePct(s.roles.unbranded.fenderWins, s.roles.unbranded.resolved),
     pct(s.roles.unbranded.fenderWins, s.roles.unbranded.resolved),
-    "Unbranded SOV",
+    UNBRANDED_DISCOVERY_LABEL,
     30,
     65,
   );
   const brandedHero = heroPctFace(
     ratePct(s.roles.branded.fenderWins, s.roles.branded.resolved),
     pct(s.roles.branded.fenderWins, s.roles.branded.resolved),
-    "Brand Consideration",
+    BRANDED_CONSIDERATION_LABEL,
     70,
     90,
   );
@@ -202,7 +211,7 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
       heroValue:
         s.roles.unbranded.resolved > 0
           ? unbrandedHero.heroValue
-          : { value: "No resolved answers", label: "Unbranded SOV" },
+          : { value: "No resolved answers", label: UNBRANDED_DISCOVERY_LABEL },
       meta: `${state} run · ${run.answered ?? "?"} of ${run.expected ?? "?"} answered`,
       subTab: AI_TABS.summary,
       // The hero value above is the whole explanation. Open Run Summary for the engine and run detail.
@@ -252,7 +261,7 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
         if (gap && rival != null && gap.resolved > 0) {
           return {
             value: pct(rival.wins, gap.resolved),
-            label: `${categoryLabel(gap.category)} · ${rival.brand}`,
+            label: rivalLeadsLabel(rival.brand, gap.category),
           };
         }
         if (s.topCompetitor) {
@@ -337,7 +346,7 @@ export function aiSpokeDesc(read: AiSearchRead): string {
   if (read.phase === "error" && read.selection) return `${selectionLine(read.selection, false)}.`;
   if (read.phase === "error") return `The published AI run did not load: ${read.message}`;
   if (read.phase === "no-run") return "No AI run has been published yet, so no AI Search figure is shown.";
-  return `How AI shopping answers cite the web, and whether ${brandName()}-owned pages show up.`;
+  return `How AI assistants name and cite ${brandName()}.`;
 }
 
 export type AiSpokeChip = {

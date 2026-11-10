@@ -134,13 +134,14 @@ test("a failed set-aside read marks the Status column Not available*", () => {
 });
 
 test("malformed bodies fall back to every row", () => {
-  assert.deepEqual(parseShownRequest(null), { keys: null, search: "", sort: null, filter: null });
+  assert.deepEqual(parseShownRequest(null), { keys: null, search: "", sort: null, filter: null, scope: null });
   assert.deepEqual(parseShownRequest({ keys: [1, "B0X"], search: 4 }).keys, ["B0X"]);
 });
 
 test("export table ids, hrefs, and file names", () => {
   assert.ok(isExportTable("map-listings"));
-  assert.ok(!isExportTable("ai-simulations"));
+  assert.ok(isExportTable("ai-simulations"), "the AI Search tables have server loaders");
+  assert.ok(!isExportTable("no-such-table"));
   assert.equal(exportHref("map-listings", "fender"), "/dashboard/export/map-listings");
   assert.equal(exportHref("map-listings", "ledlenser"), "/dashboard/export/map-listings?client=ledlenser");
   assert.equal(exportFileName("stock-loss", new Date("2026-11-09T12:00:00Z")), "stock-loss-2026-11-09.csv");

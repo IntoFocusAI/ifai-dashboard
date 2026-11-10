@@ -11,6 +11,7 @@ import {
   type CitationWindow,
 } from "@/lib/ai-search/citation-aggregate";
 import type { CitationFailedRead } from "@/lib/ai-search/citation-read-failure";
+import { citationPopulation } from "@/lib/ai-search/engine-group";
 import { NO_WINDOW_RUN_HEADING } from "@/lib/ai-search/default-window";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
 
@@ -79,7 +80,7 @@ export function useCitationAggregate(): CitationAggregate {
     if (read.phase === "loading") return { phase: "loading" };
     if (read.phase === "error") return { phase: "error", message: read.message, failed: "published" };
     if (read.phase === "no-run") return { phase: "empty", message: "No AI run has been published yet." };
-    return finish({ kind: "run" }, [read.snapshot], true);
+    return finish({ kind: "run" }, [citationPopulation(read.snapshot)], true);
   }
   if (mode.kind === "legacy") {
     return { phase: "empty", message: "Legacy test runs stay out of the citation totals." };

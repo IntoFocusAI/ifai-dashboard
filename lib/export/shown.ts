@@ -23,7 +23,20 @@ export function parseShownRequest(body: unknown): ShownRequest {
     search: text(input.search) ?? "",
     sort: text(input.sort),
     filter: text(input.filter),
+    scope: scopeOf(input.scope),
   };
+}
+
+const MAX_SCOPE_CHARS = 4000;
+
+/** A small plain object, or null. Each loader validates the fields it reads. */
+function scopeOf(value: unknown): Record<string, unknown> | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  try {
+    return JSON.stringify(value).length <= MAX_SCOPE_CHARS ? (value as Record<string, unknown>) : null;
+  } catch {
+    return null;
+  }
 }
 
 function sentence(value: string): string {

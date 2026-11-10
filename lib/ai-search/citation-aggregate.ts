@@ -90,6 +90,11 @@ export function poolCitationSnapshots(snapshots: readonly AiSearchSnapshot[]): A
   };
 }
 
+/** The citation total of a selection: the runs that stored their cited URLs, added together. */
+export function pooledCitationSnapshot(snapshots: readonly AiSearchSnapshot[]): AiSearchSnapshot | null {
+  return poolCitationSnapshots(snapshots.filter(citationSnapshotUsable));
+}
+
 /**
  * Window pool for Run Summary and other rate tabs: every non-empty call list,
  * but only citation-usable runs contribute citation rows.
