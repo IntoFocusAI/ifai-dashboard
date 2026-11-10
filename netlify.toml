@@ -2,12 +2,18 @@
   command = "npm run build"
   publish = ".next"
 
-# TEST_LOGIN_EMAIL is an email address, not a secret. Netlify's secrets
-# scan fails every build because that address also appears in the source.
-# Skip that one key; every other environment variable is still scanned.
-# To undo, delete this block.
+# Netlify's secrets scan fails the build when the value of a setting marked
+# secret shows up in the build. Two cases here are expected:
+# 1. The NEXT_PUBLIC_SUPABASE_* values are public by design. Next.js puts
+#    them in the browser code, so the scan always finds them.
+# 2. The Next.js build cache (.next/cache) keeps a copy of every build
+#    setting, including the test login. The cache is never served to
+#    visitors.
+# Everything that is served, and the repo itself, is still scanned for
+# every other setting (passwords included). To undo, delete this block.
 [build.environment]
-  SECRETS_SCAN_OMIT_KEYS = "TEST_LOGIN_EMAIL"
+  SECRETS_SCAN_OMIT_KEYS = "NEXT_PUBLIC_SUPABASE_ANON_KEY,NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,NEXT_PUBLIC_SUPABASE_URL"
+  SECRETS_SCAN_OMIT_PATHS = ".netlify/.next/cache/**,.next/cache/**"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
