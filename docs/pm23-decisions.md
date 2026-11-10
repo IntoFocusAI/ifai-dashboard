@@ -180,3 +180,23 @@ closeout of each view. Open items are marked OPEN and are not built.
 34. PM24 test. The first batch is two views, 24.4 AI Search and 24.3
     Catalog Health. It runs with no audit. Decision 24 applies again when
     Brian says so.
+35. Brian's answers (9 Nov 2026, evening):
+    - Item 21 (Roadmap and Action Items rules a to j): approved for now,
+      as written, to see how they play out in use. Worker 24.7 may build
+      on them. Expect changes after his review.
+    - Item 17 (C-01 story pack): the audience is both a prospect and a
+      client sponsor. The idea: once a potential client's data is in the
+      dashboard, pull its key findings into a sales-pitch view, with
+      formatting guidance from Presentation-Assistant on Toolbelt. Earlier
+      attempts were poor. It is not needed before launch.
+    - Item 16 (D-06 A+ dollar figure): no A+ dollar figure for now. D-06
+      closes on the content shares. The lift assumptions (how much more a
+      listing sells with A+) must be worked out later and be defensible:
+      they are essential to the value of combining ecommerce and AEO
+      insight. Tracked with the parked dollar formulas.
+    - Workers stay on the PM's model for now.
+    - When a database change needs his approval, explain it in plain
+      language.
+    - He may miss a request in a long message, or answer out of order.
+      Keep a short list of what is still waiting on him and remind him
+      after a while, each with a terse, plain-language explanation.
