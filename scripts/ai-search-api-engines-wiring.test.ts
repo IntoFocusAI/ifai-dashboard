@@ -326,14 +326,12 @@ test("the API repeat cap keeps repeats 1 to 3 and the fact checks and citations 
   assert.match(API_REPEAT_RULE, /repeats 1 to 3/);
 });
 
-test("the map's AI bubbles say when they include API engines, and stay hoverless when they do not", () => {
+test("the map's AI bubbles carry no hover tooltip, with or without API engines", () => {
   const all = engineGroupRead({ phase: "ready", snapshot: NOV3 }, { phase: "ready", snapshots: [API_NOV2] }, "all");
   assert.equal(all.phase, "ready");
   const faces = aiNodeFaces(all);
-  assert.equal(faces.spokeAeo.tooltip.title, "Includes API engines");
-  assert.match(faces.spokeAeo.tooltip.desc, /3 search-engine answers plus 2 answers from the API run nearest its day \(ChatGPT API\)/);
-  assert.match(faces.spokeAeo.tooltip.desc, /Only repeats 1 to 3/);
-  assert.equal(faces.spokeCompetitors.tooltip.title, "Includes API engines");
+  assert.deepEqual(faces.spokeAeo.tooltip, { title: "", desc: "" });
+  assert.deepEqual(faces.spokeCompetitors.tooltip, { title: "", desc: "" });
 
   const alone = aiNodeFaces({ phase: "ready", snapshot: NOV3 });
   assert.deepEqual(alone.spokeAeo.tooltip, { title: "", desc: "" });

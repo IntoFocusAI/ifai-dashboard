@@ -61,10 +61,12 @@ for (const client of CLIENTS) {
         /^This figure covers ChatGPT, Gemini, and Perplexity\. Only ChatGPT, Gemini, and Perplexity ask the rotating catalog questions\./,
       );
       await expect(tip).not.toHaveAttribute("title", /.*/);
-      // The catalog lead sits above Accuracy.
-      const catalogTop = (await lead.boundingBox())!.y;
-      const accuracyTop = (await page.locator("[data-ai-accuracy-figure]").boundingBox())!.y;
-      expect(catalogTop).toBeLessThan(accuracyTop);
+      // Accuracy sits to the right of the catalog figure, side by side, with no sideways scroll.
+      const catalogBox = (await lead.boundingBox())!;
+      const accuracyBox = (await page.locator("[data-ai-accuracy-figure]").boundingBox())!;
+      expect(accuracyBox.x).toBeGreaterThanOrEqual(catalogBox.x + catalogBox.width - 1);
+      expect(Math.abs(accuracyBox.y - catalogBox.y)).toBeLessThan(40);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
       await expect(page.locator("[data-ai-accuracy-figure-col] [data-status]")).toHaveText(/^(Poor|Fair|Good)$/);
       await expect(page.locator("[data-ai-fact-fixed-only]")).toHaveCount(0);
 
