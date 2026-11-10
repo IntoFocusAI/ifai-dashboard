@@ -15,7 +15,7 @@ const TABS: Tab[] = [
   [
     "ecommerce",
     "Catalog Health",
-    ["Retail Overview", "Suppressed Listings", "MAP", "Catalog Governance", "Out of Stock"],
+    ["Retail Overview", "Suppressed Listings", "MAP Leakage", "Catalog Governance", "Out of Stock"],
   ],
   [
     "aeo",
