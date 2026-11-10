@@ -1,16 +1,26 @@
 "use client";
 
+import "@/components/v3/live/summary.css";
 import { useState } from "react";
 import { CitationPieDisc } from "@/components/v3/live/ai-search/CitationPieDisc";
 import { ConsensusComponentBars } from "@/components/v3/live/ConsensusComponentBars";
+import { PartialFigureMark } from "@/components/v3/live/FigureTip";
+import { StatusMark } from "@/components/v3/live/StatusMark";
+import type { PartialFigure } from "@/lib/fender-canvas/canvas-reads";
 import {
   ACTUATION_OMITTED_REASON,
   CONSENSUS_EXPLAINER_BODY,
   CONSENSUS_EXPLAINER_TITLE,
+  consensusPartial,
+  pillarPartial,
   scoreAgainst100Pie,
+  scoreAgainstTarget,
+  scoreFigure,
+  scoreStatus,
+  scoreTargetLabel,
   scoreToneColor,
 } from "@/lib/fender-canvas/consensus-score-display";
-import { formatPct, formatRatio } from "@/lib/fender-canvas/format";
+import { formatRatio } from "@/lib/fender-canvas/format";
 import type { ConsensusScore, PillarScore } from "@/lib/fender-canvas/consensus-scores";
 
 const PIE_SIZE = "citation-pie-disc citation-pie-disc-retail";
@@ -37,7 +47,11 @@ function ExploreChevron() {
   );
 }
 
-/** Fit-content score hero: label, colored figure, N of M, pie disc, optional chevron. */
+/**
+ * Fit-content score hero: label, the score in its status color against target 70 (H-07),
+ * N of M, the status mark and word, pie disc, optional chevron. A score that leaves out some
+ * of its inputs carries the asterisk and its tooltip (X-25).
+ */
 export function ScoreHeroCard({
   id,
   label,
@@ -48,6 +62,8 @@ export function ScoreHeroCard({
   controls,
   dominant,
   dataAttr,
+  partial = null,
+  coverageNoun,
 }: {
   id: string;
   label: string;
@@ -58,13 +74,18 @@ export function ScoreHeroCard({
   controls?: string;
   dominant?: boolean;
   dataAttr?: string;
+  partial?: PartialFigure | null;
+  /** What the coverage counts: "pillars" or "components". */
+  coverageNoun?: string;
 }) {
   const color = scoreToneColor(score);
+  const status = scoreStatus(score);
   const pie = scoreAgainst100Pie(`score-${id}`, label, score);
-  const percent = score == null ? "Not available" : formatPct(score, 0);
+  const figure = scoreFigure(score);
+  const target = scoreAgainstTarget(score);
   const tip =
-    score != null && coverage
-      ? `${label}: ${formatPct(score)} · ${formatRatio(coverage.numerator, coverage.denominator)} of inputs in.`
+    target && coverage
+      ? `${label}: ${target} · ${formatRatio(coverage.numerator, coverage.denominator)} ${coverageNoun ?? "inputs"} in.`
       : undefined;
 
   return (
@@ -99,17 +120,26 @@ export function ScoreHeroCard({
               lineHeight: 1.05,
             }}
           >
-            {percent}
+            <PartialFigureMark partial={partial} testId={`consensus-${id}`}>
+              {figure}
+            </PartialFigureMark>
           </span>
-          {coverage ? (
+          {target ? (
+            <span className="findability-lead-ratio" data-consensus-target="">
+              {scoreTargetLabel()}
+            </span>
+          ) : null}
+          {coverage && score != null ? (
             <span
               className="findability-lead-ratio"
               data-consensus-pillar-coverage=""
               data-consensus-coverage={dominant ? "" : undefined}
             >
               {formatRatio(coverage.numerator, coverage.denominator)}
+              {coverageNoun ? ` ${coverageNoun}` : ""}
             </span>
           ) : null}
+          {status ? <StatusMark status={status} /> : null}
         </div>
         {pie ? <CitationPieDisc pie={pie} sizeClass={PIE_SIZE} tip={tip} /> : null}
       </div>
@@ -211,6 +241,8 @@ export function ConsensusLeadBand({ consensus }: { consensus: ConsensusScore }) 
             label="AI Consensus"
             score={consensus.score}
             coverage={consensus.coverage}
+            coverageNoun="pillars"
+            partial={consensusPartial(consensus)}
             dominant
           />
           <ScoreHeroCard
@@ -218,6 +250,8 @@ export function ConsensusLeadBand({ consensus }: { consensus: ConsensusScore }) 
             label={consensus.foundation.name}
             score={consensus.foundation.score}
             coverage={consensus.foundation.coverage}
+            coverageNoun="components"
+            partial={pillarPartial(consensus.foundation)}
             open={open === "foundation"}
             onToggle={() => toggle("foundation")}
             controls={COMPONENTS_ID}
@@ -227,6 +261,8 @@ export function ConsensusLeadBand({ consensus }: { consensus: ConsensusScore }) 
             label={consensus.commerce.name}
             score={consensus.commerce.score}
             coverage={consensus.commerce.coverage}
+            coverageNoun="components"
+            partial={pillarPartial(consensus.commerce)}
             open={open === "commerce"}
             onToggle={() => toggle("commerce")}
             controls={COMPONENTS_ID}

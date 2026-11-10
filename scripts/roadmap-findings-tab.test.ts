@@ -43,7 +43,7 @@ test("Roadmap first tab renders briefingFindingsLead via RoadmapFindingsPanel", 
   for (const label of [
     "Buy Box withheld",
     "MAP leakage",
-    "Splintered bundles",
+    "Splintered Listings",
     "Exact official product pages",
     "Unbranded discovery",
   ]) {

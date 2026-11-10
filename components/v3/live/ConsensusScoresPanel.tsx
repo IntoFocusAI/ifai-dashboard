@@ -1,8 +1,8 @@
 "use client";
 
-import { useAiSearch } from "@/components/v3/live/ai-search/AiSearchContext";
 import { ConsensusLeadBand } from "@/components/v3/live/ConsensusScoreView";
 import { useFindability } from "@/components/v3/live/findability/FindabilityContext";
+import { useSummaryAiRead } from "@/components/v3/live/useSummaryAiRead";
 import { authorizedPartnersFromSave } from "@/lib/fender-canvas/authorized-sellers";
 import { useAuthorizedSellers } from "@/lib/fender-canvas/authorized-sellers-store";
 import { consensusFromLive } from "@/lib/fender-canvas/consensus-scores-from-live";
@@ -21,7 +21,8 @@ export function ConsensusScoresPanel({
   retail: RetailCanvasRead;
 }) {
   const findability = useFindability();
-  const ai = useAiSearch();
+  // The map's population (decision 7), the same read as the Briefing's AI Consensus.
+  const ai = useSummaryAiRead();
   const [saved] = useAuthorizedSellers();
   const authorizedPartners = authorizedPartnersFromSave(saved);
 

@@ -18,7 +18,7 @@ function read(rel: string): string {
 const FINDING_LABELS = [
   "Buy Box withheld",
   "MAP leakage",
-  "Splintered bundles",
+  "Splintered Listings",
   "Exact official product pages",
   "Unbranded discovery",
 ] as const;
