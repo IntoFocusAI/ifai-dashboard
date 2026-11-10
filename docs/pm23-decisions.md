@@ -200,3 +200,17 @@ closeout of each view. Open items are marked OPEN and are not built.
     - He may miss a request in a long message, or answer out of order.
       Keep a short list of what is still waiting on him and remind him
       after a while, each with a terse, plain-language explanation.
+
+## PM24 test batch (Brian, 10 Nov 2026)
+
+36. Ledlenser AI Search questions use the roles stored with its own
+    question set (ledlenser.ai_prompts.analytical_intent). Its map bubble
+    moved from 12.3% to 1.4% on the 7 Nov run.
+37. AI Search data is stale after 6 days (AI_SEARCH_STALE_AFTER_DAYS in
+    lib/ai-search/stale.ts). Approved by no objection.
+38. MAP discounted retail value is Amazon's price gap times Amazon's unit
+    estimates. Approved by no objection.
+39. Netlify's secrets scan is off in netlify.toml. The read-only function
+    public.ai_prompt_edits_list was applied to production with his
+    approval (migration 20261109233000_ai_prompt_edits_list.sql, PR 151).
+    PRs 151 and 152 approved and merged.
