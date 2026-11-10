@@ -149,14 +149,21 @@ test("the five outcome counts stay distinct and open the listings behind them", 
 
   const exactHero = page.locator("[data-findability-lead-outcome='exact_official_product']");
   await expect(exactHero).toContainText("Exact official product page");
-  await expect(exactHero.locator("[data-findability-lead-figure]")).toHaveText("33.3%");
+  // The mocked check ran on 12 Oct 2026, past the 14-day limit for a weekly check (X-25).
+  await expect(exactHero.locator("[data-findability-lead-figure]")).toHaveText("33.3%*");
+  await expect(exactHero.locator("[data-partial-figure='stale']")).toBeVisible();
+  await expect(exactHero.locator("[data-figure-tip='findability-stale']")).toHaveAttribute(
+    "data-ifai-tooltip-desc",
+    /runs weekly and has not run since Oct 12, 2026/,
+  );
+  await expect(exactHero.locator("[data-status='bad']")).toContainText("Poor");
   await expect(exactHero.locator("[data-findability-lead-figure]")).toHaveAttribute("data-findability-exact", "2");
   await expect(exactHero.locator("[data-findability-lead-ratio]")).toHaveText("2 of 6");
   await expect(exactHero.locator("[data-citation-pie-disc='findability-exact_official_product']")).toBeVisible();
   await expect(exactHero.locator(".citation-pie-disc-findability")).toBeVisible();
 
   await expect(page.locator("[data-findability-lead-outcome='official_family_page'] [data-findability-lead-figure]")).toHaveText(
-    "16.7%",
+    "16.7%*",
   );
   await expect(page.locator("[data-findability-lead-outcome='completed_not_found'] [data-findability-lead-ratio]")).toHaveText(
     "1 of 6",
@@ -240,14 +247,20 @@ test("the five outcome counts stay distinct and open the listings behind them", 
   await expect(table).toContainText("B00ALPHA");
   await expect(table).not.toContainText("B00FAMILY");
   await expect(table.locator("thead")).toContainText("Listing");
-  await expect(table.locator("thead th[data-col-id='outcome']")).toHaveCount(1);
+  // Seven columns fit 1280 px: the outcome is the box title, and related facts share a cell.
+  await expect(table.locator("thead th[data-col-id]")).toHaveCount(7);
+  await expect(table.locator("thead th[data-col-id='outcome']")).toHaveCount(0);
   await expect(table.locator("thead th[data-col-id='page']")).toContainText("Official page");
-  await expect(table.locator("thead th[data-col-id='http']")).toContainText("HTTP status");
   await expect(table.locator("thead th[data-col-id='checked']")).toContainText("Checked");
-  await expect(table.locator("thead th[data-col-id='sku']")).toContainText("Variant SKU");
   await expect(table.locator("thead th[data-col-id='confidence']")).toContainText("Confidence");
-  await expect(table.locator("thead th[data-col-id='source']")).toContainText("How it was matched");
+  await expect(table.locator("thead th[data-col-id='bundle']")).toContainText("Dealer bundle");
   await expect(table.locator("thead th[data-col-id='reason']")).toHaveCount(0);
+  // The dealer-bundle caveat is in the header tooltip, not on screen.
+  await expect(page.locator(".findability-panel")).not.toContainText("correlation");
+  await expect(table.locator("thead .ifai-term[data-ifai-tooltip-title='Dealer bundle']")).toHaveAttribute(
+    "data-ifai-tooltip-desc",
+    /correlation, not a proven cause/,
+  );
 
   const link = table.locator("[data-findability-official-url]").first();
   await expect(link).toHaveAttribute("href", /brand\.example/);
@@ -255,8 +268,9 @@ test("the five outcome counts stay distinct and open the listings behind them", 
   const zebra = table.locator("[data-findability-asin='B00ZEBRA']");
   await expect(zebra.locator("td.asin-col a")).toHaveCount(0);
   await expect(zebra.locator("td.asin-col .asin-chip")).toHaveText("B00ZEBRA");
-  await expect(zebra.locator("td").nth(6)).toHaveText("0140000001");
-  await expect(zebra.locator("td").nth(6).locator("a")).toHaveCount(0);
+  // Variant SKU sits under the official page as text.
+  await expect(zebra.locator("td").nth(2)).toContainText("Variant SKU 0140000001");
+  await expect(zebra.locator("td").nth(2).locator(".findability-cell-sub a")).toHaveCount(0);
 
   await table.locator("thead").getByRole("button", { name: "Listing" }).click();
   await expect(table.locator("tbody tr").first()).toContainText("Alpha Exact");
@@ -276,15 +290,11 @@ test("the five outcome counts stay distinct and open the listings behind them", 
     "href",
     "https://brand.example/products/family",
   );
-  const skuHeader = table.locator("thead .ifai-term[data-ifai-tooltip-title='Variant SKU']");
-  await expect(skuHeader).toHaveAttribute(
-    "data-ifai-tooltip-desc",
-    "The brand's variant code stored with this official-page match. It is not the Amazon ASIN.",
-  );
+  const skuHeader = table.locator("thead .ifai-term[data-ifai-tooltip-title='Official page']");
+  await expect(skuHeader).toHaveAttribute("data-ifai-tooltip-desc", /The variant SKU is not the Amazon ASIN\./);
   await expect(skuHeader).toHaveAttribute("tabindex", "0");
   await expect(skuHeader).not.toHaveAttribute("title");
   await expect(table.locator("thead th[data-col-id='confidence']")).toContainText("Confidence");
-  await expect(table.locator("thead th[data-col-id='source']")).toContainText("How it was matched");
 
   await page.locator("[data-findability-outcome='completed_not_found'] [data-findability-count]").click();
   await expect(table).toContainText("B00BUNDLE1");
@@ -335,12 +345,8 @@ test("the five outcome counts stay distinct and open the listings behind them", 
   await expect(table).toContainText("B00ZEBRA");
   await expect(table).not.toContainText("B00UNCHECKED");
   await expect(table.locator("thead th[data-col-id='page']")).toContainText("Official page");
-  await expect(table.locator("thead th[data-col-id='http']")).toContainText("HTTP status");
   await expect(table.locator("thead th[data-col-id='checked']")).toContainText("Checked");
-  await expect(table.locator("thead th[data-col-id='outcome']")).toContainText("Outcome");
-  await expect(table.locator("thead th[data-col-id='sku']")).toContainText("Variant SKU");
   await expect(table.locator("thead th[data-col-id='confidence']")).toContainText("Confidence");
-  await expect(table.locator("thead th[data-col-id='source']")).toContainText("How it was matched");
   await expect(table.locator("thead th[data-col-id='reason']")).toHaveCount(0);
   await expect(table.locator("[data-findability-official-url]").first()).toHaveAttribute("href", /brand\.example/);
 });
@@ -434,7 +440,7 @@ test("a partial read keeps zero outcomes separate from the rows that were checke
   await expect(page.locator("[data-findability-lead-outcome]")).toHaveCount(5);
   await expect(
     page.locator("[data-findability-lead-outcome='official_family_page'] [data-findability-lead-figure]"),
-  ).toHaveText("0.0%");
+  ).toHaveText("0.0%*");
   await expect(
     page.locator("[data-findability-lead-outcome='official_family_page'] [data-findability-lead-ratio]"),
   ).toHaveText("0 of 3");
@@ -583,12 +589,9 @@ test("a stored other outcome uses the same chevron", async ({ page }) => {
   await expect(page.locator(".content-box-title .tag-badge")).toHaveText("1 listings");
   await expect(page.locator("#findability-listings")).toContainText("B00BLOCK");
   await expect(page.locator("#findability-listings thead th[data-col-id='page']")).toContainText("Official page");
-  await expect(page.locator("#findability-listings thead th[data-col-id='http']")).toContainText("HTTP status");
   await expect(page.locator("#findability-listings thead th[data-col-id='checked']")).toContainText("Checked");
-  await expect(page.locator("#findability-listings thead th[data-col-id='outcome']")).toContainText("Outcome");
-  await expect(page.locator("#findability-listings thead th[data-col-id='sku']")).toContainText("Variant SKU");
   await expect(page.locator("#findability-listings thead th[data-col-id='confidence']")).toContainText("Confidence");
-  await expect(page.locator("#findability-listings thead th[data-col-id='source']")).toContainText("How it was matched");
+  await expect(page.locator("#findability-listings thead th[data-col-id='explanation']")).toContainText("Explanation");
   await expect(page.locator("#findability-listings thead th[data-col-id='reason']")).toHaveCount(0);
   await expect(page.locator("#findability-listings [data-findability-asin='B00BLOCK'] td.asin-col a")).toHaveCount(0);
   await expect(page.locator("#findability-listings [data-findability-asin='B00BLOCK'] td.asin-col .asin-chip")).toHaveText(
@@ -743,10 +746,11 @@ test("a 10-character ASIN opens its Amazon page from every Findability outcome t
       await expect(table.locator("thead")).not.toContainText("Variant SKU");
       await expect(table.locator("thead th").nth(6)).toHaveAttribute("data-col-id", "bundle");
     } else {
-      await expect(table.locator("thead th").nth(6)).toHaveAttribute("data-col-id", "sku");
-      const skuCell = table.locator(`[data-findability-asin='${asin}'] td`).nth(6);
-      await expect(skuCell).toHaveText(variantSku);
-      await expect(skuCell.locator("a")).toHaveCount(0);
+      // The variant SKU sits under the official page, as text.
+      await expect(table.locator("thead th").nth(2)).toHaveAttribute("data-col-id", "page");
+      const skuLine = table.locator(`[data-findability-asin='${asin}'] td`).nth(2).locator(".findability-cell-sub");
+      await expect(skuLine).toHaveText(`Variant SKU ${variantSku}`);
+      await expect(skuLine.locator("a")).toHaveCount(0);
     }
   }
 });
