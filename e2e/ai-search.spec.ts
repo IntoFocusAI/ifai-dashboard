@@ -6,8 +6,8 @@ import { expect, test } from "./fixtures";
 test.describe("AI Search Visibility", () => {
   test("the bubble states the published run with numerator and denominator", async ({ page }) => {
     const bubble = page.locator(".graph-node").filter({ hasText: /AI\s*Search\s*Visibility/i });
-    // One hero rate per bubble with its status word (ce1bba9, X-34); counts move with each run.
-    await expect(bubble).toContainText(/\d+\.\d%\s*Unbranded Discovery\s*(Poor|Fair|Good)/);
+    await expect(bubble).toContainText(/Unbranded\s*13 of 23/);
+    await expect(bubble).toContainText(/Branded\s*22 of 23/);
     await expect(bubble).not.toContainText(/51 of 63/);
     await expect(bubble).not.toContainText(/Sims/);
   });
@@ -38,16 +38,15 @@ test.describe("AI Search Visibility", () => {
 
   test("the command center and metric repeat the two rates", async ({ canvas, page }) => {
     await canvas.openCommandCenter();
-    // The counts move with each published run; the shape of the two rates does not.
-    await expect(canvas.commandCenter).toContainText(/Unbranded discovery: .*?[\d,]+ of [\d,]+ resolved answers \(\d+\.\d%\)/);
-    await expect(canvas.commandCenter).toContainText(/Branded consideration: [\d,]+ of [\d,]+ resolved answers \(\d+\.\d%\)/);
+    await expect(canvas.commandCenter).toContainText("13 of 23 resolved answers (56.5%)");
+    await expect(canvas.commandCenter).toContainText("22 of 23 resolved answers (95.7%)");
     await expect(canvas.commandCenter).not.toContainText("51 of 63");
     await page.locator(".drilldown-hide-btn").click();
     await expect(page.locator(".ifai-canvas.panel-hidden")).toHaveCount(1);
 
     await page.locator("[data-graph-node-id='spoke-aeo']").focus();
     const slots = page.locator("[data-hub-slots]");
-    await expect(slots.locator("[data-hub-slot='gap']")).toContainText(/Fender led [\d,]+ of [\d,]+/);
+    await expect(slots.locator("[data-hub-slot='gap']")).toContainText(/Fender led \d+ of \d+/);
     await expect(slots).not.toContainText("Overall AI Win Rate");
   });
 
