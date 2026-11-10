@@ -30,7 +30,13 @@ export function withSearchEmpty(children: ReactNode, controls: TableControls | n
 
 async function downloadCsv(
   tableId: string,
-  body: { keys: readonly string[] | null; search: string; sort: string | null; filter: string | null },
+  body: {
+    keys: readonly string[] | null;
+    search: string;
+    sort: string | null;
+    filter: string | null;
+    scope: Record<string, unknown> | null;
+  },
 ): Promise<string | null> {
   const response = await fetch(exportHref(tableId, activeClientKey()), {
     method: "POST",
@@ -59,6 +65,7 @@ export function TableToolbar({
   controls,
   shownKeys,
   filterLabel,
+  exportScope,
 }: {
   tableId: string;
   columns: readonly ToolbarColumn[];
@@ -67,12 +74,14 @@ export function TableToolbar({
   /** Row keys in the table body, used when the sort hook cannot key its rows. */
   shownKeys: readonly string[];
   filterLabel?: string | null;
+  /** What the view shows, sent with the download. Null means this view has no download now. */
+  exportScope?: Record<string, unknown> | null;
 }) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   // Without its sort hook the toolbar cannot name every matching row, so it shows nothing.
   if (!controls) return null;
-  const exportable = isExportTable(tableId);
+  const exportable = isExportTable(tableId) && exportScope !== null;
   const query = controls.query;
   const onDownload = async () => {
     setBusy(true);
@@ -84,6 +93,7 @@ export function TableToolbar({
           search: query,
           sort: describeTableSort(sort, columns),
           filter: filterLabel ?? null,
+          scope: exportScope ?? null,
         }),
       );
     } catch {

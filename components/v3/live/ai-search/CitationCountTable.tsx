@@ -12,16 +12,30 @@ export function CountTable<T>({
   rows,
   value,
   renderRow,
+  keyOf,
+  exportScope,
 }: {
   tableId: string;
   columns: readonly RetailColumn[];
   rows: readonly T[];
   value: (row: T, columnId: string) => SortInput;
   renderRow: (row: T) => ReactNode;
+  /** The key each row uses on screen, sent with Download CSV. */
+  keyOf?: (row: T) => string;
+  /** What the tab shows, sent with Download CSV. Null hides the download. */
+  exportScope?: Record<string, unknown> | null;
 }) {
-  const sorted = useClientTableSort(rows, columns, value);
+  const sorted = useClientTableSort(rows, columns, value, keyOf);
   return (
-    <ResizableTable tableId={tableId} columns={columns} freezeHeader maxHeight={520} sort={sorted.sort} onSort={sorted.onSort}>
+    <ResizableTable
+      tableId={tableId}
+      columns={columns}
+      freezeHeader
+      maxHeight={520}
+      sort={sorted.sort}
+      onSort={sorted.onSort}
+      exportScope={exportScope}
+    >
       <tbody>{sorted.rows.map((row) => renderRow(row))}</tbody>
     </ResizableTable>
   );

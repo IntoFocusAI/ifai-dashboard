@@ -199,6 +199,7 @@ export function ResizableTable({
   tableClassName,
   toolbar = true,
   filterLabel = null,
+  exportScope,
   controls: controlsProp,
   children,
 }: {
@@ -214,10 +215,10 @@ export function ResizableTable({
   onSort?: (columnId: string) => void;
   /** Extra classes on the table (e.g. table-no-row-hover). */
   tableClassName?: string;
-  /** Search box and Download CSV above the table. */
-  toolbar?: boolean;
+  toolbar?: boolean; // Search box and Download CSV above the table.
   /** Plain words for the view filter this table sits under, written into the download. */
   filterLabel?: string | null;
+  exportScope?: Record<string, unknown> | null; // What the view shows, sent with Download CSV. Null hides it.
   /** The sort hook's `controls`, for a table that wraps the hook's `onSort` in its own handler. */
   controls?: TableControls | null;
   children: ReactNode;
@@ -386,7 +387,7 @@ export function ResizableTable({
     <>
       {toolbar && (
         <TableToolbar
-          {...{ tableId, columns, sort, controls, filterLabel }}
+          {...{ tableId, columns, sort, controls, filterLabel, exportScope }}
           shownKeys={rowLimit.keys.map(sourceRowKey)}
         />
       )}

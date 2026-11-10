@@ -12,6 +12,18 @@ export const EXPORT_TABLE_IDS = [
   "brand-site-page-found",
   "aplus-matrix-listings",
   "suppressed-listings",
+  // AI Search Visibility: read on the server for the date pill and engine switch the screen shows.
+  "ai-run-engines",
+  "ai-run-categories",
+  "ai-simulations",
+  "product-fact-checks",
+  "catalog-coverage",
+  "ai-history-trend",
+  "ai-trend-point",
+  "citation-engines",
+  "citation-categories",
+  "citation-evidence",
+  "prompt-history",
 ] as const;
 
 export type ExportTableId = (typeof EXPORT_TABLE_IDS)[number];

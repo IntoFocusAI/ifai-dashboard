@@ -62,7 +62,18 @@ export type HistoryReadOptions = {
   limit?: ReadLimit;
   /** Stops queuing pages once the caller no longer needs the run. */
   signal?: AbortSignal;
+  /** False leaves each call's answer text on the server, for a reader that shows none. */
+  withAnswers?: boolean;
+  /** False skips the run's cited-URL rows, for a reader that shows none. */
+  withCitations?: boolean;
 };
+
+function withoutAnswerText(columns: string): string {
+  return columns
+    .split(",")
+    .filter((column) => column !== "answer_text")
+    .join(",");
+}
 
 const STOPPED: DbError = { message: "The read was stopped." };
 
@@ -207,24 +218,29 @@ export async function loadHistorySnapshot(
 
   try {
     // sim_id is unique within a run, and position is unique within a call's citations.
+    const answers = options.withAnswers !== false;
+    const callColumns = answers ? HISTORY_CALL_COLUMNS : withoutAnswerText(HISTORY_CALL_COLUMNS);
+    const probeColumns = answers ? HISTORY_PROBE_COLUMNS : withoutAnswerText(HISTORY_PROBE_COLUMNS);
     const [calls, probes, citations] = await Promise.all([
-      readRunPages<AiCallRow>(client, "canvas_ai_history_calls", HISTORY_CALL_COLUMNS, runId, ["sim_id", "id"], options),
+      readRunPages<AiCallRow>(client, "canvas_ai_history_calls", callColumns, runId, ["sim_id", "id"], options),
       readRunPages<AiProbeRow & { answer_text?: string | null }>(
         client,
         "canvas_ai_history_probes",
-        HISTORY_PROBE_COLUMNS,
+        probeColumns,
         runId,
         ["sim_id"],
         options,
       ),
-      readRunPages<AiCitationRow>(
-        client,
-        HISTORY_CITATION_VIEW,
-        HISTORY_CITATION_COLUMNS,
-        runId,
-        ["sim_id", "position"],
-        options,
-      ),
+      options.withCitations === false
+        ? Promise.resolve({ rows: [] as AiCitationRow[], error: null })
+        : readRunPages<AiCitationRow>(
+            client,
+            HISTORY_CITATION_VIEW,
+            HISTORY_CITATION_COLUMNS,
+            runId,
+            ["sim_id", "position"],
+            options,
+          ),
     ]);
     for (const result of [calls, probes, citations]) {
       if (result.error) {

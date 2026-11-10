@@ -24,6 +24,8 @@ export function useClientTableSort<T>(
   rows: readonly T[],
   columns: readonly SortableColumn[],
   value: (row: T, columnId: string) => SortInput,
+  /** The key each row uses on screen, when it is not an ASIN or a page URL. */
+  keyOf?: (row: T) => string,
 ) {
   const [sort, setSort] = useState<TableSort | null>(null);
   const [query, setQuery] = useState("");
@@ -43,7 +45,7 @@ export function useClientTableSort<T>(
     if (!kind) return matched;
     return sortRowsByColumn(matched, kind, sort.direction, (row) => value(row, sort.columnId));
   }, [columns, matched, sort, value]);
-  const orderedKeys = useMemo(() => orderedRowKeys(sorted), [sorted]);
+  const orderedKeys = useMemo(() => (keyOf ? sorted.map(keyOf) : orderedRowKeys(sorted)), [keyOf, sorted]);
   const controls: TableControls = { query, setQuery, total: rows.length, matched: matched.length, orderedKeys };
   registerTableControls(onSort, controls);
   return { rows: sorted, sort, onSort, query, setQuery, controls };

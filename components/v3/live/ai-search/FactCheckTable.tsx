@@ -7,6 +7,7 @@ import { AiStatusTag, tagToneOf } from "@/components/v3/live/ai-search/AiStatusT
 import { CopyTip } from "@/components/v3/live/ai-search/CopyTip";
 import { EvidenceLink } from "@/components/v3/live/ai-search/EvidenceLink";
 import { ExternalLink } from "@/components/v3/live/ai-search/ExternalLink";
+import { useAiExportScope } from "@/components/v3/live/ai-search/useAiExport";
 import { AI_TABS } from "@/lib/ai-search/canvas-surfaces";
 import { PROBE_STATE_LABELS, type ProbeEvidence, type ProbeState } from "@/lib/ai-search/drift";
 import { AMAZON_DIFFERS_TITLE, ANCHOR_TIP, ANCHOR_TITLE, amazonDiffersTip } from "@/lib/ai-search/fact-check-copy";
@@ -36,6 +37,8 @@ const COLUMNS = [
   clientColumn("checked", "Checked", "date", 200, 160),
 ];
 
+const probeKey = (row: ProbeEvidence) => row.key;
+
 function factSortValue(row: ProbeEvidence, columnId: string): SortInput {
   if (columnId === "question") return row.prompt.trim() || null;
   if (columnId === "engine") return engineLabel(row.engine);
@@ -45,7 +48,8 @@ function factSortValue(row: ProbeEvidence, columnId: string): SortInput {
 }
 
 export function FactCheckTable({ rows, windowed = false }: { rows: ProbeEvidence[]; windowed?: boolean }) {
-  const sorted = useClientTableSort(rows, COLUMNS, factSortValue);
+  const sorted = useClientTableSort(rows, COLUMNS, factSortValue, probeKey);
+  const exportScope = useAiExportScope();
   const unit = windowed ? "selection" : "run";
   return (
     <div className="content-box ai-probe-table" style={{ marginTop: 12 }}>
@@ -60,6 +64,7 @@ export function FactCheckTable({ rows, windowed = false }: { rows: ProbeEvidence
           maxHeight={520}
           sort={sorted.sort}
           onSort={sorted.onSort}
+          exportScope={exportScope}
         >
           <tbody>
             {sorted.rows.map((row) => (

@@ -20,7 +20,7 @@ export async function POST(request: Request, context: { params: Promise<{ table:
   const client = isClientKey(raw) ? raw : "fender";
   const shown = parseShownRequest(await request.json().catch(() => null));
   return runWithClient(client, async () => {
-    const read = await loadTableSource(table);
+    const read = await loadTableSource(table, shown.scope);
     if (!read.ok) return textFailure(read.message);
     const status = read.source.setAsideCheck ? await loadSetAsideStatus(read.source.setAsideCheck) : null;
     return csvResponse(shownCsv(read.source, shown, status), exportFileName(table));

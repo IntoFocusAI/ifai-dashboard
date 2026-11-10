@@ -11,6 +11,7 @@ import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
 import { RunDetailsLead } from "@/components/v3/live/ai-search/RunDetailsLead";
 import { SimulationEvidenceDrawer } from "@/components/v3/live/ai-search/SimulationEvidenceDrawer";
 import { SimulationFilters } from "@/components/v3/live/ai-search/SimulationFilters";
+import { useAiExportScope } from "@/components/v3/live/ai-search/useAiExport";
 import { useEvidenceFocus } from "@/components/v3/live/ai-search/useEvidenceFocus";
 import { citationEvidence, type CitationEvidence } from "@/lib/ai-search/citations";
 import { driftRead } from "@/lib/ai-search/drift";
@@ -68,6 +69,8 @@ function simulationSortValue(row: AiCallRow, columnId: string, cited: number): S
   return row.created_at;
 }
 
+const callKey = (row: AiCallRow) => row.id;
+
 const OUTCOME_TONE: Record<CallOutcome, string> = {
   fender_win: "tag-success",
   fender_win_disqualified: "tag-danger",
@@ -119,9 +122,13 @@ function Explorer({ snapshot }: { snapshot: AiSearchSnapshot }) {
     () => sortExplorerRows(applyExplorerFilter(snapshot.calls, filter)),
     [snapshot.calls, filter],
   );
-  const sorted = useClientTableSort(rows, SIM_COLUMNS, (row, columnId) =>
-    simulationSortValue(row, columnId, citations.get(row.id)?.length ?? 0),
+  const sorted = useClientTableSort(
+    rows,
+    SIM_COLUMNS,
+    (row, columnId) => simulationSortValue(row, columnId, citations.get(row.id)?.length ?? 0),
+    callKey,
   );
+  const exportScope = useAiExportScope({ filter });
 
   const changeFilter = (next: ExplorerFilter) => {
     setOpenId(null);
@@ -161,6 +168,7 @@ function Explorer({ snapshot }: { snapshot: AiSearchSnapshot }) {
             maxHeight={520}
             sort={sorted.sort}
             onSort={sorted.onSort}
+            exportScope={exportScope}
           >
             <tbody>
               {sorted.rows.map((row) => {

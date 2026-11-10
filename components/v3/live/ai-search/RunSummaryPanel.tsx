@@ -12,6 +12,7 @@ import { EngineGroupScope } from "@/components/v3/live/ai-search/EngineGroupScop
 import { EvidenceLink } from "@/components/v3/live/ai-search/EvidenceLink";
 import { MixedScoringTip } from "@/components/v3/live/ai-search/MixedScoringTip";
 import { RunCompletenessCard } from "@/components/v3/live/ai-search/RunCompletenessCard";
+import { useAiExportScope } from "@/components/v3/live/ai-search/useAiExport";
 import { KeptOutNote, RoleCount, RoleSumLine, largestResolved, roleColumn, roleRateSort } from "@/components/v3/live/ai-search/RoleRateTable";
 import { AI_TABS } from "@/lib/ai-search/canvas-surfaces";
 import { categoryRoleTallies, engineResultRoleTallies, headlineAside, type RoleGroupTally, type RoleTally } from "@/lib/ai-search/question-role";
@@ -63,6 +64,8 @@ function groupSortValue(
 }
 
 const SIM = AI_TABS.simulations;
+
+const groupKey = (row: RoleGroupTally) => row.key;
 
 function ratePie(id: string, title: string, tally: RoleTally): PieDiscInput {
   return {
@@ -222,9 +225,13 @@ function EngineTable({ snapshot, showSmallSample }: { snapshot: AiSearchSnapshot
     unbranded: largestResolved(engines, "unbranded_discovery"),
     branded: largestResolved(engines, "branded_consideration"),
   };
-  const sorted = useClientTableSort(engines, ENGINE_COLUMNS, (row, columnId) =>
-    groupSortValue(row, columnId, engineLabel(row.key), largest),
+  const sorted = useClientTableSort(
+    engines,
+    ENGINE_COLUMNS,
+    (row, columnId) => groupSortValue(row, columnId, engineLabel(row.key), largest),
+    groupKey,
   );
+  const exportScope = useAiExportScope();
   return (
     <div className="content-box ai-engine-table ai-role-rates" style={{ marginTop: 12 }}>
       <div className="content-box-title">By engine and model</div>
@@ -236,6 +243,7 @@ function EngineTable({ snapshot, showSmallSample }: { snapshot: AiSearchSnapshot
         maxHeight={520}
         sort={sorted.sort}
         onSort={sorted.onSort}
+        exportScope={exportScope}
       >
         <tbody>
           {sorted.rows.map((engine) => {
@@ -281,9 +289,13 @@ function CategoryTable({ snapshot, showSmallSample }: { snapshot: AiSearchSnapsh
     unbranded: largestResolved(categories, "unbranded_discovery"),
     branded: largestResolved(categories, "branded_consideration"),
   };
-  const sorted = useClientTableSort(categories, CATEGORY_COLUMNS, (row, columnId) =>
-    groupSortValue(row, columnId, categoryLabel(row.key), largest),
+  const sorted = useClientTableSort(
+    categories,
+    CATEGORY_COLUMNS,
+    (row, columnId) => groupSortValue(row, columnId, categoryLabel(row.key), largest),
+    groupKey,
   );
+  const exportScope = useAiExportScope();
   return (
     <div className="content-box ai-category-table ai-role-rates" style={{ marginTop: 12 }}>
       <div className="content-box-title">By commercial category</div>
@@ -295,6 +307,7 @@ function CategoryTable({ snapshot, showSmallSample }: { snapshot: AiSearchSnapsh
         maxHeight={520}
         sort={sorted.sort}
         onSort={sorted.onSort}
+        exportScope={exportScope}
       >
         <tbody>
           {sorted.rows.map((row) => {

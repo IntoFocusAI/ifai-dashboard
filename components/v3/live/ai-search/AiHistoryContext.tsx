@@ -2,19 +2,18 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useSearchParams } from "next/navigation";
-import { clientWindowSnapshots, defaultWindowRuns, latestPublishedDay } from "@/lib/ai-search/default-window";
+import { clientWindowSnapshots, latestPublishedDay } from "@/lib/ai-search/default-window";
 import { displayedAiRead } from "@/lib/ai-search/displayed-read";
 import { compareRuns, utcDay, type HistoryRunSummary } from "@/lib/ai-search/history-eligibility";
 import { historyFixtureSnapshot, historyFixtureSummaries } from "@/lib/ai-search/history-fixtures";
 import {
   DEFAULT_HISTORY_MODE,
   historyControlLabel,
-  rangeFromMode,
   windowBounds,
   type HistoryMode,
 } from "@/lib/ai-search/history-mode";
 import { loadHistoryCatalog, loadHistorySnapshot, type HistorySnapshotResult } from "@/lib/ai-search/history-queries";
-import { isReviewHistoryRun } from "@/lib/ai-search/review-runs";
+import { runsInSelection } from "@/lib/ai-search/selection";
 import type { AiSearchRead, AiSearchSnapshot } from "@/lib/ai-search/types";
 import { readsWindowRemotely } from "@/lib/ai-search/window-read";
 import { getCanvasSupabase } from "@/lib/supabase/canvas-client";
@@ -57,23 +56,6 @@ type AiHistoryValue = {
 };
 
 const AiHistoryContext = createContext<AiHistoryValue | null>(null);
-
-function runsInScope(
-  runs: readonly HistoryRunSummary[],
-  mode: HistoryMode,
-  windowEnd: string | null,
-): HistoryRunSummary[] {
-  if (mode.kind === "month") return defaultWindowRuns(runs, windowEnd).included;
-  if (mode.kind === "run" || mode.kind === "legacy") return [];
-  const { from, to } = rangeFromMode(mode);
-  return runs.filter(isReviewHistoryRun).filter((run) => {
-    const day = utcDay(run.published_at ?? run.completed_at);
-    if (!day) return false;
-    if (from && day < from) return false;
-    if (to && day > to) return false;
-    return true;
-  });
-}
 
 function isWindowMode(mode: HistoryMode): boolean {
   return mode.kind === "month" || mode.kind === "range" || mode.kind === "all";
@@ -153,7 +135,7 @@ export function AiHistoryProvider({ current, children }: { current: AiSearchRead
   }, []);
 
   const windowRuns = useMemo(
-    () => (catalog.phase === "ready" ? runsInScope(catalog.runs, mode, windowEnd) : []),
+    () => (catalog.phase === "ready" ? runsInSelection(catalog.runs, mode, windowEnd) : []),
     [catalog, mode, windowEnd],
   );
   const trendKey = useMemo(() => {
