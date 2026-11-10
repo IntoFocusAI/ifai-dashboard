@@ -14,6 +14,11 @@ export type AiSelectionScope = {
   /** Last day of the default window: the published run's day. Only read for the last 30 days. */
   windowEnd: string | null;
   engines: EngineGroupChoice;
+  /**
+   * True when the engine switch was live on screen, so the figures held the API engines the
+   * choice names. False when it read Not available* and every figure was the search engines'.
+   */
+  enginesReady: boolean;
 };
 
 /** The battery runs a window adds. A single run and a legacy run add none. */
@@ -63,8 +68,9 @@ export function parseAiSelectionScope(value: unknown): AiSelectionScope | null {
   if (!mode) return null;
   const engines = value.engines === "search" || value.engines === "api" || value.engines === "all" ? value.engines : null;
   if (!engines) return null;
+  if (typeof value.enginesReady !== "boolean") return null;
   const windowEnd = typeof value.windowEnd === "string" && DAY.test(value.windowEnd) ? value.windowEnd : null;
-  return { mode, windowEnd, engines };
+  return { mode, windowEnd, engines, enginesReady: value.enginesReady };
 }
 
 /** "Last 30 days · Oct 10 to Nov 8, 2026. Engines: All." for the Filter line of a download. */

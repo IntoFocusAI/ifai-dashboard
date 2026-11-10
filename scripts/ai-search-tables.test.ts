@@ -36,26 +36,31 @@ const read = (path: string) => readFileSync(new URL(`../${path}`, import.meta.ur
 const snapshot = historyFixtureSnapshot(PUBLISHED_OCTOBER_12_RUN_ID)!;
 
 test("a download request carries the date pill and the engine switch, and nothing malformed passes", () => {
-  assert.deepEqual(parseAiSelectionScope({ mode: { kind: "month" }, windowEnd: "2026-11-08", engines: "all" }), {
+  const ready = { enginesReady: true };
+  assert.deepEqual(parseAiSelectionScope({ mode: { kind: "month" }, windowEnd: "2026-11-08", engines: "all", ...ready }), {
     mode: { kind: "month" },
     windowEnd: "2026-11-08",
     engines: "all",
-  });
-  assert.deepEqual(parseAiSelectionScope({ mode: { kind: "range", from: "2026-11-05", to: "2026-10-20" }, engines: "search" }), {
-    mode: { kind: "range", from: "2026-10-20", to: "2026-11-05" },
-    windowEnd: null,
-    engines: "search",
+    enginesReady: true,
   });
   assert.deepEqual(
-    parseAiSelectionScope({ mode: { kind: "run", runId: PUBLISHED_OCTOBER_12_RUN_ID }, engines: "api" })?.mode,
+    parseAiSelectionScope({ mode: { kind: "range", from: "2026-11-05", to: "2026-10-20" }, engines: "search", enginesReady: false }),
+    { mode: { kind: "range", from: "2026-10-20", to: "2026-11-05" }, windowEnd: null, engines: "search", enginesReady: false },
+  );
+  assert.deepEqual(
+    parseAiSelectionScope({ mode: { kind: "run", runId: PUBLISHED_OCTOBER_12_RUN_ID }, engines: "api", ...ready })?.mode,
     { kind: "run", runId: PUBLISHED_OCTOBER_12_RUN_ID },
   );
   assert.equal(parseAiSelectionScope(null), null);
-  assert.equal(parseAiSelectionScope({ mode: { kind: "legacy", runId: "x" }, engines: "all" }), null);
-  assert.equal(parseAiSelectionScope({ mode: { kind: "run", runId: "1; drop table" }, engines: "all" }), null);
-  assert.equal(parseAiSelectionScope({ mode: { kind: "range", from: "Nov 5", to: "2026-11-08" }, engines: "all" }), null);
-  assert.equal(parseAiSelectionScope({ mode: { kind: "month" }, engines: "everything" }), null);
-  assert.equal(parseAiSelectionScope({ mode: { kind: "month" }, windowEnd: "soon", engines: "all" })?.windowEnd, null);
+  assert.equal(parseAiSelectionScope({ mode: { kind: "legacy", runId: "x" }, engines: "all", ...ready }), null);
+  assert.equal(parseAiSelectionScope({ mode: { kind: "run", runId: "1; drop table" }, engines: "all", ...ready }), null);
+  assert.equal(parseAiSelectionScope({ mode: { kind: "range", from: "Nov 5", to: "2026-11-08" }, engines: "all", ...ready }), null);
+  assert.equal(parseAiSelectionScope({ mode: { kind: "month" }, engines: "everything", ...ready }), null);
+  assert.equal(parseAiSelectionScope({ mode: { kind: "month" }, engines: "all" }), null, "the switch state is required");
+  assert.equal(parseAiSelectionScope({ mode: { kind: "month" }, windowEnd: "soon", engines: "all", ...ready })?.windowEnd, null);
+  // A download never drops the API engines the screen showed: it fails and says so.
+  const load = read("lib/ai-search/selection-load.ts");
+  assert.match(load, /if \(scope\.enginesReady && engineSwitchState\(load, scope\.engines\)\.kind !== "ready"\) \{\s+return \{ ok: false, message: API_ENGINES_FAILED \};/);
   assert.equal(
     selectionFilterLabel({ pillLabel: "Last 30 days · Oct 10 to Nov 8, 2026", engines: "search", enginesReady: true }),
     "Last 30 days · Oct 10 to Nov 8, 2026. Engines: Without API",
@@ -77,9 +82,9 @@ test("the server reads the same runs the pill names", () => {
   assert.deepEqual(runsInSelection(runs, { kind: "run", runId: PUBLISHED_OCTOBER_12_RUN_ID }, null), []);
   const context = read("components/v3/live/ai-search/AiHistoryContext.tsx");
   assert.match(context, /runsInSelection\(catalog\.runs, mode, windowEnd\)/);
-  const load = read("lib/ai-search/selection-load.ts");
+  const steps = read("lib/ai-search/selection-load.ts");
   for (const step of ["runsInSelection(", "clientWindowSnapshots(", "displayedAiRead(", "engineGroupRead(", "engineGroupTrend(", "apiRunsCoveringBattery(", "apiRunsInScope("]) {
-    assert.ok(load.includes(step), `the server selection uses ${step}`);
+    assert.ok(steps.includes(step), `the server selection uses ${step}`);
   }
 });
 

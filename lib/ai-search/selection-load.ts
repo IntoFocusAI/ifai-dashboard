@@ -51,6 +51,7 @@ export type AiSelection = {
 export type AiSelectionResult = { ok: true; selection: AiSelection } | { ok: false; message: string };
 
 const SELECTION_FAILED = "The runs in this selection could not be read.";
+const API_ENGINES_FAILED = "The API-engine runs in this selection could not be read. Try the download again.";
 
 type Loaded = { phase: "ready"; snapshot: AiSearchSnapshot } | { phase: "failed"; message: string };
 
@@ -124,7 +125,14 @@ export async function loadAiSelection(
   }
 
   const displayed = displayedAiRead(mode, selected, trend, current);
-  const load = await loadApiEngines(client, { ...scope, windowEnd }, battery, windowEnd, selectedDay);
+  // The screen's switch read Not available*: its figures were the search engines', so are these.
+  const load: ApiEngineLoad = scope.enginesReady
+    ? await loadApiEngines(client, { ...scope, windowEnd }, battery, windowEnd, selectedDay)
+    : { phase: "missing" };
+  // The screen held API engines and this read cannot: fail rather than write a smaller table.
+  if (scope.enginesReady && engineSwitchState(load, scope.engines).kind !== "ready") {
+    return { ok: false, message: API_ENGINES_FAILED };
+  }
   const narrowed = engineGroupRead(displayed, load, scope.engines);
   const window =
     mode.kind === "run"
