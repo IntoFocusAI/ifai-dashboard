@@ -276,7 +276,7 @@ export function specHero(snapshot: PortfolioRetailSnapshot): RetailOverviewHeroM
           .join(" ")
       : null,
     explainer: ready
-      ? "Every Amazon spec field is filled."
+      ? "Listings with every Amazon spec field filled."
       : reading.missingMessage?.split(". ")[0] ?? "Amazon spec-field reading not stored.",
     numerator: complete,
     denominator: checked,

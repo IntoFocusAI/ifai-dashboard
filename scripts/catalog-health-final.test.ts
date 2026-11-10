@@ -11,7 +11,12 @@ import {
   type ChannelSourceRow,
 } from "../lib/fender-canvas/map-channels.ts";
 import { heroFigureColor, heroFigureTone } from "../lib/fender-canvas/retail-overview-lead.ts";
-import { EPISODE_COLUMNS, episodeEndLabel, episodeKey } from "../lib/fender-canvas/stock-loss.ts";
+import {
+  awaitingInputsBreakdown,
+  EPISODE_COLUMNS,
+  episodeEndLabel,
+  episodeKey,
+} from "../lib/fender-canvas/stock-loss.ts";
 import { CLIENTS } from "../lib/client/active-client.ts";
 
 const read = (path: string) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
@@ -251,4 +256,81 @@ test("every Catalog Health TSX file stays at or under 400 lines", () => {
     const lines = read(`components/v3/live/${file}.tsx`).split("\n").length;
     assert.ok(lines <= 400, `${file}.tsx is ${lines} lines`);
   }
+});
+
+/* PM24 review, 10 Nov 2026. */
+
+test("at 1280 wide every Catalog Health table is fitted, and listing names clamp to two lines", () => {
+  for (const file of [
+    "components/v3/live/MapListingsTable.tsx",
+    "components/v3/live/StockLossPanel.tsx",
+    "components/v3/live/FenderListingsTable.tsx",
+    "components/v3/live/SuppressedListingsPanel.tsx",
+  ]) {
+    const source = read(file);
+    assert.match(source, /wrapColumnIds=\{wrapColumnIdsAfterFirst\(/, file);
+    assert.match(source, /RETAIL_FIT_TABLE/, file);
+  }
+  for (const file of [
+    "components/v3/live/MapListingsTable.tsx",
+    "components/v3/live/StockLossPanel.tsx",
+    "components/v3/live/FenderListingsTable.tsx",
+    "components/v3/live/FeaturedOfferRow.tsx",
+    "components/v3/live/CatalogGovernanceBundleTable.tsx",
+    "components/v3/live/CatalogGovernanceSpecTable.tsx",
+  ]) {
+    assert.match(read(file), /<ListingName name=/, file);
+  }
+  const css = read("components/v3/live/catalog-health.css");
+  assert.match(css, /\.listing-name \{[^}]*-webkit-line-clamp: 2/s);
+  assert.match(css, /\.retail-fit \.sourced-label \{[^}]*flex-direction: column/s);
+  assert.doesNotMatch(read("components/v3/live/MapListingsTable.tsx"), /listing-title-scroll/);
+});
+
+test("Out of Stock leads with a partial total labeled analyst estimate (X-25)", () => {
+  const hero = read("components/v3/live/StockLossHero.tsx");
+  assert.match(hero, /PartialFigureMark partial=\{partial\}/);
+  assert.match(hero, /const ANALYST_ESTIMATE = "analyst estimate"/);
+  assert.doesNotMatch(hero, />\s*Estimate\s*</);
+  const tag = read("components/v3/live/SourceTag.tsx");
+  assert.match(tag, /Estimate: "analyst estimate"/);
+  assert.match(tag, /data-source=\{source\}/);
+});
+
+test("the awaiting-inputs breakdown names each reason and never counts $0", () => {
+  type Row = Parameters<typeof awaitingInputsBreakdown>[0][number];
+  const row = (overrides: Partial<Row>): Row =>
+    ({
+      asin: "B000000001",
+      revenue_source: null,
+      est_lost_revenue_oos_365: null,
+      awaiting_inputs_reason: "no_sales_source",
+      ...overrides,
+    }) as Row;
+  const rows = [
+    row({ revenue_source: "smartscout", est_lost_revenue_oos_365: 120, awaiting_inputs_reason: null }),
+    row({}),
+    row({}),
+    row({ awaiting_inputs_reason: "smartscout_reports_no_sales" }),
+  ];
+  assert.equal(
+    awaitingInputsBreakdown(rows),
+    "3 listings are awaiting inputs and are not counted as $0: 2 with no sales source; 1 where SmartScout reports no sales.",
+  );
+  assert.equal(awaitingInputsBreakdown(rows.slice(0, 1)), null);
+});
+
+test("the AI Commerce card on Retail Overview matches its siblings", () => {
+  const panel = read("components/v3/live/CommerceConsensusPanel.tsx");
+  assert.match(panel, /retail-finding retail-overview-hero retail-commerce-hero/);
+  assert.match(panel, /data-consensus-commerce-hero="commerce"/);
+  assert.match(panel, /<RetailStatusMark tone=\{tone\} \/>/);
+  assert.match(panel, /<RetailShareDisc pie=\{pie\} measuredKey="matched"/);
+  const css = read("components/v3/live/catalog-health.css");
+  assert.match(css, /\.retail-overview-hero \.retail-overview-hero-row \{[^}]*flex-wrap: nowrap/s);
+});
+
+test("the panel shell sets no native title on the tab strip or the explanation toggle", () => {
+  assert.doesNotMatch(read("lib/canvas-sdk/CanvasShell.tsx"), /\(new\)`/);
+  assert.doesNotMatch(read("lib/canvas-sdk/panel-interactions.ts"), /toggle\.title\s*=/);
 });

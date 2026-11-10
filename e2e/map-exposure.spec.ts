@@ -33,7 +33,7 @@ test("MAP Leakage shows discounted retail value as an analyst estimate with its 
   await expect(card.locator("[data-map-exposure-value]")).toHaveText("$600.00* a month");
   await expect(card.locator("[data-map-exposure-units]")).toHaveText("SmartScout · 7 est. monthly units");
   await expect(card.locator("[data-map-exposure-coverage]")).toHaveText(
-    "2 of 3 listings below MAP estimated · 1 awaiting inputs",
+    "Covers 2 of 3 listings below MAP. 1 is awaiting inputs.",
   );
 
   // The formula, the source, and the awaiting-inputs breakdown sit in the tag's custom tooltip.
@@ -111,7 +111,7 @@ test("an approved exception leaves the discounted retail value", async ({ page }
 
   await expect(card.locator("[data-map-exposure-value]")).toHaveText("$100.00* a month");
   await expect(card.locator("[data-map-exposure-coverage]")).toHaveText(
-    "1 of 2 listings below MAP estimated · 1 awaiting inputs",
+    "Covers 1 of 2 listings below MAP. 1 is awaiting inputs.",
   );
   await expect(card.locator("[data-map-exposure-estimate]")).toHaveAttribute(
     "data-ifai-tooltip-desc",

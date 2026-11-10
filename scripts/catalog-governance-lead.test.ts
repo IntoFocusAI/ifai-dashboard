@@ -152,7 +152,8 @@ test("spec hero 100 complete of 100 is 100.0% green success", () => {
   assert.equal(hero.color, "var(--success-green)");
   assert.equal(hero.tone, "success");
   assert.equal(hero.label, "Specs complete");
-  assert.match(hero.explainer, /Every Amazon spec field is filled/);
+  // The caption defines the measure. It does not read as a claim about the figure above it.
+  assert.equal(hero.explainer, "Listings with every Amazon spec field filled.");
   assert.ok(hero.explainer.length < 48);
 });
 

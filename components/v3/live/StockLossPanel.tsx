@@ -4,6 +4,7 @@ import { Fragment, useEffect, useState } from "react";
 import { DefinedTerm } from "@/components/v3/live/DefinedTerm";
 import { figureTipAttrs } from "@/components/v3/live/FigureTip";
 import { ResizableTable, type RetailColumn } from "@/components/v3/live/ResizableTable";
+import { ListingName, RETAIL_FIT_TABLE, wrapColumnIdsAfterFirst } from "@/components/v3/live/RetailOverviewFigure";
 import { NewTag, SourceTag, type DataSource } from "@/components/v3/live/SourceTag";
 import { StockLossDetail } from "@/components/v3/live/StockLossDetail";
 import { StockLossHero } from "@/components/v3/live/StockLossHero";
@@ -34,13 +35,13 @@ function sourced(name: string, ...sources: DataSource[]) {
 }
 
 const STOCK_LOSS_COLUMNS: RetailColumn[] = [
-  { id: "listing", name: "Listing", label: "Listing", width: 260, minWidth: 160, sort: "text" },
+  { id: "listing", name: "Listing", label: "Listing", width: 260, minWidth: 220, sort: "text" },
   {
     id: "lost",
     name: "Est. lost sales, 12 months",
     label: sourced("Est. lost sales, 12 months", "Estimate"),
-    width: 210,
-    minWidth: 150,
+    width: 138,
+    minWidth: 124,
     className: "money",
     sort: "number",
   },
@@ -48,8 +49,8 @@ const STOCK_LOSS_COLUMNS: RetailColumn[] = [
     id: "lost90",
     name: "Est. lost sales, 90 days",
     label: sourced("Est. lost sales, 90 days", "Estimate"),
-    width: 200,
-    minWidth: 140,
+    width: 138,
+    minWidth: 124,
     className: "money",
     sort: "number",
   },
@@ -57,8 +58,8 @@ const STOCK_LOSS_COLUMNS: RetailColumn[] = [
     id: "lost30",
     name: "Est. lost sales, 30 days",
     label: sourced("Est. lost sales, 30 days", "Estimate"),
-    width: 200,
-    minWidth: 140,
+    width: 138,
+    minWidth: 124,
     className: "money",
     sort: "number",
   },
@@ -66,16 +67,16 @@ const STOCK_LOSS_COLUMNS: RetailColumn[] = [
     id: "oos365",
     name: "Out-of-stock days, 12 months",
     label: sourced("Out-of-stock days, 12 months", "Keepa"),
-    width: 210,
-    minWidth: 150,
+    width: 112,
+    minWidth: 104,
     sort: "number",
   },
   {
     id: "rate",
     name: "Sales per in-stock day",
     label: sourced("Sales per in-stock day", "SmartScout", "Keepa"),
-    width: 250,
-    minWidth: 170,
+    width: 104,
+    minWidth: 96,
     className: "money",
     sort: "number",
   },
@@ -83,8 +84,8 @@ const STOCK_LOSS_COLUMNS: RetailColumn[] = [
     id: "nobb",
     name: "No Buy Box days, 12 months",
     label: sourced("No Buy Box days, 12 months", "Keepa"),
-    width: 210,
-    minWidth: 150,
+    width: 96,
+    minWidth: 88,
     sort: "number",
   },
 ];
@@ -187,6 +188,8 @@ export function StockLossPanel() {
               maxHeight={560}
               sort={sorted.sort}
               onSort={sorted.onSort}
+              wrapColumnIds={wrapColumnIdsAfterFirst(STOCK_LOSS_COLUMNS)}
+              tableClassName={RETAIL_FIT_TABLE}
             >
               <tbody>
                 {sorted.rows.length === 0 ? (
@@ -225,8 +228,7 @@ export function StockLossPanel() {
                           }}
                         >
                           <td>
-                            <strong>{row.title ?? row.asin}</strong>
-                            <br />
+                            <ListingName name={row.title ?? row.asin} />
                             <span className="asin-chip">{row.asin}</span>
                             {noActiveOffer(row) ? (
                               <span

@@ -242,6 +242,41 @@ export function awaitingInputsReason(row: StockLossRow): string {
   }
 }
 
+const AWAITING_REASON_PHRASE: Record<AwaitingInputsReason, string> = {
+  no_keepa_history: "with no Keepa history yet",
+  no_sales_source: "with no sales source",
+  smartscout_reports_no_sales: "where SmartScout reports no sales",
+  too_few_in_stock_days: "with too few in-stock days to set a sales rate",
+};
+
+const AWAITING_REASON_ORDER: readonly AwaitingInputsReason[] = [
+  "no_sales_source",
+  "smartscout_reports_no_sales",
+  "too_few_in_stock_days",
+  "no_keepa_history",
+];
+
+/**
+ * How many listings are awaiting inputs, by reason, as one sentence for the total's tooltip.
+ * Null when every listing is estimated.
+ */
+export function awaitingInputsBreakdown(rows: readonly StockLossRow[], window: LossWindow = 365): string | null {
+  const counts = new Map<AwaitingInputsReason, number>();
+  let awaiting = 0;
+  for (const row of rows) {
+    if (lostSales(row, window) != null && row.revenue_source) continue;
+    awaiting += 1;
+    const reason = row.awaiting_inputs_reason ?? "no_sales_source";
+    counts.set(reason, (counts.get(reason) ?? 0) + 1);
+  }
+  if (awaiting === 0) return null;
+  const parts = AWAITING_REASON_ORDER.filter((reason) => counts.has(reason)).map(
+    (reason) => `${new Intl.NumberFormat("en-US").format(counts.get(reason)!)} ${AWAITING_REASON_PHRASE[reason]}`,
+  );
+  const count = new Intl.NumberFormat("en-US").format(awaiting);
+  return `${count} ${awaiting === 1 ? "listing is" : "listings are"} awaiting inputs and ${awaiting === 1 ? "is" : "are"} not counted as $0: ${parts.join("; ")}.`;
+}
+
 export function noActiveOffer(row: StockLossRow): boolean {
   return row.featured_offer_state === "no_active_offer";
 }

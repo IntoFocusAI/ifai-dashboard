@@ -259,10 +259,19 @@ function listingWord(n: number): string {
   return n === 1 ? "listing" : "listings";
 }
 
-/** "18 of 118 listings below MAP estimated". */
+/** "Covers 17 of 118 listings below MAP." */
 export function mapExposureCoverage(summary: MapExposureSummary): string {
-  return `${formatInt(summary.estimated)} of ${formatInt(summary.violations)} ${listingWord(summary.violations)} below MAP estimated`;
+  return `Covers ${formatInt(summary.estimated)} of ${formatInt(summary.violations)} ${listingWord(summary.violations)} below MAP.`;
 }
+
+/** "101 are awaiting inputs." Null when every listing is estimated. */
+export function mapAwaitingCount(summary: MapExposureSummary): string | null {
+  if (summary.awaiting <= 0) return null;
+  return `${formatInt(summary.awaiting)} ${summary.awaiting === 1 ? "is" : "are"} awaiting inputs.`;
+}
+
+/** What "awaiting inputs" means on MAP exposure, in one sentence. */
+export const MAP_AWAITING_RULE = `Unit estimates exist only for Amazon, so a listing priced below MAP only at another retailer, or with no ${MAP_UNITS_SOURCE} unit estimate, or with zero estimated units, is awaiting inputs.`;
 
 /** The awaiting-inputs breakdown, as one sentence. Null when nothing is awaiting. */
 export function mapAwaitingSentence(summary: MapExposureSummary): string | null {
@@ -281,7 +290,8 @@ export function mapExposureSummaryTip(summary: MapExposureSummary, exceptions?: 
   const read = formatSnapshotDay(summary.latestSnapshot);
   return [
     `Each listing's price gap below MAP on Amazon times its ${MAP_UNITS_SOURCE} estimated monthly units on Amazon, added across the listings that have both.`,
-    `${mapExposureCoverage(summary)}.`,
+    mapExposureCoverage(summary),
+    MAP_AWAITING_RULE,
     mapAwaitingSentence(summary),
     "It is the discount at retail for one month if today's gaps and sales rates hold. It is an analyst estimate.",
     read ? `${MAP_UNITS_SOURCE} read ${read}.` : null,

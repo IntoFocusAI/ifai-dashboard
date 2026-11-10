@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ResizableTable, type RetailColumn } from "@/components/v3/live/ResizableTable";
+import { ListingName } from "@/components/v3/live/RetailOverviewFigure";
 import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
 import {
   listingMatchesSpecFilters,
@@ -228,7 +229,7 @@ function SpecGapRows({ gaps }: { gaps: AmazonSpecGap[] }) {
             slice.map((row) => (
               <tr key={row.asin}>
                 <td>
-                  <strong>{row.modelOrTitle?.trim() || "Listing"}</strong>
+                  <ListingName name={row.modelOrTitle?.trim() || "Listing"} />
                 </td>
                 <td className="asin-col">
                   <AsinLink asin={row.asin} />

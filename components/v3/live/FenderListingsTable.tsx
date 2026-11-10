@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ChannelPriceCell } from "@/components/v3/live/ChannelPriceCell";
 import { ResizableTable, type RetailColumn } from "@/components/v3/live/ResizableTable";
+import { ListingName, RETAIL_FIT_TABLE, wrapColumnIdsAfterFirst } from "@/components/v3/live/RetailOverviewFigure";
 import { useFullPopulationSort } from "@/components/v3/live/useFullPopulationSort";
 import { listingChannelPricesQuery, listingsQuery } from "@/lib/canvasData";
 import { CLIENT_TABLE_PAGE_SIZE, loadFilteredPages } from "@/lib/fender-canvas/full-result-sort";
@@ -43,8 +44,8 @@ function amazonHref(asin: string): string | null {
   return /^[A-Z0-9]{10}$/.test(asin) ? `https://www.amazon.com/dp/${asin}` : null;
 }
 
-function moneyColumn(id: string, name: string, width = 164): RetailColumn {
-  return { id, name, label: name, width, minWidth: 148, className: "money", sort: "number" };
+function moneyColumn(id: string, name: string, width = 108): RetailColumn {
+  return { id, name, label: name, width, minWidth: 96, className: "money", sort: "number" };
 }
 
 function exploreColumns(channels: ExploreChannelColumn[], showReviews: boolean): RetailColumn[] {
@@ -54,18 +55,18 @@ function exploreColumns(channels: ExploreChannelColumn[], showReviews: boolean):
       name: "Listing",
       label: "Listing",
       width: MAP_LISTING_COLUMN_WIDTH,
-      minWidth: 96,
+      minWidth: 160,
       className: "listing-col",
       sort: "text",
     },
-    { id: "asin", name: "ASIN", label: "ASIN", width: 118, minWidth: 108, className: "asin-col", sort: "text" },
-    { id: "partner", name: "Partner / Bundle", label: "Partner / Bundle", width: 150, minWidth: 100, sort: "text" },
-    { id: "map", name: "MAP", label: "MAP", width: 104, minWidth: 88, className: "money", sort: "number" },
-    ...channels.map((channel) => moneyColumn(channel.key, channel.name, channel.key === "musicians-friend" ? 176 : 164)),
+    { id: "asin", name: "ASIN", label: "ASIN", width: 92, minWidth: 88, className: "asin-col", sort: "text" },
+    { id: "partner", name: "Partner / Bundle", label: "Partner / Bundle", width: 116, minWidth: 96, sort: "text" },
+    { id: "map", name: "MAP", label: "MAP", width: 80, minWidth: 72, className: "money", sort: "number" },
+    ...channels.map((channel) => moneyColumn(channel.key, channel.name, channel.key === "amazon" ? 116 : 108)),
     ...(showReviews
-      ? [{ id: "reviews", name: "Reviews", label: "Reviews", width: 124, minWidth: 112, sort: "number" } as RetailColumn]
+      ? [{ id: "reviews", name: "Reviews", label: "Reviews", width: 88, minWidth: 80, sort: "number" } as RetailColumn]
       : []),
-    { id: "channels", name: "Channels", label: "Channels", width: 120, minWidth: 80, sort: "text" },
+    { id: "channels", name: "Channels", label: "Channels", width: 96, minWidth: 80, sort: "text" },
   ];
 }
 
@@ -209,6 +210,8 @@ export function FenderListingsTable() {
         sort={population.sort}
         onSort={population.onSort}
         filterLabel={filterLabel(filter)}
+        wrapColumnIds={wrapColumnIdsAfterFirst(columns)}
+        tableClassName={RETAIL_FIT_TABLE}
       >
         <tbody>
           {loading && rows.length === 0 ? (
@@ -238,9 +241,7 @@ export function FenderListingsTable() {
             return (
               <tr key={row.asin}>
                 <td className="listing-col">
-                  <span className="listing-title-scroll">
-                    <strong>{label}</strong>
-                  </span>
+                  <ListingName name={label} />
                 </td>
                 <td className="asin-col">
                   {exploreHref ? (

@@ -12,15 +12,22 @@ const SOURCE_TITLES: Record<DataSource, string> = {
   Estimate: "Analyst estimate built from Keepa and SmartScout inputs. Not reported sales.",
 };
 
+/** What each tag reads on screen. An estimate always wears the required "analyst estimate" label. */
+const SOURCE_LABELS: Record<DataSource, string> = {
+  Keepa: "Keepa",
+  SmartScout: "SmartScout",
+  Estimate: "analyst estimate",
+};
+
 /** The source name with its definition in the shared custom tooltip (no native title). */
 export function SourceTag({ source }: { source: DataSource }) {
   return (
     <span
-      {...figureTipAttrs(source, SOURCE_TITLES[source], "source-tag")}
+      {...figureTipAttrs(SOURCE_LABELS[source], SOURCE_TITLES[source], "source-tag")}
       className={`source-tag source-tag-${source.toLowerCase()} ifai-term`}
       data-source={source}
     >
-      {source}
+      {SOURCE_LABELS[source]}
     </span>
   );
 }

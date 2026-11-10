@@ -49,7 +49,7 @@ export function ChannelPriceCell({
       {fact.gap != null && below ? (
         <span className="channel-gap data-status data-status-bad" data-status="bad">
           <StatusGlyph status="bad" />
-          <span className="data-status-word">{formatUsd(fact.gap, { signed: true })} below MAP</span>
+          <span className="data-status-word">{formatUsd(fact.gap, { signed: true })} below</span>
         </span>
       ) : null}
       {fact.gap != null && !below ? (

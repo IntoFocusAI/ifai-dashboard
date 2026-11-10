@@ -237,7 +237,14 @@ test("Retail Overview places three heroes before the essay and drops the stacked
 
   // AI Commerce sits in the same band as the three share pies.
   assert.match(commerce, /RetailOverviewLead/);
-  assert.match(commerce, /CommerceHeroCard/);
+  // The AI Commerce card is drawn here so it matches its three siblings: status mark and word,
+  // and the disc in the chart tokens.
+  assert.match(commerce, /function CommerceCard/);
+  assert.match(commerce, /retail-overview-hero/);
+  assert.match(commerce, /RetailStatusMark tone=\{tone\}/);
+  assert.match(commerce, /RetailShareDisc/);
+  assert.match(commerce, /scoreTone\(score\)/);
+  assert.doesNotMatch(commerce, /CitationPieDisc|CommerceHeroCard/);
   assert.match(lead, /leading/);
   assert.match(lead, /retailOverviewHeroes/);
   assert.match(lead, /ai-lead-figure/);

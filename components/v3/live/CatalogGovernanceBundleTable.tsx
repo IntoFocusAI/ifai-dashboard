@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ResizableTable, type RetailColumn } from "@/components/v3/live/ResizableTable";
+import { ListingName } from "@/components/v3/live/RetailOverviewFigure";
 import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
 import {
   catalogBundleBuyBoxLabel,
@@ -132,13 +133,8 @@ export function CatalogGovernanceBundleTable({ rows }: { rows: UnnestedBundleOpp
             slice.map((row) => (
               <tr key={row.asin}>
                 <td>
-                  <strong>{row.modelOrTitle ?? "Listing"}</strong>
-                  {row.bundleName ? (
-                    <>
-                      <br />
-                      {row.bundleName}
-                    </>
-                  ) : null}
+                  <ListingName name={row.modelOrTitle ?? "Listing"} />
+                  {row.bundleName ?? null}
                 </td>
                 <td className="asin-col">
                   <AsinLink asin={row.asin} href={httpUrl(row.productUrl) ?? amazonHref(row.asin)} />

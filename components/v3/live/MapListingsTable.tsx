@@ -4,6 +4,7 @@ import { Fragment } from "react";
 import "@/components/v3/live/catalog-health.css";
 import { ChannelPriceCell } from "@/components/v3/live/ChannelPriceCell";
 import { figureTipAttrs } from "@/components/v3/live/FigureTip";
+import { ListingName, RETAIL_FIT_TABLE, wrapColumnIdsAfterFirst } from "@/components/v3/live/RetailOverviewFigure";
 import { ResizableTable, type RetailColumn } from "@/components/v3/live/ResizableTable";
 import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
 import {
@@ -63,12 +64,13 @@ function amazonHref(asin: string): string | null {
 }
 
 function mapColumns(model: MapTabModel, withExposure: boolean): RetailColumn[] {
-  const money = (id: string, name: string, width = 164): RetailColumn => ({
+  // Widths fit all nine columns in the panel at 1280 wide. A price stacks over its gap.
+  const money = (id: string, name: string, width = 108): RetailColumn => ({
     id,
     name,
     label: name,
     width,
-    minWidth: 148,
+    minWidth: 96,
     className: "money",
     sort: "number",
   });
@@ -78,22 +80,22 @@ function mapColumns(model: MapTabModel, withExposure: boolean): RetailColumn[] {
       name: "Listing",
       label: "Listing",
       width: MAP_LISTING_COLUMN_WIDTH,
-      minWidth: withExposure ? 180 : 96,
+      minWidth: 140,
       className: "listing-col",
       sort: "text",
     },
-    { id: "asin", name: "ASIN", label: "ASIN", width: 118, minWidth: 108, className: "asin-col", sort: "text" },
-    { id: "map", name: "MAP", label: "MAP", width: 104, minWidth: 88, className: "money", sort: "number" },
+    { id: "asin", name: "ASIN", label: "ASIN", width: 92, minWidth: 88, className: "asin-col", sort: "text" },
+    { id: "map", name: "MAP", label: "MAP", width: 80, minWidth: 72, className: "money", sort: "number" },
   ];
-  if (model.showAmazon) columns.push(money("amazon", "Amazon"));
+  if (model.showAmazon) columns.push(money("amazon", "Amazon", 116));
   // R-09: Amazon gap x SmartScout units = discounted retail value, read left to right.
   if (withExposure) {
     columns.push({
       id: MAP_UNITS_COLUMN_ID,
       name: `${MAP_UNITS_LABEL} (${MAP_UNITS_SOURCE})`,
       label: tagged(MAP_UNITS_LABEL, MAP_UNITS_SOURCE),
-      width: 150,
-      minWidth: 120,
+      width: 96,
+      minWidth: 84,
       className: "money",
       sort: "number",
     });
@@ -101,16 +103,16 @@ function mapColumns(model: MapTabModel, withExposure: boolean): RetailColumn[] {
       id: MAP_EXPOSURE_COLUMN_ID,
       name: `${MAP_EXPOSURE_LABEL} a month (${ANALYST_ESTIMATE_LABEL})`,
       label: tagged(`${MAP_EXPOSURE_LABEL} a month`, ANALYST_ESTIMATE_LABEL, true),
-      width: 190,
-      minWidth: 150,
+      width: 108,
+      minWidth: 100,
       className: "money",
       sort: "number",
     });
   }
   if (model.showWalmart) columns.push(money("walmart", "Walmart"));
-  if (model.showMusiciansFriend) columns.push(money("musicians-friend", "Musician's Friend", 176));
+  if (model.showMusiciansFriend) columns.push(money("musicians-friend", "Musician's Friend"));
   for (const channel of model.extraChannels) columns.push(money(channel.channel, channel.name));
-  columns.push(SET_ASIDE_SORT_COLUMN);
+  columns.push({ ...SET_ASIDE_SORT_COLUMN, width: 92, minWidth: 84 });
   return columns;
 }
 
@@ -176,7 +178,8 @@ export function MapListingsTable({
       maxHeight={520}
       sort={sorted.sort}
       onSort={sorted.onSort}
-      tableClassName="table-no-row-hover"
+      wrapColumnIds={wrapColumnIdsAfterFirst(columns)}
+      tableClassName={`table-no-row-hover ${RETAIL_FIT_TABLE}`}
     >
       <tbody>
         {rows.length === 0 ? (
@@ -199,9 +202,7 @@ export function MapListingsTable({
               <Fragment key={row.asin}>
               <tr>
                 <td className="listing-col">
-                  <span className="listing-title-scroll">
-                    <strong>{listingLabel(row)}</strong>
-                  </span>
+                  <ListingName name={listingLabel(row)} />
                 </td>
                 <td className="asin-col">
                   {href ? (

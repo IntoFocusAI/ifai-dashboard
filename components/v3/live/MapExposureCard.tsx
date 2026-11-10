@@ -9,8 +9,10 @@ import {
   AWAITING_INPUTS_LABEL,
   MAP_EXPOSURE_LABEL,
   MAP_UNITS_LABEL,
+  MAP_AWAITING_RULE,
   MAP_UNITS_SOURCE,
   formatSnapshotDay,
+  mapAwaitingCount,
   mapAwaitingSentence,
   mapExposureCoverage,
   mapExposureSummaryTip,
@@ -31,7 +33,7 @@ function coveragePartial(summary: MapExposureSummary): PartialFigure | null {
   const read = formatSnapshotDay(summary.latestSnapshot);
   return {
     reason: "coverage",
-    missing,
+    missing: `${MAP_AWAITING_RULE} ${missing}`,
     coverage: `${formatInt(summary.estimated)} of ${formatInt(summary.violations)} listings below MAP`,
     source: `${MAP_UNITS_SOURCE} estimated monthly units${read ? `, read ${read},` : ""} and the stored Amazon price gap`,
     effect: "The total covers only the estimated listings, so it is lower than the full exposure.",
@@ -109,8 +111,7 @@ export function MapExposureCard({
             </span>
           ) : null}
           <span className="findability-lead-ratio" data-map-exposure-coverage="">
-            {mapExposureCoverage(summary)}
-            {summary.awaiting > 0 ? ` · ${formatInt(summary.awaiting)} awaiting inputs` : ""}
+            {[mapExposureCoverage(summary), mapAwaitingCount(summary)].filter(Boolean).join(" ")}
           </span>
         </>
       ) : null}

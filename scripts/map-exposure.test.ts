@@ -7,7 +7,9 @@ import {
   ANALYST_ESTIMATE_LABEL,
   AWAITING_INPUTS_LABEL,
   MAP_EXPOSURE_LABEL,
+  MAP_AWAITING_RULE,
   amazonGapBelowMap,
+  mapAwaitingCount,
   mapAwaitingSentence,
   mapExposure,
   mapExposureCoverage,
@@ -121,11 +123,17 @@ test("the summary counts estimated and awaiting listings and totals one source",
     no_units_sold: 1,
     other_retailer_only: 1,
   });
-  assert.equal(mapExposureCoverage(summary), "2 of 6 listings below MAP estimated");
+  assert.equal(mapExposureCoverage(summary), "Covers 2 of 6 listings below MAP.");
+  assert.equal(mapAwaitingCount(summary), "4 are awaiting inputs.");
   assert.match(mapAwaitingSentence(summary) ?? "", /^4 are awaiting inputs and are not counted as \$0: /);
   const tip = mapExposureSummaryTip(summary, "1 listing set aside as an approved exception is left out of this count.");
   assert.match(tip, /price gap below MAP on Amazon times its SmartScout estimated monthly units/);
-  assert.match(tip, /2 of 6 listings below MAP estimated/);
+  assert.match(tip, /Covers 2 of 6 listings below MAP\./);
+  // The tooltip says what is awaited: units exist only for Amazon, and zero units count as awaiting.
+  assert.match(tip, /Unit estimates exist only for Amazon/);
+  assert.match(tip, /only at another retailer/);
+  assert.match(tip, /zero estimated units, is awaiting inputs/);
+  assert.equal(tip.includes(MAP_AWAITING_RULE), true);
   assert.match(tip, /analyst estimate/);
   assert.match(tip, /approved exception is left out/);
 });
@@ -138,6 +146,7 @@ test("no estimated listing leaves the total empty, never $0", () => {
   const none = mapExposureSummary([], LOOKUP);
   assert.equal(none.totalValue, null);
   assert.equal(mapAwaitingSentence(none), null);
+  assert.equal(mapAwaitingCount(none), null);
 });
 
 test("an approved exception leaves the exposure total (R-12)", () => {

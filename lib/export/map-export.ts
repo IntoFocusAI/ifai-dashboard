@@ -162,7 +162,7 @@ export async function loadMapSource(): Promise<SourceRead> {
           summary.totalValue != null
             ? `${MAP_EXPOSURE_LABEL} (${ANALYST_ESTIMATE_LABEL}, ${MAP_UNITS_SOURCE} units): ${formatUsd(summary.totalValue)} a month.`
             : null,
-          `${mapExposureCoverage(summary)}.`,
+          mapExposureCoverage(summary),
           mapAwaitingSentence(summary),
         ]
           .filter(Boolean)

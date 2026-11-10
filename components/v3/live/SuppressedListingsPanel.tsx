@@ -2,7 +2,12 @@
 
 import { Fragment, useEffect, useState } from "react";
 import { DefinedTerm } from "@/components/v3/live/DefinedTerm";
-import { RetailShareDisc, RetailStatusMark } from "@/components/v3/live/RetailOverviewFigure";
+import {
+  RETAIL_FIT_TABLE,
+  RetailShareDisc,
+  RetailStatusMark,
+  wrapColumnIdsAfterFirst,
+} from "@/components/v3/live/RetailOverviewFigure";
 import { ResizableTable } from "@/components/v3/live/ResizableTable";
 import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
 import {
@@ -288,6 +293,8 @@ export function SuppressedListingsPanel({
             maxHeight={520}
             sort={sorted.sort}
             onSort={sorted.onSort}
+            wrapColumnIds={wrapColumnIdsAfterFirst(TABLE_COLUMNS)}
+            tableClassName={RETAIL_FIT_TABLE}
           >
             <tbody>
               {sorted.rows.length === 0 ? (

@@ -52,6 +52,33 @@ export function RetailShareDisc({
   );
 }
 
+/** A name longer than this is likely cut by the two-line clamp, so it gets its full text in a tooltip. */
+const LISTING_NAME_TIP_LENGTH = 44;
+
+/**
+ * A listing name in a table cell: two lines at most, so a row never grows past the name.
+ * A long name opens in full in the shared custom tooltip.
+ */
+export function ListingName({ name }: { name: string }) {
+  const long = name.length > LISTING_NAME_TIP_LENGTH;
+  return (
+    <strong
+      className={long ? "listing-name ifai-term" : "listing-name"}
+      {...(long ? { "data-ifai-tooltip-title": "Listing", "data-ifai-tooltip-desc": name } : {})}
+    >
+      {name}
+    </strong>
+  );
+}
+
+/** Every column after the first: the ids a fitted Catalog Health table lets wrap. */
+export function wrapColumnIdsAfterFirst(columns: readonly { id: string }[]): string[] {
+  return columns.slice(1).map((column) => column.id);
+}
+
+/** Table class for a Catalog Health table that fits the panel at 1280 wide without side scroll. */
+export const RETAIL_FIT_TABLE = "retail-fit";
+
 /** The mark and word under a status-colored retail figure. Nothing when the figure has no status. */
 export function RetailStatusMark({ tone }: { tone: NodeStatus | null | undefined }) {
   const status = dataStatusFromNode(tone);

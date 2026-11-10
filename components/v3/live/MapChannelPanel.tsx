@@ -246,18 +246,16 @@ function MapTopRow({
       }}
     >
       <MapLeakageLead read={read} />
-      {exposure ? <MapExposureCard state={exposure} exceptionsSentence={exceptionsSentence} /> : null}
-      <div
-        className="content-box"
-        data-map-notes=""
-        style={{ flex: "1 1 220px", alignSelf: "stretch", minWidth: 180, marginTop: 0 }}
-      >
-        <MapNotes
-          read={read}
-          channels={channels}
-          walmartMissing={walmartMissing}
-          musiciansFriendLastRunAt={musiciansFriendLastRunAt}
-        />
+      <div className="map-top-side" data-map-top-side="">
+        {exposure ? <MapExposureCard state={exposure} exceptionsSentence={exceptionsSentence} /> : null}
+        <div className="content-box" data-map-notes="">
+          <MapNotes
+            read={read}
+            channels={channels}
+            walmartMissing={walmartMissing}
+            musiciansFriendLastRunAt={musiciansFriendLastRunAt}
+          />
+        </div>
       </div>
     </div>
   );

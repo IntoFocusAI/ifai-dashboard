@@ -121,7 +121,7 @@ test.describe("drill-downs", () => {
     await canvas.openTab("Catalog Governance");
     const catalog = page.locator(".catalog-governance");
     // Let the data speak: the screen says which population is counted; what it is not is in the tooltip.
-    await expect(catalog).toContainText("counts the bundles in the retail read");
+    await expect(catalog).toContainText("counts monitored bundles that have an offer for sale on Amazon now");
     await expect(catalog).not.toContainText("not the full catalog");
     await expect(catalog).not.toContainText("listings below MAP");
     await expect(catalog).not.toContainText("Average price gap");
