@@ -132,7 +132,7 @@ export function HistoryTrendsPanel() {
                     scoringLabel(trend.phase === "ready" ? trend.snapshots.find((item) => item.run.audit_run_id === boundary.afterRunId)?.run ?? {} : {}) ?? SCORING_LABELS.original_winner
                   }. ${formatDay(boundary.beforeDay)} uses ${
                     scoringLabel(trend.phase === "ready" ? trend.snapshots.find((item) => item.run.audit_run_id === boundary.beforeRunId)?.run ?? {} : {}) ?? SCORING_LABELS.mention_share
-                  }. The line can connect these runs. The rates were not scored the same way.`
+                  }.`
                 : `${formatDay(boundary.afterDay)} to ${formatDay(boundary.beforeDay)}. Open the questions on each side before comparing the rates.`}
             </p>
             <details>
@@ -210,9 +210,6 @@ export function HistoryTrendsPanel() {
           </button>
         </div>
       </div>
-      <p className="ai-history-note">
-        <AiTerm term="provider error">Provider errors</AiTerm> and <AiTerm term="no clear leader">unresolved answers</AiTerm> stay outside both rates.
-      </p>
       <label className="ai-history-query">
         Question
         <select

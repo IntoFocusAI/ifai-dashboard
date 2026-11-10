@@ -8,6 +8,7 @@ import { AiReadGate, mutedText } from "@/components/v3/live/ai-search/AiReadGate
 import { useTrendSlot } from "@/components/v3/live/ai-search/AiSearchSurface";
 import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
 import { CitationPieDisc, type PieDiscInput } from "@/components/v3/live/ai-search/CitationPieDisc";
+import { CopyTip } from "@/components/v3/live/ai-search/CopyTip";
 import { EngineGroupScope } from "@/components/v3/live/ai-search/EngineGroupScope";
 import { EvidenceLink } from "@/components/v3/live/ai-search/EvidenceLink";
 import { MixedScoringTip } from "@/components/v3/live/ai-search/MixedScoringTip";
@@ -64,6 +65,9 @@ function groupSortValue(
 }
 
 const SIM = AI_TABS.simulations;
+
+/** Why a lead with a confirmed contradiction sits outside the wins. Lives in the count's tooltip. */
+const DISQUALIFIED_TIP = `These answers named ${leadBrand()} most and contradicted a fact IntoFocus verified on a ${brandName()} page, so they are not counted as wins.`;
 
 const groupKey = (row: RoleGroupTally) => row.key;
 
@@ -187,21 +191,21 @@ function WinCard({ snapshot }: { snapshot: AiSearchSnapshot }) {
           <EvidenceLink focus={{ field: "role", value: "brand_associated_discovery/resolved" }} tab={SIM}>
             {keptOut(s.roles.associated)}
           </EvidenceLink>
-          . Counted on its own, not inside unbranded discovery.
+          .
         </li>
         <li>
           <AiTerm term="shopping guidance">Shopping guidance</AiTerm>:{" "}
           <EvidenceLink focus={{ field: "role", value: "shopping_guidance" }} tab={SIM}>
             {keptOut(s.roles.guidance)}
           </EvidenceLink>
-          . Not in either rate above.
+          .
         </li>
         <li>
           <AiTerm term="product-fact question">Product-fact questions</AiTerm>:{" "}
           <EvidenceLink focus={{ field: "role", value: "product_fact" }} tab={SIM}>
             {keptOut(s.roles.productFact)}
           </EvidenceLink>
-          . These are still stored as shopping prompts, and they are not in either rate above.
+          .
         </li>
         <li>
           <EvidenceLink focus={{ field: "kind", value: "probe" }} tab={SIM}>
@@ -211,7 +215,10 @@ function WinCard({ snapshot }: { snapshot: AiSearchSnapshot }) {
         </li>
         {s.commercial.disqualified > 0 ? (
           <li>
-            {formatInt(s.commercial.disqualified)} {brandName()} leads with a <AiTerm term="confirmed contradiction" />, not counted as wins
+            <CopyTip label="Confirmed contradiction" description={DISQUALIFIED_TIP}>
+              {formatInt(s.commercial.disqualified)} {brandName()} leads
+            </CopyTip>{" "}
+            with a <AiTerm term="confirmed contradiction" />
           </li>
         ) : null}
       </ul>
@@ -342,7 +349,7 @@ function CategoryTable({ snapshot, showSmallSample }: { snapshot: AiSearchSnapsh
           })}
         </tbody>
       </ResizableTable>
-      <KeptOutNote snapshot={snapshot} />
+      <KeptOutNote snapshot={snapshot} inlineCaveats={false} />
     </div>
   );
 }

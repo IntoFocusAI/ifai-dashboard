@@ -1,5 +1,6 @@
 import {
   callOutcome,
+  cleanPrompt,
   isCommercial,
   isError,
   isFailedResultEngine,
@@ -7,10 +8,13 @@ import {
   tallyCommercial,
   type OutcomeTally,
 } from "@/lib/ai-search/run-metrics";
+import { storedQuestionRole } from "@/lib/ai-search/stored-question-roles";
 import type { AiCallRow } from "@/lib/ai-search/types";
+import { activeClientKey } from "@/lib/client/active-client";
 
 /**
- * What kind of question a stored prompt is, read from its text.
+ * What kind of question a stored prompt is: the role the client's battery stores for that
+ * wording when it stores one (stored-question-roles.ts), else read from its text.
  * Product-fact probes (`prompt_kind = probe`) stay their own bucket.
  * The other five roles are commercial prompts that must not share one win rate.
  */
@@ -60,6 +64,9 @@ export function questionRole(row: {
   prompt?: string | null;
 }): QuestionRole {
   if (row.prompt_kind === "probe") return "probe";
+  // A battery that stores each prompt's role is the truth for that client (Ledlenser).
+  const stored = storedQuestionRole(activeClientKey(), cleanPrompt(row.prompt));
+  if (stored) return stored;
   const text = row.prompt ?? "";
   if (PRODUCT_FACT.test(text)) return "product_fact";
   if (SHOPPING_GUIDANCE.test(text)) return "shopping_guidance";
