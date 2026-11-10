@@ -215,3 +215,13 @@
 .ifai-canvas .map-top-side > [data-map-notes] {
   flex: 1 1 auto;
 }
+
+/*
+ * A lead total with the partial asterisk. At hero size the asterisk's dotted underline falls
+ * far below the glyph and reads as a stray mark on the next line, so the asterisk alone is
+ * the tooltip target here.
+ */
+.ifai-canvas .stock-loss-hero .partial-figure-mark.ifai-term,
+.ifai-canvas .map-exposure-figure .partial-figure-mark.ifai-term {
+  border-bottom: 0;
+}

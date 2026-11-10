@@ -463,7 +463,7 @@ export function bundlePopulationTip(reading: RetailReading<UnnestedBundleDetail 
     `${countLabel(n)} of ${countLabel(m)} ${LIVE_OFFER_BUNDLES} have no usable parent ASIN.`,
     LIVE_OFFER_RULE,
     flagged != null
-      ? `${countLabel(flagged)} ${flagged === 1 ? "listing" : "listings"} in the retail read ${flagged === 1 ? "is" : "are"} flagged as bundles${detail.catalogBundles != null ? `, out of ${countLabel(detail.catalogBundles)} the catalog flags` : ""}.`
+      ? `${countLabel(flagged)} ${flagged === 1 ? "monitored listing" : "monitored listings"} ${flagged === 1 ? "is" : "are"} flagged as bundles${detail.catalogBundles != null ? `, out of ${countLabel(detail.catalogBundles)} the catalog flags` : ""}.`
       : null,
     unread > 0 ? `${countLabel(unread)} of them ${unread === 1 ? "has" : "have"} no offer reading yet.` : null,
     detail.catalogBundlesFailure

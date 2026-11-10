@@ -8,6 +8,7 @@ import { anyListingReviewCount } from "../lib/fender-canvas/listing-reviews.ts";
 import {
   channelPriceLookup,
   exploreChannelColumns,
+  shownChannelGap,
   type ChannelSourceRow,
 } from "../lib/fender-canvas/map-channels.ts";
 import { heroFigureColor, heroFigureTone } from "../lib/fender-canvas/retail-overview-lead.ts";
@@ -333,4 +334,34 @@ test("the AI Commerce card on Retail Overview matches its siblings", () => {
 test("the panel shell sets no native title on the tab strip or the explanation toggle", () => {
   assert.doesNotMatch(read("lib/canvas-sdk/CanvasShell.tsx"), /\(new\)`/);
   assert.doesNotMatch(read("lib/canvas-sdk/panel-interactions.ts"), /toggle\.title\s*=/);
+});
+
+/* PM24 review, round 2. */
+
+test("a price exactly at MAP prints alone, on screen and in the CSV", () => {
+  assert.equal(shownChannelGap(0), null);
+  assert.equal(shownChannelGap(null), null);
+  assert.equal(shownChannelGap(undefined), null);
+  assert.equal(shownChannelGap(-40), -40);
+  assert.equal(shownChannelGap(20), 20);
+  for (const file of [
+    "components/v3/live/ChannelPriceCell.tsx",
+    "lib/export/map-export.ts",
+    "lib/export/explore-listings-export.ts",
+  ]) {
+    assert.match(read(file), /shownChannelGap\(/, file);
+  }
+});
+
+test("population sentences use plain words, not the internal term retail read", () => {
+  for (const file of [
+    "lib/export/explore-listings-export.ts",
+    "lib/export/map-export.ts",
+    "lib/export/stock-episodes-export.ts",
+  ]) {
+    assert.doesNotMatch(read(file), /population:[^\n]*(retail|sales) read/, file);
+  }
+  assert.doesNotMatch(read("lib/export/retail-export.ts"), /in the sales read/);
+  assert.match(read("lib/fender-canvas/retail-overview-lead.ts"), /"monitored listing" : "monitored listings"/);
+  assert.match(read("lib/fender-canvas/portfolio-retail.ts"), /"monitored listing" : "monitored listings"/);
 });

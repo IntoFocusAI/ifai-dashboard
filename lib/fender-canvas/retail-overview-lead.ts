@@ -147,7 +147,7 @@ export function mapLeakageTip(snapshot: PortfolioRetailSnapshot): string | null 
   return [
     `${formatInt(reading.issueCount)} of ${formatInt(detail.decided)} listings with a stored MAP price and at least one stored channel price are priced below MAP.`,
     uncompared > 0
-      ? `${formatInt(uncompared)} other ${uncompared === 1 ? "listing" : "listings"} in the retail read ${uncompared === 1 ? "has" : "have"} no stored MAP comparison.`
+      ? `${formatInt(uncompared)} other ${uncompared === 1 ? "monitored listing" : "monitored listings"} ${uncompared === 1 ? "has" : "have"} no stored MAP comparison.`
       : null,
     approvedExceptionsSentence(detail.approvedExceptions ?? 0, snapshot.mapApprovedExceptionsFailed),
   ]

@@ -130,6 +130,14 @@ function channelGap(leakage: unknown, price: unknown, mapPrice: unknown): number
   return roundMoney(shelf - map);
 }
 
+/**
+ * The gap a price cell prints, on screen and in the CSV. A price exactly at MAP has no gap to
+ * show, so zero prints nothing and the price stands alone.
+ */
+export function shownChannelGap(gap: number | null | undefined): number | null {
+  return gap == null || gap === 0 ? null : gap;
+}
+
 function belowMap(gap: number | null): boolean {
   return gap != null && gap < 0;
 }

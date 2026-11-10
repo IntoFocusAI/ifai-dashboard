@@ -7,6 +7,7 @@ import {
   listingChannelFacts,
   listingLabel,
   missingCheckedPageLabel,
+  shownChannelGap,
   musiciansFriendCheckedPageUrl,
   storedHttpUrl,
   type ChannelPriceRow,
@@ -85,7 +86,8 @@ async function loadExceptions(): Promise<{ asins: Set<string>; failed: boolean }
 
 function cellText(price: number | null, gap: number | null, note: string | null): string {
   if (price == null && gap == null) return "";
-  return [price != null ? formatUsd(price) : null, gap != null ? formatUsd(gap, { signed: true }) : null, note]
+  const shown = shownChannelGap(gap);
+  return [price != null ? formatUsd(price) : null, shown != null ? formatUsd(shown, { signed: true }) : null, note]
     .filter(Boolean)
     .join(" ");
 }

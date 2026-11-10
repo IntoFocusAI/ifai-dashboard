@@ -7,6 +7,7 @@ import {
   MISSING_CHECKED_PAGE_DESC,
   MISSING_CHECKED_PAGE_LABEL,
   missingCheckedPageLabel,
+  shownChannelGap,
   type ChannelFact,
 } from "@/lib/fender-canvas/map-channels";
 
@@ -29,7 +30,9 @@ export function ChannelPriceCell({
   requireCheckedPage?: boolean;
 }) {
   if (!fact || (fact.price == null && fact.gap == null)) return <td className="money channel-fact" />;
-  const below = fact.gap != null && fact.gap < 0;
+  // A price exactly at MAP prints alone: a gap of zero is not below MAP.
+  const gap = shownChannelGap(fact.gap);
+  const below = gap != null && gap < 0;
   const price = fact.price != null ? formatUsd(fact.price) : null;
   const missingSource = missingCheckedPageLabel(requireCheckedPage, href, fact.price);
   return (
@@ -46,15 +49,13 @@ export function ChannelPriceCell({
         </a>
       ) : null}
       {price != null && !href ? <span>{price}</span> : null}
-      {fact.gap != null && below ? (
+      {gap != null && below ? (
         <span className="channel-gap data-status data-status-bad" data-status="bad">
           <StatusGlyph status="bad" />
-          <span className="data-status-word">{formatUsd(fact.gap, { signed: true })} below</span>
+          <span className="data-status-word">{formatUsd(gap, { signed: true })} below</span>
         </span>
       ) : null}
-      {fact.gap != null && !below ? (
-        <span className="channel-gap">{formatUsd(fact.gap, { signed: true })}</span>
-      ) : null}
+      {gap != null && !below ? <span className="channel-gap">{formatUsd(gap, { signed: true })}</span> : null}
       {missingSource ? (
         <span
           className="ifai-term channel-note"
