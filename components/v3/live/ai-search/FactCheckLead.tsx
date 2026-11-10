@@ -114,10 +114,7 @@ export function FactCheckLead({
               {status ? <StatusMark status={status} /> : null}
             </div>
           ) : null}
-      </div>
-
-      <div className="ai-fact-accuracy-row" data-ai-accuracy-row>
-        <div className="ai-lead-explainer ai-fact-explainer" data-ai-accuracy-lead>
+        <div className="ai-lead-explainer ai-fact-explainer" data-ai-accuracy-row data-ai-accuracy-lead>
           <div className="content-box-title">
             <span>
               Do AI answers match {brandName()}&apos;s published <AiTerm term="product fact check">product facts</AiTerm>?

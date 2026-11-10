@@ -24,6 +24,7 @@ import {
   UNBRANDED_RATE_BANDS,
 } from "@/lib/ai-search/summary";
 import type { AiSearchRead } from "@/lib/ai-search/types";
+import { radarBubbleLead } from "@/lib/ai-search/radar-bubble";
 import { selectionLine } from "@/lib/ai-search/displayed-read";
 import { isWindowHistoryKind } from "@/lib/ai-search/window-display";
 import { brandName, leadBrand } from "@/lib/brand-copy";
@@ -154,7 +155,6 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
   const s = summarizeRun(read.snapshot);
   const { completeness: run, drift, citations } = s;
   const state = runStateLabel(run.state);
-  const gap = s.largestGap;
   const weakestEngine = unbrandedEnginesWeakestFirst(engineResultRoleTallies(read.snapshot.calls))[0] ?? null;
 
   // The main bubble and its three satellites each lead with one scored headline value.
@@ -243,11 +243,13 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
       title: "Competitive Radar",
       stats: [],
       heroValue: (() => {
-        const rival = gap?.leaders[0];
-        if (gap && rival != null && gap.resolved > 0) {
+        if (read.radarPending) return { value: "Loading run", label: "Unbranded discovery" };
+        // Same rows and same category-lead rule as the Category Battlecards tab.
+        const lead = radarBubbleLead((read.radarSnapshot ?? read.snapshot).calls);
+        if (lead?.topRival && lead.resolved > 0) {
           return {
-            value: pct(rival.wins, gap.resolved),
-            label: rivalLeadsLabel(rival.brand, gap.category),
+            value: pct(lead.topRival.wins, lead.resolved),
+            label: rivalLeadsLabel(lead.topRival.brand, lead.key),
           };
         }
         if (s.topCompetitor) {

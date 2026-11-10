@@ -67,6 +67,8 @@ for (const client of CLIENTS) {
       expect(accuracyBox.x).toBeGreaterThanOrEqual(catalogBox.x + catalogBox.width - 1);
       expect(Math.abs(accuracyBox.y - catalogBox.y)).toBeLessThan(40);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+      const explainerBox = (await page.locator("[data-ai-accuracy-lead]").boundingBox())!;
+      expect(explainerBox.x).toBeGreaterThanOrEqual(accuracyBox.x + accuracyBox.width - 1);
       await expect(page.locator("[data-ai-accuracy-figure-col] [data-status]")).toHaveText(/^(Poor|Fair|Good)$/);
       await expect(page.locator("[data-ai-fact-fixed-only]")).toHaveCount(0);
 
@@ -100,6 +102,20 @@ for (const client of CLIENTS) {
       expect(text.y + text.height, "the label ends inside the ring").toBeLessThanOrEqual(circle.y + circle.height);
       expect(text.x).toBeGreaterThanOrEqual(circle.x);
       expect(text.x + text.width).toBeLessThanOrEqual(circle.x + circle.width);
+    });
+
+    test("the radar bubble names the rival the Category Battlecards tab lists first as Behind", async ({ page }) => {
+      test.setTimeout(240_000);
+      await page.goto(url(client, "spoke=competitors"));
+      const label = page.locator("[data-graph-node-id='spoke-competitors'] .node-hero-label");
+      await expect(label).toHaveText(/^\S.*leads\s?\S/, { timeout: 120_000 });
+      const bubble = ((await label.textContent()) ?? "").replace(/\s+/g, " ");
+      await page.goto(url(client, "spoke=competitors&tab=category-battlecards"));
+      const body = page.locator(".drilldown-body");
+      await expect(body).toContainText("Top rival:", { timeout: 120_000 });
+      const first = ((await body.innerText()).match(/Behind\s*\n\s*Top rival: ([^\n]+)/) ?? [])[1];
+      expect(first, "a Behind category with a top rival").toBeTruthy();
+      expect(bubble.replace(/\s/g, "")).toContain(`${first!.trim().replace(/\s/g, "")}leads`);
     });
 
     test("Run Summary and Run Details download what they show for the date pill's selection", async ({ page }) => {
