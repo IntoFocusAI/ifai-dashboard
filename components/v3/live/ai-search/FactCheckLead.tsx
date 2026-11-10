@@ -2,6 +2,7 @@
 
 import "@/components/v3/live/ai-search/fact-checks.css";
 import { StatusMark } from "@/components/v3/live/StatusMark";
+import { AiStaleMark } from "@/components/v3/live/ai-search/AiStaleMark";
 import { AiStatusTag } from "@/components/v3/live/ai-search/AiStatusTag";
 import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
 import { CitationPieDisc } from "@/components/v3/live/ai-search/CitationPieDisc";
@@ -71,6 +72,7 @@ export function FactCheckLead({
                 </CopyTip>
               )}
             </span>
+            <AiStaleMark />
             <span className="ai-fact-figure-unit">{CATALOG_PRODUCTS_UNIT}</span>
             {catalogPie && catalog.phase === "ready" ? (
               <CitationPieDisc
@@ -102,6 +104,7 @@ export function FactCheckLead({
                   {accuracy.rate} Accuracy
                 </CopyTip>
               </span>
+              <AiStaleMark />
               <CitationPieDisc
                 pie={pie}
                 sizeClass="citation-pie-disc citation-pie-disc-accuracy"

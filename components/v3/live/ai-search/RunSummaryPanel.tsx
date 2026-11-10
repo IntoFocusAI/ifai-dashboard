@@ -6,6 +6,7 @@ import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
 import { useAiHistoryOptional } from "@/components/v3/live/ai-search/AiHistoryContext";
 import { AiReadGate, mutedText } from "@/components/v3/live/ai-search/AiReadGate";
 import { useTrendSlot } from "@/components/v3/live/ai-search/AiSearchSurface";
+import { AiStaleMark } from "@/components/v3/live/ai-search/AiStaleMark";
 import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
 import { CitationPieDisc, type PieDiscInput } from "@/components/v3/live/ai-search/CitationPieDisc";
 import { CopyTip } from "@/components/v3/live/ai-search/CopyTip";
@@ -118,6 +119,7 @@ function RoleRate({
                 {lead.rate}
               </MixedScoringTip>
             </span>
+            <AiStaleMark />
             <CitationPieDisc
               pie={ratePie(`summary-${tally.role}`, label, tally)}
               tip={`${formatInt(tally.fenderWins)} ${leadBrand()} leads. ${formatInt(tally.resolved - tally.fenderWins)} rest of resolved answers. Total ${formatInt(tally.resolved)} resolved answers.`}

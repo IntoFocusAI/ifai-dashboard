@@ -2,6 +2,7 @@
 
 import "@/components/v3/live/ai-search/citation-chain.css";
 import { useId, type CSSProperties, type ReactNode } from "react";
+import { AiStaleMark } from "@/components/v3/live/ai-search/AiStaleMark";
 import { CitationFilteredMark } from "@/components/v3/live/ai-search/CitationFilteredMark";
 import { citationChain, citationOwnedLinksLead } from "@/lib/ai-search/citation-lead";
 import type { CitationRead } from "@/lib/ai-search/citations";
@@ -151,6 +152,7 @@ export function CitationChain({
         <span className="citation-chain-figure">
           <span className="citation-chain-count">{count(answered)}</span>
           <CitationFilteredMark category={category} note={note} />
+          <AiStaleMark />
         </span>
         <span className="citation-chain-label">
           <Term name={scopeTitle} desc={answersDesc}>
