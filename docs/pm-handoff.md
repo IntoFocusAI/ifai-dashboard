@@ -44,14 +44,32 @@ The PM24 test spent $218 API-equivalent on two views and hit the plan limit
 in 1 h 40 m. About half of that was avoidable. These rules apply to the PM
 and to every worker.
 
-- **Models.** PM and workers run Opus 5.5 at high effort. Use Fable 5.2 only
-  where Brian names it: the Roadmap recommendation logic (24.7) and the
-  Auditor. Always name the model when starting a subagent; a subagent
-  without one inherits the PM's.
-- **Budget.** Pause and report to Brian when this seat's 5-hour window
-  passes 50%, or when one view has cost more than $60. Never write that
-  usage is not a constraint.
-- **One worker at a time per seat**, unless Brian asks for more.
+- **Goal: pace.** Leadership approved the "Better" path on 10 Nov 2026: reach
+  the launch scope of the FDD quickly, at about $40 API-equivalent per view.
+  Parallel workers are wanted whenever they do not interfere.
+- **Models.** The PM runs Opus 5.5. Choose each worker's model by the work,
+  and state it with a one-line reason in the Phase 0 build plan:
+  - Opus 5.5 at high effort: the default for view builds and fix rounds.
+  - Fable 5.2: only where the reasoning is hard and a wrong answer is
+    costly. Examples: the Roadmap recommendation logic (24.7), reconciling
+    two figures that disagree (PM24-2), the Auditor, the tenant split and
+    access rules (X-16, X-15). Say why Opus is not enough.
+  - Sonnet 5.5: mechanical, well-specified work. Examples: renames, weight
+    and lint fixes, test updates to match decided behavior, CSV wiring that
+    copies an existing pattern.
+  Always name the model when starting a subagent; a subagent without one
+  inherits the PM's.
+- **Parallel workers.** Run up to 3 workers at once on one seat when their
+  files do not overlap (the worker briefs list each view's files) and no
+  worker needs another's unmerged change. Shared files (lib/ai-search reads,
+  canvas-reads.ts, ResizableTable, StatusMark) belong to one worker per
+  batch; others wait or ask the PM. Work that touches the database or Brian
+  Watson's open pull requests runs alone. More than 3 only when Brian asks.
+- **Budget.** Report usage in every review request: the seat's 5-hour window
+  percentage and the cost per view so far. Pause new workers and report to
+  Brian when the window passes 80%, or when one view passes $80. Let running
+  workers finish their current step and save state. Never write that usage
+  is not a constraint.
 - **Fresh worker per round.** Send each fix round to a new worker with a
   short summary (branch, pull request, what is done, the fix list, files
   owned). Do not resume a worker whose context is large.
@@ -158,9 +176,11 @@ if this block is stale.
   review notes).
 - Before the next view: a worker adds `npm run lint:brand` and the 1280
   overflow check, and proposes fix or retire for the 28 failing e2e tests.
-- Next, when he says go: 24.5 AI Readiness first, under the cost rules, and
-  report its cost. Then 24.2 Summary, 24.6 Competitive Radar, 24.7 Roadmap
-  and Action Items. Update the 24.5 and 24.7 briefs for decision 35 first.
+- Next, when he says go: a parallel batch of 24.5 AI Readiness, 24.2
+  Summary, and 24.6 Competitive Radar (check their files do not overlap),
+  then 24.7 Roadmap and Action Items once decision 21 is answered. Plan the
+  X-15, X-16, and R-19 work with Brian Watson. Update the 24.5 and 24.7
+  briefs for decision 35 first.
 - Known: Fender AI Search is slow (about 14 to 24 s). Stale asterisk missing
   on map bubbles and Minimal. Fender listings below MAP moved 118, 210, 120
   of 633 between 9 and 10 Nov: unexplained, for Brian Watson or Ryan.
