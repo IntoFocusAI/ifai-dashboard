@@ -172,20 +172,16 @@ if this block is stale.
   X-15 and X-16 change permissions and tables: Brian Watson applies those
   migrations.
 - Database: public.ai_prompt_edits_list applied 10 Nov (PR 151).
-- PM24-1 to PM24-3 built and merged in PR 158 (worker 24.8), 10 Nov. The
-  FDD in docs/fdd does not yet record it: PM25 updates rows PM24-1 to
-  PM24-3, adds decisions 40 to 43 (docs/pm23-decisions.md), and logs PRs
-  158 and 159.
-- Failing e2e tests: Brian chose to clean them all up (option B). Worker
-  24.9, PR 159 (tests only). Before the next view a worker still adds
-  `npm run lint:brand` and the 1280 overflow check.
+- Open from the PM24 batch: FDD decision rows PM24-1 to PM24-3 (Brian's
+  review notes).
+- Before the next view: a worker adds `npm run lint:brand` and the 1280
+  overflow check, and proposes fix or retire for the 28 failing e2e tests.
 - Next, when he says go: a parallel batch of 24.5 AI Readiness, 24.2
   Summary, and 24.6 Competitive Radar (check their files do not overlap),
   then 24.7 Roadmap and Action Items once decision 21 is answered. Plan the
   X-15, X-16, and R-19 work with Brian Watson. Update the 24.5 and 24.7
   briefs for decision 35 first.
-- Known: Fender AI Search is slow (about 14 to 24 s); the Radar bubble
-  waits about 32 s for its 30-day read (accepted 10 Nov, speed-up owed). Stale asterisk missing
+- Known: Fender AI Search is slow (about 14 to 24 s). Stale asterisk missing
   on map bubbles and Minimal. Fender listings below MAP moved 118, 210, 120
   of 633 between 9 and 10 Nov: unexplained, for Brian Watson or Ryan.
   PR 110 still breaks metric-destinations.spec. Watson: PRs 125, 131, 139.
