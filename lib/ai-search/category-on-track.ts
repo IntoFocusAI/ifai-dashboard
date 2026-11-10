@@ -2,6 +2,7 @@ import { headlineCompetitorWins, type RoleGroupTally } from "@/lib/ai-search/que
 import { categoryLabel, engineLabel, isCommercial, isError } from "@/lib/ai-search/run-metrics";
 import type { AiCallRow } from "@/lib/ai-search/types";
 import { brandName, leadBrand, leadBrandOr } from "@/lib/brand-copy";
+import { PARTIAL_TITLE, partialFigureTip } from "@/lib/fender-canvas/canvas-reads";
 
 /** Who leads one category on unbranded discovery. */
 export type CategoryLeadStatus = "on_track" | "tied" | "behind" | "not_available";
@@ -111,7 +112,14 @@ export type CategoryLeadSummary = {
   /** Labels in display order. */
   tied: string[];
   behind: string[];
+  /** "Taylor leads Acoustics", one per Behind category in display order, as the map words it. */
+  rivalsLead: string[];
 };
+
+/** "Taylor leads Acoustics": the map bubble's wording for a category another brand leads (decision 5). */
+export function rivalLeadsCategory(brand: string, category: string): string {
+  return `${brand} leads ${categoryLabel(category)}`;
+}
 
 export function categoryLeadSummary(leads: readonly CategoryLead[]): CategoryLeadSummary {
   const labels = (status: CategoryLeadStatus) => leads.filter((lead) => lead.status === status).map((lead) => lead.label);
@@ -120,6 +128,9 @@ export function categoryLeadSummary(leads: readonly CategoryLead[]): CategoryLea
     onTrack: labels("on_track").length,
     tied: labels("tied"),
     behind: labels("behind"),
+    rivalsLead: leads.flatMap((lead) =>
+      lead.status === "behind" && lead.topRival ? [rivalLeadsCategory(lead.topRival.brand, lead.key)] : [],
+    ),
   };
 }
 
@@ -218,7 +229,15 @@ export function isBattlecardFiltered(filter: BattlecardFilter): boolean {
   return filter.engine !== "" || filter.lead !== "all";
 }
 
-/** Tooltip on the asterisk an engine chip puts on each figure it narrows. */
+/** Title of the asterisk an engine chip puts on each figure it narrows (X-25). */
+export const ENGINE_MARK_TITLE = PARTIAL_TITLE.filtered;
+
+/** Tooltip on that asterisk, from the shared partial-figure helper: what is left out, the source, the effect. */
 export function engineOnlyNote(engineName: string): string {
-  return `${engineName} only. Clear the engine to see all engines.`;
+  return partialFigureTip({
+    reason: "filtered",
+    missing: `${engineName} only. Answers from the other engines are left out`,
+    source: "AI Search answers in the date pill's selection",
+    effect: "Clear the engine to see all engines.",
+  });
 }

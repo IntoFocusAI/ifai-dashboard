@@ -528,7 +528,12 @@ test.describe("Competitive Radar", () => {
     await expect(marks.first()).toBeVisible();
     for (const mark of await marks.all()) {
       await expect(mark).toHaveText("*");
-      await expect(mark).toHaveAttribute("data-ifai-tooltip-desc", `${engineName} only. Clear the engine to see all engines.`);
+      // The shared partial-figure tooltip (X-25): what is left out, the source, then the effect.
+      await expect(mark).toHaveAttribute("data-ifai-tooltip-title", "Filtered figure");
+      await expect(mark).toHaveAttribute(
+        "data-ifai-tooltip-desc",
+        `${engineName} only. Answers from the other engines are left out. Source: AI Search answers in the date pill's selection. Clear the engine to see all engines.`,
+      );
       await expect(mark).not.toHaveAttribute("title");
     }
     await expect(cards.locator("[data-ai-on-track-hero] .ai-battle-engine-mark")).toHaveCount(1);

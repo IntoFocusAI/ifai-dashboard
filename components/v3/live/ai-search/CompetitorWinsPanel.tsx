@@ -10,10 +10,16 @@ import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
 import { CompetitorWinsHero } from "@/components/v3/live/ai-search/CompetitorWinsHero";
 import { EvidenceLink } from "@/components/v3/live/ai-search/EvidenceLink";
 import { WhyNotFender } from "@/components/v3/live/ai-search/WhyNotFender";
+import { useAiExportScope } from "@/components/v3/live/ai-search/useAiExport";
 import { useEvidenceFocus } from "@/components/v3/live/ai-search/useEvidenceFocus";
 import { AI_TABS } from "@/lib/ai-search/canvas-surfaces";
 import { citationEvidence } from "@/lib/ai-search/citations";
 import { competitorTallies, isUnbrandedDiscovery, type CompetitorTally } from "@/lib/ai-search/competitors";
+import {
+  competitorCategoryLine,
+  competitorEngineLine,
+  competitorLeadsCell,
+} from "@/lib/ai-search/radar-tables";
 import { callOutcome, categoryLabel, cleanPrompt, engineLabel, modelLabel } from "@/lib/ai-search/run-metrics";
 import { summarizeRun } from "@/lib/ai-search/summary";
 import { formatInt } from "@/lib/fender-canvas/format";
@@ -29,20 +35,18 @@ const COLUMNS = [
   clientColumn("engines", "Engines", "text", 240, 120),
 ];
 
-const ofResolved = (wins: number, resolved: number) => `${formatInt(wins)} of ${formatInt(resolved)}`;
-
-const categoryLine = (row: CompetitorTally) =>
-  row.byCategory.map((c) => `${categoryLabel(c.category)} ${ofResolved(c.wins, c.resolved)}`).join(", ");
-
-const engineLine = (row: CompetitorTally) =>
-  row.byEngine.map((e) => `${engineLabel(e.engine)} ${ofResolved(e.wins, e.resolved)}`).join(", ");
+/** Categories takes the panel's spare width; both long lists wrap so the table never scrolls sideways. */
+const FILL_COLUMN = "categories";
+const WRAP_COLUMNS = ["engines"];
 
 function tallySortValue(row: CompetitorTally, columnId: string): SortInput {
   if (columnId === "competitor") return row.brand;
   if (columnId === "leads") return row.wins;
-  if (columnId === "categories") return categoryLine(row) || null;
-  return engineLine(row) || null;
+  if (columnId === "categories") return competitorCategoryLine(row) || null;
+  return competitorEngineLine(row) || null;
 }
+
+const tallyKey = (row: CompetitorTally) => row.brand;
 
 function Wins({ snapshot }: { snapshot: AiSearchSnapshot }) {
   const history = useAiHistoryOptional();
@@ -59,7 +63,8 @@ function Wins({ snapshot }: { snapshot: AiSearchSnapshot }) {
   }
 
   const tallies = competitorTallies(snapshot.calls);
-  const sorted = useClientTableSort(tallies, COLUMNS, tallySortValue);
+  const sorted = useClientTableSort(tallies, COLUMNS, tallySortValue, tallyKey);
+  const exportScope = useAiExportScope();
   const losses = useMemo(
     () =>
       snapshot.calls
@@ -93,6 +98,9 @@ function Wins({ snapshot }: { snapshot: AiSearchSnapshot }) {
             <ResizableTable
               tableId="competitor-wins"
               columns={COLUMNS}
+              fillColumnId={FILL_COLUMN}
+              wrapColumnIds={WRAP_COLUMNS}
+              exportScope={exportScope}
               freezeHeader
               maxHeight={520}
               sort={sorted.sort}
@@ -111,9 +119,9 @@ function Wins({ snapshot }: { snapshot: AiSearchSnapshot }) {
                         {t.brand}
                       </button>
                     </td>
-                    <td>{ofResolved(t.wins, t.resolved)} resolved</td>
-                    <td>{categoryLine(t)}</td>
-                    <td>{engineLine(t)}</td>
+                    <td>{competitorLeadsCell(t)}</td>
+                    <td>{competitorCategoryLine(t)}</td>
+                    <td>{competitorEngineLine(t)}</td>
                   </tr>
                 ))}
               </tbody>

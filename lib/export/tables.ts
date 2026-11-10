@@ -25,6 +25,11 @@ export const EXPORT_TABLE_IDS = [
   "citation-engines",
   "citation-categories",
   "citation-evidence",
+  // Competitive Radar: the same selection as the AI Search tables.
+  "category-battlecards",
+  "competitor-wins",
+  "engine-comparison",
+  "engine-category",
   "prompt-history",
   "explore-listings",
 ] as const;

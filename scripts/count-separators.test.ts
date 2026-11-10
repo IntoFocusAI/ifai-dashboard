@@ -24,7 +24,10 @@ test("Competitor Wins reads 1,064 of 1,788, and the hero still splits the count 
   assert.match(surfaces, /figure: competitorWinsFigure\(s\.competitorWins, s\.roles\.unbranded\.resolved\)/);
 
   const panel = flat("components/v3/live/ai-search/CompetitorWinsPanel.tsx");
-  assert.match(panel, /<td>\{ofResolved\(t\.wins, t\.resolved\)\} resolved<\/td>/);
+  assert.match(panel, /<td>\{competitorLeadsCell\(t\)\}<\/td>/);
+  const radar = flat("lib/ai-search/radar-tables.ts");
+  assert.match(radar, /return `\$\{ofResolved\(row\.wins, row\.resolved\)\} resolved`;/);
+  assert.doesNotMatch(radar, /\$\{c\.wins\} of \$\{c\.resolved\}|\$\{e\.wins\} of \$\{e\.resolved\}/);
   assert.match(panel, /\{formatInt\(shown\.length\)\} answers/);
   assert.doesNotMatch(panel, /\$\{c\.wins\} of \$\{c\.resolved\}|\$\{e\.wins\} of \$\{e\.resolved\}|\{t\.wins\} of \{t\.resolved\}/);
 });

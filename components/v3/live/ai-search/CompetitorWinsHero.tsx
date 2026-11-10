@@ -1,5 +1,6 @@
 "use client";
 
+import { AiStaleMark } from "@/components/v3/live/ai-search/AiStaleMark";
 import { CitationPieDisc, sliceColor } from "@/components/v3/live/ai-search/CitationPieDisc";
 import { MixedScoringTip } from "@/components/v3/live/ai-search/MixedScoringTip";
 import { competitorTallies } from "@/lib/ai-search/competitors";
@@ -53,6 +54,7 @@ function HeroFigure({ snapshot, mixed }: { snapshot: AiSearchSnapshot; mixed: bo
             </>
           )}
         </span>
+        <AiStaleMark />
         {pie ? (
           <CitationPieDisc
             pie={pie}
