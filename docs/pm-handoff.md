@@ -146,7 +146,10 @@ decisions goes to Brian as a question.
 
 ## Standing rules
 
-The map shows the published run plus its matching API run. The shared date
+The map shows the published run plus its matching API run, except the
+Competitive Radar bubble, which reads the Category Battlecards rows for the
+date-pill window with the tab's lead rule (decision 40, FDD C-03). Do not
+"fix" that bubble back to the published run. The shared date
 pill is the only period label. Cited pages are associations. Dollar figures
 stay analyst estimates, and their formulas stay parked. The client portal
 says nothing about IntoFocus fees. Do not build delegation or paid tiers.
@@ -158,7 +161,8 @@ The brand book, `docs/brand/IntoFocus_AI_Brand_Book_V2.pdf`, is a standard
 below the FDD. Where the two conflict, ask Brian.
 
 Held, until he says otherwise: A-06, A-02, R-06, R-11, A-04, A-07, N-07,
-LATER rows, and the dollar formulas.
+LATER rows, and the dollar formulas. X-15, X-16, and R-19 are held until
+the rest of the launch build is complete (decision 46).
 
 ## State
 

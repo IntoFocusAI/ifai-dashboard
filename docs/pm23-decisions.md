@@ -227,3 +227,18 @@ closeout of each view. Open items are marked OPEN and are not built.
     contradictions badge. No lower box. PR 158.
 43. Workers run in parallel when they do not edit the same files.
     Failing e2e tests: one cleanup worker clears them (option B, 24.9).
+
+## PM25 (Brian, 10 Nov 2026)
+
+44. Decision 21 (Roadmap and Action Items rules a to j) stands as written
+    for worker 24.7.
+45. D-06 is CURRENT, closed on the content shares. No A+ dollar figure for
+    now.
+46. X-15, X-16, and R-19 stay in launch scope but are held until the rest
+    of the launch build is complete; they add steps that slow development.
+47. lint:brand: the components/sdk flags are not fixed. Those pages are not
+    linked from any route.
+48. AI Search read performance: waiting on Brian Watson's diagnosis. A
+    read-only log review by a worker (option 2) only if he asks for it.
+49. Go ahead on the parallel batch 24.5 AI Readiness, 24.2 Summary, and
+    24.6 Competitive Radar.

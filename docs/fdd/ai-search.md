@@ -59,11 +59,11 @@
 
 **Status source:** Explicit meeting (was DECISION)
 
-- **Current:** Product Fact Checks leads Accuracy with one line, “5 products checked · 4 with a verified fact”; how the products were chosen sits in its tooltip. Every non-fact-check question reads n/a. Fact checks count by catalog product once the collector’s rotation fills the probe columns; until then the counts are unchanged. On 3 Nov 2026 the collector (v15) moved to 3 repeats and a rotation across 180 in-scope guitar and bass models, 90 per run, with anchors p17 and p33.
+- **Current:** Product Fact Checks leads with one row: the catalog products checked figure, Accuracy beside it, then the question, its sentence, and the contradictions badge. There is no lower box (decision 42). How the products were chosen sits in a tooltip. Every non-fact-check question reads n/a. Fact checks count by catalog product once the collector’s rotation fills the probe columns; until then the counts are unchanged. On 3 Nov 2026 the collector (v15) moved to 3 repeats and a rotation across 180 in-scope guitar and bass models, 90 per run, with anchors p17 and p33.
 - **Desired:** Keep Product Fact Checks. Reject the handful method. Results need defensible catalog coverage or a stated representative sample. In Fact Check, show “n/a” when the question was not a fact check.
 - **User value:** Consensus checks are credible.
 - **Acceptance:** Method statement on screen; n/a for non-fact-check rows.
-- **Evidence:** Approved by Brian Magazu on 3 Nov 2026. Worker 20.4, pull request 106, main fff5dd2. Worker 24.4, pull request 151 (main f1df1f5), merged 10 Nov 2026: every engine choice keeps the rotating catalog fact checks its engines asked, Product Fact Checks leads with N of M catalog products checked, and tooltips name the engines covered.
+- **Evidence:** Approved by Brian Magazu on 3 Nov 2026. Worker 20.4, pull request 106, main fff5dd2. Worker 24.4, pull request 151 (main f1df1f5), merged 10 Nov 2026: every engine choice keeps the rotating catalog fact checks its engines asked, Product Fact Checks leads with N of M catalog products checked, and tooltips name the engines covered. Worker 24.8, pull request 158 (main 77e4c7e), merged 10 Nov 2026: the one-row lead (PM24-3, decision 42).
 - **Open decision:** None. Decided by Brian Magazu on 9 Nov 2026: every engine choice, All included, counts the rotating catalog questions and leads with N of M catalog products checked. Only ChatGPT, Gemini, and Perplexity ask the rotating questions; the tooltip says which engines a figure covers.
 
 **A-06 TARGET** · Launch

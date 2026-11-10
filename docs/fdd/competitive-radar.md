@@ -26,12 +26,12 @@
 
 **Status source:** Explicit
 
-- **Current:** Category Battlecards opens on a row of pies: categories on track (N of M), Unbranded Discovery, and Branded Consideration. A small pie per category shows Fender/Squier against the top rival and other brands, with On track, Tied, or Behind. On track means Fender/Squier leads more resolved unbranded answers than any single other brand. Engine and who-leads chips filter the pies and the table in place, and engine-filtered evidence carries an asterisk.
+- **Current:** Category Battlecards opens on a row of pies: categories on track (N of M), Unbranded Discovery, and Branded Consideration. A small pie per category shows Fender/Squier against the top rival and other brands, with On track, Tied, or Behind. On track means Fender/Squier leads more resolved unbranded answers than any single other brand. Engine and who-leads chips filter the pies and the table in place, and engine-filtered evidence carries an asterisk. The Competitive Radar map bubble reads the same rows (the date-pill window) with the same category-lead function, so the bubble and the tab cannot disagree; Fender reads “Taylor leads Acoustics”. This bubble is the one exception to the rule that the map shows the published run plus its matching API run (decision 40). It shows Loading run until that read finishes, about 32 s for Fender and 16 s for Ledlenser on the preview (decision 41, accepted for now).
 - **Desired:** Filter chips; lead = on track visual.
 - **User value:** Who is ahead is obvious.
 - **Acceptance:** Filters change the battlecards without a reload maze.
-- **Evidence:** Approved by Brian Magazu on 3 Nov 2026. Worker 20.5, pull request 108, main 7623bc2.
-- **Open decision:** None.
+- **Evidence:** Approved by Brian Magazu on 3 Nov 2026. Worker 20.5, pull request 108, main 7623bc2. Worker 24.8, pull request 158 (main 77e4c7e), merged 10 Nov 2026: the map bubble reads the Battlecards rows (PM24-2).
+- **Open decision:** None. Decided by Brian Magazu on 10 Nov 2026 (decision 40, PM24-2 option A): the Radar map bubble follows the Battlecards window and lead rule, not the published run. Do not move it back to the published run. Decision 41: its longer load is accepted until the AI Search reads are faster.
 
 **C-04 CURRENT** · Launch
 

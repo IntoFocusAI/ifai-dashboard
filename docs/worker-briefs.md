@@ -33,7 +33,8 @@ propose status changes in the pull request body.
 - Never invent rules, figures, or causes. If the FDD and the decisions do
   not say, ask the PM in your report.
 - Standing rules: the map shows the published run plus its matching API
-  run; the shared date pill is the only period label; dollar figures stay
+  run, except the Competitive Radar bubble, which reads the Category
+  Battlecards rows for the date-pill window (decision 40; do not change it); the shared date pill is the only period label; dollar figures stay
   labeled analyst estimate and their formulas stay parked; nothing about
   IntoFocus fees; no delegation or paid tiers; let the data speak (caveats
   in tooltips; "analyst estimate", "Not available*", and the asterisk stay
@@ -81,7 +82,8 @@ propose status changes in the pull request body.
 - No new tooltips on the map bubbles; no on-screen qualifiers (they go in
   tooltips); no internal terms in client copy.
 - `npm test` passes; e2e for your view passes, with no new failures against
-  the main baseline; `npm run lint:brand` passes once it exists.
+  the main baseline; `npm run lint:brand` reports no issue in the files you own or touch
+  (main has 73 issues elsewhere; do not fix files you do not own).
 - Each row's FDD Acceptance text holds for both clients.
 
 ### Hand back
@@ -117,7 +119,7 @@ screenshots by path only. List the files changed.
 - Amazon Specs (D-05): name the required-spec list per category (Fender
   guitar list, Ledlenser lighting fields), both marked placeholder.
 - A+ Matrix (R-03): unchecked shows as unchecked, never a fail. No A+
-  dollar figure (D-06 OPEN).
+  dollar figure (D-06 closed on the content shares, decisions 35 and 45).
 - D-03: no renames; check the map's satellite names match the tabs.
 - Defect: the Brand-Site Specs satellite reads "100.0% missing
   machine-readable specs" for both clients; verify against
@@ -148,7 +150,7 @@ screenshots by path only. List the files changed.
 
 ## 24.7 Roadmap and Action Items (two pull requests, after the rules)
 
-- Waits for Brian's answers on decision 21 (recommendation rules) in
+- Decision 21 (recommendation rules) stands as written (decisions 35 and 44) in
   `docs/pm23-decisions.md`.
 - Roadmap: one tab, "30-60-90 Days" (S-03), built per S-02 once the rules
   are set; owner sentence "IntoFocus's recommended plan for {brand}"
