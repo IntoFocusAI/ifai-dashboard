@@ -117,8 +117,8 @@ export const fenderStaticNodes: CanvasNode[] = [
       status: "neutral",
       title: "Roadmap",
       stats: [],
-      // Before the reads load the bubble says so; it never shows a fixed plan.
-      heroValue: { value: "Loading", label: "Need action" },
+      // Static for every client: a click opens the next 90 days of strategy.
+      heroValue: { value: "30-60-90", label: "" },
       subTab: "30-60-90 Days",
       spokeId: "roadmap",
       tooltip: { title: "", desc: "" },

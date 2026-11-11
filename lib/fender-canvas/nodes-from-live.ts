@@ -334,7 +334,7 @@ export function buildLiveNodes(
       ...primarySpoke("spoke-roadmap"),
       title: "Roadmap",
       stats: [],
-      ...roadmapBubbleFace(retail, findability, ai),
+      ...roadmapBubbleFace(),
       spokeId: "roadmap",
       tooltip: { title: "", desc: "" },
     },

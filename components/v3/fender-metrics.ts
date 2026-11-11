@@ -200,9 +200,9 @@ export const FENDER_METRICS = {
   dayNinetyBuyBoxTarget: {
     id: "day-90-buy-box-target",
     spokeId: "roadmap",
-    label: "90-day plan",
-    value: "Loading",
-    detail: "Findings that need action now",
+    label: "Roadmap",
+    value: "30-60-90",
+    detail: "The next 90 days of strategy",
     tone: "neutral",
     subTab: "30-60-90 Days",
     provenance: "live",
