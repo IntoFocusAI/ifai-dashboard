@@ -3925,6 +3925,12 @@
       max-width: 100%;
     }
 
+    /* Run Details: an outcome badge wraps inside its own cell instead of painting over the Engine column. */
+    .ai-simulations .resizable-table .tag-badge {
+      white-space: normal;
+      max-width: 100%;
+    }
+
     /* Do not shatter dates and short labels when the column already has room. */
     .resizable-table td {
       overflow-wrap: break-word;
@@ -4298,6 +4304,17 @@
       background: transparent;
       cursor: pointer;
       padding: 0;
+    }
+
+    /* A hover and focus target over each dashed boundary line; its tooltip says why the line is there. */
+    .ai-history-chart .ai-history-boundary-hit {
+      position: absolute;
+      top: 12%;
+      bottom: 12%;
+      width: 16px;
+      margin-left: -8px;
+      border-bottom: none;
+      cursor: help;
     }
 
     .ai-history-dot {

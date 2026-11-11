@@ -1,7 +1,7 @@
 "use client";
 
 import { formatDay } from "@/lib/ai-search/history-eligibility";
-import { boundaryBreaks, rateLabel, trendSegments, type TrendModel, type TrendPoint } from "@/lib/ai-search/history-trends";
+import { boundaryBreaks, boundaryReason, rateLabel, trendSegments, type TrendModel, type TrendPoint } from "@/lib/ai-search/history-trends";
 
 /* Brand chart tokens (X-34): two ice-blue series, then grays. Status colors stay off charts. */
 const SERIES_COLOR = ["var(--chart-measured)", "var(--chart-second)", "var(--text-muted)", "var(--chart-rest)"];
@@ -100,6 +100,23 @@ export function HistoryTrendChart({
           ),
         )}
       </svg>
+      {model.boundaries.map((boundary) => {
+        const x = (xFor(boundary.afterDay, min, max) + xFor(boundary.beforeDay, min, max)) / 2;
+        const reason = boundaryReason(boundary);
+        return (
+          <span
+            key={`${boundary.afterRunId}-${boundary.beforeRunId}`}
+            className="ai-history-boundary-hit ifai-term"
+            style={{ left: `${x}%` }}
+            data-ai-boundary-hit
+            data-ifai-tooltip-title="Runs not directly comparable"
+            data-ifai-tooltip-desc={reason}
+            tabIndex={0}
+            role="img"
+            aria-label={`Runs not directly comparable: ${reason}`}
+          />
+        );
+      })}
       <div className="ai-history-ylabels" aria-hidden="true">
         <span>100%</span>
         <span>50%</span>

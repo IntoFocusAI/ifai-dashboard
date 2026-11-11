@@ -44,8 +44,8 @@ import { brandName, leadBrand } from "@/lib/brand-copy";
 const SIM_WRAP_COLUMNS = ["prompt", "outcome", "model", "category", "fact", "checked"] as const;
 
 const SIM_COLUMNS = [
-  clientColumn("prompt", "Prompt", "text", 260, 150),
-  clientColumn("outcome", "Outcome", "text", 130, 110),
+  clientColumn("prompt", "Prompt", "text", 180, 120),
+  clientColumn("outcome", "Outcome", "text", 190, 140),
   clientColumn("engine", "Engine", "text", 90, 80),
   clientColumn("model", "Model", "text", 100, 90),
   clientColumn("category", "Category", "text", 100, 90),
