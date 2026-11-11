@@ -105,7 +105,6 @@ export function UserMenuDropdown({
         aria-expanded={open}
         aria-haspopup="menu"
         aria-controls={menuId}
-        title={email}
         onClick={() => setOpen(!open)}
       >
         {avatarUrl ? (
@@ -120,7 +119,7 @@ export function UserMenuDropdown({
 
       {open ? (
         <div className="user-menu-panel" id={menuId} role="menu">
-          <div className="user-menu-email" title={email}>
+          <div className="user-menu-email">
             <span>{email}</span>
             {organizationName ? (
               <span className="user-menu-org">
