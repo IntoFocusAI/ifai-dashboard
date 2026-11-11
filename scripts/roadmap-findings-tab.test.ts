@@ -35,7 +35,7 @@ test("Roadmap 30-60-90 Days renders the shared plan in three dated phases (S-02,
   const data = read("components/v3/live/RoadmapPlanData.ts");
   assert.match(spokes, /roadmap:\s*\{[\s\S]*0:\s*\([^)]*\)\s*=>\s*<RoadmapFindingsPanel/);
   assert.match(data, /briefingFindingsLead/);
-  assert.match(panel, /useRoadmapPlan\(read\)/);
+  assert.match(panel, /useRoadmapPlan\(read, bundle\)/);
   assert.match(panel, /PLAN_PHASES\.map/);
   assert.match(panel, /IntoFocus's recommended plan for/);
   assert.doesNotMatch(panel, /Open details|since last time|what changed/i);
