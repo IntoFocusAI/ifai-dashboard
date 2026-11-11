@@ -1,21 +1,17 @@
 /**
- * Action Items · Urgent Interventions work list: the five current findings in priority order,
- * each opening its home spoke/tab via data-ifai-open.
+ * Action Items · Urgent Interventions: the action line for each of the five current findings.
+ * The rows render in React (ActionItemsFixTable), where DefinedCopy marks glossary terms the way
+ * annotateGlossary marks them in the HTML tabs.
  */
 
-import type { AiSearchRead } from "@/lib/ai-search/types";
-import { fixListHtml, rankFixList } from "@/lib/fender-canvas/action-items-fix-list";
 import {
   BRIEFING_COUNT_MISSING,
-  briefingFindingsLead,
   type BriefingFinding,
   type BriefingFindingId,
 } from "@/lib/fender-canvas/briefing-retail-lead";
-import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
-import type { FindabilityRead } from "@/lib/findability/copy";
 import { brandName, brandSite } from "@/lib/brand-copy";
 
-function hasStoredReading(finding: BriefingFinding): boolean {
+export function hasStoredReading(finding: BriefingFinding): boolean {
   return (
     finding.ratio != null &&
     finding.numerator != null &&
@@ -47,28 +43,6 @@ const MISSING_ACTIONS: Record<BriefingFindingId, string> = {
   unbranded_discovery: "The AI Search reading is not stored.",
 };
 
-function actionCopy(finding: BriefingFinding): string {
+export function findingAction(finding: BriefingFinding): string {
   return hasStoredReading(finding) ? STORED_ACTIONS[finding.id] : MISSING_ACTIONS[finding.id];
-}
-
-/**
- * Renders the five briefingFindingsLead rows as one ranked fix list.
- * No per-finding dollar is computed yet, so no row carries an estimate.
- * Buy Box and MAP jargon stay for annotateGlossary (do not pre-mark ifai-term).
- */
-export function urgentInterventionsHtml(
-  retail: RetailCanvasRead,
-  findability: FindabilityRead,
-  ai: AiSearchRead,
-): string {
-  const { findings } = briefingFindingsLead(retail, findability, ai);
-  return fixListHtml(
-    rankFixList(
-      findings.map((finding) => ({
-        finding,
-        action: actionCopy(finding),
-        stored: hasStoredReading(finding),
-      })),
-    ),
-  );
 }
