@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState, type ReactNode } from "react";
 import { useFindability } from "@/components/v3/live/findability/FindabilityContext";
 import { ALL_REASONS, NotFoundReasonCell, ReasonFilter } from "@/components/v3/live/PageFoundReason";
 import { ResizableTable, type RetailColumn } from "@/components/v3/live/ResizableTable";
@@ -22,6 +22,7 @@ import {
 } from "@/lib/fender-canvas/page-found-reasons";
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
 import "@/components/v3/live/page-found.css";
+import { brandSite } from "@/lib/brand-copy";
 
 const PAGE = 50;
 
@@ -33,8 +34,8 @@ const COLUMNS: RetailColumn[] = [
   { id: "status", name: "Page found", label: "Page found", width: 120, minWidth: 100, sort: "text" },
   {
     id: "evidence",
-    name: "fender.com page or reason",
-    label: "fender.com page or reason",
+    name: `${brandSite()} page or reason`,
+    label: `${brandSite()} page or reason`,
     width: 320,
     minWidth: 180,
     sort: "text",
@@ -120,10 +121,12 @@ function FilterButtons({
   evidence,
   filter,
   onFilter,
+  children,
 }: {
   evidence: PageFoundEvidence;
   filter: Filter;
   onFilter: (next: Filter) => void;
+  children?: ReactNode;
 }) {
   const options: Array<[Filter, string, number]> = [
     ["all", "All checked", evidence.checked],
@@ -147,6 +150,7 @@ function FilterButtons({
           </button>
         ))}
       </div>
+      {children}
     </div>
   );
 }
@@ -199,8 +203,10 @@ export function PageFoundTable({
     [reasons],
   );
   const sorted = useClientTableSort(rows, COLUMNS, value);
-  const slice = sorted.rows.slice(page * PAGE, page * PAGE + PAGE);
-  const matches = evidence ? evidenceMatchesHero(evidence, hero) : true;
+  // A search or a sort can leave fewer pages than the one on screen.
+  const shown = Math.min(page, Math.max(0, Math.ceil(sorted.rows.length / PAGE) - 1));
+  const slice = sorted.rows.slice(shown * PAGE, shown * PAGE + PAGE);
+  const matches = evidence && hero.denominator != null ? evidenceMatchesHero(evidence, hero) : true;
 
   return (
     <div
@@ -215,7 +221,7 @@ export function PageFoundTable({
     >
       <div className="content-box-title">
         <span>
-          fender.com page by checked SKU
+          {brandSite()} page by checked SKU
           {matches ? null : (
             <span
               className="ifai-term page-found-mismatch"
@@ -243,18 +249,19 @@ export function PageFoundTable({
             setReasonFilter(ALL_REASONS);
             setPage(0);
           }}
-        />
-      ) : null}
-      {evidence && filter === "not_found" && findability.phase !== "loading" ? (
-        <ReasonFilter
-          groups={groups}
-          total={evidence.notFound}
-          value={activeReason}
-          onChange={(next) => {
-            setReasonFilter(next);
-            setPage(0);
-          }}
-        />
+        >
+          {filter === "not_found" && findability.phase !== "loading" ? (
+            <ReasonFilter
+              groups={groups}
+              total={evidence.notFound}
+              value={activeReason}
+              onChange={(next) => {
+                setReasonFilter(next);
+                setPage(0);
+              }}
+            />
+          ) : null}
+        </FilterButtons>
       ) : null}
       <ResizableTable
         tableId="brand-site-page-found"
@@ -264,6 +271,7 @@ export function PageFoundTable({
         freezeHeader
         maxHeight={520}
         sort={sorted.sort}
+        controls={sorted.controls}
         onSort={(columnId) => {
           setPage(0);
           sorted.onSort(columnId);
@@ -290,7 +298,7 @@ export function PageFoundTable({
           ))}
         </tbody>
       </ResizableTable>
-      <Pager page={page} total={rows.length} onPage={setPage} />
+      <Pager page={shown} total={sorted.rows.length} onPage={setPage} />
     </div>
   );
 }

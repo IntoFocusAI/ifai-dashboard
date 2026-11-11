@@ -18,6 +18,7 @@ import { cleanPrompt, engineLabel, formatRunTime, modelLabel } from "@/lib/ai-se
 import type { AiCallRow } from "@/lib/ai-search/types";
 import { formatInt } from "@/lib/fender-canvas/format";
 import { amazonHref } from "@/lib/fender-canvas/stock-loss";
+import { brandName } from "@/lib/brand-copy";
 
 const label = { fontSize: 11, textTransform: "uppercase", letterSpacing: 0.4, color: "var(--text-subtle)" } as const;
 const value = { fontSize: 13, lineHeight: 1.5, margin: "2px 0 10px" } as const;
@@ -77,7 +78,7 @@ export function FactCheckEvidence({
         {cleanPrompt(row.prompt)}
       </Step>
 
-      <Step step={2} heading="Verified Fender fact">
+      <Step step={2} heading={`Verified ${brandName()} fact`}>
         {probe?.claim ?? PROBE_STATE_LABELS.no_fact}
         {catalog?.amazonDiffers ? (
           <div style={mutedText} data-ai-amazon-differs="">
@@ -89,7 +90,7 @@ export function FactCheckEvidence({
         ) : null}
       </Step>
 
-      <Step step={3} heading="Official Fender source">
+      <Step step={3} heading={`Official ${brandName()} source`}>
         {probe?.sourceUrl ? (
           <ExternalLink href={probe.sourceUrl}>{probe.sourceUrl}</ExternalLink>
         ) : (
@@ -130,7 +131,7 @@ export function FactCheckEvidence({
                   <td>ASIN</td>
                   <td>{listing ? <ExternalLink href={listing}>{catalog.asin}</ExternalLink> : catalog.asin}</td>
                 </tr>
-                <tr><td>Fender SKU</td><td>{catalog.sku ?? "Not recorded"}</td></tr>
+                <tr><td>{brandName()} SKU</td><td>{catalog.sku ?? "Not recorded"}</td></tr>
                 <tr><td>Spec checked</td><td>{specFieldLabel(catalog.specField) ?? "Not recorded"}</td></tr>
                 <tr><td>Amazon value</td><td>{catalog.amazonValue ?? "Not recorded"}</td></tr>
               </>

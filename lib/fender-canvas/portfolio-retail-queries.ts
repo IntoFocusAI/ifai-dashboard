@@ -1,4 +1,5 @@
 import { getCanvasSupabase } from "../supabase/canvas-client";
+import { readFailure } from "./canvas-reads";
 import {
   loadPortfolioRetailSnapshot as loadFromSource,
   readPages,
@@ -88,11 +89,11 @@ export function supabaseRetailQuerySource(): RetailQuerySource {
     async catalogBundleCount() {
       try {
         const { data, error } = await catalogBundleCountQuery();
-        if (error) return null;
+        if (error) return readFailure("m", error);
         const row = (data ?? [])[0] as { catalog_bundles?: unknown } | undefined;
         return finiteCount(row?.catalog_bundles);
-      } catch {
-        return null;
+      } catch (reason) {
+        return readFailure("m", reason);
       }
     },
     specRows: () =>

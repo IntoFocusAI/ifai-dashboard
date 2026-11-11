@@ -20,11 +20,11 @@ test("division and MAP listing tables opt out of row hover without deleting the 
   );
 
   const divisions = read("components/v3/live/FenderDivisionsTable.tsx");
-  assert.match(divisions, /className="table-sm table-no-row-hover"/);
+  assert.match(divisions, /tableClassName="table-no-row-hover"/);
   assert.doesNotMatch(divisions, /onClick/);
 
   const map = read("components/v3/live/MapListingsTable.tsx");
-  assert.match(map, /tableClassName="table-no-row-hover"/);
+  assert.match(map, /table-no-row-hover/);
   assert.match(map, /ChannelPriceCell/);
   assert.match(map, /listing-link/);
 

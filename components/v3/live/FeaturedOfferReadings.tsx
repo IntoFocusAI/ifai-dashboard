@@ -1,5 +1,7 @@
 "use client";
 
+import { figureTipAttrs } from "@/components/v3/live/FigureTip";
+import { StatusMark } from "@/components/v3/live/StatusMark";
 import { formatInt } from "@/lib/fender-canvas/format";
 import {
   coverageExceptionLabel,
@@ -7,7 +9,10 @@ import {
 } from "@/lib/fender-canvas/coverage-exceptions";
 import type { FeaturedOfferCounts } from "@/lib/fender-canvas/featured-offer";
 import {
-  benchmarkCoverageSentence,
+  BENCHMARK_UNPUBLISHED_TIP,
+  BENCHMARK_UNPUBLISHED_TITLE,
+  COVERAGE_EXCEPTIONS_TIP,
+  benchmarkCoverageParts,
   featuredOfferFreshnessSentence,
   featuredOfferJob,
 } from "@/lib/fender-canvas/featured-offer-copy";
@@ -60,6 +65,25 @@ function readings(counts: FeaturedOfferCounts): Reading[] {
   ];
 }
 
+/**
+ * Benchmark coverage with its caveat in a tooltip on the unpublished count, so the sentence
+ * on screen states only what was found.
+ */
+export function BenchmarkCoverageText({ counts }: { counts: FeaturedOfferCounts }) {
+  const parts = benchmarkCoverageParts(counts);
+  return (
+    <>
+      {parts.before}
+      {parts.figure ? (
+        <span {...figureTipAttrs(BENCHMARK_UNPUBLISHED_TITLE, BENCHMARK_UNPUBLISHED_TIP, "benchmark-unpublished")}>
+          {parts.figure}
+        </span>
+      ) : null}
+      {parts.after}
+    </>
+  );
+}
+
 function CoverageExceptionsCard({ counts }: { counts: FeaturedOfferCounts }) {
   const healthy = coverageExceptionsHealthy(counts.notChecked, counts.checkFailed);
   return (
@@ -70,11 +94,13 @@ function CoverageExceptionsCard({ counts }: { counts: FeaturedOfferCounts }) {
     >
       <span className="metric-card-label">Coverage exceptions</span>
       <span className="metric-card-val fo-coverage-value">
-        {coverageExceptionLabel(counts.notChecked, counts.checkFailed)}
+        <span {...figureTipAttrs("Coverage exceptions", COVERAGE_EXCEPTIONS_TIP, "coverage-exceptions")}>
+          {coverageExceptionLabel(counts.notChecked, counts.checkFailed)}
+        </span>
       </span>
+      {healthy ? <StatusMark status="good" /> : null}
       <span className="metric-card-sub">
-        Unchecked listings have not been reached. Failed checks are not counted as present and not
-        counted as zero. A failed check is not an unchecked listing.
+        Unchecked listings have not been reached yet. Failed checks are counted on their own.
       </span>
     </div>
   );
@@ -111,7 +137,9 @@ export function FeaturedOfferReadings({
           {formatInt(counts.current)} of {formatInt(counts.population)} current
         </span>
       </div>
-      <p className="retail-missing">{benchmarkCoverageSentence(counts)}</p>
+      <p className="retail-missing">
+        <BenchmarkCoverageText counts={counts} />
+      </p>
       <p className="retail-missing">
         {featuredOfferFreshnessSentence(counts, featuredOfferJob(freshness))}
       </p>

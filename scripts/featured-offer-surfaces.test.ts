@@ -75,6 +75,7 @@ function snapshot(): PortfolioRetailSnapshot {
         parent_asin: null,
         product_url: null,
         is_bundle: true,
+        featured_offer_state: "present",
       },
     ]),
     amazonSpecGaps: {
@@ -153,7 +154,9 @@ test("every copied surface carries the same Buy Box label and count", () => {
   assert.equal(roadmap?.tooltip?.desc, "");
 
   const tour = buildLiveTourSteps(bundle(), READ);
-  assert.ok(tour.some((step) => step.displays?.includes(sentence)));
+  assert.ok(
+    tour.some((step) => step.displays?.some((line) => line.startsWith(`${surface.label}: ${surface.countLabel}`))),
+  );
 
   const vars = retailTemplateVars(bundle(), READ);
   assert.equal(vars.retail_headline, sentence);
@@ -189,7 +192,7 @@ test("the client-facing label holds even when the confirmed count clears", () =>
 test("the suppressed tab keeps its slug so old deep links still resolve", () => {
   assert.equal(RETAIL_FINDING_LABELS.suppressed_listings, "Suppressed Listings");
   assert.equal(tabSlug(RETAIL_FINDING_LABELS.suppressed_listings), "suppressed-listings");
-  assert.equal(tabSlug(RETAIL_FINDING_LABELS.map_leakage), "map");
+  assert.equal(tabSlug(RETAIL_FINDING_LABELS.map_leakage), "map-leakage");
   assert.equal(tabSlug(RETAIL_FINDING_LABELS.unnested_bundles), "catalog-governance");
   // The label on screen changed; the tab the link opens did not.
   assert.equal(headlineSurface(READ).tab, "Suppressed Listings");
@@ -248,8 +251,6 @@ function tsxFiles(dir: string, out: string[] = []): string[] {
    as tech debt to split when that area is next edited, not as a blocker here. */
 const PRE_EXISTING_OVERSIZED = [
   "components/intofocus-portal/PortalView.tsx",
-  "components/sdk/docs/DesignSystemContent.tsx",
-  "components/sdk/sdk-canvas-spec.tsx",
   "lib/canvas-sdk/CanvasShell.tsx",
   "lib/canvas-sdk/GraphPrimitives.tsx",
 ];

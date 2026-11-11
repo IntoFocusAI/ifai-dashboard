@@ -1,0 +1,40 @@
+/* A Findability row opened from a Brand-Site Specs reason link. Fades back to the table. */
+
+@keyframes findability-row-landed {
+  from {
+    background-color: color-mix(in srgb, var(--accent-cyan) 28%, transparent);
+  }
+  to {
+    background-color: transparent;
+  }
+}
+
+tr[data-findability-landed] > td {
+  animation: findability-row-landed 2.4s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  tr[data-findability-landed] > td {
+    animation: none;
+    background-color: color-mix(in srgb, var(--accent-cyan) 18%, transparent);
+  }
+}
+
+/* A stacked cell's second line: category under the listing, variant SKU under the page. */
+.findability-cell-sub {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--text-muted);
+}
+
+/* Titles and page addresses wrap inside their column so the table fits the panel. */
+.findability-listing-title {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.findability-official-link {
+  overflow-wrap: anywhere;
+}

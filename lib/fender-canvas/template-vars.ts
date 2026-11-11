@@ -1,4 +1,4 @@
-import { ENTERPRISE_POTENTIAL_ESTIMATE, PHASE_ONE_LIFT_ESTIMATE } from "@/lib/fender-canvas/analyst-estimates";
+import { ENTERPRISE_POTENTIAL_ESTIMATE, NO_ANALYST_ESTIMATE, PHASE_ONE_LIFT_ESTIMATE } from "@/lib/fender-canvas/analyst-estimates";
 import type { CanvasAiCategoryRow, CanvasBundle, CanvasMetricsRow } from "@/lib/fender-canvas/types";
 import {
   formatEstimate,
@@ -13,6 +13,10 @@ import {
 
 function catRow(cats: CanvasAiCategoryRow[], slug: string) {
   return cats.find((c) => c.category === slug);
+}
+
+function estimateOrNone(figure: string): string {
+  return figure === NO_ANALYST_ESTIMATE ? figure : formatEstimate(figure);
 }
 
 function kpiString(m: CanvasMetricsRow, key: string, fallback: string): string {
@@ -34,7 +38,6 @@ export function buildTemplateVars(bundle: CanvasBundle): Record<string, string> 
   const vars: Record<string, string> = {
     catalog_skus: formatInt(m.catalog_skus),
     catalog_bundles: formatInt(m.catalog_bundles),
-    division_count: formatInt(bundle.divisions.length > 0 ? bundle.divisions.length : m.division_count),
     bb_total: formatInt(m.bb_total),
     bb_1p: formatInt(m.bb_1p),
     bb_3p: formatInt(m.bb_3p),
@@ -87,8 +90,8 @@ export function buildTemplateVars(bundle: CanvasBundle): Record<string, string> 
     bb_1p_detail: `${formatInt(m.bb_1p)} 1P vs ${formatInt(m.bb_3p)} 3P`,
     sim_resolved_detail: `${formatInt(m.sim_resolved)} resolved (${formatInt(m.sim_unclear)} unclear, ${formatInt(m.sim_errors)} errors)`,
     fender_found_ratio: formatRatio(m.spec_fender_found, m.spec_checked),
-    phase_one_lift: formatEstimate(kpiString(m, "phase1_lift", PHASE_ONE_LIFT_ESTIMATE)),
-    enterprise_potential: formatEstimate(kpiString(m, "enterprise_potential", ENTERPRISE_POTENTIAL_ESTIMATE)),
+    phase_one_lift: estimateOrNone(kpiString(m, "phase1_lift", PHASE_ONE_LIFT_ESTIMATE)),
+    enterprise_potential: estimateOrNone(kpiString(m, "enterprise_potential", ENTERPRISE_POTENTIAL_ESTIMATE)),
   };
 
   for (const row of cats) {

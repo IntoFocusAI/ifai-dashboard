@@ -83,6 +83,7 @@ function bundle(overrides: Partial<CatalogBundleRow> & Pick<CatalogBundleRow, "a
     parent_asin: null,
     product_url: "https://www.amazon.com/dp/B0D8TFXHHT",
     is_bundle: true,
+    featured_offer_state: "present",
     ...overrides,
   };
 }
@@ -146,8 +147,8 @@ test("Suppressed Listings places one callout body beside the share", () => {
   assert.match(panel, /data-suppressed-listings-notes/);
   assert.match(panel, /data-suppressed-listings-top/);
   assert.match(panel, /data-suppressed-listings-table/);
-  assert.match(panel, /CitationPieDisc/);
-  assert.match(panel, /citation-pie-disc citation-pie-disc-retail/);
+  assert.match(panel, /RetailShareDisc/);
+  assert.match(read("components/v3/live/RetailOverviewFigure.tsx"), /citation-pie-disc citation-pie-disc-retail/);
   assert.match(panel, /hero\.label/);
   assert.match(panel, /hero\.percent/);
   assert.match(panel, /hero\.ratio/);
@@ -156,7 +157,7 @@ test("Suppressed Listings places one callout body beside the share", () => {
   assert.match(panel, /width:\s*"fit-content"/);
   assert.match(panel, /Why can a listing lose the Buy Box\?/);
   assert.match(panel, /confirmedSuppressionSentence/);
-  assert.match(panel, /benchmarkCoverageSentence/);
+  assert.match(panel, /BenchmarkCoverageText/);
   assert.match(panel, /featuredOfferFreshnessSentence/);
   assert.match(
     panel,
@@ -177,7 +178,7 @@ test("Suppressed Listings places one callout body beside the share", () => {
     1,
     "one callout body holds the why text and reading sentences",
   );
-  assert.match(panel, /\.join\(" "\)/);
+  assert.match(panel, /<ReadingNotes read=\{read\} freshness=\{freshness\} \/>/);
   assert.doesNotMatch(
     panel,
     /retail-missing">\{confirmedSuppressionSentence|retail-missing">\{benchmarkCoverageSentence|retail-missing">\s*\{featuredOfferFreshnessSentence/,

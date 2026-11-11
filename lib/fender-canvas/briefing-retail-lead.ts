@@ -12,7 +12,15 @@ import {
 } from "@/lib/ai-search/summary";
 import type { AiSearchRead } from "@/lib/ai-search/types";
 import type { NodeStatus } from "@/lib/canvas-sdk/types";
+import {
+  CANVAS_READS,
+  failedReadTip,
+  READ_NOT_AVAILABLE,
+  type PartialFigure,
+} from "@/lib/fender-canvas/canvas-reads";
 import { formatInt, formatRatio } from "@/lib/fender-canvas/format";
+import { activeOfferClarity } from "@/lib/fender-canvas/offer-clarity";
+import type { CanvasBundle } from "@/lib/fender-canvas/types";
 import {
   buyBoxHero,
   catalogHero,
@@ -20,6 +28,7 @@ import {
   type RetailOverviewHeroModel,
 } from "@/lib/fender-canvas/retail-overview-lead";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
+import { RETAIL_FINDING_LABELS } from "@/lib/fender-canvas/portfolio-retail";
 import type { FindabilityRead } from "@/lib/findability/copy";
 import {
   exactPageLeadPie,
@@ -29,8 +38,15 @@ import {
   outcomeShareFigure,
 } from "@/lib/findability/lead";
 import { countFindability } from "@/lib/findability/outcomes";
+import { leadBrand } from "@/lib/brand-copy";
 
 export const BRIEFING_COUNT_MISSING = "Not available*";
+
+/** Shown on a Briefing card while its read is still loading: not a missing figure. */
+export const BRIEFING_LOADING = "Loading";
+
+/** X-18: one name for this figure everywhere (the map, Briefing, and the Roadmap card). */
+export const SPLINTERED_LISTINGS_LABEL = "Splintered Listings";
 
 /**
  * Searched PortfolioRetailSnapshot detail/counts and CanvasMetricsRow once.
@@ -60,6 +76,16 @@ export type BriefingFinding = {
   explainer: string;
   numerator: number | null;
   denominator: number | null;
+  /** X-25: why the figure is partial or stale, for the asterisk and its tooltip. Null when whole. */
+  partial: PartialFigure | null;
+  /** The read is still loading. `percent` stays Not available* for the fix list; the card says Loading. */
+  loading: boolean;
+};
+
+/** Options for the AI finding. Summary passes the map's read and its stale reading. */
+export type BriefingAiOptions = {
+  /** The published run is past its check schedule (lib/ai-search/stale.ts). */
+  aiStale?: PartialFigure | null;
 };
 
 export type BriefingLostRevenuePlaceholder = {
@@ -99,6 +125,8 @@ function fromRetailHero(
     explainer,
     numerator: hero.numerator,
     denominator: hero.denominator,
+    partial: hero.partial ?? null,
+    loading: false,
   };
 }
 
@@ -108,6 +136,7 @@ function missingFinding(
   tab: string,
   label: string,
   explainer: string,
+  loading = false,
 ): BriefingFinding {
   return {
     id,
@@ -123,26 +152,39 @@ function missingFinding(
     explainer,
     numerator: null,
     denominator: null,
+    partial: null,
+    loading,
   };
 }
 
 function retailFindings(read: RetailCanvasRead): BriefingFinding[] {
   if (read.phase !== "ready") {
+    const loading = read.phase === "loading";
+    const why = (stored: string) => (loading ? "Loading the retail reading." : stored);
     return [
       missingFinding(
         "buy_box",
         "ecommerce",
-        "Suppressed Listings",
+        RETAIL_FINDING_LABELS.suppressed_listings,
         "Buy Box withheld",
-        "Buy Box reading not stored.",
+        why("Buy Box reading not stored."),
+        loading,
       ),
-      missingFinding("map_leakage", "ecommerce", "MAP", "MAP leakage", "MAP reading not stored."),
+      missingFinding(
+        "map_leakage",
+        "ecommerce",
+        RETAIL_FINDING_LABELS.map_leakage,
+        "MAP leakage",
+        why("MAP reading not stored."),
+        loading,
+      ),
       missingFinding(
         "splintered_bundles",
         "ecommerce",
-        "Catalog Governance",
-        "Splintered bundles",
-        "Catalog reading not stored.",
+        RETAIL_FINDING_LABELS.unnested_bundles,
+        SPLINTERED_LISTINGS_LABEL,
+        why("Catalog reading not stored."),
+        loading,
       ),
     ];
   }
@@ -169,8 +211,8 @@ function retailFindings(read: RetailCanvasRead): BriefingFinding[] {
     ),
     fromRetailHero(
       "splintered_bundles",
-      { ...catalog, label: "Splintered bundles" },
-      "Splintered bundles",
+      { ...catalog, label: SPLINTERED_LISTINGS_LABEL },
+      SPLINTERED_LISTINGS_LABEL,
       catalog.numerator != null && catalog.denominator != null
         ? "No usable parent ASIN, so reviews stay split."
         : catalog.explainer,
@@ -180,12 +222,14 @@ function retailFindings(read: RetailCanvasRead): BriefingFinding[] {
 
 function findabilityFinding(read: FindabilityRead): BriefingFinding {
   if (read.phase !== "ready") {
+    const loading = read.phase === "loading";
     return missingFinding(
       "exact_official_product",
       "specs",
       "Findability",
       "Exact official product pages",
-      "Official-page reading not stored.",
+      loading ? "Loading the official-page reading." : "Official-page reading not stored.",
+      loading,
     );
   }
 
@@ -218,6 +262,8 @@ function findabilityFinding(read: FindabilityRead): BriefingFinding {
       : "Official-page reading not stored.",
     numerator: ready ? counts.exact_official_product : null,
     denominator: ready ? counts.total : null,
+    partial: null,
+    loading: false,
   };
 }
 
@@ -226,24 +272,29 @@ function unbrandedPie(fenderWins: number, resolved: number): PieDiscData | null 
   const rest = resolved - fenderWins;
   return {
     id: "briefing-unbranded",
-    title: "Unbranded discovery",
+    title: "Unbranded Discovery",
     total: resolved,
     totalLabel: "resolved unbranded discovery answers",
     slices: [
-      { key: "fender", label: "Fender/Squier leads", count: fenderWins },
+      { key: "fender", label: `${leadBrand()} leads`, count: fenderWins },
       { key: "rest", label: "Rest of resolved answers", count: rest },
     ].filter((slice) => slice.count > 0),
   };
 }
 
-function unbrandedFinding(read: AiSearchRead): BriefingFinding {
+const AI_READ_FAILED =
+  "The published AI Search run did not load, so this figure is left out rather than shown as zero.";
+
+function unbrandedFinding(read: AiSearchRead, options: BriefingAiOptions): BriefingFinding {
   if (read.phase !== "ready") {
+    const loading = read.phase === "loading";
     return missingFinding(
       "unbranded_discovery",
       "aeo",
       "Run Details",
-      "Unbranded discovery",
-      "AI Search reading not stored.",
+      "Unbranded Discovery",
+      loading ? "Loading the published AI Search run." : AI_READ_FAILED,
+      loading,
     );
   }
 
@@ -262,7 +313,7 @@ function unbrandedFinding(read: AiSearchRead): BriefingFinding {
     id: "unbranded_discovery",
     spokeId: "aeo",
     tab: "Run Details",
-    label: "Unbranded discovery",
+    label: "Unbranded Discovery",
     percent: ready ? lead.rate! : BRIEFING_COUNT_MISSING,
     ratio: ready ? formatRatio(tally.fenderWins, tally.resolved) : null,
     color: lead.color ?? TONE_COLOR.warning,
@@ -272,11 +323,29 @@ function unbrandedFinding(read: AiSearchRead): BriefingFinding {
       ? `${formatInt(tally.fenderWins)} of ${formatInt(tally.resolved)} resolved unbranded discovery answers.`
       : null,
     explainer: ready
-      ? "Fender/Squier named most on unbranded shopping questions."
+      ? `${leadBrand()} named most on unbranded shopping questions.`
       : "No resolved unbranded discovery answers in this window.",
     numerator: ready ? tally.fenderWins : null,
     denominator: ready ? tally.resolved : null,
+    partial: ready ? (options.aiStale ?? null) : null,
+    loading: false,
   };
+}
+
+function escapeHtml(value: string): string {
+  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+/**
+ * The Briefing "Active offers" line. The offer split comes from canvas_metrics, so a failed
+ * read is Not available* with the read named in the shared custom tooltip (HTML, for the
+ * Briefing template), never a zero or "not stored".
+ */
+export function activeOffersLine(bundle: CanvasBundle): string {
+  const tip = failedReadTip(bundle, "m");
+  if (!tip) return activeOfferClarity(bundle.m);
+  const desc = escapeHtml(tip);
+  return `<span class="ifai-term" data-ifai-tooltip-title="${READ_NOT_AVAILABLE}" data-ifai-tooltip-desc="${desc}" data-read-unavailable="${CANVAS_READS.m.source}" tabindex="0" aria-label="${READ_NOT_AVAILABLE}: ${desc}">${READ_NOT_AVAILABLE}</span>`;
 }
 
 export function briefingLostRevenuePlaceholder(): BriefingLostRevenuePlaceholder {
@@ -295,10 +364,11 @@ export function briefingFindingsLead(
   retail: RetailCanvasRead,
   findability: FindabilityRead,
   ai: AiSearchRead,
+  options: BriefingAiOptions = {},
 ): BriefingFindingsLead {
   const [buyBox, map, bundles] = retailFindings(retail);
   return {
-    findings: [buyBox, map, bundles, findabilityFinding(findability), unbrandedFinding(ai)],
+    findings: [buyBox, map, bundles, findabilityFinding(findability), unbrandedFinding(ai, options)],
     lostRevenue: briefingLostRevenuePlaceholder(),
   };
 }

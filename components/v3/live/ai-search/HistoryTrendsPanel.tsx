@@ -4,20 +4,19 @@ import { useMemo, useState, type ReactNode } from "react";
 import { useAiHistory } from "@/components/v3/live/ai-search/AiHistoryContext";
 import { READ_ERROR_TITLE } from "@/components/v3/live/ai-search/AiReadGate";
 import { CopyTip } from "@/components/v3/live/ai-search/CopyTip";
+import { useEngineGroupWindow } from "@/components/v3/live/ai-search/EngineGroupScope";
 import { HistoryPointDetail } from "@/components/v3/live/ai-search/HistoryPointDetail";
 import { HistoryTrendChart } from "@/components/v3/live/ai-search/HistoryTrendChart";
+import { HistoryTrendTable } from "@/components/v3/live/ai-search/HistoryTrendTable";
 import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
 import { formatDay, utcDay } from "@/lib/ai-search/history-eligibility";
-import { rangeFromMode } from "@/lib/ai-search/history-mode";
 import { batteryGaps } from "@/lib/ai-search/prompt-battery";
-import { isReviewHistoryRun, SCORING_LABELS, scoringLabel } from "@/lib/ai-search/review-runs";
+import { SCORING_LABELS, scoringLabel } from "@/lib/ai-search/review-runs";
 import {
   boundaryLabel,
   buildHistoryTrend,
-  coverageLabel,
   ONE_RUN_TREND_MESSAGE,
   queryChoices,
-  rateLabel,
   type QueryChoice,
   type TrendMetric,
 } from "@/lib/ai-search/history-trends";
@@ -43,35 +42,28 @@ export function HistoryTrendsPanel() {
   const [breakdown, setBreakdown] = useState<"overall" | "engine">("overall");
   const [query, setQuery] = useState<QueryChoice>({ kind: "all" });
   const [picked, setPicked] = useState<{ runId: string; seriesKey: string } | null>(null);
-  const { from, to } = rangeFromMode(history.mode);
-  const runs = history.catalog.phase === "ready" ? history.catalog.runs : [];
-  const trusted = runs.filter(isReviewHistoryRun).filter((run) => {
-    const day = utcDay(run.published_at ?? run.completed_at);
-    if (!day) return false;
-    if (from && day < from) return false;
-    if (to && day > to) return false;
-    return true;
-  });
+  const { trend, apiDays, runCount } = useEngineGroupWindow();
+  const { from, to } = history.bounds;
 
   const model = useMemo(() => {
-    if (history.trend.phase !== "ready") return null;
+    if (trend.phase !== "ready") return null;
     return buildHistoryTrend({
-      snapshots: history.trend.snapshots,
+      snapshots: trend.snapshots,
       metric,
       breakdown,
       fromDay: from,
       toDay: to,
       query,
     });
-  }, [breakdown, from, history.trend, metric, query, to]);
+  }, [breakdown, from, trend, metric, query, to]);
 
   const choices = useMemo(
-    () => (history.trend.phase === "ready" ? queryChoices(history.trend.snapshots, metric) : [{ kind: "all" as const }]),
-    [history.trend, metric],
+    () => (trend.phase === "ready" ? queryChoices(trend.snapshots, metric) : [{ kind: "all" as const }]),
+    [trend, metric],
   );
 
   let body: ReactNode = null;
-  if (history.catalog.phase === "loading" || history.trend.phase === "loading") {
+  if (history.catalog.phase === "loading" || trend.phase === "loading") {
     body = <p className="ai-history-note" data-ai-history-state="loading">Loading run history.</p>;
   } else if (history.catalog.phase === "error") {
     body = (
@@ -83,36 +75,36 @@ export function HistoryTrendsPanel() {
         .
       </p>
     );
-  } else if (history.trend.phase === "error") {
+  } else if (trend.phase === "error") {
     body = (
       <p className="ai-history-note" data-ai-history-state="error">
         The runs in this period{" "}
-        <CopyTip label={READ_ERROR_TITLE} description={history.trend.message}>
+        <CopyTip label={READ_ERROR_TITLE} description={trend.message}>
           did not load
         </CopyTip>
         . No trend line is drawn.
       </p>
     );
-  } else if (history.trend.phase === "unavailable") {
+  } else if (trend.phase === "unavailable") {
     body = (
       <p className="ai-history-note" data-ai-history-state="unavailable">
-        {history.trend.message} No trend line is drawn.
+        {trend.message} No trend line is drawn.
       </p>
     );
-  } else if (trusted.length === 1 || model?.status === "one-run") {
+  } else if (runCount === 1 || model?.status === "one-run") {
     body = (
       <p className="ai-history-note" data-ai-history-state="one-run">
-        {trusted.length === 1 ? ONE_RUN_TREND_MESSAGE : model?.message ?? ONE_RUN_TREND_MESSAGE}
+        {runCount === 1 ? ONE_RUN_TREND_MESSAGE : model?.message ?? ONE_RUN_TREND_MESSAGE}
       </p>
     );
-  } else if (trusted.length === 0 || model?.status === "empty") {
+  } else if (runCount === 0 || model?.status === "empty") {
     body = <p className="ai-history-note" data-ai-history-state="empty">No review run falls in this range.</p>;
   } else if (model?.status === "ready") {
     const active = model.series.flatMap((series) => series.points.map((point) => ({ point, series }))).find(
       (item) => item.point.runId === picked?.runId && item.series.key === picked?.seriesKey,
     );
-    const snapshot = history.trend.phase === "ready"
-      ? history.trend.snapshots.find((item) => item.run.audit_run_id === active?.point.runId) ?? null
+    const snapshot = trend.phase === "ready"
+      ? trend.snapshots.find((item) => item.run.audit_run_id === active?.point.runId) ?? null
       : null;
     body = (
       <>
@@ -137,10 +129,10 @@ export function HistoryTrendsPanel() {
             <p>
               {boundary.scoringMethodChanged
                 ? `${formatDay(boundary.afterDay)} uses ${
-                    scoringLabel(history.trend.phase === "ready" ? history.trend.snapshots.find((item) => item.run.audit_run_id === boundary.afterRunId)?.run ?? {} : {}) ?? SCORING_LABELS.original_winner
+                    scoringLabel(trend.phase === "ready" ? trend.snapshots.find((item) => item.run.audit_run_id === boundary.afterRunId)?.run ?? {} : {}) ?? SCORING_LABELS.original_winner
                   }. ${formatDay(boundary.beforeDay)} uses ${
-                    scoringLabel(history.trend.phase === "ready" ? history.trend.snapshots.find((item) => item.run.audit_run_id === boundary.beforeRunId)?.run ?? {} : {}) ?? SCORING_LABELS.mention_share
-                  }. The line can connect these runs. The rates were not scored the same way.`
+                    scoringLabel(trend.phase === "ready" ? trend.snapshots.find((item) => item.run.audit_run_id === boundary.beforeRunId)?.run ?? {} : {}) ?? SCORING_LABELS.mention_share
+                  }.`
                 : `${formatDay(boundary.afterDay)} to ${formatDay(boundary.beforeDay)}. Open the questions on each side before comparing the rates.`}
             </p>
             <details>
@@ -162,35 +154,9 @@ export function HistoryTrendsPanel() {
             </details>
           </div>
         ))}
-        <table className="table-sm ai-history-table">
-          <thead>
-            <tr>
-              <th>Run</th>
-              <th>Series</th>
-              <th>Rate</th>
-              <th>Outside the rate</th>
-            </tr>
-          </thead>
-          <tbody>
-            {model.series.flatMap((series) =>
-              series.points.map((point) => (
-                <tr key={`${point.runId}:${series.key}`} data-ai-trend-row={`${point.runId}:${series.key}`}>
-                  <td>
-                    {formatDay(point.day)}
-                    {point.partial ? " · Partial" : ""}
-                    {point.notStored > 0 ? " · Partial coverage" : ""}
-                    {point.scoringMethod ? ` · ${SCORING_LABELS[point.scoringMethod]}` : ""}
-                  </td>
-                  <td>{series.label}</td>
-                  <td>{rateLabel(point)}</td>
-                  <td>{coverageLabel(point)}</td>
-                </tr>
-              )),
-            )}
-          </tbody>
-        </table>
-        {history.trend.phase === "ready"
-          ? history.trend.snapshots.flatMap((snapshot) => {
+        <HistoryTrendTable model={model} apiDays={apiDays} metric={metric} breakdown={breakdown} query={query} />
+        {trend.phase === "ready"
+          ? trend.snapshots.flatMap((snapshot) => {
               const day = utcDay(snapshot.run.published_at ?? snapshot.run.completed_at);
               return batteryGaps(snapshot.calls).map((gap) => (
                 <p key={`${snapshot.run.audit_run_id}:${gap.promptKey}:${gap.engine}`} data-ai-history-gap={`${gap.promptKey}:${gap.engine}`}>
@@ -200,7 +166,14 @@ export function HistoryTrendsPanel() {
             })
           : null}
         {active && snapshot ? (
-          <HistoryPointDetail snapshot={snapshot} point={active.point} metric={metric} query={query} />
+          <HistoryPointDetail
+            snapshot={snapshot}
+            point={active.point}
+            seriesKey={active.series.key}
+            metric={metric}
+            breakdown={breakdown}
+            query={query}
+          />
         ) : (
           <p className="ai-history-note">Choose a point to see the calls behind it.</p>
         )}
@@ -237,9 +210,6 @@ export function HistoryTrendsPanel() {
           </button>
         </div>
       </div>
-      <p className="ai-history-note">
-        <AiTerm term="provider error">Provider errors</AiTerm> and <AiTerm term="no clear leader">unresolved answers</AiTerm> stay outside both rates.
-      </p>
       <label className="ai-history-query">
         Question
         <select

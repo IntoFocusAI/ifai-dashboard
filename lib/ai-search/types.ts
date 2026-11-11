@@ -1,3 +1,5 @@
+import type { EngineScope } from "@/lib/ai-search/engine-group";
+
 /** Row shapes for the `public.canvas_ai_*` views in docs/ai-search-truth-contract.md. */
 
 export type AiRunState = "completed" | "partial" | "running" | "failed" | "historical";
@@ -131,6 +133,8 @@ export type AiSearchSnapshot = {
    * Null when that read failed.
    */
   probeCoverage?: AiProbeCoverageRow[] | null;
+  /** Set once the All · Without API · API only switch has narrowed the selection. */
+  engineScope?: EngineScope;
 };
 
 /** Every surface renders one of these. A failed or missing read is never shown as zero. */
@@ -146,4 +150,15 @@ export type AiSearchRead =
       selection?: "failed" | "empty";
     }
   | { phase: "no-run" }
-  | { phase: "ready"; snapshot: AiSearchSnapshot; stale?: boolean };
+  | {
+      phase: "ready";
+      snapshot: AiSearchSnapshot;
+      stale?: boolean;
+      /**
+       * The rows the Category Battlecards tab reads (the date-pill window, narrowed by the engine
+       * switch). Only the map's Competitive Radar bubble uses it. Absent until that window loads.
+       */
+      radarSnapshot?: AiSearchSnapshot;
+      /** True while that window still loads, so the radar bubble waits instead of showing another population. */
+      radarPending?: boolean;
+    };

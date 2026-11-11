@@ -1,3 +1,5 @@
+import { activeClient, clientStorageKey } from "@/lib/client/active-client";
+import { activeSetAsideClientKey } from "@/lib/set-aside/keys";
 import type { ReactNode } from "react";
 import { buildLiveSpokes } from "@/components/v3/build-live-spokes";
 import { fenderCommandCenter } from "@/components/v3/command-center-data";
@@ -29,7 +31,7 @@ import { buildLiveTourSteps } from "@/lib/fender-canvas/tour-from-live";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
 
 /** Documentation version shown beside the product name in the canvas header. */
-export const DOCUMENTATION_VERSION = "20.9";
+export const DOCUMENTATION_VERSION = "25.20";
 
 const FOCUS_TARGETS = withPrimaryFocusTargets(
   graphLayout.focusTargets as Record<string, { x: number; y: number }>,
@@ -70,12 +72,17 @@ export function buildFenderCanvasSpec(
   const retail = options.retail ?? { phase: "loading" as const };
   const aiSearch = options.aiSearch ?? { phase: "loading" as const };
   const findability = options.findability ?? { phase: "loading" as const };
-  const live = bundle ? buildLiveMetrics(bundle, retail, findability) : null;
+  const live = bundle ? buildLiveMetrics(bundle, retail, findability, aiSearch) : null;
   const metrics = live ? (Object.assign({}, live, aiMetrics(aiSearch)) as typeof live) : FENDER_METRICS;
 
   const ai = metrics.overallAiWinRate;
   const headline = headlineSurface(retail);
-  const commandCenter = bundle ? buildLiveCommandCenter(bundle, retail, aiSearch) : fenderCommandCenter;
+  const commandCenter = bundle ? buildLiveCommandCenter(bundle, retail, aiSearch) : {
+        ...fenderCommandCenter,
+        // The offline fallback reads the set-asides and owner chips of the brand on screen.
+        storageKey: clientStorageKey(fenderCommandCenter.storageKey ?? "ifai:fender:command-center"),
+        setAsideClientKey: activeSetAsideClientKey(),
+      };
   const nodes = bundle ? buildLiveNodes(bundle, metrics, retail, aiSearch, findability) : fenderStaticNodes;
   const minimalView = bundle
     ? {
@@ -97,7 +104,7 @@ export function buildFenderCanvasSpec(
   const spec = defineCanvas({
     appearance: "iom",
     commandCenter,
-    promptsEditor: (close) => <PromptsEditor onClose={close} />,
+    promptsEditor: activeClient().promptsEditable ? (close) => <PromptsEditor onClose={close} /> : undefined,
     glossary: fenderGlossary,
     hubSlots: buildHubSlots({
       suppressed: retail.phase === "ready" ? retail.snapshot.suppressedListings : retail.phase,

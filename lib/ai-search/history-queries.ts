@@ -62,7 +62,18 @@ export type HistoryReadOptions = {
   limit?: ReadLimit;
   /** Stops queuing pages once the caller no longer needs the run. */
   signal?: AbortSignal;
+  /** False leaves each call's answer text on the server, for a reader that shows none. */
+  withAnswers?: boolean;
+  /** False skips the run's cited-URL rows, for a reader that shows none. */
+  withCitations?: boolean;
 };
+
+function withoutAnswerText(columns: string): string {
+  return columns
+    .split(",")
+    .filter((column) => column !== "answer_text")
+    .join(",");
+}
 
 const STOPPED: DbError = { message: "The read was stopped." };
 
@@ -140,7 +151,7 @@ export async function loadHistoryCatalog(
  * Every row one run has in a history view. The server returns at most 1,000 rows
  * per request, so the read pages by key: each page asks for the rows after the last
  * one seen. The key must be unique within a run, or a page boundary inside a tie
- * would skip rows.
+ * would skip rows. `orFilter` (PostgREST `or` syntax) narrows every page on the server.
  */
 export async function readRunPages<T>(
   client: HistoryReadClient,
@@ -149,6 +160,7 @@ export async function readRunPages<T>(
   runId: string,
   key: RunKey,
   options: HistoryReadOptions = {},
+  orFilter?: string,
 ): Promise<{ rows: T[]; error: DbError }> {
   const limit = options.limit ?? historyReadLimit;
   const rows: T[] = [];
@@ -158,6 +170,7 @@ export async function readRunPages<T>(
     const result = await limit<ReadResult>(() => {
       if (options.signal?.aborted) return Promise.resolve({ data: null, error: STOPPED });
       let query = client.from(view).select(columns).eq("audit_run_id", runId);
+      if (orFilter) query = query.or(orFilter);
       if (after) query = afterKey(query, key, after);
       for (const column of key) query = query.order(column, { ascending: true });
       return query.limit(PAGE);
@@ -205,24 +218,29 @@ export async function loadHistorySnapshot(
 
   try {
     // sim_id is unique within a run, and position is unique within a call's citations.
+    const answers = options.withAnswers !== false;
+    const callColumns = answers ? HISTORY_CALL_COLUMNS : withoutAnswerText(HISTORY_CALL_COLUMNS);
+    const probeColumns = answers ? HISTORY_PROBE_COLUMNS : withoutAnswerText(HISTORY_PROBE_COLUMNS);
     const [calls, probes, citations] = await Promise.all([
-      readRunPages<AiCallRow>(client, "canvas_ai_history_calls", HISTORY_CALL_COLUMNS, runId, ["sim_id", "id"], options),
+      readRunPages<AiCallRow>(client, "canvas_ai_history_calls", callColumns, runId, ["sim_id", "id"], options),
       readRunPages<AiProbeRow & { answer_text?: string | null }>(
         client,
         "canvas_ai_history_probes",
-        HISTORY_PROBE_COLUMNS,
+        probeColumns,
         runId,
         ["sim_id"],
         options,
       ),
-      readRunPages<AiCitationRow>(
-        client,
-        HISTORY_CITATION_VIEW,
-        HISTORY_CITATION_COLUMNS,
-        runId,
-        ["sim_id", "position"],
-        options,
-      ),
+      options.withCitations === false
+        ? Promise.resolve({ rows: [] as AiCitationRow[], error: null })
+        : readRunPages<AiCitationRow>(
+            client,
+            HISTORY_CITATION_VIEW,
+            HISTORY_CITATION_COLUMNS,
+            runId,
+            ["sim_id", "position"],
+            options,
+          ),
     ]);
     for (const result of [calls, probes, citations]) {
       if (result.error) {

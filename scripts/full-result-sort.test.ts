@@ -255,7 +255,7 @@ test("sticky headers and column resizing stay in place while the full population
   const pages = read("components/v3/live/MachineReadabilityPageTable.tsx");
   assert.match(pages, /tableId="machine-readability-pages"/);
   assert.match(pages, /freezeHeader/);
-  assert.match(pages, /sorted\.rows\.slice\(page \* PAGE/);
+  assert.match(pages, /sorted\.rows\.slice\(shown \* PAGE/);
   const resize = read("components/v3/live/ResizableTable.tsx");
   assert.match(resize, /col-resize-handle/);
   assert.match(resize, /aria-sort/);

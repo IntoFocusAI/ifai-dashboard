@@ -3,7 +3,9 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { HUB_LAYOUT, fenderCanvasEdges, primarySpokeLayouts, satelliteNode, type SatelliteId } from "../lib/fender-canvas/primary-spoke-layout.ts";
 import {
+  BUBBLE_TEXT_MIN,
   SATELLITE_HERO_TEXT,
+  bubbleTextMin,
   fitMainHero,
   isCompactHeroValue,
   satelliteHeroLayout,
@@ -13,17 +15,17 @@ import { fittedSatelliteClusters, groupBounds } from "../lib/canvas-sdk/satellit
 import type { CanvasNode, CanvasSpec } from "../lib/canvas-sdk/types.ts";
 
 const HEROES: Record<SatelliteId, { title: string; value: string; label: string }> = {
-  "sat-prompts": { title: "Run Details", value: "95.7%", label: "Brand Consideration" },
+  "sat-prompts": { title: "Run Details", value: "95.7%", label: "Branded Consideration" },
   "sat-citations": { title: "Citations", value: "19.1%", label: "Fender-Owned Links" },
   "sat-drift": { title: "Fact Checks", value: "100.0%", label: "Accuracy" },
   "sat-buybox": { title: "Suppressed Listings", value: "12.4%", label: "confirmed high-price" },
-  "sat-asin": { title: "Catalog Governance", value: "38.0%", label: "Splintered listings" },
-  "sat-map": { title: "MAP Leakage", value: "22.5%", label: "MAP leakage" },
-  "sat-findability": { title: "Findability", value: "12.4%", label: "exact official product page" },
-  "sat-schema": { title: "Brand-Site Specs", value: "100.0%", label: "missing machine-readable specs" },
-  "sat-tables": { title: "Amazon A+ Matrix", value: "Not measured", label: "Comparison tables" },
-  "sat-taylor": { title: "Competitor Wins", value: "38 of 84", label: "competitors led" },
-  "sat-amps": { title: "Engine Comparison", value: "42.1%", label: "ChatGPT unbranded" },
+  "sat-asin": { title: "Catalog Governance", value: "38.0%", label: "Splintered Listings" },
+  "sat-map": { title: "MAP Leakage", value: "22.5%", label: "" },
+  "sat-findability": { title: "Findability", value: "12.4%*", label: "Exact page" },
+  "sat-schema": { title: "Brand-Site Specs", value: "100.0%", label: "Specs missing" },
+  "sat-tables": { title: "Amazon A+ Matrix", value: "74.4%", label: "Five bullets" },
+  "sat-taylor": { title: "Competitor Wins", value: "39.3%", label: "" },
+  "sat-amps": { title: "Engine Comparison", value: "42.1%", label: "ChatGPT API" },
 };
 
 const SATELLITES: SatelliteId[] = [
@@ -66,7 +68,7 @@ test("hero text stays at its readable size and the ring clears every row", () =>
 });
 
 test("a worded empty value reads at label size, not as a giant number", () => {
-  const layout = satelliteHeroLayout("Run Details", "No resolved answers", "Brand Consideration");
+  const layout = satelliteHeroLayout("Run Details", "No resolved answers", "Branded Consideration");
   assert.ok(layout.rows.every((row) => row.kind !== "value"));
   assert.ok(layout.radius < 90);
 });
@@ -77,17 +79,31 @@ test("main-bubble heroes fit inside a fixed ring with readable size", () => {
   assert.equal(isCompactHeroValue("Loading run"), false);
 
   const aeo = primarySpokeLayouts().find((spoke) => spoke.id === "spoke-aeo")!;
-  // Icon + two-line title leave the hero stack starting near the center.
-  const startY = 4 + 2 * 23 + 5;
-  const fit = fitMainHero("61.2%", "Unbranded SOV", aeo.r, startY);
-  assert.ok(fit.valueSize >= 16, `value shrunk to a crumb (${fit.valueSize})`);
+  // The lifted icon and two-line title leave the hero stack starting just under the center.
+  const startY = -aeo.r * 0.56 + 20 + 15 + 2 * 23 + 5;
+  const fit = fitMainHero("61.2%", "Unbranded Discovery", aeo.r, startY);
+  assert.ok(fit.valueSize >= 24, `value shrunk to a crumb (${fit.valueSize})`);
   assert.ok(fit.valueSize <= aeo.r * 0.4, `value still too large for the ring (${fit.valueSize})`);
-  assert.ok(fit.labelY + fit.labelLineH <= aeo.r - 8, "label spills past the ring");
-  assert.deepEqual(fit.labelLines, ["Unbranded SOV"]);
+  assert.ok(fit.labelY + fit.labelLineH * (fit.labelLines.length - 1) <= aeo.r - 8, "label spills past the ring");
+  assert.equal(fit.labelSize, BUBBLE_TEXT_MIN);
 
   const worded = fitMainHero("Loading run", "", aeo.r, startY);
   assert.equal(worded.worded, true);
-  assert.ok(worded.valueSize <= 16);
+  assert.equal(worded.valueSize, BUBBLE_TEXT_MIN);
+});
+
+test("bubble text renders at 11px or more at 1280x720, on the map and on the rail", () => {
+  // The map draws at 0.72 at 1280x720, the rail at 240 / 330; the floor is set a little under both.
+  assert.ok(BUBBLE_TEXT_MIN * 0.72 >= 11, `${BUBBLE_TEXT_MIN} units render under 11px on the map`);
+  assert.ok(SATELLITE_HERO_TEXT.title * 0.72 >= 11 && SATELLITE_HERO_TEXT.label * 0.72 >= 11);
+  for (const spoke of primarySpokeLayouts()) {
+    // The rail lays a face out at its pre-growth radius and scales it to the 100-unit rail bubble.
+    const faceScale = 100 / spoke.faceRadius;
+    const min = bubbleTextMin(faceScale);
+    assert.ok(min * faceScale * (240 / 330) >= 11, `${spoke.id} rail text renders at ${(min * faceScale * (240 / 330)).toFixed(2)}px`);
+    const fit = fitMainHero("44.6%", "Taylor leads Acoustics", spoke.faceRadius, 20, min);
+    assert.ok(fit.labelSize >= min && fit.valueSize >= min, `${spoke.id} rail hero under the floor`);
+  }
 });
 
 test("grown satellites clear their parent, each other, and every other bubble", () => {

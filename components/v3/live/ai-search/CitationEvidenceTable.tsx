@@ -20,6 +20,8 @@ const COLUMNS = [
   clientColumn("domain", "Domain and class", "text", 180, 120),
 ];
 
+const citationKey = (row: CitationEvidence) => row.key;
+
 function citationSortValue(row: CitationEvidence, columnId: string): SortInput {
   if (columnId === "prompt") return row.prompt.trim() || null;
   if (columnId === "engine") return engineLabel(row.engine);
@@ -31,13 +33,19 @@ export function CitationEvidenceTable({
   rows,
   label,
   onClear,
+  exportScope,
+  narrowed = false,
 }: {
   rows: CitationEvidence[];
   label: string;
   onClear?: () => void;
+  /** What the tab shows, sent with Download CSV. Null hides the download. */
+  exportScope?: Record<string, unknown> | null;
+  /** A picked site, class, or answer group narrows these links; the download names it. */
+  narrowed?: boolean;
 }) {
   const [limit, setLimit] = useState(PAGE);
-  const sorted = useClientTableSort(rows, COLUMNS, citationSortValue);
+  const sorted = useClientTableSort(rows, COLUMNS, citationSortValue, citationKey);
   const shown = sorted.rows.slice(0, limit);
   return (
     <div className="content-box ai-citation-evidence" style={{ marginTop: 12 }}>
@@ -62,6 +70,9 @@ export function CitationEvidenceTable({
             setLimit(PAGE);
             sorted.onSort(columnId);
           }}
+          controls={sorted.controls}
+          exportScope={exportScope}
+          filterLabel={narrowed ? `Cited links: ${label}` : null}
         >
           <tbody>
             {shown.map((row) => (
@@ -84,9 +95,9 @@ export function CitationEvidenceTable({
           </tbody>
         </ResizableTable>
       ) : null}
-      {rows.length > limit ? (
+      {sorted.rows.length > limit ? (
         <button type="button" className="segmented-btn" style={{ marginTop: 6 }} onClick={() => setLimit((n) => n + PAGE)}>
-          Show {Math.min(PAGE, rows.length - limit)} more of {rows.length - limit}
+          Show {Math.min(PAGE, sorted.rows.length - limit)} more of {sorted.rows.length - limit}
         </button>
       ) : null}
     </div>

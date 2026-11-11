@@ -107,13 +107,13 @@ test("MAP violations stay a separate metric", () => {
   const metrics = buildLiveMetrics(bundle(), retail);
   assert.equal(metrics.flaggedAsins.id, "flagged-asins");
   assert.equal(metrics.flaggedAsins.label, "MAP violations");
-  assert.equal(metrics.flaggedAsins.subTab, "MAP");
+  assert.equal(metrics.flaggedAsins.subTab, "MAP Leakage");
   assert.equal(metrics.flaggedAsins.value, "9");
   assert.notEqual(metrics.flaggedAsins.id, metrics.suppressedListings.id);
   assert.equal(metrics.suppressedListings.value, "42");
 
   assert.equal(FENDER_METRICS.flaggedAsins.label, "MAP violations");
-  assert.equal(FENDER_METRICS.flaggedAsins.subTab, "MAP");
+  assert.equal(FENDER_METRICS.flaggedAsins.subTab, "MAP Leakage");
   assert.equal(FENDER_METRICS.suppressedListings.id, "suppressed-listings");
   assert.equal(FENDER_METRICS.suppressedListings.label, "Suppressed Listings");
   assert.equal(FENDER_METRICS.suppressedListings.subTab, "Suppressed Listings");

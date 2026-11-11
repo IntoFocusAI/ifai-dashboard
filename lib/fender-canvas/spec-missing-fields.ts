@@ -1,4 +1,36 @@
+import { activeClient } from "@/lib/client/active-client";
+import { specFieldLabel } from "@/lib/fender-canvas/catalog-governance-findings";
+import {
+  requiredMarketplaceSpecFieldSet,
+  requiredSpecsPlaceholderTooltip,
+} from "@/lib/fender-canvas/consensus-scores";
 import { formatInt, formatPct, formatRatio, pendingLabel } from "@/lib/fender-canvas/format";
+
+/**
+ * The required-spec list Amazon Specs checks (D-05, decision 15). Fender uses the guitar and
+ * instrument list; Ledlenser uses the lighting fields Brian Watson loaded. Both are placeholders
+ * until required specs are approved by category, and the tab names the list it used.
+ */
+export type RequiredSpecList = {
+  /** "guitar and instrument list" or "lighting list". */
+  name: string;
+  fieldCount: number;
+  /** Placeholder tooltip that names every field on the list. */
+  tooltip: string;
+};
+
+export function requiredAmazonSpecList(): RequiredSpecList {
+  return {
+    name: activeClient().key === "fender" ? "guitar and instrument list" : "lighting list",
+    fieldCount: requiredMarketplaceSpecFieldSet().size,
+    tooltip: requiredSpecsPlaceholderTooltip(),
+  };
+}
+
+/** Plain name for a stored Amazon field ("scale_length" reads "Scale length"). */
+export function amazonFieldLabel(field: string): string {
+  return specFieldLabel(field);
+}
 
 export const NO_MISSING_AMAZON_FIELDS = "No missing fields";
 export const MISSING_AMAZON_FIELDS_DETAIL_UNAVAILABLE = "Missing-field detail is not stored.";

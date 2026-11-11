@@ -12,10 +12,12 @@ import type { FindabilityRead } from "@/lib/findability/copy";
 import type { AmazonFieldTotals } from "@/lib/fender-canvas/ai-readiness-lead";
 import { scoreAgainst100Pie, scoreTone } from "@/lib/fender-canvas/consensus-score-display";
 import { formatInt, formatPct, formatRatio } from "@/lib/fender-canvas/format";
+import { markPartial, partialFigureTip, type PartialFigure } from "@/lib/fender-canvas/canvas-reads";
 import type { PortfolioRetailSnapshot } from "@/lib/fender-canvas/portfolio-retail";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
 import type { StockLossRow } from "@/lib/fender-canvas/stock-loss";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
+import { leadBrand } from "@/lib/brand-copy";
 
 /** The Out of Stock rows, loaded once for the slots the same way the tab loads them. */
 export type StockLossRead =
@@ -153,8 +155,11 @@ export function bubbleEntry(
     read: (ctx) => {
       const node = ctx.node(entry.id)!;
       const value = node.heroValue?.value ?? "";
+      const reading = entry.read(ctx);
       return {
-        ...entry.read(ctx),
+        ...reading,
+        // X-25: a bubble figure with the partial asterisk keeps its tooltip in the slot.
+        missing: reading.missing ?? node.partialTip ?? null,
         value: /^not available\*?$/i.test(value.trim()) ? NOT_AVAILABLE : value,
         tone: node.status,
       };
@@ -206,17 +211,19 @@ type HeroModel = {
   tip: string | null;
   explainer?: string;
   tone?: NodeStatus;
+  /** X-25: part of the population is past its recheck schedule. */
+  partial?: PartialFigure | null;
 };
 
 export function heroFigure(hero: HeroModel, noun: string, missing: string): MinimalFigure {
   if (hero.ratio == null || isNotAvailable(hero.percent)) return missingFigure(hero.explainer ?? missing);
   return {
-    value: hero.percent,
+    value: markPartial(hero.percent, hero.partial),
     tone: hero.tone ?? toneFromColor(hero.color),
     ratio: `${hero.ratio} ${noun}`,
     pie: hero.pie,
     tip: hero.tip,
-    missing: null,
+    missing: hero.partial ? partialFigureTip(hero.partial) : null,
   };
 }
 
@@ -229,14 +236,14 @@ export function rateLeadPie(id: string, title: string, wins: number, resolved: n
     total: resolved,
     totalLabel: "resolved answers",
     slices: [
-      { key: "fender", label: "Fender/Squier leads", count: wins },
+      { key: "fender", label: `${leadBrand()} leads`, count: wins },
       { key: "other", label: "Rest of resolved answers", count: resolved - wins },
     ].filter((slice) => slice.count > 0),
   };
 }
 
 export function rateTip(wins: number, resolved: number): string {
-  return `${wins} Fender/Squier leads. ${resolved - wins} rest of resolved answers. Total ${resolved} resolved answers.`;
+  return `${wins} ${leadBrand()} leads. ${resolved - wins} rest of resolved answers. Total ${resolved} resolved answers.`;
 }
 
 /** A Fender-lead rate. The pie is the one the tab draws, or null when the tab draws none. */

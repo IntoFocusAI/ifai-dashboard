@@ -7,6 +7,8 @@ import type { NodeStatus } from "../canvas-sdk/types";
 import { CONFIRMED_HIGH_PRICE_LABEL, WITHHELD_LABEL } from "./featured-offer-copy";
 import { formatInt, formatPct, formatUsd } from "./format";
 import {
+  bundlePopulationTip,
+  LIVE_OFFER_BUNDLES,
   RETAIL_FINDING_LABELS,
   type SuppressionDetail,
   selectRetailHeadline,
@@ -17,6 +19,8 @@ import {
   type RetailReading,
   type UnnestedBundleDetail,
 } from "./portfolio-retail";
+import { approvedExceptionsSentence } from "./map-approved-exceptions";
+import { PARTIAL_TITLE, READ_NOT_AVAILABLE } from "./canvas-reads";
 import { buyBoxHero } from "./retail-overview-lead";
 
 export const RETAIL_OVERVIEW_TAB = "Retail Overview";
@@ -271,45 +275,60 @@ export function suppressedBubble(
   );
 }
 
-/** Below-MAP listings / listings with a stored MAP comparison (`decided`). */
+/**
+ * Below-MAP listings / listings with a stored MAP comparison (`decided`).
+ * Approved exceptions are already out of the reading; while any are, the figure carries an
+ * asterisk and the satellite tooltip says how many.
+ */
 export function mapBubble(reading: RetailReading<MapLeakageDetail | null>): RetailBubbleFace {
   const detail = reading.detail;
   const numerator = reading.issueCount;
   const denominator = detail != null && detail.decided > 0 ? detail.decided : null;
+  const exceptions = detail?.approvedExceptions ?? 0;
+  const mark = exceptions > 0 ? "*" : "";
   const count = countPhrase(reading, "below MAP", "below MAP");
   const gap =
     detail?.averageLeakage != null
       ? `${formatUsd(detail.averageLeakage, { signed: true })} gap`
       : null;
   const coverage = coveragePill(reading);
-  return satelliteFace(
+  const share = shareHeroValue(reading, numerator, denominator);
+  const face = satelliteFace(
     "MAP Leakage",
     reading,
-    { value: shareHeroValue(reading, numerator, denominator), label: "MAP leakage" },
-    [...(count ? [count] : []), ...(gap ? [gap] : []), ...(coverage ? [coverage] : [])],
-    "MAP",
+    { value: numerator != null && denominator != null ? `${share}${mark}` : share, label: "" },
+    [...(count ? [`${count}${mark}`] : []), ...(gap ? [gap] : []), ...(coverage ? [coverage] : [])],
+    RETAIL_FINDING_LABELS.map_leakage,
   );
+  if (exceptions > 0) face.tooltip = { title: "MAP leakage", desc: approvedExceptionsSentence(exceptions) };
+  return face;
 }
 
-/** Unnested bundles / bundles in this retail read. */
+/** Unnested bundles / bundles with a live offer (R-13). */
 export function catalogBubble(
   reading: RetailReading<UnnestedBundleDetail | null>,
 ): RetailBubbleFace {
   const detail = reading.detail;
   const numerator = reading.issueCount;
   const denominator = detail != null && detail.bundlesInRead > 0 ? detail.bundlesInRead : null;
-  const count = countPhrase(reading, "bundle");
+  const count =
+    numerator != null && denominator != null
+      ? `${formatInt(numerator)} of ${formatInt(denominator)} ${LIVE_OFFER_BUNDLES}`
+      : countPhrase(reading, "bundle");
   const coverage = coveragePill(reading);
-  return satelliteFace(
+  const face = satelliteFace(
     "Catalog Governance",
     reading,
     {
       value: shareHeroValue(reading, numerator, denominator),
-      label: "Splintered listings",
+      label: "Splintered Listings",
     },
     [...(count ? [count] : []), ...(coverage ? [coverage] : [])],
     "Catalog Governance",
   );
+  const tip = bundlePopulationTip(reading);
+  if (tip) face.tooltip = { title: "Splintered Listings", desc: tip };
+  return face;
 }
 
 function waitingFace(
@@ -325,9 +344,11 @@ function waitingFace(
     status: "warning",
     subTab,
     // Satellite waiting faces carry a worded hero; main Catalog Health leaves hero unset.
-    ...(heroLabel ? { heroValue: { value: stats[0] ?? "Loading", label: heroLabel }, tooltip: { ...EMPTY_TOOLTIP } } : { tooltip: { title, desc } }),
+    ...(heroLabel != null ? { heroValue: { value: stats[0] ?? "Loading", label: heroLabel }, tooltip: { ...EMPTY_TOOLTIP } } : { tooltip: { title, desc } }),
   };
 }
+
+const RETAIL_READ_FAILED = "The retail read did not load. The figure is left out rather than shown as zero.";
 
 /**
  * Catalog Health main spoke: Buy Box withheld share of current readings (same figure as the
@@ -348,10 +369,10 @@ export function catalogHealthMainFace(read: RetailCanvasRead): RetailBubbleFace 
     return {
       title: "Catalog Health",
       stats: [],
-      heroValue: { value: "Read failed", label: "Buy Box withheld" },
-      status: "danger",
+      heroValue: { value: READ_NOT_AVAILABLE, label: "Buy Box withheld" },
+      status: "neutral",
       subTab: RETAIL_OVERVIEW_TAB,
-      tooltip: { title: "", desc: "" },
+      tooltip: { title: PARTIAL_TITLE["read-failed"], desc: RETAIL_READ_FAILED },
     };
   }
 
@@ -381,18 +402,22 @@ export function retailBubbleFaces(read: RetailCanvasRead): {
     return {
       main: catalogHealthMainFace(read),
       suppressed: waitingFace("Suppressed Listings", "Suppressed Listings", ["Loading"], desc, "confirmed high-price"),
-      map: waitingFace("MAP Leakage", "MAP", ["Loading"], desc, "MAP leakage"),
-      catalog: waitingFace("Catalog Governance", "Catalog Governance", ["Loading"], desc, "Splintered listings"),
+      map: waitingFace("MAP Leakage", RETAIL_FINDING_LABELS.map_leakage, ["Loading"], desc, ""),
+      catalog: waitingFace("Catalog Governance", "Catalog Governance", ["Loading"], desc, "Splintered Listings"),
     };
   }
 
   if (read.phase === "error") {
-    const desc = "The retail read could not be loaded.";
+    const failed = (face: RetailBubbleFace): RetailBubbleFace => ({
+      ...face,
+      status: "neutral",
+      tooltip: { title: PARTIAL_TITLE["read-failed"], desc: RETAIL_READ_FAILED },
+    });
     return {
       main: catalogHealthMainFace(read),
-      suppressed: waitingFace("Suppressed Listings", "Suppressed Listings", ["Read failed"], desc, "confirmed high-price"),
-      map: waitingFace("MAP Leakage", "MAP", ["Read failed"], desc, "MAP leakage"),
-      catalog: waitingFace("Catalog Governance", "Catalog Governance", ["Read failed"], desc, "Splintered listings"),
+      suppressed: failed(waitingFace("Suppressed Listings", "Suppressed Listings", [READ_NOT_AVAILABLE], RETAIL_READ_FAILED, "confirmed high-price")),
+      map: failed(waitingFace("MAP Leakage", RETAIL_FINDING_LABELS.map_leakage, [READ_NOT_AVAILABLE], RETAIL_READ_FAILED, "")),
+      catalog: failed(waitingFace("Catalog Governance", "Catalog Governance", [READ_NOT_AVAILABLE], RETAIL_READ_FAILED, "Splintered Listings")),
     };
   }
 

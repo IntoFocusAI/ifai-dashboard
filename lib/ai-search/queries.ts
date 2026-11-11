@@ -4,6 +4,7 @@ import {
   PROBE_COVERAGE_COLUMNS,
   PROBE_COVERAGE_VIEW,
 } from "@/lib/ai-search/probe-catalog";
+import { ensureSiteTypes } from "@/lib/ai-search/site-types";
 import type {
   AiCallRow,
   AiCitationRow,
@@ -103,6 +104,7 @@ export async function answerTextQuery(
  * dropped here as a second guard on top of the current-run views.
  */
 export async function loadAiSearchRead(client: AiReadClient): Promise<AiSearchRead> {
+  await ensureSiteTypes(client);
   const runResult = await client.from("canvas_ai_current_run").select("*");
   if (runResult.error) return { phase: "error", message: runResult.error.message };
   const runs = (runResult.data ?? []) as AiCurrentRun[];

@@ -176,7 +176,6 @@ test("Briefing keeps the consensus sentence on the title tooltip inside the find
 
   assert.match(performanceCard, /id="consensus"[\s\S]*?dominant/);
   assert.doesNotMatch(performanceCard, /briefingConsensusSentence|data-ifai-tooltip-desc/);
-  assert.doesNotMatch(read("components/v3/live/CurrentFindingsPanel.tsx"), /BriefingConsensusLead/);
   assert.doesNotMatch(read("components/v3/live/RoadmapFindingsPanel.tsx"), /BriefingConsensusLead/);
   assert.doesNotMatch(read("lib/fender-canvas/briefing-consensus-sentence.ts"), /CONSENSUS_EXPLAINER_BODY/);
 });

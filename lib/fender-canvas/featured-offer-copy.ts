@@ -115,20 +115,54 @@ export function firstPassIncomplete(counts: FeaturedOfferCounts): boolean {
   return counts.current < counts.population;
 }
 
-/** Benchmark coverage. An unavailable benchmark is not a failure and not a zero. */
-export function benchmarkCoverageSentence(counts: FeaturedOfferCounts): string {
+/** Tooltip on the unpublished-benchmark count: what an unpublished benchmark is and is not. */
+export const BENCHMARK_UNPUBLISHED_TITLE = "No published benchmark";
+export const BENCHMARK_UNPUBLISHED_TIP =
+  "Amazon finished the check and published no outside price for these listings. That is not a failed check and not a price of zero.";
+
+/** Tooltip on a blank gap cell: why there is nothing to compare. */
+export const NO_COMPARABLE_PAIR_LABEL = "No comparable pair";
+export const NO_COMPARABLE_PAIR_TIP =
+  "This reading has no observed offer and outside price from one check to compare yet. It is not a gap of zero.";
+
+/** Tooltip on the coverage-exceptions count: how failed and unchecked listings are counted. */
+export const COVERAGE_EXCEPTIONS_TIP =
+  "A failed check is not counted as present and not counted as zero. A failed check is not an unchecked listing.";
+
+/**
+ * Benchmark coverage in three parts, so the screen can hang the caveat on the count it
+ * belongs to. `figure` is the unpublished count ("the other 177"), null when there is none.
+ */
+export function benchmarkCoverageParts(counts: FeaturedOfferCounts): {
+  before: string;
+  figure: string | null;
+  after: string;
+} {
   if (counts.keepaClassified === 0) {
-    return "No listing has a finished Amazon Buy Box check yet, so the outside-price benchmark has no coverage to report.";
+    return {
+      before:
+        "No listing has a finished Amazon Buy Box check yet, so the outside-price benchmark has no coverage to report.",
+      figure: null,
+      after: "",
+    };
   }
   const lead = `Amazon's outside price is stored for ${formatInt(
     counts.benchmarkPresent,
   )} of ${formatInt(counts.keepaClassified)} checked ${listings(
     counts.keepaClassified,
   )}. Amazon does not name the retailer behind that price.`;
-  if (counts.benchmarkUnavailable === 0) return lead;
-  return `${lead} Amazon did not publish a benchmark for the other ${formatInt(
-    counts.benchmarkUnavailable,
-  )}. That is not a failed check and not a price of zero.`;
+  if (counts.benchmarkUnavailable === 0) return { before: lead, figure: null, after: "" };
+  return {
+    before: `${lead} Amazon did not publish a benchmark for `,
+    figure: `the other ${formatInt(counts.benchmarkUnavailable)}`,
+    after: ".",
+  };
+}
+
+/** Benchmark coverage as one sentence. The caveat on the unpublished count lives in its tooltip. */
+export function benchmarkCoverageSentence(counts: FeaturedOfferCounts): string {
+  const parts = benchmarkCoverageParts(counts);
+  return `${parts.before}${parts.figure ?? ""}${parts.after}`;
 }
 
 /** Confirmed suppression, stated so a withheld listing with no benchmark is not swept in. */

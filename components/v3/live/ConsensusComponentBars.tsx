@@ -1,7 +1,10 @@
 "use client";
 
+import "@/components/v3/live/summary.css";
+import { StatusMark } from "@/components/v3/live/StatusMark";
+import { CHART_COLORS } from "@/lib/canvas-sdk/data-status";
 import { formatPct, formatRatio } from "@/lib/fender-canvas/format";
-import { scoreToneColor } from "@/lib/fender-canvas/consensus-score-display";
+import { scoreStatus, scoreToneColor } from "@/lib/fender-canvas/consensus-score-display";
 import type {
   DroppedComponent,
   PillarScore,
@@ -45,8 +48,12 @@ function ComponentName({ row }: { row: ScoredComponent | DroppedComponent }) {
   );
 }
 
+/**
+ * One included component. The bar is a chart, so it is drawn in the measured ice blue; the
+ * status color, mark, and word sit on the figure beside it (decision 27).
+ */
 function IncludedBar({ row }: { row: ScoredComponent }) {
-  const color = scoreToneColor(row.score);
+  const status = scoreStatus(row.score);
   return (
     <div
       className="consensus-component-row"
@@ -62,13 +69,18 @@ function IncludedBar({ row }: { row: ScoredComponent }) {
             className="readiness-progress-fill"
             style={{
               width: `${Math.max(0, Math.min(100, row.score))}%`,
-              background: color,
+              background: CHART_COLORS.measured,
             }}
           />
         </div>
-        <span className="consensus-component-score" data-consensus-component-score="">
+        <span
+          className="consensus-component-score"
+          data-consensus-component-score=""
+          style={status ? { color: scoreToneColor(row.score) } : undefined}
+        >
           {formatPct(row.score)}
         </span>
+        {status ? <StatusMark status={status} /> : null}
       </div>
       <div className="consensus-component-meta">
         <span data-consensus-component-weight="">Weight {formatPct(row.weight)}</span>

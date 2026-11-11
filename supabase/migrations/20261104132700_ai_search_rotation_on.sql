@@ -1,0 +1,85 @@
+-- Worker 21.2. Collector v15 Step 2: catalog fact-check rotation switched on.
+-- Applied on production 2026-11-04 13:27 UTC by the FenderTest Toolbelt agent
+-- (AEO_Product_Research-FenderTest) under migration_name 20261104_pm20_step2_rotation_on.
+-- Recorded here as the repo log. Do not re-run.
+--
+-- Every statement in this file is commented out, so supabase db push and Supabase's GitHub
+-- integration, which apply each file in supabase/migrations, run nothing from it.
+--
+-- Source: the Toolbelt agent's reply in delegation dlg_e98b9df8-c4a4-4d81-af17-470f8dbc9820. It ran
+-- the change as one transaction. Read back on 4 Nov 2026 through public.ai_prompts_list() in a
+-- read-only call: the p35, p36, and p37 rows (prompt_text, category, prompt_kind, active,
+-- created_at, updated_at) and updated_at on p18, p19, and p34, all 2026-11-04 13:27:19.699944 UTC.
+-- 34 prompts are active. Repo database access can't read probe_mode, probe_slots,
+-- command.fmic_ai_probe_facts, command.fmic_ai_prompt_edits, or command.fmic_job_state, so those
+-- statements are written as the agent described them.
+--
+-- Changes:
+--   command.fmic_ai_prompts       inserts p35, p36, p37: probe prompts, probe_mode 'rotating',
+--                                 probe_slots 30, active
+--   command.fmic_ai_probe_facts   inserts one placeholder row each for p35, p36, p37. Each run's
+--                                 expected value comes from command.fmic_ai_probe_plan.
+--   command.fmic_ai_prompts       sets active = false on p18, p19, p34. The rows and their history stay.
+--   command.fmic_ai_prompt_edits  inserts 6 rows, source 'pm20_step2_dlg_e98b9df8'
+--   command.fmic_job_state        inserts the ai_probe_rotation row, cursor 0
+--   command.fmic_job_state        updates ai_battery_config.extra: status active_step2, rotation on,
+--                                 active probes p17, p33, p35, p36, p37, expected calls per run
+--                                 549 (shopping 261, anchors 18, rotating 270)
+--
+-- Toolbelt wrenches changed at the same time (outside this repo):
+--   battery wrench 34d68651           now v15 (was v14). While rotation is on, v15 uses the config's
+--                                     3 repeats. If schedule cb8b49c5 still passes repeats=20, v15
+--                                     ignores it and records metadata.repeats_input_overridden.
+--   subchat collector wrench 63f7c160 now v13 (was v12)
+--
+-- Why: collector v15 Step 2. Three rotating slots ask a different catalog fact each run, in place of
+-- the fixed probes p18, p19, and p34. p17 and p33 stay on as anchors. Approved by Brian Magazu.
+--
+-- Undo, as the Toolbelt agent gave it:
+--   UPDATE command.fmic_ai_prompts SET active=true, updated_at=now() WHERE prompt_key IN ('p18','p19','p34');
+--   UPDATE command.fmic_ai_prompts SET active=false, updated_at=now() WHERE prompt_key IN ('p35','p36','p37');
+--   UPDATE command.fmic_job_state SET extra = extra || '{"status":"active_step1","rotation":{"active":false,"status":"off"},"active_probes":["p17","p18","p19","p33","p34"],"expected":{"total":306,"probes":45,"shopping":261}}'::jsonb WHERE job_key='ai_battery_config';
+--   DELETE FROM command.fmic_job_state WHERE job_key='ai_probe_rotation';
+--   Then roll back the Toolbelt wrenches: battery 34d68651 to v14, subchat collector 63f7c160 to v12.
+-- The undo leaves p35 to p37, their fact rows, and the 6 edit rows in place, with p35 to p37 inactive.
+-- jsonb || replaces the whole rotation object, so the undo does not bring back the Step 1 rotation
+-- keys (asks_per_engine 1, in_scope_models 180, products_per_run 90, runs_per_full_cycle 2) if the
+-- switch-on dropped them.
+--
+-- Applied: 4 Nov 2026 13:27 UTC (8:27 AM ET) on production by AEO_Product_Research-FenderTest.
+-- Record only; already applied. Do not re-run.
+
+-- BEGIN;
+--
+-- -- Read back from public.ai_prompts_list(). probe_mode and probe_slots as the agent described them.
+-- INSERT INTO command.fmic_ai_prompts
+--   (prompt_key, prompt_text, category, prompt_kind, active, probe_mode, probe_slots, created_at, updated_at)
+-- VALUES
+--   ('p35', 'Rotating catalog fact check slot A: question per run in command.fmic_ai_probe_plan',
+--    'hallucinations', 'probe', true, 'rotating', 30, now(), now()),
+--   ('p36', 'Rotating catalog fact check slot B: question per run in command.fmic_ai_probe_plan',
+--    'hallucinations', 'probe', true, 'rotating', 30, now(), now()),
+--   ('p37', 'Rotating catalog fact check slot C: question per run in command.fmic_ai_probe_plan',
+--    'hallucinations', 'probe', true, 'rotating', 30, now(), now());
+--
+-- -- As described. One placeholder row per prompt; the agent did not give the column values.
+-- INSERT INTO command.fmic_ai_probe_facts (prompt_key, ...) VALUES ('p35', ...), ('p36', ...), ('p37', ...);
+--
+-- -- Read back: updated_at on all three is the transaction time.
+-- UPDATE command.fmic_ai_prompts SET active = false, updated_at = now()
+-- WHERE prompt_key IN ('p18', 'p19', 'p34');
+--
+-- -- As described. Six rows; the agent did not list them.
+-- INSERT INTO command.fmic_ai_prompt_edits (edited_at, action, prompt_key, before, after, source)
+-- VALUES (now(), ..., ..., ..., ..., 'pm20_step2_dlg_e98b9df8');  -- x6
+--
+-- -- As described.
+-- INSERT INTO command.fmic_job_state (job_key, cursor_offset) VALUES ('ai_probe_rotation', 0);
+--
+-- -- As described.
+-- UPDATE command.fmic_job_state
+-- SET extra = extra || '{"status":"active_step2","rotation":{"active":true,"status":"on"},"active_probes":["p17","p33","p35","p36","p37"],"expected":{"total":549,"shopping":261,"anchors":18,"rotating":270}}'::jsonb,
+--     updated_at = now()
+-- WHERE job_key = 'ai_battery_config';
+--
+-- COMMIT;

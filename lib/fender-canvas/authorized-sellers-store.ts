@@ -6,12 +6,13 @@ import {
   type AuthorizedSellerSave,
 } from "@/lib/fender-canvas/authorized-sellers";
 import { createLocalStore } from "@/lib/canvas-sdk/local-store";
+import { clientStorageKey } from "@/lib/client/active-client";
 
 /** Per-viewer list. Another browser keeps the placeholder until someone saves there. */
 export const AUTHORIZED_SELLERS_STORAGE_KEY = "ifai:fender:authorized-buy-box-sellers";
 
 const store = createLocalStore<AuthorizedSellerSave | null>(
-  AUTHORIZED_SELLERS_STORAGE_KEY,
+  clientStorageKey(AUTHORIZED_SELLERS_STORAGE_KEY),
   null,
   reviveAuthorizedSellers,
 );

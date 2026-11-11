@@ -60,6 +60,7 @@ function bundle(overrides: Partial<CatalogBundleRow> & Pick<CatalogBundleRow, "a
     parent_asin: null,
     product_url: "https://www.amazon.com/dp/B0D8TFXHHT",
     is_bundle: true,
+    featured_offer_state: "present",
     ...overrides,
   };
 }
@@ -128,8 +129,8 @@ test("MAP panel places notes beside the share and listings under the row", () =>
   assert.match(panel, /data-map-notes/);
   assert.match(panel, /data-map-top/);
   assert.match(panel, /data-map-listings/);
-  assert.match(panel, /CitationPieDisc/);
-  assert.match(panel, /citation-pie-disc citation-pie-disc-retail/);
+  assert.match(panel, /RetailShareDisc/);
+  assert.match(read("components/v3/live/RetailOverviewFigure.tsx"), /citation-pie-disc citation-pie-disc-retail/);
   assert.match(panel, /hero\.label/);
   assert.match(panel, /hero\.percent/);
   assert.match(panel, /hero\.ratio/);

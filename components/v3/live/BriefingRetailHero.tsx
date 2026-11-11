@@ -2,8 +2,8 @@
 
 import { BriefingConsensusLead } from "@/components/v3/live/BriefingConsensusLead";
 import { BriefingFindingCard } from "@/components/v3/live/BriefingFindingCard";
-import { useAiSearch } from "@/components/v3/live/ai-search/AiSearchContext";
 import { useFindability } from "@/components/v3/live/findability/FindabilityContext";
+import { useSummaryAiRead, useSummaryAiStale } from "@/components/v3/live/useSummaryAiRead";
 import {
   briefingFindingsLead,
   type BriefingLostRevenuePlaceholder,
@@ -43,13 +43,15 @@ export function BriefingRetailHero({
   read: RetailCanvasRead;
 }) {
   const findability = useFindability();
-  const ai = useAiSearch();
-  const { findings, lostRevenue } = briefingFindingsLead(read, findability, ai);
+  // The map's population (decision 7): the Briefing and the map read one number.
+  const ai = useSummaryAiRead();
+  const aiStale = useSummaryAiStale(ai);
+  const { findings, lostRevenue } = briefingFindingsLead(read, findability, ai, { aiStale });
   const [buyBox, ...rest] = findings;
 
   return (
     <div className="briefing-findings" data-briefing-retail-hero="" data-briefing-findings="">
-      <BriefingConsensusLead bundle={bundle} retail={read} />
+      <BriefingConsensusLead bundle={bundle} retail={read} ai={ai} />
       <BriefingFindingCard finding={buyBox} />
       <LostRevenuePlaceholder placeholder={lostRevenue} />
       {rest.map((finding) => (

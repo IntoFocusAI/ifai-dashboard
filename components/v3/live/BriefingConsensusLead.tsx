@@ -1,33 +1,48 @@
 "use client";
 
+import "@/components/v3/live/summary.css";
 import { CitationPieDisc } from "@/components/v3/live/ai-search/CitationPieDisc";
-import { useAiSearch } from "@/components/v3/live/ai-search/AiSearchContext";
+import { PartialFigureMark } from "@/components/v3/live/FigureTip";
 import { useFindability } from "@/components/v3/live/findability/FindabilityContext";
+import { StatusMark } from "@/components/v3/live/StatusMark";
+import type { AiSearchRead } from "@/lib/ai-search/types";
+import { authorizedPartnersFromSave } from "@/lib/fender-canvas/authorized-sellers";
+import { useAuthorizedSellers } from "@/lib/fender-canvas/authorized-sellers-store";
 import { briefingConsensusSentence } from "@/lib/fender-canvas/briefing-consensus-sentence";
 import {
+  consensusPartial,
   scoreAgainst100Pie,
+  scoreAgainstTarget,
+  scoreFigure,
+  scoreStatus,
+  scoreTargetLabel,
   scoreToneColor,
 } from "@/lib/fender-canvas/consensus-score-display";
 import { consensusFromLive } from "@/lib/fender-canvas/consensus-scores-from-live";
-import { formatPct, formatRatio } from "@/lib/fender-canvas/format";
+import { formatRatio } from "@/lib/fender-canvas/format";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
 
 const PIE_SIZE = "citation-pie-disc citation-pie-disc-retail";
 
 /**
- * One Summary Briefing bubble. Same live score as Performance, sized like the
- * other briefing bubbles. The result sentence is the title tooltip only.
+ * One Summary Briefing bubble. Same live score as Performance (the map's AI read and the saved
+ * authorized partners), sized like the other briefing bubbles, read against target 70 (H-07).
+ * The result sentence is the title tooltip only.
  */
 export function BriefingConsensusLead({
   bundle,
   retail,
+  ai,
 }: {
   bundle: CanvasBundle;
   retail: RetailCanvasRead;
+  /** The map's AI read (decision 7), from useSummaryAiRead. */
+  ai: AiSearchRead;
 }) {
   const findability = useFindability();
-  const ai = useAiSearch();
+  const [saved] = useAuthorizedSellers();
+  const authorizedPartners = authorizedPartnersFromSave(saved);
   const loading =
     retail.phase === "loading" || findability.phase === "loading" || ai.phase === "loading";
 
@@ -38,15 +53,18 @@ export function BriefingConsensusLead({
         specPages: bundle.specPages,
         retail,
         ai,
+        authorizedPartners,
       });
   const sentence = loading ? null : briefingConsensusSentence(consensus);
   const score = consensus?.score ?? null;
   const coverage = consensus?.coverage ?? null;
-  const percent = loading ? "Loading" : score == null ? "Not available" : formatPct(score, 0);
+  const status = loading ? null : scoreStatus(score);
+  const figure = loading ? "Loading" : scoreFigure(score);
   const pie = loading ? null : scoreAgainst100Pie("score-consensus", "AI Consensus", score);
+  const target = scoreAgainstTarget(score);
   const tip =
-    score != null && coverage
-      ? `AI Consensus: ${formatPct(score)} · ${formatRatio(coverage.numerator, coverage.denominator)} of inputs in.`
+    target && coverage
+      ? `AI Consensus: ${target} · ${formatRatio(coverage.numerator, coverage.denominator)} pillars in.`
       : undefined;
 
   return (
@@ -75,15 +93,23 @@ export function BriefingConsensusLead({
           <span
             className="ai-lead-figure"
             data-briefing-consensus-score=""
-            style={{ color: loading ? "var(--text-muted)" : scoreToneColor(score) }}
+            style={{ color: status ? scoreToneColor(score) : "var(--text-muted)" }}
           >
-            {percent}
+            <PartialFigureMark partial={consensus ? consensusPartial(consensus) : null} testId="briefing-consensus">
+              {figure}
+            </PartialFigureMark>
           </span>
-          {coverage ? (
-            <span className="retail-overview-hero-ratio" data-briefing-consensus-coverage="">
-              {formatRatio(coverage.numerator, coverage.denominator)}
+          {target ? (
+            <span className="retail-overview-hero-ratio" data-briefing-consensus-target="">
+              {scoreTargetLabel()}
             </span>
           ) : null}
+          {coverage && score != null ? (
+            <span className="retail-overview-hero-ratio" data-briefing-consensus-coverage="">
+              {formatRatio(coverage.numerator, coverage.denominator)} pillars
+            </span>
+          ) : null}
+          {status ? <StatusMark status={status} /> : null}
         </span>
         {pie ? <CitationPieDisc pie={pie} sizeClass={PIE_SIZE} tip={tip} /> : null}
       </div>

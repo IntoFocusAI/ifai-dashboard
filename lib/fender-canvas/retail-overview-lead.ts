@@ -6,14 +6,18 @@
 
 import type { PieDiscData } from "@/lib/ai-search/citation-pies";
 import type { NodeStatus } from "@/lib/canvas-sdk/types";
+import type { PartialFigure } from "@/lib/fender-canvas/canvas-reads";
 import { formatInt, formatPct, formatRatio } from "@/lib/fender-canvas/format";
 import {
+  bundlePopulationTip,
+  LIVE_OFFER_BUNDLES,
   RETAIL_FINDING_LABELS,
   type PortfolioRetailSnapshot,
   type RetailFindingId,
   type RetailReading,
 } from "@/lib/fender-canvas/portfolio-retail";
 import { readingLabel } from "@/lib/fender-canvas/portfolio-retail-display";
+import { approvedExceptionsSentence } from "@/lib/fender-canvas/map-approved-exceptions";
 
 const TONE_COLOR: Record<Exclude<NodeStatus, "neutral">, string> = {
   danger: "var(--danger-red)",
@@ -39,7 +43,26 @@ export type RetailOverviewHeroModel = {
   explainer: string;
   numerator: number | null;
   denominator: number | null;
+  /** X-25: part of the population is past its recheck schedule. Null when every row is current. */
+  partial?: PartialFigure | null;
 };
+
+/**
+ * The figure's status, or null when it reads Not available*. A missing figure carries no
+ * status color, mark, or word: status marks data only.
+ */
+export function heroFigureTone(
+  hero: Pick<RetailOverviewHeroModel, "numerator" | "denominator" | "tone">,
+): Exclude<NodeStatus, "neutral"> | null {
+  return hero.numerator != null && hero.denominator != null ? hero.tone : null;
+}
+
+/** The figure's color: its status color, or muted text when there is no figure to grade. */
+export function heroFigureColor(
+  hero: Pick<RetailOverviewHeroModel, "numerator" | "denominator" | "tone" | "color">,
+): string {
+  return heroFigureTone(hero) ? hero.color : "var(--text-muted)";
+}
 
 function toneForShare(
   numerator: number | null,
@@ -112,12 +135,44 @@ export function buyBoxHero(snapshot: PortfolioRetailSnapshot): RetailOverviewHer
       : reading.missingMessage?.split(". ")[0] ?? "Buy Box reading not stored.",
     numerator,
     denominator,
+    partial: ready ? reading.stale ?? null : null,
   };
 }
 
 /**
+ * The MAP figure's tooltip: what was counted, what the read could not compare, and how many
+ * approved exceptions were left out (R-12). This is the one place the coverage caveat lives.
+ */
+export function mapLeakageTip(snapshot: PortfolioRetailSnapshot): string | null {
+  const reading = snapshot.mapLeakage;
+  const detail = reading.detail;
+  if (reading.issueCount == null || detail == null || detail.decided <= 0) return null;
+  const uncompared = detail.population - detail.decided;
+  return [
+    `${formatInt(reading.issueCount)} of ${formatInt(detail.decided)} listings with a stored MAP price and at least one stored channel price are priced below MAP.`,
+    uncompared > 0
+      ? `${formatInt(uncompared)} other ${uncompared === 1 ? "monitored listing" : "monitored listings"} ${uncompared === 1 ? "has" : "have"} no stored MAP comparison.`
+      : null,
+    approvedExceptionsSentence(detail.approvedExceptions ?? 0, snapshot.mapApprovedExceptionsFailed),
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+/** Tooltip for the average price gap below MAP: what it averages and the approved exceptions left out. */
+export function averageGapTip(snapshot: PortfolioRetailSnapshot): string | null {
+  const detail = snapshot.mapLeakage.detail;
+  if (detail?.averageLeakage == null) return null;
+  return [
+    `Average of the largest stored channel gap on each of ${formatInt(detail.violations)} ${detail.violations === 1 ? "listing" : "listings"} priced below MAP.`,
+    approvedExceptionsSentence(detail.approvedExceptions ?? 0, snapshot.mapApprovedExceptionsFailed),
+  ].join(" ");
+}
+
+/**
  * Below-MAP listings / listings with a stored MAP comparison (`decided`).
- * Listings with no MAP price cannot leak MAP and stay out of the pie.
+ * Listings with no MAP price cannot leak MAP and stay out of the pie. Approved exceptions
+ * are out of both sides, and the N of M carries an asterisk while any are left out.
  */
 export function mapHero(snapshot: PortfolioRetailSnapshot): RetailOverviewHeroModel {
   const reading = snapshot.mapLeakage;
@@ -127,26 +182,28 @@ export function mapHero(snapshot: PortfolioRetailSnapshot): RetailOverviewHeroMo
   const denominator = detail != null && detail.decided > 0 ? detail.decided : null;
   const tone = toneForShare(numerator, denominator, reading);
   const ready = numerator != null && denominator != null;
+  const filtered = (detail?.approvedExceptions ?? 0) > 0;
 
   return {
     id: "map_leakage",
     tab: RETAIL_FINDING_LABELS.map_leakage,
     label,
     percent: ready ? formatPct((100 * numerator!) / denominator!) : "Not available*",
-    ratio: ready ? formatRatio(numerator, denominator) : null,
+    ratio: ready ? `${formatRatio(numerator, denominator)}${filtered ? "*" : ""}` : null,
     color: TONE_COLOR[tone],
     tone,
     pie: ready ? sharePie("retail-map", label, "Below MAP", numerator!, denominator!) : null,
-    tip: ready ? `${formatInt(numerator)} of ${formatInt(denominator)} listings with a stored MAP price.` : null,
+    tip: ready ? mapLeakageTip(snapshot) : null,
     explainer: ready ? "Priced below MAP." : reading.missingMessage?.split(". ")[0] ?? "MAP reading not stored.",
     numerator,
     denominator,
+    partial: ready ? reading.stale ?? null : null,
   };
 }
 
 /**
- * Unnested bundles / bundles in this retail read.
- * Catalog bundles outside the read are not fine and are not the rest of the pie.
+ * Unnested bundles / bundles with a live offer (R-13). The ratio names that population;
+ * the tooltip carries the live-offer rule and the wider bundle totals.
  */
 export function catalogHero(snapshot: PortfolioRetailSnapshot): RetailOverviewHeroModel {
   const reading = snapshot.unnestedBundles;
@@ -162,20 +219,19 @@ export function catalogHero(snapshot: PortfolioRetailSnapshot): RetailOverviewHe
     tab: label,
     label,
     percent: ready ? formatPct((100 * numerator!) / denominator!) : "Not available*",
-    ratio: ready ? formatRatio(numerator, denominator) : null,
+    ratio: ready ? `${formatRatio(numerator, denominator)} ${LIVE_OFFER_BUNDLES}` : null,
     color: TONE_COLOR[tone],
     tone,
     pie: ready
       ? sharePie("retail-catalog", label, "Unnested bundle", numerator!, denominator!)
       : null,
-    tip: ready
-      ? `${formatInt(numerator)} of ${formatInt(denominator)} bundles in this retail read.`
-      : null,
+    tip: ready ? bundlePopulationTip(reading) : null,
     explainer: ready
       ? "No parent listing, so the reviews stay split."
       : reading.missingMessage?.split(". ")[0] ?? "Catalog reading not stored.",
     numerator,
     denominator,
+    partial: ready ? reading.stale ?? null : null,
   };
 }
 
@@ -218,13 +274,19 @@ export function specHero(snapshot: PortfolioRetailSnapshot): RetailOverviewHeroM
     tone,
     pie: ready ? specCompletePie(complete!, missing!, checked!) : null,
     tip: ready
-      ? `${formatInt(missing)} of ${formatInt(checked)} checked listings are missing an Amazon spec field.`
+      ? [
+          `${formatInt(missing)} of ${formatInt(checked)} checked listings are missing an Amazon spec field.`,
+          reading.status === "incomplete" ? reading.missingMessage : null,
+        ]
+          .filter(Boolean)
+          .join(" ")
       : null,
     explainer: ready
-      ? "Every Amazon spec field is filled."
+      ? "Listings with every Amazon spec field filled."
       : reading.missingMessage?.split(". ")[0] ?? "Amazon spec-field reading not stored.",
     numerator: complete,
     denominator: checked,
+    partial: ready ? reading.stale ?? null : null,
   };
 }
 

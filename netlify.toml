@@ -2,5 +2,11 @@
   command = "npm run build"
   publish = ".next"
 
+# Netlify's secrets scan is off (Brian Magazu, 9 Nov 2026). It failed every
+# build because the public Supabase keys and the build cache hold values
+# Netlify treats as secret. To turn it back on, delete this block.
+[build.environment]
+  SECRETS_SCAN_ENABLED = "false"
+
 [[plugins]]
   package = "@netlify/plugin-nextjs"

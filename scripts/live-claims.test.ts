@@ -144,8 +144,8 @@ test("A+ Matrix reads listing content and never borrows Amazon attribute complet
   assert.ok(satellite);
   assert.ok(readiness);
   assert.equal(satellite.title, "Amazon A+ Matrix");
-  assert.deepEqual(satellite.heroValue, { value: "Not available*", label: "Five bullets filled" });
-  assert.equal(satellite.tooltip.desc, "");
+  assert.deepEqual(satellite.heroValue, { value: "Not available*", label: "Five bullets" });
+  assert.match(satellite.tooltip.desc, /no Amazon listing bullets\./, "the tooltip says what is missing");
   const satelliteText = [
     satellite.meta,
     satellite.tooltip.title,
@@ -159,7 +159,7 @@ test("A+ Matrix reads listing content and never borrows Amazon attribute complet
   assert.match(satelliteText, /Not available/);
   assert.doesNotMatch(satelliteText, /91\.8%/);
 
-  assert.deepEqual(readiness.heroValue, { value: "10.8%", label: "fender.com page found" });
+  assert.deepEqual(readiness.heroValue, { value: "10.8%", label: "Page found" });
   assert.equal(readiness.status, "danger");
   assert.equal(metrics.machineReadableSpecs.label, "fender.com Spec Block");
   assert.equal(metrics.machineReadableSpecs.value, "Not available*");
@@ -185,7 +185,7 @@ test("command center uses the retail headline and drops unsourced claims", () =>
   assert.doesNotMatch(text, /3,598/);
   assert.doesNotMatch(text, /electric SKUs|monitored electric SKUs/i);
   assert.ok(text.includes(headline));
-  assert.match(text, /13 divisions/);
+  assert.doesNotMatch(text, /\bdivisions?\b/i);
   // AI Search lines come from the published run only, never the pooled canvas_metrics sim_* fields.
   assert.doesNotMatch(text, /222|630|hallucination|Yamaha 66\.7%/i);
   assert.doesNotMatch(text, /8\.3%/);
@@ -196,8 +196,8 @@ test("command center uses the retail headline and drops unsourced claims", () =>
     ["buybox-suppression", "schema-coverage", "map-leakage", "aplus-tables"],
   );
   assert.equal(map?.title, "555 listings are below MAP in this listing read");
-  assert.equal(map?.subTab, "MAP");
-  assert.match(map?.why ?? "", /Open the MAP tab/);
+  assert.equal(map?.subTab, "MAP Leakage");
+  assert.match(map?.why ?? "", /Open the MAP Leakage tab/);
   assert.doesNotMatch(map?.why ?? "", /not a final count/);
 });
 
@@ -243,7 +243,7 @@ test("the MAP violations widget follows the listing read", () => {
   const ready = buildLiveMetrics(bundle(), retailReady()).flaggedAsins;
   assert.equal(ready.label, "MAP violations");
   assert.equal(ready.value, "555");
-  assert.equal(ready.subTab, "MAP");
+  assert.equal(ready.subTab, "MAP Leakage");
   assert.doesNotMatch(ready.detail, /48/);
 
   const failed = buildLiveMetrics(bundle(), { phase: "error" }).flaggedAsins;
@@ -282,7 +282,7 @@ test("missing MAP prices do not become a below-MAP count or an average gap", () 
     .join(" ");
   assert.match(satelliteText, /Fender MAP prices have not been stored/);
   assert.equal(satellite?.tooltip.desc, "");
-  assert.equal(satellite?.heroValue?.label, "MAP leakage");
+  assert.equal(satellite?.heroValue?.label, "", "the title names the figure");
   assert.doesNotMatch(satelliteText, /below MAP|gap|\$|\d/);
 
   const drift = buildLiveMetrics(bundle(), retail).amazonMapDrift;
@@ -293,7 +293,8 @@ test("missing MAP prices do not become a below-MAP count or an average gap", () 
 
 test("the guided tour uses the same retail headline as the ticker", () => {
   const retail = retailReady();
-  const headline = headlineSentence(headlineSurface(retail));
+  const surface = headlineSurface(retail);
+  const headline = `${surface.label}: ${surface.countLabel}`;
   const steps = buildLiveTourSteps(bundle(), retail);
   const hub = steps.find((step) => step.nodeId === "hub");
   const roadmap = steps.find((step) => step.nodeId === "roadmap");

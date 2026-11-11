@@ -6,8 +6,10 @@ import { PageFoundTable } from "@/components/v3/live/PageFoundTable";
 import { ShareHeroCard } from "@/components/v3/live/ShareHeroCard";
 import { openedFromPageFoundBubble, useLandOnPageFoundHero } from "@/components/v3/live/useLandOnPageFoundHero";
 import { usePageFoundEvidence } from "@/components/v3/live/usePageFoundEvidence";
+import { useSpecCheckRunAt } from "@/components/v3/live/useSpecCheckRunAt";
 import {
   machineReadabilityHeroes,
+  pageFoundRowsStale,
   sharedGapSentence,
   type MachineHeroId,
   type SpecPageSummary,
@@ -18,6 +20,7 @@ import {
   PAGE_FOUND_HERO_ID,
 } from "@/lib/fender-canvas/page-found-hero";
 import type { CanvasMetricsRow } from "@/lib/fender-canvas/types";
+import { brandSite } from "@/lib/brand-copy";
 
 const PAGES_TABLE_ID = "machine-readability-pages";
 const PAGE_FOUND_TABLE_ID = "brand-site-page-found-skus";
@@ -38,7 +41,7 @@ function BrandSiteSpecsNotes({ summary }: { summary: SpecPageSummary | null }) {
           <span>What is machine-readable product data?</span>
         </div>
         <div className="ceo-callout-body">
-          Shoppers read fender.com&apos;s spec tables. AI engines read the Schema.org product data
+          Shoppers read {brandSite()}&apos;s spec tables. AI engines read the Schema.org product data
           behind the page and take what is there as fact. A spec that only appears as page text has
           to be guessed. {shared}
         </div>
@@ -62,7 +65,7 @@ export function MachineReadabilityPanel({
     openedFromPageFoundBubble() ? PAGE_FOUND_HERO_ID : "missing_specs",
   );
   const heroes = machineReadabilityHeroes(summary);
-  const pageFound = brandSitePageFoundHero(metrics);
+  const pageFound = brandSitePageFoundHero(metrics, useSpecCheckRunAt(), pageFoundRowsStale(summary));
   const pageFoundRead = usePageFoundEvidence(openTable === PAGE_FOUND_HERO_ID);
   useLandOnPageFoundHero(PAGE_FOUND_ANCHOR, () => setOpenTable(PAGE_FOUND_HERO_ID));
 
