@@ -20,7 +20,7 @@ const FINDING_LABELS = [
   "MAP leakage",
   "Splintered Listings",
   "Exact official product pages",
-  "Unbranded discovery",
+  "Unbranded Discovery",
 ] as const;
 
 const FINDING_IDS = [
