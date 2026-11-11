@@ -153,9 +153,25 @@ export function outcomeLabel(row: Pick<SetAsideRow, "outcome" | "reason_label">)
   return row.reason_label ? `Set aside · ${row.reason_label}` : "Set aside";
 }
 
-function errorText(error: { message?: string } | null | undefined): string {
+/** Shown when the database does not know the client, so the person sees why nothing was saved. */
+export const UNKNOWN_CLIENT_MESSAGE =
+  "This client is not set up for set-asides yet, so nothing was saved. Ask IntoFocus to add it.";
+
+/** The message a person reads for a failed set-aside call. Never blank, never the raw database code. */
+export function errorText(error: { message?: string } | null | undefined): string {
   const message = error?.message?.trim();
+  if (message && /^unknown client\.?$/i.test(message)) return UNKNOWN_CLIENT_MESSAGE;
   return message ? message : "The set-aside could not be saved. Try again.";
+}
+
+/** An RPC that throws (network loss, a bad response) is a failed save with a visible message, not a stuck form. */
+async function callRpc(fn: string, args: Record<string, unknown>): Promise<SetAsideResult> {
+  try {
+    const { error } = await getPublicCanvasSupabase().rpc(fn, args);
+    return error ? { ok: false, error: errorText(error) } : { ok: true };
+  } catch (error) {
+    return { ok: false, error: errorText(error as { message?: string }) };
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -255,7 +271,7 @@ export function useSetAsides(clientKey: string | null | undefined, checkKey: str
   const setAside = useCallback(
     async (input: SetAsideInput): Promise<SetAsideResult> => {
       if (!clientKey || !store) return { ok: false, error: "Set-aside is not available here." };
-      const { error } = await getPublicCanvasSupabase().rpc("set_aside_issue", {
+      const saved = await callRpc("set_aside_issue", {
         p_client_key: clientKey,
         p_check_key: checkKey,
         p_entity_key: input.entityKey,
@@ -264,7 +280,7 @@ export function useSetAsides(clientKey: string | null | undefined, checkKey: str
         p_note: input.note?.trim() || null,
         p_entity_label: input.entityLabel ?? null,
       });
-      if (error) return { ok: false, error: errorText(error) };
+      if (!saved.ok) return saved;
       rememberViewerName(input.name);
       // Re-read through the view so labels (check, reason) come back joined.
       await load(clientKey, checkKey);
@@ -276,7 +292,7 @@ export function useSetAsides(clientKey: string | null | undefined, checkKey: str
   const markDone = useCallback(
     async (input: DoneInput): Promise<SetAsideResult> => {
       if (!clientKey || !store) return { ok: false, error: "Done is not available here." };
-      const { error } = await getPublicCanvasSupabase().rpc("mark_issue_done", {
+      const saved = await callRpc("mark_issue_done", {
         p_client_key: clientKey,
         p_check_key: checkKey,
         p_entity_key: input.entityKey,
@@ -284,7 +300,7 @@ export function useSetAsides(clientKey: string | null | undefined, checkKey: str
         p_note: input.note?.trim() || null,
         p_entity_label: input.entityLabel ?? null,
       });
-      if (error) return { ok: false, error: errorText(error) };
+      if (!saved.ok) return saved;
       rememberViewerName(input.name);
       await load(clientKey, checkKey);
       return { ok: true };
@@ -295,12 +311,12 @@ export function useSetAsides(clientKey: string | null | undefined, checkKey: str
   const reopen = useCallback(
     async (row: SetAsideRow, name: string, note?: string | null): Promise<SetAsideResult> => {
       if (!clientKey || !store) return { ok: false, error: "Set-aside is not available here." };
-      const { error } = await getPublicCanvasSupabase().rpc("reopen_set_aside", {
+      const saved = await callRpc("reopen_set_aside", {
         p_id: row.id,
         p_name: name.trim(),
         p_note: note?.trim() || null,
       });
-      if (error) return { ok: false, error: errorText(error) };
+      if (!saved.ok) return saved;
       rememberViewerName(name);
       upsertRow(store, {
         ...row,

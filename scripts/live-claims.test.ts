@@ -144,8 +144,8 @@ test("A+ Matrix reads listing content and never borrows Amazon attribute complet
   assert.ok(satellite);
   assert.ok(readiness);
   assert.equal(satellite.title, "Amazon A+ Matrix");
-  assert.deepEqual(satellite.heroValue, { value: "Not available*", label: "Five bullets filled" });
-  assert.match(satellite.tooltip.desc, /no Amazon listing bullets\. Source: canvas_listing_content\./, "the tooltip says what is missing");
+  assert.deepEqual(satellite.heroValue, { value: "Not available*", label: "Five bullets" });
+  assert.match(satellite.tooltip.desc, /no Amazon listing bullets\./, "the tooltip says what is missing");
   const satelliteText = [
     satellite.meta,
     satellite.tooltip.title,
@@ -159,7 +159,7 @@ test("A+ Matrix reads listing content and never borrows Amazon attribute complet
   assert.match(satelliteText, /Not available/);
   assert.doesNotMatch(satelliteText, /91\.8%/);
 
-  assert.deepEqual(readiness.heroValue, { value: "10.8%", label: "fender.com page found" });
+  assert.deepEqual(readiness.heroValue, { value: "10.8%", label: "Page found" });
   assert.equal(readiness.status, "danger");
   assert.equal(metrics.machineReadableSpecs.label, "fender.com Spec Block");
   assert.equal(metrics.machineReadableSpecs.value, "Not available*");
@@ -282,7 +282,7 @@ test("missing MAP prices do not become a below-MAP count or an average gap", () 
     .join(" ");
   assert.match(satelliteText, /Fender MAP prices have not been stored/);
   assert.equal(satellite?.tooltip.desc, "");
-  assert.equal(satellite?.heroValue?.label, "MAP leakage");
+  assert.equal(satellite?.heroValue?.label, "", "the title names the figure");
   assert.doesNotMatch(satelliteText, /below MAP|gap|\$|\d/);
 
   const drift = buildLiveMetrics(bundle(), retail).amazonMapDrift;

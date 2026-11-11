@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
-import { useAiHistoryOptional } from "@/components/v3/live/ai-search/AiHistoryContext";
+import { useAiHistoryOptional, useDisplayedAiSearch } from "@/components/v3/live/ai-search/AiHistoryContext";
 import {
   apiEngineViewsEnabled,
   apiRunsCoveringBattery,
@@ -14,6 +14,7 @@ import {
   type ApiRunSummary,
   type ApiSnapshotResult,
 } from "@/lib/ai-search/api-runs";
+import { useEngineGroupChoice } from "@/components/v3/live/ai-search/engine-group-store";
 import { engineGroupRead, type ApiEngineLoad } from "@/lib/ai-search/engine-group-read";
 import { runDay } from "@/lib/ai-search/default-window";
 import type { HistoryMode } from "@/lib/ai-search/history-mode";
@@ -190,5 +191,21 @@ export function useMapAiSearch(published: AiSearchRead): AiSearchRead {
   }, [catalog, snapshot]);
   const load = useApiSnapshots(paired);
   const pending = useMemo(() => catalogLoadState(catalog), [catalog]);
-  return useMemo(() => engineGroupRead(published, pending ?? load, "all"), [published, pending, load]);
+  const mapRead = useMemo(() => engineGroupRead(published, pending ?? load, "all"), [published, pending, load]);
+
+  // The Competitive Radar bubble alone reads what the Category Battlecards tab reads: the date-pill
+  // window with the API runs in it, narrowed by the engine switch. Both loads are the ones the tab
+  // and the history provider already make, shared through the caches above.
+  const displayed = useDisplayedAiSearch(published);
+  const windowApi = useApiEngineLoad();
+  const [choice] = useEngineGroupChoice();
+  const radar = useMemo(() => engineGroupRead(displayed, windowApi, choice), [displayed, windowApi, choice]);
+  return useMemo(
+    () => {
+      if (mapRead.phase !== "ready") return mapRead;
+      if (radar.phase === "ready") return { ...mapRead, radarSnapshot: radar.snapshot };
+      return radar.phase === "loading" ? { ...mapRead, radarPending: true } : mapRead;
+    },
+    [mapRead, radar],
+  );
 }

@@ -1,9 +1,11 @@
+import type { AiSearchRead } from "@/lib/ai-search/types";
 import type { CanvasMetric } from "@/lib/canvas-sdk/types";
 import { ENTERPRISE_POTENTIAL_ESTIMATE, PHASE_ONE_LIFT_ESTIMATE } from "@/lib/fender-canvas/analyst-estimates";
 import { beginnerSovLine } from "@/lib/fender-canvas/beginner-sov";
 import { failedReadTip, READ_NOT_AVAILABLE } from "@/lib/fender-canvas/canvas-reads";
 import { MAP_PRICES_NOT_STORED } from "@/lib/fender-canvas/portfolio-retail";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
+import { roadmapMetric } from "@/lib/fender-canvas/roadmap-bubble";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
 import {
   formatInt,
@@ -167,14 +169,17 @@ export function buildLiveMetrics(
   bundle: CanvasBundle,
   retail: RetailCanvasRead = { phase: "loading" },
   findability: FindabilityRead = { phase: "loading" },
+  /** The map's AI read. The Roadmap figure counts the unbranded discovery finding from it. */
+  ai: AiSearchRead = { phase: "loading" },
 ): Record<string, CanvasMetric> {
-  return withFailedReads(bundle, liveMetrics(bundle, retail, findability));
+  return withFailedReads(bundle, liveMetrics(bundle, retail, findability, ai));
 }
 
 function liveMetrics(
   bundle: CanvasBundle,
   retail: RetailCanvasRead,
   findability: FindabilityRead,
+  ai: AiSearchRead,
 ): Record<string, CanvasMetric> {
   const { m, cats } = bundle;
   const schemaPages = specPageCounts(bundle.specPages);
@@ -363,16 +368,7 @@ function liveMetrics(
       subTab: "Revenue Estimates",
       provenance: "estimate",
     },
-    dayNinetyBuyBoxTarget: {
-      id: "day-90-buy-box-target",
-      spokeId: "roadmap",
-      label: "90-day plan",
-      value: "3 phases",
-      detail: "MAP, catalog nesting, and estimated lift",
-      tone: "success",
-      subTab: "30-60-90 Days",
-      provenance: "live",
-    },
+    dayNinetyBuyBoxTarget: roadmapMetric(),
   };
 }
 

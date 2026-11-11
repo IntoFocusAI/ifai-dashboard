@@ -34,12 +34,12 @@ test("a published run is current through day 6 and stale after it", () => {
   assert.ok(aiSearchStale({ published_at: null, completed_at: published }, at(7)));
 });
 
-test("the tooltip names what is missing, the coverage, the source, the last check, and the effect", () => {
+test("the tooltip names what is missing and the last check in two short lines", () => {
   const stale = aiSearchStale({ published_at: published, completed_at: published }, at(7))!;
   assert.equal(PARTIAL_TITLE.stale, "Older than its check schedule");
   assert.equal(
     partialFigureTip(stale),
-    "No AI Search run has been published in the last 6 days, so the answers assistants gave after Nov 8, 2026 are missing. Covers the runs published through Nov 8, 2026. Source: canvas_ai_current_run. Last check: Nov 8, 2026, 12:48 PM UTC. The figure shows the last published run and may differ from what assistants answer today.",
+    "No AI Search run has been published in 6 days.\nLast check: Nov 8, 2026.",
   );
   assert.doesNotMatch(partialFigureTip(stale), /—|n't\b/);
 });

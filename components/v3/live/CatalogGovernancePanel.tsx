@@ -4,7 +4,7 @@ import { useState } from "react";
 import { CatalogGovernanceBundleTable } from "@/components/v3/live/CatalogGovernanceBundleTable";
 import { CatalogGovernanceSpecTable } from "@/components/v3/live/CatalogGovernanceSpecTable";
 import { DefinedCopy } from "@/components/v3/live/DefinedTerm";
-import { figureTipAttrs } from "@/components/v3/live/FigureTip";
+import { figureTipAttrs, PartialFigureMark } from "@/components/v3/live/FigureTip";
 import { RetailShareDisc, RetailStatusMark } from "@/components/v3/live/RetailOverviewFigure";
 import { CATALOG_GOVERNANCE_EXPLAINER } from "@/lib/fender-canvas/catalog-governance-copy";
 import type { PortfolioRetailSnapshot, RetailReading } from "@/lib/fender-canvas/portfolio-retail";
@@ -95,7 +95,9 @@ function CatalogSpecHero({
         <div className="findability-lead-row">
           <div className="findability-lead-figures">
             <span className="ai-lead-figure" style={{ color: heroFigureColor(hero) }}>
-              {hero.percent}
+              <PartialFigureMark partial={hero.partial} testId="spec-hero-stale">
+                {hero.percent}
+              </PartialFigureMark>
             </span>
             {hero.ratio ? (
               <span className="findability-lead-ratio">
@@ -150,7 +152,9 @@ function CatalogGovernanceLead({
       <div className="findability-lead-row">
         <div className="findability-lead-figures">
           <span className="ai-lead-figure" style={{ color: heroFigureColor(hero) }}>
-            {hero.percent}
+            <PartialFigureMark partial={hero.partial} testId="bundle-hero-stale">
+              {hero.percent}
+            </PartialFigureMark>
           </span>
           {hero.ratio ? (
             <span className="findability-lead-ratio">

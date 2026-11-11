@@ -9,7 +9,6 @@ import {
   AWAITING_INPUTS_LABEL,
   MAP_EXPOSURE_LABEL,
   MAP_UNITS_LABEL,
-  MAP_AWAITING_RULE,
   MAP_UNITS_SOURCE,
   formatSnapshotDay,
   mapAwaitingCount,
@@ -18,6 +17,7 @@ import {
   mapExposureSummaryTip,
   type MapExposureSummary,
 } from "@/lib/fender-canvas/map-exposure";
+import { mergePartial } from "@/lib/fender-canvas/row-stale";
 
 export type MapExposureState =
   | { phase: "loading" }
@@ -28,15 +28,18 @@ const UNITS_READ_FAILED = `The ${MAP_UNITS_SOURCE} unit estimates could not be l
 
 /** The X-25 asterisk on the total: which listings it leaves out, and what that does to it. */
 function coveragePartial(summary: MapExposureSummary): PartialFigure | null {
+  return mergePartial(awaitingPartial(summary), summary.stale);
+}
+
+function awaitingPartial(summary: MapExposureSummary): PartialFigure | null {
   const missing = mapAwaitingSentence(summary);
   if (!missing) return null;
   const read = formatSnapshotDay(summary.latestSnapshot);
   return {
     reason: "coverage",
-    missing: `${MAP_AWAITING_RULE} ${missing}`,
-    coverage: `${formatInt(summary.estimated)} of ${formatInt(summary.violations)} listings below MAP`,
+    missing: `${formatInt(summary.awaiting)} of ${formatInt(summary.violations)} listings below MAP are awaiting inputs and not counted as $0`,
+    coverage: null,
     source: `${MAP_UNITS_SOURCE} estimated monthly units${read ? `, read ${read},` : ""} and the stored Amazon price gap`,
-    effect: "The total covers only the estimated listings, so it is lower than the full exposure.",
   };
 }
 

@@ -22,6 +22,7 @@ import {
 } from "@/lib/fender-canvas/types";
 import { formatInt, formatPct } from "@/lib/fender-canvas/format";
 import {
+  amazonFieldLabel,
   presentMissingAmazonFields,
   presentMissingFieldShare,
 } from "@/lib/fender-canvas/spec-missing-fields";
@@ -99,7 +100,7 @@ function MissingFieldRow({
       data-spec-missing-bar={share.barPct == null ? "" : String(share.barPct)}
     >
       <div style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: 11 }}>
-        <span>{row.field}</span>
+        <span>{amazonFieldLabel(row.field)}</span>
         <span data-spec-missing-count="">{countLabel}</span>
       </div>
       {share.barPct != null ? (
@@ -312,8 +313,8 @@ function CatalogSpecReadiness({ read }: { read: AmazonSpecRowsRead }) {
                     <td>
                       {missingFields.kind === "fields"
                         ? missingFields.fields.map((field) => (
-                            <span key={field} className="tag-badge tag-neutral spec-field-pill">
-                              {field}
+                            <span key={field} className="tag-badge tag-neutral spec-field-pill" data-spec-field={field}>
+                              {amazonFieldLabel(field)}
                             </span>
                           ))
                         : missingFields.label}

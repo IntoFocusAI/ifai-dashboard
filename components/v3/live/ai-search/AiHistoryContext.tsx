@@ -12,7 +12,8 @@ import {
   windowBounds,
   type HistoryMode,
 } from "@/lib/ai-search/history-mode";
-import { loadHistoryCatalog, loadHistorySnapshot, type HistorySnapshotResult } from "@/lib/ai-search/history-queries";
+import { afterSiteTypes } from "@/lib/ai-search/site-types";
+import { loadHistoryCatalog,loadHistorySnapshot, type HistorySnapshotResult } from "@/lib/ai-search/history-queries";
 import { runsInSelection } from "@/lib/ai-search/selection";
 import type { AiSearchRead, AiSearchSnapshot } from "@/lib/ai-search/types";
 import { readsWindowRemotely } from "@/lib/ai-search/window-read";
@@ -109,7 +110,8 @@ export function AiHistoryProvider({ current, children }: { current: AiSearchRead
       return;
     }
     setSelected({ phase: "loading" });
-    void loadHistorySnapshot(getCanvasSupabase() as never, runId).then(setSelected);
+    const client = getCanvasSupabase();
+    void afterSiteTypes(client, () => loadHistorySnapshot(client as never, runId)).then(setSelected);
   }, [source]);
 
   const viewPublished = useCallback(() => {
@@ -174,7 +176,9 @@ export function AiHistoryProvider({ current, children }: { current: AiSearchRead
       const first: { failed: Exclude<HistorySnapshotResult, { phase: "ready" }> | null } = { failed: null };
       const loaded = await Promise.all(
         trusted.map((run) =>
-          loadHistorySnapshot(getCanvasSupabase() as never, run.audit_run_id, { signal: stop.signal }).then((result) => {
+          afterSiteTypes(getCanvasSupabase(), () =>
+            loadHistorySnapshot(getCanvasSupabase() as never, run.audit_run_id, { signal: stop.signal }),
+          ).then((result) => {
             if (result.phase !== "ready" && !first.failed && !stop.signal.aborted) {
               first.failed = result;
               stop.abort();

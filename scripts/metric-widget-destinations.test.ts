@@ -213,7 +213,7 @@ test("the picker list, including live overrides, opens the named tab", () => {
 
 test("the canvas spec passes the findability read into the widget list", () => {
   const source = readFileSync(new URL("lib/fender-canvas/build-canvas-spec.tsx", root), "utf8");
-  assert.match(source, /buildLiveMetrics\(bundle, retail, findability\)/);
+  assert.match(source, /buildLiveMetrics\(bundle, retail, findability, aiSearch\)/);
   const liveSource = readFileSync(new URL("lib/fender-canvas/metrics-from-live.ts", root), "utf8");
   const catalog = readFileSync(new URL("components/v3/fender-metrics.ts", root), "utf8");
   assert.doesNotMatch(liveSource, /spec_fender_found/);

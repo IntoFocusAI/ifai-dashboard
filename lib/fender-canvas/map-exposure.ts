@@ -15,9 +15,11 @@
  * Violation duration is not built: MAP price history is not stored.
  */
 
+import type { PartialFigure } from "./canvas-reads";
 import { formatInt, formatUsd } from "./format";
 import type { MapSourceRow } from "./map-channels";
 import { mapAsinKey } from "./portfolio-retail";
+import { RECHECK_DAYS, rowsStale } from "./row-stale";
 import { getCanvasSupabase } from "../supabase/canvas-client";
 
 /** The one units source today. A second source gets its own total; totals are never added. */
@@ -192,12 +194,15 @@ export type MapExposureSummary = {
   /** Newest SmartScout read among the listings with a unit estimate. */
   latestSnapshot: string | null;
   source: typeof MAP_UNITS_SOURCE;
+  /** X-25: estimated listings whose SmartScout snapshot is older than twice its 7-day recheck. Null when current. */
+  stale: PartialFigure | null;
 };
 
 /** Totals over the listings below MAP. Rows are the counted rows: approved exceptions already out. */
 export function mapExposureSummary(
   rows: readonly MapSourceRow[],
   lookup: MapUnitsLookup,
+  now: number = Date.now(),
 ): MapExposureSummary {
   const awaitingByReason: Record<MapAwaitingReason, number> = {
     no_units_source: 0,
@@ -209,6 +214,7 @@ export function mapExposureSummary(
   let value = 0;
   let units = 0;
   let latestSnapshot: string | null = null;
+  const snapshots: (string | null)[] = [];
   for (const row of rows) {
     const exposure = mapExposure(row, lookup);
     if (exposure.snapshotDate && (!latestSnapshot || exposure.snapshotDate > latestSnapshot)) {
@@ -219,6 +225,7 @@ export function mapExposureSummary(
       continue;
     }
     estimated += 1;
+    snapshots.push(exposure.snapshotDate);
     value += exposure.value;
     units += exposure.units;
   }
@@ -231,6 +238,17 @@ export function mapExposureSummary(
     totalUnits: estimated > 0 ? units : null,
     latestSnapshot,
     source: MAP_UNITS_SOURCE,
+    stale: rowsStale(
+      snapshots,
+      (at) => at,
+      {
+        intervalDays: RECHECK_DAYS.smartscout,
+        check: `${MAP_UNITS_SOURCE} snapshot`,
+        source: "canvas_listing_sales_loss_v2",
+        figure: "discounted retail value",
+      },
+      now,
+    ),
   };
 }
 

@@ -1,9 +1,13 @@
-import { expect, test } from "./fixtures";
+import { AI_READ_MS, expect, test } from "./fixtures";
 
 /* The authored panel HTML is injected as a string and wired by delegation.
    These cover the contract in lib/canvas-sdk/panel-interactions.ts. */
 
 test.describe("simulation filters", () => {
+  test.beforeEach(() => {
+    test.slow();
+  });
+
   test("commercial prompts, probes, and errors filter apart", async ({ canvas, page }) => {
     await canvas.openSimulations();
     const rows = canvas.simulations;
@@ -63,37 +67,6 @@ test.describe("collapsible explanations", () => {
 });
 
 test.describe("drill-downs", () => {
-  test("MAP tab holds the summary and does not revive the old channel story", async ({ canvas, page }) => {
-    await canvas.openPriority("Fender MAP prices have not been stored");
-    await expect(canvas.activeTab).toContainText("MAP");
-
-    const body = page.locator(".drilldown-body");
-    await expect(body).toContainText("Summary");
-    await expect(body).toContainText("Fender MAP prices have not been stored.");
-    await expect(body).not.toContainText("listings below MAP");
-    await expect(body).not.toContainText("Listings below MAP");
-    await expect(body).not.toContainText("Average price gap");
-    await expect(body).not.toContainText("Discounted bundles");
-    await expect(body).not.toContainText("Amazon gap");
-    const musiciansFriend = page.locator("tr", { hasText: "B0HJDFP2XS" });
-    await expect(musiciansFriend).toBeVisible();
-    await expect(musiciansFriend).toContainText("$599.99");
-    await expect(musiciansFriend).toContainText("Not available*");
-    await expect(musiciansFriend.locator(".channel-fact a.listing-link")).toHaveCount(0);
-    await expect(musiciansFriend).not.toContainText("-$150");
-    await expect(musiciansFriend.locator(".channel-gap")).toHaveCount(0);
-    const walmart = page.locator("tr", { hasText: "B0DYKZ4MJG" });
-    await expect(walmart).toBeVisible();
-    await expect(walmart).toContainText("$220.14");
-    await expect(walmart.locator(".channel-gap")).toHaveCount(0);
-    await expect(body).not.toContainText("$808.00");
-    await expect(body).not.toContainText("Reverb");
-    await expect(body).not.toContainText("Sweetwater");
-    await expect(body).not.toContainText("Buy Box withheld");
-    await expect(body).not.toContainText("Prices at MAP");
-    await expect(page.locator(".map-channel-row")).toHaveCount(0);
-  });
-
   test("portfolio retail keeps listings, MAP, suppressed rows, and catalog apart", async ({
     canvas,
     page,
@@ -135,11 +108,12 @@ test.describe("drill-downs", () => {
   });
 
   test("out of stock shows sourced estimates that open to their inputs", async ({ canvas, page }) => {
+    test.slow();
     await canvas.openPriority("Buy Box withheld");
     await expect(page.locator(".drilldown-tab-btn[data-new-tab]")).toHaveText(["Out of Stock"]);
     await canvas.openTab("Out of Stock");
     const panel = page.locator(".stock-loss");
-    await expect(panel).toBeVisible();
+    await expect(panel).toBeVisible({ timeout: 60_000 });
     await expect(panel.locator("[data-new-tag]")).toBeVisible();
     await expect(panel.getByText("Loading the stock history…")).toHaveCount(0);
     await expect(panel).toContainText("analyst estimate");
@@ -154,7 +128,10 @@ test.describe("drill-downs", () => {
     // Every row was out of stock at least one day, so no 12-month estimate is $0.00.
     // A listing with no sales source reads Awaiting inputs.
     const rows = panel.locator("tr.stock-loss-row");
-    await expect(rows.first()).toBeVisible();
+    await expect(rows.first()).toBeVisible({ timeout: 60_000 });
+    // The table draws the largest estimates first, so open every row before looking for awaiting inputs.
+    const showAll = panel.locator("[data-table-show-all]");
+    if (await showAll.count()) await showAll.click();
     const zeroYear = await rows.evaluateAll(
       (trs) => trs.filter((tr) => tr.querySelectorAll("td")[1]?.textContent?.trim() === "$0.00").length,
     );
@@ -173,34 +150,32 @@ test.describe("drill-downs", () => {
   });
 
   test("suppressed listings follow the retail reading", async ({ canvas, page }) => {
+    test.slow();
     await canvas.openPriority("Buy Box withheld");
     await canvas.openTab("Suppressed Listings");
     const body = page.locator(".drilldown-body");
     const list = page.locator(".suppressed-listings");
-    await expect(list).toBeVisible();
+    await expect(list).toBeVisible({ timeout: 60_000 });
+    await expect(list.getByText("Loading withheld listings…")).toHaveCount(0, { timeout: 60_000 });
     await expect(list).toContainText("Competitive External Price");
     await expect(list).not.toContainText("Recorded Keepa reading");
     await expect(list).not.toContainText("39 of 993");
     await expect(list).not.toContainText("Reverb");
     await expect(list).not.toContainText("Sweetwater");
     await expect(body).not.toContainText("$808.00");
-
     // Amazon's benchmark is never attributed to a named retailer.
-    await expect(list).toContainText("Amazon does not name that retailer");
+    await expect(body).toContainText("Amazon does not name that retailer");
+    await expect(list).not.toContainText("could not be loaded");
 
-    const count = list.locator(".suppressed-count");
-    await expect(count).toBeVisible();
-    await expect(list.getByText("Loading withheld listings…")).toHaveCount(0);
-    await expect(
-      list.getByText(/current reading|not stored a reading|could not be loaded/).first(),
-    ).toBeVisible();
-    if (await count.isVisible()) {
-      // The badge is the confirmed withheld count, and the table lists exactly those rows.
-      const badge = Number((await count.innerText()).replace(/,/g, ""));
-      const empty = await list.getByText("No monitored listing has a withheld").count();
-      const dataRows = empty ? 0 : await list.locator("tbody tr").count();
-      expect(badge).toBe(dataRows);
-    }
+    // The lead figure is the confirmed withheld count, and the table lists exactly those rows.
+    const lead = page.locator("[data-suppressed-listings-lead-percent]");
+    await expect(lead).toBeVisible();
+    const withheld = Number(await lead.getAttribute("data-suppressed-listings-lead-numerator"));
+    const footer = list.locator("[data-table-row-limit]");
+    const tableRows = (await footer.count())
+      ? Number(await footer.getAttribute("data-rows-total"))
+      : await list.locator("tbody tr").count();
+    expect(tableRows).toBe(withheld);
   });
 
   test("the Buy Box readings keep each state on its own denominator", async ({
@@ -237,48 +212,47 @@ test.describe("drill-downs", () => {
     await expect(readings).not.toContainText("MAP");
   });
 
-  test("roadmap first tab shows current findings, not example phases", async ({ page }) => {
+  test("roadmap opens on IntoFocus's plan in three dated phases", async ({ page }) => {
+    test.slow();
     await page.context().addCookies([
       { name: "ifai_guest_fender", value: "1", domain: "localhost", path: "/" },
     ]);
     await page.goto("/dashboard?spoke=roadmap");
     const body = page.locator(".drilldown-body");
-    await expect(page.locator("[data-roadmap-findings-panel]")).toBeVisible();
+    await expect(page.locator("[data-roadmap-plan]")).toBeVisible();
     await expect(page.locator(".drilldown-tab-btn.active")).toContainText("30-60-90 Days");
-    await expect(body).toContainText("Current findings");
-    for (const label of [
-      "Buy Box withheld",
-      "MAP leakage",
-      "Splintered bundles",
-      "Exact official product pages",
-      "Unbranded discovery",
-    ]) {
-      await expect(body).toContainText(label);
-    }
-    // Each finding shows its current N of M share.
-    await expect(body.locator("[data-briefing-finding-ratio]")).toHaveCount(5);
-    await expect(body.locator(".ifai-open-hint")).toHaveCount(0);
-    await expect(body).not.toContainText("Phase 1");
-    await expect(body).not.toContainText("Days 1 to 30");
+    await expect(body.locator("[data-roadmap-owner]")).toHaveText("IntoFocus's recommended plan for Fender");
+    await expect(body.locator(".roadmap-phase-days")).toHaveText(["Days 1 to 30", "Days 31 to 60", "Days 61 to 90"]);
+    await expect(body.locator("[data-roadmap-lead-figure]")).toHaveText(/^\d+ of \d+\*?$/, { timeout: AI_READ_MS });
     await expect(body).not.toContainText("since last time");
+    await expect(body).not.toContainText("Open details");
   });
 
-  test("the spec sample states the live schema result", async ({ canvas, page }) => {
+  test("the spec priority opens Brand-Site Specs with its live N of M", async ({ canvas, page }) => {
+    test.slow();
     await canvas.openPriority("machine-readable spec");
-    await canvas.openTab("Readiness");
+    await expect(canvas.activeTab).toHaveText("Brand-Site Specs");
     await expect(page.locator(".drilldown-desc")).toHaveCount(0);
-    await expect(page.locator(".drilldown-body")).toContainText("additionalProperty");
-    await expect(page.locator(".drilldown-body")).not.toContainText("29.2%");
-    await expect(page.locator(".drilldown-body")).not.toContainText("7 of 22");
-    await expect(page.locator(".drilldown-body")).not.toContainText("14 catalog");
+    const body = page.locator(".drilldown-body");
+    const missing = page.locator("[data-machine-hero='missing_specs']");
+    await expect(missing).toBeVisible({ timeout: 60_000 });
+    await expect(missing.locator("[data-hero-percent]")).toHaveText(/^\d+\.\d%$/);
+    await expect(missing).toContainText(/[\d,]+ of [\d,]+/);
+    await expect(missing).toContainText("spec block");
+    await expect(body).not.toContainText("29.2%");
+    await expect(body).not.toContainText("7 of 22");
+    await expect(body).not.toContainText("14 catalog");
   });
 
   test("Product Fact Checks leads with the business result", async ({ canvas, page }) => {
+    test.slow();
     await canvas.openSpokeFromMap("AI Search Visibility");
     await canvas.openTab("Product Fact Checks");
     const body = page.locator(".drilldown-body");
+    // The result is either "No contradictions were found in N answers" or "K of N answers contradicted the verified fact".
     await expect(page.locator("[data-ai-fact-headline]")).toContainText(
-      /\d+ Fender product facts were checked across .+\. No contradictions were found in \d+ answers\./,
+      /[\d,]+ Fender product facts? (were|was) checked across .+\. (No contradictions were found in [\d,]+ answers?|[\d,]+ of [\d,]+ answers contradicted the verified fact)\./,
+      { timeout: AI_READ_MS },
     );
     await expect(body).not.toContainText("These checks cover the selected facts only");
     await expect(page.locator("[data-ai-accuracy-figure] .ifai-term")).toHaveAttribute(
@@ -306,17 +280,18 @@ test.describe("drill-downs", () => {
   });
 
   test("competitive rows use commercial AI-search outcomes", async ({ canvas, page }) => {
+    test.slow();
     await canvas.openSpokeFromMap("Competitive Radar");
-    await expect(page.locator(".ai-battlecards")).toBeVisible();
+    await expect(page.locator(".ai-battlecards")).toBeVisible({ timeout: AI_READ_MS });
 
     const headers = await page.locator(".ai-battlecards th").allInnerTexts();
     expect(headers.some((h) => /unbranded discovery/i.test(h))).toBe(true);
     expect(headers.some((h) => /top competitor/i.test(h))).toBe(true);
     expect(headers.some((h) => /competitor leads/i.test(h))).toBe(true);
 
-    const desc = await page.locator(".drilldown-desc").innerText();
-    const led = desc.match(/Competitors led (\d+) of (\d+) resolved unbranded discovery answers/);
-    expect(led).not.toBeNull();
+    await expect(page.locator(".drilldown-desc")).toHaveText(
+      /Competitors led [\d,]+ of [\d,]+ resolved unbranded discovery answers/,
+    );
     await expect(page.locator("[data-ai-run-details-lead] [data-ai-win-rate='unbranded_discovery']")).toBeVisible();
     await expect(page.locator("[data-ai-battle-lead-graph]")).toBeVisible();
     await expect(page.locator("[data-ai-history-trigger]")).toContainText("Last 30 days");

@@ -108,18 +108,18 @@
       --font-sans: var(--font-geist), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
 
-      /* Shared metric typography (sidebar widgets + drilldown cards). Floor: 10px. */
-      --metric-overline-size: 10px;
+      /* Shared metric typography (sidebar widgets + drilldown cards). Floor: 11px (X-31). Sentences use 12px. */
+      --metric-overline-size: 11px;
       --metric-overline-weight: 500;
       --metric-overline-tracking: 0.08em;
-      --metric-label-size: 10px;
+      --metric-label-size: 11px;
       --metric-label-weight: 500;
       --metric-value-size: 23px;
       --metric-value-weight: 600;
       --metric-value-tracking: -0.02em;
-      --metric-detail-size: 10px;
+      --metric-detail-size: 12px;
       --metric-detail-weight: 400;
-      --metric-provenance-size: 10px;
+      --metric-provenance-size: 11px;
       --metric-provenance-weight: 500;
       --metric-provenance-tracking: 0.08em;
     }
@@ -353,7 +353,7 @@
 
     .brand-name .tag-badge {
       padding: 3px 8px;
-      font-size: 10px;
+      font-size: 11px;
     }
 
     .brand-sub {
@@ -568,7 +568,7 @@
       min-width: 18px;
       height: 18px;
       padding: 0 5px;
-      font-size: 10px;
+      font-size: 11px;
       background: var(--accent);
       color: var(--accent-ink);
     }
@@ -1064,7 +1064,7 @@
     }
 
     .metric-widget-empty span {
-      font-size: 10px;
+      font-size: 11px;
       font-weight: 600;
       letter-spacing: 0.08em;
       text-transform: uppercase;
@@ -1130,7 +1130,7 @@
     .metric-widget-picker-header small,
     .metric-widget-option small {
       color: var(--text-subtle);
-      font-size: 10px;
+      font-size: 11px;
       font-weight: 600;
     }
 
@@ -1148,7 +1148,7 @@
       padding: 9px 8px 4px;
       background: var(--bg-surface);
       color: var(--accent-cyan);
-      font-size: 10px;
+      font-size: 11px;
       font-weight: 600;
       letter-spacing: 0.1em;
       text-transform: uppercase;
@@ -1189,7 +1189,7 @@
 
     .metric-widget-option strong {
       overflow: hidden;
-      font-size: 10.5px;
+      font-size: 11px;
       font-weight: 600;
       text-overflow: ellipsis;
       white-space: nowrap;
@@ -1341,6 +1341,10 @@
       transform: translate(-50%, calc(-100% - 8px)) scale(1);
     }
 
+    .node-tooltip .node-tooltip-desc {
+      white-space: pre-line;
+    }
+
     .node-tooltip.node-tooltip-column {
       max-width: 240px;
       transform: translate(0, -50%) scale(0.96);
@@ -1416,7 +1420,7 @@
       align-items: center;
       padding: 2px 8px;
       border-radius: var(--radius-button);
-      font-size: 10px;
+      font-size: 11px;
       font-weight: 600;
       letter-spacing: 0.08em;
       text-transform: uppercase;
@@ -1462,30 +1466,37 @@
       list-style: none;
     }
 
+    .ai-competitor-win-bars > li {
+      display: grid;
+      grid-template-columns: 160px minmax(0, 1fr) 72px;
+      align-items: center;
+      gap: 12px;
+    }
+
     .ai-competitor-win-bars > li + li {
-      margin-top: 8px;
+      margin-top: 6px;
     }
 
-    .ai-competitor-win-meta {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: baseline;
-      justify-content: space-between;
-      gap: 4px 12px;
-      color: var(--text-muted);
-      font-size: 12px;
-    }
-
-    .ai-competitor-win-meta strong {
+    .ai-competitor-win-name {
       color: var(--text-main);
       font-size: 13px;
+      font-weight: 600;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .ai-competitor-win-count {
+      color: var(--text-muted);
+      font-size: 12px;
+      text-align: right;
+      white-space: nowrap;
     }
 
     .ai-competitor-win-track {
       display: block;
       width: 100%;
       height: 12px;
-      margin-top: 4px;
       border-radius: 999px;
       background: color-mix(in srgb, var(--border-color) 70%, transparent);
       overflow: hidden;
@@ -1799,7 +1810,7 @@
     /* A stored price that is not a current observation. */
     .channel-note {
       display: block;
-      font-size: 10px;
+      font-size: 11px;
       font-weight: 500;
       color: var(--text-muted);
       white-space: nowrap;
@@ -1927,21 +1938,31 @@
       gap: 10px;
     }
 
-    .ai-engine-unbranded-head {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: baseline;
-      justify-content: space-between;
-      gap: 6px 12px;
-      margin-bottom: 4px;
-      font-size: 14px;
+    /* One row per engine: name column, bar, value at the right end (same grid as Competitor Wins). */
+    .ai-engine-unbranded-list > li {
+      display: grid;
+      grid-template-columns: 160px minmax(0, 1fr) minmax(72px, auto);
+      align-items: center;
+      gap: 4px 12px;
+    }
+
+    .ai-engine-unbranded-name {
+      min-width: 0;
       color: var(--text-main);
+      font-size: 13px;
+      font-weight: 600;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .ai-engine-unbranded-rate {
-      font-family: var(--font-mono);
-      font-weight: 600;
       color: var(--text-main);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 600;
+      text-align: right;
+      white-space: nowrap;
     }
 
     .ai-engine-unbranded-bar {
@@ -1970,10 +1991,10 @@
     }
 
     .ai-engine-unbranded-legend {
+      grid-column: 2 / -1;
       display: flex;
       flex-wrap: wrap;
       gap: 4px 14px;
-      margin-top: 4px;
       font-size: 13px;
       color: var(--text-muted);
     }
@@ -2175,7 +2196,7 @@
     }
 
     .tour-step-pill {
-      font-size: 10px;
+      font-size: 11px;
       font-weight: 600;
       padding: 2px 7px;
       border-radius: var(--radius-button);
@@ -2185,7 +2206,7 @@
     }
 
     .tour-category-badge {
-      font-size: 10.5px;
+      font-size: 11px;
       font-weight: 600;
       color: var(--text-muted);
     }
@@ -2498,7 +2519,7 @@
     .dual-index-badge {
       display: inline-flex;
       align-items: center;
-      font-size: 10px;
+      font-size: 11px;
       font-weight: 600;
       padding: 2px 6px;
       border-radius: var(--radius-button);
@@ -2624,7 +2645,7 @@
     .asin-chip {
       display: inline-block;
       font-family: var(--font-mono);
-      font-size: 10.5px;
+      font-size: 11px;
       font-weight: 600;
       color: var(--accent-cyan);
       background: rgba(78, 151, 188, 0.1);
@@ -2637,7 +2658,7 @@
     }
 
     .channel-tag {
-      font-size: 10px;
+      font-size: 11px;
       font-weight: 600;
       padding: 1px 5px;
       border-radius: 3px;
@@ -2753,7 +2774,7 @@
 
       .metric-widget-label {
         max-width: 142px;
-        font-size: 10px;
+        font-size: 11px;
       }
 
       .metric-widget-value,
@@ -2762,7 +2783,7 @@
       }
 
       .metric-widget-detail {
-        font-size: 10px;
+        font-size: 12px;
       }
 
       .metric-widget-provenance {
@@ -2909,7 +2930,7 @@
       border: 1px solid var(--border-color);
       background: transparent;
       color: var(--text-muted);
-      font-size: 10.5px;
+      font-size: 11px;
       font-weight: 600;
       letter-spacing: 0.04em;
       text-transform: uppercase;
@@ -2938,7 +2959,7 @@
       border-radius: 999px;
       background: var(--accent);
       color: var(--accent-ink);
-      font-size: 10px;
+      font-size: 11px;
       font-weight: 600;
       line-height: 1;
     }
@@ -2947,7 +2968,7 @@
       display: block;
       width: 100%;
       margin-top: 2px;
-      font-size: 10px;
+      font-size: 11px;
       font-style: normal;
       font-weight: 600;
       color: var(--text-subtle);
@@ -2992,7 +3013,7 @@
       display: flex;
       align-items: center;
       gap: 6px;
-      font-size: 10.5px;
+      font-size: 11px;
       font-weight: 600;
       letter-spacing: 0.08em;
       text-transform: uppercase;
@@ -3039,7 +3060,7 @@
     }
 
     .cc-quadrant-label {
-      font-size: 10.5px;
+      font-size: 11px;
       font-weight: 600;
       letter-spacing: 0.04em;
       text-transform: uppercase;
@@ -3127,7 +3148,7 @@
     .cc-sev-badge {
       padding: 1px 7px;
       border-radius: var(--radius-button);
-      font-size: 10px;
+      font-size: 11px;
       font-weight: 600;
       letter-spacing: 0.07em;
       text-transform: uppercase;
@@ -3159,7 +3180,7 @@
 
     .cc-why-label {
       display: block;
-      font-size: 10px;
+      font-size: 11px;
       font-weight: 600;
       letter-spacing: 0.08em;
       text-transform: uppercase;
@@ -3206,7 +3227,7 @@
       border: 1px solid var(--border-color);
       background: transparent;
       color: var(--text-muted);
-      font-size: 10.5px;
+      font-size: 11px;
       font-weight: 600;
       cursor: pointer;
       transition: all 0.15s ease;
@@ -3282,7 +3303,7 @@
       border: 1px solid var(--border-color);
       background: transparent;
       color: var(--text-muted);
-      font-size: 10.5px;
+      font-size: 11px;
       font-weight: 600;
       cursor: pointer;
       flex-shrink: 0;
@@ -3403,7 +3424,7 @@
       background: transparent;
       color: inherit;
       font-family: inherit;
-      font-size: 10px;
+      font-size: 11px;
       font-weight: 600;
       letter-spacing: 0.06em;
       text-transform: uppercase;
@@ -3481,7 +3502,7 @@
       padding: 2px 8px;
       border-radius: var(--radius-button);
       border: 1px solid var(--border-dark);
-      font-size: 10px;
+      font-size: 11px;
       font-weight: 600;
       letter-spacing: 0.04em;
       color: var(--accent-purple);
@@ -3682,7 +3703,7 @@
 
     .fo-failed-note {
       display: block;
-      font-size: 10.5px;
+      font-size: 12px;
       color: var(--warning-amber, var(--text-muted));
     }
 
@@ -4263,7 +4284,7 @@
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      font-size: 10px;
+      font-size: 11px;
       color: var(--text-muted);
     }
 
@@ -4437,12 +4458,9 @@
       pointer-events: auto;
     }
 
-    /* Keep the left bubbles clear of the slot column on a laptop-width map. */
-    @media (max-width: 1500px) {
-      .ifai-canvas.panel-hidden:has(.hub-slots) .viewport-container {
-        left: 302px;
-      }
-    }
+    /* The slot column overlays the map; the map keeps its size (0.72 at 1280x720) so bubble text
+       stays at 11px or more, and the hover slide (useHoverFraming) moves the hovered group clear
+       of the column. */
 
     .hub-slot-source {
       margin: 0;
@@ -5280,7 +5298,7 @@
       display: inline-block;
       padding: 1px 6px;
       border-radius: 999px;
-      font-size: 10px;
+      font-size: 11px;
       font-weight: 600;
       letter-spacing: 0.04em;
       text-transform: uppercase;
@@ -5303,7 +5321,7 @@
       margin-left: 6px;
       padding: 0 5px;
       border-radius: 999px;
-      font-size: 10px;
+      font-size: 11px;
       font-weight: 600;
       letter-spacing: 0.04em;
       text-transform: uppercase;

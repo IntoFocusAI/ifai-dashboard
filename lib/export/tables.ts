@@ -12,6 +12,8 @@ export const EXPORT_TABLE_IDS = [
   "brand-site-page-found",
   "aplus-matrix-listings",
   "suppressed-listings",
+  // Summary Performance: the catalog division table (read on the server like the screen).
+  "catalog-divisions",
   // AI Search Visibility: read on the server for the date pill and engine switch the screen shows.
   "ai-run-engines",
   "ai-run-categories",
@@ -23,6 +25,11 @@ export const EXPORT_TABLE_IDS = [
   "citation-engines",
   "citation-categories",
   "citation-evidence",
+  // Competitive Radar: the same selection as the AI Search tables.
+  "category-battlecards",
+  "competitor-wins",
+  "engine-comparison",
+  "engine-category",
   "prompt-history",
   "explore-listings",
 ] as const;

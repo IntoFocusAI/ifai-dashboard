@@ -125,6 +125,8 @@ export type AiReadinessHeroModel = {
   /** N of M, or a count phrase that cannot be read as a second percentage. */
   ratio: string | null;
   color: string | null;
+  /** Status (X-34) behind `color`, for the mark and word beside the figure. */
+  tone: Exclude<NodeStatus, "neutral"> | null;
   pie: PieDiscData | null;
   tip: string | null;
 };
@@ -157,6 +159,22 @@ export function fenderCompletenessTone(pct: number | null): Exclude<NodeStatus, 
 
 export function toneColor(tone: Exclude<NodeStatus, "neutral"> | null): string | null {
   return tone ? TONE_COLOR[tone] : null;
+}
+
+/**
+ * The status behind a graded share's color (X-34), so the figure carries its mark and word.
+ * A figure without a population is not graded: it has no status and shows in muted text.
+ */
+export function shareFigureTone(
+  color: string | null,
+  numerator: number | null,
+  denominator: number | null,
+): Exclude<NodeStatus, "neutral"> | null {
+  if (numerator == null || denominator == null || !color) return null;
+  const match = (Object.keys(TONE_COLOR) as Array<Exclude<NodeStatus, "neutral">>).find(
+    (tone) => TONE_COLOR[tone] === color,
+  );
+  return match ?? null;
 }
 
 /** Disc of a 0-100 average percent (filled versus remainder to full). */
@@ -226,6 +244,7 @@ function failedReadHero(hero: AiReadinessHeroModel, m: CanvasMetricsRow): AiRead
     percent: READ_NOT_AVAILABLE,
     ratio: null,
     color: null,
+    tone: null,
     pie: null,
     tip: null,
   };
@@ -263,6 +282,7 @@ export function pageFoundHero(m: CanvasMetricsRow, checkedAt: string | null = nu
     percent: ready ? formatPct(pct) : pendingLabel(),
     ratio: ready ? formatRatio(found, checked) : null,
     color: toneColor(pageFoundTone(pct)),
+    tone: pageFoundTone(pct),
     pie: ready ? shareCountPie("ai-readiness-page-found", `${brandSite()} page found`, "Page found", found!, checked!) : null,
     tip: ready ? `${formatInt(found)} of ${formatInt(checked)} checked SKUs` : null,
   }, m);
@@ -297,6 +317,7 @@ export function amazonCompletenessHero(
     percent: ready ? formatPct(pct) : pendingLabel(),
     ratio: share.label,
     color: tone ? TONE_COLOR[tone] : null,
+    tone,
     pie: averagePercentPie("ai-readiness-amazon-completeness", "Amazon attribute completeness", pct),
     tip: ready ? formatPct(pct) : null,
   }, m);
@@ -316,6 +337,7 @@ export function fenderCompletenessHero(m: CanvasMetricsRow, checkedAt: string | 
     percent: ready ? formatPct(pct) : pendingLabel(),
     ratio: averageAcrossRatio(found != null && found > 0 ? found : null, "found pages"),
     color: toneColor(fenderCompletenessTone(pct)),
+    tone: fenderCompletenessTone(pct),
     pie: averagePercentPie("ai-readiness-fender-completeness", `${brandSite()} completeness`, pct),
     tip: ready ? formatPct(pct) : null,
   }, m);
@@ -336,6 +358,7 @@ export function missingAdditionalPropertyHero(m: CanvasMetricsRow, checkedAt: st
     percent: ready ? formatPct(pct) : pendingLabel(),
     ratio: ready ? formatRatio(missing, found) : null,
     color: null,
+    tone: null,
     pie: ready
       ? shareCountPie(
           "ai-readiness-missing-additional-property",

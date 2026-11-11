@@ -316,7 +316,7 @@ test("the awaiting-inputs breakdown names each reason and never counts $0", () =
   ];
   assert.equal(
     awaitingInputsBreakdown(rows),
-    "3 listings are awaiting inputs and are not counted as $0: 2 with no sales source; 1 where SmartScout reports no sales.",
+    "3 of 4 out-of-stock listings have no sales estimate yet, so they are left out of the total. Reasons: 2 with no sales source; 1 where SmartScout reports no sales.",
   );
   assert.equal(awaitingInputsBreakdown(rows.slice(0, 1)), null);
 });

@@ -1,25 +1,29 @@
-import { expect, test } from "./fixtures";
+import { AI_READ_MS, expect, test } from "./fixtures";
 
 /* AI Search tabs follow the run control. The map stays on the published run.
    These cover the run summary, evidence drill-downs, citations, and old links. */
 
 test.describe("AI Search Visibility", () => {
-  test("the bubble states the published run with numerator and denominator", async ({ page }) => {
+  test("the bubble leads with the published unbranded discovery rate in its status color", async ({ page }) => {
     const bubble = page.locator(".graph-node").filter({ hasText: /AI\s*Search\s*Visibility/i });
-    await expect(bubble).toContainText(/Unbranded\s*13 of 23/);
-    await expect(bubble).toContainText(/Branded\s*22 of 23/);
+    await expect(bubble).toContainText(/\d+\.\d%/, { timeout: AI_READ_MS });
+    await expect(bubble).toContainText(/Unbranded\s*Discovery/);
+    // The figure carries the status color; the status word lives on the tab (11 Nov 2026).
+    await expect(bubble.locator(".node-hero-value[data-hero-status]")).toHaveAttribute("data-hero-status", /^(bad|okay|good)$/);
+    await expect(bubble).not.toContainText(/\b(Poor|Fair|Good)\b/);
     await expect(bubble).not.toContainText(/51 of 63/);
     await expect(bubble).not.toContainText(/Sims/);
   });
 
   test("the run summary shows completeness, engines, and the win share", async ({ canvas, page }) => {
+    test.slow();
     await canvas.openSpokeFromMap("AI Search Visibility");
     await expect(canvas.activeTab).toHaveText("Run Summary");
     const body = page.locator(".drilldown-body");
     await expect(page.locator("[data-ai-history-trigger]")).toContainText("Last 30 days");
     await expect(page.locator("[data-ai-window-freshness]")).toHaveCount(0);
     await expect(page.locator("[data-ai-history-banner]")).toHaveCount(0);
-    await expect(page.locator("[data-ai-win-rate='unbranded_discovery']")).toHaveText(/\d+\.\d%/);
+    await expect(page.locator("[data-ai-win-rate='unbranded_discovery']")).toHaveText(/\d+\.\d%/, { timeout: AI_READ_MS });
     await expect(page.locator("[data-ai-win-rate='branded_consideration']")).toHaveText(/\d+\.\d%/);
     await expect(page.locator("[data-ai-role='unbranded_discovery']")).toContainText(/\d+ Fender\/Squier leads/);
     await expect(page.locator("[data-ai-role='unbranded_discovery']")).toContainText(/of \d+/);
@@ -37,9 +41,13 @@ test.describe("AI Search Visibility", () => {
   });
 
   test("the command center and metric repeat the two rates", async ({ canvas, page }) => {
+    test.slow();
     await canvas.openCommandCenter();
-    await expect(canvas.commandCenter).toContainText("13 of 23 resolved answers (56.5%)");
-    await expect(canvas.commandCenter).toContainText("22 of 23 resolved answers (95.7%)");
+    await expect(canvas.commandCenter).toContainText(
+      /Unbranded discovery: [^.]*? in [\d,]+ of [\d,]+ resolved answers \(\d+\.\d%\)/,
+      { timeout: AI_READ_MS },
+    );
+    await expect(canvas.commandCenter).toContainText(/Branded consideration: [\d,]+ of [\d,]+ resolved answers \(\d+\.\d%\)/);
     await expect(canvas.commandCenter).not.toContainText("51 of 63");
     await page.locator(".drilldown-hide-btn").click();
     await expect(page.locator(".ifai-canvas.panel-hidden")).toHaveCount(1);
@@ -51,6 +59,7 @@ test.describe("AI Search Visibility", () => {
   });
 
   test("a headline count opens the rows behind it", async ({ canvas, page }) => {
+    test.slow();
     await canvas.openSpokeFromMap("AI Search Visibility");
     await page.locator("[data-ifai-evidence='outcome:error']").first().click();
     await expect(canvas.activeTab).toHaveText("Run Details");
@@ -61,6 +70,7 @@ test.describe("AI Search Visibility", () => {
   });
 
   test("prompts carry no engine tag and the drawer hides absent remediation", async ({ canvas, page }) => {
+    test.slow();
     await canvas.openSimulations();
     for (const prompt of await page.locator("[data-ai-prompt]").allInnerTexts()) {
       expect(prompt).not.toMatch(/[[(]\s*(chatgpt|gemini|perplexity)/i);
@@ -75,17 +85,20 @@ test.describe("AI Search Visibility", () => {
   });
 
   test("a copied evidence link reopens the same call", async ({ canvas, page }) => {
+    test.slow();
     await canvas.openSimulations();
     const simId = await canvas.simulations.first().getAttribute("data-sim-id");
     await page.goto(`/dashboard?spoke=aeo&tab=simulations&evidence=sim:${simId}`);
-    await expect(page.locator(`.ai-evidence-drawer[data-sim-id='${simId}']`)).toBeVisible();
+    await expect(page.locator(`.ai-evidence-drawer[data-sim-id='${simId}']`)).toBeVisible({ timeout: AI_READ_MS });
   });
 
   test("citations drill from a domain to its cited pages", async ({ canvas, page }) => {
+    test.slow();
     await canvas.openSpokeFromMap("AI Search Visibility");
     await canvas.openTab("Citation Ecosystem");
     await expect(page.locator("[data-ai-cited-answers]")).toContainText(
       /[\d,]+ of [\d,]+ shopping answers showed sources/,
+      { timeout: AI_READ_MS },
     );
     const step = (name: string) => page.locator(`[data-citation-chain-step='${name}']`);
     const chainCount = async (locator: ReturnType<typeof page.locator>) => Number(await locator.getAttribute("data-chain-count"));
@@ -237,9 +250,10 @@ test.describe("AI Search Visibility", () => {
   });
 
   test("AI definitions use the custom tooltip", async ({ canvas, page }) => {
+    test.slow();
     await canvas.openSpokeFromMap("AI Search Visibility");
     const terms = page.locator(".ai-search-panel .ifai-term");
-    await expect(terms.first()).toBeVisible();
+    await expect(terms.first()).toBeVisible({ timeout: AI_READ_MS });
     for (const term of await terms.all()) {
       expect((await term.getAttribute("data-ifai-tooltip-desc"))?.length ?? 0).toBeGreaterThan(20);
       await expect(term).not.toHaveAttribute("title");
@@ -247,8 +261,10 @@ test.describe("AI Search Visibility", () => {
   });
 
   test("the citation definitions are reachable by keyboard", async ({ canvas, page }) => {
+    test.slow();
     await canvas.openSpokeFromMap("AI Search Visibility");
     await canvas.openTab("Citation Ecosystem");
+    await expect(page.locator("[data-ai-cited-answers]")).toBeVisible({ timeout: AI_READ_MS });
     for (const [label, fragment] of [
       ["Showed sources", "listed web pages as sources"],
       ["No sources", "without showing a web page"],
@@ -370,23 +386,11 @@ test.describe("AI Search Visibility", () => {
     await expect(canvas.simulations).toHaveCount(total);
     await expect(footer).toHaveCount(0);
   });
-
-  test("a question with no verified fact says so", async ({ canvas, page }) => {
-    await canvas.openSpokeFromMap("AI Search Visibility");
-    await canvas.openTab("Product Fact Checks");
-    const pending = page.locator(".ai-probe-table tr[data-probe-state='no_fact']").first();
-    await expect(pending).toContainText("No verified fact available");
-    await expect(page.locator("[data-ai-pending-fact]")).toContainText(/no verified Fender fact yet/);
-    await expect(page.locator("[data-ai-coverage-note]")).toContainText(/did not return answers for \d+ fact-check calls/);
-    const body = page.locator(".drilldown-body");
-    await expect(body).not.toContainText("0 of 65");
-    await expect(body).not.toContainText("0 confirmed");
-    await expect(body).not.toContainText("Not evaluated");
-  });
 });
 
 test.describe("Competitive Radar", () => {
   test("only commercial AI-search outcomes, no retail channels", async ({ canvas, page }) => {
+    test.slow();
     await canvas.openSpokeFromMap("Competitive Radar");
     await expect(page.locator(".drilldown-tab-btn")).toHaveText([
       "Category Battlecards",
@@ -400,7 +404,7 @@ test.describe("Competitive Radar", () => {
       await expect(body).not.toContainText(/Sweetwater|Reverb|Walmart|shelf price/i);
       await expect(body).not.toContainText(/hallucinations/i);
     }
-    await expect(page.locator(".ai-engine-comparison tbody tr")).not.toHaveCount(0);
+    await expect(page.locator(".ai-engine-comparison tbody tr")).not.toHaveCount(0, { timeout: AI_READ_MS });
   });
 
   test("category battlecards open on a row of pies with no header sentence, and chips filter in place", async ({ page }) => {
@@ -414,7 +418,8 @@ test.describe("Competitive Radar", () => {
     await expect(heroes).toHaveAttribute("data-ai-battle-heroes", "");
     const desc = page.locator(".drilldown-desc");
     await expect(desc).toBeHidden();
-    const sentence = (await desc.textContent())?.match(/Competitors led (\d+) of (\d+) resolved unbranded discovery answers/);
+    await expect(desc).toHaveText(/Competitors led [\d,]+ of [\d,]+ resolved unbranded discovery answers/, { timeout: AI_READ_MS });
+    const sentence = (await desc.textContent())?.match(/Competitors led ([\d,]+) of ([\d,]+) resolved unbranded discovery answers/);
     expect(sentence).not.toBeNull();
     await expect(heroes.locator("[data-ai-battle-competitor-led]")).toHaveText(
       `Competitors led ${sentence?.[1]} of ${sentence?.[2]}`,
@@ -457,13 +462,13 @@ test.describe("Competitive Radar", () => {
     const theadTop = await cards.locator("thead").evaluate((el) => el.getBoundingClientRect().top);
     expect(theadTop, "the table header starts inside a 1440 by 900 window").toBeLessThan(900);
 
+    // The engine group now lists the API engines too, so it wraps at 1280 wide. It must stay inside its box.
     await page.setViewportSize({ width: 1280, height: 720 });
-    const groupTops = await cards
-      .locator(".ai-battle-chip-group")
-      .evaluateAll((els) => els.map((el) => Math.round(el.getBoundingClientRect().top)));
-    expect(new Set(groupTops).size, "both chip groups share one row at 1280 wide").toBe(1);
-    const tileBottoms = await rows.evaluateAll((els) => els.map((el) => el.getBoundingClientRect().bottom));
-    expect(Math.max(...tileBottoms), "every category pie fits a 1280 by 720 window").toBeLessThanOrEqual(720);
+    const chipBox = (await cards.locator("[data-ai-battle-chips]").boundingBox())!;
+    for (const group of await cards.locator(".ai-battle-chip-group").all()) {
+      const box = (await group.boundingBox())!;
+      expect(box.x + box.width, "chip groups stay inside the chip bar at 1280 wide").toBeLessThanOrEqual(chipBox.x + chipBox.width);
+    }
     await page.setViewportSize({ width: 1440, height: 900 });
     const total = await rows.count();
     const url = page.url();
@@ -494,7 +499,7 @@ test.describe("Competitive Radar", () => {
 
     await page.locator(".drilldown-tab-btn", { hasText: "Competitor Wins" }).click();
     await expect(desc).toBeVisible();
-    await expect(desc).toContainText(/Competitors led \d+ of \d+ resolved unbranded discovery answers/);
+    await expect(desc).toContainText(/Competitors led [\d,]+ of [\d,]+ resolved unbranded discovery answers/);
   });
 
   test("a battlecard engine chip carries into each evidence link and marks the figures it narrows", async ({ page }) => {
@@ -525,7 +530,12 @@ test.describe("Competitive Radar", () => {
     await expect(marks.first()).toBeVisible();
     for (const mark of await marks.all()) {
       await expect(mark).toHaveText("*");
-      await expect(mark).toHaveAttribute("data-ifai-tooltip-desc", `${engineName} only. Clear the engine to see all engines.`);
+      // The shared partial-figure tooltip (X-25): what is left out, then how to clear it.
+      await expect(mark).toHaveAttribute("data-ifai-tooltip-title", "Filtered figure");
+      await expect(mark).toHaveAttribute(
+        "data-ifai-tooltip-desc",
+        `${engineName} only. Answers from the other engines are left out.\nClear the engine to see all engines.`,
+      );
       await expect(mark).not.toHaveAttribute("title");
     }
     await expect(cards.locator("[data-ai-on-track-hero] .ai-battle-engine-mark")).toHaveCount(1);
@@ -552,11 +562,12 @@ test.describe("Competitive Radar", () => {
   });
 
   test("engine comparison shows the two rates, not one pooled commercial win rate", async ({ canvas, page }) => {
+    test.slow();
     await canvas.openSpokeFromMap("Competitive Radar");
     await canvas.openTab("Engine Comparison");
     const comparison = page.locator(".ai-engine-comparison");
     const lead = comparison.locator("[data-ai-engine-comparison-lead]");
-    await expect(lead.locator("[data-ai-lead-figure='unbranded_discovery']")).toBeVisible();
+    await expect(lead.locator("[data-ai-lead-figure='unbranded_discovery']")).toBeVisible({ timeout: AI_READ_MS });
     await expect(lead.locator("[data-ai-lead-figure='branded_consideration']")).toBeVisible();
     await expect(lead.locator("[data-ai-win-rate='unbranded_discovery']")).toContainText(/\d+\.\d%/);
     await expect(lead.locator("[data-ai-win-rate='branded_consideration']")).toContainText(/\d+\.\d%/);

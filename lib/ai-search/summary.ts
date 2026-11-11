@@ -122,7 +122,7 @@ export const UNBRANDED_RATE_BANDS = { redBelow: 30, greenAbove: 65 } as const;
 export const BRANDED_RATE_BANDS = { redBelow: 70, greenAbove: 90 } as const;
 
 /** The theme's status colors, by the names the panels already use. */
-const STATUS_COLOR: Record<DataStatus, string> = {
+export const STATUS_COLOR: Record<DataStatus, string> = {
   bad: "var(--danger-red)",
   okay: "var(--warning-amber)",
   good: "var(--success-green)",

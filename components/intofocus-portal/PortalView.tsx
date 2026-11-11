@@ -183,7 +183,7 @@ export function PortalView({ v }: Props) {
     </Fragment>
     ))}
               </div>
-              <div style={css("font-size:11.5px;color:#a8a8b2")}>Sortable columns, inline filters and export are the operator path — the same rows the simple view renders as opinion.</div>
+              <div style={css("font-size:11.5px;color:#a8a8b2")}>Sortable columns, inline filters and export are the operator path, the same rows the simple view renders as opinion.</div>
             </div>
           
     )}
@@ -258,7 +258,7 @@ export function PortalView({ v }: Props) {
                   <div style={css("display:flex;align-items:flex-start;justify-content:space-between")}>
                     <div style={css("display:flex;flex-direction:column;gap:3px")}>
                       <div style={css("font-size:13px;font-weight:600")}>Readiness Score</div>
-                      <div style={css("font-size:11.5px;color:#8e8e99")}>Objective checks — pass or fail</div>
+                      <div style={css("font-size:11.5px;color:#8e8e99")}>Objective checks: pass or fail</div>
                     </div>
                     <HoverButton onClick={goRead} style={css("all:unset;cursor:pointer;font-size:12px;font-weight:600;color:#4b45c6")}>Checklist →</HoverButton>
                   </div>
@@ -357,7 +357,7 @@ export function PortalView({ v }: Props) {
                       
     </Fragment>
     ))}
-                      <div style={{ fontSize: "11.5px", color: m.t.ink3, textWrap: "pretty" }}>Below 1024px the diagram becomes a nested list — same nodes, same state, no shrinking.</div>
+                      <div style={{ fontSize: "11.5px", color: m.t.ink3, textWrap: "pretty" }}>Below 1024px the diagram becomes a nested list with the same nodes, the same state, and no shrinking.</div>
                     </div>
                   </div>
                 
@@ -557,7 +557,7 @@ export function PortalView({ v }: Props) {
                   </div>
                   <div style={css("max-width:320px;display:flex;flex-direction:column;gap:10px;padding-top:8px")}>
                     <div style={css("font-size:13px;font-weight:600")}>Responsive treatment · 390px</div>
-                    <div style={css("font-size:12.5px;color:#5c5c66;text-wrap:pretty")}>One column, rank stays as the anchor, the three metadata columns become a single meta line. The opinionated default order is what survives the squeeze — sorting drops to a sheet.</div>
+                    <div style={css("font-size:12.5px;color:#5c5c66;text-wrap:pretty")}>One column, rank stays as the anchor, the three metadata columns become a single meta line. The opinionated default order is what survives the squeeze. Sorting drops to a sheet.</div>
                   </div>
                 </div>
               
@@ -580,7 +580,7 @@ export function PortalView({ v }: Props) {
                     <div style={css("height:8px;flex:11;background:#10744a;border-radius:2px")}></div>
                     <div style={css("height:8px;flex:7;background:#ececed;border-radius:2px")}></div>
                   </div>
-                  <div style={css("font-size:12px;color:#8e8e99")}>11 checks pass, 7 fail. Each line below is measured, not estimated — the value and the threshold it was compared against are both shown.</div>
+                  <div style={css("font-size:12px;color:#8e8e99")}>11 checks pass, 7 fail. Each line below is measured, not estimated. The value and the threshold it was compared against are both shown.</div>
                 </div>
                 <div style={css("border-left:1px solid #f0f0f3;padding-left:24px;display:flex;flex-direction:column;gap:3px;max-width:230px")}>
                   <div style={css("font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:#a8a8b2;font-weight:600")}>Not a forecast</div>
@@ -601,7 +601,7 @@ export function PortalView({ v }: Props) {
     
                     <div style={css("border-bottom:1px solid #f4f4f6")}>
                       <div style={css("display:grid;grid-template-columns:26px 1fr 132px 132px 150px;padding:12px 20px;align-items:center;gap:8px")}>
-                        <div style={{ width: "18px", height: "18px", borderRadius: "4px", background: c.markBg, color: c.markColor, fontSize: "11px", fontWeight: "700", display: "flex", alignItems: "center", justifyContent: "center" }}>{c.mark}</div>
+                        <div style={{ width: "18px", height: "18px", borderRadius: "4px", background: c.markBg, color: c.markColor, fontSize: "11px", fontWeight: "600", display: "flex", alignItems: "center", justifyContent: "center" }}>{c.mark}</div>
                         <div style={css("font-size:13px;text-wrap:pretty")}>{c.label}</div>
                         <div style={{ fontSize: "12.5px", fontWeight: "600", textAlign: "right", fontVariantNumeric: "tabular-nums", color: c.markColor }}>{c.value}</div>
                         <div style={css("font-size:11.5px;color:#a8a8b2;text-align:right;font-variant-numeric:tabular-nums")}>{c.threshold}</div>
@@ -689,7 +689,7 @@ export function PortalView({ v }: Props) {
                 <div style={css("border-top:1px solid #f0f0f3;padding-top:14px;display:flex;gap:10px;align-items:stretch")}>
                   <div style={css("width:3px;background:#b3372c;border-radius:2px;flex:0 0 3px")}></div>
                   <div style={css("display:flex;flex-direction:column;gap:4px")}>
-                    <div style={css("font-size:12.5px;color:#16161a;text-wrap:pretty;max-width:760px")}>Both step-downs follow an e-commerce event by 7–9 days — the interval it takes the sources assistants cite to refresh. The visibility line is a lagging indicator of what happens on the listing.</div>
+                    <div style={css("font-size:12.5px;color:#16161a;text-wrap:pretty;max-width:760px")}>Both step-downs follow an e-commerce event by 7 to 9 days, the interval it takes the sources assistants cite to refresh. The visibility line is a lagging indicator of what happens on the listing.</div>
                     <HoverButton onClick={goEcom} style={css("all:unset;cursor:pointer;font-size:12px;color:#4b45c6;font-weight:600")}>See both events in E-commerce →</HoverButton>
                   </div>
                 </div>
@@ -777,7 +777,7 @@ export function PortalView({ v }: Props) {
                   </div>
                   <div style={css("background:#f4f3fd;border:1px solid #dcdbf6;border-radius:10px;padding:16px 18px;display:flex;flex-direction:column;gap:7px")}>
                     <div style={css("font-size:12.5px;font-weight:600;color:#4b45c6")}>Every finding here names its e-commerce cause</div>
-                    <div style={css("font-size:12px;color:#5c5c66;text-wrap:pretty")}>Open any prompt row and the last line traces up to the suggestion it produced — the same pattern works in reverse from the E-commerce findings.</div>
+                    <div style={css("font-size:12px;color:#5c5c66;text-wrap:pretty")}>Open any prompt row and the last line traces up to the suggestion it produced. The same pattern works in reverse from the E-commerce findings.</div>
                   </div>
                 </div>
               </div>
@@ -819,7 +819,7 @@ export function PortalView({ v }: Props) {
     
                   <div style={css("border-bottom:1px solid #f4f4f6;padding:16px 18px;display:flex;flex-direction:column;gap:10px")}>
                     <div style={css("display:flex;align-items:flex-start;gap:12px")}>
-                      <span style={{ fontSize: "10.5px", fontWeight: "700", letterSpacing: "0.04em", textTransform: "uppercase", padding: "3px 7px", borderRadius: "4px", color: f.sevColor, background: f.sevBg, flex: "0 0 auto", marginTop: "1px" }}>{f.sev}</span>
+                      <span style={{ fontSize: "11px", fontWeight: "600", letterSpacing: "0.04em", textTransform: "uppercase", padding: "3px 7px", borderRadius: "4px", color: f.sevColor, background: f.sevBg, flex: "0 0 auto", marginTop: "1px" }}>{f.sev}</span>
                       <div style={css("display:flex;flex-direction:column;gap:5px;flex:1")}>
                         <div style={css("font-size:14px;font-weight:600;letter-spacing:-0.01em;text-wrap:pretty")}>{f.title}</div>
                         <div style={css("font-size:12.5px;color:#5c5c66;text-wrap:pretty;max-width:760px")}>{f.desc}</div>

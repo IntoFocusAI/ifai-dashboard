@@ -1,279 +1,195 @@
 # PM handoff
 
-You are the current Project Manager. You do not write product code.
+You are the current Project Manager. You do not write product code. If you
+are about to edit a product file, stop and write a worker brief.
 
-Read the Functional Design Document and the Technical Design Document,
-then the State section below. If State and the Google Docs disagree, the
-Google Docs win. Report the documentation version, then do the first job
-that applies.
+Read `docs/fdd/register.md`, then the State section below. Open an FDD view
+file (`docs/fdd/<view>.md`) or the TDD (`docs/tdd/README.md`) only for the
+rows you are working on. Do not read the whole FDD or TDD. If State and the
+FDD disagree, the FDD wins.
 
 ## Your number
 
-Brian starts you with "Continue as Project Manager." You are a new Project
-Manager. Take the next whole number. Read the live documentation version.
-Your number is one greater than the whole number in that version. Your
-workers are that number .1, .2, .3, and so on. If workers already exist
-at that number, add one again. State may name an older Project Manager. Do not keep
-that number, and do not continue its decimals.
+Brian starts you with "Continue as Project Manager." Your number is one
+greater than the PM number in State. Your workers are that number .1, .2,
+.3, and so on. Commits made by a worker carry its label ("Worker 25.1: ...").
 
-On October 27, 2026 the live docs are on 11.4. PM11B already used 11.5,
-11.6, and 11.7. You are PM12. Your workers are 12.1, 12.2, and 12.3. If the
-live documentation version is already 12 or higher, add one to that whole
-number instead.
+## Your jobs
 
-1. Close the docs. If work you can see on the approved preview is missing
-   from the docs, propose the closeout in one short table: worker, FDD id,
-   status you will set, one sentence. Wait for "go ahead." Then update both
-   docs using the steps below. Set the first line to the last approved
-   worker label. Add a changelog row with the worker, the pull request, and
-   the commit. Reply with the new first line of each doc.
-2. Plan and build to final form, using "How to run the work" below.
-   Send the Phase 0 plan in one message. Wait for "go ahead." Then write
-   one worker brief per view and start a separate cloud agent for each.
-3. On "hand off," replace only the State section, keep it under 25 lines,
-   and stop.
+1. **Close out an approved view.** "I approve," "publish," or "ship it" on a
+   preview means: merge the pull request he approved, then close out the docs
+   in one small pull request:
+   - In each changed FDD row, edit the status line (`**R-09 REFINE** · Launch`)
+     and its Evidence (pull request, commit, what was verified).
+   - Add one row per worker to `docs/fdd/changelog.md` (date, change, reason,
+     reference).
+   - Bump the version on the first line of `docs/fdd/README.md` and
+     `docs/tdd/README.md` to the last approved worker label, and update
+     the TDD where the build changed it.
+   - Run `python3 scripts/fdd-register.py` and commit the register with the
+     rows.
+   Workers may propose these edits in their own pull request body; the PM
+   applies them only after Brian approves.
+2. **Plan and build.** Send the Phase 0 plan in one message. Wait for "go
+   ahead." Then brief and run workers as described below.
+3. **Hand off.** On "hand off," replace only the State section, keep it
+   under 25 lines, and stop.
 
-"I approve," "publish," and "ship it" on a preview mean job 1 for that
-preview, using the statuses in the batch he already accepted. The header
-title follows FDD X-26. Preserve every DECISION and LATER item unless he
-changes it. X-20 stays TARGET.
+Preserve every DECISION and LATER row unless Brian changes it. The header
+title follows FDD X-26. X-20 stays TARGET.
 
-A worker label belongs on a commit when a different agent made that commit.
-If you are about to edit a product file, stop and write the brief.
+## Cost rules (Brian Magazu, 10 Nov 2026)
 
-## How to update the Google Docs
+The PM24 test spent $218 API-equivalent on two views and hit the plan limit
+in 1 h 40 m. About half of that was avoidable. These rules apply to the PM
+and to every worker.
 
-Edit a copy of each doc on this machine, then make the same edits in the
-live doc with the Google-docs plugin. This is the only publish path.
-
-FDD file id: 1PoeiXKR2twOaz_JcRN0e4ZQkUCuDD5qnnyrlt6ygkeU (`fdd`)
-TDD file id: 1K6-ghhSnJZcrch81DDhmHXXYU0pSF7tOGR9S9jiCUjk (`tdd`)
-
-1. Download. Run
-   `python3 scripts/design-doc-edit.py download fdd fdd-live.docx`
-   (or `tdd`). It reads the public export URL and prints the first line.
-   Copy it to a working file, such as fdd-21.9.docx.
-2. Edit the copy with `python3 scripts/design-doc-edit.py COMMAND FILE ...`.
-   It installs python-docx if it is missing. Do not hand-edit
-   word/document.xml. Each command saves in place, and saves nothing if it
-   fails.
-   - `set-version FILE 21.9` sets the first line, the Version and Date
-     rows, and the footer. `--date "November 5, 2026"` overrides today.
-   - `set-status FILE X-21 CURRENT` sets the status word and its color.
-   - `get`, `set`, `append`, `replace FILE X-21 Evidence ...` edit one
-     field in either row layout (table or label paragraphs).
-   - `clone FILE X-21 X-31 X-32 --status TARGET` copies X-21 to a new
-     X-32 after X-31. Then set each field.
-   - `changelog FILE CHANGE REASON REFERENCE` appends a change-log row.
-   - `add-row FILE decision|later|trace|tdd-trace VALUES...` and
-     `set-cell FILE trace X-21 Status CURRENT` edit the registers. Add
-     rows at the bottom (no `--after`): the plugin cannot add a row
-     inside a table.
-   - `replace-all FILE OLD NEW`, and `rows` or `show FILE X-21` to read.
-   Then run `python3 scripts/design-doc-edit.py diff fdd-live.docx
-   fdd-21.9.docx` and read every changed line.
-3. Plan. Run `python3 scripts/design-doc-edit.py plan fdd-live.docx
-   fdd-21.9.docx > plan.txt`. Read its Self-check line first. Go on only
-   when it says OK. If it says MISMATCH, or lists anything under Skipped
-   or Warnings, fix the copy and plan again. Published change-log rows
-   stay as they are unless Brian asks; then add `--no-keep-history`.
-4. Apply plan.txt with the Google-docs plugin, one call at a time, in
-   the order listed. documentId is the file id. The plan uses
-   replace_text, find_text, read_document, delete_content, insert_text,
-   insert_table, apply_text_style, apply_paragraph_style,
-   set_paragraph_format, and set_header_footer. Take every index from the
-   find_text or read_document call in the same step. If a replace_text
-   reports a different occurrencesChanged than its step expects, stop,
-   put back what it changed, and tell Brian. If the Google-docs namespace
-   says needsAuth, or a call fails with an authentication error, call its
-   mcp_auth, then ask Brian to reconnect Google Docs under Integrations in
-   the Cursor web dashboard (not the desktop app). In Claude Code the
-   plugin's tools do not exist: follow "Step 4 in Claude Code" below.
-   find_text returns at most 20
-   matches: for a step that names a later occurrence, find a unique line
-   in the same row and read_document forward to it. After filling a new
-   table, read it back before the check.
-5. Check. Run the two lines at the end of plan.txt:
-   `python3 scripts/design-doc-edit.py pub fdd-21.9.docx pub.docx --split ...`
-   and `python3 scripts/check-design-doc.py FILE_ID pub.docx`. pub puts
-   each appended row in its own table, the way insert_table leaves it
-   live. Reply with the new first line only after the check exits 0. If
-   it reports a paragraph, fix that paragraph in the live doc with the
-   plugin and check again.
-
-Do not create a second Google Doc. Do not paste the .docx, its base64, a
-data URL, or its text into a tool call, and do not upload it.
-`scripts/stage-design-docx.py` stays in the repo but is not part of the
-publish path.
-
-### Step 4 in Claude Code
-
-Claude Code's Google Docs connector has two calls: read_doc and update_doc
-(a Docs batchUpdate). Load the google-workspace skill before the first
-edit. Steps 1 to 3 and 5 are unchanged. Apply plan.txt with update_doc.
-Steps that only use replaceAllText may go together in one update_doc call.
-Index-based steps go one per call, in order. Translate each plan call:
-
-- replace_text: replaceAllText. Check occurrencesChanged against the step.
-- find_text and read_document: read_doc, then find the index in the saved
-  result with the google-workspace skill's `docs_index.py find`.
-- insert_text: insertText. delete_content: deleteContentRange.
-- insert_table: insertTable, then fill the cells one call at a time and
-  read the table back.
-- apply_text_style: updateTextStyle. apply_paragraph_style and
-  set_paragraph_format: updateParagraphStyle.
-- set_header_footer: insertText or replaceAllText in the header or footer
-  segment.
-
-Every update_doc call that uses an index carries
-writeControl.requiredRevisionId from a read_doc taken after your last
-write. If Google rejects it, read again and rebuild the step. If a
-replaceAllText changes a different count than the plan expects, stop, put
-back what it changed, and tell Brian. If a Google call fails with an
-authentication error, ask Brian to reconnect Google Docs in his claude.ai
-connector settings.
+- **Goal: pace.** Leadership approved the "Better" path on 10 Nov 2026: reach
+  the launch scope of the FDD quickly, at about $40 API-equivalent per view.
+  Parallel workers are wanted whenever they do not interfere.
+- **Models.** The PM runs Opus 5.5. Choose each worker's model by the work,
+  and state it with a one-line reason in the Phase 0 build plan:
+  - Opus 5.5 at high effort: the default for view builds and fix rounds.
+  - Fable 5.2: only where the reasoning is hard and a wrong answer is
+    costly. Examples: the Roadmap recommendation logic (24.7), reconciling
+    two figures that disagree (PM24-2), the Auditor, the tenant split and
+    access rules (X-16, X-15). Say why Opus is not enough.
+  - Sonnet 5.5: mechanical, well-specified work. Examples: renames, weight
+    and lint fixes, test updates to match decided behavior, CSV wiring that
+    copies an existing pattern.
+  Always name the model when starting a subagent; a subagent without one
+  inherits the PM's.
+- **Parallel workers.** Run up to 3 workers at once on one seat when their
+  files do not overlap (the worker briefs list each view's files) and no
+  worker needs another's unmerged change. Shared files (lib/ai-search reads,
+  canvas-reads.ts, ResizableTable, StatusMark) belong to one worker per
+  batch; others wait or ask the PM. Work that touches the database or Brian
+  Watson's open pull requests runs alone. More than 3 only when Brian asks.
+- **Budget.** Report usage in every review request: the seat's 5-hour window
+  percentage and the cost per view so far. Pause new workers and report to
+  Brian when the window passes 80%, or when one view passes $80. Let running
+  workers finish their current step and save state. Never write that usage
+  is not a constraint.
+- **Fresh worker per round.** Send each fix round to a new worker with a
+  short summary (branch, pull request, what is done, the fix list, files
+  owned). Do not resume a worker whose context is large.
+- **Never idle with a large context.** The prompt cache expires after 5
+  minutes, and a resumed context is paid for again in full. Before waiting
+  for a review, a long test run, or Brian, a worker writes its state into the
+  pull request body and ends. Run builds and e2e in the background and check
+  back within 5 minutes.
+- **No duplicate QA.** Workers hand back an evidence table (below). The PM
+  checks it, spot-checks the preview text, and builds a branch only if the
+  evidence is missing or doubtful.
+- **CI noise.** Do not subscribe to pull request activity while previews are
+  known to be red. Fix the preview first, or tell Brian at once.
+- **Context hygiene.** Read files by range (`grep -n`, `sed -n`), not whole.
+  Edit files; do not rewrite whole files. Check screenshots by script; read
+  an image only when a script cannot decide.
 
 ## How to run the work
 
-Brian Magazu set this model on 9 Nov 2026. He reviews a view only when it
-is in its final intended form, so he never wonders whether a missing FDD
-item is still unassigned.
+Brian reviews a view only in its final intended form.
 
 ### Phase 0: one planning message, then wait for "go ahead"
 
-1. Completion map. Every FDD row that is not CURRENT or LATER, grouped by
-   view: Summary, Catalog Health, AI Search Visibility, AI Readiness,
-   Competitive Radar, Action Items, Strategy Roadmap, Minimal, and
-   cross-dashboard. Give each row one class. BUILD: buildable now.
-   DECISION: needs Brian. BLOCKED: needs data, the collector, Brian Watson,
-   Ryan, or auth; name the owner and what is missing. HELD: his held list,
-   PR 110 (X-22), and the dollar formulas. Leave no row unclassified.
-2. Decisions. Every DECISION row, and any rule the FDD does not specify
-   that a build would need. For each, say what he is deciding, what the
-   screen shows under the recommendation and under the alternative, and
-   why. He replies to the ones he disagrees with and approves the rest.
-3. Final-form spec per view. What opens first, what each tab shows, which
-   rows it closes, and which rows stay BLOCKED or HELD. Specs come only
-   from the FDD and his decisions. Never invent rules.
-4. Build plan. A foundation step first for cross-cutting rows (type scale,
-   asterisk rule, renames, table rule). Then one lead worker and one pull
-   request per view, with file ownership, sequencing, at most 7 workers at
-   once, and projected completion.
+1. Completion map. Run `python3 scripts/fdd-register.py --open`. Give each
+   open row one class, grouped by view. BUILD: buildable now. DECISION: needs
+   Brian. BLOCKED: needs data, the collector, Brian Watson, Ryan, or auth;
+   name the owner and what is missing. HELD: his held list, PR 110 (X-22),
+   and the dollar formulas.
+2. Decisions. Every DECISION row, and any rule the FDD does not give that a
+   build would need. For each, say what he decides, what the screen shows
+   under the recommendation and the alternative, and why.
+3. Final-form spec per view, only from the FDD and his decisions.
+4. Build plan: one worker and one pull request per view, file ownership,
+   sequencing, the model per worker, and the projected cost.
 
 ### Phase 1: build to final
 
-- One pull request per view. A big view runs as sequential workers on the
-  same branch and pull request. Follow-ups go to the same worker. Rebase
-  on main often; Brian Watson merges Ledlenser work.
-- Every view is correct for both clients, Fender and Ledlenser, through
-  the client switcher.
-- Build inside the existing dashboard views. Add no standalone route or
-  page that nothing links to, unless the FDD says so.
-- A feature whose data does not exist is BLOCKED, not built. Never deliver
-  a screen or column that reads Not available* on every row as the work.
-- No two workers edit the same files. No worker edits a file that another
-  contributor's open pull request changes.
-- Before asking Brian, the PM checks the preview at 1280x720 for both
-  clients against each row's FDD acceptance text, and sends the worker
-  back until every BUILD row in the view passes.
+- Brief from `docs/worker-briefs.md`: the common rules plus the view's
+  section. Every brief carries the acceptance checklist and the database
+  rule.
+- Each worker is a subagent with its own git worktree on
+  `worker/<number>-<short-name>`, with one pull request. Rebase on main
+  often; Brian Watson merges Ledlenser work.
+- Every view is correct for Fender and Ledlenser through the client switcher.
+- Build inside the existing views. No standalone route or page that nothing
+  links to, unless the FDD says so.
+- A feature whose data does not exist is BLOCKED, not built. Never deliver a
+  screen or column that reads Not available* on every row.
+- No two workers edit the same files, or a file another open pull request
+  changes.
+- Before asking Brian, the PM checks the worker's evidence table against
+  each row's Acceptance text for both clients, and sends it back until every
+  BUILD row passes.
 - Between reviews, message Brian only when a decision or blocker needs him.
 
-### Batch mode (Brian Magazu, 9 Nov 2026)
+### Audit gate
 
-This overrides any per-view wording in this file.
-
-- Run several view workers at once. In Claude Code each worker is a
-  subagent with its own git worktree, on its own branch
-  `worker/<number>-<short-name>` (for example `worker/24.4-ai-search`),
-  with one pull request. Continue a worker with a message to the same
-  agent, not a new agent.
-- When every pull request in the batch passes the PM's preview check, send
-  Brian one combined review checklist, with a link to each pull request
-  and its preview.
-- Merge only the pull requests he approves, one at a time. After each
-  merge, the remaining workers rebase on main and the PM rechecks their
-  previews before the next merge.
-- Close out the docs once per batch: one version bump, every row status
-  and evidence change for the batch, one change-log row per pull request,
-  and one header-label pull request for the new version.
-- If a new pull request gets no Netlify deploy preview, tell Brian at
-  once. Every review depends on it.
-
-### Audit gate (before any view reaches Brian)
-
-For the PM24 test batch (24.4 and 24.3), Brian skipped the audit
-(9 Nov 2026). The PM's own preview check still applies. The rest of this
-section applies again when he says so.
-
-When the PM believes a view is final, it starts a separate Auditor agent
-with `docs/auditor-brief.md`, the preview URL, the view's final-form spec,
-and its FDD rows. Every Auditor runs on GPT-5.6 Sol High
-(`gpt-5.6-sol-high`). Until an OpenAI option is connected in Claude Code,
-Auditors run on Fable (Brian Magazu, 9 Nov 2026). If the chosen model is
-unavailable, do not substitute another: tell Brian and wait. Workers that
-build stay on the PM's model.
-
-The Auditor never edits code, merges, or contacts Brian. Send its BLOCKER
-and MAJOR findings to the view's worker as follow-ups, then audit once
-more. After two audit rounds, anything still open goes on Brian's review
-checklist as Known issues, with the Auditor's evidence. Any finding that
-conflicts with the FDD, a standing rule, the brand book, or one of
-Brian's decisions goes to Brian as a question, never to a worker as a fix.
+Off until Brian brings it back. When on: the PM starts an Auditor on Fable 5.2
+with `docs/auditor-brief.md`, the preview URL, the view's spec, and its FDD
+rows. BLOCKER and MAJOR findings go to a fresh worker; audit once more. After
+two rounds, open findings go on Brian's checklist as Known issues. A finding
+that conflicts with the FDD, a standing rule, the brand book, or Brian's
+decisions goes to Brian as a question.
 
 ### Phase 2: review and close
 
-- Review request per view: worker numbers, pull request link, preview
-  link, then a checklist with one line per FDD row: where to click from
-  the map, and what he should see. Then the view's BLOCKED and HELD rows
-  with owners. Plain language, terse.
-- On his approval, merge the pull request. Then close out the docs with
-  the publish path above: first line is the last approved worker label,
-  one change-log row per worker with pull request and commit, and a header
-  label pull request. Reply with the new first lines only after
-  check-design-doc.py exits 0 for both docs.
+- Review request per view: worker numbers, pull request link, preview link,
+  then one line per FDD row: where to click and what he should see. Then the
+  view's BLOCKED and HELD rows with owners. Plain language, terse.
+- If several views are ready together, send one combined checklist. Merge
+  only what he approves, one at a time; the remaining branches rebase and the
+  PM rechecks before the next merge.
+- If a new pull request gets no Netlify deploy preview, tell Brian at once.
 
 ## Standing rules
 
-The map shows the published run plus its matching API run. The shared date
+The map shows the published run plus its matching API run, except the
+Competitive Radar bubble, which reads the Category Battlecards rows for the
+date-pill window with the tab's lead rule (decision 40, FDD C-03). Do not
+"fix" that bubble back to the published run. The shared date
 pill is the only period label. Cited pages are associations. Dollar figures
 stay analyst estimates, and their formulas stay parked. The client portal
 says nothing about IntoFocus fees. Do not build delegation or paid tiers.
-Let the data speak: caveats go in tooltips. Custom tooltips only. Database
-changes follow "Database changes" in AGENTS.md: a migration file first;
-additive changes applied only after his approval (the FenderTest agent can
-apply them); anything that alters or deletes waits for Brian Watson. Every
-worker brief repeats that rule. Merge only pull requests he approves.
+Let the data speak: caveats go in tooltips. Call Brian Watson "Watson" and
+Brian Magazu "Brian" (decision 63). Custom tooltips only. Database
+changes follow "Database changes" in AGENTS.md. Merge only pull requests
+Brian approves.
 
 The brand book, `docs/brand/IntoFocus_AI_Brand_Book_V2.pdf`, is a standard
 below the FDD. Where the two conflict, ask Brian.
 
 Held, until he says otherwise: A-06, A-02, R-06, R-11, A-04, A-07, N-07,
-LATER items, and the dollar formulas. Detail lives in the FDD.
-
-- FDD: https://docs.google.com/document/d/1PoeiXKR2twOaz_JcRN0e4ZQkUCuDD5qnnyrlt6ygkeU/edit
-- TDD: https://docs.google.com/document/d/1K6-ghhSnJZcrch81DDhmHXXYU0pSF7tOGR9S9jiCUjk/edit
+LATER rows, and the dollar formulas. X-15, X-16, and R-19 are held until
+the rest of the launch build is complete (decision 46).
 
 ## State
 
-Replace this whole section on handoff. Keep it under 25 lines. The Google
-Docs win if this block is stale.
+Replace this whole section on handoff. Keep it under 25 lines. The FDD wins
+if this block is stale.
 
-- PM24 (second session) wrote this on 10 Nov 2026, in Claude Code.
-  Workers 24.3 and 24.4 are merged. Unused: 24.2, 24.5, 24.6, 24.7.
-- Main f1df1f5: PRs 149 to 153. Live check 10 Nov: Catalog Health and AI
-  Search open for both clients, CSV downloads work.
-- Docs: both still on 23.1. The batch closeout for PRs 151 and 152 is owed
-  (one version bump, row status and evidence, one change-log row each,
-  Brian's three review notes), then one header-label pull request.
-- Database: public.ai_prompt_edits_list applied 10 Nov (PR 151).
-- Held until Brian says go: his three review notes
-  (docs/pm24-review-notes.md).
-- Next, when he says go: 24.5 AI Readiness, 24.2 Summary, 24.6 Competitive
-  Radar, 24.7 Roadmap and Action Items. Update the 24.5 and 24.7 briefs for
-  decision 35 first. One worker at a time; ask Brian which model.
-- No audit until Brian brings it back.
-- Known: 28 of 244 e2e tests fail on main (fix or retire: ask Brian).
-  Fender AI Search is slow (about 14 to 24 s). Stale asterisk missing on
-  map bubbles and Minimal. Fender listings below MAP moved 118, 210, 120
-  of 633 between 9 and 10 Nov: unexplained, for Brian Watson or Ryan.
-  PR 110 still breaks metric-destinations.spec. Watson: PRs 125, 131, 139.
+- PM25 is the last PM; the next is PM26. Workers 25.1 to 25.20 are merged
+  (PRs 164 to 178). Docs at 25.20. Launch rows CURRENT: 64 of 93.
+- Decisions 1 to 73 are in docs/pm23-decisions.md; 44 to 73 are PM25's.
+- Held by Brian: X-15, X-16, R-19 until the rest of launch; A-02, A-04,
+  A-06, A-07, R-06, R-11, N-07, LATER rows, dollar formulas (R-06 includes
+  "zero sales vs awaiting inputs", decision 70).
+- Waiting on Brian: D-05 required-spec rule that works for 20+ clients (no
+  "placeholder" at launch); R-19 vs the R-18 placeholder seller list; C-01
+  deck (outline draft: docs/c01-deck-outline.md, figures from 10 Nov).
+- Watson PR coming (11 Nov): Ledlenser API views + API switch for every
+  client (Ledlenser AI figures will change; review both clients after it
+  merges); catalog_checked_at and Keepa load time on views (then wire the
+  Splintered and Keepa asterisks, X-25 to CURRENT). Brian decides: retire
+  the empty "Other retailers" channel read (decision 73).
+- Also waiting on Watson: the Ledlenser set-aside form error; AI Search
+  read speed (HTTP 500s under load); PR 110 wording (metric-destinations).
+- After ~15 Nov: verify Watson's Findability pass; propose D-02, D-09.
+- Site-type classifier runs daily in Toolbelt (decision 55): check first
+  runs and needs-review; backlog ~974 Fender, ~591 Ledlenser at 100 a day.
+- Open REFINE work: X-25 (Splintered asterisk), X-10/X-33 CSV gaps (fix
+  list has no CSV), X-18/X-27/X-34 adoption, H-07 (needs SC-03).
+- Known: AI Search tables scroll inside panels at 1280; 3 TSX files over
+  400 lines. PM25 cost about $600 (estimate). Do not subscribe to worker PRs.

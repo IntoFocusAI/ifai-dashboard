@@ -1,4 +1,3 @@
-import { formatDay, utcDay } from "@/lib/ai-search/history-eligibility";
 import type { HistoryMode } from "@/lib/ai-search/history-mode";
 import type { AiCurrentRun } from "@/lib/ai-search/types";
 import { isPastCheckSchedule, type PartialFigure } from "@/lib/fender-canvas/canvas-reads";
@@ -24,15 +23,12 @@ export function aiSearchStale(run: RunTimes | null | undefined, now: number = Da
   const at = run?.published_at ?? run?.completed_at ?? null;
   // isPastCheckSchedule is true past twice the schedule, so the schedule is half the limit.
   if (!isPastCheckSchedule(at, (AI_SEARCH_STALE_AFTER_DAYS * DAY_MS) / 2, now)) return null;
-  const day = utcDay(at);
-  const since = day ? formatDay(day) : "the last published run";
   return {
     reason: "stale",
-    missing: `No AI Search run has been published in the last ${AI_SEARCH_STALE_AFTER_DAYS} days, so the answers assistants gave after ${since} are missing`,
-    coverage: `the runs published through ${since}`,
+    missing: `No AI Search run has been published in ${AI_SEARCH_STALE_AFTER_DAYS} days`,
+    coverage: null,
     source: "canvas_ai_current_run",
     lastCheck: at,
-    effect: "The figure shows the last published run and may differ from what assistants answer today",
   };
 }
 

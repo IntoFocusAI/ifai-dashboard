@@ -214,3 +214,113 @@ closeout of each view. Open items are marked OPEN and are not built.
     public.ai_prompt_edits_list was applied to production with his
     approval (migration 20261109233000_ai_prompt_edits_list.sql, PR 151).
     PRs 151 and 152 approved and merged.
+40. PM24-2, option A: the Competitive Radar map bubble reads the same rows
+    as the Category Battlecards tab (the date-pill window) with the tab's
+    category-lead function, so the two cannot disagree. Fender now reads
+    "Taylor leads Acoustics". This bubble only; every other bubble stays on
+    the published run plus its matching API run. PR 158.
+41. The Radar bubble's longer load (about 32 s for Fender on the preview,
+    16 s for Ledlenser, showing "Loading run" until then) is accepted for
+    now. Speeding up the AI Search reads is a follow-up.
+42. PM24-3 correction: the Product Fact Checks lead is one row: catalog
+    figure, accuracy, then the question, its sentence and the
+    contradictions badge. No lower box. PR 158.
+43. Workers run in parallel when they do not edit the same files.
+    Failing e2e tests: one cleanup worker clears them (option B, 24.9).
+
+## PM25 (Brian, 10 Nov 2026)
+
+44. Decision 21 (Roadmap and Action Items rules a to j) stands as written
+    for worker 24.7.
+45. D-06 is CURRENT, closed on the content shares. No A+ dollar figure for
+    now.
+46. X-15, X-16, and R-19 stay in launch scope but are held until the rest
+    of the launch build is complete; they add steps that slow development.
+47. lint:brand: the components/sdk flags are not fixed. Those pages are not
+    linked from any route.
+48. AI Search read performance: waiting on Brian Watson's diagnosis. A
+    read-only log review by a worker (option 2) only if he asks for it.
+49. Go ahead on the parallel batch 24.5 AI Readiness, 24.2 Summary, and
+    24.6 Competitive Radar.
+50. X-31: nothing on the client dashboard is smaller than 11px (was 10px).
+51. No "placeholder" label ships at launch. The required-spec lists (D-05)
+    need a rule that works for 20 or more future clients; Brian decides it
+    later. R-19 versus the R-18 placeholder seller list and the C-01 deck
+    are also open; the deck needs values we can defend.
+52. Catalog Health's AI Commerce card shows "vs target 70", as Summary does.
+53. Ledlenser's "Work_lights" reads "Work lights" everywhere, the map
+    bubble included.
+54. PRs 165, 166, and 167 approved and merged on 11 Nov 2026. The
+    Competitor Wins hero keeps the status color and word (approved as
+    built). Follow-ups: Engine Comparison puts engine names on the bar
+    rows; MAP Leakage puts the per-retailer list to the right of the
+    Discounted retail value card.
+55. 21a site types: an AI job classifies each cited site from its page and
+    stores type and confidence; staff overrides win; confidence under 0.7
+    goes to a staff-only Needs review list; "other" reads Unclassified; no
+    staff override screen before launch. Table applied to production 11 Nov
+    (PR 174, migration site_types); Toolbelt job "Site type classifier
+    (IntoFocus dashboard, decision 21a)" runs daily, up to 100 sites,
+    skipping subdomains whose main domain is classified.
+56. 21c own product pages: urgent when any brand-controlled factor (brand-
+    site page found, completeness when found, machine-readable specs, Amazon
+    attribute completeness, A+) is red or yellow; low priority in Days 61 to
+    90 when all are green but the brand site is cited in under 30% of
+    shopping answers; none when all green and cited 30% or more.
+57. 21d always a focus: weakest engine ("{Brand} is named in N of M answers
+    on {engine}, the lowest of the engines checked.", Days 31 to 60), the 5
+    weakest questions, and the cited sites rising or falling fastest over 3
+    runs. Guardrails: a gap of 10 points or more, and at least 30 answers.
+58. The plan rolls: always a current 90 days, re-dated each refresh, with a
+    client-chosen focus that can shift between segments.
+59. Map bubbles: hero figure plus a 1 to 2 word label; status words only on
+    the tabs (option B). Rail figures stay as they are.
+60. Competitor Wins color is the inverse of the unbranded rule: red above
+    70%, amber 35% to 70%, green below 35%, on the satellite and the tab.
+61. The Roadmap bubble is static for every client: title Roadmap, then
+    30-60-90 in the muted label grey.
+62. Retail stale asterisk uses Watson's recheck intervals (11 Nov), counted
+    per row: Buy Box, Amazon MAP, Splintered Listings 1 day; Walmart 1 day
+    (Ledlenser 2); Musician's Friend 3 days; SmartScout units, Amazon specs,
+    A+ 7 days. Stale is twice the interval. Findability counts rows checked
+    in the last 14 days.
+63. Refer to Brian Watson as "Watson" and Brian Magazu as "Brian" in all
+    messages, docs, and briefs.
+64. PRs 169, 170, 171, 172, and 174 approved and merged on 11 Nov 2026.
+65. 21d figures count answers over the last 30 days ending on the published
+    run, never one run. The 30-answer floor applies to the window. Defaults:
+    "10 citations" means 10 answers citing the site; both 30-day windows
+    need 30 answers with sources; an engine is named only when two or more
+    pass the floor.
+66. Two tiers: the weakest engine and weakest questions always show once
+    they pass the floor. A gap of 10 points or more is a priority (Days 31
+    to 60); under 10 is a Watch line ranked last (Days 61 to 90).
+67. Moving sites: sites with 3% or more of shopping answers and 10 or more
+    citations; flagged on a 10% relative change against the previous 30
+    days. Brand-owned and Unclassified sites are left out.
+68. Freshness on every view: each canvas view should expose a per-row check
+    time for every source it uses, built into the tenant-split redesign.
+    Asked of Watson 11 Nov, with three gaps: catalog.extracted_at on
+    canvas_retail_listings, keepa_daily.day, and the anon read of
+    canvas_listing_channel_price.
+69. Topic focus is set by IntoFocus staff per client (roadmapFocusCategory
+    in lib/client/active-client.ts); no client control.
+70. Out of Stock wording: "N of M out-of-stock listings have no sales
+    estimate yet, so they are left out of the total." Parked with the
+    dollar formulas: whether listings SmartScout reports as zero sales
+    should count as $0 rather than awaiting inputs.
+71. AI Actuation (SC-03, after launch): IntoFocus staff confirm the client
+    has an active, scheduled strategy for its most-cited sites; the moving
+    sites list feeds it.
+72. PRs 176, 177, and 178 approved and merged on 11 Nov 2026. PM25 hands off
+    to PM26 after this closeout.
+73. Watson, 11 Nov: canvas_listing_channel_price is empty for both clients
+    (built for Sweetwater and Reverb, never checked); Walmart and Musician's
+    Friend prices come from canvas_retail_listings, which stays correct.
+    Open for Brian: retire the "Other retailers" read. Watson's freshness
+    proposal for X-16: every canvas view exposes <source>_checked_at
+    columns (keepa_, catalog_, featured_offer_, wmt_, mf_, smartscout_,
+    spec_, content_, findability_), present from the start in each new
+    client schema. Accepted by Brian on 11 Nov 2026. Retiring "Other
+    retailers" is left for PM26 to raise.
+

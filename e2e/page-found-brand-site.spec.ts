@@ -29,7 +29,7 @@ test("Brand-Site Specs shows the page-found hero and opens its checked SKUs", as
   await expect(canvas.activeTab).toContainText("Brand-Site Specs");
 
   const hero = page.locator("[data-machine-hero='page_found']");
-  await expect(hero.locator("[data-hero-percent]")).toHaveText("50.0%");
+  await expect(hero.locator("[data-hero-percent]")).toHaveText(/^50\.0%\*?$/);
   await expect(hero.locator("[data-hero-ratio]")).toHaveText("2 of 4");
   await expect(hero.locator("[data-citation-pie-disc]")).toBeVisible();
   await expect(hero.locator("span.ifai-term").first()).toHaveAttribute(
@@ -97,7 +97,7 @@ test("the AI Readiness bubble's page-found figure opens Brand-Site Specs at that
   const canvas = new Canvas(page);
   await canvas.open();
   const bubble = page.locator("[data-graph-node-id='spoke-specs']");
-  await expect(bubble).toContainText("fender.com page found");
+  await expect(bubble).toContainText("Page found");
   await expect(bubble).toContainText("50.0%");
 
   await openAiReadiness(page, canvas);
@@ -106,7 +106,7 @@ test("the AI Readiness bubble's page-found figure opens Brand-Site Specs at that
   const pageFound = page.locator("#brand-site-page-found-skus");
   const missingSpecs = page.locator("#machine-readability-pages");
   await expect(hero).toBeInViewport();
-  await expect(hero.locator("[data-hero-percent]")).toHaveText("50.0%");
+  await expect(hero.locator("[data-hero-percent]")).toHaveText(/^50\.0%\*?$/);
   await expect(pageFound).toHaveAttribute("data-page-found-table", "ready");
   await expect(missingSpecs).toHaveCount(0);
 

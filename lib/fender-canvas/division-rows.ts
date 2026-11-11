@@ -17,6 +17,8 @@ export type DivisionCell = {
   /** N of M under the figure, saying what was counted. Null when the figure is missing. */
   count: string | null;
   tip: string;
+  /** The unrounded share behind `value`, for sorting. Null when the figure is missing. */
+  share: number | null;
 };
 
 export type DivisionNextStep = {
@@ -49,12 +51,14 @@ function bundleCell(row: CanvasDivisionRow): DivisionCell {
       value: NOT_AVAILABLE,
       count: null,
       tip: `The bundle count for ${row.division} has not been stored.`,
+      share: null,
     };
   }
   return {
     value: formatPct((100 * bundles) / skus),
     count: `${formatRatio(bundles, skus)} ${plural(skus, "SKU", "SKUs")}`,
     tip: `${formatInt(bundles)} of the ${formatInt(skus)} ${row.division} ${plural(skus, "SKU", "SKUs")} in the division read ${plural(bundles, "is a bundle listing", "are bundle listings")}: a product sold with extras under its own ASIN.`,
+    share: (100 * bundles) / skus,
   };
 }
 
@@ -64,6 +68,7 @@ function buyBoxCell(row: CanvasDivisionRow, census: DivisionCensus | null): Divi
       value: NOT_AVAILABLE,
       count: null,
       tip: `The Buy Box read did not load, so the listings behind ${row.division}'s Buy Box share cannot be counted.`,
+      share: null,
     };
   }
   const key = divisionKey(row.division);
@@ -77,6 +82,7 @@ function buyBoxCell(row: CanvasDivisionRow, census: DivisionCensus | null): Divi
         listings === 0
           ? `No ${row.division} listing is in the retail read.`
           : `None of the ${formatInt(listings)} ${row.division} ${plural(listings, "listing", "listings")} in the retail read has a known Buy Box holder.`,
+      share: null,
     };
   }
   const unknown = entry.listings - entry.knownHolder;
@@ -88,6 +94,7 @@ function buyBoxCell(row: CanvasDivisionRow, census: DivisionCensus | null): Divi
     value: formatPct((100 * entry.amazonHolds) / entry.knownHolder),
     count: `${formatRatio(entry.amazonHolds, entry.knownHolder)} ${plural(entry.knownHolder, "listing", "listings")}`,
     tip: `Amazon Retail holds the Buy Box on ${formatInt(entry.amazonHolds)} of the ${formatInt(entry.knownHolder)} ${row.division} ${plural(entry.knownHolder, "listing", "listings")} whose Buy Box holder is known.${rest}`,
+    share: (100 * entry.amazonHolds) / entry.knownHolder,
   };
 }
 
@@ -111,4 +118,23 @@ export function divisionRowModels(
     buyBox: buyBoxCell(row, census),
     next: nextStep(row),
   }));
+}
+
+/** Column headers, shared by the table on screen and its CSV. */
+export const DIVISION_COLUMN_NAMES = {
+  division: "Catalog Division",
+  bundles: "Bundle listings",
+  buyBox: "Amazon holds the Buy Box",
+  next: "Next step",
+} as const;
+
+/** One cell as the CSV writes it: the figure, then its N of M in brackets when there is one. */
+export function divisionCellText(cell: DivisionCell): string {
+  return cell.count ? `${cell.value} (${cell.count})` : cell.value;
+}
+
+/** The population sentence for the table and its CSV. */
+export function divisionPopulation(rows: readonly DivisionRowModel[]): string {
+  const n = rows.length;
+  return `${formatInt(n)} catalog ${plural(n, "division", "divisions")} in the division read, most monitored SKUs first. Buy Box shares count listings in the retail read whose Buy Box holder is known.`;
 }

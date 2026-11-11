@@ -29,6 +29,12 @@ export type ClientProfile = {
   sellerModel: "Partner-led" | "Brand-led";
   /** Dealers counted as controlled Buy Box until the viewer saves their own list (partner-led only). */
   defaultBuyBoxPartners: readonly string[];
+  /**
+   * Roadmap and Action Items focus, set by IntoFocus staff (Brian, 11 Nov 2026; no client control).
+   * Null plans for the whole brand. A stored question category key (the `category` on AI Search
+   * calls, e.g. "acoustics") narrows the plan to that category plus the brand-wide items.
+   */
+  roadmapFocusCategory: string | null;
 };
 
 export const CLIENT_PARAM = "client";
@@ -45,6 +51,7 @@ export const CLIENTS: Record<ClientKey, ClientProfile> = {
     promptsEditable: true,
     sellerModel: "Partner-led",
     defaultBuyBoxPartners: ["Austin Bazaar", "GearTree"],
+    roadmapFocusCategory: null,
   },
   ledlenser: {
     key: "ledlenser",
@@ -57,6 +64,7 @@ export const CLIENTS: Record<ClientKey, ClientProfile> = {
     promptsEditable: false,
     sellerModel: "Brand-led",
     defaultBuyBoxPartners: [],
+    roadmapFocusCategory: null,
   },
 };
 

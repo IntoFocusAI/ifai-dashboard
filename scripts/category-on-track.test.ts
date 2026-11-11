@@ -12,6 +12,7 @@ import {
   categoryLeadStatus,
   categoryLeadSummary,
   effectiveBattlecardFilter,
+  ENGINE_MARK_TITLE,
   engineOnlyNote,
   HERO_RATES_NOTE,
   isBattlecardFiltered,
@@ -164,7 +165,13 @@ test("categories sort behind, then tied, then the weakest Fender/Squier share, a
   assert.equal(leadSentence(leads[3]), "Fender/Squier leads 9 of 10 resolved answers. Yamaha, the top rival, leads 1.");
   assert.equal(leadSentence(leads[4]), "No unbranded discovery questions in this category.");
   assert.match(leadStatusDefinition(leads[4]), /no unbranded discovery questions/);
-  assert.deepEqual(categoryLeadSummary(leads), { measured: 4, onTrack: 2, tied: ["Electrics"], behind: ["Acoustics"] });
+  assert.deepEqual(categoryLeadSummary(leads), {
+    measured: 4,
+    onTrack: 2,
+    tied: ["Electrics"],
+    behind: ["Acoustics"],
+    rivalsLead: ["Yamaha leads Acoustics"],
+  });
   const [alone] = leadsOf(times(3, { category: "amps" }));
   assert.equal(leadSentence(alone), "Fender/Squier leads 3 of 3 resolved answers. No other brand leads any.");
 });
@@ -335,7 +342,8 @@ test("Category Battlecards opens on the hero pie row, then the chips, the catego
   assert.match(pies, /data-ai-battle-lead-graph=""/);
   assert.match(pies, /AiTerm term="unbranded discovery"/);
   assert.match(pies, /data-ai-on-track-status=\{lead\.status\}/);
-  assert.match(pies, /LEAD_STATUS_ICONS\[lead\.status\]/, "an icon and a word carry each status, not color alone");
+  assert.match(pies, /<StatusMark status=\{status\} word=\{label\} \/>/, "a mark and a word carry each status, not color alone");
+  assert.match(pies, /on_track: "good",\s*tied: "okay",\s*behind: "bad",\s*not_available: null/);
   assert.match(pies, /<EvidenceLink focus=\{focus\} tab=\{AI_TABS\.simulations\}/, "a pie opens its table row's evidence");
   assert.match(pies, /Top rival: \{lead\.topRival\.brand\}/);
   const chips = read("components/v3/live/ai-search/CategoryBattleChips.tsx");
@@ -456,7 +464,10 @@ test("with an engine chip on, every evidence link on the tab opens that engine's
     opened(scopeEvidence({ field: "role", value: "unbranded_discovery/fender_win" }, { category: "acoustics", engine: "chatgpt" })),
     [rows[0].id],
   );
-  assert.equal(engineOnlyNote("ChatGPT"), "ChatGPT only. Clear the engine to see all engines.");
+  assert.equal(
+    engineOnlyNote("ChatGPT"),
+    "ChatGPT only. Answers from the other engines are left out.\nClear the engine to see all engines.",
+  );
 
   assert.match(read("components/v3/live/ai-search/EvidenceLink.tsx"), /data-ifai-evidence=\{focus \? formatEvidence\(focus\) : "all"\}/);
   const explorer = read("components/v3/live/ai-search/SimulationsExplorer.tsx");
@@ -471,7 +482,8 @@ test("with an engine chip on, every evidence link on the tab opens that engine's
   const pies = read("components/v3/live/ai-search/CategoryLeadPies.tsx");
   assert.match(pies, /scopeEvidence\(\{ field: "category", value: lead\.key \}, scope\)/);
   assert.match(pies, /if \(!engineName\) return null;/, "no asterisk with all engines");
-  assert.match(pies, /<Term name=\{`\$\{engineName\} only`\} desc=\{engineOnlyNote\(engineName\)\}/);
+  assert.match(pies, /<Term name=\{ENGINE_MARK_TITLE\} desc=\{engineOnlyNote\(engineName\)\} className="partial-figure-mark ai-battle-engine-mark">/);
+  assert.equal(ENGINE_MARK_TITLE, "Filtered figure");
   const heroes = read("components/v3/live/ai-search/CategoryBattleHeroes.tsx");
   assert.match(heroes, /scopeEvidence\(\{ field: "role", value: `\$\{role\}\/\$\{outcome\}` \}, engineScope\)/);
   assert.equal(heroes.match(/<EngineMark /g)?.length, 3, "the on-track figure, both rate captions, and the competitor line");

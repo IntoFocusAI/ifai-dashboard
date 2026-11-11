@@ -119,7 +119,7 @@ test("Brand-Site Specs dates the page-found tooltip from the fender.com product 
   assert.equal(await loadSpecCheckRunAt(freshnessClient([{ job_key: "spec_readiness", last_run_at: "not a time" }])), null);
   assert.equal(await loadSpecCheckRunAt(freshnessClient([{ job_key: "spec_readiness", last_run_at: null }])), null);
   await assert.rejects(loadSpecCheckRunAt(freshnessClient(null, { message: "boom" })), /canvas_freshness: boom/);
-  assert.match(read("components/v3/live/MachineReadabilityPanel.tsx"), /brandSitePageFoundHero\(metrics, useSpecCheckRunAt\(\)\)/);
+  assert.match(read("components/v3/live/MachineReadabilityPanel.tsx"), /brandSitePageFoundHero\(metrics, useSpecCheckRunAt\(\), pageFoundRowsStale\(summary\)\)/);
   assert.match(read("components/v3/live/useSpecCheckRunAt.ts"), /loadSpecCheckRunAt\(\)/);
   const lead = read("components/v3/live/AiReadinessLead.tsx");
   assert.match(lead, /newestAmazonSpecCheckAt\(rows\)/);

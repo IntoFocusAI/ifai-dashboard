@@ -315,10 +315,10 @@ export function PromptsEditor({ onClose }: Props) {
                   <div className="pe-item-main">
                     <p className="pe-text">{p.prompt_text}</p>
                     <div className="pe-item-actions">
-                      <button className="pe-icon-btn" disabled={disabled} onClick={() => startEdit(p)} aria-label={`Edit ${p.prompt_key}`} title="Edit">
+                      <button className="pe-icon-btn" disabled={disabled} onClick={() => startEdit(p)} aria-label={`Edit ${p.prompt_key}`}>
                         <Pencil size={14} />
                       </button>
-                      <button className="pe-icon-btn pe-danger" disabled={disabled} onClick={() => remove(p)} aria-label={`Remove ${p.prompt_key}`} title="Remove">
+                      <button className="pe-icon-btn pe-danger" disabled={disabled} onClick={() => remove(p)} aria-label={`Remove ${p.prompt_key}`}>
                         <Trash2 size={14} />
                       </button>
                     </div>
