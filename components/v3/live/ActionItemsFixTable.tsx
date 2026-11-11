@@ -4,6 +4,7 @@ import { useCallback } from "react";
 import { ResizableTable, type RetailColumn } from "@/components/v3/live/ResizableTable";
 import { PlanAction, PlanEvidence, PlanFigure, PlanStatus } from "@/components/v3/live/RoadmapPlanParts";
 import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
+import { phaseWindow } from "@/lib/fender-canvas/roadmap-dates";
 import { PLAN_PHASES, phaseLabel, type PlanItem } from "@/lib/fender-canvas/roadmap-plan";
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
 
@@ -14,11 +15,11 @@ const COLUMNS: RetailColumn[] = [
   { id: "action", name: "What to fix", label: "What to fix", width: 420, minWidth: 240, sort: "text" },
   { id: "finding", name: "Finding", label: "Finding", width: 220, minWidth: 170, sort: "number" },
   { id: "status", name: "Status", label: "Status", width: 120, minWidth: 104, sort: "text" },
-  { id: "phase", name: "Phase", label: "Phase", width: 120, minWidth: 104, sort: "number" },
+  { id: "phase", name: "Phase", label: "Phase", width: 104, minWidth: 104, sort: "number" },
   { id: "evidence", name: "Evidence", label: "Evidence", width: 220, minWidth: 180, sort: "text" },
 ];
 
-const WRAP = ["finding", "evidence"] as const;
+const WRAP = ["finding", "phase", "evidence"] as const;
 
 function shareOf(item: PlanItem): number | null {
   const match = /^([\d,]+) of ([\d,]+)/.exec(item.ratio ?? "");
@@ -33,7 +34,7 @@ const rowKey = (item: PlanItem) => item.id;
  * Every plan item in Action Items order (decision 21 f) on the shared table: each column sorts,
  * the toolbar searches and counts rows. Rows are not clickable; the evidence button opens the tab.
  */
-export function ActionItemsFixTable({ plan }: { plan: readonly PlanItem[] }) {
+export function ActionItemsFixTable({ plan, today }: { plan: readonly PlanItem[]; today: Date }) {
   const sortValue = useCallback((item: PlanItem, columnId: string): SortInput => {
     if (columnId === "rank") return item.rank;
     if (columnId === "action") return `${item.kind === "finding" ? "" : `${item.fact} `}${item.action}`;
@@ -77,6 +78,7 @@ export function ActionItemsFixTable({ plan }: { plan: readonly PlanItem[] }) {
             </td>
             <td className="plan-cell-sub" data-fix-phase="">
               {phaseLabel(item.phase)}
+              {item.phase ? <div data-fix-phase-dates="">{phaseWindow(item.phase, today).label}</div> : null}
             </td>
             <td>
               <PlanEvidence item={item} />

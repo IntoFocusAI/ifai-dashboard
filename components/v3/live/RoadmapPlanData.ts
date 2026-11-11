@@ -6,31 +6,20 @@ import { catalogLoadState, useApiRunCatalog, useApiSnapshots } from "@/component
 import { useFindability } from "@/components/v3/live/findability/FindabilityContext";
 import { useStockLossRead } from "@/components/v3/live/useMinimalMetricReads";
 import { useSummaryAiRead, useSummaryAiStale } from "@/components/v3/live/useSummaryAiRead";
+import { readPublishedRun, useFocusWindows } from "@/components/v3/live/useFocusWindows";
 import { apiRunsCoveringBattery, batteryQuestions, nearestApiRun } from "@/lib/ai-search/api-runs";
 import { engineGroupRead } from "@/lib/ai-search/engine-group-read";
 import { compareRuns, isTrustworthyRun, type HistoryRunSummary } from "@/lib/ai-search/history-eligibility";
-import { loadHistorySnapshot, type HistorySnapshotResult } from "@/lib/ai-search/history-queries";
 import type { AiSearchRead, AiSearchSnapshot } from "@/lib/ai-search/types";
 import { briefingFindingsLead, type BriefingFinding } from "@/lib/fender-canvas/briefing-retail-lead";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
-import { buildPlan, type PlanItem } from "@/lib/fender-canvas/roadmap-plan";
+import { buildPlan, focusPlan, type PlanItem } from "@/lib/fender-canvas/roadmap-plan";
+import { focusActions, staffFocus, type HeldItem, type PlanFocus } from "@/lib/fender-canvas/roadmap-focus";
+import { ownPagesAction } from "@/lib/fender-canvas/roadmap-own-pages";
 import { signalActions } from "@/lib/fender-canvas/roadmap-signals";
 import { SOURCE_RUNS_WINDOW, sourceActions } from "@/lib/fender-canvas/roadmap-sources";
-import { getCanvasSupabase } from "@/lib/supabase/canvas-client";
-
-/** Earlier published runs, read once per run and shared by Action Items and the Roadmap. */
-const runReads = new Map<string, Promise<HistorySnapshotResult>>();
-
-function readRun(runId: string): Promise<HistorySnapshotResult> {
-  const cached = runReads.get(runId);
-  if (cached) return cached;
-  const read = loadHistorySnapshot(getCanvasSupabase() as never, runId).then((result) => {
-    if (result.phase === "error") runReads.delete(runId);
-    return result;
-  });
-  runReads.set(runId, read);
-  return read;
-}
+import type { WindowSummary } from "@/lib/fender-canvas/roadmap-window";
+import type { CanvasBundle } from "@/lib/fender-canvas/types";
 
 const LOADING: AiSearchRead = { phase: "loading" };
 
@@ -62,7 +51,7 @@ function usePriorRun(runId: string | null): AiSearchRead {
   useEffect(() => {
     if (!runId) return;
     let cancelled = false;
-    void readRun(runId).then((result) => {
+    void readPublishedRun(runId).then((result) => {
       if (cancelled) return;
       setState({
         id: runId,
@@ -109,26 +98,48 @@ function useSourceRuns(current: AiSearchRead): SourceRunsRead {
 export type RoadmapPlanRead = {
   plan: PlanItem[];
   findings: BriefingFinding[];
-  /** Source actions wait on the earlier runs; the rest of the plan does not. */
+  /** Source actions wait on the earlier runs, and focus items on the two 30-day windows; the rest of the plan does not. */
   sources: SourceRunsRead;
   ai: AiSearchRead;
+  /** 21d items a guardrail held back, and why no own-page action shows (21c). */
+  held: HeldItem[];
+  /** 21d: answers behind each engine and question in the two 30-day windows, per run. */
+  window: { current: WindowSummary; previous: WindowSummary } | null;
+  ownPagesReason: string;
 };
 
-/** The plan Action Items and the Roadmap show, on the map's AI population (decision 7). */
-export function useRoadmapPlan(retail: RetailCanvasRead): RoadmapPlanRead {
+/**
+ * The plan Action Items and the Roadmap show, on the map's AI population (decision 7). It is
+ * rebuilt on every read, so actions whose trigger clears drop off and new ones enter. The focus
+ * IntoFocus staff set per client (staffFocus) narrows the plan to one category; the default is
+ * the whole brand.
+ */
+export function useRoadmapPlan(retail: RetailCanvasRead, bundle: CanvasBundle | null, focus: PlanFocus = staffFocus()): RoadmapPlanRead {
   const ai = useSummaryAiRead();
   const aiStale = useSummaryAiStale(ai);
   const findability = useFindability();
   const stock = useStockLossRead();
   const sources = useSourceRuns(ai);
+  const windows = useFocusWindows();
 
   return useMemo(() => {
     const { findings } = briefingFindingsLead(retail, findability, ai, { aiStale });
+    const current = ai.phase === "ready" ? ai.snapshot : null;
+    const own = ownPagesAction(bundle, current);
+    const focused = focusActions({ windows: windows.phase === "ready" ? windows.windows : null, focus });
+    const held: HeldItem[] =
+      windows.phase === "error"
+        ? [{ id: "focus:window", label: "The last 30 days", guardrail: "data", detail: windows.message }, ...focused.held]
+        : focused.held;
     const plan = buildPlan({
       findings,
       signals: signalActions({ retail, ai, stock }),
       sources: sources.phase === "ready" ? sourceActions(sources.snapshots) : [],
+      ownPages: own.action,
+      focus: focused.actions,
     });
-    return { plan, findings, sources, ai };
-  }, [ai, aiStale, findability, retail, sources, stock]);
+    const window = windows.phase === "ready" ? windows.summary : null;
+    const waiting: SourceRunsRead = windows.phase === "loading" ? { phase: "loading" } : sources;
+    return { plan: focusPlan(plan, focus), findings, sources: waiting, ai, held, window, ownPagesReason: own.reason };
+  }, [ai, aiStale, bundle, findability, focus, retail, sources, stock, windows]);
 }

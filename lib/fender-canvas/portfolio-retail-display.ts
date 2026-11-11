@@ -296,7 +296,7 @@ export function mapBubble(reading: RetailReading<MapLeakageDetail | null>): Reta
   const face = satelliteFace(
     "MAP Leakage",
     reading,
-    { value: numerator != null && denominator != null ? `${share}${mark}` : share, label: "MAP leakage" },
+    { value: numerator != null && denominator != null ? `${share}${mark}` : share, label: "" },
     [...(count ? [`${count}${mark}`] : []), ...(gap ? [gap] : []), ...(coverage ? [coverage] : [])],
     RETAIL_FINDING_LABELS.map_leakage,
   );
@@ -344,7 +344,7 @@ function waitingFace(
     status: "warning",
     subTab,
     // Satellite waiting faces carry a worded hero; main Catalog Health leaves hero unset.
-    ...(heroLabel ? { heroValue: { value: stats[0] ?? "Loading", label: heroLabel }, tooltip: { ...EMPTY_TOOLTIP } } : { tooltip: { title, desc } }),
+    ...(heroLabel != null ? { heroValue: { value: stats[0] ?? "Loading", label: heroLabel }, tooltip: { ...EMPTY_TOOLTIP } } : { tooltip: { title, desc } }),
   };
 }
 
@@ -402,7 +402,7 @@ export function retailBubbleFaces(read: RetailCanvasRead): {
     return {
       main: catalogHealthMainFace(read),
       suppressed: waitingFace("Suppressed Listings", "Suppressed Listings", ["Loading"], desc, "confirmed high-price"),
-      map: waitingFace("MAP Leakage", RETAIL_FINDING_LABELS.map_leakage, ["Loading"], desc, "MAP leakage"),
+      map: waitingFace("MAP Leakage", RETAIL_FINDING_LABELS.map_leakage, ["Loading"], desc, ""),
       catalog: waitingFace("Catalog Governance", "Catalog Governance", ["Loading"], desc, "Splintered Listings"),
     };
   }
@@ -416,7 +416,7 @@ export function retailBubbleFaces(read: RetailCanvasRead): {
     return {
       main: catalogHealthMainFace(read),
       suppressed: failed(waitingFace("Suppressed Listings", "Suppressed Listings", [READ_NOT_AVAILABLE], RETAIL_READ_FAILED, "confirmed high-price")),
-      map: failed(waitingFace("MAP Leakage", RETAIL_FINDING_LABELS.map_leakage, [READ_NOT_AVAILABLE], RETAIL_READ_FAILED, "MAP leakage")),
+      map: failed(waitingFace("MAP Leakage", RETAIL_FINDING_LABELS.map_leakage, [READ_NOT_AVAILABLE], RETAIL_READ_FAILED, "")),
       catalog: failed(waitingFace("Catalog Governance", "Catalog Governance", [READ_NOT_AVAILABLE], RETAIL_READ_FAILED, "Splintered Listings")),
     };
   }

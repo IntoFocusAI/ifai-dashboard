@@ -1,4 +1,3 @@
-import { FMIC_CLIENT_KEY } from "@/lib/set-aside/keys";
 import type { CommandCenterSpec } from "@/lib/canvas-sdk/types";
 
 /**
@@ -13,7 +12,6 @@ export const fenderCommandCenter: CommandCenterSpec = {
     "The retail headline and the published AI run load with the canvas read.",
   openByDefault: true,
   storageKey: "ifai:fender:command-center",
-  setAsideClientKey: FMIC_CLIENT_KEY,
   items: [
     {
       id: "buybox-suppression",

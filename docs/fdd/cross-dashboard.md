@@ -125,7 +125,7 @@
 - **Evidence:** Verified in source/CSS variance Oct 20. Approved by Brian Magazu on 9 Nov 2026. Worker 23.1, pull request 148 (main c8561cb): all dashboard text is Geist (400 body, 600 headings) with Geist Mono for labels and table numbers; Playfair and the system monospace are gone from shared CSS. REFINE until the view stylesheets that still use weights of 700 or more, and prompts-editor.css, follow. Worker 24.3 (PR 152, main ca22e8a) and worker 24.4 (PR 151, main f1df1f5): Catalog Health and AI Search follow the type rules; other views to follow.
 - **Open decision:** None. Decided by Brian Magazu on 9 Nov 2026, following the IntoFocus AI Brand Book V2 (docs/brand in the repo): Geist for all text, 400 for body and 600 for headlines and hero figures, never heavier than 600. Geist Mono only for eyebrows, labels, sources, and table numbers. Sizes stay on the X-31 dashboard scale.
 
-**X-31 REFINE** · Launch
+**X-31 CURRENT** · Launch
 
 **Status source:** Explicit
 
@@ -143,11 +143,11 @@ Operators can read every figure and note, and nothing collides.
 
 **Acceptance**
 
-No client-dashboard text is under 10px. Sentence-length notes use body size. Raised type causes no overlaps, wraps, or collisions. Marketing pages and the portal are outside this scale.
+No client-dashboard text is under 11px, map and rail bubbles included, as rendered at 1280x720. Sentence-length notes use body size. Raised type causes no overlaps, wraps, or collisions. Marketing pages and the portal are outside this scale.
 
 **Evidence**
 
-Approved by Brian Magazu on 29 Oct 2026. Pull request 88, commit 921c81e. Published on main at d91bffa.
+Approved by Brian Magazu on 29 Oct 2026. Pull request 88, commit 921c81e. Published on main at d91bffa. Workers 25.8, 25.9, 25.13, 25.14, pull request 172 (main 8781129), approved 11 Nov 2026: sub-11px text 1,158 to 0 on the pages at 1280x720; map bubbles show the hero figure and a short label only (decision 59); e2e/type-floor.spec.ts guards it for both clients.
 
 **Open decision**
 
@@ -285,7 +285,7 @@ None. Status words are Poor, Fair, and Good where a figure has no word of its ow
 - **Desired:** Partial figure → asterisk + tooltip (missing inputs, coverage, source, last check, effect). Absent inputs → “Not available\*”.
 - **User value:** Incomplete data cannot pose as full intelligence.
 - **Acceptance:** No silent mix of actual and modeled amounts.
-- **Evidence:** Approved by Brian Magazu on 9 Nov 2026. Worker 23.1, pull request 148 (main c8561cb): a shared partial-figure helper and asterisk tooltip naming what is missing, the coverage, the source, the last check, and the effect; a map figure whose read failed reads Not available\* and names the read. REFINE until the stale-data trigger is built on the decided schedules and the views use the helper. Worker 24.4, pull request 151 (main f1df1f5): AI Search applies the stale-data limit of 6 days (AI_SEARCH_STALE_AFTER_DAYS in lib/ai-search/stale.ts). It is not yet on the map bubbles or Minimal.
+- **Evidence:** Approved by Brian Magazu on 9 Nov 2026. Worker 23.1, pull request 148 (main c8561cb): a shared partial-figure helper and asterisk tooltip naming what is missing, the coverage, the source, the last check, and the effect; a map figure whose read failed reads Not available\* and names the read. REFINE until the stale-data trigger is built on the decided schedules and the views use the helper. Worker 24.4, pull request 151 (main f1df1f5): AI Search applies the stale-data limit of 6 days (AI_SEARCH_STALE_AFTER_DAYS in lib/ai-search/stale.ts). It is not yet on the map bubbles or Minimal. Workers 25.15, 25.18, 25.20, pull request 177 (main fa70cd6), approved 11 Nov 2026: the asterisk counts stale rows against Watson's recheck intervals on retail, Out of Stock, specs, A+, AI Readiness, map bubbles, Minimal, and Briefing; tooltips are one lead line plus the last check and stay inside the screen. Stays REFINE: Splintered Listings needs catalog.extracted_at on a view (Watson, decision 68).
 - **Open decision:** None. Decided by Brian Magazu on 9 Nov 2026: a figure gets an asterisk when a filter narrows it, it covers part of its population, an input read failed, or its data is older than twice its normal check schedule. Normal schedules, for now: AI Search every 2 to 3 days; Buy Box, Keepa, and MAP prices daily; spec and Findability checks weekly.
 
 **X-12 CURRENT** · Launch

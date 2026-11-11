@@ -17,12 +17,17 @@ test.describe("Roadmap 30-60-90 Days lays the plan out in three dated phases", (
 
     const lead = plan.locator("[data-roadmap-lead-figure]");
     await expect(lead).toHaveText(/^\d+ of \d+\*?$/, { timeout: LIVE_READ_TIMEOUT });
-    const bubble = page.locator('[data-graph-node-id="spoke-roadmap"] .node-hero-value');
-    await expect(bubble).toHaveText((await lead.innerText()).trim());
-    await expect(page.locator('[data-graph-node-id="spoke-roadmap"] .node-hero-label')).toContainText(/findings\s*need\s*action/i);
+    // The bubble carries no figure: a muted "30-60-90" explainer whatever the findings say (PR 172).
+    await expect(page.locator('[data-graph-node-id="spoke-roadmap"] .node-hero-label')).toHaveText("30-60-90");
+    await expect(page.locator('[data-graph-node-id="spoke-roadmap"] .node-hero-value')).toHaveCount(0);
 
     await expect(plan.locator("[data-roadmap-phase]")).toHaveCount(3);
     await expect(plan.locator(".roadmap-phase-days")).toHaveText(["Days 1 to 30", "Days 31 to 60", "Days 61 to 90"]);
+    // Rolling 90 days: Days 1 to 30 starts today, whenever the page is read.
+    const today = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(new Date());
+    const dates = plan.locator("[data-roadmap-phase-dates]");
+    await expect(dates).toHaveCount(3);
+    await expect(dates.first()).toHaveText(new RegExp(`^${today}(, \\d{4})? to [A-Z][a-z]{2} \\d{1,2}, \\d{4}$`));
     await expect(plan).toHaveAttribute("data-roadmap-sources", "ready", { timeout: 120_000 });
     for (const phase of await plan.locator("[data-roadmap-phase]").all()) {
       const items = phase.locator("[data-roadmap-item]");

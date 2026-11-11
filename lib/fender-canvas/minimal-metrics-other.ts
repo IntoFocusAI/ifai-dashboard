@@ -12,10 +12,10 @@ import { failedReadTip } from "@/lib/fender-canvas/canvas-reads";
 import { ACTUATION_OMITTED_REASON } from "@/lib/fender-canvas/consensus-score-display";
 import { formatInt, formatPct } from "@/lib/fender-canvas/format";
 import { categoryUnbrandedFigure } from "@/lib/fender-canvas/minimal-metrics-ai";
+import { ROADMAP_BUBBLE_VALUE } from "@/lib/fender-canvas/roadmap-bubble";
 import {
   aiFigure,
   cached,
-  loadingFigure,
   missingFigure,
   type MinimalContext,
   type MinimalEntry,
@@ -67,23 +67,23 @@ function other(entry: Omit<MinimalEntry, "area">): MinimalEntry {
 }
 
 /**
- * The Roadmap bubble's figure. The 30-60-90 Days tab now leads with it, so it is not an Other
- * figure; it sits first in this list so it follows Action Items in map order. It keeps its
- * saved-slot id. A plan is not graded, so even Not available* stays neutral, never Champagne.
+ * The Roadmap bubble's text. It is static ("30-60-90", decision 11 Nov 2026), so Minimal shows
+ * the same words. The 30-60-90 Days tab leads with the findings figure, so this is not an Other
+ * figure; it sits first so it follows Action Items in map order. It keeps its saved-slot id.
  */
 const ROADMAP_ENTRY: MinimalEntry = {
   id: "day-90-buy-box-target",
   spokeId: "roadmap",
   tab: "30-60-90 Days",
-  label: "90-day plan",
-  read: (ctx) => {
-    const value = ctx.node("spoke-roadmap")?.heroValue?.value?.trim();
-    if (value === "Loading") return loadingFigure("The current findings are still loading.");
-    if (!value || /^not available\*?$/i.test(value)) {
-      return { ...missingFigure("No current finding has a stored reading."), tone: "neutral" };
-    }
-    return { value, tone: "neutral", ratio: `${value} current findings need action`, pie: null, tip: null, missing: null };
-  },
+  label: "Roadmap",
+  read: (ctx) => ({
+    value: ctx.node("spoke-roadmap")?.heroValue?.value?.trim() || ROADMAP_BUBBLE_VALUE,
+    tone: "neutral",
+    ratio: null,
+    pie: null,
+    tip: null,
+    missing: null,
+  }),
 };
 
 export const OTHER_ENTRIES: MinimalEntry[] = [

@@ -10,14 +10,15 @@ import type { PieDiscData } from "@/lib/ai-search/citation-pies";
 import type { ShareHeroModel } from "@/components/v3/live/ShareHeroCard";
 import type { PartialFigure } from "@/lib/fender-canvas/canvas-reads";
 import { formatInt, formatPct, formatRatio } from "@/lib/fender-canvas/format";
-import { newestCheckTime, weeklyCheckStale } from "@/lib/findability/last-checked";
+import { newestCheckTime } from "@/lib/findability/last-checked";
+import { mergePartial, RECHECK_DAYS, rowsStale } from "@/lib/fender-canvas/row-stale";
 import { getCanvasSupabase } from "@/lib/supabase/canvas-client";
 
 /** Amazon's standard bullet slots on a listing. */
 export const FULL_BULLETS = 5;
 
 export const LISTING_CONTENT_COLUMNS =
-  "asin,title,bullet_count,image_count,aplus_state,aplus_module_count,video_state,video_count,checked_at,aplus_source,video_source";
+  "asin,title,bullet_count,image_count,aplus_state,aplus_module_count,video_state,video_count,checked_at,content_checked_at,aplus_source,video_source";
 
 export type ListingContentRow = {
   asin: string;
@@ -29,6 +30,8 @@ export type ListingContentRow = {
   video_state: string | null;
   video_count: number | null;
   checked_at: string | null;
+  /** When the listing content was last read. The per-row stale rule (X-25) counts from this. */
+  content_checked_at?: string | null;
   /** live_page (spec_readiness v11, present or absent) or keepa. Null when not read. */
   aplus_source?: string | null;
   video_source?: string | null;
@@ -129,12 +132,6 @@ function uncheckedCount(summary: ListingContentSummary, id: ContentHeroId): numb
   return Math.max(0, summary.rows.length - read);
 }
 
-const HERO_NOUN: Record<ContentHeroId, string> = {
-  bullets: "bullets",
-  aplus: "A+",
-  video: "video",
-};
-
 const HERO_UNCHECKED: Record<ContentHeroId, string> = {
   bullets: "no bullet count yet",
   aplus: "no A+ check on the listing page yet",
@@ -142,33 +139,34 @@ const HERO_UNCHECKED: Record<ContentHeroId, string> = {
 };
 
 /**
- * The partial reading (X-25) for one content share: stale when the newest check is past the
- * weekly schedule, else coverage when some live listings are unchecked. Null when neither.
+ * The partial reading (X-25) for one content share: the live listings whose own content check
+ * is older than twice the weekly schedule, plus the live listings not checked at all. Null when neither.
  */
 export function contentSharePartial(
   summary: ListingContentSummary,
   id: ContentHeroId,
   now: number = Date.now(),
 ): PartialFigure | null {
-  const checkedAt = newestCheckTime(summary.rows, () => true, (row) => row.checked_at);
-  const stale = weeklyCheckStale(
-    checkedAt,
-    { check: "Amazon listing check", source: "canvas_listing_content", figure: "content shares" },
+  const checkedAt = newestCheckTime(summary.rows, () => true, (row) => row.content_checked_at ?? row.checked_at);
+  const stale = rowsStale(
+    summary.rows,
+    (row) => row.content_checked_at,
+    { intervalDays: RECHECK_DAYS.weekly, check: "Amazon listing check", source: "canvas_listing_content", figure: "content shares" },
     now,
   );
-  if (stale) return stale;
   const unchecked = uncheckedCount(summary, id);
   const total = summary.rows.length;
-  if (unchecked === 0 || total === 0) return null;
-  const noun = HERO_NOUN[id];
-  return {
-    reason: "coverage",
-    missing: `${formatInt(unchecked)} of ${formatInt(total)} live Amazon listings have ${HERO_UNCHECKED[id]}`,
-    coverage: `${formatInt(total - unchecked)} of ${formatInt(total)} live Amazon listings`,
-    source: "canvas_listing_content",
-    lastCheck: checkedAt,
-    effect: `Unchecked listings are left out of the share, not counted as missing ${noun}`,
-  };
+  const coverage: PartialFigure | null =
+    unchecked === 0 || total === 0
+      ? null
+      : {
+          reason: "coverage",
+          missing: `${formatInt(unchecked)} of ${formatInt(total)} live Amazon listings have ${HERO_UNCHECKED[id]}`,
+          coverage: null,
+          source: "canvas_listing_content",
+          lastCheck: checkedAt,
+        };
+  return mergePartial(stale, coverage);
 }
 
 function shareHero(

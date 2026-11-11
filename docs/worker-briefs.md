@@ -24,8 +24,9 @@ propose status changes in the pull request body.
   Watson merges Ledlenser work). Commit messages start "Worker N.M:".
 - Run in your own git worktree so parallel workers do not share a checkout.
 - Both clients: correct for Fender (/dashboard) and Ledlenser
-  (/dashboard?client=ledlenser). Ledlenser has no API-engine views and no
-  set-aside views; handle that as the code already does.
+  (/dashboard?client=ledlenser). Ledlenser has no API-engine views. The set-aside
+  tables and views are shared in `public` and client-keyed (`fmic`, `ledlenser`), so
+  set-asides work for both clients; handle the rest as the code already does.
 - Build inside the existing view. No standalone routes or pages that
   nothing links to (a server route for CSV is fine).
 - A feature whose data does not exist is BLOCKED, not built. Never deliver

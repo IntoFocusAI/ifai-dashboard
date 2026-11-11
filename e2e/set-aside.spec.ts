@@ -1,4 +1,5 @@
 import { expect, test, type Locator } from "./fixtures";
+import type { Page } from "@playwright/test";
 
 /* Worker 18.5: a row set aside on a check is marked in place, listed in the
    check's history with who, why, and when, and reopens on the same row. */
@@ -86,4 +87,51 @@ test("an Amazon Specs listing can be marked done with just a name", async ({ can
   });
   const history = page.locator('[data-set-aside-history="amazon_specs"]');
   await expect(history.locator("summary")).toContainText("1 done · 0 set aside");
+});
+
+/* Worker 25.15: the set-aside tables and views are shared and client-keyed, so Ledlenser runs the
+   same flow under its own key. */
+test.describe("Ledlenser", () => {
+  async function openLedlenserAmazonSpecs(page: Page, baseURL: string | undefined) {
+    const host = new URL(baseURL ?? "http://localhost").hostname;
+    // Ledlenser's site-type read is not in the database yet; it is not what this spec checks.
+    await page.route("**/rest/v1/canvas_site_types*", (route) =>
+      route.fulfill({ status: 200, contentType: "application/json", body: "[]" }),
+    );
+    await page.context().addCookies([{ name: "ifai_guest_ledlenser", value: "1", domain: host, path: "/" }]);
+    await page.goto("/dashboard?client=ledlenser&spoke=specs&tab=amazon-specs");
+    const skipLogin = page.getByRole("button", { name: "Skip Login" });
+    if (await skipLogin.isVisible().catch(() => false)) await skipLogin.click();
+    return page.locator("#spec-readiness-by-asin");
+  }
+
+  test("an Amazon Specs listing can be set aside under the ledlenser key", async ({ page, baseURL, setAsides }) => {
+    const table = await openLedlenserAmazonSpecs(page, baseURL);
+    const asin = await setAsideFirst(table, "discontinued", "Test Person");
+    expect(asin).toMatch(/^[A-Z0-9]{10}$/);
+    await expect(table.locator(`[data-set-aside-chip="${asin}"]`)).toHaveText("Set aside · Discontinued");
+    expect(setAsides.calls[0].body).toMatchObject({
+      p_client_key: "ledlenser",
+      p_check_key: "amazon_specs",
+      p_entity_key: asin,
+    });
+  });
+
+  test("an Unknown client. answer from the database is shown on the form", async ({ page, baseURL, setAsides, pageErrors }) => {
+    await page.route("**/rest/v1/rpc/set_aside_issue", (route) =>
+      route.fulfill({
+        status: 400,
+        contentType: "application/json",
+        body: JSON.stringify({ message: "Unknown client.", code: "22023" }),
+      }),
+    );
+    const table = await openLedlenserAmazonSpecs(page, baseURL);
+    await setAsideFirst(table, "discontinued", "Test Person");
+    await expect(table.locator("[data-set-aside-form] .set-aside-error")).toContainText(
+      "not set up for set-asides yet",
+    );
+    expect(setAsides.rows).toHaveLength(0);
+    // The 400 is the answer this test sends on purpose.
+    pageErrors.splice(0, pageErrors.length, ...pageErrors.filter((line) => !line.includes("rpc/set_aside_issue")));
+  });
 });

@@ -28,7 +28,9 @@ import {
   featuredOfferHeadlineLabel,
   firstPassIncomplete,
 } from "./featured-offer-copy";
-import { brandName } from "@/lib/brand-copy";
+import { brandName, isFenderClient } from "@/lib/brand-copy";
+import type { PartialFigure } from "./canvas-reads";
+import { combineStale, RECHECK_DAYS, rowsStale } from "./row-stale";
 
 export type RetailReadingStatus =
   | "available_with_issues"
@@ -50,7 +52,17 @@ export type RetailReading<T> = {
   headlineLabel?: string;
   /** Noun for the count beside `headlineLabel`. */
   headlineNoun?: string;
+  /**
+   * X-25: set when part of this reading's population has its own check older than twice its
+   * recheck interval. The figure carries an asterisk and this tooltip. Absent when whole.
+   */
+  stale?: PartialFigure | null;
 };
+
+/** The reading with its per-row stale reading attached (X-25). */
+function withStale<T>(reading: RetailReading<T>, stale: PartialFigure | null): RetailReading<T> {
+  return stale ? { ...reading, stale } : reading;
+}
 
 export type RetailFindingId = "suppressed_listings" | "map_leakage" | "unnested_bundles";
 
@@ -85,13 +97,13 @@ const SPEC_UNAVAILABLE = "Amazon spec-field readings have not been stored.";
 export const RETAIL_SUPPRESSION_COLUMNS = FEATURED_OFFER_COLUMNS;
 
 export const RETAIL_MAP_LEAKAGE_COLUMNS =
-  "asin,map_price,offer_price,amz_leakage,wmt_leakage,mf_leakage";
+  "asin,map_price,offer_price,amz_leakage,wmt_leakage,mf_leakage,featured_offer_checked_at,wmt_checked_at,mf_checked_at";
 
 export const RETAIL_CATALOG_GOVERNANCE_COLUMNS =
-  "asin,model_name,title,bundle_name,parent_asin,product_url,is_bundle,category,buybox_seller_name,buybox_seller_id,buybox_status,featured_offer_state";
+  "asin,model_name,title,bundle_name,parent_asin,product_url,is_bundle,category,buybox_seller_name,buybox_seller_id,buybox_status,featured_offer_state,featured_offer_checked_at";
 
 export const RETAIL_AMAZON_SPEC_COLUMNS =
-  "asin,title,amazon_checked,amazon_missing_fields";
+  "asin,title,amazon_checked,amazon_missing_fields,checked_at";
 
 function finite(value: unknown): number | null {
   if (typeof value === "string" && value.trim() === "") return null;
@@ -138,7 +150,7 @@ export type SuppressionDetail = {
  * confirmed withheld count otherwise. A withheld Featured Offer with no outside benchmark
  * is never called a price suppression.
  */
-export function suppressedListingsFinding(
+function suppressedListingsReading(
   rows: SuppressionSupportRow[] | null,
   options?: { truncated?: boolean; now?: number },
 ): RetailReading<SuppressionDetail | null> {
@@ -209,6 +221,11 @@ export type MapLeakageRow = {
   amz_leakage: number | string | null;
   wmt_leakage: number | string | null;
   mf_leakage: number | string | null;
+  /** Amazon MAP price check time (the Featured Offer read). Per-row stale rule, X-25. */
+  featured_offer_checked_at?: string | null;
+  wmt_checked_at?: string | null;
+  /** Musician's Friend is Fender only; Ledlenser rows never carry it. */
+  mf_checked_at?: string | null;
 };
 
 export type MapLeakageDetail = {
@@ -269,7 +286,7 @@ function storedMapPrice(value: unknown): number | null {
  * Listings whose ASIN is in `approvedExceptions` are left out of the population, the
  * comparisons, the violations, and the average gap; the count of them is kept in the detail.
  */
-export function mapLeakageFinding(
+function mapLeakageReading(
   allRows: MapLeakageRow[] | null,
   options?: { truncated?: boolean; approvedExceptions?: ReadonlySet<string> | null },
 ): RetailReading<MapLeakageDetail | null> {
@@ -362,6 +379,8 @@ export type CatalogBundleRow = {
   buybox_status?: string | null;
   /** Current Featured Offer state from the hourly listing read: present, withheld, or no_active_offer. */
   featured_offer_state?: string | null;
+  /** When the Featured Offer state was observed. Per-row stale rule, X-25. */
+  featured_offer_checked_at?: string | null;
 };
 
 /** Short label for the bundle population every bundle figure counts (R-13). */
@@ -521,7 +540,7 @@ export function unnestedBundleOpportunities(rows: CatalogBundleRow[]): UnnestedB
  * Only bundles for sale now are counted; a title that matches a bundle is not enough.
  * A bundle with a usable parent is not a defect. Seller authorization is not classified here.
  */
-export function unnestedBundlesFinding(
+function unnestedBundlesReading(
   rows: CatalogBundleRow[] | null,
   options?: { truncated?: boolean; catalogBundleCount?: number | null | CanvasReadFailure },
 ): RetailReading<UnnestedBundleDetail | null> {
@@ -591,6 +610,8 @@ export type AmazonSpecRow = {
   title: string | null;
   amazon_checked: boolean | null;
   amazon_missing_fields: string | null;
+  /** When the spec read last checked this listing. Per-row stale rule, X-25. */
+  checked_at?: string | null;
 };
 
 export type AmazonSpecGap = {
@@ -614,7 +635,7 @@ export function amazonMissingFields(value: string | null | undefined): string[] 
     .filter((field) => field.length > 0);
 }
 
-export function amazonSpecGapsFinding(
+function amazonSpecGapsReading(
   rows: AmazonSpecRow[] | null,
   options?: { truncated?: boolean },
 ): RetailReading<AmazonSpecGapDetail | null> {
@@ -662,6 +683,111 @@ export function amazonSpecGapsFinding(
     missingMessage: null,
     detail,
   };
+}
+
+
+/** Buy Box state and suppression: every retail listing's own featured_offer_checked_at, daily. */
+export function suppressedListingsFinding(
+  rows: SuppressionSupportRow[] | null,
+  options?: { truncated?: boolean; now?: number },
+): RetailReading<SuppressionDetail | null> {
+  const reading = suppressedListingsReading(rows, options);
+  if (rows == null) return reading;
+  return withStale(
+    reading,
+    rowsStale(
+      rows,
+      (row) => row.featured_offer_checked_at,
+      { intervalDays: RECHECK_DAYS.buyBox, check: "Buy Box check", source: "canvas_retail_listings", figure: "Buy Box figures" },
+      options?.now,
+    ),
+  );
+}
+
+/**
+ * MAP leakage: Amazon prices carry featured_offer_checked_at (daily), Walmart wmt_checked_at
+ * (daily for Fender, every 2 days for Ledlenser), Musician's Friend mf_checked_at (every 3 days).
+ * Each channel counts the listings that have a stored comparison on it.
+ */
+export function mapLeakageFinding(
+  allRows: MapLeakageRow[] | null,
+  options?: { truncated?: boolean; approvedExceptions?: ReadonlySet<string> | null; now?: number },
+): RetailReading<MapLeakageDetail | null> {
+  const reading = mapLeakageReading(allRows, options);
+  if (allRows == null) return reading;
+  const exceptions = options?.approvedExceptions;
+  const rows = exceptions?.size
+    ? allRows.filter((row) => {
+        const key = mapAsinKey(row.asin);
+        return key == null || !exceptions.has(key);
+      })
+    : allRows;
+  const channel = (
+    label: string,
+    leakage: (row: MapLeakageRow) => unknown,
+    at: (row: MapLeakageRow) => string | null | undefined,
+    intervalDays: number,
+  ) => ({
+    label,
+    stale: rowsStale(
+      rows.filter((row) => finite(leakage(row)) != null),
+      at,
+      { intervalDays, check: `${label} price check`, source: "canvas_retail_listings", figure: "MAP figures" },
+      options?.now,
+    ),
+  });
+  return withStale(
+    reading,
+    combineStale(
+      [
+        channel("Amazon", (row) => row.amz_leakage, (row) => row.featured_offer_checked_at, RECHECK_DAYS.buyBox),
+        channel(
+          "Walmart",
+          (row) => row.wmt_leakage,
+          (row) => row.wmt_checked_at,
+          isFenderClient() ? RECHECK_DAYS.walmartFender : RECHECK_DAYS.walmartLedlenser,
+        ),
+        channel("Musician's Friend", (row) => row.mf_leakage, (row) => row.mf_checked_at, RECHECK_DAYS.musiciansFriend),
+      ],
+    ),
+  );
+}
+
+/** Splintered Listings "for sale now": each live bundle's own featured_offer_checked_at, daily. */
+export function unnestedBundlesFinding(
+  rows: CatalogBundleRow[] | null,
+  options?: { truncated?: boolean; catalogBundleCount?: number | null | CanvasReadFailure; now?: number },
+): RetailReading<UnnestedBundleDetail | null> {
+  const reading = unnestedBundlesReading(rows, options);
+  if (rows == null) return reading;
+  const live = rows.filter((row) => row.is_bundle === true && text(row.asin) && hasLiveOffer(row));
+  return withStale(
+    reading,
+    rowsStale(
+      live,
+      (row) => row.featured_offer_checked_at,
+      { intervalDays: RECHECK_DAYS.buyBox, check: "Buy Box check", source: "canvas_retail_listings", figure: "bundle figures" },
+      options?.now,
+    ),
+  );
+}
+
+/** Amazon specs: each checked listing's own spec_readiness.checked_at, weekly. */
+export function amazonSpecGapsFinding(
+  rows: AmazonSpecRow[] | null,
+  options?: { truncated?: boolean; now?: number },
+): RetailReading<AmazonSpecGapDetail | null> {
+  const reading = amazonSpecGapsReading(rows, options);
+  if (rows == null || rows.length === 0) return reading;
+  return withStale(
+    reading,
+    rowsStale(
+      rows.filter((row) => row.amazon_checked === true),
+      (row) => row.checked_at,
+      { intervalDays: RECHECK_DAYS.weekly, check: "Amazon spec check", source: "canvas_spec_readiness", figure: "spec figures" },
+      options?.now,
+    ),
+  );
 }
 
 export type PortfolioRetailFindings = {

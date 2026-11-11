@@ -6,7 +6,7 @@
 
 import type { PieDiscData } from "@/lib/ai-search/citation-pies";
 import type { PartialFigure } from "@/lib/fender-canvas/canvas-reads";
-import { newestCheckTime, weeklyCheckStale } from "@/lib/findability/last-checked";
+import { RECHECK_DAYS, rowsStale } from "@/lib/fender-canvas/row-stale";
 import { formatInt, formatPct, formatRatio } from "@/lib/fender-canvas/format";
 import { getCanvasSupabase } from "@/lib/supabase/canvas-client";
 import { brandSite } from "@/lib/brand-copy";
@@ -63,7 +63,12 @@ export type SpecPage = {
   checkedAt: string | null;
 };
 
+/** One checked row of the spec read: its listing and its own check time (X-25). */
+export type SpecCheckedRow = { asin: string; checkedAt: string | null };
+
 export type SpecPageSummary = {
+  /** Every checked listing (fender_found stored as true or false), with its own check time. Optional on fixtures. */
+  checkedRows?: SpecCheckedRow[];
   pages: SpecPage[];
   withSpecBlock: number;
   withAllBasics: number;
@@ -103,6 +108,9 @@ function later(a: string | null, b: string | null): boolean {
 
 /** Group found rows into one entry per fender.com page. Rows without a page URL are not pages. */
 export function buildSpecPages(rows: readonly SpecPageSourceRow[]): SpecPageSummary {
+  const checkedRows: SpecCheckedRow[] = rows
+    .filter((row) => row.fender_found === true || row.fender_found === false)
+    .map((row) => ({ asin: row.asin, checkedAt: row.checked_at }));
   const latest = new Map<string, SpecPageSourceRow>();
   const asins = new Map<string, Set<string>>();
 
@@ -134,6 +142,7 @@ export function buildSpecPages(rows: readonly SpecPageSourceRow[]): SpecPageSumm
   pages.sort((a, b) => b.asins.length - a.asins.length || a.url.localeCompare(b.url));
 
   return {
+    checkedRows,
     pages,
     withSpecBlock: pages.filter((page) => page.hasSpecBlock).length,
     withAllBasics: pages.filter((page) => page.missingBasics.length === 0).length,
@@ -146,10 +155,8 @@ type PageRead = PromiseLike<{ data: unknown; error: { message: string } | null }
 export type SpecPageClient = {
   from: (view: string) => {
     select: (columns: string) => {
-      eq: (column: "fender_found", value: true) => {
-        order: (column: string, options: { ascending: boolean }) => {
-          range: (from: number, to: number) => PageRead;
-        };
+      order: (column: string, options: { ascending: boolean }) => {
+        range: (from: number, to: number) => PageRead;
       };
     };
   };
@@ -158,7 +165,7 @@ export type SpecPageClient = {
 const READ_PAGE = 1000;
 const MAX_READS = 10;
 
-/** Every found row on the spec view, read in pages. Throws on a failed read. */
+/** Every checked row on the spec view, read in pages (found pages, and the check time of every checked listing). Throws on a failed read. */
 export async function loadSpecPages(client?: SpecPageClient): Promise<SpecPageSummary> {
   const supabase = client ?? (getCanvasSupabase() as unknown as SpecPageClient);
   const rows: SpecPageSourceRow[] = [];
@@ -167,7 +174,6 @@ export async function loadSpecPages(client?: SpecPageClient): Promise<SpecPageSu
     const { data, error } = await supabase
       .from("canvas_spec_readiness")
       .select(SPEC_PAGE_COLUMNS)
-      .eq("fender_found", true)
       .order("asin", { ascending: true })
       .range(from, from + READ_PAGE - 1);
     if (error) throw new Error(`canvas_spec_readiness: ${error.message}`);
@@ -329,13 +335,39 @@ function missingSpecsHero(summary: SpecPageSummary | null): MachineHeroModel {
   };
 }
 
-/** The stale reading for the page figures: the newest page read past its weekly schedule. */
+/** The stale reading for the page figures: each found page's own latest check against twice the weekly schedule. */
 export function specPagesStale(summary: SpecPageSummary | null, now: number = Date.now()): PartialFigure | null {
   if (!summary) return null;
-  const checkedAt = newestCheckTime(summary.pages, () => true, (page) => page.checkedAt);
-  return weeklyCheckStale(
-    checkedAt,
-    { check: `${brandSite()} product check`, source: "canvas_spec_readiness", figure: "page shares" },
+  return rowsStale(
+    summary.pages,
+    (page) => page.checkedAt,
+    {
+      intervalDays: RECHECK_DAYS.weekly,
+      check: `${brandSite()} product check`,
+      source: "canvas_spec_readiness",
+      figure: "page shares",
+      unit: "pages",
+    },
+    now,
+  );
+}
+
+/**
+ * The stale reading for the page-found figures (the AI Readiness map bubble and the Brand-Site Specs
+ * lead): each checked listing's own check against twice the weekly schedule. Null when the read
+ * carries no per-row times.
+ */
+export function pageFoundRowsStale(summary: SpecPageSummary | null | undefined, now: number = Date.now()): PartialFigure | null {
+  if (!summary?.checkedRows) return null;
+  return rowsStale(
+    summary.checkedRows,
+    (row) => row.checkedAt,
+    {
+      intervalDays: RECHECK_DAYS.weekly,
+      check: `${brandSite()} product check`,
+      source: "canvas_spec_readiness",
+      figure: "page-found figures",
+    },
     now,
   );
 }

@@ -1,9 +1,6 @@
 import { activeClient } from "@/lib/client/active-client";
 
-/** Fender pilot. Each client gets a row in public.set_aside_clients. */
-export const FMIC_CLIENT_KEY = "fmic";
-
-/** set_aside_clients key for the brand on screen: "fmic" or "ledlenser". */
+/** set_aside_clients key for the brand on screen: "fmic" or "ledlenser". Each client has a row in public.set_aside_clients. */
 export function activeSetAsideClientKey(): string {
   return activeClient().setAsideKey;
 }

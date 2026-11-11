@@ -120,10 +120,10 @@ const TAB_OVERRIDES: Partial<
   },
   // Action Items and the Roadmap read the same plan on the map's AI population (decision 7).
   suggestions: {
-    0: (_bundle, _vars, retail) => <ActionItemsPanel read={retail} />,
+    0: (bundle, _vars, retail) => <ActionItemsPanel read={retail} bundle={bundle} />,
   },
   roadmap: {
-    0: (_bundle, _vars, retail) => <RoadmapFindingsPanel read={retail} />,
+    0: (bundle, _vars, retail) => <RoadmapFindingsPanel read={retail} bundle={bundle} />,
   },
 };
 

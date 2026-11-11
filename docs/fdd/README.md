@@ -1,4 +1,4 @@
-**Documentation version: 25.5**
+**Documentation version: 25.20**
 
 > **Source of truth.** This FDD moved from Google Docs into the repo on 10 Nov 2026 at version 24.4. Rows by status: [register.md](register.md). Views: [cross-dashboard](cross-dashboard.md), [summary and score model](summary.md), [catalog health](catalog-health.md), [AI search](ai-search.md), [AI readiness](ai-readiness.md), [competitive radar](competitive-radar.md), [action items](action-items.md), [roadmap](roadmap.md), [minimal](minimal.md), [launch readiness and registers](launch-and-registers.md). History: [changelog.md](changelog.md). Editing rules: "Design documents" in AGENTS.md.
 

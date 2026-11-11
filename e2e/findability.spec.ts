@@ -149,12 +149,12 @@ test("the five outcome counts stay distinct and open the listings behind them", 
 
   const exactHero = page.locator("[data-findability-lead-outcome='exact_official_product']");
   await expect(exactHero).toContainText("Exact official product page");
-  // The mocked check ran on 12 Oct 2026, past the 14-day limit for a weekly check (X-25).
+  // The mocked rows were checked on 12 Oct 2026, so none falls in the last 14 days (X-25).
   await expect(exactHero.locator("[data-findability-lead-figure]")).toHaveText("33.3%*");
-  await expect(exactHero.locator("[data-partial-figure='stale']")).toBeVisible();
+  await expect(exactHero.locator("[data-partial-figure='coverage']")).toBeVisible();
   await expect(exactHero.locator("[data-figure-tip='findability-stale']")).toHaveAttribute(
     "data-ifai-tooltip-desc",
-    /runs weekly and has not run since Oct 12, 2026/,
+    /^6 of 6 listings have no official-page check in 14 days\./,
   );
   await expect(exactHero.locator("[data-status='okay']")).toContainText("Fair");
   await expect(exactHero.locator("[data-findability-lead-figure]")).toHaveAttribute("data-findability-exact", "2");
@@ -175,6 +175,11 @@ test("the five outcome counts stay distinct and open the listings behind them", 
   await expect(lastChecked).toBeVisible();
   await expect(lastChecked).toHaveAttribute("data-findability-last-checked", "2026-10-12T20:27:46.000Z");
   await expect(lastChecked).toHaveText("Last checked Oct 12, 2026, 8:27 PM UTC.");
+  // The newest check stays on screen; its tooltip says how many listings the 14-day window covers.
+  await expect(lastChecked.locator("[data-findability-last-checked-tip]")).toHaveAttribute(
+    "data-ifai-tooltip-desc",
+    "This is the newest official-page check. 0 of 6 listings checked in the last 14 days.",
+  );
   await expect(page.locator("[data-findability-outcome='exact_official_product']")).toHaveAttribute(
     "data-selected",
     "true",

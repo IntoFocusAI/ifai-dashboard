@@ -6,7 +6,7 @@ import {
   joinBrands,
   type CategoryBattle,
 } from "@/lib/ai-search/competitors";
-import { competitorWinsFigure } from "@/lib/ai-search/competitor-wins-lead";
+import { competitorWinsFigure, competitorWinsStatus } from "@/lib/ai-search/competitor-wins-lead";
 import {
   factCheckHeadline,
   factCheckShortLine,
@@ -147,7 +147,7 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
       satCitations: satelliteStateFace(read, "Citations", AI_TABS.citations, `${brandName()}-Owned Links`),
       satDrift: satelliteStateFace(read, "Fact Checks", AI_TABS.drift, "Accuracy"),
       spokeCompetitors: pending("Competitive Radar", RADAR_TABS.battlecards, true),
-      satGap: satelliteStateFace(read, "Competitor Wins", RADAR_TABS.wins, "competitors led"),
+      satGap: satelliteStateFace(read, "Competitor Wins", RADAR_TABS.wins, ""),
       satLead: satelliteStateFace(read, "Engine Comparison", RADAR_TABS.engines, "Unbranded discovery"),
     };
   }
@@ -265,7 +265,12 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
       tooltip: { ...EMPTY_TOOLTIP },
     },
     satGap: {
-      status: s.competitorWins > 0 ? "warning" : "success",
+      // Status is the shared Competitor Wins rule (red above 70%, green below 35%). The hero is the competitor-led share of
+      // resolved unbranded answers (84 of 214 reads 39.3%); the title is its label.
+      status: (() => {
+        const tone = competitorWinsStatus(s.competitorWins, s.roles.unbranded.resolved);
+        return tone === "bad" ? "danger" : tone === "good" ? "success" : tone === "okay" ? "warning" : "neutral";
+      })(),
       title: "Competitor Wins",
       stats:
         s.roles.unbranded.resolved > 0
@@ -273,11 +278,8 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
           : ["No resolved answers"],
       heroValue:
         s.roles.unbranded.resolved > 0
-          ? {
-              value: `${s.competitorWins} of ${s.roles.unbranded.resolved}`,
-              label: "competitors led",
-            }
-          : { value: "No resolved answers", label: "competitors led" },
+          ? { value: pct(s.competitorWins, s.roles.unbranded.resolved), label: "" }
+          : { value: "No resolved answers", label: "" },
       meta: "Unbranded discovery",
       subTab: RADAR_TABS.wins,
       tooltip: { ...EMPTY_TOOLTIP },
@@ -288,7 +290,7 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
         const engineHero = heroPctFace(
           ratePct(tally.fenderWins, tally.resolved),
           pct(tally.fenderWins, tally.resolved),
-          `${engineLabel(weakestEngine.key)} unbranded`,
+          engineLabel(weakestEngine.key),
           UNBRANDED_RATE_BANDS.redBelow,
           UNBRANDED_RATE_BANDS.greenAbove,
         );
