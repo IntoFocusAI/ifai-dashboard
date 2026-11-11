@@ -13,7 +13,6 @@ export { IntelligenceCanvas } from "@/lib/canvas-sdk/IntelligenceCanvas";
 export {
   ActionCard,
   ContentBox,
-  DataTable,
   MetricCard,
   MetricGrid,
   TagBadge,

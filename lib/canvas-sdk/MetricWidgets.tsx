@@ -2,6 +2,8 @@
 
 import { Plus, Wrench } from "lucide-react";
 import { useMemo, useRef } from "react";
+import { StatusMark } from "@/components/v3/live/StatusMark";
+import { dataStatusFromNode } from "@/lib/canvas-sdk/data-status";
 import { MetricPicker } from "@/lib/canvas-sdk/MetricPicker";
 import { useMetricSlots, type MetricSlotIds } from "@/lib/canvas-sdk/metric-slots";
 import { metricTermAttrs } from "@/lib/canvas-sdk/metric-term";
@@ -42,6 +44,9 @@ export function MetricWidgets({ config, spokes, onOpenMetric }: Props) {
         const missing = minimal?.reading?.missing ?? null;
         const definition = minimal?.definition;
         const notes = [definition, missing].filter(Boolean).join(" ");
+        // A status color always carries its mark and word (X-34); Not available* stays plain.
+        const status = missing ? null : dataStatusFromNode(metric?.tone);
+        const tone = status ? metric?.tone : "neutral";
 
         return (
           <div
@@ -68,11 +73,12 @@ export function MetricWidgets({ config, spokes, onOpenMetric }: Props) {
                   )}
                 </span>
                 <strong
-                  className={`metric-widget-value tone-${metric.tone ?? "neutral"}${metric.value.length > 14 ? " is-longer" : ""}${missing ? " ifai-term" : ""}`}
+                  className={`metric-widget-value tone-${tone ?? "neutral"}${metric.value.length > 14 ? " is-longer" : ""}${missing ? " ifai-term" : ""}`}
                   {...metricTermAttrs(metric.value, missing)}
                 >
                   {metric.value}
                 </strong>
+                {status ? <StatusMark status={status} /> : null}
                 <span className="metric-widget-detail">{metric.detail}</span>
               </button>
             ) : (
