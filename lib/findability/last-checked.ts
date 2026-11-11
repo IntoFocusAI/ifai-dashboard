@@ -117,3 +117,12 @@ export function weeklyCheckStale(
     effect: `The ${figure} show the last check and may differ from the pages today`,
   };
 }
+
+/** The stale reading (X-25) for the Findability outcome shares; the map's Findability bubble reads it too. */
+export function findabilityStale(rows: readonly FindabilityRow[], now: number = Date.now()): PartialFigure | null {
+  return weeklyCheckStale(
+    newestCheckedAttemptAt(rows),
+    { check: "official-page check", source: "canvas_spec_findability", figure: "outcome shares" },
+    now,
+  );
+}

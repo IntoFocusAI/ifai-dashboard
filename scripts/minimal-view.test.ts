@@ -140,7 +140,8 @@ const findability = {
 function aiReady(): AiSearchRead {
   const snapshots = historyFixtureSnapshots();
   const published = snapshots.find((snapshot) => snapshot.run.is_published) ?? snapshots[snapshots.length - 1];
-  return { phase: "ready", snapshot: published };
+  // Published now, so these figures are current; scripts/map-stale-mark.test.ts covers a stale run.
+  return { phase: "ready", snapshot: { ...published, run: { ...published.run, published_at: new Date().toISOString() } } };
 }
 
 function stockRow(asin: string, lost365: number | null): StockLossRow {

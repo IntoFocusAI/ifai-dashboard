@@ -14,11 +14,11 @@ import {
 } from "@/lib/findability/lead";
 import {
   findabilityLastCheckedSentence,
+  findabilityStale,
   LAST_CHECKED_UNAVAILABLE_DESC,
   LAST_CHECKED_UNAVAILABLE_LABEL,
   LAST_CHECKED_UNAVAILABLE_TITLE,
   newestCheckedAttemptAt,
-  weeklyCheckStale,
 } from "@/lib/findability/last-checked";
 import { toneColor } from "@/lib/fender-canvas/ai-readiness-lead";
 import { OUTCOME_DEFINITION, OUTCOME_LABEL, bucketLabel } from "@/lib/findability/copy";
@@ -174,11 +174,7 @@ export function FindabilityLead({
   }
 
   const buckets = findabilityLeadBuckets(counts);
-  const stale = weeklyCheckStale(newestCheckedAttemptAt(rows), {
-    check: "official-page check",
-    source: "canvas_spec_findability",
-    figure: "outcome shares",
-  });
+  const stale = findabilityStale(rows);
 
   return (
     <div data-findability-lead="">

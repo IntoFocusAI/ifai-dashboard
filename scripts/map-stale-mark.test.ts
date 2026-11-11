@@ -1,0 +1,152 @@
+// node --experimental-strip-types --import ./scripts/register-alias.mjs --import ./scripts/register-ts-extensions.mjs --test scripts/map-stale-mark.test.ts
+// X-25 on the map: a bubble whose figure is past its check schedule carries the asterisk and
+// its tooltip; the AI Search Visibility and Competitive Radar bubbles carry the asterisk only.
+import assert from "node:assert/strict";
+import { test } from "node:test";
+import { historyFixtureSnapshots } from "../lib/ai-search/history-fixtures.ts";
+import type { AiSearchRead } from "../lib/ai-search/types.ts";
+import type { CanvasNode } from "../lib/canvas-sdk/types.ts";
+import type { FindabilityRead } from "../lib/findability/copy.ts";
+import { PARTIAL_TITLE } from "../lib/fender-canvas/canvas-reads.ts";
+import { buildLiveMetrics } from "../lib/fender-canvas/metrics-from-live.ts";
+import { buildMinimalMetrics } from "../lib/fender-canvas/minimal-metrics.ts";
+import { buildLiveNodes } from "../lib/fender-canvas/nodes-from-live.ts";
+import { SPEC_CHECK_JOB } from "../lib/fender-canvas/page-found-checked-at.ts";
+import type { CanvasBundle, CanvasMetricsRow } from "../lib/fender-canvas/types.ts";
+
+const DAY = 86_400_000;
+const daysAgo = (days: number) => new Date(Date.now() - days * DAY).toISOString();
+
+function bundle(specCheckAt: string | null = null): CanvasBundle {
+  return {
+    m: { catalog_skus: 3598, spec_checked: 925, spec_fender_found: 123, spec_fender_found_pct: 13.3 } as CanvasMetricsRow,
+    cats: [],
+    engines: [],
+    sov: [],
+    divisions: [],
+    missing: [],
+    fresh: specCheckAt ? [{ job_key: SPEC_CHECK_JOB, last_run_at: specCheckAt }] : [],
+  } as CanvasBundle;
+}
+
+function findability(checkedAt: string | null): FindabilityRead {
+  const row = (asin: string, state: string) => ({
+    asin,
+    title: asin,
+    category: null,
+    product_kind: null,
+    latest_state: state,
+    latest_canonical_url: `https://brand.example/${asin}`,
+    latest_variant_sku: null,
+    confidence: null,
+    explanation: null,
+    source_method: null,
+    http_status: 200,
+    latest_attempt_at: checkedAt,
+    jsonld_status: "not_checked",
+    counts_as_confirmed: true,
+    counts_as_finished_search: true,
+    counts_as_ambiguous: false,
+    counts_as_unchecked: false,
+    counts_as_completed_not_found: false,
+    counts_as_blocked: false,
+    counts_as_timeout: false,
+    counts_as_parse_failure: false,
+    counts_as_unsupported: false,
+  });
+  return {
+    phase: "ready",
+    dealerBundleLoaded: true,
+    rows: [row("B00EXACT", "exact_official_product"), row("B00FAMILY", "official_family_page")],
+  } as FindabilityRead;
+}
+
+function ai(publishedAt: string): AiSearchRead {
+  const snapshots = historyFixtureSnapshots();
+  const published = snapshots.find((snapshot) => snapshot.run.is_published) ?? snapshots[snapshots.length - 1];
+  return { phase: "ready", snapshot: { ...published, run: { ...published.run, published_at: publishedAt } } };
+}
+
+function nodes(input: { find: FindabilityRead; ai: AiSearchRead; specCheckAt?: string | null }) {
+  const b = bundle(input.specCheckAt ?? null);
+  const list = buildLiveNodes(b, buildLiveMetrics(b), { phase: "loading" }, input.ai, input.find);
+  return { b, list, byId: new Map(list.map((node) => [node.id, node])) };
+}
+
+const node = (byId: Map<string, CanvasNode>, id: string) => {
+  const found = byId.get(id);
+  assert.ok(found, `no ${id} bubble`);
+  return found;
+};
+
+test("a Findability check older than twice its weekly schedule marks the Findability bubble", () => {
+  const { byId } = nodes({ find: findability(daysAgo(30)), ai: ai(daysAgo(1)) });
+  const sat = node(byId, "sat-findability");
+  assert.equal(sat.heroValue?.value, "50.0%*");
+  assert.equal(sat.tooltip.title, PARTIAL_TITLE.stale);
+  assert.match(sat.tooltip.desc, /official-page check runs weekly and has not run since/);
+  assert.match(sat.tooltip.desc, /Source: canvas_spec_findability\./);
+  assert.equal(sat.partialTip, sat.tooltip.desc);
+});
+
+test("a current Findability check leaves the bubble plain", () => {
+  const { byId } = nodes({ find: findability(daysAgo(3)), ai: ai(daysAgo(1)) });
+  const sat = node(byId, "sat-findability");
+  assert.equal(sat.heroValue?.value, "50.0%");
+  assert.equal(sat.tooltip.desc, "");
+  assert.equal(sat.partialTip, undefined);
+});
+
+test("a stale fender.com product check marks the AI Readiness bubble with its tooltip", () => {
+  const stale = nodes({ find: findability(daysAgo(1)), ai: ai(daysAgo(1)), specCheckAt: daysAgo(20) });
+  const bubble = node(stale.byId, "spoke-specs");
+  assert.match(bubble.heroValue?.value ?? "", /^\d+(\.\d)?%\*$/);
+  assert.equal(bubble.tooltip.title, PARTIAL_TITLE.stale);
+  assert.match(bubble.tooltip.desc, /product check runs weekly/);
+
+  const current = nodes({ find: findability(daysAgo(1)), ai: ai(daysAgo(1)), specCheckAt: daysAgo(2) });
+  assert.doesNotMatch(node(current.byId, "spoke-specs").heroValue?.value ?? "", /\*$/);
+});
+
+test("a stale AI Search run marks every AI figure; the two main bubbles get no hover box (PM24-1)", () => {
+  const { byId } = nodes({ find: findability(daysAgo(1)), ai: ai(daysAgo(9)) });
+  for (const id of ["spoke-aeo", "spoke-competitors"]) {
+    const bubble = node(byId, id);
+    assert.match(bubble.heroValue?.value ?? "", /\*$/, `${id} carries the asterisk`);
+    assert.equal(bubble.tooltip.desc, "", `${id} has no hover box`);
+    assert.match(bubble.partialTip ?? "", /No AI Search run has been published in the last 6 days/);
+  }
+  for (const id of ["sat-prompts", "sat-citations", "sat-drift", "sat-taylor", "sat-amps"]) {
+    const sat = node(byId, id);
+    if (!/\d/.test(sat.heroValue?.value ?? "")) continue;
+    assert.match(sat.heroValue?.value ?? "", /\*$/, `${id} carries the asterisk`);
+    assert.equal(sat.tooltip.title, PARTIAL_TITLE.stale, `${id} explains it`);
+  }
+});
+
+test("a current AI Search run leaves the AI bubbles plain", () => {
+  const { byId } = nodes({ find: findability(daysAgo(1)), ai: ai(daysAgo(2)) });
+  for (const id of ["spoke-aeo", "spoke-competitors", "sat-prompts", "sat-taylor"]) {
+    assert.doesNotMatch(node(byId, id).heroValue?.value ?? "", /\*$/, id);
+  }
+});
+
+test("a Minimal slot that reads a stale bubble keeps the asterisk and its tooltip", () => {
+  const { b, list } = nodes({ find: findability(daysAgo(30)), ai: ai(daysAgo(1)) });
+  const metrics = buildLiveMetrics(b);
+  const slots = buildMinimalMetrics(list, {
+    bundle: b,
+    retail: { phase: "loading" },
+    ai: ai(daysAgo(1)),
+    findability: findability(daysAgo(30)),
+    authorizedPartners: null,
+    stockLoss: { phase: "loading" },
+    amazonFieldTotals: null,
+    phaseOne: metrics.phaseOneLift,
+    enterprise: metrics.enterprisePotential,
+  });
+  const slot = slots.find((entry) => entry.id === "sat-findability");
+  assert.ok(slot);
+  assert.equal(slot.value, "50.0%*");
+  assert.match(slot.reading.missing ?? "", /official-page check runs weekly/);
+});

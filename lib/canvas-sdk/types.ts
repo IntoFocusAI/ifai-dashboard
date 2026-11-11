@@ -28,6 +28,12 @@ export type CanvasNode = {
    * bubble has one scored headline value instead of several short facts to list.
    */
   heroValue?: { value: string; label: string };
+  /**
+   * Why the hero figure carries the partial asterisk (X-25): what is missing, the coverage, the
+   * source, the last check, and the effect. Set even on a bubble that shows no hover box, so a
+   * Minimal slot that reads this figure can show it.
+   */
+  partialTip?: string;
   /** Opens this spoke on click. Omit to reset the camera. Set on the hub when it has its own drilldown. */
   spokeId?: string;
   subTab?: string;
