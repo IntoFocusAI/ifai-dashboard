@@ -5,6 +5,7 @@ import { afterEach, test } from "node:test";
 import { classifySource } from "../lib/ai-search/citations.ts";
 import {
   ensureSiteTypes,
+  resetSiteTypeLoadsForTests,
   loadSiteTypes,
   lookupSiteType,
   parseSiteTypeRows,
@@ -23,6 +24,7 @@ import { resetActiveClientForTests } from "../lib/client/active-client.ts";
 
 afterEach(() => {
   setSiteTypes(null);
+  resetSiteTypeLoadsForTests();
   resetActiveClientForTests(null);
 });
 
@@ -138,21 +140,48 @@ test("a stored type wins over the lists, including a staff Other; unlisted domai
   assert.equal(siteTypeNeedsReview("musicradar.com"), false);
 });
 
-test("ensureSiteTypes installs the rows once per client and leaves the lists alone on failure", async () => {
+test("ensureSiteTypes installs the rows once per client key and leaves the lists alone on failure", async () => {
   const ok = fakeView([[row("zzz-example-site.com", "community")]]);
-  await ensureSiteTypes(ok.client, "fmic");
-  await ensureSiteTypes(ok.client, "fmic");
+  await ensureSiteTypes({}, "fmic", ok.client);
+  await ensureSiteTypes({}, "fmic", ok.client);
   assert.equal(ok.asked.filter((v) => v === "canvas_site_types").length, 1);
   assert.equal(classifySource("zzz-example-site.com"), "community");
 
+  resetSiteTypeLoadsForTests();
   const broken = fakeView({ error: "missing" });
-  await ensureSiteTypes(broken.client, "fmic");
+  await ensureSiteTypes({}, "fmic", broken.client);
   assert.equal(classifySource("zzz-example-site.com"), "other");
   assert.equal(classifySource("guitarworld.com"), "editorial");
 
+  resetSiteTypeLoadsForTests();
   const empty = fakeView([[]]);
-  await ensureSiteTypes(empty.client, "fmic");
+  await ensureSiteTypes({}, "fmic", empty.client);
   assert.equal(classifySource("guitarcenter.com"), "retailer");
+});
+
+test("ensureSiteTypes for Ledlenser ignores the brand-schema client and reads through the public client", async () => {
+  process.env.NEXT_PUBLIC_SUPABASE_URL = "http://127.0.0.1:9";
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = "test-key";
+  const urls: string[] = [];
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = (async (input: RequestInfo | URL) => {
+    urls.push(String(input));
+    return new Response(
+      JSON.stringify([{ client_key: "ledlenser", domain: "zzz-led-example.com", site_type: "retailer", source: "ai" }]),
+      { status: 200, headers: { "content-type": "application/json" } },
+    );
+  }) as typeof fetch;
+  try {
+    const brand = fakeView({ error: "404 ledlenser.canvas_site_types" });
+    await ensureSiteTypes(brand.client, "ledlenser");
+    assert.equal(brand.asked.length, 0, "the brand-schema client is never asked");
+    assert.equal(urls.length, 1);
+    assert.match(urls[0]!, /\/rest\/v1\/canvas_site_types\?/);
+    assert.match(urls[0]!, /client_key=eq\.ledlenser/);
+    assert.equal(classifySource("zzz-led-example.com"), "retailer");
+  } finally {
+    globalThis.fetch = realFetch;
+  }
 });
 
 /* Day one: the seed rows in the migration must give the same answer as the lists in code. */
