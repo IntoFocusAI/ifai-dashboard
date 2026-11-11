@@ -472,8 +472,8 @@ function CenteredFace({
     titleSizeOverride ?? (prominent ? 13 : radius >= 74 ? 11.5 : 11);
   const lineH = titleSize + 3;
   const iconY = icon ? -radius * (prominent ? 0.44 : 0.36) : 0;
-  // A selected bubble with a two-line title lifts the title so a two-row hero label clears the ring.
-  const titleStart = icon ? (prominent ? (lines.length > 1 && heroValue ? -2 : 4) : -radius * 0.02) : -lineH * (lines.length / 2);
+  // A two-line title with a hero lifts the title so a two-row hero label at the 11px floor clears the ring.
+  const titleStart = icon ? (prominent ? (lines.length > 1 && heroValue ? -5 : 4) : -radius * 0.02) : -lineH * (lines.length / 2);
   const stackStartY = titleStart + lines.length * lineH + (stats.length || meta || heroValue ? 5 : 0);
 
   return (
