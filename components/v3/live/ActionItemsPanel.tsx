@@ -40,7 +40,7 @@ export function ActionItemsPanel({ read, bundle }: { read: RetailCanvasRead; bun
       <ActionItemsFixTable plan={plan} today={today} />
       {sources.phase === "loading" ? (
         <p className="plan-note" data-fix-sources-loading="">
-          Loading the source actions from the last three published AI Search runs.
+          Loading the source actions and the last 30 days of AI Search answers.
         </p>
       ) : null}
     </div>
