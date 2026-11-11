@@ -174,13 +174,13 @@ export function rivalTableSlide(input: DeckInput, snapshot: AiSearchSnapshot | n
   if (!snapshot) return null;
   const tallies = competitorTallies(snapshot.calls).filter((row) => row.wins > 0);
   if (tallies.length === 0) return null;
-  const shown = tallies.slice(0, 6);
+  const shown = tallies.slice(0, 7);
   return {
     id: "b1",
     kind: "table",
     backstage: true,
     act: "Backstage",
-    headline: `Every rival that led an open answer, by category and engine.`,
+    headline: `The rivals that led open answers, by category and engine.`,
     why: `The full Competitor Wins table behind slide 3.`,
     figures: [],
     table: {

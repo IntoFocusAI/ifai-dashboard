@@ -272,6 +272,7 @@
   vertical-align: top;
   overflow-wrap: anywhere;
 }
+.deck-table td:nth-child(2) { font-family: var(--font-geist-mono), monospace; }
 .deck-table-caption { margin: 14px 0 0; font-size: 15px; color: var(--deck-caption); }
 
 /* Controls */
