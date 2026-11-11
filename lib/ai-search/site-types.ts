@@ -11,6 +11,7 @@
 
 import type { SourceClass } from "@/lib/ai-search/citations";
 import { activeSetAsideClientKey } from "@/lib/set-aside/keys";
+import { getPublicCanvasSupabase } from "@/lib/supabase/canvas-client";
 
 export const SITE_TYPE_VIEW = "canvas_site_types";
 
@@ -133,7 +134,12 @@ export function lookupSiteType(index: SiteTypeIndex, domain: string): SiteTypeRo
 }
 
 let current: SiteTypeIndex | null = null;
-const loads = new WeakMap<object, Promise<void>>();
+const loads = new Map<string, Promise<void>>();
+
+/** Tests only: forget which clients have loaded. */
+export function resetSiteTypeLoadsForTests() {
+  loads.clear();
+}
 
 /** Installs (or clears, with null) the stored types classifySource reads first. */
 export function setSiteTypes(index: SiteTypeIndex | null) {
@@ -158,15 +164,24 @@ export function afterSiteTypes<T>(client: object, read: () => Promise<T>): Promi
 }
 
 /**
- * Loads the stored types once per client object, before any run is read, so every later
- * classifySource call sees them. Safe to await anywhere; it never rejects.
+ * Loads the stored types once per client key, before any run is read, so every later
+ * classifySource call sees them. The view lives in `public`, keyed by client_key, so the read
+ * always uses the public client; the client the caller holds may be bound to a brand schema
+ * (Ledlenser's) where the view does not exist. `readClient` is for tests. Never rejects.
  */
-export function ensureSiteTypes(client: object, clientKey: string = activeSetAsideClientKey()): Promise<void> {
-  const existing = loads.get(client);
+export function ensureSiteTypes(
+  _client: object,
+  clientKey: string = activeSetAsideClientKey(),
+  readClient?: SiteTypeReadClient,
+): Promise<void> {
+  const existing = loads.get(clientKey);
   if (existing) return existing;
-  const pending = loadSiteTypes(client as SiteTypeReadClient, clientKey).then((read) => {
-    setSiteTypes(read.phase === "stored" && read.rows.length ? siteTypeIndex(read.rows) : null);
-  });
-  loads.set(client, pending);
+  const pending = Promise.resolve()
+    .then(() => loadSiteTypes(readClient ?? (getPublicCanvasSupabase() as unknown as SiteTypeReadClient), clientKey))
+    .catch((error): SiteTypeRead => ({ phase: "fallback", reason: String(error) }))
+    .then((read) => {
+      setSiteTypes(read.phase === "stored" && read.rows.length ? siteTypeIndex(read.rows) : null);
+    });
+  loads.set(clientKey, pending);
   return pending;
 }
