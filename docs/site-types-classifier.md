@@ -2,7 +2,9 @@
 
 Spec for the AI job that fills `public.site_type_classifications`. Draft; the table and the read
 view `public.canvas_site_types` come from `supabase/migrations/20261111150000_site_types.sql`
-(not applied; needs Brian's approval). Nothing here runs yet.
+(applied to production 11 Nov 2026, PR 174). The job runs in Toolbelt as "Site type classifier
+(IntoFocus dashboard, decision 21a)" on AEO_Product_Research-FenderTest, daily at 11:40 UTC,
+up to 100 domains a run, skipping a subdomain when its main domain already has a row.
 
 ## What it decides
 
@@ -16,7 +18,7 @@ stored, never recomputed on page load.
 - `domain` (lowercase, no `www.`).
 - The page itself: the fetched home page title, meta description, and the first 1,500 characters
   of visible text. If the home page cannot be fetched, use the cited page URL stored for that
-  domain; if neither loads, send the domain alone and cap confidence at 0.4.
+  domain; if neither loads, skip the domain (no row) and retry on a later run.
 - `client_key` and the client's brand name and own site domains, for client rows only (below).
 
 ## Output (JSON only)
@@ -73,8 +75,7 @@ with the service role, upserting on (domain, client). Staff overrides go to `sit
 
 ## Failures
 
-- Fetch fails or times out (10 seconds): classify on the domain alone with confidence capped at
-  0.4, which lands in Needs review.
+- Fetch fails or times out (10 seconds): no row; the domain is retried on a later run.
 - Model error or invalid JSON: retry once; then write no row. The domain stays unclassified and
   the dashboard uses its in-code lists. The next run tries again.
 - No failure ever changes an existing row or blocks the run's publish.

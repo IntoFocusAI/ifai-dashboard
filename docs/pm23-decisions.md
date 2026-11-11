@@ -255,4 +255,36 @@ closeout of each view. Open items are marked OPEN and are not built.
     built). Follow-ups: Engine Comparison puts engine names on the bar
     rows; MAP Leakage puts the per-retailer list to the right of the
     Discounted retail value card.
+55. 21a site types: an AI job classifies each cited site from its page and
+    stores type and confidence; staff overrides win; confidence under 0.7
+    goes to a staff-only Needs review list; "other" reads Unclassified; no
+    staff override screen before launch. Table applied to production 11 Nov
+    (PR 174, migration site_types); Toolbelt job "Site type classifier
+    (IntoFocus dashboard, decision 21a)" runs daily, up to 100 sites,
+    skipping subdomains whose main domain is classified.
+56. 21c own product pages: urgent when any brand-controlled factor (brand-
+    site page found, completeness when found, machine-readable specs, Amazon
+    attribute completeness, A+) is red or yellow; low priority in Days 61 to
+    90 when all are green but the brand site is cited in under 30% of
+    shopping answers; none when all green and cited 30% or more.
+57. 21d always a focus: weakest engine ("{Brand} is named in N of M answers
+    on {engine}, the lowest of the engines checked.", Days 31 to 60), the 5
+    weakest questions, and the cited sites rising or falling fastest over 3
+    runs. Guardrails: a gap of 10 points or more, and at least 30 answers.
+58. The plan rolls: always a current 90 days, re-dated each refresh, with a
+    client-chosen focus that can shift between segments.
+59. Map bubbles: hero figure plus a 1 to 2 word label; status words only on
+    the tabs (option B). Rail figures stay as they are.
+60. Competitor Wins color is the inverse of the unbranded rule: red above
+    70%, amber 35% to 70%, green below 35%, on the satellite and the tab.
+61. The Roadmap bubble is static for every client: title Roadmap, then
+    30-60-90 in the muted label grey.
+62. Retail stale asterisk uses Watson's recheck intervals (11 Nov), counted
+    per row: Buy Box, Amazon MAP, Splintered Listings 1 day; Walmart 1 day
+    (Ledlenser 2); Musician's Friend 3 days; SmartScout units, Amazon specs,
+    A+ 7 days. Stale is twice the interval. Findability counts rows checked
+    in the last 14 days.
+63. Refer to Brian Watson as "Watson" and Brian Magazu as "Brian" in all
+    messages, docs, and briefs.
+64. PRs 169, 170, 171, 172, and 174 approved and merged on 11 Nov 2026.
 

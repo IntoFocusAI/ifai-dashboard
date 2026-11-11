@@ -55,15 +55,15 @@
 - **Evidence:** Open for which assumptions later.
 - **Open decision:** None. Moved to LATER on 9 Nov 2026 by Brian Magazu: no client-editable assumptions in launch.
 
-**N-04 TARGET** · Launch
+**N-04 CURRENT** · Launch
 
 **Status source:** Explicit
 
-- **Current:** Authored maintenance list.
+- **Current:** Urgent Interventions shows an explicit line when nothing needs action, and the fix list is generated from the findings and decision 21 actions.
 - **Desired:** Always a true maintenance item or explicit empty state.
 - **User value:** The spoke never looks abandoned.
 - **Acceptance:** Empty state copy when no maintenance items.
-- **Evidence:** Not live as generator.
+- **Evidence:** Worker 25.6, pull request 170 (main 0526fab), approved 11 Nov 2026; empty state unit-tested.
 - **Open decision:** None.
 
 **N-05 CURRENT** · Launch
