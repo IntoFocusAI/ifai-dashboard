@@ -14,6 +14,7 @@ import {
 } from "@/lib/findability/lead";
 import {
   findabilityLastCheckedSentence,
+  findabilityLastCheckedTip,
   findabilityStale,
   LAST_CHECKED_UNAVAILABLE_DESC,
   LAST_CHECKED_UNAVAILABLE_LABEL,
@@ -34,13 +35,23 @@ const FINDABILITY_PIE_SIZE = "citation-pie-disc citation-pie-disc-findability";
 function LastCheckedLine({ rows }: { rows: readonly FindabilityRow[] }) {
   const iso = newestCheckedAttemptAt(rows);
   const sentence = findabilityLastCheckedSentence(iso);
+  const tip = findabilityLastCheckedTip(rows);
   return (
     <p
       className="findability-last-checked"
       data-findability-last-checked={iso ?? ""}
     >
       {sentence ? (
-        sentence
+        <span
+          className="ifai-term"
+          data-ifai-tooltip-title={LAST_CHECKED_UNAVAILABLE_TITLE}
+          data-ifai-tooltip-desc={tip}
+          data-findability-last-checked-tip=""
+          tabIndex={0}
+          aria-label={`${sentence} ${tip}`}
+        >
+          {sentence}
+        </span>
       ) : (
         <>
           Last checked{" "}

@@ -16,7 +16,8 @@ import {
   presentAmazonCompletenessFieldShare,
   resolveAmazonFieldTotals,
 } from "@/lib/fender-canvas/ai-readiness-lead";
-import { failedReadTip } from "@/lib/fender-canvas/canvas-reads";
+import { failedReadTip, markPartial, partialFigureTip, type PartialFigure } from "@/lib/fender-canvas/canvas-reads";
+import { findabilityStale } from "@/lib/findability/last-checked";
 import { listingContentHeroes } from "@/lib/fender-canvas/listing-content";
 import { machineReadabilityHeroes } from "@/lib/fender-canvas/machine-readability";
 import { brandSitePageFoundHero } from "@/lib/fender-canvas/page-found-hero";
@@ -47,6 +48,11 @@ function findabilityCounts(ctx: MinimalContext): OutcomeCounts | null {
   return cached(ctx, "findability-counts", () => (ctx.findability.phase === "ready" ? countFindability(ctx.findability.rows) : null));
 }
 
+/** X-25: the official-page rows not checked in the last 14 days, shared by every Findability tile. */
+function findabilityPartial(ctx: MinimalContext): PartialFigure | null {
+  return cached(ctx, "findability-stale", () => (ctx.findability.phase === "ready" ? findabilityStale(ctx.findability.rows) : null));
+}
+
 /** One Findability outcome hero: its share of the read, N of M, and its disc. */
 function outcomeEntry(bucket: Exclude<FindabilityBucket, "exact_official_product">): MinimalEntry {
   return {
@@ -62,13 +68,14 @@ function outcomeEntry(bucket: Exclude<FindabilityBucket, "exact_official_product
       const share = outcomeShareFigure(counts, bucket);
       const ratio = outcomeRatioFigure(counts, bucket);
       if (!share || !ratio) return missingFigure("This official-page read has no listings.");
+      const partial = findabilityPartial(ctx);
       return {
-        value: share,
+        value: markPartial(share, partial),
         tone: outcomeShareTone(counts, bucket) ?? "neutral",
         ratio: `${ratio} ${LISTINGS_IN_READ}`,
         pie: outcomeLeadPie(counts, bucket),
         tip: outcomeLeadTip(counts, bucket),
-        missing: null,
+        missing: partial ? partialFigureTip(partial) : null,
       };
     },
   };

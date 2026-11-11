@@ -29,8 +29,9 @@ function bundle(specCheckAt: string | null = null): CanvasBundle {
   } as CanvasBundle;
 }
 
-function findability(checkedAt: string | null): FindabilityRead {
-  const row = (asin: string, state: string) => ({
+/** Two official-page rows; the second row's check time defaults to the first's. */
+function findability(checkedAt: string | null, familyCheckedAt: string | null = checkedAt): FindabilityRead {
+  const row = (asin: string, state: string, at: string | null) => ({
     asin,
     title: asin,
     category: null,
@@ -42,7 +43,7 @@ function findability(checkedAt: string | null): FindabilityRead {
     explanation: null,
     source_method: null,
     http_status: 200,
-    latest_attempt_at: checkedAt,
+    latest_attempt_at: at,
     jsonld_status: "not_checked",
     counts_as_confirmed: true,
     counts_as_finished_search: true,
@@ -57,7 +58,7 @@ function findability(checkedAt: string | null): FindabilityRead {
   return {
     phase: "ready",
     dealerBundleLoaded: true,
-    rows: [row("B00EXACT", "exact_official_product"), row("B00FAMILY", "official_family_page")],
+    rows: [row("B00EXACT", "exact_official_product", checkedAt), row("B00FAMILY", "official_family_page", familyCheckedAt)],
   } as FindabilityRead;
 }
 
@@ -83,10 +84,24 @@ test("a Findability check older than twice its weekly schedule marks the Findabi
   const { byId } = nodes({ find: findability(daysAgo(30)), ai: ai(daysAgo(1)) });
   const sat = node(byId, "sat-findability");
   assert.equal(sat.heroValue?.value, "50.0%*");
-  assert.equal(sat.tooltip.title, PARTIAL_TITLE.stale);
-  assert.match(sat.tooltip.desc, /official-page check runs weekly and has not run since/);
+  assert.equal(sat.tooltip.title, PARTIAL_TITLE.coverage);
+  assert.match(sat.tooltip.desc, /^2 listings have no official-page check in the last 14 days\./);
+  assert.match(sat.tooltip.desc, /Covers 0 of 2 listings checked in the last 14 days\./);
   assert.match(sat.tooltip.desc, /Source: canvas_spec_findability\./);
   assert.equal(sat.partialTip, sat.tooltip.desc);
+});
+
+test("a fresh newest check does not clear the asterisk while another listing is older than 14 days", () => {
+  const { byId } = nodes({ find: findability(daysAgo(0), daysAgo(30)), ai: ai(daysAgo(1)) });
+  const sat = node(byId, "sat-findability");
+  assert.equal(sat.heroValue?.value, "50.0%*");
+  assert.match(sat.tooltip.desc, /^1 listing has no official-page check in the last 14 days\./);
+  assert.match(sat.tooltip.desc, /Covers 1 of 2 listings checked in the last 14 days\./);
+});
+
+test("a listing with no stored check time counts as not checked in the window", () => {
+  const { byId } = nodes({ find: findability(daysAgo(1), null), ai: ai(daysAgo(1)) });
+  assert.equal(node(byId, "sat-findability").heroValue?.value, "50.0%*");
 });
 
 test("a current Findability check leaves the bubble plain", () => {
@@ -148,5 +163,9 @@ test("a Minimal slot that reads a stale bubble keeps the asterisk and its toolti
   const slot = slots.find((entry) => entry.id === "sat-findability");
   assert.ok(slot);
   assert.equal(slot.value, "50.0%*");
-  assert.match(slot.reading.missing ?? "", /official-page check runs weekly/);
+  assert.match(slot.reading.missing ?? "", /0 of 2 listings checked in the last 14 days/);
+  const family = slots.find((entry) => entry.id === "findability-official-family-page");
+  assert.ok(family);
+  assert.equal(family.value, "50.0%*", "a Findability tile that is not a bubble carries the asterisk too");
+  assert.match(family.reading.missing ?? "", /0 of 2 listings checked in the last 14 days/);
 });
