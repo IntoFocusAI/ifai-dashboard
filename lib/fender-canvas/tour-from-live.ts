@@ -205,7 +205,7 @@ export function buildLiveTourSteps(
       subtitle: "What happens at 30, 60, and 90 days",
       category: "ROADMAP",
       displays: [...retailLines, ...aiLines.rates],
-      value: "Follow the Roadmap on its 30-60-90 Days tab, starting from the current retail headline.",
+      value: "Follow the Roadmap on its 30-60-90 Days tab.",
     },
   ].map(frameTourStep);
 }
