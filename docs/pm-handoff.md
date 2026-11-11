@@ -153,7 +153,8 @@ date-pill window with the tab's lead rule (decision 40, FDD C-03). Do not
 pill is the only period label. Cited pages are associations. Dollar figures
 stay analyst estimates, and their formulas stay parked. The client portal
 says nothing about IntoFocus fees. Do not build delegation or paid tiers.
-Let the data speak: caveats go in tooltips. Custom tooltips only. Database
+Let the data speak: caveats go in tooltips. Call Brian Watson "Watson" and
+Brian Magazu "Brian" (decision 63). Custom tooltips only. Database
 changes follow "Database changes" in AGENTS.md. Merge only pull requests
 Brian approves.
 
