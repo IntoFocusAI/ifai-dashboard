@@ -183,6 +183,17 @@ test("Amazon Specs shows Amazon completeness only, with no fender.com page-found
   await expect(catalog.getByRole("columnheader", { name: "Missing Amazon fields" })).toHaveCount(1);
 });
 
+test("Amazon Specs names how its required fields were chosen, with no placeholder (D-05)", async ({ page }) => {
+  await mockCanvasRead(page);
+  await openAmazonSpecs(page);
+
+  const line = page.locator("[data-amazon-specs-required-list='fill-rate']");
+  await expect(line).toContainText("Required fields: top 10 by fill rate in");
+  const category = line.locator("[data-amazon-specs-required-category]").first();
+  await expect(category).toHaveAttribute("data-ifai-tooltip-desc", /filled most often across the \d+ checked/);
+  await expect(page.locator("[data-amazon-specs-lead]")).not.toContainText(/placeholder/i);
+});
+
 test("Amazon Specs puts Top missing fields beside the completeness hero", async ({ page }) => {
   await mockCanvasRead(page);
   await openAmazonSpecs(page);

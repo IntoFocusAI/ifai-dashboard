@@ -117,9 +117,9 @@ export function requiredSpecListsByCategory(
     .sort((a, b) => b.listings - a.listings || a.category.localeCompare(b.category));
 }
 
-/** "Solid Body, 2,900 listings" (one listing reads "1 listing"). */
+/** "Solid Body (847 listings)"; one listing reads "1 listing". */
 export function categoryListingLabel(list: CategoryRequiredList): string {
-  return `${list.category}, ${formatInt(list.listings)} ${list.listings === 1 ? "listing" : "listings"}`;
+  return `${list.category} (${formatInt(list.listings)} ${list.listings === 1 ? "listing" : "listings"})`;
 }
 
 /** Tooltip body: every field on the category's list with its fill rate. */

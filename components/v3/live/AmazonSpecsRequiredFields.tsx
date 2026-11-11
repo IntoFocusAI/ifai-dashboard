@@ -43,7 +43,8 @@ export function AmazonSpecsRequiredFields({ read }: { read: AmazonSpecRowsRead }
   const lists = useMemo(() => (rows ? requiredSpecListsByCategory(rows) : []), [rows]);
   if (lists.length === 0) return null;
 
-  const shown = open ? lists : lists.slice(0, SHOWN_CATEGORIES);
+  // One hidden category is named, not folded.
+  const shown = open || lists.length <= SHOWN_CATEGORIES + 1 ? lists : lists.slice(0, SHOWN_CATEGORIES);
   const hidden = lists.length - shown.length;
   const lead =
     lists.length === 1

@@ -40,15 +40,18 @@ import { isWindowHistoryKind } from "@/lib/ai-search/window-display";
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
 import { brandName, leadBrand } from "@/lib/brand-copy";
 
+/* Text columns wrap inside their widths, so the table fits a 1280 px panel. */
+const SIM_WRAP_COLUMNS = ["prompt", "outcome", "model", "category", "fact", "checked"] as const;
+
 const SIM_COLUMNS = [
-  clientColumn("prompt", "Prompt", "text", 280, 160),
-  clientColumn("outcome", "Outcome", "text", 220, 140),
-  clientColumn("engine", "Engine", "text", 120, 90),
-  clientColumn("model", "Model", "text", 150, 100),
-  clientColumn("category", "Category", "text", 160, 110),
-  clientColumn("fact", "Fact check", "text", 180, 120),
-  clientColumn("cited", "Cited links", "number", 110, 90),
-  clientColumn("checked", "Checked", "date", 180, 130),
+  clientColumn("prompt", "Prompt", "text", 260, 150),
+  clientColumn("outcome", "Outcome", "text", 130, 110),
+  clientColumn("engine", "Engine", "text", 90, 80),
+  clientColumn("model", "Model", "text", 100, 90),
+  clientColumn("category", "Category", "text", 100, 90),
+  clientColumn("fact", "Fact check", "text", 100, 90),
+  clientColumn("cited", "Cited links", "number", 80, 72),
+  clientColumn("checked", "Checked", "date", 110, 100),
 ];
 
 function simulationSortValue(row: AiCallRow, columnId: string, cited: number): SortInput {
@@ -164,6 +167,7 @@ function Explorer({ snapshot }: { snapshot: AiSearchSnapshot }) {
           <ResizableTable
             tableId="ai-simulations"
             columns={SIM_COLUMNS}
+            wrapColumnIds={SIM_WRAP_COLUMNS}
             freezeHeader
             maxHeight={520}
             sort={sorted.sort}

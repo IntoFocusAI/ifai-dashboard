@@ -14,6 +14,7 @@ import {
 import { specPagesStale, type SpecPageSummary } from "../lib/fender-canvas/machine-readability.ts";
 import { amazonFieldLabel } from "../lib/fender-canvas/spec-missing-fields.ts";
 import { WEEKLY_CHECK_DAYS, weeklyCheckStale } from "../lib/findability/last-checked.ts";
+import { findabilityExportColumns } from "../lib/findability/findability-export.ts";
 import { outcomeShareTone } from "../lib/findability/lead.ts";
 import {
   categoryListingLabel,
@@ -153,8 +154,8 @@ test("Amazon Specs required fields are each category's top 10 by fill rate, with
   assert.equal(requiredSpecListsByCategory([{ category: "X", amazon_spec_values: { a: " " } }])[0].fields.length, 0);
   const many = requiredSpecListsByCategory([row("Big", fields)]);
   assert.equal(many[0].fields.length, 10);
-  assert.equal(categoryListingLabel(headlamps), "Headlamps, 3 listings");
-  assert.equal(categoryListingLabel(lists[1]), "Lanterns, 1 listing");
+  assert.equal(categoryListingLabel(headlamps), "Headlamps (3 listings)");
+  assert.equal(categoryListingLabel(lists[1]), "Lanterns (1 listing)");
   assert.match(categoryRequiredTooltip(headlamps), /^The 4 spec fields filled most often across the 3 checked Headlamps listings/);
   assert.match(categoryRequiredTooltip(headlamps), /L 100\.0% \(3 of 3\)/);
   assert.equal(amazonFieldLabel("scale_length"), "Scale length");
@@ -193,4 +194,15 @@ test("the three AI Readiness tables with their own sort handler pass the toolbar
     assert.match(source, /controls=\{sorted\.controls\}/, path);
     assert.match(source, /total=\{sorted\.rows\.length\}/, path);
   }
+});
+
+test("the Findability CSV keeps the on-screen columns for each outcome (X-10)", () => {
+  const table = read("components/v3/live/findability/FindabilityTable.tsx");
+  for (const outcome of ["exact_official_product", "not_checked"] as const) {
+    for (const [id, name] of findabilityExportColumns(outcome)) {
+      if (id === "bundle") continue;
+      assert.match(table, new RegExp(`clientColumn\\("${id}", "${name}"`));
+    }
+  }
+  assert.match(table, /exportScope=\{exportScope\}/);
 });
