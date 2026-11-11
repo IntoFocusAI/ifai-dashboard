@@ -11,15 +11,15 @@
 - **Evidence:** Approved by Brian Magazu on 29 Oct 2026. Pull request 86, commit ed72d84. Published on main at d91bffa. Worker 21.5, pull request 122 (main 9e83004), approved by Brian Magazu on 4 Nov 2026.
 - **Open decision:** None.
 
-**S-02 REFINE** · Launch
+**S-02 CURRENT** · Launch
 
 **Status source:** Explicit
 
-- **Current:** The 30-60-90 Days tab shows IntoFocus's recommended plan: the five current findings, then dated actions in Days 1 to 30, 31 to 60, and 61 to 90 built from decision 21 (worker 25.6). Rolling re-dating, the 21c own-page rule, and the 21d always-a-focus items are being built (worker 25.16).
+- **Current:** The 30-60-90 Days tab shows IntoFocus's recommended plan: the five current findings, then dated actions in Days 1 to 30, 31 to 60, and 61 to 90 built from decision 21 (worker 25.6). The plan rolls: phases re-date from today on every refresh. It adds the 21c own-page rule and the 21d always-a-focus items (weakest engine, five weakest questions, moving sites) counted over the last 30 days, with priority and Watch tiers (decisions 56, 57, 65 to 67).
 - **Desired:** If retained: dated phases that roll forward from finding ids; open-details explains in place (ADD-19). Brian Magazu, 4 Nov 2026: the roadmap should lay out an intelligent plan of activity that influences the opportunities the dashboard presents.
 - **User value:** The plan stays current.
 - **Acceptance:** Details do not jump to an unrelated bubble.
-- **Evidence:** The example cards were removed with S-01 on 29 Oct 2026, pull request 86, commit ed72d84, published on main at d91bffa. Worker 25.6, pull requests 170 and 171 (main 4d82415), approved 11 Nov 2026: the dated plan from decision 21. Stays REFINE until the rolling plan (decision 58) lands.
+- **Evidence:** The example cards were removed with S-01 on 29 Oct 2026, pull request 86, commit ed72d84, published on main at d91bffa. Worker 25.6, pull requests 170 and 171 (main 4d82415), approved 11 Nov 2026: the dated plan from decision 21. Workers 25.16 and 25.19, pull request 176 (main ca9f5fc), approved 11 Nov 2026: rolling plan, 21c and 21d for Fender and Ledlenser.
 - **Open decision:** None.
 
 **S-03 CURRENT** · Launch
