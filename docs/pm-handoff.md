@@ -172,7 +172,7 @@ if this block is stale.
 
 - PM25 is the last PM; the next is PM26. Workers 25.1 to 25.20 are merged
   (PRs 164 to 178). Docs at 25.20. Launch rows CURRENT: 64 of 93.
-- Decisions 1 to 72 are in docs/pm23-decisions.md; 44 to 72 are PM25's.
+- Decisions 1 to 73 are in docs/pm23-decisions.md; 44 to 73 are PM25's.
 - Held by Brian: X-15, X-16, R-19 until the rest of launch; A-02, A-04,
   A-06, A-07, R-06, R-11, N-07, LATER rows, dollar formulas (R-06 includes
   "zero sales vs awaiting inputs", decision 70).
@@ -186,14 +186,10 @@ if this block is stale.
   the empty "Other retailers" channel read (decision 73).
 - Also waiting on Watson: the Ledlenser set-aside form error; AI Search
   read speed (HTTP 500s under load); PR 110 wording (metric-destinations).
-- After about 15 Nov: verify Watson's Findability first pass, then propose
-  D-02 and D-09 CURRENT; Findability figures may shift.
-- Site-type classifier runs daily in Toolbelt (decision 55); check the
-  needs-review list and the first runs. Backlog about 974 Fender, 591
-  Ledlenser sites at 100 a day.
+- After ~15 Nov: verify Watson's Findability pass; propose D-02, D-09.
+- Site-type classifier runs daily in Toolbelt (decision 55): check first
+  runs and needs-review; backlog ~974 Fender, ~591 Ledlenser at 100 a day.
 - Open REFINE work: X-25 (Splintered asterisk), X-10/X-33 CSV gaps (fix
   list has no CSV), X-18/X-27/X-34 adoption, H-07 (needs SC-03).
-- Known: overflow-1280 aeo tables scroll inside panels (AI Search follow-up);
-  three files over 400 lines (PortalView, CanvasShell, GraphPrimitives).
-- Cost: PM25 spent roughly $600 API-equivalent, PM context included (an
-  estimate; the seat window was not visible). Workers do not subscribe the PM to PR activity.
+- Known: AI Search tables scroll inside panels at 1280; 3 TSX files over
+  400 lines. PM25 cost about $600 (estimate). Do not subscribe to worker PRs.
