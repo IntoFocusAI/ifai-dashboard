@@ -1,0 +1,207 @@
+/**
+ * The plan Action Items and the Roadmap share (decision 21, FDD S-02, N-01, N-04).
+ *
+ * Order (21f): the five findings keep the fix-list order, then the ecommerce signals, then the
+ * source, competitor, and fact-check actions by the share of answers they affect.
+ * Phases (21g): Days 1 to 30 listing fixes, 31 to 60 catalog and site content, 61 to 90
+ * outreach programs. The plan is rebuilt from each read, so an action leaves when its trigger
+ * drops below its threshold (21h).
+ */
+
+import type { NodeStatus } from "@/lib/canvas-sdk/types";
+import { rankFixList, type FixListRow } from "@/lib/fender-canvas/action-items-fix-list";
+import type { BriefingFinding, BriefingFindingId } from "@/lib/fender-canvas/briefing-retail-lead";
+import type { PartialFigure } from "@/lib/fender-canvas/canvas-reads";
+import { formatPct, formatRatio } from "@/lib/fender-canvas/format";
+import {
+  SITE_TYPE_LABELS,
+  type CitedPage,
+  type SiteType,
+  type SourceAction,
+} from "@/lib/fender-canvas/roadmap-sources";
+import type { SignalAction } from "@/lib/fender-canvas/roadmap-signals";
+import { findingAction, hasStoredReading } from "@/lib/fender-canvas/urgent-interventions-rows";
+
+export type PlanPhase = "days_1_30" | "days_31_60" | "days_61_90";
+
+export const PLAN_PHASES: ReadonlyArray<{ id: PlanPhase; label: string; focus: string }> = [
+  { id: "days_1_30", label: "Days 1 to 30", focus: "Listing fixes" },
+  { id: "days_31_60", label: "Days 31 to 60", focus: "Catalog and site content" },
+  { id: "days_61_90", label: "Days 61 to 90", focus: "Outreach programs" },
+];
+
+/** Shown where an item has no dated phase: unbranded discovery moves with the fixes before it. */
+export const ALL_PHASES_LABEL = "All phases";
+
+const FINDING_PHASE: Record<BriefingFindingId, PlanPhase | null> = {
+  buy_box: "days_1_30",
+  map_leakage: "days_1_30",
+  splintered_bundles: "days_1_30",
+  exact_official_product: "days_31_60",
+  unbranded_discovery: null,
+};
+
+const SOURCE_PHASE: Partial<Record<SiteType, PlanPhase>> = {
+  retailer: "days_1_30",
+  competitor_brand: "days_31_60",
+  reference: "days_31_60",
+  publication: "days_61_90",
+  community: "days_61_90",
+  video: "days_61_90",
+};
+
+const SIGNAL_PHASE: Record<string, PlanPhase> = {
+  "signal:out_of_stock": "days_1_30",
+  "signal:missing_specs": "days_31_60",
+  "signal:fact_contradictions": "days_31_60",
+};
+
+export type PlanKind = "finding" | "signal" | "source";
+
+export type PlanItem = {
+  id: string;
+  kind: PlanKind;
+  rank: number;
+  phase: PlanPhase | null;
+  label: string;
+  /** The figure, as its home tab shows it. */
+  percent: string;
+  ratio: string | null;
+  /** Status tone for a finding; null for a signal or source action, which carry no grade. */
+  tone: Exclude<NodeStatus, "neutral"> | null;
+  statusLabel: string;
+  fact: string;
+  action: string;
+  /** Critical or at risk, or a signal or source over its threshold. */
+  needsAction: boolean;
+  /** A finding whose reading is not stored. */
+  noReading: boolean;
+  loading: boolean;
+  partial: PartialFigure | null;
+  open: { spokeId: string; tab: string };
+  siteType: string | null;
+  pages: CitedPage[];
+};
+
+export const RECOMMENDED_LABEL = "Recommended";
+
+function findingItem(row: FixListRow): PlanItem {
+  const { finding } = row;
+  return {
+    id: `finding:${finding.id}`,
+    kind: "finding",
+    rank: row.rank,
+    phase: FINDING_PHASE[finding.id],
+    label: finding.label,
+    percent: finding.percent,
+    ratio: finding.ratio,
+    tone: row.status === "no_reading" ? null : finding.tone,
+    statusLabel: row.statusLabel,
+    fact: finding.explainer,
+    action: finding.loading ? "Loading the reading." : row.action,
+    needsAction: row.status === "critical" || row.status === "at_risk",
+    noReading: row.status === "no_reading",
+    loading: finding.loading,
+    partial: finding.partial,
+    open: { spokeId: finding.spokeId, tab: finding.tab },
+    siteType: null,
+    pages: [],
+  };
+}
+
+function signalItem(signal: SignalAction): PlanItem {
+  const rival = signal.id.startsWith("signal:rival:");
+  return {
+    id: signal.id,
+    kind: "signal",
+    rank: 0,
+    phase: rival ? "days_31_60" : (SIGNAL_PHASE[signal.id] ?? null),
+    label: signal.label,
+    percent: formatPct(100 * (signal.denominator ? signal.numerator / signal.denominator : signal.share)),
+    ratio: signal.denominator != null ? formatRatio(signal.numerator, signal.denominator) : null,
+    tone: null,
+    statusLabel: RECOMMENDED_LABEL,
+    fact: signal.fact,
+    action: signal.action,
+    needsAction: true,
+    noReading: false,
+    loading: false,
+    partial: signal.partial,
+    open: signal.open,
+    siteType: null,
+    pages: [],
+  };
+}
+
+function sourceItem(source: SourceAction): PlanItem {
+  return {
+    id: `source:${source.domain}`,
+    kind: "source",
+    rank: 0,
+    phase: SOURCE_PHASE[source.type] ?? null,
+    label: source.domain,
+    percent: formatPct(100 * source.share),
+    ratio: formatRatio(source.answers, source.answersWithSources),
+    tone: null,
+    statusLabel: RECOMMENDED_LABEL,
+    fact: source.fact,
+    action: source.action,
+    needsAction: true,
+    noReading: false,
+    loading: false,
+    partial: null,
+    open: { spokeId: "aeo", tab: "Citation Ecosystem" },
+    siteType: SITE_TYPE_LABELS[source.type],
+    pages: source.pages,
+  };
+}
+
+/** The five findings as the fix list ranks them, with their action lines. */
+export function rankedFindings(findings: readonly BriefingFinding[]): FixListRow[] {
+  return rankFixList(
+    findings.map((finding) => ({ finding, action: findingAction(finding), stored: hasStoredReading(finding) })),
+  );
+}
+
+export type PlanInput = {
+  findings: readonly BriefingFinding[];
+  signals: readonly SignalAction[];
+  sources: readonly SourceAction[];
+};
+
+/** Every item in Action Items order, ranked 1 to N. */
+export function buildPlan(input: PlanInput): PlanItem[] {
+  const findings = rankedFindings(input.findings).map(findingItem);
+  const ecommerce = input.signals.filter((signal) => signal.group === "ecommerce").map(signalItem);
+  const shares = new Map<string, number>();
+  const answers = [
+    ...input.signals.filter((signal) => signal.group === "answers").map((signal) => {
+      shares.set(signal.id, signal.share);
+      return signalItem(signal);
+    }),
+    ...input.sources.map((source) => {
+      shares.set(`source:${source.domain}`, source.share);
+      return sourceItem(source);
+    }),
+  ].sort((a, b) => (shares.get(b.id) ?? 0) - (shares.get(a.id) ?? 0) || a.label.localeCompare(b.label));
+  return [...findings, ...ecommerce, ...answers].map((item, index) => ({ ...item, rank: index + 1 }));
+}
+
+/** Items in one phase, in plan order: those that need action, then findings with no reading. */
+export function phaseItems(plan: readonly PlanItem[], phase: PlanPhase): PlanItem[] {
+  return plan.filter((item) => item.phase === phase && (item.needsAction || item.noReading));
+}
+
+export function phaseLabel(phase: PlanPhase | null): string {
+  return PLAN_PHASES.find((entry) => entry.id === phase)?.label ?? ALL_PHASES_LABEL;
+}
+
+/** N-04: the plain sentence when nothing needs action. Null when something does. */
+export function emptyPlanLine(plan: readonly PlanItem[]): string | null {
+  if (plan.some((item) => item.needsAction || item.loading)) return null;
+  const unread = plan.filter((item) => item.noReading).length;
+  if (unread > 0) {
+    return `No finding with a stored reading needs action. ${unread} of ${plan.filter((item) => item.kind === "finding").length} readings are not stored.`;
+  }
+  return "Nothing needs action now. Every current finding is on track, and no other action meets its threshold.";
+}
