@@ -39,7 +39,8 @@ test("the AI Search bubble adds the Nov 2 API run and matches AI Search on All f
 
   // 3 of 4 search leads plus 2 of 4 API leads (repeats 1 to 3). The smoke test is left out.
   const bubble = canvas.bubble("spoke-aeo");
-  await expect(bubble.locator(".node-hero-value")).toHaveText("62.5%");
+  // The mocked run is past its check schedule, so the bubble carries the stale asterisk (X-25).
+  await expect(bubble.locator(".node-hero-value")).toHaveText(/^62\.5%\*?$/);
   await bubble.hover({ force: true });
   await canvas.bubble("spoke-competitors").hover({ force: true });
   await page.waitForTimeout(400);
@@ -58,7 +59,7 @@ test("with the API reads off the bubble shows the published run alone", async ({
   await canvas.open();
 
   const bubble = canvas.bubble("spoke-aeo");
-  await expect(bubble.locator(".node-hero-value")).toHaveText("75.0%");
+  await expect(bubble.locator(".node-hero-value")).toHaveText(/^75\.0%\*?$/);
   await bubble.hover({ force: true });
   await page.waitForTimeout(400);
   await expect(page.locator(".node-tooltip", { hasText: "Includes API engines" })).toHaveCount(0);
@@ -70,7 +71,7 @@ test("with the API views missing the bubble shows the published run alone", asyn
   await canvas.open();
 
   const bubble = canvas.bubble("spoke-aeo");
-  await expect(bubble.locator(".node-hero-value")).toHaveText("75.0%");
+  await expect(bubble.locator(".node-hero-value")).toHaveText(/^75\.0%\*?$/);
   await bubble.hover({ force: true });
   await page.waitForTimeout(400);
   await expect(page.locator(".node-tooltip", { hasText: "Includes API engines" })).toHaveCount(0);

@@ -84,8 +84,9 @@
  * Fitted tables: every Catalog Health table fits the panel at 1280 wide with no side scroll.
  * Cells are tighter, header tags sit under their label, and prices stack over their gap.
  */
+/* The right padding clears the 8px resize handle; the 11px header tags (X-31) need the rest. */
 .ifai-canvas .resizable-table.retail-fit th {
-  padding: 8px 12px 8px 6px;
+  padding: 8px 8px 8px 6px;
 }
 
 .ifai-canvas .resizable-table.retail-fit td {
@@ -109,9 +110,9 @@
   white-space: normal;
   border-radius: 8px;
   font-size: 11px;
-  letter-spacing: 0.02em;
+  letter-spacing: 0;
   line-height: 1.3;
-  padding: 1px 5px;
+  padding: 1px 3px;
 }
 
 .ifai-canvas .retail-fit td.channel-fact,
