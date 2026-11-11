@@ -4454,12 +4454,9 @@
       pointer-events: auto;
     }
 
-    /* Keep the left bubbles clear of the slot column on a laptop-width map. */
-    @media (max-width: 1500px) {
-      .ifai-canvas.panel-hidden:has(.hub-slots) .viewport-container {
-        left: 302px;
-      }
-    }
+    /* The slot column overlays the map; the map keeps its size (0.72 at 1280x720) so bubble text
+       stays at 11px or more, and the hover slide (useHoverFraming) moves the hovered group clear
+       of the column. */
 
     .hub-slot-source {
       margin: 0;

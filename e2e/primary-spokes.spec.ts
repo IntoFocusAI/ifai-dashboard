@@ -61,13 +61,13 @@ test.describe("primary spoke map", () => {
       const roadmap = page.locator('[data-graph-node-id="spoke-roadmap"]');
       await expect(roadmap.locator(".node-meta")).toHaveCount(0);
       // A live count, never the fixed "90 Days / 3 phases" plan.
-      await expect(roadmap.locator(".node-hero-label")).toContainText(/findings\s*need\s*action/i);
-      await expect(roadmap.locator(".node-hero-value")).toHaveText(/^(\d+ of \d+\*?|Loading|Not available\*)$/);
+      await expect(roadmap.locator(".node-hero-label")).toContainText(/need\s*action/i);
+      await expect(roadmap.locator(".node-hero-value")).toHaveText(/^(\d+\.\d%\*?|Loading|Not available\*)$/);
       await expect(roadmap.locator(".node-stat-pill")).toHaveCount(0);
 
       const readiness = page.locator('[data-graph-node-id="spoke-specs"]');
       await expect(readiness.locator(".node-meta")).toHaveCount(0);
-      await expect(readiness.locator(".node-hero-label")).toContainText(/fender\.com page found/i);
+      await expect(readiness.locator(".node-hero-label")).toContainText(/Page found/i);
       await expect(readiness).not.toContainText("no page");
       await expect(readiness).not.toContainText("ambiguous");
       await expect(readiness).not.toContainText("unchecked");

@@ -42,6 +42,11 @@ type MetricsMap = ReturnType<typeof buildLiveMetrics>;
 
 const EMPTY_TOOLTIP = { title: "", desc: "" } as const;
 
+/* Bubble labels stay one or two words so they render at 11px or more at 1280x720. The tab
+   behind each bubble carries the full name. */
+const FINDABILITY_BUBBLE_LABEL = "Exact page";
+const READINESS_BUBBLE_LABEL = "Page found";
+
 /** The hover box on a Not available* face: which read failed and what that leaves out. */
 function failedReadTooltip(failure: CanvasReadFailure) {
   return { title: PARTIAL_TITLE["read-failed"], desc: partialFigureTip(readFailedPartial(failure)) };
@@ -86,7 +91,7 @@ function findabilitySatellite(findability: FindabilityRead): Pick<
       status: "neutral",
       title: "Findability",
       stats: ["Loading"],
-      heroValue: { value: "Loading", label: "exact official product page" },
+      heroValue: { value: "Loading", label: FINDABILITY_BUBBLE_LABEL },
       subTab: "Findability",
       tooltip: { ...EMPTY_TOOLTIP },
     };
@@ -96,7 +101,7 @@ function findabilitySatellite(findability: FindabilityRead): Pick<
       status: "neutral",
       title: "Findability",
       stats: [READ_NOT_AVAILABLE],
-      heroValue: { value: READ_NOT_AVAILABLE, label: "exact official product page" },
+      heroValue: { value: READ_NOT_AVAILABLE, label: FINDABILITY_BUBBLE_LABEL },
       subTab: "Findability",
       tooltip: failedReadTooltip({
         key: "specPages",
@@ -112,7 +117,7 @@ function findabilitySatellite(findability: FindabilityRead): Pick<
       status: "neutral",
       title: "Findability",
       stats: ["No listings"],
-      heroValue: { value: "No listings", label: "exact official product page" },
+      heroValue: { value: "No listings", label: FINDABILITY_BUBBLE_LABEL },
       subTab: "Findability",
       tooltip: { ...EMPTY_TOOLTIP },
     };
@@ -134,7 +139,7 @@ function findabilitySatellite(findability: FindabilityRead): Pick<
       `${formatInt(counts.exact_official_product)} of ${formatInt(counts.total)} exact`,
     ],
     meta: "Official-page outcomes",
-    heroValue: { value, label: "exact official product page" },
+    heroValue: { value, label: FINDABILITY_BUBBLE_LABEL },
     subTab: "Findability",
     tooltip: { ...EMPTY_TOOLTIP },
   };
@@ -157,7 +162,7 @@ function machineReadabilityFace(counts: SpecPageCounts | null, failure: CanvasRe
       status: "neutral",
       title: "Brand-Site Specs",
       stats: [READ_NOT_AVAILABLE],
-      heroValue: { value: READ_NOT_AVAILABLE, label: "missing machine-readable specs" },
+      heroValue: { value: READ_NOT_AVAILABLE, label: "Specs missing" },
       subTab: "Brand-Site Specs",
       tooltip: failure
         ? failedReadTooltip(failure)
@@ -169,7 +174,7 @@ function machineReadabilityFace(counts: SpecPageCounts | null, failure: CanvasRe
     status: counts.missingSpecBlock === 0 ? "success" : "danger",
     title: "Brand-Site Specs",
     stats: [`${formatInt(counts.missingSpecBlock)} of ${formatInt(counts.pages)} pages`],
-    heroValue: { value: formatPct(missingPct), label: "missing machine-readable specs" },
+    heroValue: { value: formatPct(missingPct), label: "Specs missing" },
     subTab: "Brand-Site Specs",
     tooltip: { ...EMPTY_TOOLTIP },
   };
@@ -182,7 +187,7 @@ function aplusFace(counts: BulletCounts | null, failure: CanvasReadFailure | und
       status: "neutral",
       title: "Amazon A+ Matrix",
       stats: [READ_NOT_AVAILABLE],
-      heroValue: { value: READ_NOT_AVAILABLE, label: "Five bullets filled" },
+      heroValue: { value: READ_NOT_AVAILABLE, label: "Five bullets" },
       subTab: "Amazon A+ Matrix",
       tooltip: failure
         ? failedReadTooltip(failure)
@@ -193,7 +198,7 @@ function aplusFace(counts: BulletCounts | null, failure: CanvasReadFailure | und
     status: counts.short === 0 ? "success" : "danger",
     title: "Amazon A+ Matrix",
     stats: [`${formatInt(counts.fullBullets)} of ${formatInt(counts.listings)} listings`],
-    heroValue: { value: formatPct(counts.pct), label: "Five bullets filled" },
+    heroValue: { value: formatPct(counts.pct), label: "Five bullets" },
     subTab: "Amazon A+ Matrix",
     tooltip: { ...EMPTY_TOOLTIP },
   };
@@ -220,10 +225,10 @@ export function buildLiveNodes(
   const pageStale = metricsTip || pageHero.ratio == null ? null : pageFoundStale(freshnessLastRun(bundle, SPEC_CHECK_JOB));
   const readinessStatus: NodeStatus = metricsTip ? "neutral" : (pageTone ?? "neutral");
   const readinessHero = metricsTip
-    ? { value: READ_NOT_AVAILABLE, label: `${brandSite()} page found` }
+    ? { value: READ_NOT_AVAILABLE, label: READINESS_BUBBLE_LABEL }
     : pageHero.ratio != null
-      ? { value: markPartial(pageHero.percent, pageStale), label: `${brandSite()} page found` }
-      : { value: pageHero.percent === "Pending data" ? "Pending data" : "Not available", label: `${brandSite()} page found` };
+      ? { value: markPartial(pageHero.percent, pageStale), label: READINESS_BUBBLE_LABEL }
+      : { value: pageHero.percent === "Pending data" ? "Pending data" : "Not available", label: READINESS_BUBBLE_LABEL };
 
   return [
     {

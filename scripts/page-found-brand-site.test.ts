@@ -126,7 +126,7 @@ test("the AI Readiness bubble's page-found figure opens Brand-Site Specs at that
     assert.equal(specTabs[resolve(node.subTab)], "Brand-Site Specs");
   }
   const hero = brandSitePageFoundHero(m);
-  assert.deepEqual(live?.heroValue, { value: hero.percent, label: hero.label });
+  assert.deepEqual(live?.heroValue, { value: hero.percent, label: "Page found" }, "the same figure, with a two-word label on the map");
 
   const panel = read("components/v3/live/MachineReadabilityPanel.tsx");
   const land = read("components/v3/live/useLandOnPageFoundHero.ts");

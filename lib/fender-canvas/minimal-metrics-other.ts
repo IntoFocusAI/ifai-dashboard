@@ -12,6 +12,7 @@ import { failedReadTip } from "@/lib/fender-canvas/canvas-reads";
 import { ACTUATION_OMITTED_REASON } from "@/lib/fender-canvas/consensus-score-display";
 import { formatInt, formatPct } from "@/lib/fender-canvas/format";
 import { categoryUnbrandedFigure } from "@/lib/fender-canvas/minimal-metrics-ai";
+import { roadmapHeroValue } from "@/lib/fender-canvas/roadmap-bubble";
 import {
   aiFigure,
   cached,
@@ -82,7 +83,9 @@ const ROADMAP_ENTRY: MinimalEntry = {
     if (!value || /^not available\*?$/i.test(value)) {
       return { ...missingFigure("No current finding has a stored reading."), tone: "neutral" };
     }
-    return { value, tone: "neutral", ratio: `${value} current findings need action`, pie: null, tip: null, missing: null };
+    // The bubble shows the share; the slot's line keeps the N of M the tab leads with.
+    const count = roadmapHeroValue(ctx.retail, ctx.findability, ctx.ai).replace(/\*$/, "");
+    return { value, tone: "neutral", ratio: `${count} current findings need action`, pie: null, tip: null, missing: null };
   },
 };
 

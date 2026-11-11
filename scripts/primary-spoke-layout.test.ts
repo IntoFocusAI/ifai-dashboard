@@ -115,7 +115,7 @@ test("Roadmap has no retail metadata line", () => {
   assert.equal(Object.hasOwn(staticRoadmap, "meta"), false);
   assert.equal(staticRoadmap.meta, undefined);
   assert.deepEqual(staticRoadmap.stats, []);
-  assert.deepEqual(staticRoadmap.heroValue, { value: "Loading", label: "findings need action" });
+  assert.deepEqual(staticRoadmap.heroValue, { value: "Loading", label: "Need action" });
   assert.equal(staticRoadmap.title, "Roadmap");
   assert.equal(staticRoadmap.tooltip?.desc, "");
 
@@ -125,14 +125,14 @@ test("Roadmap has no retail metadata line", () => {
   assert.equal(Object.hasOwn(liveRoadmap, "meta"), false);
   assert.equal(liveRoadmap.meta, undefined);
   assert.deepEqual(liveRoadmap.stats, []);
-  assert.deepEqual(liveRoadmap.heroValue, { value: "Loading", label: "findings need action" });
+  assert.deepEqual(liveRoadmap.heroValue, { value: "Loading", label: "Need action" });
   assert.equal(liveRoadmap.status, "neutral");
   assert.equal(liveRoadmap.spokeId, "roadmap");
   assert.equal(liveRoadmap.tooltip?.desc, "");
 
   const specs = fenderStaticNodes.find((node) => node.id === "spoke-specs");
   assert.deepEqual(specs?.stats, []);
-  assert.deepEqual(specs?.heroValue, { value: "Pending data", label: "fender.com page found" });
+  assert.deepEqual(specs?.heroValue, { value: "Pending data", label: "Page found" });
 });
 
 test("connectors and camera targets land on the new spoke centers", () => {

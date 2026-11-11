@@ -9,7 +9,8 @@ import type { CanvasMetric, CanvasNode } from "@/lib/canvas-sdk/types";
 import { BRIEFING_LOADING, briefingFindingsLead } from "@/lib/fender-canvas/briefing-retail-lead";
 import { READ_NOT_AVAILABLE } from "@/lib/fender-canvas/canvas-reads";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
-import { PLAN_FIGURE_LABEL, planFindingsFigure } from "@/lib/fender-canvas/roadmap-plan";
+import { formatPct } from "@/lib/fender-canvas/format";
+import { planFindingsFigure } from "@/lib/fender-canvas/roadmap-plan";
 import type { FindabilityRead } from "@/lib/findability/copy";
 
 export const ROADMAP_TAB = "30-60-90 Days";
@@ -27,6 +28,25 @@ export function roadmapHeroValue(
   return figure.partial ? `${figure.value}*` : figure.value;
 }
 
+/** The bubble's label: the hero is a share, so the label stays two words. */
+export const ROADMAP_BUBBLE_LABEL = "Need action";
+
+/**
+ * The bubble's hero: the same figure as a share ("5 of 5" reads "100.0%"), so it reads as a
+ * large figure like every other bubble. The tab and Minimal keep the N of M.
+ */
+export function roadmapBubbleValue(
+  retail: RetailCanvasRead,
+  findability: FindabilityRead,
+  ai: AiSearchRead,
+): string {
+  const figure = planFindingsFigure(briefingFindingsLead(retail, findability, ai).findings);
+  if (figure.phase === "loading") return BRIEFING_LOADING;
+  if (figure.phase === "missing") return READ_NOT_AVAILABLE;
+  const share = formatPct((100 * figure.needs) / figure.stored);
+  return figure.partial ? `${share}*` : share;
+}
+
 /** The face nodes-from-live gives the Roadmap bubble. Status stays neutral: a plan is not graded. */
 export function roadmapBubbleFace(
   retail: RetailCanvasRead,
@@ -35,7 +55,7 @@ export function roadmapBubbleFace(
 ): Pick<CanvasNode, "status" | "heroValue" | "subTab"> {
   return {
     status: "neutral",
-    heroValue: { value: roadmapHeroValue(retail, findability, ai), label: PLAN_FIGURE_LABEL },
+    heroValue: { value: roadmapBubbleValue(retail, findability, ai), label: ROADMAP_BUBBLE_LABEL },
     subTab: ROADMAP_TAB,
   };
 }

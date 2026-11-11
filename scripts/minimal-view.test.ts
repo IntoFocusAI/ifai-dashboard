@@ -117,7 +117,7 @@ function findabilityRow(asin: string, state: string) {
     explanation: null,
     source_method: null,
     http_status: 200,
-    latest_attempt_at: null,
+    latest_attempt_at: new Date().toISOString(),
     jsonld_status: "not_checked",
     counts_as_confirmed: true,
     counts_as_finished_search: true,
@@ -526,8 +526,8 @@ test("each live figure says N of M and the larger slots carry the tab's disc", (
   const retail = slots.find((slot) => slot.id === "spoke-retail");
   assert.equal(retail?.reading.ratio, "1 of 3 current Buy Box readings");
   const taylor = slots.find((slot) => slot.id === "sat-taylor");
-  assert.ok(taylor && /^\d+ of \d+$/.test(taylor.value));
-  assert.equal(taylor.reading.ratio, "resolved unbranded discovery answers", "the count is not repeated under the value");
+  assert.ok(taylor && /^\d+\.\d%$/.test(taylor.value), "the bubble leads with the competitor-led share");
+  assert.match(taylor.reading.ratio ?? "", /^\d+ of \d+ resolved unbranded discovery answers$/, "the N of M sits under the share");
 });
 
 test("a missing input reads Not available* or the bubble's waiting word, with a reason for the tooltip", () => {

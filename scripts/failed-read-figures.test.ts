@@ -164,7 +164,7 @@ test("the AI Readiness bubble reads Not available* with canvas_metrics in its ho
   const b = bundle(["m"]);
   const node = buildLiveNodes(b, buildLiveMetrics(b)).find((item) => item.id === "spoke-specs");
   assert.equal(node?.heroValue?.value, READ_NOT_AVAILABLE);
-  assert.equal(node?.heroValue?.label, "fender.com page found");
+  assert.equal(node?.heroValue?.label, "Page found");
   assert.equal(node?.status, "neutral", "Not available* carries no status color");
   assert.equal(node?.tooltip.title, READ_NOT_AVAILABLE);
   assert.equal(
@@ -173,7 +173,7 @@ test("the AI Readiness bubble reads Not available* with canvas_metrics in its ho
   );
 
   const loaded = buildLiveNodes(bundle(), buildLiveMetrics(bundle())).find((item) => item.id === "spoke-specs");
-  assert.equal(loaded?.heroValue?.label, "fender.com page found", "the bubble shows the same figure");
+  assert.equal(loaded?.heroValue?.label, "Page found", "the bubble shows the same figure");
   assert.match(String(loaded?.heroValue?.value), /\d/);
   assert.equal(loaded?.tooltip.desc, "", "a loaded bubble keeps no hover box");
 });

@@ -17,9 +17,11 @@ test.describe("Roadmap 30-60-90 Days lays the plan out in three dated phases", (
 
     const lead = plan.locator("[data-roadmap-lead-figure]");
     await expect(lead).toHaveText(/^\d+ of \d+\*?$/, { timeout: LIVE_READ_TIMEOUT });
+    // The bubble shows the same figure as a share: "5 of 5" reads "100.0%".
     const bubble = page.locator('[data-graph-node-id="spoke-roadmap"] .node-hero-value');
-    await expect(bubble).toHaveText((await lead.innerText()).trim());
-    await expect(page.locator('[data-graph-node-id="spoke-roadmap"] .node-hero-label')).toContainText(/findings\s*need\s*action/i);
+    const [, needs, stored, mark] = (await lead.innerText()).trim().match(/^(\d+) of (\d+)(\*?)$/)!;
+    await expect(bubble).toHaveText(`${((100 * Number(needs)) / Number(stored)).toFixed(1)}%${mark}`);
+    await expect(page.locator('[data-graph-node-id="spoke-roadmap"] .node-hero-label')).toContainText(/need\s*action/i);
 
     await expect(plan.locator("[data-roadmap-phase]")).toHaveCount(3);
     await expect(plan.locator(".roadmap-phase-days")).toHaveText(["Days 1 to 30", "Days 31 to 60", "Days 61 to 90"]);
