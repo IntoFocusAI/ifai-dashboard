@@ -16,6 +16,9 @@
 -- Each DO block skips a database where that view does not exist, so the same file is safe on the
 -- copies.
 --
+-- Applied: production, 4 Nov 2026 21:54 UTC, by Brian Watson, recorded as version 20261104215427.
+-- Checked 11 Nov 2026: anon=r and authenticated=r on both views.
+--
 -- Undo (restores the previous grants):
 --   GRANT ALL ON public.canvas_set_aside_events TO anon, authenticated;
 --   GRANT ALL ON public.canvas_set_aside_reasons TO anon, authenticated;
