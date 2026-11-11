@@ -19,7 +19,7 @@
 - **Desired:** Competitor wins use unbranded resolved answers for the selected period. Branded consideration stays its own Fender-lead column.
 - **User value:** Losses are real shopping losses.
 - **Acceptance:** Win rates use unbranded resolved answers.
-- **Evidence:** Desktop-verified and approved 22 Oct 2026 on preview PR 45, commits 931cc3f and 8248f5b, Worker 8.5. Last 30 days: competitors led 38 of 94 beside Fender/Squier leads 56 of 94. Map: Unbranded 13 of 21, Branded 22 of 23.
+- **Evidence:** Desktop-verified and approved 22 Oct 2026 on preview PR 45, commits 931cc3f and 8248f5b, Worker 8.5. Last 30 days: competitors led 38 of 94 beside Fender/Squier leads 56 of 94. Map: Unbranded 13 of 21, Branded 22 of 23. Worker 25.3, pull request 167 (main 186f13f), approved 11 Nov 2026: Competitor Wins hero is the standard percentage, N of M, status mark, and pie on the Engines row; brand names share the bar rows; Radar tables fit at 1280 px; server CSV for four Radar tables; Ledlenser mention check fixed.
 - **Open decision:** None.
 
 **C-03 CURRENT** · Launch

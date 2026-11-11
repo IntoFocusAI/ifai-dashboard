@@ -145,7 +145,7 @@ Former name: Portfolio Retail / Retail Portfolio. Approved rename: Catalog Healt
 - **Evidence:** Brian Magazu chose live-offer bundles on 4 Nov 2026. Worker 21.4, pull request 121 (main e715570).
 - **Open decision:** None. Decided 4 Nov 2026: bundles with a live offer.
 
-**R-03 TARGET** · Launch
+**R-03 CURRENT** · Launch
 
 **Status source:** Explicit
 
@@ -153,7 +153,7 @@ Former name: Portfolio Retail / Retail Portfolio. Approved rename: Catalog Healt
 - **Desired:** Amazon listing health with explicit unchecked; other marketplaces DECISION/LATER.
 - **User value:** Listing quality is visible.
 - **Acceptance:** Unchecked ≠ fail.
-- **Evidence:** A+ still Not measured.
+- **Evidence:** Worker 25.2, pull request 165 (main 5477ac6), approved 11 Nov 2026: A+ and video states never checked read Unchecked and never count as a gap (Fender 64 of 975 live listings unchecked; Ledlenser 25 of 200).
 - **Open decision:** None.
 
 **R-14 CURRENT** · Launch

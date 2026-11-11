@@ -44,7 +44,7 @@
 - **Evidence:** Not live.
 - **Open decision:** None.
 
-**D-03 TARGET** · Launch
+**D-03 CURRENT** · Launch
 
 **Status source:** Explicit
 
@@ -52,7 +52,7 @@
 - **Desired:** Superseded in direction by D-07/D-08 split. Residual: final tab labels Brian has not renamed.
 - **User value:** Tabs explain themselves.
 - **Acceptance:** Final labels approved.
-- **Evidence:** Open.
+- **Evidence:** Worker 25.2, pull request 165 (main 5477ac6), approved by Brian Magazu on 11 Nov 2026: the satellites read Findability, Brand-Site Specs, and Amazon A+ Matrix, each matching its tab, for Fender and Ledlenser; satellite-click passes.
 - **Open decision:** None. Decided by Brian Magazu on 9 Nov 2026: the X-18 rename list is final; no AI Readiness heading is renamed.
 
 **D-04 CURRENT** · Launch
@@ -66,7 +66,7 @@
 - **Evidence:** Brian Magazu approved the preview on 2 Nov 2026. Pull request 94, commits 2bda570 and 42475c9, published on main at 984739b. Worker 21.3 added Last checked, pull request 119 (main 796ebd2), approved by Brian Magazu on 4 Nov 2026. D-04 is CURRENT.
 - **Open decision:** None.
 
-**D-05 TARGET** · Launch
+**D-05 REFINE** · Launch
 
 **Status source:** Explicit
 
@@ -74,7 +74,7 @@
 - **Desired:** Score components now approved in SC-01; additionalProperty stays in evidence. Cross-category required-spec lists still need Brian.
 - **User value:** Foundation score stays honest by category.
 - **Acceptance:** Category required-spec lists approved.
-- **Evidence:** Open for category lists.
+- **Evidence:** Worker 25.2, pull request 165 (main 5477ac6), approved 11 Nov 2026: Amazon Specs reads "Required fields: guitar and instrument list (13 fields, placeholder)" for Fender and "lighting list" for Ledlenser, with every field in its tooltip. Stays REFINE: the lists are not approved, and Brian Magazu ruled on 11 Nov 2026 that no "placeholder" label ships at launch (decision 51). The rule must serve future clients, not only these two.
 - **Open decision:** None. Decided by Brian Magazu on 9 Nov 2026: Fender uses the guitar and instrument list; Ledlenser uses the lighting spec fields loaded by Brian Watson. Both stay marked placeholder, and Amazon Specs names the list it used.
 
 **D-06 CURRENT** · Launch

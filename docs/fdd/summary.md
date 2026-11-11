@@ -28,7 +28,7 @@ Former name: Brand Portfolio. Approved rename: Summary.
 
 **Status source:** Explicit meeting
 
-- **Current:** Summary tabs are Briefing, Performance, and Opportunity. Performance leads with AI Consensus, then AI Foundation and AI Commerce. AI Actuation reads Not included. The scores are not yet shown against a target.
+- **Current:** Summary tabs are Briefing, Performance, and Opportunity. Performance leads with AI Consensus, then AI Foundation and AI Commerce. AI Actuation reads Not included. Each score is shown against target 70 with a status mark and word, for example "AI Consensus 56* Fair" (worker 25.1, pull request 166). The Briefing's AI figures use the map's population.
 - **Desired:** Summary tabs: Briefing, Performance, Opportunity. Briefing = why it matters + AI Consensus Score + one sentence. Performance = actual vs target with AI Foundation, AI Commerce, AI Actuation side by side. Opportunity = value achieved, near-term upside, full potential with drill-downs to inputs/assumptions/formulas.
 - **User value:** Executives get story, scores, and upside without hunting.
 - **Acceptance:** Three tabs only under Summary; Commercial Sizing label gone.
