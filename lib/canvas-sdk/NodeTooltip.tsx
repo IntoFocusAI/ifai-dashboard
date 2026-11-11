@@ -80,7 +80,7 @@ export function NodeTooltip({ ref }: { ref: Ref<NodeTooltipHandle> }) {
             marginTop: 6,
             color: "var(--accent-purple)",
             fontWeight: 600,
-            fontSize: 10,
+            fontSize: 11,
           }}
         >
           CLICK FOR MORE INFO →

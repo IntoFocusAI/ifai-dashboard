@@ -6,7 +6,7 @@ import { HeroStatusRow, SatelliteHeroFace } from "@/lib/canvas-sdk/SatelliteHero
 import type { CanvasEdge, NodeStatus } from "@/lib/canvas-sdk/types";
 
 /** Stat pill label size inside IOM / v3 bubbles (SVG units before optional face scale). */
-const IOM_STAT_PILL_FONT = 10;
+const IOM_STAT_PILL_FONT = 11;
 
 function polar(radius: number, deg: number) {
   const angle = (deg * Math.PI) / 180;
@@ -244,7 +244,7 @@ export function CenteredStack({
   flowStartY?: number;
 }) {
   const pillMax = maxWidth ?? Math.max(radius * 2 - 14, fontSize * 4);
-  // Meta used to shrink to 82% of the pill; at the 10px floor that reads under 10px.
+  // Meta used to shrink to 82% of the pill; at the 11px floor that reads under 11px.
   const metaSize = fontSize;
   const metaMax = pillMax;
   const gap = radius < 62 ? 4 : 5;
@@ -469,7 +469,7 @@ function CenteredFace({
 
   const lines = titleLines(title);
   const titleSize =
-    titleSizeOverride ?? (prominent ? 13 : radius >= 74 ? 11.5 : 10.5);
+    titleSizeOverride ?? (prominent ? 13 : radius >= 74 ? 11.5 : 11);
   const lineH = titleSize + 3;
   const iconY = icon ? -radius * (prominent ? 0.44 : 0.36) : 0;
   // A selected bubble with a two-line title lifts the title so a two-row hero label clears the ring.
@@ -766,7 +766,7 @@ export function TourSpotlight({
           x="6"
           y="4"
           textAnchor="middle"
-          fontSize="10.5"
+          fontSize="11"
           fontWeight="600"
           fill="var(--brand-headline)"
           letterSpacing="0.5"

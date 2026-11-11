@@ -21,7 +21,7 @@ const LABEL_GAP = 4;
 /** Main-bubble ring clearance (icon + title already sit above `startY`). */
 const MAIN_RING_PAD = 14;
 const MAIN_MIN_VALUE = 15;
-const MAIN_MIN_LABEL = 10;
+const MAIN_MIN_LABEL = 11;
 const MAIN_MAX_VALUE_RATIO = 0.3;
 
 type Row = { text: string; size: number; kind: keyof typeof WIDTH_PER_CHAR };
