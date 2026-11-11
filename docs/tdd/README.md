@@ -37,7 +37,7 @@ Implementation guide for the Functional Design Document.
 >
 > • Hard-coded retailer channels remain (amazon/walmart/musicians-friend).
 >
-> • AI run immutable once published. The battery asks 3 repeats per question per engine (306 calls, 549 with the catalog rotation, on since 13:27 UTC 4 Nov 2026). Brian Watson's API job runs about 465 calls at 3 repeats from 5 Nov 2026. ChatGPT model often blank.
+> • AI run immutable once published. The battery asks 3 repeats per question per engine (306 calls, 549 with the catalog rotation, on since 13:27 UTC 4 Nov 2026). Wave 2 (migration 20261111205426, applied 11 Nov 2026) makes 64 active prompts, 61 fixed: 819 calls with the rotation from the 12 Nov run. Brian Watson's API job asks the active fixed prompts (fender_ai_subchat_collector v13), so it goes from 465 calls (31 questions) to 915 (61 questions) at 3 repeats on 5 engines. ChatGPT model often blank.
 >
 > • Estimate fallbacks for Phase 1 / enterprise dollars still in templates — must stay labeled estimates.
 >

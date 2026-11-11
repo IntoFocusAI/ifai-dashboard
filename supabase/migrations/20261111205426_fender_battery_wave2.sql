@@ -45,7 +45,12 @@
 --     FROM command.fmic_ai_prompts WHERE prompt_key BETWEEN 'p38' AND 'p67';
 --   Then publish a third set whose p38 to p67 revisions have active = false, the same way as below.
 --
--- Applied: not yet.
+-- Applied: 11 Nov 2026 20:54 UTC, by Claude Code for Brian Watson, after Brian Magazu's approval.
+-- Recorded on production as version 20261111205426 (this file was 20261110190000 in the pull
+-- request). Also applied to the mirror and claude copies under the same version. Not applied to
+-- sandbox: its p18, p19 and p34 have no first revision, so the check above refuses there.
+-- Verified on production: 64 active prompts (61 fixed, 3 rotating), 30 edit rows, set f87a5cae
+-- published with max_active 64 and 67 members.
 
 DO $$
 DECLARE
