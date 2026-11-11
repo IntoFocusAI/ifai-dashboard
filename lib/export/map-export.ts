@@ -70,7 +70,8 @@ async function loadPrices(): Promise<ChannelPriceRow[]> {
   return rows;
 }
 
-async function loadExceptions(): Promise<{ asins: Set<string>; failed: boolean }> {
+/** The approved MAP exceptions, read as the screen's set-aside store reads them. */
+export async function loadExceptions(): Promise<{ asins: Set<string>; failed: boolean }> {
   try {
     const { data, error } = await getPublicCanvasSupabase()
       .from("canvas_issue_set_asides")

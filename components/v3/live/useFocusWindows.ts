@@ -3,18 +3,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAiHistory } from "@/components/v3/live/ai-search/AiHistoryContext";
 import { catalogLoadState, useApiRunCatalog, useApiSnapshots } from "@/components/v3/live/ai-search/useApiEngineLoad";
-import { apiRunsCoveringBattery, apiRunsInScope, batteryQuestions } from "@/lib/ai-search/api-runs";
 import { afterSiteTypes } from "@/lib/ai-search/site-types";
 import { loadHistorySnapshot, type HistorySnapshotResult } from "@/lib/ai-search/history-queries";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
-import type { FocusWindows } from "@/lib/fender-canvas/roadmap-focus";
-import {
-  focusWindowRuns,
-  poolFocusWindow,
-  previousWindowEnd,
-  windowSummary,
-  type WindowSummary,
-} from "@/lib/fender-canvas/roadmap-window";
+import { focusWindowApiRuns, focusWindowsReady, type FocusWindowsRead } from "@/lib/fender-canvas/roadmap-plan-read";
+import { focusWindowRuns } from "@/lib/fender-canvas/roadmap-window";
 import { getCanvasSupabase } from "@/lib/supabase/canvas-client";
 
 /** Earlier published runs, read once per run and shared by Action Items and the Roadmap. */
@@ -31,12 +24,7 @@ export function readPublishedRun(runId: string): Promise<HistorySnapshotResult> 
   return read;
 }
 
-export type FocusWindowsRead =
-  | { phase: "loading" }
-  | { phase: "error"; message: string }
-  | { phase: "ready"; windows: FocusWindows; summary: { current: WindowSummary; previous: WindowSummary } };
-
-const MONTH = { kind: "month" } as const;
+export type { FocusWindowsRead };
 
 /** The published review runs of both windows, loaded; the published run itself is not read again. */
 function useBatteryRuns(ids: string[] | null, published: AiSearchSnapshot | null) {
@@ -99,14 +87,10 @@ export function useFocusWindows(): FocusWindowsRead {
   }, [battery, runs]);
 
   const catalog = useApiRunCatalog();
-  const apiRuns = useMemo(() => {
-    if (catalog.phase !== "ready" || !split) return { current: [], previous: [] };
-    const eligible = apiRunsCoveringBattery(catalog.runs, batteryQuestions([...split.current, ...split.previous]));
-    return {
-      current: apiRunsInScope(eligible, MONTH, end),
-      previous: apiRunsInScope(eligible, MONTH, previousWindowEnd(end)),
-    };
-  }, [catalog, end, split]);
+  const apiRuns = useMemo(
+    () => (catalog.phase === "ready" && split ? focusWindowApiRuns(catalog.runs, split, end) : { current: [], previous: [] }),
+    [catalog, end, split],
+  );
   const currentApi = useApiSnapshots(apiRuns.current);
   const previousApi = useApiSnapshots(apiRuns.previous);
   const pending = catalogLoadState(catalog);
@@ -120,23 +104,6 @@ export function useFocusWindows(): FocusWindowsRead {
     if (history.catalog.phase === "error") return { phase: "error", message: history.catalog.message };
     if (!split || !battery) return { phase: "loading" };
     if (battery.error) return { phase: "error", message: battery.error };
-    const apiOf = (load: typeof currentApi): AiSearchSnapshot[] | null => {
-      if (pending?.phase === "missing" || load.phase === "missing") return [];
-      if (pending?.phase === "loading" || load.phase === "loading") return null;
-      if (pending?.phase === "error") return [];
-      return load.phase === "ready" ? load.snapshots : [];
-    };
-    const current = apiOf(currentApi);
-    const previous = apiOf(previousApi);
-    if (!current || !previous) return { phase: "loading" };
-    const windows = { current: poolFocusWindow(split.current, current), previous: poolFocusWindow(split.previous, previous) };
-    return {
-      phase: "ready",
-      windows,
-      summary: {
-        current: windowSummary(windows.current, split.current, current),
-        previous: windowSummary(windows.previous, split.previous, previous),
-      },
-    };
+    return focusWindowsReady(split, pending, currentApi, previousApi);
   }, [battery, currentApi, history.catalog, history.source, pending, previousApi, published, split]);
 }

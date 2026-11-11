@@ -8,7 +8,7 @@ import { formatInt } from "@/lib/fender-canvas/format";
 import { describeTableSort } from "@/lib/fender-canvas/table-search";
 import type { SortKind, TableSort } from "@/lib/fender-canvas/table-sort";
 
-const DOWNLOAD_FAILED = "The download could not be made. Try again.";
+export const DOWNLOAD_FAILED = "The download could not be made. Try again.";
 
 type ToolbarColumn = { id: string; name: string; sort?: SortKind };
 
@@ -28,7 +28,8 @@ export function withSearchEmpty(children: ReactNode, controls: TableControls | n
   );
 }
 
-async function downloadCsv(
+/** Posts what is on screen to the table's server export and saves the CSV. Returns an error line, or null. */
+export async function downloadCsv(
   tableId: string,
   body: {
     keys: readonly string[] | null;
@@ -57,7 +58,7 @@ async function downloadCsv(
   return null;
 }
 
-/** Search box, match count, and Download CSV above one ResizableTable. */
+/** Search box, the N of M rows count (always shown, decided 11 Nov 2026), and Download CSV above one ResizableTable. */
 export function TableToolbar({
   tableId,
   columns,
@@ -114,11 +115,9 @@ export function TableToolbar({
         data-table-search={tableId}
         onChange={(event) => controls.setQuery(event.target.value)}
       />
-      {query.trim() ? (
-        <span className="table-toolbar-count" data-table-search-count={controls.matched}>
-          {formatInt(controls.matched)} of {formatInt(controls.total)} rows
-        </span>
-      ) : null}
+      <span className="table-toolbar-count" data-table-search-count={controls.matched}>
+        {formatInt(controls.matched)} of {formatInt(controls.total)} rows
+      </span>
       {exportable ? (
         <button
           type="button"

@@ -173,6 +173,17 @@ export function apiRunsCoveringBattery(runs: readonly ApiRunSummary[], battery: 
   });
 }
 
+/** The map's API run (decision 7): the counted run nearest the published run that asked its fixed questions. */
+export function pairedApiRuns(
+  runs: readonly ApiRunSummary[],
+  snapshot: Pick<AiSearchSnapshot, "run" | "calls" | "probes"> | null,
+): ApiRunSummary[] {
+  if (!snapshot) return [];
+  const battery = batteryQuestions([snapshot]);
+  const run = nearestApiRun(apiRunsCoveringBattery(runs, battery), battery[0]?.day ?? null);
+  return run ? [run] : [];
+}
+
 export type ApiCatalogResult =
   | { phase: "ready"; runs: ApiRunSummary[] }
   | { phase: "missing" }
