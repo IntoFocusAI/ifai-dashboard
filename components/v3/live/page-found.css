@@ -92,7 +92,7 @@ button.page-found-findability-link:focus-visible {
   margin-left: 4px;
   font-size: 12px;
   font-weight: 600;
-  color: var(--warning-amber);
+  color: var(--text-main);
 }
 
 .page-found-pager {
@@ -109,4 +109,17 @@ button.page-found-findability-link:focus-visible {
 .ifai-canvas [data-brand-site-specs-lead] .findability-lead-card > .metric-card-sub {
   width: 0;
   min-width: 100%;
+}
+
+/* Amazon Specs: opens the rest of the required-field categories (D-05). */
+.amazon-specs-required-more {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: var(--accent-cyan);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+  cursor: pointer;
 }

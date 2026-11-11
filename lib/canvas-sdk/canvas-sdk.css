@@ -1425,9 +1425,10 @@
       letter-spacing: 0.08em;
       text-transform: uppercase;
       width: fit-content;
-      background: var(--danger-bg);
-      color: var(--danger-text);
-      border: 1px solid var(--danger-border);
+      /* An eyebrow, not data: no status color (X-34). */
+      background: var(--bg-surface);
+      color: var(--text-muted);
+      border: 1px solid var(--border-color);
     }
 
     .drilldown-title {
@@ -3043,9 +3044,15 @@
       gap: 2px;
     }
 
-    .cc-quadrant-critical {
-      border-color: var(--danger-border);
-      background: var(--danger-bg);
+    /* The critical count keeps Oxblood with its mark and word in the label (X-34). */
+    .cc-quadrant-critical .cc-quadrant-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .cc-quadrant-label .data-status-glyph {
+      color: var(--status-bad);
     }
 
     .cc-quadrant-val {
@@ -3056,7 +3063,7 @@
     }
 
     .cc-quadrant-critical .cc-quadrant-val {
-      color: var(--danger-red);
+      color: var(--status-bad);
     }
 
     .cc-quadrant-label {
@@ -3154,16 +3161,11 @@
       text-transform: uppercase;
     }
 
-    .cc-sev-badge-critical {
-      background: var(--danger-bg);
-      color: var(--danger-text);
-      border: 1px solid var(--danger-border);
-    }
-
+    /* Critical and high carry StatusMark (mark and word); the badge itself stays neutral. */
+    .cc-sev-badge-critical,
     .cc-sev-badge-high {
-      background: var(--warning-bg);
-      color: var(--warning-text);
-      border: 1px solid var(--warning-border);
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
     }
 
     .cc-sev-badge-moderate {
@@ -3197,9 +3199,9 @@
     .cc-impact {
       font-size: 11.5px;
       font-weight: 600;
-      color: var(--success-text);
-      background: var(--success-bg);
-      border: 1px solid var(--success-border);
+      color: var(--text-main);
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
       border-radius: 10px;
       padding: 7px 10px;
     }
@@ -3925,6 +3927,12 @@
       max-width: 100%;
     }
 
+    /* Run Details: an outcome badge wraps inside its own cell instead of painting over the Engine column. */
+    .ai-simulations .resizable-table .tag-badge {
+      white-space: normal;
+      max-width: 100%;
+    }
+
     /* Do not shatter dates and short labels when the column already has room. */
     .resizable-table td {
       overflow-wrap: break-word;
@@ -4298,6 +4306,17 @@
       background: transparent;
       cursor: pointer;
       padding: 0;
+    }
+
+    /* A hover and focus target over each dashed boundary line; its tooltip says why the line is there. */
+    .ai-history-chart .ai-history-boundary-hit {
+      position: absolute;
+      top: 12%;
+      bottom: 12%;
+      width: 16px;
+      margin-left: -8px;
+      border-bottom: none;
+      cursor: help;
     }
 
     .ai-history-dot {
