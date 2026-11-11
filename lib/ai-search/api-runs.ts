@@ -29,7 +29,7 @@ export function apiEngineViewsEnabled(
 ): boolean {
   const forced = (scope as { __IFAI_AI_API_VIEWS__?: unknown } | undefined)?.__IFAI_AI_API_VIEWS__;
   if (typeof forced === "boolean") return forced;
-  // Every client has the API-engine views in its own schema (Ledlenser: 20261111220000), and the
+  // Every client has the API-engine views in its own schema (Ledlenser: 20261111222737), and the
   // canvas client reads that schema, so the switch works the same for every brand.
   return flag !== "0";
 }

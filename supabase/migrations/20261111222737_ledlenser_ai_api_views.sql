@@ -36,7 +36,11 @@
 --   NOTIFY pgrst, 'reload schema';
 --
 -- Additive. Applied to production only after Brian Magazu approves (AGENTS.md, Database changes).
--- Applied: not yet.
+-- Approved: Brian Magazu (per Brian Watson, 11 Nov 2026).
+-- Applied: production only, 11 Nov 2026 22:27 UTC, by Claude Code for Brian Watson, recorded as version
+-- 20261111222737 (this file was 20261111220000 in the pull request). The mirror and claude copies have no
+-- ledlenser schema. Verified: 5 runs counted by the view (the dashboard leaves out the 4 Nov 5-question
+-- test run), 1,748 API calls, and the anon key reads ledlenser.canvas_ai_api_runs.
 
 CREATE VIEW ledlenser_private.ai_api_runs AS
 WITH api_calls AS (

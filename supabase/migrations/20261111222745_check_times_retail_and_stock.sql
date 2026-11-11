@@ -31,7 +31,11 @@
 -- view blocks in 20261102170000 and 20261104170000 with the same swap as below.
 --
 -- Alters existing views, so Brian Watson applies it (AGENTS.md, Database changes).
--- Applied: not yet.
+-- Applied: production only, 11 Nov 2026 22:27 UTC, by Claude Code for Brian Watson, recorded as version
+-- 20261111222745 (this file was 20261111220100 in the pull request). The mirror and claude copies have no
+-- ledlenser schema. Verified: catalog_checked_at filled on 1,134 of 1,134 Fender and 194 of 194 Ledlenser
+-- retail rows; keepa_checked_at on 1,134 of 1,134 Fender and 194 of 206 Ledlenser Out of Stock rows (the
+-- other 12 have no Keepa history); both refresh jobs active.
 
 SET lock_timeout = '5s';
 
