@@ -100,32 +100,3 @@ export function ActionCard({
     </div>
   );
 }
-
-export function DataTable({
-  headers,
-  rows,
-}: {
-  headers: ReactNode[];
-  rows: ReactNode[][];
-}) {
-  return (
-    <table className="table-sm">
-      <thead>
-        <tr>
-          {headers.map((header, idx) => (
-            <th key={idx}>{header}</th>
-          ))}
-        </tr>
-      </thead>
-      <tbody>
-        {rows.map((row, rowIdx) => (
-          <tr key={rowIdx}>
-            {row.map((cell, cellIdx) => (
-              <td key={cellIdx}>{cell}</td>
-            ))}
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  );
-}
