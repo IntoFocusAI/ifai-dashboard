@@ -6,6 +6,7 @@
 
 import type { PieDiscData } from "@/lib/ai-search/citation-pies";
 import type { NodeStatus } from "@/lib/canvas-sdk/types";
+import type { PartialFigure } from "@/lib/fender-canvas/canvas-reads";
 import { formatInt, formatPct, formatRatio } from "@/lib/fender-canvas/format";
 import {
   bundlePopulationTip,
@@ -42,6 +43,8 @@ export type RetailOverviewHeroModel = {
   explainer: string;
   numerator: number | null;
   denominator: number | null;
+  /** X-25: part of the population is past its recheck schedule. Null when every row is current. */
+  partial?: PartialFigure | null;
 };
 
 /**
@@ -132,6 +135,7 @@ export function buyBoxHero(snapshot: PortfolioRetailSnapshot): RetailOverviewHer
       : reading.missingMessage?.split(". ")[0] ?? "Buy Box reading not stored.",
     numerator,
     denominator,
+    partial: ready ? reading.stale ?? null : null,
   };
 }
 
@@ -193,6 +197,7 @@ export function mapHero(snapshot: PortfolioRetailSnapshot): RetailOverviewHeroMo
     explainer: ready ? "Priced below MAP." : reading.missingMessage?.split(". ")[0] ?? "MAP reading not stored.",
     numerator,
     denominator,
+    partial: ready ? reading.stale ?? null : null,
   };
 }
 
@@ -226,6 +231,7 @@ export function catalogHero(snapshot: PortfolioRetailSnapshot): RetailOverviewHe
       : reading.missingMessage?.split(". ")[0] ?? "Catalog reading not stored.",
     numerator,
     denominator,
+    partial: ready ? reading.stale ?? null : null,
   };
 }
 
@@ -280,6 +286,7 @@ export function specHero(snapshot: PortfolioRetailSnapshot): RetailOverviewHeroM
       : reading.missingMessage?.split(". ")[0] ?? "Amazon spec-field reading not stored.",
     numerator: complete,
     denominator: checked,
+    partial: ready ? reading.stale ?? null : null,
   };
 }
 

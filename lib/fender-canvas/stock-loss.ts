@@ -10,6 +10,9 @@
  */
 
 import type { PieDiscData } from "@/lib/ai-search/citation-pies";
+import type { PartialFigure } from "@/lib/fender-canvas/canvas-reads";
+import { formatInt } from "@/lib/fender-canvas/format";
+import { combineStale, mergePartial, RECHECK_DAYS, rowsStale } from "@/lib/fender-canvas/row-stale";
 import { getCanvasSupabase } from "../supabase/canvas-client";
 
 export type RevenueSource = "brand_reported" | "smartscout";
@@ -322,4 +325,60 @@ export function formatDay(day: string | null | undefined): string | null {
   if (!day) return null;
   const at = new Date(`${day}T00:00:00Z`);
   return Number.isFinite(at.getTime()) ? dayFormat.format(at) : null;
+}
+
+/**
+ * X-25 per-row stale reading for the lost-sales totals. Each listing in a total has its own
+ * Keepa history (history_through, rechecked daily) and, when SmartScout supplies its sales, its
+ * own SmartScout snapshot (smartscout_snapshot_date, rechecked every 7 days).
+ */
+export function lostSalesStale(
+  rows: readonly StockLossRow[],
+  window: LossWindow = 365,
+  now: number = Date.now(),
+): PartialFigure | null {
+  const estimated = rows.filter((row) => row.revenue_source && lostSales(row, window) != null);
+  const smartscout = estimated.filter((row) => row.revenue_source === "smartscout");
+  return combineStale(
+    [
+      {
+        label: "Keepa stock history",
+        stale: rowsStale(
+          estimated,
+          (row) => row.history_through,
+          { intervalDays: RECHECK_DAYS.keepa, check: "Keepa history update", source: "canvas_listing_sales_loss_v2", figure: "missed-sales totals" },
+          now,
+        ),
+      },
+      {
+        label: "SmartScout unit estimates",
+        stale: rowsStale(
+          smartscout,
+          (row) => row.smartscout_snapshot_date,
+          { intervalDays: RECHECK_DAYS.smartscout, check: "SmartScout snapshot", source: "canvas_listing_sales_loss_v2", figure: "missed-sales totals" },
+          now,
+        ),
+      },
+    ],
+    "missed-sales totals",
+  );
+}
+
+/** The X-25 asterisk on a lost-sales total: the listings it leaves out, and the older inputs it includes. */
+export function lostSalesPartial(
+  rows: readonly StockLossRow[],
+  sum: LostSalesSum,
+  now: number = Date.now(),
+): PartialFigure | null {
+  const missing = awaitingInputsBreakdown(rows, sum.window);
+  const coverage: PartialFigure | null = missing
+    ? {
+        reason: "coverage",
+        missing,
+        coverage: `${formatInt(sum.estimatedCount)} of ${formatInt(sum.affectedCount)} listings out of stock at least one day in the last 12 months`,
+        source: "SmartScout sales and Keepa stock history",
+        effect: "The total covers only the estimated listings, so it is lower than the full figure.",
+      }
+    : null;
+  return mergePartial(coverage, lostSalesStale(rows, sum.window, now));
 }

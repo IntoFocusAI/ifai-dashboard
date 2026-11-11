@@ -18,6 +18,7 @@ import {
   mapExposureSummaryTip,
   type MapExposureSummary,
 } from "@/lib/fender-canvas/map-exposure";
+import { mergePartial } from "@/lib/fender-canvas/row-stale";
 
 export type MapExposureState =
   | { phase: "loading" }
@@ -28,6 +29,10 @@ const UNITS_READ_FAILED = `The ${MAP_UNITS_SOURCE} unit estimates could not be l
 
 /** The X-25 asterisk on the total: which listings it leaves out, and what that does to it. */
 function coveragePartial(summary: MapExposureSummary): PartialFigure | null {
+  return mergePartial(awaitingPartial(summary), summary.stale);
+}
+
+function awaitingPartial(summary: MapExposureSummary): PartialFigure | null {
   const missing = mapAwaitingSentence(summary);
   if (!missing) return null;
   const read = formatSnapshotDay(summary.latestSnapshot);

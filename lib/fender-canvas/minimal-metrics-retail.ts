@@ -1,5 +1,6 @@
 /** Minimal view entries for Catalog Health, in tab order. */
 
+import { markPartial, partialFigureTip } from "@/lib/fender-canvas/canvas-reads";
 import { commerceInputsFromLive } from "@/lib/fender-canvas/consensus-scores-from-live";
 import { commerceScore } from "@/lib/fender-canvas/consensus-scores";
 import { formatInt, formatUsd } from "@/lib/fender-canvas/format";
@@ -20,6 +21,7 @@ import { LIVE_OFFER_BUNDLES } from "@/lib/fender-canvas/portfolio-retail";
 import { RETAIL_OVERVIEW_TAB, STOCK_LOSS_TAB } from "@/lib/fender-canvas/portfolio-retail-display";
 import { averageGapTip, buyBoxHero, catalogHero, mapHero, specHero } from "@/lib/fender-canvas/retail-overview-lead";
 import {
+  lostSalesPartial,
   lostSalesPopulationPie,
   REVENUE_SOURCE_LABELS,
   sumLostSales,
@@ -49,13 +51,14 @@ function lostSalesEntry(source: RevenueSource): MinimalEntry {
       const year = yearOfLostSales(ctx);
       const total = year?.bySource.find((entry) => entry.source === source)?.total;
       if (!year || total == null) return { ...missingFigure("The stock history could not be loaded."), estimate };
+      const partial = ctx.stockLoss.phase === "ready" ? lostSalesPartial(ctx.stockLoss.rows, year) : null;
       return {
-        value: formatUsd(total),
+        value: markPartial(formatUsd(total), partial),
         tone: "danger",
         ratio: `${formatInt(year.estimatedCount)} of ${formatInt(year.affectedCount)} estimated · ${formatInt(year.awaitingCount)} awaiting inputs`,
         pie: lostSalesPopulationPie(year),
         tip: `${formatInt(year.estimatedCount)} estimated, ${formatInt(year.awaitingCount)} awaiting inputs, of ${formatInt(year.affectedCount)} out-of-stock listings.`,
-        missing: null,
+        missing: partial ? partialFigureTip(partial) : null,
         estimate,
       };
     },
@@ -137,12 +140,12 @@ export const RETAIL_ENTRIES: MinimalEntry[] = [
         }
         const mark = (detail.approvedExceptions ?? 0) > 0 ? "*" : "";
         return {
-          value: formatUsd(detail.averageLeakage, { signed: true }),
+          value: markPartial(formatUsd(detail.averageLeakage, { signed: true }), reading.stale),
           tone: "danger",
           ratio: `Across ${formatInt(detail.violations)} ${detail.violations === 1 ? "listing" : "listings"} below MAP${mark}`,
           pie: null,
           tip: averageGapTip(snapshot),
-          missing: null,
+          missing: reading.stale ? partialFigureTip(reading.stale) : null,
         };
       }),
   },

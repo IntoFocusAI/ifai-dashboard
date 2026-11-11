@@ -101,7 +101,7 @@ test("Brand-Site Specs renders the page-found hero first with the shared card an
   const card = read("components/v3/live/ShareHeroCard.tsx");
   const spokes = read("components/v3/build-live-spokes.tsx");
   assert.match(spokes, /<MachineReadabilityPanel summary=\{bundle\.specPages \?\? null\} metrics=\{bundle\.m\} \/>/);
-  assert.match(panel, /brandSitePageFoundHero\(metrics, useSpecCheckRunAt\(\)\)/);
+  assert.match(panel, /brandSitePageFoundHero\(metrics, useSpecCheckRunAt\(\), pageFoundRowsStale\(summary\)\)/);
   const pageFoundAt = panel.indexOf("hero={pageFound}");
   const othersAt = panel.indexOf("heroes.map(");
   assert.ok(pageFoundAt > 0 && othersAt > pageFoundAt, "page-found hero leads the row");

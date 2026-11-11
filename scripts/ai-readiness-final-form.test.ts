@@ -48,6 +48,7 @@ function content(asin: string, aplus: string, source: string | null, checkedAt =
     video_state: aplus,
     video_count: null,
     checked_at: checkedAt,
+    content_checked_at: checkedAt,
     aplus_source: source,
     video_source: source,
   };
@@ -75,9 +76,14 @@ test("A+ unchecked listings show as Unchecked, never as a fail (R-03)", () => {
   assert.match(aplus.partial?.effect ?? "", /not counted as missing A\+/);
 });
 
-test("content shares carry the stale asterisk once the check is past its weekly schedule", () => {
-  const summary = summarizeListingContent([content("L1", "present", "live_page", "2026-10-20T00:00:00Z")]);
-  assert.equal(contentSharePartial(summary, "aplus", NOW)?.reason, "stale");
+test("content shares carry the asterisk when a listing's own check is past twice its weekly schedule (X-25)", () => {
+  const summary = summarizeListingContent([
+    content("L1", "present", "live_page", "2026-10-20T00:00:00Z"),
+    content("L2", "present", "live_page", "2026-11-09T00:00:00Z"),
+  ]);
+  const partial = contentSharePartial(summary, "aplus", NOW);
+  assert.equal(partial?.reason, "coverage");
+  assert.equal(partial?.coverage, "1 of 2 listings checked in the last 14 days");
   assert.equal(contentSharePartial(summary, "aplus", Date.parse("2026-10-25T00:00:00Z")), null);
 });
 
@@ -86,7 +92,7 @@ test("no A+ dollar figure and no on-screen sales qualifier on the A+ Matrix (D-0
   assert.doesNotMatch(panel, /not estimated|\$|analyst estimate/);
 });
 
-test("brand-site page figures go stale with their newest page read", () => {
+test("brand-site page figures count each page against its own latest read (X-25)", () => {
   const summary: SpecPageSummary = {
     pages: [
       {
@@ -104,7 +110,7 @@ test("brand-site page figures go stale with their newest page read", () => {
     withAllBasics: 1,
     listings: 1,
   };
-  assert.equal(specPagesStale(summary, NOW)?.reason, "stale");
+  assert.equal(specPagesStale(summary, NOW)?.coverage, "0 of 1 pages checked in the last 14 days");
   assert.equal(specPagesStale(summary, Date.parse("2026-10-05T00:00:00Z")), null);
   assert.equal(specPagesStale(null, NOW), null);
 });

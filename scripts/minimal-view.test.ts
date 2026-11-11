@@ -56,6 +56,7 @@ function bundle(): CanvasBundle {
 }
 
 const CHECKED_AT = new Date(Date.now() - 60_000).toISOString();
+const CHECKED_DAY = new Date().toISOString().slice(0, 10);
 
 function buyBoxRow(asin: string, withheld: boolean) {
   return {
@@ -79,8 +80,8 @@ function retailReady(): RetailCanvasRead {
   const findings = {
     suppressedListings: suppressedListingsFinding([buyBoxRow("B0A", true), buyBoxRow("B0B", false), buyBoxRow("B0C", false)]),
     mapLeakage: mapLeakageFinding([
-      { map_price: 100, offer_price: 80, amz_leakage: -20, wmt_leakage: null, mf_leakage: null },
-      { map_price: 100, offer_price: 100, amz_leakage: 0, wmt_leakage: null, mf_leakage: null },
+      { map_price: 100, offer_price: 80, amz_leakage: -20, wmt_leakage: null, mf_leakage: null, featured_offer_checked_at: CHECKED_AT },
+      { map_price: 100, offer_price: 100, amz_leakage: 0, wmt_leakage: null, mf_leakage: null, featured_offer_checked_at: CHECKED_AT },
     ]),
     unnestedBundles: unnestedBundlesFinding([
       {
@@ -92,6 +93,7 @@ function retailReady(): RetailCanvasRead {
         product_url: "https://www.amazon.com/dp/B000000001",
         is_bundle: true,
         featured_offer_state: "present",
+        featured_offer_checked_at: CHECKED_AT,
       },
     ]),
     amazonSpecGaps: {
@@ -151,10 +153,10 @@ function stockRow(asin: string, lost365: number | null): StockLossRow {
     featured_offer_state: "present",
     offline_now: false,
     current_oos_days: 0,
-    smartscout_snapshot_date: null,
+    smartscout_snapshot_date: CHECKED_DAY,
     smartscout_monthly_revenue: null,
     smartscout_ttm_revenue: null,
-    history_through: null,
+    history_through: CHECKED_DAY,
     in_stock_days_30: null,
     oos_days_30: 1,
     oos_days_90: 2,
@@ -472,7 +474,9 @@ test("Out of Stock offers one estimate per sales source, as its tab shows them",
   const smartscout = slotById(slots, "stock-loss-12m-smartscout");
   assert.equal(smartscout.subTab, "Out of Stock");
   assert.equal(smartscout.provenance, "estimate");
-  assert.equal(smartscout.value, formatUsd(1500.5));
+  // One listing is awaiting inputs, so the total carries the asterisk and says why (X-25).
+  assert.equal(smartscout.value, `${formatUsd(1500.5)}*`);
+  assert.match(smartscout.reading.missing ?? "", /1 listing is awaiting inputs/);
   assert.equal(smartscout.reading.ratio, "2 of 3 estimated · 1 awaiting inputs");
   assert.equal(smartscout.reading.pie?.id, "stock-loss-population");
   assert.match(smartscout.detail, /^Analyst estimate\./);
@@ -546,6 +550,8 @@ test("a missing input reads Not available* or the bubble's waiting word, with a 
   const bubbles = new Set(nodes.map((node) => node.id));
   for (const slot of slots) {
     if (bubbles.has(slot.id) || !slot.reading.missing) continue;
+    // A figure with the partial asterisk keeps its tooltip in `missing`; it is a figure, not a missing input.
+    if (/\d\*$/.test(slot.value)) continue;
     assert.ok([NOT_AVAILABLE, "Loading"].includes(slot.value), `${slot.id} reads ${slot.value}`);
     assert.equal(slot.reading.pie, null, `${slot.id} draws no disc without its input`);
   }

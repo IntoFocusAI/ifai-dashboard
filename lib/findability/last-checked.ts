@@ -7,6 +7,7 @@
 import { isPastCheckSchedule, type PartialFigure } from "@/lib/fender-canvas/canvas-reads";
 import { formatCheckedAt } from "@/lib/fender-canvas/featured-offer-copy";
 import { formatInt } from "@/lib/fender-canvas/format";
+import { RECHECK_DAYS, rowsStale } from "@/lib/fender-canvas/row-stale";
 import { findabilityOutcome, type FindabilityRow } from "@/lib/findability/outcomes";
 
 export const LAST_CHECKED_UNAVAILABLE_LABEL = "Not available*";
@@ -66,6 +67,19 @@ export function newestAmazonSpecCheckAt(rows: readonly AmazonSpecCheckRow[]): st
     rows,
     (row) => row.amazon_checked === true,
     (row) => row.checked_at,
+  );
+}
+
+/**
+ * The per-row stale reading (X-25) for the Amazon spec figures: each Amazon-checked listing's own
+ * spec_readiness.checked_at against twice the weekly schedule.
+ */
+export function amazonSpecsStale(rows: readonly AmazonSpecCheckRow[], now: number = Date.now()): PartialFigure | null {
+  return rowsStale(
+    rows.filter((row) => row.amazon_checked === true),
+    (row) => row.checked_at,
+    { intervalDays: RECHECK_DAYS.weekly, check: "Amazon spec check", source: "canvas_spec_readiness", figure: "completeness figures" },
+    now,
   );
 }
 

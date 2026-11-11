@@ -16,7 +16,7 @@ import type { PartialFigure } from "@/lib/fender-canvas/canvas-reads";
 import { formatInt } from "@/lib/fender-canvas/format";
 import { requiredAmazonSpecList } from "@/lib/fender-canvas/spec-missing-fields";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
-import { newestAmazonSpecCheckAt, weeklyCheckStale } from "@/lib/findability/last-checked";
+import { amazonSpecsStale, newestAmazonSpecCheckAt } from "@/lib/findability/last-checked";
 
 const PIE_SIZE = "citation-pie-disc citation-pie-disc-amazon-specs";
 
@@ -108,11 +108,7 @@ export function AiReadinessLead({ bundle, specRows }: { bundle: CanvasBundle; sp
     // While the listing rows load, the field totals are still coming, not unavailable.
     needsRowTotals && specRows.phase === "loading" ? { ...hero, ratio: null } : hero,
   );
-  const stale = weeklyCheckStale(checkedAt, {
-    check: "Amazon listing check",
-    source: "canvas_spec_readiness",
-    figure: "completeness figures",
-  });
+  const stale = useMemo(() => (rows ? amazonSpecsStale(rows) : null), [rows]);
 
   return (
     <div className="ai-readiness-lead" data-ai-readiness-lead="" data-amazon-specs-lead="">
