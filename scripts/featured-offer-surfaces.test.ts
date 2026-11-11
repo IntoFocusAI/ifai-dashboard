@@ -251,8 +251,6 @@ function tsxFiles(dir: string, out: string[] = []): string[] {
    as tech debt to split when that area is next edited, not as a blocker here. */
 const PRE_EXISTING_OVERSIZED = [
   "components/intofocus-portal/PortalView.tsx",
-  "components/sdk/docs/DesignSystemContent.tsx",
-  "components/sdk/sdk-canvas-spec.tsx",
   "lib/canvas-sdk/CanvasShell.tsx",
   "lib/canvas-sdk/GraphPrimitives.tsx",
 ];

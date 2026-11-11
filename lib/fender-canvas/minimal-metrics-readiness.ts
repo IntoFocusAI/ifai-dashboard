@@ -6,7 +6,7 @@ import {
   outcomeLeadPie,
   outcomeLeadTip,
   outcomeRatioFigure,
-  outcomeShareColor,
+  outcomeShareTone,
   outcomeShareFigure,
 } from "@/lib/findability/lead";
 import { countFindability, type FindabilityBucket, type OutcomeCounts } from "@/lib/findability/outcomes";
@@ -64,7 +64,7 @@ function outcomeEntry(bucket: Exclude<FindabilityBucket, "exact_official_product
       if (!share || !ratio) return missingFigure("This official-page read has no listings.");
       return {
         value: share,
-        tone: toneFromColor(outcomeShareColor(counts, bucket)),
+        tone: outcomeShareTone(counts, bucket) ?? "neutral",
         ratio: `${ratio} ${LISTINGS_IN_READ}`,
         pie: outcomeLeadPie(counts, bucket),
         tip: outcomeLeadTip(counts, bucket),

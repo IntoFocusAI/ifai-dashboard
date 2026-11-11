@@ -28,8 +28,6 @@ const MAX_TSX_LINES = 400;
 /* Allow-list. Each entry is a repo-relative path prefix and the rules it skips.
    Keep it short and say why. */
 const ALLOW = [
-  // Internal SDK docs and design-system playground; not shown to clients.
-  { path: "components/sdk/", rules: ["contraction", "emoji", "em-dash", "em-dash-placeholder"], why: "internal SDK docs, not client-facing" },
 ];
 
 const args = process.argv.slice(2);

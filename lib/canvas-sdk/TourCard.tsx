@@ -43,7 +43,7 @@ export function TourCard({
           </span>
           <span className="tour-category-badge">{step.category}</span>
         </div>
-        <button className="tour-close-btn" onClick={onClose} title="Close Tour (ESC)">
+        <button className="tour-close-btn" onClick={onClose} aria-label="Close tour">
           <X size={15} />
         </button>
       </div>

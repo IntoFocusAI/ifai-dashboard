@@ -223,7 +223,7 @@ for (const viewport of [
       await page.goto("/dashboard?ai-history=fixture");
       await expect(page.locator(".graph-node").first()).toBeVisible();
       await canvas.openSpokeFromMap("AI Search Visibility");
-      const theme = page.locator("button[title='Toggle Light / Dark']");
+      const theme = page.locator("button[aria-label='Toggle Light / Dark']");
       for (const mode of ["dark", "light"] as const) {
         if (mode === "light") await theme.click();
         await expect(page.locator(".ifai-canvas")).toHaveClass(mode === "light" ? /light-theme/ : /^((?!light-theme).)*$/);

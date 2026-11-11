@@ -45,7 +45,7 @@ test("Roadmap first tab renders briefingFindingsLead via RoadmapFindingsPanel", 
     "MAP leakage",
     "Splintered Listings",
     "Exact official product pages",
-    "Unbranded discovery",
+    "Unbranded Discovery",
   ]) {
     assert.match(read("lib/fender-canvas/briefing-retail-lead.ts"), new RegExp(label));
   }

@@ -126,7 +126,6 @@ export function LargeMetricSlots({ metrics, storageKey, spokes, onOpenMetric }: 
               onClick={() => togglePicker(slotIndex)}
               aria-label={`Configure ${slotName}`}
               aria-expanded={pickerOpen}
-              title="Choose metric"
             >
               <Wrench aria-hidden="true" size={13} strokeWidth={1.8} />
             </button>

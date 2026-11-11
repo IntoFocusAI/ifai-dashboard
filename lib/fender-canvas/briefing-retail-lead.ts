@@ -272,7 +272,7 @@ function unbrandedPie(fenderWins: number, resolved: number): PieDiscData | null 
   const rest = resolved - fenderWins;
   return {
     id: "briefing-unbranded",
-    title: "Unbranded discovery",
+    title: "Unbranded Discovery",
     total: resolved,
     totalLabel: "resolved unbranded discovery answers",
     slices: [
@@ -292,7 +292,7 @@ function unbrandedFinding(read: AiSearchRead, options: BriefingAiOptions): Brief
       "unbranded_discovery",
       "aeo",
       "Run Details",
-      "Unbranded discovery",
+      "Unbranded Discovery",
       loading ? "Loading the published AI Search run." : AI_READ_FAILED,
       loading,
     );
@@ -313,7 +313,7 @@ function unbrandedFinding(read: AiSearchRead, options: BriefingAiOptions): Brief
     id: "unbranded_discovery",
     spokeId: "aeo",
     tab: "Run Details",
-    label: "Unbranded discovery",
+    label: "Unbranded Discovery",
     percent: ready ? lead.rate! : BRIEFING_COUNT_MISSING,
     ratio: ready ? formatRatio(tally.fenderWins, tally.resolved) : null,
     color: lead.color ?? TONE_COLOR.warning,

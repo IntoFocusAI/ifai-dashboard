@@ -7,10 +7,17 @@ import { RetailShareDisc, RetailStatusMark } from "@/components/v3/live/RetailOv
 import { RetailOverviewLead } from "@/components/v3/live/RetailOverviewLead";
 import { authorizedPartnersFromSave } from "@/lib/fender-canvas/authorized-sellers";
 import { useAuthorizedSellers } from "@/lib/fender-canvas/authorized-sellers-store";
-import { scoreAgainst100Pie, scoreTone, scoreToneColor } from "@/lib/fender-canvas/consensus-score-display";
+import {
+  scoreAgainst100Pie,
+  scoreAgainstTarget,
+  scoreFigure,
+  scoreTargetLabel,
+  scoreTone,
+  scoreToneColor,
+} from "@/lib/fender-canvas/consensus-score-display";
 import { commerceInputsFromLive } from "@/lib/fender-canvas/consensus-scores-from-live";
 import { commerceScore, type PillarScore } from "@/lib/fender-canvas/consensus-scores";
-import { formatPct, formatRatio } from "@/lib/fender-canvas/format";
+import { formatRatio } from "@/lib/fender-canvas/format";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
 
 /**
@@ -33,7 +40,7 @@ function CommerceCard({
   const pie = scoreAgainst100Pie("score-commerce", name, score);
   const tip =
     score != null && coverage
-      ? `${name}: ${formatPct(score)} · ${formatRatio(coverage.numerator, coverage.denominator)} of inputs in.`
+      ? `${name}: ${scoreAgainstTarget(score)} · ${formatRatio(coverage.numerator, coverage.denominator)} of inputs in.`
       : null;
   return (
     <div
@@ -52,8 +59,13 @@ function CommerceCard({
             data-consensus-pillar-included="true"
             style={{ color: tone ? scoreToneColor(score) : "var(--text-muted)" }}
           >
-            {score == null ? "Not available" : formatPct(score, 0)}
+            {score == null ? "Not available" : scoreFigure(score)}
           </span>
+          {score != null ? (
+            <span className="retail-overview-hero-ratio" data-consensus-target="">
+              {scoreTargetLabel()}
+            </span>
+          ) : null}
           {coverage ? (
             <span className="retail-overview-hero-ratio" data-consensus-pillar-coverage="">
               {formatRatio(coverage.numerator, coverage.denominator)}
