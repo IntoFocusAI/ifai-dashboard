@@ -2,6 +2,7 @@
 
 import { BriefingConsensusLead } from "@/components/v3/live/BriefingConsensusLead";
 import { BriefingFindingCard } from "@/components/v3/live/BriefingFindingCard";
+import { DeckLauncher } from "@/components/v3/live/deck/DeckLauncher";
 import { useFindability } from "@/components/v3/live/findability/FindabilityContext";
 import { useSummaryAiRead, useSummaryAiStale } from "@/components/v3/live/useSummaryAiRead";
 import {
@@ -50,6 +51,8 @@ export function BriefingRetailHero({
   const [buyBox, ...rest] = findings;
 
   return (
+    <>
+    <DeckLauncher bundle={bundle} retail={read} />
     <div className="briefing-findings" data-briefing-retail-hero="" data-briefing-findings="">
       <BriefingConsensusLead bundle={bundle} retail={read} ai={ai} />
       <BriefingFindingCard finding={buyBox} />
@@ -58,5 +61,6 @@ export function BriefingRetailHero({
         <BriefingFindingCard key={finding.id} finding={finding} />
       ))}
     </div>
+    </>
   );
 }
