@@ -233,7 +233,8 @@ test("a first visit opens six empty slots", () => {
   assert.match(specSource, /minimalViewKeys\(options\.metricStorageSuffix \?\? "anonymous"\)/);
 });
 
-const AREA_ORDER = ["hub", "ecommerce", "aeo", "specs", "competitors", "suggestions"];
+// The Roadmap figure follows Action Items: its 30-60-90 Days tab leads with it.
+const AREA_ORDER = ["hub", "ecommerce", "aeo", "specs", "competitors", "suggestions", "roadmap"];
 
 test("the list offers most headline figures, grouped by area, and each opens a tab that shows it", () => {
   const { nodes, slots } = build(retailReady(), aiReady());
@@ -247,8 +248,8 @@ test("the list offers most headline figures, grouped by area, and each opens a t
   assert.ok(slots.slice(firstOther).every((slot) => slot.area === "Other"), "Other comes last");
   const mapped = slots.slice(0, firstOther);
   const areas = mapped.map((slot) => AREA_ORDER.indexOf(slot.spokeId));
-  assert.ok(areas.every((area) => area >= 0), "every option sits in one of the six areas");
-  assert.deepEqual([...areas].sort((a, b) => a - b), areas, "areas run Summary through Action Items");
+  assert.ok(areas.every((area) => area >= 0), "every option sits in one of the seven areas");
+  assert.deepEqual([...areas].sort((a, b) => a - b), areas, "areas run Summary through the Roadmap");
   assert.deepEqual([...new Set(mapped.map((slot) => slot.spokeId))], AREA_ORDER, "every area has options");
   for (const slot of slots) {
     const tab = openedTab(slot.spokeId, slot.subTab);
@@ -373,7 +374,6 @@ const OTHER: Record<string, [spokeId: string, tab: string]> = {
   "strongest-category-sov": ["competitors", "Category Battlecards"],
   "resolved-simulations": ["aeo", "Run Summary"],
   "ai-actuation": ["hub", "Performance"],
-  "day-90-buy-box-target": ["roadmap", "30-60-90 Days"],
 };
 
 function storedBundle(): CanvasBundle {
@@ -385,7 +385,7 @@ function storedBundle(): CanvasBundle {
 }
 
 test("Other lists the figures no tab shows, last, each opening its closest tab with a definition", () => {
-  const { slots } = build(retailReady(), aiReady(), findability, { b: storedBundle() });
+  const { slots, nodes } = build(retailReady(), aiReady(), findability, { b: storedBundle() });
   const others = slots.filter((slot) => slot.area === "Other");
   assert.deepEqual(others.map((slot) => slot.id), Object.keys(OTHER), "in the order PM20 listed them");
   for (const slot of others) {
@@ -424,9 +424,10 @@ test("Other lists the figures no tab shows, last, each opening its closest tab w
   assert.equal(actuation.value, NOT_AVAILABLE, "AI Actuation has no records yet");
   assert.equal(actuation.reading.missing, "No owner, evidence, or dated records yet.");
   const plan = slotById(slots, "day-90-buy-box-target");
-  assert.equal(plan.value, "3 phases", "reads the Roadmap bubble");
-  assert.equal(plan.reading.ratio, "MAP, catalog nesting, and estimated lift");
-  assert.match(plan.definition ?? "", /a plan, not a measured result/);
+  const roadmap = nodes.find((node) => node.id === "spoke-roadmap");
+  assert.equal(plan.value, roadmap?.heroValue?.value, "reads the Roadmap bubble");
+  assert.equal(plan.tone, "neutral", "a plan is not graded, so it never takes the Champagne color");
+  assert.equal(plan.area, undefined, "the 30-60-90 Days tab shows it, so it is not an Other figure");
 
   const unstored = build(retailReady(), { phase: "error", message: "down" }).slots;
   for (const id of ["buy-box-retention", "seller-data-coverage", "beginner-sov-gap", "strongest-category-sov", "resolved-simulations"]) {

@@ -60,8 +60,9 @@ test.describe("primary spoke map", () => {
 
       const roadmap = page.locator('[data-graph-node-id="spoke-roadmap"]');
       await expect(roadmap.locator(".node-meta")).toHaveCount(0);
-      await expect(roadmap.locator(".node-hero-value")).toContainText("90 Days");
-      await expect(roadmap.locator(".node-hero-label")).toContainText(/3 phases/i);
+      // A live count, never the fixed "90 Days / 3 phases" plan.
+      await expect(roadmap.locator(".node-hero-label")).toContainText(/findings\s*need\s*action/i);
+      await expect(roadmap.locator(".node-hero-value")).toHaveText(/^(\d+ of \d+\*?|Loading|Not available\*)$/);
       await expect(roadmap.locator(".node-stat-pill")).toHaveCount(0);
 
       const readiness = page.locator('[data-graph-node-id="spoke-specs"]');

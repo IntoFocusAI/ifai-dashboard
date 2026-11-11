@@ -28,6 +28,7 @@ test.describe("Minimal / Balanced view switch", () => {
       "AI Readiness",
       "Competitive Radar",
       "Action Items",
+      "Roadmap",
       "Other",
     ]);
     await expect.poll(() => dialog.locator("[data-metric-option]").count()).toBeGreaterThanOrEqual(38);
@@ -54,7 +55,8 @@ test.describe("Minimal / Balanced view switch", () => {
     }
     const other = dialog.locator(".metric-widget-group").last();
     await expect(other.locator("h3")).toHaveText("Other");
-    await expect(other.locator("[data-metric-option]")).toHaveCount(8);
+    // The 90-day plan left Other: the Roadmap's 30-60-90 Days tab leads with it.
+    await expect(other.locator("[data-metric-option]")).toHaveCount(7);
     const actuation = other.locator("[data-metric-option='ai-actuation']");
     await expect(actuation.locator("small.ifai-term")).toHaveText("Not available*");
     await expect(actuation.locator("strong .ifai-term")).toHaveAttribute("data-ifai-tooltip-desc", /No tab shows/);

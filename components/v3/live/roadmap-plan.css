@@ -1,4 +1,4 @@
-/* Action Items fix list and the Roadmap plan items. Weights stay at or under 600; no text
+/* Action Items fix list and the Roadmap 30-60-90 plan. Weights stay at or under 600; no text
    is smaller than 11px (X-27, X-31). */
 
 .plan-empty,
@@ -89,4 +89,109 @@
 .plan-pages li {
   overflow-wrap: anywhere;
   line-height: 1.5;
+}
+
+/* Roadmap: owner sentence, positions, then three phase columns. */
+.roadmap-owner {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.roadmap-lead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-top: 10px;
+}
+
+.roadmap-lead-figure {
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-main);
+}
+
+.roadmap-lead-label {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.roadmap-positions {
+  margin: 6px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.roadmap-phases {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+@media (max-width: 1100px) {
+  .roadmap-phases {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.roadmap-phase {
+  min-width: 0;
+}
+
+.roadmap-phase-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+  margin-bottom: 8px;
+}
+
+.roadmap-phase-days {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.roadmap-phase-focus {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.roadmap-item {
+  padding: 10px 0;
+  border-top: 1px solid var(--border-dark);
+  min-width: 0;
+}
+
+.roadmap-item-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 8px;
+  margin-bottom: 4px;
+}
+
+.roadmap-item-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-main);
+  overflow-wrap: anywhere;
+}
+
+.roadmap-item-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  margin-top: 6px;
 }

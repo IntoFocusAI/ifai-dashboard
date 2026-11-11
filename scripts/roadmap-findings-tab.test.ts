@@ -29,16 +29,17 @@ test("Roadmap first tab no longer ships the example 30-60-90 phase cards", () =>
   assert.doesNotMatch(JSON.stringify(spec), /Executive KPI Target Matrix|Flexible Resourcing/);
 });
 
-test("Roadmap first tab renders briefingFindingsLead via RoadmapFindingsPanel", () => {
+test("Roadmap 30-60-90 Days renders the shared plan in three dated phases (S-02, S-04)", () => {
   const spokes = read("components/v3/build-live-spokes.tsx");
   const panel = read("components/v3/live/RoadmapFindingsPanel.tsx");
-  assert.match(spokes, /RoadmapFindingsPanel/);
+  const data = read("components/v3/live/RoadmapPlanData.ts");
   assert.match(spokes, /roadmap:\s*\{[\s\S]*0:\s*\([^)]*\)\s*=>\s*<RoadmapFindingsPanel/);
-  assert.match(panel, /briefingFindingsLead/);
-  assert.match(panel, /BriefingFindingCard/);
-  assert.match(panel, /Current findings/);
-  assert.doesNotMatch(panel, /Phase 1|Days 1 to 30|Open details|dated phase|since last time|what changed/i);
-  assert.doesNotMatch(panel, /lostRevenue|LostRevenue|BRIEFING_LOST_REVENUE|\$680|\$38M/i);
+  assert.match(data, /briefingFindingsLead/);
+  assert.match(panel, /useRoadmapPlan\(read\)/);
+  assert.match(panel, /PLAN_PHASES\.map/);
+  assert.match(panel, /IntoFocus's recommended plan for/);
+  assert.doesNotMatch(panel, /Open details|since last time|what changed/i);
+  assert.doesNotMatch(panel + data, /lostRevenue|LostRevenue|BRIEFING_LOST_REVENUE|\$680|\$38M|fee|retainer/i);
   assert.doesNotMatch(panel, /\u2014/);
   for (const label of [
     "Buy Box withheld",
