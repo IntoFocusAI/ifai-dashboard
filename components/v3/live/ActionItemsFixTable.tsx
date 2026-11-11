@@ -15,11 +15,11 @@ const COLUMNS: RetailColumn[] = [
   { id: "action", name: "What to fix", label: "What to fix", width: 420, minWidth: 240, sort: "text" },
   { id: "finding", name: "Finding", label: "Finding", width: 220, minWidth: 170, sort: "number" },
   { id: "status", name: "Status", label: "Status", width: 120, minWidth: 104, sort: "text" },
-  { id: "phase", name: "Phase", label: "Phase", width: 160, minWidth: 150, sort: "number" },
+  { id: "phase", name: "Phase", label: "Phase", width: 104, minWidth: 104, sort: "number" },
   { id: "evidence", name: "Evidence", label: "Evidence", width: 220, minWidth: 180, sort: "text" },
 ];
 
-const WRAP = ["finding", "evidence"] as const;
+const WRAP = ["finding", "phase", "evidence"] as const;
 
 function shareOf(item: PlanItem): number | null {
   const match = /^([\d,]+) of ([\d,]+)/.exec(item.ratio ?? "");
