@@ -78,6 +78,11 @@ export function hasSourceAction(type: SiteType): boolean {
   return ACTIONS[type] != null;
 }
 
+/** The 21c action for a site of this type, or null for brand-owned and Unclassified sites. */
+export function sourceActionWording(type: SiteType, site: string): string | null {
+  return ACTIONS[type]?.(site) ?? null;
+}
+
 export type CitedPage = { url: string; title: string | null; answers: number };
 
 export type SourceAction = {
@@ -93,17 +98,19 @@ export type SourceAction = {
   runsOver: number;
   runsRead: number;
   categories: string[];
+  /** Stored category keys the site is cited in, for a client focus (rolling plan). */
+  categoryKeys: string[];
   pages: CitedPage[];
   fact: string;
   action: string;
 };
 
-type RunShares = {
+export type RunShares = {
   read: ReturnType<typeof citationEvidence>;
   byDomain: Map<string, CitationEvidence[]>;
 };
 
-function runShares(snapshot: AiSearchSnapshot): RunShares {
+export function runShares(snapshot: AiSearchSnapshot): RunShares {
   const read = citationEvidence(snapshot.calls, snapshot.citations, "commercial");
   const byDomain = new Map<string, CitationEvidence[]>();
   for (const row of read.rows) {
@@ -115,11 +122,11 @@ function runShares(snapshot: AiSearchSnapshot): RunShares {
   return { read, byDomain };
 }
 
-function answersOf(rows: readonly CitationEvidence[]): number {
+export function answersOf(rows: readonly CitationEvidence[]): number {
   return new Set(rows.map((row) => row.simulationId)).size;
 }
 
-function shareIn(run: RunShares, domain: string): number {
+export function shareIn(run: RunShares, domain: string): number {
   const total = run.read.answersWithCitation;
   if (total <= 0) return 0;
   return answersOf(run.byDomain.get(domain) ?? []) / total;
@@ -139,7 +146,7 @@ function topCategories(rows: readonly CitationEvidence[]): string[] {
     .map((entry) => entry.label);
 }
 
-function citedPages(rows: readonly CitationEvidence[]): CitedPage[] {
+export function citedPages(rows: readonly CitationEvidence[]): CitedPage[] {
   const pages = new Map<string, { title: string | null; answers: Set<string> }>();
   for (const row of rows) {
     const page = pages.get(row.canonicalUrl) ?? { title: row.title, answers: new Set<string>() };
@@ -188,6 +195,7 @@ export function sourceActions(runs: readonly AiSearchSnapshot[]): SourceAction[]
       runsOver,
       runsRead: read.length,
       categories: topCategories(rows),
+      categoryKeys: [...new Set(rows.map((row) => row.category).filter(Boolean))].sort(),
       pages: citedPages(rows),
     };
     out.push({ ...base, fact: factLine(base), action: wording(domain) });

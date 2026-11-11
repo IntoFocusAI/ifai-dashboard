@@ -32,6 +32,8 @@ export type SignalAction = {
   action: string;
   open: { spokeId: string; tab: string };
   partial: PartialFigure | null;
+  /** Stored category keys the signal belongs to; absent when it is brand-wide (client focus). */
+  categories?: string[];
 };
 
 function outOfStock(stock: StockLossRead): SignalAction | null {
@@ -119,6 +121,7 @@ function rivalLedCategories(ai: AiSearchRead): SignalAction[] {
         action: `Publish comparison content on ${brandSite()} for ${lead.label} against ${rival.brand}.`,
         open: { spokeId: "competitors", tab: "Category Battlecards" },
         partial: null,
+        categories: [lead.key],
       },
     ];
   });

@@ -25,12 +25,18 @@ function RoadmapItem({ item }: { item: PlanItem }) {
   );
 }
 
-/** One of the three dated phases (21g), with an explicit line when it holds no action. */
-export function RoadmapPhase({ phase, items, pending }: { phase: Phase; items: PlanItem[]; pending: boolean }) {
+/**
+ * One of the three dated phases (21g), dated from today (rolling 90 days), with an explicit
+ * line when it holds no action.
+ */
+export function RoadmapPhase({ phase, dates, items, pending }: { phase: Phase; dates: string; items: PlanItem[]; pending: boolean }) {
   return (
-    <section className="content-box roadmap-phase" data-roadmap-phase={phase.id} aria-label={phase.label}>
+    <section className="content-box roadmap-phase" data-roadmap-phase={phase.id} aria-label={`${phase.label}, ${dates}`}>
       <div className="roadmap-phase-title">
         <span className="roadmap-phase-days">{phase.label}</span>
+        <span className="roadmap-phase-dates" data-roadmap-phase-dates="">
+          {dates}
+        </span>
         <span className="roadmap-phase-focus">{phase.focus}</span>
       </div>
       {items.length ? (

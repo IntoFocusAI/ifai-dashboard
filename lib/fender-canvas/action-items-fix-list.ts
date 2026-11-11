@@ -8,7 +8,7 @@ import type { BriefingFinding, BriefingFindingId } from "@/lib/fender-canvas/bri
 export const FIX_LIST_TITLE = "Fixes in priority order";
 
 export const FIX_LIST_PRIORITY_RULE =
-  "Critical findings come first, then at risk, then on track, then findings with no stored reading. Within a status, the finding that affects the larger share of its listings or answers comes first. For exact official product pages and unbranded discovery a higher share is better, so the share affected is the rest: listings without an exact page, and answers that do not lead with the brand. After the five findings come out-of-stock listings and missing Amazon spec fields, then the source, competitor, and fact-check actions, by the share of answers each affects.";
+  "Critical findings come first, then at risk, then on track, then findings with no stored reading. Within a status, the finding that affects the larger share of its listings or answers comes first. For exact official product pages and unbranded discovery a higher share is better, so the share affected is the rest: listings without an exact page, and answers that do not lead with the brand. After the five findings come out-of-stock listings and missing Amazon spec fields, then the brand's own pages and listings when one of their factors is below Good, then the source, competitor, and fact-check actions, by the share of answers each affects. Then come the weakest engine, the weakest unbranded discovery questions, and the cited sites rising or falling fastest, each only when it trails the best comparable, or has moved, by 10 points or more, with at least 30 answers behind the figure. Wording the brand's pages to match shopper questions comes last.";
 
 export const FIX_ESTIMATE_LABEL = "analyst estimate";
 

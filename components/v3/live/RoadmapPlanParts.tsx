@@ -67,8 +67,9 @@ export function PlanAction({ item }: { item: PlanItem }) {
 
 /** Opens the evidence tab; a source action also lists the pages the answers cite. */
 export function PlanEvidence({ item }: { item: PlanItem }) {
-  // A source action opens Citation Ecosystem on that site's rows, as the tab's own links do.
-  const focus: EvidenceFocus | null = item.kind === "source" ? { field: "domain", value: item.label } : null;
+  // A source or site action opens Citation Ecosystem on that site's rows, and an engine or
+  // question action opens Run Details on its answers, as the tabs' own links do.
+  const focus: EvidenceFocus | null = item.evidence;
   return (
     <span>
       <button

@@ -105,10 +105,10 @@ test("Action Items renders the React fix list on the map's AI population", () =>
   const spokes = read("components/v3/build-live-spokes.tsx");
   assert.doesNotMatch(spokes, /urgentInterventionsHtml|ai_action_card|aiActionCardHtml|CurrentFindingsPanel/);
   const overrides = spokes.slice(spokes.indexOf("const TAB_OVERRIDES"), spokes.indexOf("function wrapSpoke"));
-  assert.match(overrides, /suggestions:\s*\{\s*0:\s*\([^)]*\)\s*=>\s*<ActionItemsPanel read=\{retail\} \/>/);
+  assert.match(overrides, /suggestions:\s*\{\s*0:\s*\([^)]*\)\s*=>\s*<ActionItemsPanel read=\{retail\} bundle=\{bundle\} \/>/);
   assert.match(overrides, /\broadmap:\s*\{/);
   const panel = read("components/v3/live/ActionItemsPanel.tsx");
-  assert.match(panel, /useRoadmapPlan\(read\)/);
+  assert.match(panel, /useRoadmapPlan\(read, bundle\)/);
   assert.match(panel, /data-fix-empty/);
   assert.match(read("components/v3/live/RoadmapPlanData.ts"), /useSummaryAiRead\(\)/);
 });

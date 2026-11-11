@@ -1,6 +1,7 @@
 "use client";
 
 import "@/components/v3/live/roadmap-plan.css";
+import { useState } from "react";
 import { FigureTip, PartialFigureMark } from "@/components/v3/live/FigureTip";
 import { RoadmapPhase } from "@/components/v3/live/RoadmapPhase";
 import { CitationPieDisc } from "@/components/v3/live/ai-search/CitationPieDisc";
@@ -8,6 +9,8 @@ import { useRoadmapPlan } from "@/components/v3/live/RoadmapPlanData";
 import { brandName } from "@/lib/brand-copy";
 import { BRIEFING_COUNT_MISSING, BRIEFING_LOADING } from "@/lib/fender-canvas/briefing-retail-lead";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
+import { phaseWindow } from "@/lib/fender-canvas/roadmap-dates";
+import type { CanvasBundle } from "@/lib/fender-canvas/types";
 import {
   PLAN_FIGURE_LABEL,
   PLAN_PHASES,
@@ -53,10 +56,12 @@ function positionsLine(plan: readonly PlanItem[]): string | null {
 
 /**
  * Roadmap · 30-60-90 Days (S-02, S-03, S-04): the plan Action Items ranks, laid out in the three
- * dated phases of decision 21 g. It rolls forward with each published run and each retail read.
+ * phases of decision 21 g. It rolls: each refresh dates the phases from today and rebuilds the
+ * plan from the latest published run and retail read.
  */
-export function RoadmapFindingsPanel({ read }: { read: RetailCanvasRead }) {
-  const { plan, findings, sources } = useRoadmapPlan(read);
+export function RoadmapFindingsPanel({ read, bundle }: { read: RetailCanvasRead; bundle: CanvasBundle | null }) {
+  const { plan, findings, sources, held, ownPagesReason } = useRoadmapPlan(read, bundle);
+  const [today] = useState(() => new Date());
   const figure = planFindingsFigure(findings);
   const pie = planFindingsPie(figure);
   const pending = sources.phase === "loading";
@@ -64,7 +69,12 @@ export function RoadmapFindingsPanel({ read }: { read: RetailCanvasRead }) {
   const positions = positionsLine(plan);
 
   return (
-    <div data-roadmap-plan="" data-roadmap-sources={sources.phase}>
+    <div
+      data-roadmap-plan=""
+      data-roadmap-sources={sources.phase}
+      data-roadmap-held={JSON.stringify(held)}
+      data-roadmap-own-pages={ownPagesReason}
+    >
       <div className="content-box">
         <p className="roadmap-owner" data-roadmap-owner="">
           {roadmapOwnerSentence()}
@@ -94,7 +104,13 @@ export function RoadmapFindingsPanel({ read }: { read: RetailCanvasRead }) {
       </div>
       <div className="roadmap-phases">
         {PLAN_PHASES.map((phase) => (
-          <RoadmapPhase key={phase.id} phase={phase} items={phaseItems(plan, phase.id)} pending={pending} />
+          <RoadmapPhase
+            key={phase.id}
+            phase={phase}
+            dates={phaseWindow(phase.id, today).label}
+            items={phaseItems(plan, phase.id)}
+            pending={pending}
+          />
         ))}
       </div>
     </div>

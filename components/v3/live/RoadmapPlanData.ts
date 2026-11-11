@@ -14,10 +14,13 @@ import { loadHistorySnapshot,type HistorySnapshotResult } from "@/lib/ai-search/
 import type { AiSearchRead, AiSearchSnapshot } from "@/lib/ai-search/types";
 import { briefingFindingsLead, type BriefingFinding } from "@/lib/fender-canvas/briefing-retail-lead";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
-import { buildPlan, type PlanItem } from "@/lib/fender-canvas/roadmap-plan";
+import { buildPlan, focusPlan, type PlanItem } from "@/lib/fender-canvas/roadmap-plan";
+import { BRAND_FOCUS, focusActions, type HeldItem, type PlanFocus } from "@/lib/fender-canvas/roadmap-focus";
+import { ownPagesAction } from "@/lib/fender-canvas/roadmap-own-pages";
 import { signalActions } from "@/lib/fender-canvas/roadmap-signals";
 import { SOURCE_RUNS_WINDOW, sourceActions } from "@/lib/fender-canvas/roadmap-sources";
 import { getCanvasSupabase } from "@/lib/supabase/canvas-client";
+import type { CanvasBundle } from "@/lib/fender-canvas/types";
 
 /** Earlier published runs, read once per run and shared by Action Items and the Roadmap. */
 const runReads = new Map<string, Promise<HistorySnapshotResult>>();
@@ -110,13 +113,20 @@ function useSourceRuns(current: AiSearchRead): SourceRunsRead {
 export type RoadmapPlanRead = {
   plan: PlanItem[];
   findings: BriefingFinding[];
-  /** Source actions wait on the earlier runs; the rest of the plan does not. */
+  /** Source and moving-site actions wait on the earlier runs; the rest of the plan does not. */
   sources: SourceRunsRead;
   ai: AiSearchRead;
+  /** 21d items a guardrail held back, and why no own-page action shows (21c). */
+  held: HeldItem[];
+  ownPagesReason: string;
 };
 
-/** The plan Action Items and the Roadmap show, on the map's AI population (decision 7). */
-export function useRoadmapPlan(retail: RetailCanvasRead): RoadmapPlanRead {
+/**
+ * The plan Action Items and the Roadmap show, on the map's AI population (decision 7). It is
+ * rebuilt on every read, so actions whose trigger clears drop off and new ones enter. A client
+ * focus narrows the plan to one category; the default is the whole brand.
+ */
+export function useRoadmapPlan(retail: RetailCanvasRead, bundle: CanvasBundle | null, focus: PlanFocus = BRAND_FOCUS): RoadmapPlanRead {
   const ai = useSummaryAiRead();
   const aiStale = useSummaryAiStale(ai);
   const findability = useFindability();
@@ -125,11 +135,16 @@ export function useRoadmapPlan(retail: RetailCanvasRead): RoadmapPlanRead {
 
   return useMemo(() => {
     const { findings } = briefingFindingsLead(retail, findability, ai, { aiStale });
+    const current = ai.phase === "ready" ? ai.snapshot : null;
+    const own = ownPagesAction(bundle, current);
+    const focused = focusActions({ current, runs: sources.phase === "ready" ? sources.snapshots : null, focus });
     const plan = buildPlan({
       findings,
       signals: signalActions({ retail, ai, stock }),
       sources: sources.phase === "ready" ? sourceActions(sources.snapshots) : [],
+      ownPages: own.action,
+      focus: focused.actions,
     });
-    return { plan, findings, sources, ai };
-  }, [ai, aiStale, findability, retail, sources, stock]);
+    return { plan: focusPlan(plan, focus), findings, sources, ai, held: focused.held, ownPagesReason: own.reason };
+  }, [ai, aiStale, bundle, findability, focus, retail, sources, stock]);
 }

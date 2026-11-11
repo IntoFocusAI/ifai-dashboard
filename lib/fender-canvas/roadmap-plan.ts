@@ -1,14 +1,17 @@
 /**
  * The plan Action Items and the Roadmap share (decision 21, FDD S-02, N-01, N-04).
  *
- * Order (21f): the five findings keep the fix-list order, then the ecommerce signals, then the
- * source, competitor, and fact-check actions by the share of answers they affect.
+ * Order (21f): the five findings keep the fix-list order, then the ecommerce signals and the
+ * brand's own pages when a page factor is below Good (21c), then the source, competitor, and
+ * fact-check actions by the share of answers they affect, then the focus items (21d: weakest
+ * engine, weakest questions, cited sites moving fastest), then rewording the brand's pages.
  * Phases (21g): Days 1 to 30 listing fixes, 31 to 60 catalog and site content, 61 to 90
- * outreach programs. The plan is rebuilt from each read, so an action leaves when its trigger
- * drops below its threshold (21h).
+ * outreach programs. The plan is rebuilt from each read and dated from today (rolling 90 days),
+ * so an action leaves when its trigger clears (21h) and a new one enters when its trigger is met.
  */
 
 import type { PieDiscData } from "@/lib/ai-search/citation-pies";
+import type { EvidenceFocus } from "@/lib/ai-search/evidence-focus";
 import type { NodeStatus } from "@/lib/canvas-sdk/types";
 import { rankFixList, type FixListRow } from "@/lib/fender-canvas/action-items-fix-list";
 import type { BriefingFinding, BriefingFindingId } from "@/lib/fender-canvas/briefing-retail-lead";
@@ -20,6 +23,8 @@ import {
   type SiteType,
   type SourceAction,
 } from "@/lib/fender-canvas/roadmap-sources";
+import type { FocusAction, PlanFocus } from "@/lib/fender-canvas/roadmap-focus";
+import type { OwnPageAction } from "@/lib/fender-canvas/roadmap-own-pages";
 import type { SignalAction } from "@/lib/fender-canvas/roadmap-signals";
 import { findingAction, hasStoredReading } from "@/lib/fender-canvas/urgent-interventions-rows";
 
@@ -57,7 +62,13 @@ const SIGNAL_PHASE: Record<string, PlanPhase> = {
   "signal:fact_contradictions": "days_31_60",
 };
 
-export type PlanKind = "finding" | "signal" | "source";
+/** 21d: the weakest engine and questions are site content; a moving site keeps its type's phase. */
+const FOCUS_PHASE: Record<"engine" | "question", PlanPhase> = {
+  engine: "days_31_60",
+  question: "days_31_60",
+};
+
+export type PlanKind = "finding" | "signal" | "source" | "own_page" | "focus";
 
 export type PlanItem = {
   id: string;
@@ -82,6 +93,10 @@ export type PlanItem = {
   open: { spokeId: string; tab: string };
   siteType: string | null;
   pages: CitedPage[];
+  /** The rows the evidence button opens on, when the tab can narrow to them. */
+  evidence: EvidenceFocus | null;
+  /** Stored category keys the item belongs to; empty when it is brand-wide (client focus). */
+  categories: string[];
 };
 
 export const RECOMMENDED_LABEL = "Recommended";
@@ -107,6 +122,8 @@ function findingItem(row: FixListRow): PlanItem {
     open: { spokeId: finding.spokeId, tab: finding.tab },
     siteType: null,
     pages: [],
+    evidence: null,
+    categories: [],
   };
 }
 
@@ -131,6 +148,8 @@ function signalItem(signal: SignalAction): PlanItem {
     open: signal.open,
     siteType: null,
     pages: [],
+    evidence: null,
+    categories: signal.categories ?? [],
   };
 }
 
@@ -154,6 +173,58 @@ function sourceItem(source: SourceAction): PlanItem {
     open: { spokeId: "aeo", tab: "Citation Ecosystem" },
     siteType: SITE_TYPE_LABELS[source.type],
     pages: source.pages,
+    evidence: { field: "domain", value: source.domain },
+    categories: source.categoryKeys,
+  };
+}
+
+function ownPageItem(own: OwnPageAction): PlanItem {
+  return {
+    id: own.id,
+    kind: "own_page",
+    rank: 0,
+    phase: own.phase,
+    label: own.label,
+    percent: own.percent,
+    ratio: own.ratio,
+    tone: own.tone,
+    statusLabel: own.tone === "danger" ? "Critical" : own.tone === "warning" ? "At risk" : RECOMMENDED_LABEL,
+    fact: own.fact,
+    action: own.action,
+    needsAction: true,
+    noReading: false,
+    loading: false,
+    partial: null,
+    open: own.open,
+    siteType: null,
+    pages: [],
+    evidence: own.id === "own:wording" ? { field: "class", value: "fender_owned" } : null,
+    categories: [],
+  };
+}
+
+function focusItem(focus: FocusAction): PlanItem {
+  return {
+    id: focus.id,
+    kind: "focus",
+    rank: 0,
+    phase: focus.siteType ? (SOURCE_PHASE[focus.siteType] ?? null) : FOCUS_PHASE[focus.focus as "engine" | "question"],
+    label: focus.label,
+    percent: formatPct(focus.denominator > 0 ? (100 * focus.numerator) / focus.denominator : 0),
+    ratio: formatRatio(focus.numerator, focus.denominator),
+    tone: null,
+    statusLabel: RECOMMENDED_LABEL,
+    fact: focus.fact,
+    action: focus.action,
+    needsAction: true,
+    noReading: false,
+    loading: false,
+    partial: focus.partial,
+    open: focus.open,
+    siteType: focus.siteType ? SITE_TYPE_LABELS[focus.siteType] : null,
+    pages: focus.pages,
+    evidence: focus.evidence,
+    categories: focus.categories,
   };
 }
 
@@ -168,12 +239,34 @@ export type PlanInput = {
   findings: readonly BriefingFinding[];
   signals: readonly SignalAction[];
   sources: readonly SourceAction[];
+  /** 21c: the own-page action, when a factor is below Good or the brand site is cited rarely. */
+  ownPages?: OwnPageAction | null;
+  /** 21d: the focus items, each past both guardrails. */
+  focus?: readonly FocusAction[];
 };
+
+/**
+ * A moving site that already has a source action joins it: its movement sentence follows the
+ * source action's fact, so one site is never listed twice.
+ */
+function mergeMovement(sources: readonly SourceAction[], focus: readonly FocusAction[]) {
+  const domains = new Set(sources.map((source) => source.domain));
+  const merged = new Map<string, string>();
+  const rest: FocusAction[] = [];
+  for (const item of focus) {
+    const domain = item.focus === "site" && item.evidence?.field === "domain" ? item.evidence.value : null;
+    if (domain && domains.has(domain) && item.trend) merged.set(`source:${domain}`, item.trend);
+    else rest.push(item);
+  }
+  return { merged, rest };
+}
 
 /** Every item in Action Items order, ranked 1 to N. */
 export function buildPlan(input: PlanInput): PlanItem[] {
   const findings = rankedFindings(input.findings).map(findingItem);
   const ecommerce = input.signals.filter((signal) => signal.group === "ecommerce").map(signalItem);
+  const own = input.ownPages ? ownPageItem(input.ownPages) : null;
+  const { merged, rest } = mergeMovement(input.sources, input.focus ?? []);
   const shares = new Map<string, number>();
   const answers = [
     ...input.signals.filter((signal) => signal.group === "answers").map((signal) => {
@@ -182,10 +275,28 @@ export function buildPlan(input: PlanInput): PlanItem[] {
     }),
     ...input.sources.map((source) => {
       shares.set(`source:${source.domain}`, source.share);
-      return sourceItem(source);
+      const item = sourceItem(source);
+      const trend = merged.get(item.id);
+      return trend ? { ...item, fact: `${item.fact} ${trend}` } : item;
     }),
   ].sort((a, b) => (shares.get(b.id) ?? 0) - (shares.get(a.id) ?? 0) || a.label.localeCompare(b.label));
-  return [...findings, ...ecommerce, ...answers].map((item, index) => ({ ...item, rank: index + 1 }));
+  const urgentOwn = own && input.ownPages?.urgent ? [own] : [];
+  const laterOwn = own && !input.ownPages?.urgent ? [own] : [];
+  return [...findings, ...ecommerce, ...urgentOwn, ...answers, ...rest.map(focusItem), ...laterOwn].map((item, index) => ({
+    ...item,
+    rank: index + 1,
+  }));
+}
+
+/**
+ * The plan for a client focus: brand-wide items stay, and an item tied to categories stays when
+ * one of them is the focus. Ranks are renumbered. The brand focus returns the plan unchanged.
+ */
+export function focusPlan(plan: readonly PlanItem[], focus: PlanFocus): PlanItem[] {
+  if (focus.kind === "brand") return [...plan];
+  return plan
+    .filter((item) => item.categories.length === 0 || item.categories.includes(focus.key))
+    .map((item, index) => ({ ...item, rank: index + 1 }));
 }
 
 /** Items in one phase, in plan order: those that need action, then findings with no reading. */
