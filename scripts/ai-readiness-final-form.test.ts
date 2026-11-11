@@ -12,9 +12,14 @@ import {
   type ListingContentRow,
 } from "../lib/fender-canvas/listing-content.ts";
 import { specPagesStale, type SpecPageSummary } from "../lib/fender-canvas/machine-readability.ts";
-import { amazonFieldLabel, requiredAmazonSpecList } from "../lib/fender-canvas/spec-missing-fields.ts";
+import { amazonFieldLabel } from "../lib/fender-canvas/spec-missing-fields.ts";
 import { WEEKLY_CHECK_DAYS, weeklyCheckStale } from "../lib/findability/last-checked.ts";
 import { outcomeShareTone } from "../lib/findability/lead.ts";
+import {
+  categoryListingLabel,
+  categoryRequiredTooltip,
+  requiredSpecListsByCategory,
+} from "../lib/findability/required-spec-fields.ts";
 import { emptyOutcomeCounts } from "../lib/findability/outcomes.ts";
 
 const root = new URL("..", import.meta.url).pathname;
@@ -113,16 +118,50 @@ test("brand-site page figures count each page against its own latest read (X-25)
   assert.equal(specPagesStale(null, NOW), null);
 });
 
-test("Amazon Specs names its required-spec list, marked placeholder, with plain field names (D-05)", () => {
-  const list = requiredAmazonSpecList();
-  assert.equal(list.name, "guitar and instrument list");
-  assert.equal(list.fieldCount, 13);
-  assert.match(list.tooltip, /^Placeholder:/);
-  assert.match(list.tooltip, /scale length/);
+test("Amazon Specs required fields are each category's top 10 by fill rate, with no hand-kept list (D-05)", () => {
+  const fields = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l"];
+  const row = (category: string | null, filled: string[], checked: boolean | null = true) => ({
+    category,
+    amazon_checked: checked,
+    amazon_spec_values: Object.fromEntries(filled.map((field) => [field, "x"])),
+    amazon_missing_fields: fields.filter((field) => !filled.includes(field)).join(";"),
+  });
+  const rows = [
+    row("Headlamps", ["l", "k", "a"]),
+    row("Headlamps", ["l", "b"]),
+    row("Headlamps", ["l", "k"]),
+    row("Lanterns", ["a"]),
+    row("Headlamps", fields, false),
+    row(null, ["c"]),
+  ];
+  const lists = requiredSpecListsByCategory(rows);
+  assert.deepEqual(lists.map((list) => [list.category, list.listings]), [
+    ["Headlamps", 3],
+    ["Lanterns", 1],
+    ["No category recorded", 1],
+  ]);
+  const headlamps = lists[0];
+  // Only fields the category fills: l, k, a, b.
+  assert.equal(headlamps.fields.length, 4);
+  assert.deepEqual(headlamps.fields.slice(0, 4).map((fill) => [fill.field, fill.filled]), [
+    ["l", 3],
+    ["k", 2],
+    ["a", 1],
+    ["b", 1],
+  ]);
+  // A blank value is not a filled field; the unchecked row is not a listing.
+  assert.equal(requiredSpecListsByCategory([{ category: "X", amazon_spec_values: { a: " " } }])[0].fields.length, 0);
+  const many = requiredSpecListsByCategory([row("Big", fields)]);
+  assert.equal(many[0].fields.length, 10);
+  assert.equal(categoryListingLabel(headlamps), "Headlamps, 3 listings");
+  assert.equal(categoryListingLabel(lists[1]), "Lanterns, 1 listing");
+  assert.match(categoryRequiredTooltip(headlamps), /^The 4 spec fields filled most often across the 3 checked Headlamps listings/);
+  assert.match(categoryRequiredTooltip(headlamps), /L 100\.0% \(3 of 3\)/);
   assert.equal(amazonFieldLabel("scale_length"), "Scale length");
   assert.equal(amazonFieldLabel("light_output_maximum"), "Max lumens");
-  const lead = read("components/v3/live/AiReadinessLead.tsx");
-  assert.match(lead, /fields, placeholder\)/);
+  const line = read("components/v3/live/AmazonSpecsRequiredFields.tsx");
+  assert.match(line, /by fill rate in/);
+  assert.doesNotMatch(line + read("components/v3/live/AiReadinessLead.tsx"), /placeholder/i);
 });
 
 test("only the graded exact-page share carries a status; a figure without a population has none", () => {

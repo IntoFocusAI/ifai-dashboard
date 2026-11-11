@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { CitationPieDisc } from "@/components/v3/live/ai-search/CitationPieDisc";
 import { AmazonSpecsLastChecked } from "@/components/v3/live/AmazonSpecsLastChecked";
+import { AmazonSpecsRequiredFields } from "@/components/v3/live/AmazonSpecsRequiredFields";
 import { PartialFigureMark } from "@/components/v3/live/FigureTip";
 import { RetailStatusMark } from "@/components/v3/live/RetailOverviewFigure";
 import type { AmazonSpecRowsRead } from "@/components/v3/live/FenderSpecPanel";
@@ -13,8 +14,6 @@ import {
   type AiReadinessHeroModel,
 } from "@/lib/fender-canvas/ai-readiness-lead";
 import type { PartialFigure } from "@/lib/fender-canvas/canvas-reads";
-import { formatInt } from "@/lib/fender-canvas/format";
-import { requiredAmazonSpecList } from "@/lib/fender-canvas/spec-missing-fields";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
 import { amazonSpecsStale, newestAmazonSpecCheckAt } from "@/lib/findability/last-checked";
 
@@ -68,26 +67,6 @@ function ReadinessHero({ hero, stale }: { hero: AiReadinessHeroModel; stale: Par
   );
 }
 
-/** Names the required-spec list the completeness figures use (D-05). Marked placeholder. */
-function RequiredSpecListLine() {
-  const list = requiredAmazonSpecList();
-  return (
-    <p className="findability-last-checked" data-amazon-specs-required-list={list.name}>
-      Required fields:{" "}
-      <span
-        className="ifai-term"
-        data-ifai-tooltip-title="Required-spec list"
-        data-ifai-tooltip-desc={list.tooltip}
-        tabIndex={0}
-        aria-label={`Required-spec list: ${list.tooltip}`}
-      >
-        {list.name}
-      </span>{" "}
-      ({formatInt(list.fieldCount)} fields, placeholder).
-    </p>
-  );
-}
-
 /**
  * Amazon Specs lead: Amazon attribute completeness only, with Last checked under it.
  * Page-found and brand-site figures live on the bubble / Brand-Site Specs.
@@ -118,7 +97,7 @@ export function AiReadinessLead({ bundle, specRows }: { bundle: CanvasBundle; sp
         ))}
       </div>
       <AmazonSpecsLastChecked read={specRows} />
-      <RequiredSpecListLine />
+      <AmazonSpecsRequiredFields read={specRows} />
     </div>
   );
 }

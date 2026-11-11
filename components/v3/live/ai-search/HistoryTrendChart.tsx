@@ -3,7 +3,8 @@
 import { formatDay } from "@/lib/ai-search/history-eligibility";
 import { boundaryBreaks, rateLabel, trendSegments, type TrendModel, type TrendPoint } from "@/lib/ai-search/history-trends";
 
-const SERIES_COLOR = ["var(--accent-cyan)", "var(--accent-purple)", "var(--warning-amber)", "var(--success-green)"];
+/* Brand chart tokens (X-34): two ice-blue series, then grays. Status colors stay off charts. */
+const SERIES_COLOR = ["var(--chart-measured)", "var(--chart-second)", "var(--text-muted)", "var(--chart-rest)"];
 
 function xFor(day: string, min: number, max: number): number {
   const time = Date.parse(`${day}T00:00:00Z`);
@@ -74,7 +75,7 @@ export function HistoryTrendChart({
               x2={x}
               y1="12"
               y2="88"
-              stroke="var(--warning-amber)"
+              stroke="var(--text-muted)"
               strokeDasharray="1.2 1.2"
               strokeWidth="0.6"
             />

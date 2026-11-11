@@ -4,6 +4,7 @@ import { useCallback, useMemo, useState, type ReactNode } from "react";
 import { useFindability } from "@/components/v3/live/findability/FindabilityContext";
 import { ALL_REASONS, NotFoundReasonCell, ReasonFilter } from "@/components/v3/live/PageFoundReason";
 import { ResizableTable, type RetailColumn } from "@/components/v3/live/ResizableTable";
+import { AiStatusTag } from "@/components/v3/live/ai-search/AiStatusTag";
 import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
 import type { PageFoundRead } from "@/components/v3/live/usePageFoundEvidence";
 import { formatCheckedAt } from "@/lib/fender-canvas/featured-offer-copy";
@@ -105,9 +106,9 @@ function SkuRow({ row, reason }: { row: PageFoundRow; reason: NotFoundReason | u
         <span className="page-found-model">{row.model}</span>
       </td>
       <td>
-        <span className={`tag-badge page-found-status ${row.found ? "tag-success" : "tag-danger"}`}>
+        <AiStatusTag tone={row.found ? "success" : "danger"} data-page-found-status={row.found ? "found" : "not-found"}>
           {row.found ? "Found" : "Not found"}
-        </span>
+        </AiStatusTag>
       </td>
       <td>
         <Evidence row={row} reason={reason} />
