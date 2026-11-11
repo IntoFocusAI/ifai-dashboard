@@ -1,5 +1,6 @@
 // node --experimental-strip-types --import ./scripts/register-alias.mjs --import ./scripts/register-ts-extensions.mjs --test scripts/ai-search-truth.test.ts
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import {
   aiMetrics,
@@ -618,4 +619,12 @@ test("a small sample shows its exact percentage and stays unranked", () => {
     AI_DEFINITIONS["small sample"],
     "The percentage describes this run exactly, but it is based on relatively few answers or substantially fewer answers than another row beside it. A few additional answers could move it sharply, so do not treat it as a stable ranking.",
   );
+});
+
+test("publishing a finished run does not require an engine answer rate", () => {
+  const sql = readFileSync("supabase/migrations/20261026155847_publish_without_engine_floor.sql", "utf8");
+  const body = sql.slice(sql.indexOf("AS $f$"));
+  assert.match(sql, /CREATE OR REPLACE FUNCTION command\.fmic_ai_publish_run/);
+  assert.match(body, /attempted_calls IS DISTINCT FROM n/);
+  assert.doesNotMatch(body, /ceil\(0\.7|engine below 70/);
 });
