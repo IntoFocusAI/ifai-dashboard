@@ -1934,21 +1934,31 @@
       gap: 10px;
     }
 
-    .ai-engine-unbranded-head {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: baseline;
-      justify-content: space-between;
-      gap: 6px 12px;
-      margin-bottom: 4px;
-      font-size: 14px;
+    /* One row per engine: name column, bar, value at the right end (same grid as Competitor Wins). */
+    .ai-engine-unbranded-list > li {
+      display: grid;
+      grid-template-columns: 160px minmax(0, 1fr) minmax(72px, auto);
+      align-items: center;
+      gap: 4px 12px;
+    }
+
+    .ai-engine-unbranded-name {
+      min-width: 0;
       color: var(--text-main);
+      font-size: 13px;
+      font-weight: 600;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .ai-engine-unbranded-rate {
-      font-family: var(--font-mono);
-      font-weight: 600;
       color: var(--text-main);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 600;
+      text-align: right;
+      white-space: nowrap;
     }
 
     .ai-engine-unbranded-bar {
@@ -1977,10 +1987,10 @@
     }
 
     .ai-engine-unbranded-legend {
+      grid-column: 2 / -1;
       display: flex;
       flex-wrap: wrap;
       gap: 4px 14px;
-      margin-top: 4px;
       font-size: 13px;
       color: var(--text-muted);
     }

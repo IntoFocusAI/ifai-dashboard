@@ -49,20 +49,11 @@ export function EngineUnbrandedGraph({
             const name = engineLabel(engine.key);
             return (
               <li key={engine.key} data-engine={engine.key} data-ai-engine-mark="" data-small-sample={small ? "true" : undefined}>
-                <div className="ai-engine-unbranded-head">
+                <span className="ai-engine-unbranded-name">
                   <EvidenceLink focus={{ field: "engine", value: engine.key }} tab={SIM}>
                     {name}
                   </EvidenceLink>
-                  <span className="ai-engine-unbranded-rate" data-ai-engine-rate="">
-                    {pct(tally.fenderWins, tally.resolved)}
-                    {small ? (
-                      <>
-                        {" "}
-                        <AiTerm term="small sample">{SMALL_SAMPLE_LABEL}</AiTerm>
-                      </>
-                    ) : null}
-                  </span>
-                </div>
+                </span>
                 <div
                   className="ai-engine-unbranded-bar"
                   role="img"
@@ -87,6 +78,15 @@ export function EngineUnbrandedGraph({
                     </span>
                   ) : null}
                 </div>
+                <span className="ai-engine-unbranded-rate" data-ai-engine-rate="">
+                  {pct(tally.fenderWins, tally.resolved)}
+                  {small ? (
+                    <>
+                      {" "}
+                      <AiTerm term="small sample">{SMALL_SAMPLE_LABEL}</AiTerm>
+                    </>
+                  ) : null}
+                </span>
                 <div className="ai-engine-unbranded-legend">
                   <span data-ai-seg-label="fender">{leadBrand()} leads: {formatInt(tally.fenderWins)}</span>
                   <span data-ai-seg-label="other">Rest of resolved answers: {formatInt(rest)}</span>
