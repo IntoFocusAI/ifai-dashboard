@@ -41,10 +41,15 @@ test("the AI Search bubble adds the Nov 2 API run and matches AI Search on All f
   const bubble = canvas.bubble("spoke-aeo");
   // The mocked run is past its check schedule, so the bubble carries the stale asterisk (X-25).
   await expect(bubble.locator(".node-hero-value")).toHaveText(/^62\.5%\*?$/);
-  await bubble.hover({ force: true });
-  await canvas.bubble("spoke-competitors").hover({ force: true });
-  await page.waitForTimeout(400);
-  await expect(page.locator(".node-tooltip", { hasText: /\S/ })).toHaveCount(0);
+  // The map slides as a bubble's satellites open, and a satellite can slide under the pointer
+  // (a stale satellite has its own hover box, X-25). Point again once the map holds still.
+  for (const id of ["spoke-aeo", "spoke-competitors"]) {
+    await canvas.bubble(id).hover({ force: true });
+    await page.waitForTimeout(800);
+    await canvas.bubble(id).hover({ force: true });
+    await page.waitForTimeout(400);
+    await expect(page.locator(".node-tooltip.visible", { hasText: /\S/ })).toHaveCount(0);
+  }
 
   await canvas.openSpokeFromMap("AI Search Visibility");
   await page.locator("[data-ai-history-trigger]").click();
