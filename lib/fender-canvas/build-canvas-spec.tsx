@@ -72,7 +72,7 @@ export function buildFenderCanvasSpec(
   const retail = options.retail ?? { phase: "loading" as const };
   const aiSearch = options.aiSearch ?? { phase: "loading" as const };
   const findability = options.findability ?? { phase: "loading" as const };
-  const live = bundle ? buildLiveMetrics(bundle, retail, findability) : null;
+  const live = bundle ? buildLiveMetrics(bundle, retail, findability, aiSearch) : null;
   const metrics = live ? (Object.assign({}, live, aiMetrics(aiSearch)) as typeof live) : FENDER_METRICS;
 
   const ai = metrics.overallAiWinRate;

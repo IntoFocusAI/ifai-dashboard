@@ -212,31 +212,20 @@ test.describe("drill-downs", () => {
     await expect(readings).not.toContainText("MAP");
   });
 
-  test("roadmap first tab shows current findings, not example phases", async ({ page }) => {
+  test("roadmap opens on IntoFocus's plan in three dated phases", async ({ page }) => {
     test.slow();
     await page.context().addCookies([
       { name: "ifai_guest_fender", value: "1", domain: "localhost", path: "/" },
     ]);
     await page.goto("/dashboard?spoke=roadmap");
     const body = page.locator(".drilldown-body");
-    await expect(page.locator("[data-roadmap-findings-panel]")).toBeVisible();
+    await expect(page.locator("[data-roadmap-plan]")).toBeVisible();
     await expect(page.locator(".drilldown-tab-btn.active")).toContainText("30-60-90 Days");
-    await expect(body).toContainText("Current findings");
-    for (const label of [
-      "Buy Box withheld",
-      "MAP leakage",
-      "Splintered Listings",
-      "Exact official product pages",
-      "Unbranded discovery",
-    ]) {
-      await expect(body).toContainText(label);
-    }
-    // Each finding shows its current N of M share.
-    await expect(body.locator("[data-briefing-finding-ratio]")).toHaveCount(5, { timeout: AI_READ_MS });
-    await expect(body.locator(".ifai-open-hint")).toHaveCount(0);
-    await expect(body).not.toContainText("Phase 1");
-    await expect(body).not.toContainText("Days 1 to 30");
+    await expect(body.locator("[data-roadmap-owner]")).toHaveText("IntoFocus's recommended plan for Fender");
+    await expect(body.locator(".roadmap-phase-days")).toHaveText(["Days 1 to 30", "Days 31 to 60", "Days 61 to 90"]);
+    await expect(body.locator("[data-roadmap-lead-figure]")).toHaveText(/^\d+ of \d+\*?$/, { timeout: AI_READ_MS });
     await expect(body).not.toContainText("since last time");
+    await expect(body).not.toContainText("Open details");
   });
 
   test("the spec priority opens Brand-Site Specs with its live N of M", async ({ canvas, page }) => {

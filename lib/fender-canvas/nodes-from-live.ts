@@ -26,6 +26,7 @@ import {
   type RetailCanvasRead,
 } from "@/lib/fender-canvas/portfolio-retail-display";
 import { primarySpoke, satelliteNode } from "@/lib/fender-canvas/primary-spoke-layout";
+import { roadmapBubbleFace } from "@/lib/fender-canvas/roadmap-bubble";
 import { brandSite } from "@/lib/brand-copy";
 
 type MetricsMap = ReturnType<typeof buildLiveMetrics>;
@@ -280,10 +281,9 @@ export function buildLiveNodes(
     },
     {
       ...primarySpoke("spoke-roadmap"),
-      status: "neutral",
       title: "Roadmap",
       stats: [],
-      heroValue: { value: "90 Days", label: "3 phases" },
+      ...roadmapBubbleFace(retail, findability, ai),
       spokeId: "roadmap",
       tooltip: { title: "", desc: "" },
     },

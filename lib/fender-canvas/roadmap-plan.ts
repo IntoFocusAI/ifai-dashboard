@@ -8,6 +8,7 @@
  * drops below its threshold (21h).
  */
 
+import type { PieDiscData } from "@/lib/ai-search/citation-pies";
 import type { NodeStatus } from "@/lib/canvas-sdk/types";
 import { rankFixList, type FixListRow } from "@/lib/fender-canvas/action-items-fix-list";
 import type { BriefingFinding, BriefingFindingId } from "@/lib/fender-canvas/briefing-retail-lead";
@@ -204,4 +205,48 @@ export function emptyPlanLine(plan: readonly PlanItem[]): string | null {
     return `No finding with a stored reading needs action. ${unread} of ${plan.filter((item) => item.kind === "finding").length} readings are not stored.`;
   }
   return "Nothing needs action now. Every current finding is on track, and no other action meets its threshold.";
+}
+
+export const PLAN_FIGURE_LABEL = "findings need action";
+
+/** The lead figure's disc: findings that need action (measured slice), then the rest read on track. */
+export function planFindingsPie(figure: PlanFindingsFigure): PieDiscData | null {
+  if (figure.phase !== "ready" || figure.stored <= 0) return null;
+  return {
+    id: "roadmap-findings",
+    title: "Current findings",
+    total: figure.stored,
+    totalLabel: "current findings with a stored reading",
+    slices: [
+      { key: "measured", label: "Need action", count: figure.needs },
+      { key: "rest", label: "On track", count: figure.stored - figure.needs },
+    ].filter((slice) => slice.count > 0),
+  };
+}
+
+export type PlanFindingsFigure =
+  | { phase: "loading" }
+  | { phase: "missing" }
+  | { phase: "ready"; needs: number; stored: number; total: number; value: string; partial: PartialFigure | null };
+
+/**
+ * The Roadmap's lead figure and its map bubble: current findings that need action (Critical or
+ * At risk) of those with a stored reading. One function, so the bubble and the tab agree.
+ */
+export function planFindingsFigure(findings: readonly BriefingFinding[]): PlanFindingsFigure {
+  if (findings.some((finding) => finding.loading)) return { phase: "loading" };
+  const rows = rankedFindings(findings);
+  const stored = rows.filter((row) => row.status !== "no_reading");
+  if (stored.length === 0) return { phase: "missing" };
+  const needs = stored.filter((row) => row.status === "critical" || row.status === "at_risk").length;
+  const unread = rows.length - stored.length;
+  const partial: PartialFigure | null = unread
+    ? {
+        reason: "coverage",
+        missing: `${unread} of ${rows.length} current findings have no stored reading, so they are left out of this count.`,
+        coverage: `${stored.length} of ${rows.length} findings`,
+        source: "Summary Briefing findings",
+      }
+    : null;
+  return { phase: "ready", needs, stored: stored.length, total: rows.length, value: `${needs} of ${stored.length}`, partial };
 }

@@ -15,6 +15,7 @@ import { categoryUnbrandedFigure } from "@/lib/fender-canvas/minimal-metrics-ai"
 import {
   aiFigure,
   cached,
+  loadingFigure,
   missingFigure,
   type MinimalContext,
   type MinimalEntry,
@@ -65,7 +66,28 @@ function other(entry: Omit<MinimalEntry, "area">): MinimalEntry {
   return { ...entry, area: "Other" };
 }
 
+/**
+ * The Roadmap bubble's figure. The 30-60-90 Days tab now leads with it, so it is not an Other
+ * figure; it sits first in this list so it follows Action Items in map order. It keeps its
+ * saved-slot id. A plan is not graded, so even Not available* stays neutral, never Champagne.
+ */
+const ROADMAP_ENTRY: MinimalEntry = {
+  id: "day-90-buy-box-target",
+  spokeId: "roadmap",
+  tab: "30-60-90 Days",
+  label: "90-day plan",
+  read: (ctx) => {
+    const value = ctx.node("spoke-roadmap")?.heroValue?.value?.trim();
+    if (value === "Loading") return loadingFigure("The current findings are still loading.");
+    if (!value || /^not available\*?$/i.test(value)) {
+      return { ...missingFigure("No current finding has a stored reading."), tone: "neutral" };
+    }
+    return { value, tone: "neutral", ratio: `${value} current findings need action`, pie: null, tip: null, missing: null };
+  },
+};
+
 export const OTHER_ENTRIES: MinimalEntry[] = [
+  ROADMAP_ENTRY,
   other({
     id: "buy-box-retention",
     spokeId: "ecommerce",
@@ -192,18 +214,5 @@ export const OTHER_ENTRIES: MinimalEntry[] = [
     definition:
       "The third AI Consensus input: actions with an owner, evidence, and a date. No records are stored yet, so Performance lists it as Not included. No tab shows a figure for it yet.",
     read: () => missingFigure(ACTUATION_OMITTED_REASON),
-  }),
-  other({
-    id: "day-90-buy-box-target",
-    spokeId: "roadmap",
-    tab: "30-60-90 Days",
-    label: "90-day plan",
-    definition:
-      "The Roadmap bubble's 90-day plan, in phases for MAP, catalog nesting, and estimated lift. It is a plan, not a measured result. No tab shows the phases yet.",
-    read: (ctx) => {
-      const phases = ctx.node("spoke-roadmap")?.heroValue?.label?.trim();
-      if (!phases) return missingFigure("The Roadmap bubble has no plan stored.");
-      return { value: phases, tone: "neutral", ratio: "MAP, catalog nesting, and estimated lift", pie: null, tip: null, missing: null };
-    },
   }),
 ];

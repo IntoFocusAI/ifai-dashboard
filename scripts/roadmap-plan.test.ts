@@ -1,16 +1,22 @@
 // node --experimental-strip-types --import ./scripts/register-alias.mjs --import ./scripts/register-ts-extensions.mjs --test scripts/roadmap-plan.test.ts
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import type { AiCallRow, AiCitationRow, AiSearchSnapshot } from "../lib/ai-search/types.ts";
 import type { BriefingFinding, BriefingFindingId } from "../lib/fender-canvas/briefing-retail-lead.ts";
+import { roadmapHeroValue } from "../lib/fender-canvas/roadmap-bubble.ts";
 import {
   buildPlan,
   emptyPlanLine,
   phaseItems,
+  planFindingsFigure,
   PLAN_PHASES,
 } from "../lib/fender-canvas/roadmap-plan.ts";
 import { signalActions } from "../lib/fender-canvas/roadmap-signals.ts";
 import { siteType, sourceActions } from "../lib/fender-canvas/roadmap-sources.ts";
+
+const root = new URL("..", import.meta.url);
+const read = (rel: string) => readFileSync(new URL(rel, root), "utf8");
 
 function finding(id: BriefingFindingId, tone: BriefingFinding["tone"], numerator: number | null, denominator: number | null): BriefingFinding {
   const stored = numerator != null && denominator != null;
@@ -175,4 +181,32 @@ test("N-04: an explicit empty state when nothing needs action", () => {
   assert.match(emptyPlanLine(plan)!, /^Nothing needs action now\./);
   const unread = buildPlan({ findings: [...ON_TRACK.slice(0, 4), finding("unbranded_discovery", "warning", null, null)], signals: [], sources: [] });
   assert.match(emptyPlanLine(unread)!, /1 of 5 readings are not stored/);
+});
+
+test("the Roadmap figure: findings that need action, of those with a stored reading", () => {
+  const figure = planFindingsFigure(LIVE);
+  assert.equal(figure.phase === "ready" && figure.value, "5 of 5");
+  const partial = planFindingsFigure([...ON_TRACK.slice(0, 4), finding("unbranded_discovery", "warning", null, null)]);
+  assert.equal(partial.phase === "ready" && partial.value, "0 of 4");
+  assert.ok(partial.phase === "ready" && partial.partial, "a missing reading marks the figure partial");
+  assert.equal(planFindingsFigure([{ ...LIVE[0]!, loading: true }]).phase, "loading");
+  assert.equal(roadmapHeroValue({ phase: "error", message: "down" }, { phase: "error", message: "down" }, { phase: "error", message: "down" }), "Not available*");
+});
+
+test("the Roadmap tab and bubble use the map population, the owner sentence, and no fixed plan", () => {
+  const panel = read("components/v3/live/RoadmapFindingsPanel.tsx");
+  const data = read("components/v3/live/RoadmapPlanData.ts");
+  assert.match(panel, /IntoFocus's recommended plan for \$\{brandName\(\)\}/);
+  assert.match(data, /useSummaryAiRead\(\)/);
+  assert.doesNotMatch(data + panel, /useAiSearch\(\)/, "the Roadmap does not read the date-pill AI data");
+  for (const file of ["components/v3/fender-static-nodes.ts", "components/v3/fender-metrics.ts", "lib/fender-canvas/nodes-from-live.ts", "lib/fender-canvas/metrics-from-live.ts"]) {
+    assert.doesNotMatch(read(file), /"90 Days"|3 phases/, file);
+  }
+  const bubble = read("lib/fender-canvas/roadmap-bubble.ts");
+  assert.match(bubble, /status: "neutral"/);
+  for (const file of ["components/v3/live/roadmap-plan.css"]) {
+    const css = read(file);
+    for (const m of css.matchAll(/font-size:\s*(\d+)px/g)) assert.ok(Number(m[1]) >= 11, `${file} ${m[0]}`);
+    for (const m of css.matchAll(/font-weight:\s*(\d+)/g)) assert.ok(Number(m[1]) <= 600, `${file} ${m[0]}`);
+  }
 });
