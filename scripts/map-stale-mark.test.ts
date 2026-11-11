@@ -92,9 +92,9 @@ test("a Findability check older than twice its weekly schedule marks the Findabi
   const sat = node(byId, "sat-findability");
   assert.equal(sat.heroValue?.value, "50.0%*");
   assert.equal(sat.tooltip.title, PARTIAL_TITLE.coverage);
-  assert.match(sat.tooltip.desc, /^2 listings have no official-page check in the last 14 days\./);
-  assert.match(sat.tooltip.desc, /Covers 0 of 2 listings checked in the last 14 days\./);
-  assert.match(sat.tooltip.desc, /Source: canvas_spec_findability\./);
+  assert.match(sat.tooltip.desc, /^2 of 2 listings have no official-page check in 14 days\./);
+  assert.doesNotMatch(sat.tooltip.desc, /canvas_/);
+  assert.ok(sat.tooltip.desc.split("\n").length <= 3, "a lead line, then at most two short lines");
   assert.equal(sat.partialTip, sat.tooltip.desc);
 });
 
@@ -102,8 +102,7 @@ test("a fresh newest check does not clear the asterisk while another listing is 
   const { byId } = nodes({ find: findability(daysAgo(0), daysAgo(30)), ai: ai(daysAgo(1)) });
   const sat = node(byId, "sat-findability");
   assert.equal(sat.heroValue?.value, "50.0%*");
-  assert.match(sat.tooltip.desc, /^1 listing has no official-page check in the last 14 days\./);
-  assert.match(sat.tooltip.desc, /Covers 1 of 2 listings checked in the last 14 days\./);
+  assert.match(sat.tooltip.desc, /^1 of 2 listings has no official-page check in 14 days\./);
 });
 
 test("a listing with no stored check time counts as not checked in the window", () => {
@@ -124,13 +123,13 @@ test("a checked listing past 14 days marks the AI Readiness bubble, counted per 
   const bubble = node(stale.byId, "spoke-specs");
   assert.match(bubble.heroValue?.value ?? "", /^\d+(\.\d)?%\*$/);
   assert.equal(bubble.tooltip.title, PARTIAL_TITLE.coverage);
-  assert.match(bubble.tooltip.desc, /^1 listing has no .* product check in the last 14 days\./);
+  assert.match(bubble.tooltip.desc, /^1 of 1 listing has no .* product check in 14 days\./);
 
   // The newest listing is fresh, but the other one is not: the asterisk stays.
   const mixed = nodes({ find: findability(daysAgo(1)), ai: ai(daysAgo(1)), specCheckAt: daysAgo(20), specBoth: true });
   const mixedBubble = node(mixed.byId, "spoke-specs");
   assert.match(mixedBubble.heroValue?.value ?? "", /\*$/);
-  assert.match(mixedBubble.tooltip.desc, /Covers 1 of 2 listings checked in the last 14 days\./);
+  assert.match(mixedBubble.tooltip.desc, /^1 of 2 listings has no .* product check in 14 days\./);
 
   const current = nodes({ find: findability(daysAgo(1)), ai: ai(daysAgo(1)), specCheckAt: daysAgo(2) });
   assert.doesNotMatch(node(current.byId, "spoke-specs").heroValue?.value ?? "", /\*$/);
@@ -142,7 +141,7 @@ test("a stale AI Search run marks every AI figure; the two main bubbles get no h
     const bubble = node(byId, id);
     assert.match(bubble.heroValue?.value ?? "", /\*$/, `${id} carries the asterisk`);
     assert.equal(bubble.tooltip.desc, "", `${id} has no hover box`);
-    assert.match(bubble.partialTip ?? "", /No AI Search run has been published in the last 6 days/);
+    assert.match(bubble.partialTip ?? "", /^No AI Search run has been published in 6 days\./);
   }
   for (const id of ["sat-prompts", "sat-citations", "sat-drift", "sat-taylor", "sat-amps"]) {
     const sat = node(byId, id);
@@ -176,9 +175,9 @@ test("a Minimal slot that reads a stale bubble keeps the asterisk and its toolti
   const slot = slots.find((entry) => entry.id === "sat-findability");
   assert.ok(slot);
   assert.equal(slot.value, "50.0%*");
-  assert.match(slot.reading.missing ?? "", /0 of 2 listings checked in the last 14 days/);
+  assert.match(slot.reading.missing ?? "", /2 of 2 listings have no official-page check in 14 days/);
   const family = slots.find((entry) => entry.id === "findability-official-family-page");
   assert.ok(family);
   assert.equal(family.value, "50.0%*", "a Findability tile that is not a bubble carries the asterisk too");
-  assert.match(family.reading.missing ?? "", /0 of 2 listings checked in the last 14 days/);
+  assert.match(family.reading.missing ?? "", /2 of 2 listings have no official-page check in 14 days/);
 });

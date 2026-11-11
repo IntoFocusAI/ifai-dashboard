@@ -33,8 +33,7 @@ test("a weekly check is stale past 14 days and names the source, last check, and
   assert.equal(stale.reason, "stale");
   assert.equal(stale.source, "canvas_spec_findability");
   assert.equal(stale.lastCheck, "2026-10-12T20:27:46Z");
-  assert.match(stale.missing, /official-page check runs weekly and has not run since Oct 12, 2026/);
-  assert.match(stale.effect ?? "", /outcome shares show the last check/);
+  assert.equal(stale.missing, "The official-page check has not run in 14 days");
 });
 
 function content(asin: string, aplus: string, source: string | null, checkedAt = "2026-11-10T12:00:00Z"): ListingContentRow {
@@ -72,8 +71,7 @@ test("A+ unchecked listings show as Unchecked, never as a fail (R-03)", () => {
   assert.equal(aplus.explainer, "1 of 4 live listings unchecked.");
   assert.equal(bullets.partial ?? null, null);
   assert.equal(aplus.partial?.reason, "coverage");
-  assert.equal(aplus.partial?.coverage, "3 of 4 live Amazon listings");
-  assert.match(aplus.partial?.effect ?? "", /not counted as missing A\+/);
+  assert.equal(aplus.partial?.missing, "1 of 4 live Amazon listings have no A+ check on the listing page yet");
 });
 
 test("content shares carry the asterisk when a listing's own check is past twice its weekly schedule (X-25)", () => {
@@ -83,7 +81,7 @@ test("content shares carry the asterisk when a listing's own check is past twice
   ]);
   const partial = contentSharePartial(summary, "aplus", NOW);
   assert.equal(partial?.reason, "coverage");
-  assert.equal(partial?.coverage, "1 of 2 listings checked in the last 14 days");
+  assert.equal(partial?.missing, "1 of 2 listings has no Amazon listing check in 14 days");
   assert.equal(contentSharePartial(summary, "aplus", Date.parse("2026-10-25T00:00:00Z")), null);
 });
 
@@ -110,7 +108,7 @@ test("brand-site page figures count each page against its own latest read (X-25)
     withAllBasics: 1,
     listings: 1,
   };
-  assert.equal(specPagesStale(summary, NOW)?.coverage, "0 of 1 pages checked in the last 14 days");
+  assert.equal(specPagesStale(summary, NOW)?.missing, "1 of 1 page has no fender.com product check in 14 days");
   assert.equal(specPagesStale(summary, Date.parse("2026-10-05T00:00:00Z")), null);
   assert.equal(specPagesStale(null, NOW), null);
 });

@@ -41,11 +41,10 @@ test("MAP Leakage shows discounted retail value as an analyst estimate with its 
   await expect(tag).toHaveAttribute("data-ifai-tooltip-desc", /price gap below MAP on Amazon times its SmartScout/);
   await expect(tag).toHaveAttribute("data-ifai-tooltip-desc", /1 is awaiting inputs and is not counted as \$0/);
   await expect(tag).not.toHaveAttribute("title", /.+/);
-  // X-25: the partial total carries an asterisk whose tooltip names the coverage and the source.
+  // X-25: the partial total carries an asterisk whose tooltip names how many listings are left out.
   const partial = card.locator('[data-figure-tip="map-exposure-partial"]');
   await expect(partial).toHaveText("*");
-  await expect(partial).toHaveAttribute("data-ifai-tooltip-desc", /Covers 2 of 3 listings below MAP\./);
-  await expect(partial).toHaveAttribute("data-ifai-tooltip-desc", /Source: SmartScout estimated monthly units/);
+  await expect(partial).toHaveAttribute("data-ifai-tooltip-desc", /^1 of 3 listings below MAP are awaiting inputs and not counted as \$0\./);
 
   // Violations stay N of M beside it, with the status mark and word.
   await expect(page.locator('[data-map-lead-ratio] [data-figure-tip="map-ratio"]')).toHaveText("3 of 5");

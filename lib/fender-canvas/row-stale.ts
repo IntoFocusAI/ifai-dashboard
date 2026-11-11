@@ -2,7 +2,7 @@
  * The per-row stale rule (X-25, Brian 9 Nov 2026; method approved 11 Nov): a figure carries the
  * asterisk when part of its population is stale. A row is stale when its own check time is older
  * than twice its recheck interval; a row with no stored check time is stale too. The tooltip
- * reads "N of M listings checked in the last X days", the same coverage pattern Findability uses.
+ * reads "N of M listings have no X in 2 days", then the last check day.
  */
 
 import { formatInt } from "@/lib/fender-canvas/format";
@@ -105,11 +105,10 @@ export function rowsStale<T>(
   const unit = rule.unit ?? "listings";
   return {
     reason: "coverage",
-    missing: `${formatInt(older)} ${older === 1 ? `${unit.replace(/s$/, "")} has` : `${unit} have`} no ${rule.check} in the last ${days} ${days === 1 ? "day" : "days"}`,
-    coverage: rowCoverageLine(coverage, rule.intervalDays, unit),
+    missing: `${formatInt(older)} of ${formatInt(coverage.total)} ${coverage.total === 1 ? unit.replace(/s$/, "") : unit} ${older === 1 ? "has" : "have"} no ${rule.check} in ${days} ${days === 1 ? "day" : "days"}`,
+    coverage: null,
     source: rule.source,
     lastCheck: coverage.newest ?? null,
-    effect: `The ${rule.figure} include older checks and may differ from the listings today`,
   };
 }
 
@@ -119,7 +118,6 @@ export function rowsStale<T>(
  */
 export function combineStale(
   parts: readonly { label: string; stale: PartialFigure | null }[],
-  figure: string,
 ): PartialFigure | null {
   const stale = parts.filter((part): part is { label: string; stale: PartialFigure } => part.stale != null);
   if (stale.length === 0) return null;
@@ -131,11 +129,12 @@ export function combineStale(
     .pop();
   return {
     reason: "coverage",
-    missing: stale.map((part) => `${part.label}: ${part.stale.missing}`).join(". "),
-    coverage: stale.map((part) => `${part.label}: ${part.stale.coverage}`).join("; "),
+    missing: stale
+      .map((part) => (part.stale.missing.includes(part.label) ? part.stale.missing : `${part.label}: ${part.stale.missing}`))
+      .join("\n"),
+    coverage: null,
     source: Array.from(new Set(stale.map((part) => part.stale.source))).join(" and "),
     lastCheck: newest ?? null,
-    effect: `The ${figure} include older checks and may differ from the listings today`,
   };
 }
 
@@ -144,10 +143,9 @@ export function mergePartial(a: PartialFigure | null, b: PartialFigure | null): 
   if (!a || !b) return a ?? b;
   return {
     reason: "coverage",
-    missing: `${a.missing.replace(/\.$/, "")}. ${b.missing}`,
+    missing: `${a.missing}\n${b.missing}`,
     coverage: [a.coverage, b.coverage].filter(Boolean).join("; ") || null,
     source: a.source === b.source ? a.source : `${a.source} and ${b.source}`,
     lastCheck: b.lastCheck ?? a.lastCheck,
-    effect: [a.effect, b.effect].filter(Boolean).join(" ") || null,
   };
 }

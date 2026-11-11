@@ -749,7 +749,6 @@ export function mapLeakageFinding(
         ),
         channel("Musician's Friend", (row) => row.mf_leakage, (row) => row.mf_checked_at, RECHECK_DAYS.musiciansFriend),
       ],
-      "MAP figures",
     ),
   );
 }

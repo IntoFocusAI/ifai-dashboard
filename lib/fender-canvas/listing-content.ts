@@ -132,12 +132,6 @@ function uncheckedCount(summary: ListingContentSummary, id: ContentHeroId): numb
   return Math.max(0, summary.rows.length - read);
 }
 
-const HERO_NOUN: Record<ContentHeroId, string> = {
-  bullets: "bullets",
-  aplus: "A+",
-  video: "video",
-};
-
 const HERO_UNCHECKED: Record<ContentHeroId, string> = {
   bullets: "no bullet count yet",
   aplus: "no A+ check on the listing page yet",
@@ -162,17 +156,15 @@ export function contentSharePartial(
   );
   const unchecked = uncheckedCount(summary, id);
   const total = summary.rows.length;
-  const noun = HERO_NOUN[id];
   const coverage: PartialFigure | null =
     unchecked === 0 || total === 0
       ? null
       : {
           reason: "coverage",
           missing: `${formatInt(unchecked)} of ${formatInt(total)} live Amazon listings have ${HERO_UNCHECKED[id]}`,
-          coverage: `${formatInt(total - unchecked)} of ${formatInt(total)} live Amazon listings`,
+          coverage: null,
           source: "canvas_listing_content",
           lastCheck: checkedAt,
-          effect: `Unchecked listings are left out of the share, not counted as missing ${noun}`,
         };
   return mergePartial(stale, coverage);
 }

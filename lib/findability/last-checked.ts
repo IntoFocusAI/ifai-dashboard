@@ -119,17 +119,15 @@ export type WeeklyCheck = {
  */
 export function weeklyCheckStale(
   checkedAt: string | null | undefined,
-  { check, source, figure }: WeeklyCheck,
+  { check, source }: WeeklyCheck,
   now: number = Date.now(),
 ): PartialFigure | null {
   if (!isPastCheckSchedule(checkedAt, WEEKLY_CHECK_DAYS * DAY_MS, now)) return null;
-  const since = formatCheckedAt(checkedAt) ?? "the last check";
   return {
     reason: "stale",
-    missing: `The ${check} runs weekly and has not run since ${since}, so changes after that check are missing`,
+    missing: `The ${check} has not run in ${STALE_WINDOW_DAYS} days`,
     source,
     lastCheck: checkedAt ?? null,
-    effect: `The ${figure} show the last check and may differ from the pages today`,
   };
 }
 
@@ -190,10 +188,9 @@ export function findabilityStale(rows: readonly FindabilityRow[], now: number = 
   const older = coverage.total - coverage.recent;
   return {
     reason: "coverage",
-    missing: `${formatInt(older)} ${older === 1 ? "listing has" : "listings have"} no official-page check in the last ${STALE_WINDOW_DAYS} days`,
-    coverage: findabilityCoverageLine(coverage),
+    missing: `${formatInt(older)} of ${formatInt(coverage.total)} ${coverage.total === 1 ? "listing" : "listings"} ${older === 1 ? "has" : "have"} no official-page check in ${STALE_WINDOW_DAYS} days`,
+    coverage: null,
     source: "canvas_spec_findability",
-    effect: "The outcome shares include older checks and may differ from the pages today",
   };
 }
 

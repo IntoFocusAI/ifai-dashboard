@@ -342,16 +342,16 @@ export function lostSalesStale(
   return combineStale(
     [
       {
-        label: "Keepa stock history",
+        label: "Keepa",
         stale: rowsStale(
           estimated,
           (row) => row.history_through,
-          { intervalDays: RECHECK_DAYS.keepa, check: "Keepa history update", source: "canvas_listing_sales_loss_v2", figure: "missed-sales totals" },
+          { intervalDays: RECHECK_DAYS.keepa, check: "Keepa update", source: "canvas_listing_sales_loss_v2", figure: "missed-sales totals" },
           now,
         ),
       },
       {
-        label: "SmartScout unit estimates",
+        label: "SmartScout",
         stale: rowsStale(
           smartscout,
           (row) => row.smartscout_snapshot_date,
@@ -360,7 +360,6 @@ export function lostSalesStale(
         ),
       },
     ],
-    "missed-sales totals",
   );
 }
 
@@ -370,15 +369,15 @@ export function lostSalesPartial(
   sum: LostSalesSum,
   now: number = Date.now(),
 ): PartialFigure | null {
-  const missing = awaitingInputsBreakdown(rows, sum.window);
-  const coverage: PartialFigure | null = missing
-    ? {
-        reason: "coverage",
-        missing,
-        coverage: `${formatInt(sum.estimatedCount)} of ${formatInt(sum.affectedCount)} listings out of stock at least one day in the last 12 months`,
-        source: "SmartScout sales and Keepa stock history",
-        effect: "The total covers only the estimated listings, so it is lower than the full figure.",
-      }
-    : null;
+  const awaiting = rows.filter((row) => !(lostSales(row, sum.window) != null && row.revenue_source)).length;
+  const coverage: PartialFigure | null =
+    awaiting > 0
+      ? {
+          reason: "coverage",
+          missing: `${formatInt(awaiting)} of ${formatInt(sum.affectedCount)} out-of-stock listings are awaiting inputs and not counted as $0`,
+          coverage: null,
+          source: "SmartScout sales and Keepa stock history",
+        }
+      : null;
   return mergePartial(coverage, lostSalesStale(rows, sum.window, now));
 }

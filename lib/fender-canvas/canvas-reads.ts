@@ -304,19 +304,36 @@ export function formatLastCheck(at: string | null | undefined): string | null {
   return Number.isFinite(time.getTime()) ? lastCheckFormat.format(time) : null;
 }
 
-/** The tooltip for a partial figure: what is missing, coverage, source, last check, and effect. */
+const lastCheckDayFormat = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+  timeZone: "UTC",
+});
+
+/** "Mar 3, 2026", or null for a missing or unreadable time. */
+export function formatLastCheckDay(at: string | null | undefined): string | null {
+  if (!at) return null;
+  const time = new Date(at);
+  return Number.isFinite(time.getTime()) ? lastCheckDayFormat.format(time) : null;
+}
+
+/**
+ * The tooltip for a partial figure, kept short and split into lines: what the asterisk means
+ * for this figure, then what it covers (when that is not already in the first line), then the
+ * last check day. A filtered figure keeps its line on how to clear the filter, and a failed read its line on the figure left out.
+ */
 export function partialFigureTip(partial: PartialFigure): string {
-  const checked = formatLastCheck(partial.lastCheck);
+  const checked = formatLastCheckDay(partial.lastCheck);
   return sanitizeUiText(
     [
-      sentence(partial.missing),
+      ...partial.missing.split("\n").map((line) => sentence(line)),
       partial.coverage ? `Covers ${sentence(partial.coverage)}` : null,
-      partial.missing.includes(partial.source) ? null : `Source: ${sentence(partial.source)}`,
       checked ? `Last check: ${checked}.` : partial.lastCheck === undefined ? null : "Last check: not recorded.",
-      partial.effect ? sentence(partial.effect) : null,
+      (partial.reason === "filtered" || partial.reason === "read-failed") && partial.effect ? sentence(partial.effect) : null,
     ]
       .filter(Boolean)
-      .join(" "),
+      .join("\n"),
   );
 }
 

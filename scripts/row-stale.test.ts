@@ -33,20 +33,20 @@ test("a row is stale after twice its recheck interval, not at it", () => {
   assert.ok(read(15, RECHECK_DAYS.weekly));
 });
 
-test("the tooltip reads N of M listings checked in the last X days, counted per row", () => {
+test("the tooltip reads N of M listings have no check in X days, counted per row", () => {
   const rows = [ago(0.5), ago(1), ago(30), null, ""].map((at) => ({ at }));
   const partial = rowsStale(rows, (row) => row.at, rule(1), NOW);
   assert.ok(partial);
   assert.equal(partial.reason, "coverage");
-  assert.equal(partial.coverage, "2 of 5 listings checked in the last 2 days");
-  assert.match(partial.missing, /^3 listings have no price check in the last 2 days$/);
+  assert.equal(partial.missing, "3 of 5 listings have no price check in 2 days");
   assert.equal(partial.lastCheck, ago(0.5));
-  assert.match(partialFigureTip(partial), /Covers 2 of 5 listings checked in the last 2 days\./);
+  assert.equal(partialFigureTip(partial).split("\n").length, 2, "the lead line and the last check day");
+  assert.doesNotMatch(partialFigureTip(partial), /canvas_|Source:/);
 });
 
 test("a fresh newest row does not clear the asterisk while another row is stale", () => {
   const partial = rowsStale([{ at: ago(0) }, { at: ago(9) }], (row) => row.at, rule(3), NOW);
-  assert.equal(partial?.coverage, "1 of 2 listings checked in the last 6 days");
+  assert.equal(partial?.missing, "1 of 2 listings has no price check in 6 days");
 });
 
 test("an empty population and an all-current population have no asterisk", () => {
@@ -58,12 +58,15 @@ test("an empty population and an all-current population have no asterisk", () =>
 test("combine and merge keep every stale part named", () => {
   const a = rowsStale([{ at: ago(9) }], (row) => row.at, rule(1), NOW);
   const b = rowsStale([{ at: ago(0) }, { at: ago(30) }], (row) => row.at, rule(3), NOW);
-  const both = combineStale([{ label: "Amazon", stale: a }, { label: "Walmart", stale: null }, { label: "Musician's Friend", stale: b }], "MAP figures");
-  assert.match(both?.coverage ?? "", /Amazon: 0 of 1 listings checked in the last 2 days; Musician's Friend: 1 of 2 listings checked in the last 6 days/);
-  assert.equal(combineStale([{ label: "Amazon", stale: null }], "MAP figures"), null);
+  const both = combineStale([{ label: "Amazon", stale: a }, { label: "Walmart", stale: null }, { label: "Musician's Friend", stale: b }]);
+  assert.equal(
+    both?.missing,
+    "Amazon: 1 of 1 listing has no price check in 2 days\nMusician's Friend: 1 of 2 listings has no price check in 6 days",
+  );
+  assert.equal(combineStale([{ label: "Amazon", stale: null }]), null);
   assert.equal(mergePartial(null, a), a);
   assert.equal(mergePartial(a, null), a);
-  assert.match(mergePartial(a, b)?.coverage ?? "", /; /);
+  assert.match(mergePartial(a, b)?.missing ?? "", /\n/);
 });
 
 function offerRow(asin: string, checkedAt: string | null) {
@@ -82,7 +85,7 @@ test("Buy Box and suppression: featured_offer_checked_at, stale after 2 days", (
   const current = suppressedListingsFinding([offerRow("A", ago(0.1)), offerRow("B", ago(1.5))], { now: NOW });
   assert.equal(current.stale ?? null, null);
   const reading = suppressedListingsFinding([offerRow("A", ago(0.1)), offerRow("B", ago(3))], { now: NOW });
-  assert.equal(reading.stale?.coverage, "1 of 2 listings checked in the last 2 days");
+  assert.equal(reading.stale?.missing, "1 of 2 listings has no Buy Box check in 2 days");
 });
 
 test("MAP leakage: Amazon 1 day, Walmart 1 day for Fender and 2 days for Ledlenser, Musician's Friend 3 days", () => {
@@ -100,15 +103,15 @@ test("MAP leakage: Amazon 1 day, Walmart 1 day for Fender and 2 days for Ledlens
   try {
     resetActiveClientForTests("fender");
     const fender = mapLeakageFinding([row(3)], { now: NOW }).stale;
-    assert.match(fender?.coverage ?? "", /Walmart: 0 of 1 listings checked in the last 2 days/);
-    assert.match(fender?.coverage ?? "", /Musician's Friend: 0 of 1 listings checked in the last 6 days/);
-    assert.doesNotMatch(fender?.coverage ?? "", /Amazon:/);
+    assert.match(fender?.missing ?? "", /1 of 1 listing has no Walmart price check in 2 days/);
+    assert.match(fender?.missing ?? "", /1 of 1 listing has no Musician's Friend price check in 6 days/);
+    assert.doesNotMatch(fender?.missing ?? "", /Amazon/);
 
     resetActiveClientForTests("ledlenser");
     const ledlenser = mapLeakageFinding([{ ...row(3), mf_leakage: null, mf_checked_at: null }], { now: NOW }).stale;
     assert.equal(ledlenser ?? null, null, "3 days is inside Ledlenser's 4-day Walmart window and it has no Musician's Friend");
     const old = mapLeakageFinding([{ ...row(5), mf_leakage: null, mf_checked_at: null }], { now: NOW }).stale;
-    assert.match(old?.coverage ?? "", /Walmart: 0 of 1 listings checked in the last 4 days/);
+    assert.match(old?.missing ?? "", /1 of 1 listing has no Walmart price check in 4 days/);
   } finally {
     resetActiveClientForTests(null);
   }
@@ -124,8 +127,8 @@ test("channel lines carry a per-channel note from each channel's own listings", 
     const stale = mapChannelStale(rows, NOW);
     assert.equal(stale.Amazon, null);
     assert.equal(stale.Walmart, null);
-    assert.equal(stale["Musician's Friend"]?.coverage, "1 of 2 listings checked in the last 6 days");
-    assert.match(channelReadingNote("Musician's Friend", { walmartMissing: 0, channelStale: stale }) ?? "", /Covers 1 of 2 listings checked/);
+    assert.equal(stale["Musician's Friend"]?.missing, "1 of 2 listings has no Musician's Friend price check in 6 days");
+    assert.match(channelReadingNote("Musician's Friend", { walmartMissing: 0, channelStale: stale }) ?? "", /^1 of 2 listings has no Musician's Friend price check in 6 days\./);
     assert.equal(channelReadingNote("Amazon", { walmartMissing: 0, channelStale: stale }), null);
   } finally {
     resetActiveClientForTests(null);
@@ -148,13 +151,13 @@ test("Splintered Listings for sale now: each live bundle's featured_offer_checke
     [bundle("A", "present", ago(0.1)), bundle("B", "withheld", ago(5)), bundle("C", "no_active_offer", ago(60))],
     { now: NOW },
   );
-  assert.equal(reading.stale?.coverage, "1 of 2 listings checked in the last 2 days", "a bundle that is not for sale is not in the population");
+  assert.equal(reading.stale?.missing, "1 of 2 listings has no Buy Box check in 2 days", "a bundle that is not for sale is not in the population");
 });
 
 test("Amazon specs: each checked listing's spec_readiness.checked_at, stale after 14 days", () => {
   const spec = (asin: string, checked: boolean, at: string | null) => ({ asin, title: asin, amazon_checked: checked, amazon_missing_fields: null, checked_at: at });
   const reading = amazonSpecGapsFinding([spec("A", true, ago(1)), spec("B", true, ago(15)), spec("C", false, ago(90))], { now: NOW });
-  assert.equal(reading.stale?.coverage, "1 of 2 listings checked in the last 14 days");
+  assert.equal(reading.stale?.missing, "1 of 2 listings has no Amazon spec check in 14 days");
   assert.equal(amazonSpecGapsFinding([spec("A", true, ago(14))], { now: NOW }).stale ?? null, null);
 });
 
@@ -194,8 +197,8 @@ test("Out of Stock: SmartScout snapshot 7 days (stale after 14), Keepa history 1
     stockRow("C", "smartscout", "2026-11-10", "2026-11-05"),
   ];
   const partial = lostSalesStale(rows, 365, NOW);
-  assert.match(partial?.coverage ?? "", /Keepa stock history: 2 of 3 listings checked in the last 2 days/);
-  assert.match(partial?.coverage ?? "", /SmartScout unit estimates: 2 of 3 listings checked in the last 14 days/);
+  assert.match(partial?.missing ?? "", /1 of 3 listings has no Keepa update in 2 days/);
+  assert.match(partial?.missing ?? "", /1 of 3 listings has no SmartScout snapshot in 14 days/);
   const current = [stockRow("A", "smartscout", "2026-11-10", "2026-11-11")];
   assert.equal(lostSalesStale(current, 365, NOW), null);
   assert.equal(lostSalesPartial(current, sumLostSales(current, 365), NOW), null);
