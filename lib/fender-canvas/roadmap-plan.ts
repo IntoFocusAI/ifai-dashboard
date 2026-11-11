@@ -4,7 +4,8 @@
  * Order (21f): the five findings keep the fix-list order, then the ecommerce signals and the
  * brand's own pages when a page factor is below Good (21c), then the source, competitor, and
  * fact-check actions by the share of answers they affect, then the focus items (21d: weakest
- * engine, weakest questions, cited sites moving fastest), then rewording the brand's pages.
+ * engine, weakest questions, cited sites that moved most), then rewording the brand's pages,
+ * then the 21d watch lines (a weakest engine or question less than 10 points behind the best).
  * Phases (21g): Days 1 to 30 listing fixes, 31 to 60 catalog and site content, 61 to 90
  * outreach programs. The plan is rebuilt from each read and dated from today (rolling 90 days),
  * so an action leaves when its trigger clears (21h) and a new one enters when its trigger is met.
@@ -100,6 +101,8 @@ export type PlanItem = {
 };
 
 export const RECOMMENDED_LABEL = "Recommended";
+/** 21d: a weakest engine or question less than 10 points behind the best, shown so the client sees it. */
+export const WATCH_LABEL = "Watch";
 
 function findingItem(row: FixListRow): PlanItem {
   const { finding } = row;
@@ -208,12 +211,17 @@ function focusItem(focus: FocusAction): PlanItem {
     id: focus.id,
     kind: "focus",
     rank: 0,
-    phase: focus.siteType ? (SOURCE_PHASE[focus.siteType] ?? null) : FOCUS_PHASE[focus.focus as "engine" | "question"],
+    phase:
+      focus.tier === "watch"
+        ? "days_61_90"
+        : focus.siteType
+          ? (SOURCE_PHASE[focus.siteType] ?? null)
+          : FOCUS_PHASE[focus.focus as "engine" | "question"],
     label: focus.label,
     percent: formatPct(focus.denominator > 0 ? (100 * focus.numerator) / focus.denominator : 0),
     ratio: formatRatio(focus.numerator, focus.denominator),
     tone: null,
-    statusLabel: RECOMMENDED_LABEL,
+    statusLabel: focus.tier === "watch" ? WATCH_LABEL : RECOMMENDED_LABEL,
     fact: focus.fact,
     action: focus.action,
     needsAction: true,
@@ -282,7 +290,9 @@ export function buildPlan(input: PlanInput): PlanItem[] {
   ].sort((a, b) => (shares.get(b.id) ?? 0) - (shares.get(a.id) ?? 0) || a.label.localeCompare(b.label));
   const urgentOwn = own && input.ownPages?.urgent ? [own] : [];
   const laterOwn = own && !input.ownPages?.urgent ? [own] : [];
-  return [...findings, ...ecommerce, ...urgentOwn, ...answers, ...rest.map(focusItem), ...laterOwn].map((item, index) => ({
+  const priority = rest.filter((item) => item.tier === "priority").map(focusItem);
+  const watch = rest.filter((item) => item.tier === "watch").map(focusItem);
+  return [...findings, ...ecommerce, ...urgentOwn, ...answers, ...priority, ...laterOwn, ...watch].map((item, index) => ({
     ...item,
     rank: index + 1,
   }));

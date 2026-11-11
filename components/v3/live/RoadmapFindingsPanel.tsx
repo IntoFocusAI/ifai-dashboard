@@ -60,7 +60,7 @@ function positionsLine(plan: readonly PlanItem[]): string | null {
  * plan from the latest published run and retail read.
  */
 export function RoadmapFindingsPanel({ read, bundle }: { read: RetailCanvasRead; bundle: CanvasBundle | null }) {
-  const { plan, findings, sources, held, ownPagesReason } = useRoadmapPlan(read, bundle);
+  const { plan, findings, sources, held, window, ownPagesReason } = useRoadmapPlan(read, bundle);
   const [today] = useState(() => new Date());
   const figure = planFindingsFigure(findings);
   const pie = planFindingsPie(figure);
@@ -73,6 +73,7 @@ export function RoadmapFindingsPanel({ read, bundle }: { read: RetailCanvasRead;
       data-roadmap-plan=""
       data-roadmap-sources={sources.phase}
       data-roadmap-held={JSON.stringify(held)}
+      data-roadmap-window={window ? JSON.stringify(window) : undefined}
       data-roadmap-own-pages={ownPagesReason}
     >
       <div className="content-box">

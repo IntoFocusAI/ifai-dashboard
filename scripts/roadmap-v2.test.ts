@@ -14,10 +14,12 @@ import {
   focusActions,
   focusOptions,
   movingSites,
+  staffFocus,
   weakestEngine,
   weakestQuestions,
 } from "../lib/fender-canvas/roadmap-focus.ts";
 import { ownPagesAction } from "../lib/fender-canvas/roadmap-own-pages.ts";
+import { focusWindowRuns, poolFocusWindow, previousWindowEnd, windowSummary } from "../lib/fender-canvas/roadmap-window.ts";
 import { buildPlan, focusPlan, phaseItems } from "../lib/fender-canvas/roadmap-plan.ts";
 
 const root = new URL("..", import.meta.url);
@@ -187,25 +189,44 @@ test("21c: all green and the brand site cited under 30% gives the Days 61 to 90 
 
 // ---------- rule 2: always a focus (21d) ----------
 
-test("21d weakest engine: Brian's wording, Days 31 to 60, both guardrails", () => {
+const ENGINES = ["chatgpt", "gemini", "perplexity", "claude", "copilot", "grok"];
+
+test("21d weakest engine: a gap of 10 points or more is a Days 31 to 60 priority action in Brian's wording", () => {
   const calls = [...answers("chatgpt", "best electric guitar", 30, 40), ...answers("gemini", "best electric guitar", 10, 40)];
   const { actions, held } = weakestEngine(snapshot(calls));
   assert.equal(held.length, 0);
+  assert.equal(actions[0]!.tier, "priority");
   assert.equal(actions[0]!.fact, "Fender/Squier is named most in 10 of 40 resolved unbranded discovery answers on Gemini, the lowest of the engines checked.");
+  assert.equal(actions[0]!.action, "Review the Gemini answers that name another brand most, and the sources they cite.");
   const plan = buildPlan({ findings: [], signals: [], sources: [], focus: actions });
   assert.equal(plan[0]!.phase, "days_31_60");
+  assert.equal(plan[0]!.statusLabel, "Recommended");
   assert.equal(plan[0]!.evidence?.engine, "gemini");
-
-  const close = weakestEngine(snapshot([...answers("chatgpt", "best electric guitar", 30, 40), ...answers("gemini", "best electric guitar", 27, 40)]));
-  assert.equal(close.actions.length, 0);
-  assert.equal(close.held[0]!.guardrail, "gap", "7.5 points behind is not a real gap");
-
-  const thin = weakestEngine(snapshot([...answers("chatgpt", "best electric guitar", 30, 40), ...answers("gemini", "best electric guitar", 2, 20)]));
-  assert.equal(thin.actions.length, 0);
-  assert.equal(thin.held[0]!.guardrail, "data", "20 answers is not enough");
 });
 
-test("21d weakest questions: at most five, each with 30 answers and 10 points behind the best", () => {
+test("21d weakest engine: under 10 points is a Days 61 to 90 watch line; five engines at 5% and one at 1% still shows the 1%", () => {
+  const close = weakestEngine(snapshot([...answers("chatgpt", "best electric guitar", 30, 40), ...answers("gemini", "best electric guitar", 27, 40)]));
+  assert.equal(close.actions[0]!.tier, "watch", "7.5 points behind");
+  assert.equal(close.actions[0]!.action, "Watch Gemini.");
+
+  const calls = ENGINES.flatMap((engine) => answers(engine, "best electric guitar", engine === "grok" ? 1 : 5, 100));
+  const { actions } = weakestEngine(snapshot(calls));
+  assert.equal(actions.length, 1);
+  assert.equal(actions[0]!.evidence?.engine, "grok");
+  assert.match(actions[0]!.fact, /1 of 100 resolved unbranded discovery answers on /);
+  const plan = buildPlan({ findings: [], signals: [], sources: [], focus: actions });
+  assert.equal(plan[0]!.phase, "days_61_90");
+  assert.equal(plan[0]!.statusLabel, "Watch");
+});
+
+test("21d weakest engine: the 30-answer floor holds engines back, and one engine alone has nothing to compare", () => {
+  const thin = weakestEngine(snapshot([...answers("chatgpt", "best electric guitar", 30, 40), ...answers("gemini", "best electric guitar", 2, 20)]));
+  assert.equal(thin.actions.length, 0);
+  assert.deepEqual(thin.held.map((h) => `${h.id}:${h.guardrail}`), ["focus:engine:gemini:data", "focus:engine:chatgpt:data"]);
+  assert.match(thin.held[0]!.detail, /2 of 20 resolved answers in the window/);
+});
+
+test("21d weakest questions: five weakest past the floor; 10 points behind the best is priority, under 10 is watch", () => {
   const calls = [
     ...answers("chatgpt", "best electric guitar", 36, 40),
     ...answers("chatgpt", "best acoustic guitar", 8, 40, "acoustics"),
@@ -214,34 +235,85 @@ test("21d weakest questions: at most five, each with 30 answers and 10 points be
     ...answers("chatgpt", "best guitar pedal", 0, 10, "pedals"),
   ];
   const { actions, held } = weakestQuestions(snapshot(calls));
-  assert.deepEqual(actions.map((a) => a.label), ['"best acoustic guitar"', '"best bass guitar"']);
-  assert.equal(actions[0]!.fact, 'Fender/Squier is named most in 8 of 40 resolved answers to "best acoustic guitar".');
-  assert.deepEqual(actions[0]!.categories, ["acoustics"]);
   assert.deepEqual(
-    held.map((h) => `${h.label}:${h.guardrail}`).sort(),
-    ["best electric guitar:gap", "best guitar amp:gap", "best guitar pedal:data"],
+    actions.map((a) => `${a.label}:${a.tier}`),
+    ['"best acoustic guitar":priority', '"best bass guitar":priority', '"best guitar amp":watch', '"best electric guitar":watch'],
   );
+  assert.equal(actions[0]!.fact, 'Fender/Squier is named most in 8 of 40 resolved answers to "best acoustic guitar".');
+  assert.equal(actions[0]!.action, "Word the fender.com product pages to answer this question.");
+  assert.equal(actions[2]!.action, "Watch this question.");
+  assert.deepEqual(actions[0]!.categories, ["acoustics"]);
+  assert.deepEqual(held.map((h) => `${h.label}:${h.guardrail}`), ["best guitar pedal:data"]);
 });
 
-test("21d moving sites: top three each way over the last three runs, 10 points and 30 answers", () => {
-  const latest = citedRun(40, { "guitarworld.com": 20, "reddit.com": 2, "musicradar.com": 6 });
-  const middle = citedRun(40, {});
-  const oldest = citedRun(40, { "guitarworld.com": 8, "reddit.com": 10, "musicradar.com": 4, "fender.com": 30 });
-  const { actions, held } = movingSites([latest, middle, oldest]);
-  assert.deepEqual(actions.map((a) => a.label), ["guitarworld.com rising", "reddit.com falling"]);
-  assert.match(actions[0]!.fact, /^guitarworld\.com is cited in 50\.0% of shopping answers with sources \(20 of 40\)\. Two published runs earlier it was cited in 20\.0% \(8 of 40\)\.$/);
-  assert.match(actions[1]!.action, /reddit\.com accurate/);
-  assert.ok(held.some((h) => h.id === "focus:site:musicradar.com" && h.guardrail === "gap"));
+function dayRun(id: string, day: string, wins: number, total: number): AiSearchSnapshot {
+  const calls = [...answers("chatgpt", "best electric guitar", 18, 20), ...answers("chatgpt", "best acoustic guitar", wins, total, "acoustics")];
+  return { ...snapshot(calls), run: { audit_run_id: id, is_published: true, published_at: `${day}T12:00:00Z` } as AiSearchSnapshot["run"] };
+}
+
+test("21d window: the floor counts the window total, pooled across runs, never one run", () => {
+  const single = weakestQuestions(dayRun("a", "2026-11-01", 2, 20));
+  assert.equal(single.actions.length, 0, "20 answers in one run is under the floor");
+  const runs = [dayRun("a", "2026-11-01", 2, 20), dayRun("b", "2026-11-08", 3, 20)];
+  const pooled = poolFocusWindow(runs, []);
+  const { actions } = weakestQuestions(pooled!);
+  assert.deepEqual(actions.map((a) => `${a.label}:${a.numerator}/${a.denominator}:${a.tier}`), [
+    '"best acoustic guitar":5/40:priority',
+    '"best electric guitar":36/40:watch',
+  ]);
+  assert.equal(previousWindowEnd("2026-11-10"), "2026-10-11");
+  const summary = windowSummary(pooled, runs, []);
+  assert.deepEqual(summary.questions.map((q) => q.resolved), [40, 40]);
+  assert.deepEqual(summary.runs.map((r) => `${r.day}:${r.resolved}:${r.questions}`), ["2026-11-01:40:2", "2026-11-08:40:2"]);
+});
+
+test("21d window runs: the 30 days ending on the published run, and the 30 days before", () => {
+  const summary = (id: string, day: string) => ({
+    audit_run_id: id,
+    run_kind: "ai_simulation",
+    run_state: "completed",
+    collector_version: "v11",
+    prompt_set_hash: "h",
+    expected_calls: 10,
+    attempted_calls: 10,
+    answered_calls: 10,
+    error_calls: 0,
+    is_published: true,
+    published_at: `${day}T12:00:00Z`,
+    completed_at: `${day}T12:00:00Z`,
+  });
+  const runs = [summary("old", "2026-09-11"), summary("prev", "2026-10-11"), summary("first", "2026-10-12"), summary("last", "2026-11-10")];
+  const { current, previous } = focusWindowRuns(runs, "2026-11-10");
+  assert.deepEqual(current.map((r) => r.audit_run_id), ["first", "last"]);
+  assert.deepEqual(previous.map((r) => r.audit_run_id), ["prev"]);
+});
+
+test("21d moving sites: share 3% or more and 10 answers, flagged at a 10% relative change, top three each way", () => {
+  const current = citedRun(40, { "guitarworld.com": 20, "reddit.com": 10, "musicradar.com": 6, "sweetwater.com": 11, "guitarcenter.com": 12 });
+  const previous = citedRun(40, { "guitarworld.com": 8, "reddit.com": 20, "musicradar.com": 4, "sweetwater.com": 10, "guitarcenter.com": 13, "fender.com": 30 });
+  const { actions, held } = movingSites(current, previous);
+  assert.equal(held.length, 0);
+  assert.deepEqual(actions.map((a) => a.label), ["guitarworld.com rising", "sweetwater.com rising", "reddit.com falling"]);
+  assert.equal(
+    actions[0]!.fact,
+    "guitarworld.com is cited in 50.0% of shopping answers with sources in the last 30 days (20 of 40), against 20.0% (8 of 40) in the 30 days before.",
+  );
+  assert.match(actions[2]!.action, /reddit\.com accurate/);
+  assert.ok(!actions.some((a) => a.label.startsWith("musicradar.com")), "6 answers is under 10");
+  assert.ok(!actions.some((a) => a.label.startsWith("guitarcenter.com")), "30.0% from 32.5% is under a 10% change");
   assert.ok(!actions.some((a) => a.label.startsWith("fender.com")), "the brand's own site is the own-page action's");
-  assert.equal(movingSites([latest, middle]).actions.length, 0, "three published runs are needed");
-  const thin = movingSites([citedRun(20, { "guitarworld.com": 15 }), middle, oldest]);
+});
+
+test("21d moving sites: skipped and held when the prior window has fewer than 30 answers", () => {
+  const thin = movingSites(citedRun(40, { "guitarworld.com": 20 }), citedRun(20, { "guitarworld.com": 2 }));
   assert.equal(thin.actions.length, 0);
-  assert.equal(thin.held[0]!.guardrail, "data");
+  assert.equal(thin.held[0]!.id, "focus:site");
+  assert.equal(thin.held[0]!.detail, "40 shopping answers with sources in the last 30 days and 20 in the 30 days before");
+  assert.equal(movingSites(citedRun(40, {}), null).held[0]!.guardrail, "data");
 });
 
 test("21d: a moving site with a source action joins it instead of a second row", () => {
-  const latest = citedRun(40, { "guitarworld.com": 20 });
-  const focus = movingSites([latest, citedRun(40, { "guitarworld.com": 10 }), citedRun(40, { "guitarworld.com": 4 })]).actions;
+  const focus = movingSites(citedRun(40, { "guitarworld.com": 20 }), citedRun(40, { "guitarworld.com": 4 })).actions;
   const plan = buildPlan({
     findings: [],
     signals: [],
@@ -264,10 +336,13 @@ test("21d: a moving site with a source action joins it instead of a second row",
     focus,
   });
   assert.deepEqual(plan.map((item) => item.id), ["source:guitarworld.com"]);
-  assert.equal(plan[0]!.fact, "guitarworld.com is cited. Two published runs earlier it was cited in 10.0% (4 of 40).");
+  assert.equal(
+    plan[0]!.fact,
+    "guitarworld.com is cited. It is cited in 50.0% of shopping answers with sources in the last 30 days (20 of 40), against 10.0% (4 of 40) in the 30 days before.",
+  );
 });
 
-test("plan order: ecommerce, urgent own pages, answer actions, focus items, then rewording last", () => {
+test("plan order: ecommerce, urgent own pages, answer actions, focus items, rewording, then watch lines last", () => {
   const ownUrgent = ownPagesAction(bundle({ spec_fender_found_pct: 80, spec_fender_found: 80 }), null).action;
   const engine = weakestEngine(snapshot([...answers("chatgpt", "best electric guitar", 30, 40), ...answers("gemini", "best electric guitar", 10, 40)])).actions;
   const signal = { id: "signal:out_of_stock", group: "ecommerce" as const, label: "Out of stock", share: 0.2, numerator: 2, denominator: 10, fact: "f", action: "a", open: { spokeId: "ecommerce", tab: "Out of Stock" }, partial: null };
@@ -276,10 +351,21 @@ test("plan order: ecommerce, urgent own pages, answer actions, focus items, then
   assert.equal(plan[1]!.statusLabel, "Critical");
   assert.deepEqual(phaseItems(plan, "days_1_30").map((item) => item.id), ["signal:out_of_stock", "own:pages"]);
 
+  const watch = weakestQuestions(snapshot([...answers("chatgpt", "best electric guitar", 36, 40), ...answers("chatgpt", "best guitar amp", 33, 40)])).actions;
   const wording = ownPagesAction(bundle({}), citedRun(40, { "fender.com": 4 })).action;
-  const later = buildPlan({ findings: [], signals: [signal], sources: [], ownPages: wording, focus: engine });
-  assert.deepEqual(later.map((item) => item.id), ["signal:out_of_stock", "focus:engine:gemini", "own:wording"]);
-  assert.deepEqual(phaseItems(later, "days_61_90").map((item) => item.id), ["own:wording"]);
+  const later = buildPlan({ findings: [], signals: [signal], sources: [], ownPages: wording, focus: [...watch, ...engine] });
+  assert.deepEqual(later.map((item) => item.id), [
+    "signal:out_of_stock",
+    "focus:engine:gemini",
+    "own:wording",
+    "focus:question:best-guitar-amp",
+    "focus:question:best-electric-guitar",
+  ]);
+  assert.deepEqual(phaseItems(later, "days_61_90").map((item) => item.id), [
+    "own:wording",
+    "focus:question:best-guitar-amp",
+    "focus:question:best-electric-guitar",
+  ]);
 });
 
 // ---------- rule 3: rolling 90 days, client focus ----------
@@ -310,18 +396,18 @@ test("client focus: the model narrows to one category and keeps brand-wide items
   ];
   const run = snapshot(calls);
   assert.deepEqual(focusOptions(run).map((o) => o.key), ["acoustics", "bass", "electric"]);
-  const brand = focusActions({ current: run, runs: null, focus: BRAND_FOCUS });
+  const brand = focusActions({ windows: { current: run, previous: null }, focus: BRAND_FOCUS });
   const plan = buildPlan({ findings: [], signals: [], sources: [], ownPages: ownPagesAction(bundle({ spec_avg_amazon_pct: 90 }), null).action, focus: brand.actions });
   assert.deepEqual(focusPlan(plan, BRAND_FOCUS).map((item) => item.id), plan.map((item) => item.id));
   const bass = focusPlan(plan, { kind: "category", key: "bass" });
   assert.deepEqual(bass.map((item) => item.id), ["own:pages", "focus:question:best-bass-guitar"]);
   assert.deepEqual(bass.map((item) => item.rank), [1, 2]);
-  const scoped = focusActions({ current: run, runs: null, focus: { kind: "category", key: "acoustics" } });
-  assert.equal(scoped.actions.length, 0, "one question in a focus has no comparable 10 points ahead");
+  const scoped = focusActions({ windows: { current: run, previous: null }, focus: { kind: "category", key: "acoustics" } });
+  assert.deepEqual(scoped.actions.map((a) => `${a.id}:${a.tier}`), ["focus:question:best-acoustic-guitar:watch"], "one question in a focus is its own best");
 });
 
 test("copy: brand voice, no promised result, and the Roadmap bubble stays static", () => {
-  const files = ["lib/fender-canvas/roadmap-focus.ts", "lib/fender-canvas/roadmap-own-pages.ts", "lib/fender-canvas/roadmap-dates.ts"];
+  const files = ["lib/fender-canvas/roadmap-focus.ts", "lib/fender-canvas/roadmap-own-pages.ts", "lib/fender-canvas/roadmap-dates.ts", "lib/fender-canvas/roadmap-window.ts"];
   for (const file of files) {
     const text = read(file);
     const strings = [...text.matchAll(/`([^`]*)`/g)].map((m) => m[1]).join("\n");
@@ -329,4 +415,11 @@ test("copy: brand voice, no promised result, and the Roadmap bubble stays static
   }
   assert.match(read("lib/fender-canvas/roadmap-bubble.ts"), /"30-60-90"/);
   assert.match(read("components/v3/live/RoadmapPlanData.ts"), /useSummaryAiRead\(\)/);
+});
+
+test("client focus is staff-set per client in configuration; the default is the whole brand", () => {
+  assert.equal(staffFocus(), BRAND_FOCUS, "both clients default to the whole brand");
+  assert.deepEqual(staffFocus("acoustics"), { kind: "category", key: "acoustics" });
+  assert.equal(staffFocus("acoustics"), staffFocus("acoustics"), "one object per category");
+  assert.match(read("lib/client/active-client.ts"), /roadmapFocusCategory: null,[\s\S]*roadmapFocusCategory: null,/);
 });

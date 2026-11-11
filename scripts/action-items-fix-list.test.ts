@@ -88,8 +88,8 @@ test("the priority rule names the order, including the decision 21 actions after
   assert.equal(FIX_LIST_TITLE, "Fixes in priority order");
   assert.match(FIX_LIST_PRIORITY_RULE, /Critical findings come first, then at risk, then on track/);
   assert.match(FIX_LIST_PRIORITY_RULE, /out-of-stock listings and missing Amazon spec fields, then the brand.s own pages and listings when one of their factors is below Good, then the source, competitor, and fact-check actions/);
-  assert.match(FIX_LIST_PRIORITY_RULE, /weakest engine, the weakest unbranded discovery questions, and the cited sites rising or falling fastest/);
-  assert.match(FIX_LIST_PRIORITY_RULE, /10 points or more, with at least 30 answers behind the figure\. Wording the brand.s pages to match shopper questions comes last\.$/);
+  assert.match(FIX_LIST_PRIORITY_RULE, /weakest engine and the weakest unbranded discovery questions that trail the best by 10 points or more, and the cited sites whose share moved by 10% or more/);
+  assert.match(FIX_LIST_PRIORITY_RULE, /counted over the last 30 days with at least 30 answers behind the figure\. Wording the brand.s pages to match shopper questions comes next\. Watch lines come last/);
   assert.doesNotMatch(FIX_LIST_PRIORITY_RULE, /\u2014/);
 });
 
