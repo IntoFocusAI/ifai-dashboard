@@ -2,20 +2,30 @@
 
 import { useAiHistoryOptional } from "@/components/v3/live/ai-search/AiHistoryContext";
 import { AiReadGate, mutedText } from "@/components/v3/live/ai-search/AiReadGate";
-import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
+import { EngineGroupScope } from "@/components/v3/live/ai-search/EngineGroupScope";
+import { CatalogCoverageTable } from "@/components/v3/live/ai-search/CatalogCoverageTable";
+import { CopyTip } from "@/components/v3/live/ai-search/CopyTip";
+import { ExternalLink } from "@/components/v3/live/ai-search/ExternalLink";
+import { FactCheckLead } from "@/components/v3/live/ai-search/FactCheckLead";
 import { FactCheckTable } from "@/components/v3/live/ai-search/FactCheckTable";
 import { driftRead } from "@/lib/ai-search/drift";
 import {
-  FACT_CHECK_SCOPE,
-  FACT_CHECK_SHOPPING_SCOPE,
-  FACT_CHECK_SHOPPING_SCOPE_WINDOW,
+  UNVERIFIED_FLAG_TIP,
+  amazonMismatchNote,
   factCheckCoverageNote,
-  factCheckHeadline,
   factCheckPendingNote,
 } from "@/lib/ai-search/fact-check-copy";
 import { engineLabel, formatRunTime, modelLabel } from "@/lib/ai-search/run-metrics";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
 import { isWindowHistoryKind } from "@/lib/ai-search/window-display";
+import { brandName, brandSite } from "@/lib/brand-copy";
+
+/** The stored fact as one sentence: a claim that already ends in a period gets no second one. */
+function sentence(text: string | null): string {
+  const trimmed = (text ?? "").trim();
+  if (!trimmed) return "";
+  return /[.!?]$/.test(trimmed) ? trimmed : `${trimmed}.`;
+}
 
 function FactChecks({ snapshot }: { snapshot: AiSearchSnapshot }) {
   const history = useAiHistoryOptional();
@@ -25,76 +35,69 @@ function FactChecks({ snapshot }: { snapshot: AiSearchSnapshot }) {
   const contradictions = drift.probes.filter((row) => row.state === "confirmed");
   const coverageNote = factCheckCoverageNote(coverage);
   const pendingNote = factCheckPendingNote(coverage);
-  const shoppingScope = windowed ? FACT_CHECK_SHOPPING_SCOPE_WINDOW : FACT_CHECK_SHOPPING_SCOPE;
+  const amazonNote = amazonMismatchNote(coverage);
 
   return (
     <>
-      <div className="content-box ai-drift-summary">
-        <div className="content-box-title">
-          <span>Do AI answers match Fender&apos;s published product facts?</span>
-          <span
-            className={`tag-badge ${coverage.contradictions ? "tag-danger" : "tag-success"}`}
-            data-ai-fact-result
-          >
-            {coverage.contradictions ? `${coverage.contradictions} contradictions` : "No contradictions found"}
-          </span>
-        </div>
-        <p style={{ fontSize: 13, lineHeight: 1.5, margin: "0 0 6px" }} data-ai-fact-headline>
-          {factCheckHeadline(coverage, windowed)}
-        </p>
-        <p style={{ ...mutedText, margin: 0 }}>{FACT_CHECK_SCOPE}</p>
-        <p style={{ ...mutedText, marginBottom: 0 }}>
-          IntoFocus sends {coverage.questionsSent} product questions to every engine on purpose, and compares each
-          answer with a fact taken from an official Fender page. A{" "}
-          <AiTerm term="product fact check">product fact check</AiTerm> is not a buying prompt, so it never counts
-          toward a win rate or a competitor&apos;s share.
-        </p>
-      </div>
+      <FactCheckLead snapshot={snapshot} drift={drift} windowed={windowed} />
 
       {contradictions.length ? (
         <div className="content-box" style={{ marginTop: 12 }}>
-          <div className="content-box-title">Answers that contradict a Fender fact</div>
+          <div className="content-box-title">Answers that contradict a {brandName()} fact</div>
           {contradictions.map((row) => (
             <div key={row.key} className="action-card critical" style={{ marginTop: 6 }}>
               <div className="action-head">{row.prompt}</div>
               <div className="action-details">
-                {engineLabel(row.engine)} · {modelLabel(row.model)}. Fender publishes: {row.claim}. The answer said:{" "}
+                {engineLabel(row.engine)} · {modelLabel(row.model)}. {brandName()} publishes: {sentence(row.claim)} The answer said:{" "}
                 {row.evidence}
+                {row.catalog && row.sourceUrl ? (
+                  <>
+                    {" "}
+                    <ExternalLink href={row.sourceUrl}>{brandSite()} spec page</ExternalLink>
+                  </>
+                ) : null}
               </div>
             </div>
           ))}
         </div>
       ) : null}
 
+      <CatalogCoverageTable snapshot={snapshot} windowed={windowed} />
+
       <FactCheckTable rows={drift.probes} windowed={windowed} />
 
-      <div className="content-box" style={{ marginTop: 12 }}>
-        <div className="content-box-title">What this does and does not cover</div>
-        <ul style={{ ...mutedText, paddingLeft: 16, margin: 0 }}>
-          <li>{shoppingScope}</li>
-          <li>
-            A result of <AiTerm term="no contradiction found" /> means nothing in that answer conflicted with the one
-            fact being checked. It is not a clean bill of health for the whole answer.
-          </li>
-          {pendingNote ? <li data-ai-pending-fact>{pendingNote}</li> : null}
-          {coverageNote ? <li data-ai-coverage-note>{coverageNote}</li> : null}
-          {drift.unverified > 0 ? (
-            <li>
-              {drift.unverified} answers carry a flag that was never verified against a Fender page, so they are not
-              reported as contradictions.
-            </li>
-          ) : null}
-          {drift.facts.length ? (
-            <li>
-              Each verified fact was read from the linked Fender page on {formatRunTime(drift.facts[0].verifiedAt)}.
-            </li>
-          ) : null}
-        </ul>
-      </div>
+      {pendingNote || coverageNote || amazonNote || drift.unverified > 0 || drift.facts.length ? (
+        <div className="content-box" style={{ marginTop: 12 }}>
+          <div className="content-box-title">Coverage notes</div>
+          <ul style={{ ...mutedText, paddingLeft: 16, margin: 0 }}>
+            {amazonNote ? <li data-ai-amazon-mismatch>{amazonNote}</li> : null}
+            {pendingNote ? <li data-ai-pending-fact>{pendingNote}</li> : null}
+            {coverageNote ? <li data-ai-coverage-note>{coverageNote}</li> : null}
+            {drift.unverified > 0 ? (
+              <li data-ai-unverified-note>
+                {drift.unverified} {drift.unverified === 1 ? "answer carries an" : "answers carry an"}{" "}
+                <CopyTip label="Unverified flag" description={UNVERIFIED_FLAG_TIP}>
+                  unverified flag
+                </CopyTip>
+                .
+              </li>
+            ) : null}
+            {drift.facts.length ? (
+              <li>
+                Each verified fact was read from the linked {brandName()} page on {formatRunTime(drift.facts[0].verifiedAt)}.
+              </li>
+            ) : null}
+          </ul>
+        </div>
+      ) : null}
     </>
   );
 }
 
 export function AiDriftPanel() {
-  return <AiReadGate>{(snapshot) => <FactChecks snapshot={snapshot} />}</AiReadGate>;
+  return (
+    <EngineGroupScope>
+      <AiReadGate>{(snapshot) => <FactChecks snapshot={snapshot} />}</AiReadGate>
+    </EngineGroupScope>
+  );
 }

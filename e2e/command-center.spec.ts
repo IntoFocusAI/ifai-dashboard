@@ -1,4 +1,18 @@
-import { expect, test } from "./fixtures";
+import { expect, test, type Canvas, type Locator } from "./fixtures";
+
+/** The queue's "Total in queue" figure. AI Search priorities join only when that read loads. */
+async function queueTotal(canvas: Canvas) {
+  return Number(await canvas.page.locator(".cc-quadrant-val").nth(1).innerText());
+}
+
+async function setAside(item: Locator, reason: string, note: string, name: string) {
+  await item.locator("[data-cc-set-aside]").click();
+  const form = item.locator("[data-set-aside-form]");
+  await form.locator("[data-set-aside-reason]").selectOption(reason);
+  if (note) await form.locator("[data-set-aside-note]").fill(note);
+  await form.locator("[data-set-aside-name]").fill(name);
+  await form.locator("[data-set-aside-save]").click();
+}
 
 /* The "what do I need to worry about" queue: opens from Priorities, assignable,
    and every row a route into the detail behind it. */
@@ -6,7 +20,9 @@ test.describe("command center", () => {
   test("opens from the priorities control", async ({ canvas, page }) => {
     await canvas.openCommandCenter();
     await expect(canvas.commandCenter).toBeVisible();
-    await expect(canvas.priorities).toHaveCount(5);
+    const total = await queueTotal(canvas);
+    expect(total).toBeGreaterThan(0);
+    await expect(canvas.priorities).toHaveCount(total);
     await expect(canvas.commandCenter).not.toContainText("3,430");
     await expect(canvas.commandCenter).not.toContainText("993");
     await expect(canvas.commandCenter).not.toContainText("7.4%");
@@ -14,7 +30,7 @@ test.describe("command center", () => {
     await expect(canvas.commandCenter).not.toContainText("Fourteen");
     await expect(canvas.commandCenter).not.toContainText("14 catalog");
     await expect(canvas.commandCenter).not.toContainText("Discounted bundles");
-    await expect(canvas.commandCenter).toContainText("Fender MAP prices have not been stored.");
+    await expect(canvas.commandCenter).toContainText(/\d[\d,]* listings? (is|are) below MAP/);
     await expect(canvas.page.locator(".drilldown-title")).toContainText(
       "What do I need to worry about?",
     );
@@ -23,7 +39,7 @@ test.describe("command center", () => {
   test("every priority explains why it is top of the list", async ({ canvas }) => {
     await canvas.openCommandCenter();
     const whys = canvas.page.locator(".cc-why p");
-    await expect(whys).toHaveCount(5);
+    await expect(whys).toHaveCount(await queueTotal(canvas));
     for (const text of await whys.allInnerTexts()) {
       expect(text.trim().length).toBeGreaterThan(40);
     }
@@ -31,24 +47,90 @@ test.describe("command center", () => {
 
   test("counts reflect the queue", async ({ canvas, page }) => {
     await canvas.openCommandCenter();
-    const quadrants = page.locator(".cc-quadrant");
-    await expect(quadrants.nth(1)).toContainText("5");
-    await expect(quadrants.nth(0)).toContainText("1"); // critical
+    const quadrants = page.locator(".cc-quadrant-val");
+    const total = await canvas.priorities.count();
+    const critical = await canvas.priorities.locator(".cc-sev-badge-critical").count();
+    await expect(quadrants.nth(1)).toHaveText(String(total));
+    await expect(quadrants.nth(0)).toHaveText(String(critical));
 
-    await canvas.priority("Buy Box withheld").locator(".cc-done-btn").click();
-    await expect(canvas.priorities).toHaveCount(4);
-    await expect(quadrants.nth(1)).toContainText("4");
-    await expect(page.locator(".cc-cleared summary")).toContainText("1 cleared");
+    await setAside(canvas.priority("Buy Box withheld"), "discontinued", "", "Test Person");
+    await expect(canvas.priorities).toHaveCount(total - 1);
+    await expect(quadrants.nth(1)).toHaveText(String(total - 1));
+    await expect(page.locator(".cc-cleared summary")).toContainText("0 done · 1 set aside");
   });
 
-  test("a cleared item can be reopened", async ({ canvas, page }) => {
+  test("set aside needs a reason and a name, and is stored server-side", async ({ canvas, page, setAsides }) => {
     await canvas.openCommandCenter();
-    await canvas.priorities.first().locator(".cc-done-btn").click();
-    await expect(canvas.priorities).toHaveCount(4);
+    const total = await queueTotal(canvas);
+    const item = canvas.priority("Buy Box withheld");
+    await item.locator("[data-cc-set-aside]").click();
+    const form = item.locator("[data-set-aside-form]");
+    await form.locator("[data-set-aside-save]").click();
+    await expect(form.locator(".set-aside-error")).toHaveText("Pick a reason.");
+
+    await form.locator("[data-set-aside-reason]").selectOption("other");
+    await form.locator("[data-set-aside-name]").fill("Test Person");
+    await form.locator("[data-set-aside-save]").click();
+    await expect(form.locator(".set-aside-error")).toContainText("needs a note");
+    expect(setAsides.calls).toHaveLength(0);
+
+    await form.locator("[data-set-aside-note]").fill("Handled on the retailer side");
+    await form.locator("[data-set-aside-save]").click();
+    await expect(canvas.priorities).toHaveCount(total - 1);
+    expect(setAsides.calls[0]).toMatchObject({
+      fn: "set_aside_issue",
+      body: {
+        p_client_key: "fmic",
+        p_check_key: "command_center_queue",
+        p_entity_key: "buybox-suppression",
+        p_reason_code: "other",
+        p_name: "Test Person",
+        p_note: "Handled on the retailer side",
+      },
+    });
 
     await page.locator(".cc-cleared summary").click();
-    await page.locator(".cc-undo-btn").first().click();
-    await expect(canvas.priorities).toHaveCount(5);
+    await expect(page.locator(".cc-cleared")).toContainText("Other · Handled on the retailer side — Test Person");
+  });
+
+  test("done needs only a name and is counted apart from set aside", async ({ canvas, page, setAsides }) => {
+    await canvas.openCommandCenter();
+    const total = await queueTotal(canvas);
+    const item = canvas.priority("Buy Box withheld");
+    await item.locator("[data-cc-done]").click();
+    const form = item.locator("[data-done-form]");
+    await form.locator("[data-set-aside-name]").fill("Test Person");
+    await form.locator("[data-set-aside-note]").fill("Walmart price fixed");
+    await form.locator("[data-done-save]").click();
+    await expect(canvas.priorities).toHaveCount(total - 1);
+    expect(setAsides.calls[0]).toMatchObject({
+      fn: "mark_issue_done",
+      body: { p_check_key: "command_center_queue", p_entity_key: "buybox-suppression", p_name: "Test Person" },
+    });
+    await expect(page.locator(".cc-cleared summary")).toContainText("1 done · 0 set aside");
+    await page.locator(".cc-cleared summary").click();
+    await expect(page.locator(".cc-cleared")).toContainText("Done · Walmart price fixed — Test Person");
+  });
+
+  test("reopen updates the same set-aside row", async ({ canvas, page, setAsides }) => {
+    await canvas.openCommandCenter();
+    const total = await queueTotal(canvas);
+    await setAside(canvas.priorities.first(), "discontinued", "", "Test Person");
+    await expect(canvas.priorities).toHaveCount(total - 1);
+
+    await page.locator(".cc-cleared summary").click();
+    await page.locator("[data-cc-reopen]").first().click();
+    // The name is remembered from the set-aside.
+    await expect(page.locator("[data-reopen-form] [data-set-aside-name]")).toHaveValue("Test Person");
+    await page.locator("[data-reopen-save]").click();
+    await expect(canvas.priorities).toHaveCount(total);
+    await expect(page.locator(".cc-cleared summary")).toContainText("0 done · 0 set aside · 1 reopened");
+    expect(setAsides.rows).toHaveLength(1);
+    expect(setAsides.rows[0].status).toBe("reopened");
+
+    await setAside(canvas.priorities.first(), "discontinued", "", "Test Person");
+    expect(setAsides.rows).toHaveLength(1);
+    expect(setAsides.rows[0].status).toBe("active");
   });
 
   test("work can be assigned and survives a reload", async ({ canvas }) => {
@@ -76,10 +158,10 @@ test.describe("command center", () => {
   /* Each priority must land on the tab that actually holds its evidence. */
   const routes = [
     ["Buy Box withheld", "Retail Overview"],
-    ["machine-readable spec", "Machine Readability"],
-    ["Fender MAP prices have not been stored", "MAP"],
+    ["machine-readable spec", "Brand-Site Specs"],
+    ["below MAP", "MAP"],
     ["out-mention Fender/Squier", "Competitor Wins"],
-    ["A+ comparison tables", "A+"],
+    ["missing bullet copy", "Amazon A+ Matrix"],
   ] as const;
 
   for (const [title, tab] of routes) {
@@ -90,9 +172,11 @@ test.describe("command center", () => {
   }
 
   test("the back control returns to the queue", async ({ canvas }) => {
+    await canvas.openCommandCenter();
+    const total = await queueTotal(canvas);
     await canvas.openPriority("Buy Box withheld");
     await canvas.backToPriorities();
-    await expect(canvas.priorities).toHaveCount(5);
+    await expect(canvas.priorities).toHaveCount(total);
   });
 
   test("the header Priorities button reopens the queue from a spoke", async ({

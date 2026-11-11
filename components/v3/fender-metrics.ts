@@ -1,4 +1,5 @@
 import type { CanvasMetric } from "@/lib/canvas-sdk";
+import { ENTERPRISE_POTENTIAL_ESTIMATE, PHASE_ONE_LIFT_ESTIMATE } from "@/lib/fender-canvas/analyst-estimates";
 
 /**
  * Canonical names and display values for the compact dashboard signals.
@@ -6,16 +7,6 @@ import type { CanvasMetric } from "@/lib/canvas-sdk";
  * them from `spokeData`, so renaming a hub/spoke updates the picker too.
  */
 export const FENDER_METRICS = {
-  catalogSkus: {
-    id: "catalog-skus",
-    spokeId: "hub",
-    label: "Monitored Electric SKUs",
-    value: "See read",
-    detail: "Division count loads with the division table",
-    tone: "neutral",
-    subTab: "Performance",
-    provenance: "live",
-  },
   activeOfferCoverage: {
     id: "active-offer-coverage",
     spokeId: "hub",
@@ -53,7 +44,7 @@ export const FENDER_METRICS = {
     value: "Unavailable",
     detail: "The MAP listing read did not succeed.",
     tone: "warning",
-    subTab: "MAP",
+    subTab: "MAP Leakage",
     provenance: "live",
   },
   suppressedListings: {
@@ -83,7 +74,7 @@ export const FENDER_METRICS = {
     value: "Unavailable",
     detail: "The live MAP read is not available.",
     tone: "danger",
-    subTab: "MAP",
+    subTab: "MAP Leakage",
     provenance: "live",
   },
   overallAiWinRate: {
@@ -139,21 +130,21 @@ export const FENDER_METRICS = {
   machineReadableSpecs: {
     id: "machine-readable-specs",
     spokeId: "specs",
-    label: "Machine-Readable Spec Coverage",
-    value: "0%",
-    detail: "additionalProperty absent on found pages",
-    tone: "danger",
-    subTab: "Machine Readability",
+    label: "fender.com Spec Block",
+    value: "Loading",
+    detail: "Reading the fender.com product pages",
+    tone: "neutral",
+    subTab: "Brand-Site Specs",
     provenance: "live",
   },
   missingSchemaFields: {
     id: "missing-schema-fields",
     spokeId: "specs",
-    label: "Missing Schema.org Spec Fields",
-    value: "See read",
-    detail: "Missing-field rows are on the Machine Readability tab",
+    label: "Pages Missing a Spec Block",
+    value: "Loading",
+    detail: "Reading the fender.com product pages",
     tone: "warning",
-    subTab: "Machine Readability",
+    subTab: "Brand-Site Specs",
     provenance: "live",
   },
   beginnerSovGap: {
@@ -190,30 +181,30 @@ export const FENDER_METRICS = {
     id: "phase-one-lift",
     spokeId: "suggestions",
     label: "Recoverable Revenue",
-    value: "+$680K",
+    value: PHASE_ONE_LIFT_ESTIMATE,
     detail: "Phase 1 annual · 14 pilot ASINs",
     tone: "success",
-    subTab: "Interactive ROI Model",
+    subTab: "Revenue Estimates",
     provenance: "estimate",
   },
   enterprisePotential: {
     id: "enterprise-potential",
     spokeId: "suggestions",
     label: "Enterprise GMV Potential",
-    value: "+$38M to $62M",
+    value: ENTERPRISE_POTENTIAL_ESTIMATE,
     detail: "Annual · full portfolio",
     tone: "success",
-    subTab: "Interactive ROI Model",
+    subTab: "Revenue Estimates",
     provenance: "estimate",
   },
   dayNinetyBuyBoxTarget: {
     id: "day-90-buy-box-target",
     spokeId: "roadmap",
-    label: "90-day plan",
-    value: "3 phases",
-    detail: "MAP, catalog nesting, and estimated lift",
-    tone: "success",
-    subTab: "30-60-90 Day Milestones",
+    label: "Roadmap",
+    value: "30-60-90",
+    detail: "The next 90 days of strategy",
+    tone: "neutral",
+    subTab: "30-60-90 Days",
     provenance: "live",
   },
 } satisfies Record<string, CanvasMetric>;

@@ -360,6 +360,11 @@ test("unbranded brand sites count only brand websites and reconcile", () => {
     sites.slices.map((slice) => slice.brand),
     ["Fender", "Taylor", "Yamaha"],
   );
+  assert.deepEqual(
+    sites.slices.map((slice) => [slice.brand, slice.fenderOwned]),
+    [["Fender", true], ["Taylor", false], ["Yamaha", false]],
+    "Fender-owned brand sites are flagged from their source class",
+  );
 });
 
 test("range labels stay on one run and refuse a missing citation list", () => {

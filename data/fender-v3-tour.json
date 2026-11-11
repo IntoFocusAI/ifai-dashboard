@@ -8,7 +8,6 @@
     "subtitle": "Fender's health across the catalog divisions",
     "category": "BRAND CORE",
     "displays": [
-      "Monitored electric SKUs load with the catalog read",
       "Retail health uses the same headline as the ticker",
       "AI win rate and the weakest category load with the simulation read"
     ],
@@ -54,7 +53,7 @@
     "displays": [
       "additionalProperty coverage loads with the spec read",
       "Official-page outcomes stay separate and load with the findability read",
-      "Missing-field rows are listed on the Machine Readability tab"
+      "Missing-field rows for found fender.com pages are listed on Brand-Site Specs"
     ],
     "value": "Make fender.com the source AI trusts for specs, with fewer wrong answers and fewer returns."
   },
@@ -83,8 +82,8 @@
     "category": "OPPORTUNITY",
     "displays": [
       "Revenue figures on this spoke are estimates",
-      "Phase 1 estimate: +$680K",
-      "Enterprise estimate: +$38M to $62M"
+      "Phase 1: +$680K est.",
+      "Enterprise: +$38M to $62M est."
     ],
     "value": "See what each Action Item is worth, so you know where to start."
   },
@@ -93,7 +92,7 @@
     "targetX": 800,
     "targetY": 820,
     "radius": 115,
-    "title": "90-Day Roadmap",
+    "title": "Roadmap",
     "subtitle": "What happens at 30, 60, and 90 days",
     "category": "ROADMAP",
     "displays": [

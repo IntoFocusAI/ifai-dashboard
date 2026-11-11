@@ -2,20 +2,70 @@
 
 import type { ReactNode } from "react";
 import { useAiHistoryOptional } from "@/components/v3/live/ai-search/AiHistoryContext";
+import { AiStatusTag } from "@/components/v3/live/ai-search/AiStatusTag";
 import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
 import { useAiSearch } from "@/components/v3/live/ai-search/AiSearchContext";
+import { CopyTip } from "@/components/v3/live/ai-search/CopyTip";
+import { NoWindowRunNotice } from "@/components/v3/live/ai-search/NoWindowRunNotice";
+import { selectionLine, selectionSubject } from "@/lib/ai-search/displayed-read";
+import { LAST_30_DAYS_LABEL } from "@/lib/ai-search/default-window";
 import { errorLine, runStateLabel, summarizeRun } from "@/lib/ai-search/summary";
-import type { AiSearchSnapshot } from "@/lib/ai-search/types";
+import type { AiSearchRead, AiSearchSnapshot } from "@/lib/ai-search/types";
 import { isWindowHistoryKind } from "@/lib/ai-search/window-display";
 
 export const mutedText = { fontSize: 12, color: "var(--text-muted)", lineHeight: 1.45 } as const;
 
-function Notice({ heading, children, tone }: { heading: string; children: ReactNode; tone: string }) {
+export const READ_ERROR_TITLE = "Database error";
+
+function Notice({ heading, children, tone }: { heading: ReactNode; children: ReactNode; tone: string }) {
   return (
     <div className="content-box" data-ai-state={tone}>
       <div className="content-box-title">{heading}</div>
       <p style={mutedText}>{children}</p>
     </div>
+  );
+}
+
+/** The history selection failed or is empty. The published run is offered when it loaded. */
+function SelectionNotice({ read }: { read: Extract<AiSearchRead, { phase: "error" }> }) {
+  const history = useAiHistoryOptional();
+  const single = history?.mode.kind === "run";
+  const published = history?.current.phase ?? "loading";
+  const publishedLine = {
+    ready: `The published run loaded. Show it here, or pick another ${single ? "run" : "period"} from the date menu above.`,
+    loading: "The published run is still loading.",
+    error: "The published AI run did not load either.",
+    "no-run": "No AI run has been published yet.",
+  }[published];
+  const heading =
+    read.selection === "empty" ? (
+      selectionLine("empty", single)
+    ) : (
+      <span>
+        The {selectionSubject(single)}{" "}
+        <CopyTip label={READ_ERROR_TITLE} description={read.message}>
+          did not load
+        </CopyTip>
+      </span>
+    );
+  return (
+    <Notice heading={heading} tone="error">
+      <span data-ai-selection-failed={read.selection}>{publishedLine}</span>
+      {published === "ready" || single ? (
+        <span className="segmented-control" role="group" aria-label="What to show" style={{ marginTop: 10 }}>
+          {published === "ready" ? (
+            <button type="button" className="segmented-btn" data-ai-show-published onClick={history?.viewPublished}>
+              Show the published run
+            </button>
+          ) : null}
+          {single ? (
+            <button type="button" className="segmented-btn" data-ai-history-return onClick={history?.viewMonth}>
+              {LAST_30_DAYS_LABEL}
+            </button>
+          ) : null}
+        </span>
+      ) : null}
+    </Notice>
   );
 }
 
@@ -30,9 +80,9 @@ export function RunFreshness({ snapshot, stale }: { snapshot: AiSearchSnapshot; 
       style={{ ...mutedText, fontSize: 11, display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 10 }}
     >
       {showState ? (
-        <span className={`tag-badge ${run.isPartial ? "tag-warning" : "tag-success"}`}>
+        <AiStatusTag tone={run.isPartial ? "warning" : "success"}>
           {run.isPartial ? <AiTerm term="partial run">Partial run</AiTerm> : runStateLabel(run.state)}
-        </span>
+        </AiStatusTag>
       ) : null}
       <span>
         {s.shortRunId} · completed {s.completedAt}
@@ -40,7 +90,7 @@ export function RunFreshness({ snapshot, stale }: { snapshot: AiSearchSnapshot; 
       <span>
         {run.answered ?? "Unknown"} of {run.expected ?? "unknown"} calls answered · {errorLine(s)}
       </span>
-      {stale ? <span className="tag-badge tag-warning">Refresh failed, showing the last good read</span> : null}
+      {stale ? <AiStatusTag tone="warning">Refresh failed, showing the last good read</AiStatusTag> : null}
     </div>
   );
 }
@@ -77,7 +127,7 @@ function GateBody({
         {history.selected.message}
         <span style={{ display: "block", marginTop: 8 }}>
           <button type="button" data-ai-history-return onClick={history.viewMonth}>
-            Last 30 days
+            {LAST_30_DAYS_LABEL}
           </button>
         </span>
       </Notice>
@@ -107,6 +157,8 @@ function GateBody({
       </Notice>
     );
   }
+  if (read.phase === "error" && read.selection === "empty" && history?.mode.kind === "month") return <NoWindowRunNotice />;
+  if (read.phase === "error" && read.selection) return <SelectionNotice read={read} />;
   if (read.phase === "error") {
     return (
       <Notice heading="The AI run did not load" tone="error">
@@ -114,7 +166,7 @@ function GateBody({
         {historical ? (
           <span style={{ display: "block", marginTop: 8 }}>
             <button type="button" data-ai-history-return onClick={history.viewMonth}>
-              Last 30 days
+              {LAST_30_DAYS_LABEL}
             </button>
           </span>
         ) : null}
@@ -134,7 +186,7 @@ function GateBody({
         Call rows for this run did not load, so no rate is shown.
         <span style={{ display: "block", marginTop: 8 }}>
           <button type="button" data-ai-history-return onClick={history.viewMonth}>
-            Last 30 days
+            {LAST_30_DAYS_LABEL}
           </button>
         </span>
       </Notice>

@@ -136,60 +136,70 @@ test("the filter counts every missing page, not the current page of 50", async (
 test("the catalog control copy stays on the live rollup and the custom tooltip", () => {
   const root = new URL("..", import.meta.url);
   const read = (path: string) => readFileSync(new URL(path, root), "utf8");
+  const lead = read("components/v3/live/AiReadinessLead.tsx");
   const narrative = read("components/v3/live/FenderSpecNarratives.tsx");
   const panel = read("components/v3/live/FenderSpecPanel.tsx");
   const catalog = read("components/v3/live/CatalogReadinessSpec.tsx");
   const spokes = read("components/v3/build-live-spokes.tsx");
   const forbidden = /\b(123|802|925)\b/;
 
-  assert.match(narrative, /spec_fender_found_pct/);
-  assert.match(narrative, /data-spec-filter="missing-fender-page"/);
-  // One pill, no Clear button, and the toggle word is on it before the first click.
-  assert.doesNotMatch(narrative, /data-spec-filter="clear"/);
-  assert.doesNotMatch(narrative, /Clear/);
-  assert.match(narrative, /control\.active \? "Hide" : "Show"/);
-  assert.doesNotMatch(narrative, /content-box-title/);
-  assert.match(narrative, /<th>Metric<\/th>/);
-  assert.match(narrative, /<th>Result<\/th>/);
-  assert.doesNotMatch(narrative, /\stitle=/);
+  assert.doesNotMatch(lead, /data-spec-filter/);
+  assert.doesNotMatch(lead, /spec-found-pill/);
+  assert.doesNotMatch(lead, /missingPageControl|Show\/Hide|Show all/);
+  assert.doesNotMatch(lead, /content-box-title/);
+  assert.doesNotMatch(lead, /<th>Metric<\/th>/);
+  assert.doesNotMatch(lead, /<th>Result<\/th>/);
+  assert.doesNotMatch(lead, /ai-readiness-lead-note/);
+  assert.doesNotMatch(lead, /older spec read/);
+  assert.doesNotMatch(lead, /Official-page outcomes are on the Findability tab/);
+  assert.doesNotMatch(lead, /(?<![\w-])title=/);
+  assert.doesNotMatch(lead, forbidden);
+  assert.doesNotMatch(narrative, /data-spec-filter/);
+  assert.doesNotMatch(narrative, /(?<![\w-])title=/);
   assert.doesNotMatch(narrative, forbidden);
 
-  assert.match(panel, /means this check did not resolve a fender.com address/);
-  assert.match(panel, /It is not proof the product is\s+absent from fender.com/);
-  assert.match(panel, />\s*missing page\s*</);
-  assert.match(panel, /data-ifai-tooltip-title="missing page"/);
-  assert.match(panel, /data-ifai-tooltip-desc=\{MISSING_PAGE_DESC\}/);
-  assert.match(panel, /className="ifai-term"/);
-  // The missing-field list opens on two rows and keeps the full list behind a control.
+  // Two-bar preview with a title chevron; Amazon-only fields; no text button under the bars.
   assert.match(panel, /MISSING_FIELD_PREVIEW = 2/);
-  assert.match(panel, /missing\.slice\(0, MISSING_FIELD_PREVIEW\)/);
-  assert.match(panel, /Show all \$\{formatInt\(missing\.length\)\} fields/);
+  assert.match(panel, /amazonOnly\.slice\(0, MISSING_FIELD_PREVIEW\)/);
+  assert.match(panel, /Top missing Amazon fields/);
+  assert.match(panel, /data-spec-missing-fields-toggle/);
+  assert.match(panel, /aria-expanded=\{showAll\}/);
+  assert.match(panel, /retail-explore-chevron/);
+  assert.match(panel, /spec-missing-fields-preview/);
+  assert.doesNotMatch(panel, /fender\.com found/);
+  assert.doesNotMatch(panel, /Show all \$\{formatInt\(missing\.length\)\} fields/);
+  assert.doesNotMatch(panel, /Show fewer fields/);
+  assert.doesNotMatch(panel, /missingPagesOnly/);
+  assert.doesNotMatch(panel, /MISSING_PAGE_DESC/);
   assert.doesNotMatch(panel, /slice\(0, 8\)/);
-  assert.doesNotMatch(panel, /\stitle=/);
+  assert.doesNotMatch(panel, /(?<![\w-])title=/);
   assert.doesNotMatch(panel, forbidden);
 
+  assert.match(catalog, /AiReadinessLead/);
   assert.match(catalog, /catalogReadiness/);
-  assert.match(catalog, /missingPagesOnly=\{missingPagesOnly\}/);
+  assert.doesNotMatch(catalog, /missingPagesOnly/);
   assert.doesNotMatch(catalog, forbidden);
 
   assert.match(spokes, /<CatalogReadinessSpec bundle=\{bundle\} \/>/);
-  assert.match(spokes, /<SchemaExplanation \/>/);
-  assert.match(spokes, /<SchemaAdditionalPropertyList \/>/);
+  assert.match(
+    spokes,
+    /<MachineReadabilityPanel summary=\{bundle\.specPages \?\? null\} metrics=\{bundle\.m\} \/>/,
+  );
   assert.doesNotMatch(spokes, /<FenderSpecPanel/);
   assert.doesNotMatch(spokes, forbidden);
 
-  const schemaList = read("components/v3/live/SchemaAdditionalPropertyList.tsx");
+  const schemaList = read("components/v3/live/MachineReadabilityPanel.tsx");
   const governance = read("components/v3/live/CatalogGovernancePanel.tsx");
   assert.doesNotMatch(schemaList, /Spec readiness by ASIN/);
   assert.doesNotMatch(schemaList, /Top missing schema fields/);
   assert.doesNotMatch(schemaList, /\stitle=/);
   assert.doesNotMatch(schemaList, forbidden);
-  assert.match(schemaList, /data-schema-gap-count=\{total\}/);
+  assert.match(schemaList, /dataAttr="data-machine-hero"/);
   assert.match(governance, /data-ifai-open="specs"/);
-  assert.match(governance, /data-ifai-tab="AI Readiness"/);
-  assert.match(governance, /Unnested bundles/);
+  assert.match(governance, /data-ifai-tab="Amazon Specs"/);
+  assert.match(governance, /Splintered Listings/);
   assert.doesNotMatch(governance, /catalog-specs/);
   assert.doesNotMatch(governance, /Missing Amazon spec fields/);
   assert.doesNotMatch(governance, /\b435\b/);
-  assert.doesNotMatch(governance, /\stitle=/);
+  assert.doesNotMatch(governance, /(?<![\w-])title=/);
 });

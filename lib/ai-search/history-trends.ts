@@ -76,11 +76,19 @@ export const ONE_RUN_TREND_MESSAGE = "Trend begins after the next comparable pub
 const EMPTY_RANGE = "No review run falls in this range.";
 const NONE_YET = "No review run is available for a trend yet.";
 
+/**
+ * Fact checks are one question per key: a rotating key asks about a different catalog
+ * product in each repeat, so its wording is not a new question.
+ */
+function questionVersionKey(call: Pick<AiCallRow, "prompt_key" | "prompt" | "prompt_kind">): string {
+  return queryVersionKey(call.prompt_key, call.prompt_kind === "probe" ? null : call.prompt);
+}
+
 export function questionsInRun(calls: readonly AiCallRow[]): QuestionVersion[] {
   const seen = new Map<string, QuestionVersion>();
   for (const call of calls) {
     if (call.prompt_kind !== "commercial" && call.prompt_kind !== "probe") continue;
-    const versionKey = queryVersionKey(call.prompt_key, call.prompt);
+    const versionKey = questionVersionKey(call);
     if (seen.has(versionKey)) continue;
     seen.set(versionKey, {
       versionKey,

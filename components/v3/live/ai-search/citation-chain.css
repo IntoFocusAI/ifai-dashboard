@@ -1,0 +1,254 @@
+/* Citation Ecosystem headline chain: four steps left to right. The band under the
+   steps keeps one height scale per unit, so each share reads as its drop in height.
+   Hatching marks answers that listed no web page; they add nothing further on. */
+
+.citation-chain {
+  --chain-figure: 30px;
+  --chain-label: 15px;
+  --chain-gap: 7px;
+  --chain-link: 44px;
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1fr) var(--chain-link) minmax(0, 1fr) var(--chain-link) minmax(0, 1fr)
+    var(--chain-link) minmax(0, 1fr);
+  padding: 11px 18px 15px;
+  border: 1px solid var(--citation-card-border);
+  border-radius: var(--citation-card-radius);
+  background: var(--citation-card-bg);
+}
+
+.citation-chain-step {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.citation-chain-figure {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  height: var(--chain-figure);
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.citation-chain-count {
+  color: var(--text-main);
+  font-family: var(--font-sans);
+  font-size: 27px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  letter-spacing: -0.045em;
+  line-height: var(--chain-figure);
+}
+
+.citation-chain-share {
+  color: var(--text-muted);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.citation-chain-step-owned .citation-chain-count,
+.citation-chain-step-owned .citation-chain-share {
+  color: var(--citation-owned-ink);
+}
+
+.citation-chain .citation-figure-filtered.ifai-term {
+  align-self: flex-start;
+  margin-left: -5px;
+  padding: 0 2px;
+  border-bottom: 0;
+  border-radius: 4px;
+  color: inherit;
+  font-family: var(--font-mono);
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.1;
+}
+
+.citation-chain-step-owned .citation-figure-filtered.ifai-term {
+  color: var(--citation-owned-ink);
+}
+
+.citation-chain .citation-figure-filtered.ifai-term:hover,
+.citation-chain .citation-figure-filtered.ifai-term:focus-visible {
+  color: var(--accent-purple);
+  outline: 2px solid var(--accent-purple);
+  outline-offset: 1px;
+}
+
+.citation-chain-label {
+  height: var(--chain-label);
+  overflow: hidden;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  line-height: var(--chain-label);
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* The band: kept part on top, the rest beneath it. */
+.citation-chain-band {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: var(--chain-band);
+  margin-top: var(--chain-gap);
+}
+
+.citation-chain-kept {
+  flex: 0 0 auto;
+  background: var(--chain-answers);
+}
+
+.citation-chain-band-owned .citation-chain-kept {
+  background: var(--citation-owned-fill);
+}
+
+.citation-chain-rest-none {
+  background:
+    repeating-linear-gradient(135deg, var(--chain-hatch) 0 1.5px, transparent 1.5px 5px) fixed,
+    var(--chain-rest);
+}
+
+.citation-chain-rest-other {
+  background: var(--chain-answers);
+}
+
+.citation-chain-rest {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  min-height: 0;
+  padding: 0 8px;
+}
+
+.citation-chain-rest-label {
+  overflow: hidden;
+  color: var(--text-main);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.citation-chain-rest-none .citation-chain-rest-label {
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: var(--citation-card-bg);
+}
+
+.citation-chain-rest-other .citation-chain-rest-label {
+  color: var(--chain-on-neutral);
+}
+
+/* A thin rest moves its label just under the band, into the card's bottom padding. */
+.citation-chain-band-tight .citation-chain-rest-label {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0;
+  padding: 0;
+  background: none;
+  color: var(--text-muted);
+}
+
+.citation-chain-step:first-child .citation-chain-band {
+  border-radius: 7px 0 0 7px;
+  overflow: hidden;
+}
+
+.citation-chain-step-owned .citation-chain-band {
+  border-radius: 0 7px 7px 0;
+}
+
+.citation-chain-step-owned .citation-chain-kept {
+  border-top-right-radius: 7px;
+}
+
+.citation-chain-step[data-citation-chain-step="showed"] .citation-chain-band {
+  border-bottom-right-radius: 7px;
+}
+
+/* Connectors: an arrow on the figure line, the band's taper or fan beneath it. */
+.citation-chain-link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.citation-chain-arrow {
+  width: 16px;
+  height: var(--chain-figure);
+  padding: 8px 0;
+  fill: none;
+  stroke: var(--text-muted);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.6;
+  opacity: 0.75;
+}
+
+.citation-chain-flow {
+  display: block;
+  width: 100%;
+  height: var(--chain-band);
+  margin-top: calc(var(--chain-label) + var(--chain-gap));
+}
+
+.citation-chain-flow.citation-chain-rest-gone {
+  background: none;
+}
+
+.citation-chain-flow svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.citation-chain-flow-kept {
+  fill: var(--chain-answers);
+}
+
+.citation-chain-stop-links {
+  stop-color: var(--chain-answers);
+}
+
+.citation-chain-stop-owned {
+  stop-color: var(--citation-owned-fill);
+}
+
+/* Narrow panels: smaller figures and connectors, same order and scale. */
+@container citation-glance (max-width: 980px) {
+  .citation-chain {
+    --chain-link: 32px;
+    padding: 10px 14px 15px;
+  }
+
+  .citation-chain-count {
+    font-size: 24px;
+  }
+
+  .citation-chain-share {
+    font-size: 14.5px;
+  }
+}
+
+@container citation-glance (max-width: 560px) {
+  .citation-chain {
+    grid-template-columns: minmax(0, 1fr) 20px minmax(0, 1fr);
+    row-gap: 12px;
+  }
+
+  .citation-chain > .citation-chain-link:nth-of-type(2) {
+    display: none;
+  }
+}

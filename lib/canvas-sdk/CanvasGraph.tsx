@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type MouseEvent, type RefObject } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState, type MouseEvent, type RefObject } from "react";
 import { CanvasGraphNode } from "@/lib/canvas-sdk/CanvasGraphNode";
 import { ConnLine, TourSpotlight } from "@/lib/canvas-sdk/GraphPrimitives";
 import { IomGraphBackdrop } from "@/lib/canvas-sdk/IomGraphBackdrop";
@@ -21,7 +21,8 @@ type Props = {
   tourY: number;
   tourRadius: number;
   tourCategory: string;
-  onFocusNode: (spokeId: string, subTab?: string) => void;
+  /** `fromBubble` is the clicked bubble's id, so its tab can land on what that bubble leads with. */
+  onFocusNode: (spokeId: string, subTab?: string, fromBubble?: string) => void;
   onInspectBubble?: (nodeId: string) => void;
   onResetView: () => void;
   overviewNonce: number;
@@ -37,7 +38,8 @@ type Props = {
   onHideTooltip: () => void;
 };
 
-export function CanvasGraph({
+/** Memoised: the shell re-renders on hover and panel changes that leave the map's props alone. */
+export const CanvasGraph = memo(function CanvasGraph({
   spec,
   svgRef,
   viewportRef,
@@ -105,23 +107,34 @@ export function CanvasGraph({
 
   useEffect(() => () => window.clearTimeout(hideTimer.current), []);
 
-  const revealGroup = (parentId: string) => {
-    window.clearTimeout(hideTimer.current);
-    setReveal({ nonce: overviewNonce, open: parentId, pinned: pinnedParentId });
-  };
+  const revealGroup = useCallback(
+    (parentId: string) => {
+      window.clearTimeout(hideTimer.current);
+      setReveal((prev) => {
+        const pinned = prev.nonce === overviewNonce ? prev.pinned : null;
+        if (prev.nonce === overviewNonce && prev.open === parentId) return prev;
+        return { nonce: overviewNonce, open: parentId, pinned };
+      });
+    },
+    [overviewNonce],
+  );
 
-  const holdGroup = () => {
+  const holdMs = motionMs(2000);
+  const holdGroup = useCallback(() => {
     window.clearTimeout(hideTimer.current);
     hideTimer.current = window.setTimeout(
-      () => setReveal((prev) => ({ ...prev, open: null })),
-      motionMs(2000),
+      () => setReveal((prev) => (prev.open === null ? prev : { ...prev, open: null })),
+      holdMs,
     );
-  };
+  }, [holdMs]);
 
-  const pinGroup = (parentId: string) => {
-    window.clearTimeout(hideTimer.current);
-    setReveal({ nonce: overviewNonce, open: parentId, pinned: parentId });
-  };
+  const pinGroup = useCallback(
+    (parentId: string) => {
+      window.clearTimeout(hideTimer.current);
+      setReveal({ nonce: overviewNonce, open: parentId, pinned: parentId });
+    },
+    [overviewNonce],
+  );
 
   const emphasis = spec.appearance === "iom";
   const focusedNode = focusedSpokeId
@@ -162,7 +175,10 @@ export function CanvasGraph({
     return (
       <CanvasGraphNode
         key={node.id}
-        node={{ ...node, x, y, r }}
+        node={node}
+        x={x}
+        y={y}
+        r={r}
         contentRadius={contentRadius}
         centered={emphasis}
         emphasis={emphasis && (!columnLayout || node.variant === "hub")}
@@ -172,12 +188,11 @@ export function CanvasGraph({
         onResetView={onResetView}
         onShowTooltip={onShowTooltip}
         onHideTooltip={onHideTooltip}
-        onGroupEnter={parentId ? () => revealGroup(parentId) : undefined}
+        groupId={parentId}
+        onGroupEnter={parentId ? revealGroup : undefined}
         onGroupLeave={parentId ? holdGroup : undefined}
-        onSelect={MAIN_BUBBLES.has(node.id) && node.id !== "hub" ? () => pinGroup(node.id) : undefined}
-        onInspect={
-          onInspectBubble && MAIN_BUBBLES.has(node.id) ? () => onInspectBubble(node.id) : undefined
-        }
+        onSelect={MAIN_BUBBLES.has(node.id) && node.id !== "hub" ? pinGroup : undefined}
+        onInspect={onInspectBubble && MAIN_BUBBLES.has(node.id) ? onInspectBubble : undefined}
       />
     );
   };
@@ -207,42 +222,6 @@ export function CanvasGraph({
           })
         : null}
 
-      <defs>
-        <radialGradient id="brandHubGradient" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.25" />
-          <stop offset="70%" stopColor="#4f46e5" stopOpacity="0.12" />
-          <stop offset="100%" stopColor="#38bdf8" stopOpacity="0" />
-        </radialGradient>
-        <filter id="glow-danger" x="-30%" y="-30%" width="160%" height="160%">
-          <feGaussianBlur stdDeviation="6" result="blur" />
-          <feComposite in="SourceGraphic" in2="blur" operator="over" />
-        </filter>
-        <filter id="glow-accent" x="-30%" y="-30%" width="160%" height="160%">
-          <feGaussianBlur stdDeviation="7" result="blur" />
-          <feComposite in="SourceGraphic" in2="blur" operator="over" />
-        </filter>
-        <filter id="nodeShadow" x="-60%" y="-60%" width="220%" height="240%">
-          <feDropShadow dx="0" dy="8" stdDeviation="10" floodColor="#0b1220" floodOpacity="0.4" />
-        </filter>
-        <filter id="auraBlur" x="-80%" y="-80%" width="260%" height="260%">
-          <feGaussianBlur stdDeviation="10" />
-        </filter>
-        <radialGradient id="hubBody" cx="35%" cy="30%" r="75%">
-          <stop offset="0%" stopColor="#28375f" />
-          <stop offset="52%" stopColor="#17213d" />
-          <stop offset="100%" stopColor="#0d1222" />
-        </radialGradient>
-        <radialGradient id="spokeBody" cx="35%" cy="30%" r="75%">
-          <stop offset="0%" stopColor="#222d4a" />
-          <stop offset="55%" stopColor="#151c31" />
-          <stop offset="100%" stopColor="#0e1322" />
-        </radialGradient>
-        <radialGradient id="luxHubAura" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#00f0ff" stopOpacity="0.55" />
-          <stop offset="55%" stopColor="#6366f1" stopOpacity="0.28" />
-          <stop offset="100%" stopColor="#6366f1" stopOpacity="0" />
-        </radialGradient>
-      </defs>
 
       {!columnLayout
         ? (clusters ? clusters.trunk : (spec.edges ?? [])).map((edge, idx) => (
@@ -299,9 +278,8 @@ export function CanvasGraph({
             width={badge.width}
             height={badge.height}
             rx={badge.height / 2}
-            filter="url(#nodeShadow)"
           />
-          <text className="correlation-badge-text" x="0" y="4" textAnchor="middle" fontSize="10.5">
+          <text className="correlation-badge-text" x="0" y="4" textAnchor="middle" fontSize="11">
             {badge.text}
           </text>
         </g>
@@ -349,4 +327,4 @@ export function CanvasGraph({
       ) : null}
     </>
   );
-}
+});

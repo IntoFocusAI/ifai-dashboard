@@ -1,6 +1,8 @@
 import {
   citationEvidence,
   groupCitations,
+  isOwnedDomain,
+  LIGHTING_BRAND_SITES,
   SOURCE_CLASS_LABELS,
   SOURCE_CLASS_ORDER,
   type CitationEvidence,
@@ -19,6 +21,7 @@ import {
 } from "@/lib/ai-search/question-role";
 import { callOutcome, categoryLabel, isSmallSample } from "@/lib/ai-search/run-metrics";
 import type { AiCallRow, AiSearchSnapshot } from "@/lib/ai-search/types";
+import { brandName, brandOwned, isFenderClient } from "@/lib/brand-copy";
 
 export type OwnedPresence = {
   /** Shopping (or scoped) answers that cited at least one Fender-owned page. */
@@ -191,8 +194,8 @@ export function ownedByQuestionType(
     };
 
     const groups: [RoleOwnedGroup, RoleOwnedGroup] = [
-      toGroup("cited_owned", "Cited a Fender-owned page", withOwnedCalls),
-      toGroup("no_owned", "No Fender-owned page", withoutOwnedCalls),
+      toGroup("cited_owned", `Cited a ${brandOwned()} page`, withOwnedCalls),
+      toGroup("no_owned", `No ${brandOwned()} page`, withoutOwnedCalls),
     ];
     const largest = Math.max(groups[0].resolved, groups[1].resolved);
     groups[0].smallSample = isSmallSample(groups[0].resolved, largest);
@@ -353,7 +356,8 @@ const BRAND_SITE_NAMES: Array<[string, string]> = [
 
 function brandFromDomain(domain: string): string | null {
   const host = domain.toLowerCase();
-  for (const [root, brand] of BRAND_SITE_NAMES) {
+  if (!isFenderClient() && isOwnedDomain(host)) return brandName();
+  for (const [root, brand] of isFenderClient() ? BRAND_SITE_NAMES : LIGHTING_BRAND_SITES) {
     if (host === root || host.endsWith(`.${root}`)) return brand;
   }
   return null;
@@ -366,7 +370,7 @@ function brandFromDomain(domain: string): string | null {
 export function unbrandedBrandSites(
   calls: AiCallRow[],
   read: CitationRead,
-): { total: number; slices: Array<{ brand: string; links: number }>; ok: boolean } | null {
+): { total: number; slices: Array<{ brand: string; links: number; fenderOwned: boolean }>; ok: boolean } | null {
   const unbrandedIds = new Set(
     calls
       .filter(
@@ -378,6 +382,7 @@ export function unbrandedBrandSites(
       .map((call) => call.id),
   );
   const counts = new Map<string, number>();
+  const owned = new Set<string>();
   let seen = 0;
   for (const row of read.rows) {
     if (!unbrandedIds.has(row.simulationId)) continue;
@@ -386,9 +391,10 @@ export function unbrandedBrandSites(
     if (!brand) continue;
     seen += 1;
     counts.set(brand, (counts.get(brand) ?? 0) + 1);
+    if (row.sourceClass === "fender_owned") owned.add(brand);
   }
   const slices = [...counts.entries()]
-    .map(([brand, links]) => ({ brand, links }))
+    .map(([brand, links]) => ({ brand, links, fenderOwned: owned.has(brand) }))
     .sort((a, b) => b.links - a.links || a.brand.localeCompare(b.brand));
   const total = slices.reduce((sum, slice) => sum + slice.links, 0);
   if (total !== seen) return null;

@@ -2,7 +2,7 @@ import { expect, test } from "./fixtures";
 
 const PRIMARY_TITLES = [
   "Action Items",
-  "Strategy Roadmap",
+  "Roadmap",
   "AI Search Visibility",
   "Catalog Health",
   "AI Readiness",
@@ -60,11 +60,15 @@ test.describe("primary spoke map", () => {
 
       const roadmap = page.locator('[data-graph-node-id="spoke-roadmap"]');
       await expect(roadmap.locator(".node-meta")).toHaveCount(0);
-      await expect(roadmap).toContainText("90 Days");
-      await expect(roadmap).toContainText("3 Phases");
+      // A static, muted explainer under the title (PR 172): label class, no figure, no status color.
+      await expect(roadmap.locator(".node-hero-value")).toHaveCount(0);
+      await expect(roadmap.locator(".node-hero-label")).toHaveText("30-60-90");
+      await expect(roadmap.locator("[data-hero-status]")).toHaveCount(0);
+      await expect(roadmap.locator(".node-stat-pill")).toHaveCount(0);
 
       const readiness = page.locator('[data-graph-node-id="spoke-specs"]');
       await expect(readiness.locator(".node-meta")).toHaveCount(0);
+      await expect(readiness.locator(".node-hero-label")).toContainText(/Page found/i);
       await expect(readiness).not.toContainText("no page");
       await expect(readiness).not.toContainText("ambiguous");
       await expect(readiness).not.toContainText("unchecked");
@@ -82,19 +86,23 @@ test.describe("primary spoke map", () => {
     });
   }
 
-  test("the Catalog Health column rail stays readable", async ({ canvas, page }) => {
+  test("the Catalog Health column rail stays readable", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 800 });
-    await canvas.openSpokeFromMap("Catalog Health");
-    const retail = page.locator(".column-bubble-list .spoke-primary").filter({ hasText: /Catalog\s*Health/i });
+    // Deep-link into the spoke so the rail assertion does not depend on map click framing.
+    await page.goto("/dashboard?spoke=ecommerce");
+    await expect(page.locator(".ifai-canvas.column-layout")).toHaveCount(1);
+    const retail = page.locator('.column-bubble-list [data-graph-node-id="spoke-retail"]');
     await expect(retail).toBeVisible();
     const fontSize = await retail.locator(".node-title").first().evaluate((el) => {
       return Number.parseFloat(getComputedStyle(el).fontSize);
     });
     expect(fontSize).toBeGreaterThan(11);
-    const pill = retail.locator(".node-stat-text");
-    await expect(pill).toHaveCount(1);
-    const text = (await pill.textContent()) ?? "";
+    const hero = retail.locator(".node-hero-value");
+    await expect(hero).toHaveCount(1);
+    const text = (await hero.textContent()) ?? "";
     expect(text.length).toBeGreaterThan(0);
     expect(text).not.toMatch(/out of stock/i);
+    await expect(retail.locator(".node-hero-label")).toContainText(/Buy\s*Box\s*withheld/i);
+    await expect(retail.locator(".node-stat-pill")).toHaveCount(0);
   });
 });

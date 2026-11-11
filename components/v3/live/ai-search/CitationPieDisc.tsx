@@ -1,56 +1,38 @@
-import type { CitationPie, CitationPieSlice } from "@/lib/ai-search/citation-pies";
+import type { CitationPieSlice, PieDiscData } from "@/lib/ai-search/citation-pies";
+import { keyColor, sliceColors } from "@/lib/ai-search/pie-tones";
 
-const SLICE_COLOR: Record<string, string> = {
-  cited: "#22d3ee",
-  none: "#64748b",
-  owned: "#38bdf8",
-  other: "#94a3b8",
-  fender_owned: "#38bdf8",
-  retailer: "#818cf8",
-  editorial: "#34d399",
-  community: "#fbbf24",
-  video: "#f472b6",
-  reference: "#a78bfa",
-  competitor_brand: "#fb7185",
-  fender: "#38bdf8",
-  yamaha: "#fb7185",
-  gibson: "#fbbf24",
-  taylor: "#34d399",
-  prs: "#f472b6",
-  sire: "#a78bfa",
-  epiphone: "#818cf8",
-  ibanez: "#22d3ee",
-  martin: "#fb923c",
-  boss: "#e879f9",
-  "positive-grid": "#2dd4bf",
-  schecter: "#facc15",
-  gretsch: "#60a5fa",
-  jackson: "#c084fc",
-  charvel: "#fdba74",
-  evh: "#f43f5e",
-};
-
+/**
+ * One key's chart color: ice blue for the measured figure, the second blue for the one other
+ * series, gray for the rest (brand book, decision 27). Pies color by slice with `sliceColors`.
+ */
 export function sliceColor(key: string): string {
-  return SLICE_COLOR[key] ?? "#94a3b8";
+  return keyColor(key);
 }
 
 function gradient(slices: CitationPieSlice[], total: number): string {
+  const colors = sliceColors(slices);
   let angle = 0;
   return slices
-    .map((slice) => {
+    .map((slice, index) => {
       const start = angle;
       angle += (slice.count / total) * 360;
-      return `${sliceColor(slice.key)} ${start}deg ${angle}deg`;
+      return `${colors[index]} ${start}deg ${angle}deg`;
     })
     .join(", ");
 }
+
+/**
+ * Structural pie for CitationPieDisc. Run Details role rates and Product Fact
+ * Checks Accuracy reuse this; citation views keep the closed id union on CitationPie.
+ */
+export type PieDiscInput = PieDiscData;
 
 export function CitationPieDisc({
   pie,
   sizeClass = "citation-pie-disc",
   tip,
 }: {
-  pie: CitationPie;
+  pie: PieDiscData;
   sizeClass?: string;
   /** Custom tooltip. Same chrome as definition terms, without a native title. */
   tip?: string;
@@ -71,10 +53,11 @@ export function CitationPieDisc({
   );
 }
 
-export function CitationPieLegend({ pie }: { pie: CitationPie }) {
+export function CitationPieLegend({ pie }: { pie: PieDiscData }) {
+  const colors = sliceColors(pie.slices);
   return (
     <ul className="citation-pie-legend">
-      {pie.slices.map((slice) => (
+      {pie.slices.map((slice, index) => (
         <li
           key={slice.key}
           data-pie-count={slice.count}
@@ -85,7 +68,7 @@ export function CitationPieLegend({ pie }: { pie: CitationPie }) {
           tabIndex={0}
           aria-label={`${slice.label}: ${slice.count} of ${pie.total} ${pie.totalLabel}.`}
         >
-          <span className="citation-pie-swatch" style={{ background: sliceColor(slice.key) }} />
+          <span className="citation-pie-swatch" style={{ background: colors[index] }} />
           <span>
             {slice.label}: {slice.count}
           </span>

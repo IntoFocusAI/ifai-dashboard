@@ -9,6 +9,7 @@ import { countFindability } from "@/lib/findability/outcomes";
 import { formatInt } from "@/lib/fender-canvas/format";
 import type { SuppressionDetail } from "@/lib/fender-canvas/portfolio-retail";
 import type { RetailReading } from "@/lib/fender-canvas/portfolio-retail";
+import { brandName, brandSite } from "@/lib/brand-copy";
 
 export type SuppressedSlotRead = RetailReading<SuppressionDetail | null> | "loading" | "error";
 
@@ -201,15 +202,15 @@ function rateSlot(
     label,
     detail:
       role === "gap"
-        ? `Fender led ${wins} of ${resolved} (${pct(wins, resolved)}). This gap is the other ${missed}.`
-        : `Fender led ${wins} of ${resolved} resolved answers.`,
+        ? `${brandName()} led ${wins} of ${resolved} (${pct(wins, resolved)}). This gap is the other ${missed}.`
+        : `${brandName()} led ${wins} of ${resolved} resolved answers.`,
     note,
     tone,
     chart: share(
       focus,
       resolved,
-      role === "gap" ? "Fender did not lead" : "Fender led",
-      role === "gap" ? "Fender led" : "Fender did not lead",
+      role === "gap" ? `${brandName()} did not lead` : `${brandName()} led`,
+      role === "gap" ? `${brandName()} led` : `${brandName()} did not lead`,
     ),
     spokeId,
     subTab,
@@ -236,14 +237,14 @@ function aiPair(ai: AiSearchRead): [HubSlot, HubSlot] {
         spokeId: "aeo",
         subTab: "Run Summary",
       });
-    return [make("gap", "Unbranded answers Fender did not lead"), make("opportunity", "Branded consideration")];
+    return [make("gap", `Unbranded answers ${brandName()} did not lead`), make("opportunity", "Branded consideration")];
   }
   const summary = summarizeRun(ai.snapshot);
   const note = `Published run · ${summary.completedAt}`;
   return [
     rateSlot(
       "gap",
-      "Unbranded answers Fender did not lead",
+      `Unbranded answers ${brandName()} did not lead`,
       summary.roles.unbranded.fenderWins,
       summary.roles.unbranded.resolved,
       note,
@@ -326,7 +327,7 @@ function competitorPair(ai: AiSearchRead): [HubSlot, HubSlot] {
   const [pendingGap, pendingLead] = aiPair(ai);
   if (ai.phase !== "ready") {
     return [
-      { ...pendingGap, spokeId: "competitors", subTab: "Category Battlecards", label: "Category answers Fender did not lead" },
+      { ...pendingGap, spokeId: "competitors", subTab: "Category Battlecards", label: `Category answers ${brandName()} did not lead` },
       { ...pendingLead, spokeId: "competitors", subTab: "Category Battlecards", label: "Strongest category lead" },
     ];
   }
@@ -338,7 +339,7 @@ function competitorPair(ai: AiSearchRead): [HubSlot, HubSlot] {
   const gap = gapBattle
     ? rateSlot(
         "gap",
-        `${categoryLabel(gapBattle.category)} answers Fender did not lead`,
+        `${categoryLabel(gapBattle.category)} answers ${brandName()} did not lead`,
         gapBattle.fenderWins,
         gapBattle.resolved,
         note,
@@ -348,7 +349,7 @@ function competitorPair(ai: AiSearchRead): [HubSlot, HubSlot] {
     : slot({
         role: "gap",
         figure: "No gap",
-        label: "Category answers Fender did not lead",
+        label: `Category answers ${brandName()} did not lead`,
         detail: "No category gap in this run.",
         note,
         tone: "neutral",
@@ -386,14 +387,14 @@ function specAction(input: HubSlotInput, fallback: HubSlot): HubSlot {
   const fromQueue = actionSlot(item, figure, fallback);
   return {
     ...fromQueue,
-    label: input.missingSpecPages == null ? fromQueue.label : "Pages missing a machine-readable spec block",
+    label: input.missingSpecPages == null ? fromQueue.label : `${brandSite()} pages with no spec block`,
     detail:
       input.missingSpecPages == null
         ? fromQueue.detail
-        : `${formatInt(input.missingSpecPages)} pages in the older spec read lack additionalProperty.`,
-    note: "Older spec read. Separate from the official-page counts.",
+        : `${formatInt(input.missingSpecPages)} ${brandSite()} product pages carry no machine-readable specs.`,
+    note: "Opens Brand-Site Specs.",
     chart: null,
-    subTab: "Machine Readability",
+    subTab: "Brand-Site Specs",
     spokeId: "specs",
   };
 }
@@ -441,7 +442,7 @@ function estimateOpportunity(input: HubSlotInput): HubSlot {
     tone: "success",
     chart: null,
     spokeId: "suggestions",
-    subTab: "Interactive ROI Model",
+    subTab: "Revenue Estimates",
   });
 }
 

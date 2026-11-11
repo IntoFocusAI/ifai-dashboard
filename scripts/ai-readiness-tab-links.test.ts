@@ -7,7 +7,7 @@ import { fenderCommandCenter } from "../components/v3/command-center-data.ts";
 import { fenderWidgetMetrics } from "../components/v3/fender-metrics.ts";
 import { tabIndexFromSlug, tabSlug } from "../lib/canvas-sdk/canvas-url-state.ts";
 
-const SPEC_TABS = ["Findability", "AI Readiness", "Machine Readability", "Amazon A+ Matrix"];
+const SPEC_TABS = ["Findability", "Amazon Specs", "Brand-Site Specs", "Amazon A+ Matrix"];
 
 const root = new URL("..", import.meta.url);
 const read = (path: string) => readFileSync(new URL(path, root), "utf8");
@@ -23,24 +23,33 @@ test("the spoke carries Findability plus the renamed tabs and no earlier title",
   assert.deepEqual(spec.spokes.specs.tabs, SPEC_TABS);
   assert.equal(spec.spokes.specs.navLabel, "AI Readiness");
   const serialized = JSON.stringify(spec.spokes.specs.tabs);
-  for (const retired of ["Catalog Readiness", "JSON-LD Audit", "Comparison Matrix"]) {
-    assert.doesNotMatch(serialized, new RegExp(retired, "i"));
+  for (const retired of [
+    "Catalog Readiness",
+    "JSON-LD Audit",
+    "Comparison Matrix",
+    "AI Readiness",
+    "Machine Readability",
+  ]) {
+    assert.doesNotMatch(serialized, new RegExp(`"${retired}"`, "i"));
   }
 });
 
-test("the bubble and its two satellites are named for their tabs", () => {
+test("the bubble keeps AI Readiness; satellites match their tabs", () => {
   const byId = new Map(fenderStaticNodes.map((node) => [node.id, node]));
   assert.equal(byId.get("spoke-specs")?.title, "AI Readiness");
-  assert.equal(byId.get("sat-schema")?.title, "Machine Readability");
+  assert.equal(byId.get("spoke-specs")?.subTab, "Brand-Site Specs");
+  assert.equal(byId.get("sat-findability")?.title, "Findability");
+  assert.equal(byId.get("sat-schema")?.title, "Brand-Site Specs");
   assert.equal(byId.get("sat-tables")?.title, "Amazon A+ Matrix");
 
-  for (const id of ["sat-schema", "sat-tables"]) {
+  for (const id of ["sat-findability", "sat-schema", "sat-tables"]) {
     const node = byId.get(id);
     assert.ok(node?.subTab, `${id} needs a subTab`);
     const index = resolveSubTab(SPEC_TABS, node.subTab);
     assert.notEqual(index, -1, `${id} subTab "${node.subTab}" matches no tab`);
     assert.equal(SPEC_TABS[index], node.title, `${id} should open the tab with its name`);
   }
+  assert.equal(resolveSubTab(SPEC_TABS, byId.get("spoke-specs")!.subTab!), 2);
 });
 
 test("every satellite subTab has a camera target", () => {
@@ -73,14 +82,16 @@ test("every stored deep link into the spoke still resolves to a tab", () => {
   // Panel HTML and React panels deep link with data-ifai-tab.
   const governance = read("components/v3/live/CatalogGovernancePanel.tsx");
   const tabAttr = governance.match(/data-ifai-tab="([^"]+)"/)?.[1];
-  assert.equal(tabAttr, "AI Readiness");
-  assert.equal(resolveSubTab(SPEC_TABS, tabAttr), 1);
+  assert.equal(tabAttr, "Amazon Specs");
+  assert.equal(resolveSubTab(SPEC_TABS, tabAttr!), 1);
 });
 
-test("a URL copied from an earlier tab title opens the same tab", () => {
+test("a URL copied from an earlier tab title opens the renamed tab", () => {
   const copied: Array<[string, string]> = [
-    ["catalog-readiness-executive-guide", "AI Readiness"],
-    ["machine-readable-schema-org-json-ld-audit", "Machine Readability"],
+    ["catalog-readiness-executive-guide", "Amazon Specs"],
+    ["ai-readiness", "Amazon Specs"],
+    ["machine-readable-schema-org-json-ld-audit", "Brand-Site Specs"],
+    ["machine-readability", "Brand-Site Specs"],
     ["amazon-a-comparison-matrix-blueprint", "Amazon A+ Matrix"],
   ];
   for (const [slug, tab] of copied) {
@@ -90,5 +101,6 @@ test("a URL copied from an earlier tab title opens the same tab", () => {
   assert.equal(resolveSubTab(SPEC_TABS, "schema"), -1);
   assert.equal(resolveSubTab(SPEC_TABS, "a+"), 3);
   assert.equal(tabSlug(SPEC_TABS[0]), "findability");
-  assert.equal(tabSlug(SPEC_TABS[2]), "machine-readability");
+  assert.equal(tabSlug(SPEC_TABS[1]), "amazon-specs");
+  assert.equal(tabSlug(SPEC_TABS[2]), "brand-site-specs");
 });

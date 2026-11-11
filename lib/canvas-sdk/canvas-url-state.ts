@@ -22,7 +22,7 @@ const CANVAS_PARAM_KEYS = [
   "profile",
 ] as const;
 
-const PRESERVED_QUERY_KEYS = ["next", "ai-history"] as const;
+const PRESERVED_QUERY_KEYS = ["next", "ai-history", "client"] as const;
 
 /** Row-level drill-down inside an open spoke, e.g. `evidence=sim:1161`. Dropped with the spoke. */
 const SPOKE_QUERY_KEYS = ["evidence"] as const;
@@ -39,8 +39,10 @@ const TAB_SLUG_ALIASES: Record<string, string> = {
   "executive-briefing-buy-box-coverage": "briefing",
   "executive-briefing": "briefing",
   "commercial-sizing-680k-pilot-vs-38m-to-62m-enterprise": "opportunity",
-  "catalog-readiness-executive-guide": "ai-readiness",
-  "machine-readable-schema-org-json-ld-audit": "machine-readability",
+  "catalog-readiness-executive-guide": "amazon-specs",
+  "ai-readiness": "amazon-specs",
+  "machine-readable-schema-org-json-ld-audit": "brand-site-specs",
+  "machine-readability": "brand-site-specs",
   "amazon-a-comparison-matrix-blueprint": "amazon-a-matrix",
   "dual-index-scoring-executive-callout": "run-summary",
   "dual-index": "run-summary",
@@ -55,6 +57,9 @@ const TAB_SLUG_ALIASES: Record<string, string> = {
   "head-to-head": "category-battlecards",
   "rival-strategies-countermeasures": "competitor-wins",
   "multi-marketplace-channel-scope-sweetwater-reverb-walmart": "engine-comparison",
+  "current-findings": "urgent-interventions",
+  "30-60-90-day-milestones": "30-60-90-days",
+  map: "map-leakage",
 };
 
 /**

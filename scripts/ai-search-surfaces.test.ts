@@ -5,6 +5,8 @@ import { join } from "node:path";
 import { test } from "node:test";
 import { tabIndexFromSlug, tabSlug } from "../lib/canvas-sdk/canvas-url-state.ts";
 import { AI_TABS, RADAR_TABS } from "../lib/ai-search/canvas-surfaces.ts";
+import { applyExplorerFilter, filterFromEvidence } from "../lib/ai-search/explorer-filter.ts";
+import type { AiCallRow } from "../lib/ai-search/types.ts";
 
 const root = new URL("..", import.meta.url).pathname;
 const read = (path: string) => readFileSync(join(root, path), "utf8");
@@ -78,8 +80,25 @@ test("every headline figure opens its evidence", () => {
   ]) {
     assert.match(summary, new RegExp(value), value);
   }
-  assert.match(summary, /value: "error"/);
   assert.match(summary, /value: "probe"/);
+  // Provider errors sit on the run card, for one run and for a pooled selection alike.
+  assert.match(summary, /<RunCompletenessCard snapshot=\{snapshot\} \/>/);
+  const card = flat("components/v3/live/ai-search/RunCompletenessCard.tsx");
+  const errorLinks = card.match(
+    /<td>Provider errors<\/td> <td> <EvidenceLink focus=\{\{ field: "outcome", value: "error" \}\} tab=\{SIM\}> \{errorLine\(s\)\}/g,
+  );
+  assert.equal(errorLinks?.length, 2, "single-run and pooled cards both link the provider-error count");
+  const failed = filterFromEvidence({ field: "outcome", value: "error" });
+  const calls = [
+    { id: "a", sim_id: 1, prompt_kind: "commercial", call_status: "error", outcome: "error" },
+    { id: "b", sim_id: 2, prompt_kind: "probe", call_status: "error", outcome: "error" },
+    { id: "c", sim_id: 3, prompt_kind: "commercial", call_status: "answered", outcome: "fender_win" },
+  ] as AiCallRow[];
+  assert.deepEqual(
+    applyExplorerFilter(calls, failed).map((row) => row.id),
+    ["a", "b"],
+    "the link opens every failed call, fact checks included",
+  );
   assert.match(read("components/v3/live/ai-search/CitationEcosystemPanel.tsx"), /CitationEvidenceTable/);
   assert.match(read("components/v3/live/ai-search/FactCheckTable.tsx"), /field: "sim"/);
   assert.match(read("components/v3/live/ai-search/CompetitorWinsPanel.tsx"), /field: "sim"/);
@@ -127,14 +146,14 @@ test("protected surfaces are unchanged", () => {
   assert.match(spokes, /<SuppressedListingsPanel read=\{retail\}/);
   assert.match(spokes, /<MapChannelPanel/);
   const roi = JSON.stringify(spec.spokes.suggestions);
-  for (const figure of ["$680,000", "$38M to $62M", "$50,000,000"]) assert.ok(roi.includes(figure), figure);
+  for (const figure of ["{phase_one_lift}", "{enterprise_potential}", "$50M midpoint"]) assert.ok(roi.includes(figure), figure);
   assert.doesNotMatch(roi, /Reddit \/r\/Guitar Community|largest SOV gaps/);
 });
 
 test("the fact-check headline leads with the business result, not a zero", () => {
   const panel = read("components/v3/live/ai-search/AiDriftPanel.tsx");
   const copy = read("lib/ai-search/fact-check-copy.ts");
-  assert.match(copy, /Fender product fact/);
+  assert.match(copy, /\$\{brandName\(\)\} product fact/);
   assert.match(copy, /No contradictions were found in/);
   assert.match(copy, /These checks cover the selected facts only/);
   assert.match(copy, /not every factual claim in the shopping answers/);
@@ -148,32 +167,48 @@ test("the fact-check headline leads with the business result, not a zero", () =>
 
 test("the fact-check evidence view runs question, fact, source, answer, result", () => {
   const view = read("components/v3/live/ai-search/FactCheckEvidence.tsx");
-  const order = ["Question checked", "Verified Fender fact", "Official Fender source", "AI answer", "Result"];
+  const order = ["Question checked", "Verified ${brandName()} fact", "Official ${brandName()} source", "AI answer", "Result"];
   let cursor = -1;
   for (const [index, heading] of order.entries()) {
-    const at = view.indexOf(`heading="${heading}"`);
+    const at = Math.max(view.indexOf(`heading="${heading}"`), view.indexOf(`heading={\`${heading}\`}`));
     assert.ok(at > cursor, `step ${index + 1} is ${heading}`);
     cursor = at;
   }
   assert.ok(view.indexOf("Engine and run details") > cursor, "engine details stay last");
   const flatView = flat("components/v3/live/ai-search/FactCheckEvidence.tsx");
-  assert.match(flatView, /product questions IntoFocus sends to every engine on purpose/);
-  assert.match(flatView, /not a randomly chosen product/);
+  assert.match(
+    flatView,
+    /<CopyTip label=\{FACT_CHECK_METHOD_TITLE\} description=\{factCheckPickTip\(questionsSent\)\}> product questions <\/CopyTip>\{" "\} IntoFocus sends to every engine on purpose\./,
+  );
+  assert.doesNotMatch(flatView, /randomly chosen/);
 });
 
 test("citation copy separates answers from links and avoids causal claims", () => {
-  const panel = read("components/v3/live/ai-search/CitationEcosystemPanel.tsx");
-  assert.match(panel, /cited web sources/);
-  assert.match(panel, /Those answers contained \{read\.rows\.length\}/);
-  const flatPanel = flat("components/v3/live/ai-search/CitationEcosystemPanel.tsx");
-  assert.match(flatPanel, /Answers and links are separate counts/);
-  assert.match(flatPanel, /does not measure whether the page caused the recommendation/);
-  assert.match(flatPanel, /not an endorsement/);
-  for (const path of [
-    "components/v3/live/ai-search/CitationEcosystemPanel.tsx",
-    "components/v3/live/ai-search/CitationEvidenceTable.tsx",
-    "components/v3/live/ai-search/CitationRoleNote.tsx",
-  ]) {
+  // JSX spacing ({" "}) collapsed too, so the rendered sentence can be matched whole.
+  const prose = (path: string) => flat(path).replace(/\{" "\}\s*/g, " ");
+  // The headline chain counts answers, then the answers that showed sources, then the links they listed.
+  const chain = prose("components/v3/live/ai-search/CitationChain.tsx");
+  assert.match(chain, /= citationChain\(read, lead\);/);
+  assert.match(flat("lib/ai-search/citation-lead.ts"), /const \{ answered, answersWithCitation: showed \} = read;/);
+  assert.match(chain, /data-ai-cited-answers> \{count\(showed\)\} of \{count\(answered\)\} \{scopeNoun\} showed sources </);
+  assert.match(chain, /data-ai-cited-links> \{count\(links\)\} <\/span>/);
+  assert.match(chain, /links: "Every web page those answers listed\. One answer can list several\."/);
+  const steps = ["answers", "showed", "links", "owned"].map((step) => chain.indexOf(`data-citation-chain-step="${step}"`));
+  assert.ok(steps.every((at, index) => at >= 0 && (index === 0 || at > steps[index - 1])), `chain order ${steps}`);
+  assert.doesNotMatch(chain, /cited web sources|answers citing|cited links/i, "the chain uses the plain names");
+  const panel = prose("components/v3/live/ai-search/CitationEcosystemPanel.tsx");
+  const notes = panel.slice(panel.indexOf("<summary>How these counts work</summary>"));
+  assert.ok(notes.length < panel.length, "the counts note is on the panel");
+  assert.match(notes, /Answers and links are separate counts/);
+  assert.match(
+    notes,
+    /\{read\.answersWithCitation\} \{scopeNoun\} produced \{read\.rows\.length\} links, so one answer can cite several pages/,
+  );
+  assert.match(notes, /does not measure whether the page caused the recommendation/);
+  assert.match(notes, /a citation is not an endorsement/);
+  const citationFiles = files("components/v3/live/ai-search", ".tsx").filter((path) => /\/Citation\w*\.tsx$/.test(path));
+  assert.ok(citationFiles.length >= 10, "every Citation Ecosystem component is checked");
+  for (const path of citationFiles) {
     assert.doesNotMatch(read(path), /valid link|valid cited/, path);
   }
   const note = flat("components/v3/live/ai-search/CitationRoleNote.tsx");
@@ -182,6 +217,15 @@ test("citation copy separates answers from links and avoids causal claims", () =
   assert.match(note, /independent authority/);
   assert.match(note, /less control over the facts/);
   assert.match(note, /A low count does not prove a source had no influence/);
+  assert.match(note, /export const CITED_LINK_COUNT_CAVEAT = "A low count does not prove a source had no influence/);
+  const callout = note.slice(note.indexOf("export function CitationRoleNote"));
+  assert.doesNotMatch(callout, /A low count|not a worse outcome/, "the callout keeps no qualifier on screen");
+  for (const title of ['"Links"', "`\\$\\{brandOwned\\(\\)\\} links`"]) {
+    const tooltip = new RegExp(`headerTooltip: \\{ title: ${title}, description: \`[^\`]*\\$\\{CITED_LINK_COUNT_CAVEAT\\}\``);
+    assert.match(panel, tooltip, `the low-count caveat sits in the ${title} column tooltip`);
+  }
+  assert.match(panel, /columns=\{ENGINE_COLUMNS\}/);
+  assert.match(panel, /const ENGINE_COLUMNS = \[ [^\]]*\.\.\.LINK_COLUMNS, \]/);
 });
 
 test("the old authored citation percentages stay retired", () => {

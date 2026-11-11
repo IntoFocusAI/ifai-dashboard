@@ -92,6 +92,7 @@ function bundle(overrides: Partial<CatalogBundleRow> & Pick<CatalogBundleRow, "a
     parent_asin: null,
     product_url: "https://www.amazon.com/dp/B0D8TFXHHT",
     is_bundle: true,
+    featured_offer_state: "present",
     ...overrides,
   };
 }
@@ -313,16 +314,17 @@ test("a bundle with a usable parent is not an unnested opportunity", () => {
   assert.equal("seller" in (reading.detail?.opportunities[0] ?? {}), false);
 });
 
-test("catalog coverage stays incomplete when the retail read omits stored bundles", () => {
+test("the catalog's wider bundle flag count does not make the live-offer figure incomplete", () => {
   const reading = unnestedBundlesFinding(
     [bundle({ asin: "B000000001", parent_asin: null })],
     { catalogBundleCount: 4 },
   );
-  assert.equal(reading.status, "incomplete");
+  assert.equal(reading.status, "available_with_issues");
   assert.equal(reading.issueCount, 1);
-  assert.match(reading.missingMessage ?? "", /1 of 4 bundle listings/);
-  assert.match(reading.missingMessage ?? "", /not a final count/);
-  assert.doesNotMatch(JSON.stringify(reading), /partner-led|authorized seller|Buy Box/i);
+  assert.equal(reading.detail?.bundlesInRead, 1);
+  assert.equal(reading.detail?.catalogBundles, 4);
+  assert.equal(reading.missingMessage, null);
+  assert.doesNotMatch(JSON.stringify(reading), /partner-led|authorized seller/i);
 });
 
 test("a complete catalog with every bundle nested is a stored zero", () => {
@@ -425,7 +427,7 @@ test("a confirmed zero is skipped and the next finding is used", () => {
     }),
   );
   assert.equal(selected?.findingId, "map_leakage");
-  assert.equal(selected?.tabSlug, "map");
+  assert.equal(selected?.tabSlug, "map-leakage");
   assert.equal(selected?.label, RETAIL_FINDING_LABELS.map_leakage);
 
   const bundles = selectRetailHeadline(
@@ -502,7 +504,11 @@ test("query columns stay on the stored finding fields", () => {
   assert.match(RETAIL_CATALOG_GOVERNANCE_COLUMNS, /parent_asin/);
   assert.match(RETAIL_CATALOG_GOVERNANCE_COLUMNS, /bundle_name/);
   assert.match(RETAIL_CATALOG_GOVERNANCE_COLUMNS, /product_url/);
-  assert.doesNotMatch(RETAIL_CATALOG_GOVERNANCE_COLUMNS, /buybox_seller|authorized/);
+  assert.match(RETAIL_CATALOG_GOVERNANCE_COLUMNS, /category/);
+  assert.match(RETAIL_CATALOG_GOVERNANCE_COLUMNS, /buybox_seller_name/);
+  assert.match(RETAIL_CATALOG_GOVERNANCE_COLUMNS, /buybox_seller_id/);
+  assert.match(RETAIL_CATALOG_GOVERNANCE_COLUMNS, /buybox_status/);
+  assert.doesNotMatch(RETAIL_CATALOG_GOVERNANCE_COLUMNS, /authorized/);
   assert.match(RETAIL_AMAZON_SPEC_COLUMNS, /amazon_missing_fields/);
   assert.doesNotMatch(RETAIL_AMAZON_SPEC_COLUMNS, /fender_missing_fields/);
 });
@@ -518,7 +524,7 @@ test("a failed page read is unavailable and a stored page zero stays zero", asyn
   assert.equal(failed.suppressedListings.status, "unavailable");
   assert.equal(failed.headline?.findingId, "suppressed_listings");
   assert.equal(failed.amazonSpecGaps.status, "unavailable");
-  assert.equal(failed.unnestedBundles.status, "incomplete");
+  assert.equal(failed.unnestedBundles.status, "available_with_issues");
   assert.notEqual(failed.headline?.findingId, "map_leakage");
 
   const storedZero = await loadPortfolioRetailSnapshot({
@@ -559,4 +565,51 @@ test("page reads stop at a short page and report a full final page as truncated"
 
   const broken = await readPages(async () => ({ data: null, error: { message: "relation is missing" } }));
   assert.deepEqual(broken, { ok: false });
+});
+
+test("the Buy Box read keeps seller names and still scores the placeholder partners", async () => {
+  const snapshot = await loadPortfolioRetailSnapshot({
+    suppressionRows: async () => ({ ok: true, rows: [present()], truncated: false }),
+    mapRows: async () => ({ ok: true, rows: [], truncated: false }),
+    catalogRows: async () => ({
+      ok: true,
+      rows: [
+        bundle({
+          asin: "B000000001",
+          is_bundle: false,
+          buybox_status: "Amazon 1P",
+          buybox_seller_name: null,
+        }),
+        bundle({
+          asin: "B000000002",
+          is_bundle: false,
+          buybox_status: "3P Confirmed",
+          buybox_seller_name: "Austin Bazaar",
+        }),
+        bundle({
+          asin: "B000000003",
+          is_bundle: false,
+          buybox_status: "3P Confirmed",
+          buybox_seller_name: "Amazon.com",
+        }),
+        bundle({
+          asin: "B000000004",
+          is_bundle: false,
+          buybox_status: "Unknown/Not Harvested",
+          buybox_seller_name: null,
+        }),
+      ],
+      truncated: false,
+    }),
+    catalogBundleCount: async () => null,
+    specRows: async () => ({ ok: true, rows: [], truncated: false }),
+  });
+
+  assert.deepEqual(snapshot.buyBoxSellers, {
+    amazonRetail: 2,
+    sellers: [{ name: "Austin Bazaar", listings: 1 }],
+    known: 3,
+    population: 4,
+  });
+  assert.deepEqual(snapshot.controlledBuyBox, { controlled: 3, known: 3, population: 4 });
 });

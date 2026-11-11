@@ -1,15 +1,20 @@
 import {
   callOutcome,
+  cleanPrompt,
   isCommercial,
   isError,
+  isFailedResultEngine,
   modelLabel,
   tallyCommercial,
   type OutcomeTally,
 } from "@/lib/ai-search/run-metrics";
+import { storedQuestionRole } from "@/lib/ai-search/stored-question-roles";
 import type { AiCallRow } from "@/lib/ai-search/types";
+import { activeClientKey } from "@/lib/client/active-client";
 
 /**
- * What kind of question a stored prompt is, read from its text.
+ * What kind of question a stored prompt is: the role the client's battery stores for that
+ * wording when it stores one (stored-question-roles.ts), else read from its text.
  * Product-fact probes (`prompt_kind = probe`) stay their own bucket.
  * The other five roles are commercial prompts that must not share one win rate.
  */
@@ -59,6 +64,9 @@ export function questionRole(row: {
   prompt?: string | null;
 }): QuestionRole {
   if (row.prompt_kind === "probe") return "probe";
+  // A battery that stores each prompt's role is the truth for that client (Ledlenser).
+  const stored = storedQuestionRole(activeClientKey(), cleanPrompt(row.prompt));
+  if (stored) return stored;
   const text = row.prompt ?? "";
   if (PRODUCT_FACT.test(text)) return "product_fact";
   if (SHOPPING_GUIDANCE.test(text)) return "shopping_guidance";
@@ -128,6 +136,26 @@ export function engineRoleTallies(rows: AiCallRow[]): RoleGroupTally[] {
       b.roles.branded_consideration.resolved -
       (a.roles.unbranded_discovery.resolved + a.roles.branded_consideration.resolved) ||
       a.key.localeCompare(b.key),
+  );
+}
+
+/** Answered commercial calls for one engine across every question role. */
+export function roleGroupAnswered(group: RoleGroupTally): number {
+  return QUESTION_ROLES.reduce((sum, role) => sum + group.roles[role].answered, 0);
+}
+
+/** Commercial calls for one engine across every question role. */
+export function roleGroupCalls(group: RoleGroupTally): number {
+  return QUESTION_ROLES.reduce((sum, role) => sum + group.roles[role].calls, 0);
+}
+
+/**
+ * Engines that returned at least one commercial answer.
+ * An engine whose calls are all errors or all empty is not a client result.
+ */
+export function engineResultRoleTallies(rows: AiCallRow[]): RoleGroupTally[] {
+  return engineRoleTallies(rows).filter(
+    (engine) => !isFailedResultEngine({ calls: roleGroupCalls(engine), answered: roleGroupAnswered(engine) }),
   );
 }
 

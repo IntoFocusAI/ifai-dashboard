@@ -193,7 +193,7 @@ function nodeMarkup(node) {
   const statSize = node.variant === "hub" ? 12 : r >= 70 ? 12 : 10.5;
   const statusClass = node.status !== "neutral" ? \` status-\${node.status}\` : "";
   const pathId = \`node-header-arc-\${node.id}\`;
-  const metaSize = statSize * 0.82;
+  const metaSize = Math.max(statSize * 0.82, 10);
   const pillH = statSize + 9;
   const metaH = node.meta ? metaSize + 2 : 0;
   const gap = r < 62 ? 4 : 6;
@@ -575,7 +575,7 @@ async function main() {
         <div class="brand-section">
           <img src="${logo}" alt="${spec.brand.name}" class="brand-logo-icon" />
           <div class="brand-title-group">
-            <div class="brand-name">${spec.brand.name}<span class="tag-badge tag-danger" style="font-size:9.5px">${spec.brand.badge}</span></div>
+            <div class="brand-name">${spec.brand.name}<span class="tag-badge tag-danger" style="font-size:10px">${spec.brand.badge}</span></div>
             <div class="brand-sub">${spec.brand.subtitle}</div>
           </div>
           <div class="pill-divider"></div>

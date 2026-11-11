@@ -16,6 +16,9 @@ export const METRICS = {
   spec_fender_found: 2,
   spec_fender_found_pct: 50,
   spec_avg_amazon_pct: 48.8,
+  // Field totals: not inventable as 48.8% × 4 × 13 ≈ 25.4.
+  spec_amazon_fields_found: 26,
+  spec_amazon_fields_expected: 52,
   spec_avg_fender_pct: 40,
   spec_missing_additional_property: 1,
   division_count: 1,
@@ -30,6 +33,8 @@ export const SPEC_ROWS: Row[] = [
     title: "Unchecked flag",
     amazon_completeness_pct: 5,
     amazon_checked: true,
+    amazon_fields_found: 1,
+    amazon_fields_expected: 13,
     amazon_missing_fields: "",
     fender_found: null,
     fender_missing_fields: "additionalProperty",
@@ -40,6 +45,8 @@ export const SPEC_ROWS: Row[] = [
     title: "Missing Page Guitar",
     amazon_completeness_pct: 20,
     amazon_checked: true,
+    amazon_fields_found: 3,
+    amazon_fields_expected: 13,
     amazon_missing_fields: "color",
     fender_found: false,
     fender_missing_fields: null,
@@ -50,6 +57,8 @@ export const SPEC_ROWS: Row[] = [
     title: "Clear Page",
     amazon_completeness_pct: 80,
     amazon_checked: true,
+    amazon_fields_found: 10,
+    amazon_fields_expected: 13,
     amazon_missing_fields: "",
     fender_found: true,
     fender_missing_fields: "scale_length",
@@ -60,6 +69,8 @@ export const SPEC_ROWS: Row[] = [
     title: "Found Strat",
     amazon_completeness_pct: 90,
     amazon_checked: true,
+    amazon_fields_found: 12,
+    amazon_fields_expected: 13,
     amazon_missing_fields: "",
     fender_found: true,
     fender_missing_fields: "neck; additionalProperty",
@@ -83,6 +94,7 @@ export const BUNDLE: Row = {
   parent_asin: null,
   product_url: "https://www.amazon.com/dp/B00BUNDLE1",
   is_bundle: true,
+  featured_offer_state: "present",
 };
 
 export function specRowsFor(url: URL): Row[] {

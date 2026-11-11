@@ -38,6 +38,12 @@ export function formatUsd(
   return core;
 }
 
+/** An analyst estimate wears "est." wherever the figure is shown: "+$680K est.". */
+export function formatEstimate(figure: string): string {
+  const text = sanitizeUiText(figure).trim().replace(/\s*est\.$/i, "");
+  return text ? `${text} est.` : text;
+}
+
 export function formatRatio(numerator: number | null, denominator: number | null): string {
   if (numerator == null || denominator == null) return pendingLabel();
   return `${formatInt(numerator)} of ${formatInt(denominator)}`;

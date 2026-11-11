@@ -1,7 +1,11 @@
+import type { AiSearchRead } from "@/lib/ai-search/types";
 import type { CanvasMetric } from "@/lib/canvas-sdk/types";
+import { ENTERPRISE_POTENTIAL_ESTIMATE, PHASE_ONE_LIFT_ESTIMATE } from "@/lib/fender-canvas/analyst-estimates";
 import { beginnerSovLine } from "@/lib/fender-canvas/beginner-sov";
+import { failedReadTip, READ_NOT_AVAILABLE } from "@/lib/fender-canvas/canvas-reads";
 import { MAP_PRICES_NOT_STORED } from "@/lib/fender-canvas/portfolio-retail";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
+import { roadmapMetric } from "@/lib/fender-canvas/roadmap-bubble";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
 import {
   formatInt,
@@ -10,7 +14,9 @@ import {
   formatUsd,
   pendingLabel,
 } from "@/lib/fender-canvas/format";
+import { specPageCounts } from "@/lib/fender-canvas/machine-readability";
 import { findabilityWidgetCopy, type FindabilityRead } from "@/lib/findability/copy";
+import { brandSite } from "@/lib/brand-copy";
 
 function toneFromPct(pct: number | null, dangerBelow: number, warnBelow: number) {
   if (pct == null) return "neutral" as const;
@@ -76,7 +82,7 @@ function mapViolationsMetric(retail: RetailCanvasRead): CanvasMetric {
     id: "flagged-asins",
     spokeId: "ecommerce" as const,
     label: "MAP violations",
-    subTab: "MAP",
+    subTab: "MAP Leakage",
     provenance: "live" as const,
   };
   if (retail.phase === "loading") {
@@ -129,34 +135,66 @@ function findabilityMetric(read: FindabilityRead): CanvasMetric {
   };
 }
 
+/** Metrics built from the canvas_metrics row. MAP drift is one too, unless MAP prices are not stored. */
+const METRICS_ROW_KEYS = [
+  "activeOfferCoverage",
+  "buyBoxRetention",
+  "sellerDataCoverage",
+  "strandedReviews",
+  "overallAiWinRate",
+  "resolvedSimulations",
+  "confirmedHallucinations",
+  "beginnerSovGap",
+  "strongestCategorySov",
+] as const;
+
+function notAvailable(metric: CanvasMetric, tip: string): CanvasMetric {
+  return { ...metric, value: READ_NOT_AVAILABLE, detail: tip, tone: "warning" };
+}
+
+/** A metric whose read failed reads Not available* and names that read, never a blank or zero. */
+function withFailedReads(bundle: CanvasBundle, metrics: Record<string, CanvasMetric>): Record<string, CanvasMetric> {
+  const out = { ...metrics };
+  const metricsTip = failedReadTip(bundle, "m");
+  if (metricsTip) {
+    for (const key of METRICS_ROW_KEYS) out[key] = notAvailable(out[key], metricsTip);
+    if (out.amazonMapDrift.detail !== MAP_PRICES_NOT_STORED) out.amazonMapDrift = notAvailable(out.amazonMapDrift, metricsTip);
+  }
+  const categoryTip = failedReadTip(bundle, "cats");
+  if (categoryTip) out.beginnerAiWinRate = notAvailable(out.beginnerAiWinRate, categoryTip);
+  return out;
+}
+
 export function buildLiveMetrics(
   bundle: CanvasBundle,
   retail: RetailCanvasRead = { phase: "loading" },
   findability: FindabilityRead = { phase: "loading" },
+  /** The map's AI read. The Roadmap figure counts the unbranded discovery finding from it. */
+  ai: AiSearchRead = { phase: "loading" },
+): Record<string, CanvasMetric> {
+  return withFailedReads(bundle, liveMetrics(bundle, retail, findability, ai));
+}
+
+function liveMetrics(
+  bundle: CanvasBundle,
+  retail: RetailCanvasRead,
+  findability: FindabilityRead,
+  ai: AiSearchRead,
 ): Record<string, CanvasMetric> {
   const { m, cats } = bundle;
+  const schemaPages = specPageCounts(bundle.specPages);
   const beginner = cats.find((c) => c.category === "beginner");
 
   const strandedReviews =
     m.bundle_reviews == null ? pendingLabel() : formatInt(m.bundle_reviews);
 
   return {
-    catalogSkus: {
-      id: "catalog-skus",
-      spokeId: "hub",
-      label: "Monitored Electric SKUs",
-      value: formatInt(m.catalog_skus),
-      detail: `${formatInt(m.catalog_bundles)} bundles · ${formatInt(bundle.divisions.length || m.division_count)} divisions`,
-      tone: "neutral",
-      subTab: "Performance",
-      provenance: "live",
-    },
     activeOfferCoverage: {
       id: "active-offer-coverage",
       spokeId: "hub",
       label: "Active Amazon Offer Coverage",
       value: formatPct(m.active_offer_coverage_pct),
-      detail: formatRatio(m.bb_total, m.catalog_skus),
+      detail: "Share of this catalog read with an active Amazon offer",
       tone: toneFromPct(m.active_offer_coverage_pct, 35, 50),
       subTab: "Briefing",
       provenance: "live",
@@ -202,7 +240,7 @@ export function buildLiveMetrics(
             value: "Not stored",
             detail: MAP_PRICES_NOT_STORED,
             tone: "warning",
-            subTab: "MAP",
+            subTab: "MAP Leakage",
             provenance: "live",
           }
         : {
@@ -212,7 +250,7 @@ export function buildLiveMetrics(
             value: formatUsd(m.amz_avg_drift, { signed: true }),
             detail: `Across ${formatInt(m.amz_below_map)} ASINs below MAP on Amazon`,
             tone: "danger",
-            subTab: "MAP",
+            subTab: "MAP Leakage",
             provenance: "live",
           },
     overallAiWinRate: {
@@ -259,21 +297,23 @@ export function buildLiveMetrics(
     machineReadableSpecs: {
       id: "machine-readable-specs",
       spokeId: "specs",
-      label: "Machine-Readable Spec Coverage",
-      value: formatPct(m.spec_avg_amazon_pct),
-      detail: "Amazon attribute completeness",
-      tone: toneFromPct(m.spec_avg_amazon_pct, 85, 92),
-      subTab: "Machine Readability",
+      label: `${brandSite()} Spec Block`,
+      value: schemaPages ? formatPct(schemaPages.specBlockPct) : "Not available*",
+      detail: schemaPages
+        ? `${formatInt(schemaPages.withSpecBlock)} of ${formatInt(schemaPages.pages)} ${brandSite()} pages`
+        : `The ${brandSite()} page read could not be loaded.`,
+      tone: schemaPages ? toneFromPct(schemaPages.specBlockPct, 95, 98) : "warning",
+      subTab: "Brand-Site Specs",
       provenance: "live",
     },
     missingSchemaFields: {
       id: "missing-schema-fields",
       spokeId: "specs",
-      label: "Pages Missing additionalProperty",
-      value: formatInt(m.spec_missing_additional_property),
-      detail: "fender.com pages in the spec read",
-      tone: "warning",
-      subTab: "Machine Readability",
+      label: "Pages Missing a Spec Block",
+      value: schemaPages ? formatInt(schemaPages.missingSpecBlock) : "Not available*",
+      detail: `${brandSite()} product pages`,
+      tone: schemaPages && schemaPages.missingSpecBlock === 0 ? "success" : "warning",
+      subTab: "Brand-Site Specs",
       provenance: "live",
     },
     beginnerSovGap: {
@@ -312,32 +352,23 @@ export function buildLiveMetrics(
       id: "phase-one-lift",
       spokeId: "suggestions",
       label: "Recoverable Revenue",
-      value: "+$680K",
+      value: PHASE_ONE_LIFT_ESTIMATE,
       detail: "Phase 1 annual estimate",
       tone: "success",
-      subTab: "Interactive ROI Model",
+      subTab: "Revenue Estimates",
       provenance: "estimate",
     },
     enterprisePotential: {
       id: "enterprise-potential",
       spokeId: "suggestions",
       label: "Enterprise GMV Potential",
-      value: "+$38M to $62M",
+      value: ENTERPRISE_POTENTIAL_ESTIMATE,
       detail: "Annual estimate · full portfolio",
       tone: "success",
-      subTab: "Interactive ROI Model",
+      subTab: "Revenue Estimates",
       provenance: "estimate",
     },
-    dayNinetyBuyBoxTarget: {
-      id: "day-90-buy-box-target",
-      spokeId: "roadmap",
-      label: "90-day plan",
-      value: "3 phases",
-      detail: "MAP, catalog nesting, and estimated lift",
-      tone: "success",
-      subTab: "30-60-90 Day Milestones",
-      provenance: "live",
-    },
+    dayNinetyBuyBoxTarget: roadmapMetric(),
   };
 }
 

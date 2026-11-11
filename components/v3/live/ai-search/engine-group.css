@@ -1,0 +1,66 @@
+.ai-engine-switch {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin: 0 0 12px;
+}
+
+.ai-engine-switch-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.ai-engine-switch .segmented-btn:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.ai-engine-switch .segmented-btn:focus-visible {
+  outline: 2px solid var(--accent-purple);
+  outline-offset: 1px;
+}
+
+.ai-engine-switch-na {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.ai-engine-group-tag {
+  display: block;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.ai-engine-switch-trailing {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.ai-competitor-hero-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ai-competitor-hero-figures {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.ai-competitor-hero .ai-lead-figure {
+  font-size: clamp(20px, 2vw, 26px);
+  line-height: 1.05;
+}
+
+.ai-competitor-hero-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}

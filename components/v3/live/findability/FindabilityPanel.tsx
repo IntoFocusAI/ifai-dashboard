@@ -1,17 +1,16 @@
 "use client";
 
 import { useMemo, useState, type ReactNode } from "react";
+import { FindabilityLead } from "@/components/v3/live/findability/FindabilityLead";
 import { FindabilityTable } from "@/components/v3/live/findability/FindabilityTable";
 import { useFindability } from "@/components/v3/live/findability/FindabilityContext";
+import { useFindabilityRowLanding } from "@/components/v3/live/findability/useFindabilityRowLanding";
 import {
-  DEALER_BUNDLE_NOTE,
   FAMILY_IS_NOT_EXACT,
-  MACHINE_READABILITY_DISTINCTION,
+  MACHINE_READABILITY_POINTER,
   OUTCOME_DEFINITION,
   OUTCOME_LABEL,
   bucketLabel,
-  findabilityHeadline,
-  jsonLdNote,
 } from "@/lib/findability/copy";
 import { formatInt } from "@/lib/fender-canvas/format";
 import {
@@ -19,8 +18,10 @@ import {
   countFindability,
   findabilityShape,
   rowsForOutcome,
+  sheetSplit,
   type FindabilityBucket,
 } from "@/lib/findability/outcomes";
+import { brandName } from "@/lib/client/active-client";
 
 function Term({ title, description, children }: { title: string; description: string; children: ReactNode }) {
   return (
@@ -101,12 +102,14 @@ function OutcomeCount({
 
 export function FindabilityPanel() {
   const read = useFindability();
-  const [selected, setSelected] = useState<FindabilityBucket | null>(null);
+  const [selected, setSelected] = useState<FindabilityBucket | null>("exact_official_product");
+  const { landAsin, clearLanding } = useFindabilityRowLanding(read, setSelected);
 
   const counts = useMemo(
     () => (read.phase === "ready" ? countFindability(read.rows) : null),
     [read],
   );
+  const split = useMemo(() => (read.phase === "ready" ? sheetSplit(read.rows) : null), [read]);
   const filtered = useMemo(() => {
     if (read.phase !== "ready" || !selected) return [];
     return rowsForOutcome(read.rows, selected);
@@ -128,21 +131,29 @@ export function FindabilityPanel() {
   }
 
   const shape = findabilityShape(counts!);
-  const headline =
-    counts!.total === 0
-      ? "This official-page read has no listings."
-      : findabilityHeadline(counts!);
 
   const choose = (outcome: FindabilityBucket) => {
+    clearLanding();
     setSelected((current) => (current === outcome ? null : outcome));
   };
 
   return (
     <div className="findability-panel" data-findability-shape={shape} data-findability-total={counts!.total}>
-      <p className="findability-headline" data-findability-headline="">
-        {headline}
-      </p>
-      <p className="findability-note">
+      <FindabilityLead counts={counts!} rows={read.rows} />
+      {split ? (
+        <p className="findability-note" style={{ marginTop: 12 }} data-findability-sheet-split="true">
+          On {brandName()}&apos;s product sheet: {formatInt(split.onSheet.confirmed)} of{" "}
+          {formatInt(split.onSheet.total)} listings have an official page.{" "}
+          <Term
+            title={`Not on ${brandName()}'s product sheet`}
+            description={`Amazon listings titled ${brandName()} that are not on the brand's product sheet: older accessories, discontinued models, and imports sold by resellers. The US site carries few of them.`}
+          >
+            Other {brandName()}-titled listings
+          </Term>
+          : {formatInt(split.offSheet.confirmed)} of {formatInt(split.offSheet.total)}.
+        </p>
+      ) : null}
+      <p className="findability-note" style={{ marginTop: 12 }}>
         Each listing is one outcome. {FAMILY_IS_NOT_EXACT} Open a count to see the listings, titles,
         and official pages behind it.
       </p>
@@ -171,17 +182,20 @@ export function FindabilityPanel() {
       {shape === "partial" ? (
         <p className="findability-note">Some outcomes are zero in this read. A zero is a real count.</p>
       ) : null}
-      <p className="findability-note">{jsonLdNote(read.rows)} {MACHINE_READABILITY_DISTINCTION}</p>
+      <p className="findability-note">{MACHINE_READABILITY_POINTER}</p>
       {selected ? (
         <div className="content-box" style={{ marginTop: 4 }}>
           <div className="content-box-title">
             <span>{bucketLabel(selected)}</span>
             <span className="tag-badge tag-neutral">{formatInt(filtered.length)} listings</span>
           </div>
-          <p className="findability-note">
-            {read.dealerBundleLoaded ? DEALER_BUNDLE_NOTE : "Dealer bundle status did not load with this read."}
-          </p>
-          <FindabilityTable key={selected} rows={filtered} />
+          <FindabilityTable
+            key={selected}
+            outcome={selected}
+            rows={filtered}
+            bundleLoaded={read.dealerBundleLoaded}
+            landAsin={landAsin}
+          />
         </div>
       ) : null}
     </div>

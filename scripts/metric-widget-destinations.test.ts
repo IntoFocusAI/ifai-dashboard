@@ -5,7 +5,8 @@ import { test } from "node:test";
 import { fenderWidgetMetrics } from "../components/v3/fender-metrics.ts";
 import { aiMetrics } from "../lib/ai-search/canvas-surfaces.ts";
 import { buildLiveMetrics } from "../lib/fender-canvas/metrics-from-live.ts";
-import { RETAIL_PANEL_TABS } from "../lib/fender-canvas/portfolio-retail-display.ts";
+import { tabIndexFromSlug, tabSlug } from "../lib/canvas-sdk/canvas-url-state.ts";
+import { RETAIL_PANEL_TABS, STOCK_LOSS_TAB } from "../lib/fender-canvas/portfolio-retail-display.ts";
 import type { CanvasBundle, CanvasMetricsRow } from "../lib/fender-canvas/types.ts";
 import type { CanvasMetric } from "../lib/canvas-sdk/types.ts";
 import type { FindabilityRead } from "../lib/findability/copy.ts";
@@ -23,30 +24,39 @@ function openedTab(tabs: string[], subTab: string | undefined): string | null {
 }
 
 const EXPECTED_SUBTAB: Record<string, string> = {
-  "catalog-skus": "Performance",
   "active-offer-coverage": "Briefing",
   "buy-box-retention": "Retail Overview",
   "seller-data-coverage": "Retail Overview",
-  "flagged-asins": "MAP",
+  "flagged-asins": "MAP Leakage",
   "suppressed-listings": "Suppressed Listings",
   "stranded-reviews": "Catalog Governance",
-  "amazon-map-drift": "MAP",
+  "amazon-map-drift": "MAP Leakage",
   "overall-ai-win-rate": "Run Summary",
   "beginner-ai-win-rate": "Run Details",
   "resolved-simulations": "Run Summary",
   "confirmed-hallucinations": "Product Fact Checks",
   "fender-findability": "Findability",
-  "machine-readable-specs": "Machine Readability",
-  "missing-schema-fields": "Machine Readability",
+  "machine-readable-specs": "Brand-Site Specs",
+  "missing-schema-fields": "Brand-Site Specs",
   "beginner-sov-gap": "Category Battlecards",
   "strongest-category-sov": "Category Battlecards",
   "prioritized-fixes": "Urgent Interventions",
-  "phase-one-lift": "Interactive ROI Model",
-  "enterprise-potential": "Interactive ROI Model",
-  "day-90-buy-box-target": "30-60-90 Day Milestones",
+  "phase-one-lift": "Revenue Estimates",
+  "enterprise-potential": "Revenue Estimates",
+  "day-90-buy-box-target": "30-60-90 Days",
 };
 
-const RETIRED = ["Dual-Index", "Hallucination", "Priority Matrix", "Brand Divisions", "Battlecards", "Catalog", "ROI", "30-60-90"];
+const RETIRED = [
+  "Dual-Index",
+  "Hallucination",
+  "Priority Matrix",
+  "Brand Divisions",
+  "Battlecards",
+  "Catalog",
+  "ROI",
+  "Interactive ROI Model",
+  "30-60-90",
+];
 
 function tabsFor(spokeId: string): string[] {
   if (spokeId === "ecommerce") return [...RETAIL_PANEL_TABS];
@@ -151,14 +161,22 @@ test("retail tabs on the live spoke match the catalog names", () => {
   assert.deepEqual([...RETAIL_PANEL_TABS], spec.spokes.ecommerce.tabs);
 });
 
+test("a metric or link that opens Out of Stock lands on that tab, before and after the live read", () => {
+  for (const tabs of [[...RETAIL_PANEL_TABS], spec.spokes.ecommerce.tabs]) {
+    assert.equal(openedTab(tabs, STOCK_LOSS_TAB), STOCK_LOSS_TAB);
+    assert.equal(tabs[tabIndexFromSlug(tabs, tabSlug(STOCK_LOSS_TAB))], STOCK_LOSS_TAB);
+    assert.equal(tabs.indexOf(STOCK_LOSS_TAB), tabs.indexOf("Catalog Governance") + 1);
+  }
+});
+
 test("the fallback catalog opens a current tab for every widget", () => {
   assertDestinations(fenderWidgetMetrics, "fallback");
   const findabilityMetric = fenderWidgetMetrics.find((metric) => metric.id === "fender-findability");
   assert.equal(findabilityMetric?.value, "Unavailable");
   assert.match(findabilityMetric?.detail ?? "", /not available/);
   assert.doesNotMatch(`${findabilityMetric?.value} ${findabilityMetric?.detail}`, /%|29\.2|pages found|13\.3/);
-  assert.equal(fenderWidgetMetrics.find((metric) => metric.id === "phase-one-lift")?.value, "+$680K");
-  assert.equal(fenderWidgetMetrics.find((metric) => metric.id === "enterprise-potential")?.value, "+$38M to $62M");
+  assert.equal(fenderWidgetMetrics.find((metric) => metric.id === "phase-one-lift")?.value, "+$680K est.");
+  assert.equal(fenderWidgetMetrics.find((metric) => metric.id === "enterprise-potential")?.value, "+$38M to $62M est.");
   assert.equal(fenderWidgetMetrics.find((metric) => metric.id === "prioritized-fixes")?.provenance, "estimate");
   assert.equal(fenderWidgetMetrics.find((metric) => metric.id === "flagged-asins")?.label, "MAP violations");
 });
@@ -170,9 +188,9 @@ test("the picker list, including live overrides, opens the named tab", () => {
   assert.equal(live.beginnerAiWinRate.value, "41.2%");
   assert.equal(live.flaggedAsins.label, "MAP violations");
   assert.equal(live.flaggedAsins.value, "Loading");
-  assert.equal(live.phaseOneLift.value, "+$680K");
+  assert.equal(live.phaseOneLift.value, "+$680K est.");
   assert.equal(live.phaseOneLift.provenance, "estimate");
-  assert.equal(live.enterprisePotential.value, "+$38M to $62M");
+  assert.equal(live.enterprisePotential.value, "+$38M to $62M est.");
   assert.equal(live.enterprisePotential.provenance, "estimate");
   assert.equal(live.prioritizedFixes.value, "Estimates");
   assert.equal(live.prioritizedFixes.provenance, "estimate");
@@ -195,7 +213,7 @@ test("the picker list, including live overrides, opens the named tab", () => {
 
 test("the canvas spec passes the findability read into the widget list", () => {
   const source = readFileSync(new URL("lib/fender-canvas/build-canvas-spec.tsx", root), "utf8");
-  assert.match(source, /buildLiveMetrics\(bundle, retail, findability\)/);
+  assert.match(source, /buildLiveMetrics\(bundle, retail, findability, aiSearch\)/);
   const liveSource = readFileSync(new URL("lib/fender-canvas/metrics-from-live.ts", root), "utf8");
   const catalog = readFileSync(new URL("components/v3/fender-metrics.ts", root), "utf8");
   assert.doesNotMatch(liveSource, /spec_fender_found/);

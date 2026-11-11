@@ -27,7 +27,13 @@ export type CanvasNode = {
    * A single big status-colored number in place of the stacked stat pills. Use when a
    * bubble has one scored headline value instead of several short facts to list.
    */
-  heroValue?: { value: string; label: string };
+  heroValue?: { value: string; label: string; explainer?: boolean };
+  /**
+   * Why the hero figure carries the partial asterisk (X-25): what is missing, the coverage, the
+   * source, the last check, and the effect. Set even on a bubble that shows no hover box, so a
+   * Minimal slot that reads this figure can show it.
+   */
+  partialTip?: string;
   /** Opens this spoke on click. Omit to reset the camera. Set on the hub when it has its own drilldown. */
   spokeId?: string;
   subTab?: string;
@@ -74,6 +80,8 @@ export type SpokeContent = {
    */
   descSlot?: ReactNode;
   tabs: string[];
+  /** Tab names that carry a "New" marker. The marker is drawn by CSS, so the tab text stays the name. */
+  newTabs?: string[];
   /** Short name for the breadcrumb and the "Next" footer. */
   navLabel?: string;
   /** Next spoke in left-to-right map order. The panel footer links here. */
@@ -123,8 +131,13 @@ export type CommandCenterSpec = {
   items: PriorityItem[];
   /** Open the command center instead of a spoke on first paint. */
   openByDefault?: boolean;
-  /** localStorage key for owner/done state. Placeholder until Supabase per-user state lands. */
+  /** localStorage key for owner chips (and done state when `setAsideClientKey` is unset). */
   storageKey?: string;
+  /**
+   * Client key in public.set_aside_clients. When set, "Done" becomes a server-side
+   * set-aside with a reason, a name, and an audit row; reopen updates the same row.
+   */
+  setAsideClientKey?: string;
 };
 
 export type CanvasTicker = {
@@ -240,6 +253,8 @@ export type CanvasSpec = {
   drilldownExpandedWidth?: number;
   /** Priority queue shown above the spokes. Omit to keep the panel spoke-only. */
   commandCenter?: CommandCenterSpec;
+  /** Renders a "Prompts" header button (left of Priorities) that opens this content in a dialog. */
+  promptsEditor?: (close: () => void) => ReactNode;
   /** Jargon -> plain-language definition, shown on hover in the panel copy. */
   glossary?: Record<string, string>;
   filters?: CanvasFilter[];

@@ -10,7 +10,7 @@ const hubTabs = [
 
 const aiTabs = ["Run Summary", "Run Details", "Product Fact Checks", "Citation Ecosystem"];
 
-const specTabs = ["Findability", "AI Readiness", "Machine Readability", "Amazon A+ Matrix"];
+const specTabs = ["Findability", "Amazon Specs", "Brand-Site Specs", "Amazon A+ Matrix"];
 
 test("the renamed executive briefing keeps the earlier Buy Box tab slug", () => {
   assert.equal(tabSlug(hubTabs[0]), "briefing");
@@ -52,17 +52,19 @@ test("AI Search Simulations aliases open Run Details", () => {
   assert.equal(tabIndexFromSlug(aiTabs, "run-summary"), 0);
 });
 
-test("the renamed AI Readiness tabs keep the slugs copied from their old titles", () => {
+test("the renamed Amazon Specs and Brand-Site Specs tabs keep earlier slugs", () => {
   assert.deepEqual(specTabs.map(tabSlug), [
     "findability",
-    "ai-readiness",
-    "machine-readability",
+    "amazon-specs",
+    "brand-site-specs",
     "amazon-a-matrix",
   ]);
 
   const copied: Array<[string, number]> = [
     ["catalog-readiness-executive-guide", 1],
+    ["ai-readiness", 1],
     ["machine-readable-schema-org-json-ld-audit", 2],
+    ["machine-readability", 2],
     ["amazon-a-comparison-matrix-blueprint", 3],
   ];
   for (const [slug, index] of copied) {

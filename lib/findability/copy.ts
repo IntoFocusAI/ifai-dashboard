@@ -9,47 +9,45 @@ import {
   type FindabilityRow,
   type OutcomeCounts,
 } from "@/lib/findability/outcomes";
+import { brandSite } from "@/lib/brand-copy";
 
 export const OUTCOME_LABEL: Record<FindabilityOutcome, string> = {
   exact_official_product: "Exact official product page",
   official_family_page: "Official family page",
-  completed_not_found: "Finished search, no defensible page",
+  completed_not_found: "No Defensible Page",
   ambiguous_candidate: "Ambiguous match",
   not_checked: "Unchecked",
 };
 
 export const OUTCOME_DEFINITION: Record<FindabilityOutcome, string> = {
   exact_official_product:
-    "This listing resolves to one official product page for this variant. A family page is not counted here.",
+    `We found the ${brandSite()} page for this one product. An assistant can use that page's specs for this Amazon listing.`,
   official_family_page:
-    "This listing resolves to an official page for the product line. That page covers more than one variant, so it is not an exact product page.",
+    `We found a ${brandSite()} page for the whole line. Specs on it can belong to a different color or model.`,
   completed_not_found:
-    "The search finished and did not accept an official page. That does not prove the product is absent from the brand site.",
+    `We finished looking and did not accept a page. This does not prove the product is missing from ${brandSite()}.`,
   ambiguous_candidate:
-    "More than one page could fit, or the stored identifiers disagree, so no official page was accepted.",
+    `More than one ${brandSite()} page could fit, so we did not pick one.`,
   not_checked:
-    "This listing has not been checked. A missing address is not a finished search.",
+    "This listing was not checked and should be opened for that reason. A blank result is not a missing page.",
 };
 
 const HEADLINE_NOUN: Record<FindabilityOutcome, [string, string]> = {
   exact_official_product: ["exact official product page", "exact official product pages"],
   official_family_page: ["official family page", "official family pages"],
-  completed_not_found: [
-    "finished search with no defensible page",
-    "finished searches with no defensible page",
-  ],
+  completed_not_found: ["No Defensible Page", "No Defensible Pages"],
   ambiguous_candidate: ["ambiguous match", "ambiguous matches"],
   not_checked: ["unchecked listing", "unchecked listings"],
 };
 
-export const JSONLD_NOT_AUDITED =
-  "JSON-LD was not audited on this official-page read. This screen is not a schema-completeness or A+ result.";
+export const MACHINE_READABILITY_POINTER =
+  `Schema.org product data on each ${brandSite()} page is on Brand-Site Specs.`;
 
-export const MACHINE_READABILITY_DISTINCTION =
-  "Machine Readability is a separate, older spec read. It lists pages whose stored missing fields include additionalProperty. It is not this official-page result.";
-
+/** Dealer bundle header tooltip. The caveat lives here, not on screen (let the data speak). */
 export const DEALER_BUNDLE_NOTE =
   "Dealer bundle status comes from the retail read. It can line up with an official-page outcome. That is a correlation, not a proven cause.";
+
+export const DEALER_BUNDLE_NOT_LOADED = "Dealer bundle status did not load with this read.";
 
 export const FAMILY_IS_NOT_EXACT = "A family page is not an exact product page.";
 
@@ -93,8 +91,8 @@ const WIDGET_DETAIL: Array<{ key: FindabilityOutcome; singular: string; plural: 
   { key: "official_family_page", singular: "family page", plural: "family pages" },
   {
     key: "completed_not_found",
-    singular: "finished search with no defensible page",
-    plural: "finished searches with no defensible page",
+    singular: "No Defensible Page",
+    plural: "No Defensible Pages",
   },
   { key: "ambiguous_candidate", singular: "ambiguous match", plural: "ambiguous matches" },
   { key: "not_checked", singular: "unchecked listing", plural: "unchecked listings" },
@@ -124,40 +122,19 @@ export function findabilityWidgetCopy(read: FindabilityRead): FindabilityWidgetC
   };
 }
 
-export function findabilitySpokeDescription(read: FindabilityRead): string {
-  const tail = `${FAMILY_IS_NOT_EXACT} ${MACHINE_READABILITY_DISTINCTION}`;
-  if (read.phase === "loading") {
-    return `Official-page outcomes are loading. Exact product pages, family pages, finished searches with no defensible page, ambiguous matches, and unchecked listings stay separate. ${tail}`;
-  }
-  if (read.phase === "error") {
-    return `The official-page read did not load. Exact product pages, family pages, finished searches with no defensible page, ambiguous matches, and unchecked listings stay separate. ${tail}`;
-  }
-  const counts = countFindability(read.rows);
-  if (counts.total === 0) {
-    return `This official-page read has no listings. ${tail}`;
-  }
-  return `${findabilityHeadline(counts)} ${tail}`;
-}
-
-export function findabilityTourLine(read: FindabilityRead): string {
-  if (read.phase !== "ready") {
-    return "Official-page outcomes stay separate and load with the findability read";
-  }
-  const counts = countFindability(read.rows);
-  if (counts.total === 0) return "This official-page read has no listings";
-  return findabilityHeadline(counts);
-}
-
 export type ReadinessFace = {
   stats: string[];
   meta: string;
   tooltipTitle: string;
   tooltipDesc: string;
+  /** Kept for call sites that still want counts; the map main spoke uses page-found heroValue instead. */
+  heroValue?: { value: string; label: string };
 };
 
 /**
- * Map bubble face. The findability lines are counts, not the older found percentage.
- * The stat and meta lines carry the full count; the bubble keeps no hover explainer.
+ * Official-page outcome counts for AI Readiness surfaces that still need them.
+ * The map's main AI Readiness bubble leads with fender.com page found (see nodes-from-live /
+ * pageFoundHero) — not these count pills — so ecommerce operators see one share figure.
  */
 export function readinessFindabilityFace(
   read: FindabilityRead,
@@ -168,6 +145,10 @@ export function readinessFindabilityFace(
     return {
       stats: ["Official pages", amazonStat],
       meta: read.phase === "error" ? "Official-page read unavailable" : "Five outcomes loading",
+      heroValue: {
+        value: read.phase === "error" ? "Read unavailable" : "Loading",
+        label: "Official-page outcomes",
+      },
       tooltipTitle: "",
       tooltipDesc: "",
     };
@@ -177,6 +158,7 @@ export function readinessFindabilityFace(
     return {
       stats: ["0 listings", amazonStat],
       meta: "No rows in this read",
+      heroValue: { value: "No listings", label: "Official-page outcomes" },
       tooltipTitle: "",
       tooltipDesc: "",
     };
@@ -191,15 +173,6 @@ export function readinessFindabilityFace(
     tooltipTitle: "",
     tooltipDesc: "",
   };
-}
-
-export function jsonLdNote(rows: readonly FindabilityRow[]): string {
-  const audited = rows.filter((row) => {
-    const status = row.jsonld_status?.trim();
-    return Boolean(status) && status !== "not_checked";
-  }).length;
-  if (audited === 0) return JSONLD_NOT_AUDITED;
-  return `${formatInt(audited)} listings have a stored JSON-LD note. This screen still does not score schema completeness.`;
 }
 
 export function bucketLabel(bucket: FindabilityBucket): string {
@@ -267,35 +240,25 @@ export function attemptLabel(iso: string | null, bucket: FindabilityBucket): str
 export function dealerBundleLabel(value: boolean | null | undefined): string {
   if (value === true) return "Yes";
   if (value === false) return "No";
-  if (value === null) return "Not in the retail read";
+  if (value === null) return "Not in this read";
   return "Not loaded";
-}
-
-export function countFlagLine(row: FindabilityRow): string {
-  const outcome = findabilityOutcome(row);
-  if (outcome === "exact_official_product") {
-    return row.counts_as_confirmed === true
-      ? "Counted as a confirmed exact official product page."
-      : "Stored as an exact official product page.";
-  }
-  if (outcome === "official_family_page") {
-    return row.counts_as_confirmed === true
-      ? "Counted as a confirmed official page, and as a family page. Not an exact product page."
-      : "Stored as an official family page, not an exact product page.";
-  }
-  if (outcome === "completed_not_found") return "The search finished with no defensible page.";
-  if (outcome === "ambiguous_candidate") {
-    return "The search finished with an ambiguous match. No official page was accepted.";
-  }
-  if (outcome === "not_checked") return "Not checked. A missing address is not a finished search.";
-  return "This stored result sits outside the five official-page outcomes.";
 }
 
 export function presentExplanation(row: FindabilityRow): string {
   const stored = row.explanation?.trim();
   if (stored) return stored;
-  if (findabilityOutcome(row) === "not_checked") return "Not checked yet.";
-  return "No explanation was stored.";
+  return "None";
+}
+
+/** Why an unchecked listing was not checked. The first matching flag wins. */
+export function uncheckedReason(row: FindabilityRow): string {
+  if (row.counts_as_blocked === true) return "Blocked";
+  if (row.counts_as_timeout === true) return "Timeout";
+  if (row.counts_as_parse_failure === true) return "Parse failure";
+  if (row.counts_as_unsupported === true) return "Unsupported";
+  const stored = row.explanation?.trim() ?? "";
+  if (!stored || stored === "None") return "Reason not recorded";
+  return stored;
 }
 
 export function listingTitle(row: FindabilityRow): string {
@@ -330,8 +293,8 @@ export function findabilitySortValue(row: FindabilityRow, columnId: string): Sor
       return bucket === "not_checked" ? null : row.latest_attempt_at;
     case "explanation":
       return presentExplanation(row);
-    case "flags":
-      return countFlagLine(row);
+    case "reason":
+      return uncheckedReason(row);
     case "bundle":
       return dealerBundleLabel(row.dealer_bundle);
     default:

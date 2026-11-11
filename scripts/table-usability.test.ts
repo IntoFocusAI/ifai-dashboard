@@ -113,6 +113,29 @@ test("sort direction is visible to assistive tech and toggles", () => {
   assert.match(resize, /data-sort-dir=/);
   assert.match(resize, /ArrowLeft/);
   assert.match(resize, /ArrowRight/);
+  assert.match(resize, /ifai-sort-chevron/);
+  assert.match(resize, /retail-explore-chevron/);
+  assert.doesNotMatch(resize, /[↑↓]/);
+  const css = read("lib/canvas-sdk/canvas-sdk.css");
+  assert.match(css, /\.ifai-sort-btn\[data-sort-dir="asc"\] \.ifai-sort-chevron/);
+  assert.match(css, /\.ifai-sort-btn\[data-sort-dir="desc"\] \.ifai-sort-chevron/);
+  assert.doesNotMatch(css, /\.ifai-sort-btn\[data-sort-dir="asc"\]::after/);
+  assert.doesNotMatch(css, /content:\s*" ↑"/);
+});
+
+test("Suppressed Listings omits constant Buy Box and Source columns", () => {
+  const row = read("components/v3/live/FeaturedOfferRow.tsx");
+  assert.match(row, /SUPPRESSED_LISTINGS_TABLE_COLUMNS/);
+  assert.doesNotMatch(row, /id: "state"/);
+  assert.doesNotMatch(row, /id: "source"/);
+  assert.doesNotMatch(row, /name: "Buy Box"/);
+  assert.doesNotMatch(row, /showBuyBox|showSource|FEATURED_OFFER_TABLE_COLUMNS/);
+  const panel = read("components/v3/live/SuppressedListingsPanel.tsx");
+  assert.match(panel, /SUPPRESSED_LISTINGS_TABLE_COLUMNS/);
+  assert.doesNotMatch(panel, /showBuyBox|showSource/);
+  assert.doesNotMatch(panel, /FEATURED_OFFER_TABLE_COLUMNS/);
+  assert.doesNotMatch(panel, /columnId === "source"/);
+  assert.match(panel, /Amazon listing read/);
 });
 
 test("simulation dropdowns keep contrast in dark mode and in light mode", () => {
@@ -157,21 +180,28 @@ test("TSX files in this pass stay at or under 400 lines", () => {
     "components/v3/live/MapChannelPanel.tsx",
     "components/v3/live/MapListingsTable.tsx",
     "components/v3/live/ResizableTable.tsx",
-    "components/v3/live/SchemaAdditionalPropertyList.tsx",
+    "components/v3/live/MachineReadabilityPageTable.tsx",
+    "components/v3/live/MachineReadabilityPanel.tsx",
+    "components/v3/live/AplusMatrixPanel.tsx",
+    "components/v3/live/ListingContentTable.tsx",
+    "components/v3/live/ShareHeroCard.tsx",
     "components/v3/live/SuppressedListingsPanel.tsx",
     "components/v3/live/useFullPopulationSort.ts",
     "components/v3/live/ai-search/CategoryBattlecardsPanel.tsx",
     "components/v3/live/ai-search/CitationEcosystemPanel.tsx",
     "components/v3/live/ai-search/CitationEvidenceTable.tsx",
     "components/v3/live/ai-search/CompetitorWinsPanel.tsx",
+    "components/v3/live/ai-search/EngineComparisonLead.tsx",
     "components/v3/live/ai-search/EngineComparisonPanel.tsx",
+    "components/v3/live/ai-search/EngineUnbrandedGraph.tsx",
     "components/v3/live/ai-search/FactCheckTable.tsx",
     "components/v3/live/ai-search/RunSummaryPanel.tsx",
     "components/v3/live/ai-search/SimulationFilters.tsx",
     "components/v3/live/ai-search/SimulationsExplorer.tsx",
   ];
   for (const path of files) {
-    const lines = read(path).split("\n").length;
+    // Match wc -l: a trailing newline does not count as an extra blank line.
+    const lines = read(path).replace(/\n$/, "").split("\n").length;
     assert.ok(lines <= 400, `${path} is ${lines} lines`);
   }
 });

@@ -1,7 +1,11 @@
+import { clientStorageKey } from "@/lib/client/active-client";
+import { activeSetAsideClientKey } from "@/lib/set-aside/keys";
 import type { CommandCenterSpec } from "@/lib/canvas-sdk/types";
 import { aiCommandSummary, aiPriorityItems } from "@/lib/ai-search/canvas-surfaces";
 import type { AiSearchRead } from "@/lib/ai-search/types";
 import { formatInt } from "@/lib/fender-canvas/format";
+import { bulletCounts } from "@/lib/fender-canvas/listing-content";
+import { specPageCounts } from "@/lib/fender-canvas/machine-readability";
 import {
   headlineSentence,
   headlineSurface,
@@ -10,12 +14,14 @@ import {
 import { MAP_PRICES_NOT_STORED } from "@/lib/fender-canvas/portfolio-retail";
 import { mapReadLine } from "@/lib/fender-canvas/retail-copy";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
+import { brandName, brandSite, isFenderClient } from "@/lib/brand-copy";
 
-const MAP_CHANNEL_WHY =
-  "Open the MAP tab for the current below-MAP listings. Amazon, Walmart, and Musician's Friend appear only when this read stored a price for that channel. Any other retailer appears only when a stored price exists for that channel.";
+const MAP_CHANNEL_WHY = isFenderClient()
+  ? "Open the MAP Leakage tab for the current below-MAP listings. Amazon, Walmart, and Musician's Friend appear only when this read stored a price for that channel. Any other retailer appears only when a stored price exists for that channel."
+  : "Open the MAP Leakage tab for the current below-MAP listings. A retailer appears only when this read stored a price for that channel.";
 
 const MAP_PRICES_NOT_STORED_WHY =
-  "Fender MAP prices have not been stored. Amazon, Walmart, and Musician's Friend prices still show when a price is stored for that channel. A missing price stays blank.";
+  `${brandName()} MAP prices have not been stored. ${isFenderClient() ? "Amazon, Walmart, and Musician's Friend prices" : "Retail prices"} still show when a price is stored for that channel. A missing price stays blank.`;
 
 /** The MAP tab shows this sentence while the reading is unfinished or missing. */
 function mapMissingSentence(retail: RetailCanvasRead): string | null {
@@ -39,28 +45,26 @@ export function buildLiveCommandCenter(
   retail: RetailCanvasRead = { phase: "loading" },
   ai: AiSearchRead = { phase: "loading" },
 ): CommandCenterSpec {
-  const { m, divisions } = bundle;
-  const divisionCount = divisions.length > 0 ? divisions.length : m.division_count;
+  const schemaPages = specPageCounts(bundle.specPages);
+  const bullets = bulletCounts(bundle.listingContent);
   const headline = headlineSurface(retail);
   const mapItem = mapPriority(retail);
   const aiItems = aiPriorityItems(ai);
   const aiCritical = aiItems.filter((item) => item.severity === "critical");
   const aiOther = aiItems.filter((item) => item.severity !== "critical");
 
-  const summaryParts = [
-    headlineSentence(headline),
-    `The catalog read has ${formatInt(m.catalog_skus)} electric SKUs across ${formatInt(divisionCount)} divisions.`,
-  ];
+  const summaryParts = [headlineSentence(headline)];
   const aiLine = aiCommandSummary(ai);
   if (aiLine) summaryParts.push(aiLine);
 
   return {
     badge: "COMMAND CENTER · TODAY",
     title: "What do I need to worry about?",
-    desc: `The highest-value moves across the ${formatInt(m.catalog_skus)} monitored electric SKUs, ranked by what they cost you while they sit open.`,
+    desc: "The highest-value moves across the monitored electric catalog, ranked by what they cost you while they sit open.",
     summary: summaryParts.join(" "),
     openByDefault: true,
-    storageKey: "ifai:fender:command-center",
+    storageKey: clientStorageKey("ifai:fender:command-center"),
+    setAsideClientKey: activeSetAsideClientKey(),
     items: [
       {
         id: "buybox-suppression",
@@ -76,11 +80,13 @@ export function buildLiveCommandCenter(
       ...aiCritical,
       {
         id: "schema-coverage",
-        title: "fender.com pages are missing machine-readable spec fields",
-        why: `Machine Readability lists ${formatInt(m.spec_missing_additional_property)} pages from the older spec read whose stored missing fields include additionalProperty, so an assistant still has no spec block to read there. That list is not the Findability result. Findability counts exact official product pages, family pages, finished searches, ambiguous matches, and unchecked listings separately.`,
+        title: `${brandSite()} pages are missing machine-readable specs`,
+        why: schemaPages
+          ? `${formatInt(schemaPages.missingSpecBlock)} of ${formatInt(schemaPages.pages)} ${brandSite()} product pages have no spec block, so AI engines cannot read ${isFenderClient() ? "neck, pickup, and hardware specs" : "detailed specs"} there as product data.`
+          : `The ${brandSite()} page read could not be loaded.`,
         severity: "high",
         spokeId: "specs",
-        subTab: "Machine Readability",
+        subTab: "Brand-Site Specs",
         defaultOwner: "intofocus",
       },
       {
@@ -90,14 +96,16 @@ export function buildLiveCommandCenter(
         impact: "The summary and the listing rows are the rows returned by the latest retail listing read.",
         severity: "high",
         spokeId: "ecommerce",
-        subTab: "MAP",
+        subTab: "MAP Leakage",
         defaultOwner: "client",
       },
       ...aiOther,
       {
         id: "aplus-tables",
-        title: "A+ comparison tables have not been measured",
-        why: "Comparison tables have not been measured. Amazon A+ content is the enhanced modules on a product page, including comparison tables. When a comparison table is on the page, Amazon's shopping assistant and other AI models can read the columns and repeat how your lineup steps up.",
+        title: "Amazon listings are missing bullet copy",
+        why: bullets
+          ? `${formatInt(bullets.short)} of ${formatInt(bullets.listings)} live Amazon listings fill fewer than five bullets. Bullets are the first copy an AI shopping assistant quotes about a listing.`
+          : "The Amazon listing-content read could not be loaded.",
         severity: "moderate",
         spokeId: "specs",
         subTab: "A+",

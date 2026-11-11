@@ -1,21 +1,36 @@
 // node --experimental-strip-types --import ./scripts/register-alias.mjs --import ./scripts/register-ts-extensions.mjs --test scripts/satellite-fit.test.ts
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { SATELLITE_HERO_TEXT, satelliteHeroLayout } from "../lib/canvas-sdk/hero-fit.ts";
+import { HUB_LAYOUT, fenderCanvasEdges, primarySpokeLayouts, satelliteNode, type SatelliteId } from "../lib/fender-canvas/primary-spoke-layout.ts";
+import {
+  BUBBLE_TEXT_MIN,
+  SATELLITE_HERO_TEXT,
+  bubbleTextMin,
+  fitMainHero,
+  isCompactHeroValue,
+  satelliteHeroLayout,
+} from "../lib/canvas-sdk/hero-fit.ts";
 import { hoverSlide } from "../lib/canvas-sdk/hover-frame.ts";
 import { fittedSatelliteClusters, groupBounds } from "../lib/canvas-sdk/satellite-fit.ts";
 import type { CanvasNode, CanvasSpec } from "../lib/canvas-sdk/types.ts";
-import { HUB_LAYOUT, fenderCanvasEdges, primarySpokeLayouts, satelliteNode, type SatelliteId } from "../lib/fender-canvas/primary-spoke-layout.ts";
 
-const HEROES: Partial<Record<SatelliteId, { title: string; value: string; label: string }>> = {
-  "sat-prompts": { title: "Run Details", value: "95.7%", label: "Brand Consideration" },
+const HEROES: Record<SatelliteId, { title: string; value: string; label: string }> = {
+  "sat-prompts": { title: "Run Details", value: "95.7%", label: "Branded Consideration" },
   "sat-citations": { title: "Citations", value: "19.1%", label: "Fender-Owned Links" },
   "sat-drift": { title: "Fact Checks", value: "100.0%", label: "Accuracy" },
+  "sat-buybox": { title: "Suppressed Listings", value: "12.4%", label: "confirmed high-price" },
+  "sat-asin": { title: "Catalog Governance", value: "38.0%", label: "Splintered Listings" },
+  "sat-map": { title: "MAP Leakage", value: "22.5%", label: "" },
+  "sat-findability": { title: "Findability", value: "12.4%*", label: "Exact page" },
+  "sat-schema": { title: "Brand-Site Specs", value: "100.0%", label: "Specs missing" },
+  "sat-tables": { title: "Amazon A+ Matrix", value: "74.4%", label: "Five bullets" },
+  "sat-taylor": { title: "Competitor Wins", value: "39.3%", label: "" },
+  "sat-amps": { title: "Engine Comparison", value: "42.1%", label: "ChatGPT API" },
 };
 
 const SATELLITES: SatelliteId[] = [
   "sat-prompts", "sat-citations", "sat-drift", "sat-buybox", "sat-asin", "sat-map",
-  "sat-schema", "sat-tables", "sat-taylor", "sat-amps",
+  "sat-findability", "sat-schema", "sat-tables", "sat-taylor", "sat-amps",
 ];
 
 function node(id: string, x: number, y: number, r: number, extra: Partial<CanvasNode> = {}): CanvasNode {
@@ -29,7 +44,10 @@ function spec(): CanvasSpec {
     ...SATELLITES.map((id) => {
       const s = satelliteNode(id);
       const hero = HEROES[id];
-      return node(id, s.x, s.y, s.r, hero ? { title: hero.title, heroValue: { value: hero.value, label: hero.label } } : {});
+      return node(id, s.x, s.y, s.r, {
+        title: hero.title,
+        heroValue: { value: hero.value, label: hero.label },
+      });
     }),
   ];
   return { nodes, edges: fenderCanvasEdges() } as unknown as CanvasSpec;
@@ -39,16 +57,53 @@ test("hero text stays at its readable size and the ring clears every row", () =>
   for (const hero of Object.values(HEROES)) {
     const layout = satelliteHeroLayout(hero.title, hero.value, hero.label);
     const value = layout.rows.find((row) => row.kind === "value");
-    assert.equal(value?.size, SATELLITE_HERO_TEXT.value);
+    if (/\s/.test(hero.value.trim())) {
+      assert.ok(layout.rows.every((row) => row.kind !== "value"), `${hero.title} worded value`);
+    } else {
+      assert.equal(value?.size, SATELLITE_HERO_TEXT.value);
+    }
     for (const row of layout.rows.filter((item) => item.kind === "label")) assert.equal(row.size, SATELLITE_HERO_TEXT.label);
-    assert.ok(layout.radius > 52, `${hero.title} needs more than the stored radius`);
+    assert.ok(layout.radius > 48, `${hero.title} needs room for its hero face`);
   }
 });
 
 test("a worded empty value reads at label size, not as a giant number", () => {
-  const layout = satelliteHeroLayout("Run Details", "No resolved answers", "Brand Consideration");
+  const layout = satelliteHeroLayout("Run Details", "No resolved answers", "Branded Consideration");
   assert.ok(layout.rows.every((row) => row.kind !== "value"));
   assert.ok(layout.radius < 90);
+});
+
+test("main-bubble heroes fit inside a fixed ring with readable size", () => {
+  assert.equal(isCompactHeroValue("61.2%"), true);
+  assert.equal(isCompactHeroValue("90 Days"), true);
+  assert.equal(isCompactHeroValue("Loading run"), false);
+
+  const aeo = primarySpokeLayouts().find((spoke) => spoke.id === "spoke-aeo")!;
+  // The lifted icon and two-line title leave the hero stack starting just under the center.
+  const startY = -aeo.r * 0.56 + 20 + 15 + 2 * 23 + 5;
+  const fit = fitMainHero("61.2%", "Unbranded Discovery", aeo.r, startY);
+  assert.ok(fit.valueSize >= 24, `value shrunk to a crumb (${fit.valueSize})`);
+  assert.ok(fit.valueSize <= aeo.r * 0.4, `value still too large for the ring (${fit.valueSize})`);
+  assert.ok(fit.labelY + fit.labelLineH * (fit.labelLines.length - 1) <= aeo.r - 8, "label spills past the ring");
+  assert.equal(fit.labelSize, BUBBLE_TEXT_MIN);
+
+  const worded = fitMainHero("Loading run", "", aeo.r, startY);
+  assert.equal(worded.worded, true);
+  assert.equal(worded.valueSize, BUBBLE_TEXT_MIN);
+});
+
+test("bubble text renders at 11px or more at 1280x720, on the map and on the rail", () => {
+  // The map draws at 0.72 at 1280x720, the rail at 240 / 330; the floor is set a little under both.
+  assert.ok(BUBBLE_TEXT_MIN * 0.72 >= 11, `${BUBBLE_TEXT_MIN} units render under 11px on the map`);
+  assert.ok(SATELLITE_HERO_TEXT.title * 0.72 >= 11 && SATELLITE_HERO_TEXT.label * 0.72 >= 11);
+  for (const spoke of primarySpokeLayouts()) {
+    // The rail lays a face out at its pre-growth radius and scales it to the 100-unit rail bubble.
+    const faceScale = 100 / spoke.faceRadius;
+    const min = bubbleTextMin(faceScale);
+    assert.ok(min * faceScale * (240 / 330) >= 11, `${spoke.id} rail text renders at ${(min * faceScale * (240 / 330)).toFixed(2)}px`);
+    const fit = fitMainHero("44.6%", "Taylor leads Acoustics", spoke.faceRadius, 20, min);
+    assert.ok(fit.labelSize >= min && fit.valueSize >= min, `${spoke.id} rail hero under the floor`);
+  }
 });
 
 test("grown satellites clear their parent, each other, and every other bubble", () => {
@@ -65,23 +120,29 @@ test("grown satellites clear their parent, each other, and every other bubble", 
       assert.ok(gap >= 12, `${a.id} and ${b.id} are ${gap.toFixed(1)} apart`);
     }
   }
-  const ai = groups.find((group) => group.parent.id === "spoke-aeo")!;
-  for (const sat of ai.nodes) {
-    const hero = HEROES[sat.id as SatelliteId]!;
-    assert.equal(sat.r, satelliteHeroLayout(hero.title, hero.value, hero.label).radius);
+  for (const group of groups) {
+    for (const sat of group.nodes) {
+      const hero = HEROES[sat.id as SatelliteId];
+      assert.equal(sat.r, satelliteHeroLayout(hero.title, hero.value, hero.label).radius);
+    }
+    assert.deepEqual(
+      group.edges.map((edge) => [edge.x2, edge.y2]),
+      group.nodes.map((sat) => [sat.x, sat.y]),
+    );
   }
-  assert.deepEqual(
-    ai.edges.map((edge) => [edge.x2, edge.y2]),
-    ai.nodes.map((sat) => [sat.x, sat.y]),
-  );
 });
 
-test("a group with no hero value keeps its stored places", () => {
+test("every satellite cluster grows to fit its hero face", () => {
   const { groups } = fittedSatelliteClusters(spec());
-  const retail = groups.find((group) => group.parent.id === "spoke-retail")!;
-  for (const sat of retail.nodes) {
-    const stored = satelliteNode(sat.id as SatelliteId);
-    assert.deepEqual([sat.x, sat.y, sat.r], [stored.x, stored.y, stored.r]);
+  assert.equal(groups.length, 4);
+  for (const group of groups) {
+    for (const sat of group.nodes) {
+      const stored = satelliteNode(sat.id as SatelliteId);
+      const hero = HEROES[sat.id as SatelliteId];
+      const need = satelliteHeroLayout(hero.title, hero.value, hero.label).radius;
+      assert.ok(sat.r >= stored.r);
+      assert.equal(sat.r, Math.max(stored.r, need));
+    }
   }
 });
 

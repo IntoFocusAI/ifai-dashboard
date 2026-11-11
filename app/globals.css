@@ -1,21 +1,14 @@
 @import "tailwindcss";
 
-@font-face {
-  font-family: Inter;
-  font-style: normal;
-  font-weight: 100 900;
-  font-display: swap;
-  src: url("/fonts/inter-latin-wght-normal.woff2") format("woff2-variations");
-}
-
+/* Geist and Geist Mono load in app/layout.tsx (next/font) as --font-geist and --font-geist-mono. */
 @theme {
-  --font-sans: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-sans: var(--font-geist), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
 :root {
-  --font-sans: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-sans: var(--font-geist), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
 * {
@@ -31,7 +24,20 @@ body {
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   font-family: var(--font-sans);
+  font-synthesis-weight: none;
   line-height: 1.45;
+}
+
+strong,
+b,
+th,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-weight: 600;
 }
 
 button,
@@ -315,7 +321,7 @@ a:hover {
 .profile-modal-header h1 {
   margin: 0;
   font-size: 15px;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: -0.02em;
 }
 
@@ -361,8 +367,8 @@ a:hover {
 
 .profile-settings-section h2 {
   margin: 0 0 10px;
-  font-size: 10px;
-  font-weight: 800;
+  font-size: 11px;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.1em;
   color: var(--profile-muted);
@@ -383,7 +389,7 @@ a:hover {
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  font-size: 10px;
+  font-size: 11px;
   color: var(--profile-muted);
   flex-shrink: 0;
 }
@@ -591,7 +597,7 @@ a:hover {
   background: #dc2626;
   padding: 0.5rem 0.75rem;
   font-size: 0.875rem;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: #fff;
@@ -661,8 +667,8 @@ a:hover {
 .user-menu-org-picker-label {
   margin: 0;
   padding: 4px 14px 6px;
-  font-size: 10px;
-  font-weight: 700;
+  font-size: 11px;
+  font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: #8b8b96;

@@ -1,6 +1,7 @@
+import { isApiEngine } from "@/lib/ai-search/engine-group";
 import type { EvidenceFocus } from "@/lib/ai-search/evidence-focus";
 import { questionRole, type QuestionRole } from "@/lib/ai-search/question-role";
-import { callOutcome, type CallOutcome } from "@/lib/ai-search/run-metrics";
+import { callOutcome, cleanModelName, type CallOutcome } from "@/lib/ai-search/run-metrics";
 import type { AiCallRow } from "@/lib/ai-search/types";
 
 export type PromptScope = "commercial" | "probe" | "all";
@@ -112,7 +113,7 @@ export function applyExplorerFilter(rows: AiCallRow[], filter: ExplorerFilter): 
     if (filter.simId != null) return row.sim_id === filter.simId;
     if (filter.scope !== "all" && row.prompt_kind !== filter.scope) return false;
     if (filter.engine && (row.engine ?? "").toLowerCase() !== filter.engine) return false;
-    if (filter.model && (row.model?.trim() || "") !== filter.model) return false;
+    if (filter.model && cleanModelName(row.model) !== filter.model) return false;
     if (filter.category && row.category !== filter.category) return false;
     if (filter.outcome) {
       const outcome = callOutcome(row);
@@ -125,7 +126,8 @@ export function applyExplorerFilter(rows: AiCallRow[], filter: ExplorerFilter): 
             : outcome === filter.outcome;
       if (!matches) return false;
     }
-    if (filter.accuracy && accuracyState(row) !== filter.accuracy) return false;
+    // Only fact-check rows have a fact-check result; every other row reads "n/a".
+    if (filter.accuracy && (row.prompt_kind !== "probe" || accuracyState(row) !== filter.accuracy)) return false;
     if (filter.brand && (row.primary_brand ?? "") !== filter.brand) return false;
     if (filter.role && questionRole(row) !== filter.role) return false;
     return true;
@@ -136,6 +138,7 @@ export function sortExplorerRows(rows: AiCallRow[]): AiCallRow[] {
   return [...rows].sort(
     (a, b) =>
       (a.prompt_key ?? "").localeCompare(b.prompt_key ?? "") ||
+      Number(isApiEngine(a.engine)) - Number(isApiEngine(b.engine)) ||
       (a.engine ?? "").localeCompare(b.engine ?? "") ||
       a.sim_id - b.sim_id,
   );

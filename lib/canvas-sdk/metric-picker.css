@@ -1,0 +1,60 @@
+/* Metric picker additions: the type-to-filter box, two-line options with the tab each opens,
+   and the no-match line. The picker shell and option chrome live in canvas-sdk.css. */
+
+.metric-picker-filter {
+  box-sizing: border-box;
+  width: calc(100% - 20px);
+  margin: 8px 10px 0;
+  padding: 6px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 9px;
+  background: var(--bg-surface-hover);
+  color: var(--text-main);
+  font: inherit;
+  font-size: 11px;
+}
+
+.metric-picker-filter::placeholder {
+  color: var(--text-subtle);
+}
+
+.metric-picker-filter:focus-visible {
+  outline: 2px solid var(--accent-cyan);
+  outline-offset: 1px;
+}
+
+.metric-widget-picker .metric-widget-option > span.metric-picker-option-text {
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 1px;
+}
+
+.metric-picker-option-line {
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.metric-widget-picker .metric-picker-option-line strong {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.metric-picker-option-line small {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.metric-widget-picker .metric-picker-option-tab {
+  font-size: 11px;
+  opacity: 0.85;
+}
+
+.metric-picker-empty {
+  margin: 12px 8px;
+  color: var(--text-subtle);
+  font-size: 11px;
+}

@@ -146,8 +146,8 @@ function fakeClient(rows: Rows, failing?: string): AiReadClient {
   return {
     from(view: string) {
       const result = () => Promise.resolve(failing === view ? { data: null, error: { message: `${view} failed` } } : { data: rows[view] ?? [], error: null });
-      const ranged = Object.assign(result(), { range: () => result() });
-      return { select: () => Object.assign(result(), { order: () => ranged }) };
+      const ordered = Object.assign(result(), { range: () => result(), order: (): unknown => ordered });
+      return { select: () => Object.assign(result(), { order: () => ordered }) };
     },
   } as AiReadClient;
 }
@@ -191,7 +191,8 @@ test("commercial win rate: exact numerator and denominator, probes and errors ap
   assert.equal(t.winPct, 40);
   const s = summarizeRun(snapshot);
   assert.equal(s.probesAnswered, 1);
-  assert.match(aiSpokeDesc(ready), /whether Fender-owned pages show up/);
+  // The line sits above all four tabs, so it names the area, not the Citation Ecosystem alone.
+  assert.equal(aiSpokeDesc(ready), "How AI assistants name and cite Fender.");
   assert.doesNotMatch(aiSpokeDesc(ready), /Partial/);
   assert.doesNotMatch(aiSpokeDesc(ready), /2 of 5/);
   assert.match(aiSpokeFullDesc(ready), /Unbranded discovery: Fender\/Squier named most in 0 of 1 resolved answers \(0\.0%\)/);
@@ -273,7 +274,12 @@ test("AI freshness is the run's completion time, and partial runs say so", () =>
   const faces = aiNodeFaces(ready);
   assert.match(faces.satPrompts.meta ?? "", /Completed Oct 12, 2026, 5:02 PM UTC/);
   assert.match(faces.spokeAeo.meta ?? "", /Partial run · 7 of 9 answered/);
-  assert.doesNotMatch(faces.satPrompts.tooltip.desc, /latest battery/i);
+  assert.equal(faces.satPrompts.tooltip.desc, "");
+  assert.ok(faces.satPrompts.heroValue?.value);
+  assert.equal(faces.satCitations.tooltip.desc, "");
+  assert.equal(faces.satDrift.tooltip.desc, "");
+  assert.equal(faces.satGap.tooltip.desc, "");
+  assert.equal(faces.satLead.tooltip.desc, "");
   assert.match(aiSpokeFullDesc(ready), /provider errors/);
   assert.ok(aiSpokeHeaderChips(ready).some((chip) => /provider errors/i.test(chip.value)));
 });

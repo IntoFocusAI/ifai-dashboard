@@ -1,0 +1,321 @@
+/* AI-Search prompts editor. Rendered inside .ifai-canvas so it follows the canvas theme variables. */
+
+.pe-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  background: rgba(2, 8, 16, 0.55);
+  backdrop-filter: blur(2px);
+}
+
+.pe-dialog {
+  display: flex;
+  flex-direction: column;
+  width: min(920px, 100%);
+  max-height: min(88vh, 900px);
+  background: var(--bg-surface, #0b1a2c);
+  color: var(--text-main, #f5f9ff);
+  border: 1px solid var(--border-color, rgba(100, 160, 207, 0.24));
+  border-radius: 14px;
+  box-shadow: var(--shadow-soft, 0 22px 48px rgba(0, 0, 0, 0.55));
+  overflow: hidden;
+}
+
+.pe-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 20px 12px;
+  border-bottom: 1px solid var(--border-color, rgba(100, 160, 207, 0.24));
+}
+
+.pe-header h2 {
+  margin: 0 0 4px;
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.pe-sub,
+.pe-hint,
+.pe-empty {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--text-muted, #8fa8c2);
+}
+
+.pe-hint {
+  margin: 4px 0 2px;
+}
+
+.pe-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 12px 20px 0;
+  padding: 9px 12px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  line-height: 1.45;
+  border: 1px solid transparent;
+}
+
+.pe-banner svg {
+  flex: none;
+  margin-top: 2px;
+}
+
+.pe-banner-warn {
+  background: var(--warning-bg, rgba(251, 191, 36, 0.14));
+  border-color: var(--warning-border, rgba(251, 191, 36, 0.42));
+  color: var(--warning-text, #fde68a);
+}
+
+.pe-banner-error {
+  background: var(--danger-bg, rgba(251, 113, 133, 0.14));
+  border-color: var(--danger-border, rgba(251, 113, 133, 0.4));
+  color: var(--danger-text, #fecdd3);
+}
+
+.pe-banner-ok {
+  background: var(--success-bg, rgba(52, 211, 153, 0.14));
+  border-color: var(--success-border, rgba(52, 211, 153, 0.4));
+  color: var(--success-text, #a7f3d0);
+}
+
+.pe-body {
+  overflow-y: auto;
+  padding: 14px 20px 20px;
+}
+
+.pe-add {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px dashed var(--border-dark, rgba(56, 189, 248, 0.42));
+  border-radius: 10px;
+}
+
+.pe-dialog textarea,
+.pe-dialog select,
+.pe-dialog input[type="text"] {
+  font: inherit;
+  font-size: 13px;
+  color: var(--text-main, #f5f9ff);
+  background: var(--bg-card, rgba(12, 28, 47, 0.95));
+  border: 1px solid var(--border-color, rgba(100, 160, 207, 0.24));
+  border-radius: 8px;
+  padding: 7px 10px;
+}
+
+.pe-dialog textarea {
+  width: 100%;
+  resize: vertical;
+  line-height: 1.45;
+}
+
+.pe-dialog textarea:focus,
+.pe-dialog select:focus,
+.pe-dialog input[type="text"]:focus {
+  outline: 2px solid var(--accent-cyan, #2eb7ff);
+  outline-offset: 0;
+}
+
+.pe-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.pe-category {
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pe-category input[type="text"] {
+  flex: 1 1 160px;
+}
+
+.pe-btn,
+.pe-icon-btn,
+.pe-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font: inherit;
+  font-size: 12.5px;
+  color: var(--text-main, #f5f9ff);
+  cursor: pointer;
+}
+
+.pe-btn {
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: transparent;
+  border: 1px solid var(--border-color, rgba(100, 160, 207, 0.24));
+}
+
+.pe-btn:hover:not(:disabled) {
+  background: var(--bg-surface-hover, rgba(17, 40, 64, 0.98));
+}
+
+.pe-btn-primary {
+  background: var(--accent-cyan, #2eb7ff);
+  border-color: var(--accent-cyan, #2eb7ff);
+  color: #04121f;
+  font-weight: 600;
+}
+
+.pe-btn-primary:hover:not(:disabled) {
+  background: var(--color-sky, #2eb7ff);
+  filter: brightness(1.08);
+}
+
+.pe-icon-btn {
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: transparent;
+  border: 1px solid transparent;
+}
+
+.pe-icon-btn:hover:not(:disabled) {
+  background: var(--bg-surface-hover, rgba(17, 40, 64, 0.98));
+  border-color: var(--border-color, rgba(100, 160, 207, 0.24));
+}
+
+/* Status colors mark data only, never a button (decision 27). */
+.pe-danger:hover:not(:disabled) {
+  color: var(--text-main);
+}
+
+.pe-btn:disabled,
+.pe-icon-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.pe-link {
+  padding: 0;
+  background: none;
+  border: none;
+  color: var(--accent-cyan, #2eb7ff);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.pe-list {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pe-item {
+  padding: 10px 12px;
+  border: 1px solid var(--border-color, rgba(100, 160, 207, 0.24));
+  border-radius: 10px;
+  background: var(--bg-card, rgba(12, 28, 47, 0.95));
+}
+
+.pe-item-removed {
+  opacity: 0.7;
+}
+
+.pe-item-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.pe-key {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--text-subtle, #5e7894);
+}
+
+.pe-chip {
+  font-size: 11px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border-color, rgba(100, 160, 207, 0.24));
+  color: var(--text-muted, #8fa8c2);
+}
+
+.pe-chip-probe {
+  border-color: var(--accent-cyan, #a7d8f0);
+  color: var(--text-main);
+}
+
+.pe-history-toggle {
+  margin-left: auto;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.pe-history {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-color);
+}
+
+.pe-history .pe-hint {
+  margin: 0 0 8px;
+}
+
+.pe-history-side {
+  white-space: pre-line;
+}
+
+.pe-item-main {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.pe-text {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
+.pe-item-actions {
+  display: flex;
+  flex: none;
+  gap: 2px;
+}
+
+.pe-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pe-removed {
+  margin-top: 16px;
+}
+
+@media (max-width: 560px) {
+  .pe-item-main {
+    flex-direction: column;
+  }
+
+  .pe-row-actions {
+    justify-content: stretch;
+  }
+}

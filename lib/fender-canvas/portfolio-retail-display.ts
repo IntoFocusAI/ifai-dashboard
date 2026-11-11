@@ -5,24 +5,35 @@
 
 import type { NodeStatus } from "../canvas-sdk/types";
 import { CONFIRMED_HIGH_PRICE_LABEL, WITHHELD_LABEL } from "./featured-offer-copy";
-import { formatInt, formatUsd } from "./format";
+import { formatInt, formatPct, formatUsd } from "./format";
 import {
+  bundlePopulationTip,
+  LIVE_OFFER_BUNDLES,
   RETAIL_FINDING_LABELS,
+  type SuppressionDetail,
   selectRetailHeadline,
   type MapLeakageDetail,
   type PortfolioRetailFindings,
   type PortfolioRetailSnapshot,
   type RetailHeadline,
   type RetailReading,
+  type UnnestedBundleDetail,
 } from "./portfolio-retail";
+import { approvedExceptionsSentence } from "./map-approved-exceptions";
+import { PARTIAL_TITLE, READ_NOT_AVAILABLE } from "./canvas-reads";
+import { buyBoxHero } from "./retail-overview-lead";
 
 export const RETAIL_OVERVIEW_TAB = "Retail Overview";
+
+/** Keepa stock history and SmartScout sales. Not a ranked retail finding. */
+export const STOCK_LOSS_TAB = "Out of Stock";
 
 export const RETAIL_PANEL_TABS = [
   RETAIL_OVERVIEW_TAB,
   RETAIL_FINDING_LABELS.suppressed_listings,
   RETAIL_FINDING_LABELS.map_leakage,
   RETAIL_FINDING_LABELS.unnested_bundles,
+  STOCK_LOSS_TAB,
 ] as const;
 
 export type RetailCanvasRead =
@@ -37,10 +48,11 @@ export type RetailBubbleFace = {
   status: NodeStatus;
   subTab?: string;
   tooltip: { title: string; desc: string };
+  /** Main Catalog Health spoke and satellites: one big value plus a short label. */
+  heroValue?: { value: string; label: string };
 };
 
-const CATALOG_TOOLTIP =
-  "Bundle listings that are not nested under a parent ASIN. Nesting keeps their reviews on the parent listing.";
+const EMPTY_TOOLTIP = { title: "", desc: "" } as const;
 
 export function shortCoverageLine(message: string | null): string | null {
   if (!message) return null;
@@ -82,20 +94,39 @@ function coveragePill(reading: RetailReading<unknown>): string | null {
   return shortCoverageLine(reading.missingMessage);
 }
 
-function face(
+/**
+ * Satellite share figure: issue count over that finding's own population.
+ * Missing denominator stays worded — never a fake 0%.
+ */
+function shareHeroValue(
+  reading: RetailReading<unknown>,
+  numerator: number | null,
+  denominator: number | null,
+): string {
+  if (numerator != null && denominator != null && denominator > 0) {
+    return formatPct((100 * numerator) / denominator);
+  }
+  if (reading.status === "available_with_zero" && numerator === 0) {
+    return formatPct(0);
+  }
+  return shortCoverageLine(reading.missingMessage) ?? "Not available";
+}
+
+function satelliteFace(
   title: string,
   reading: RetailReading<unknown>,
+  heroValue: { value: string; label: string },
   stats: string[],
-  tooltip: string,
   subTab: string,
 ): RetailBubbleFace {
   const pills = stats.filter((entry) => entry.trim().length > 0);
   return {
     title,
-    stats: pills.length ? pills : ["Not stored"],
+    stats: pills.length ? pills : [heroValue.value],
     status: tone(reading),
     subTab,
-    tooltip: { title, desc: tooltip },
+    heroValue,
+    tooltip: { ...EMPTY_TOOLTIP },
   };
 }
 
@@ -219,60 +250,144 @@ export function headlineBubble(findings: PortfolioRetailFindings): RetailBubbleF
   };
 }
 
-export function suppressedBubble(reading: RetailReading<unknown>): RetailBubbleFace {
+/**
+ * Suppressed Listings satellite. Catalog Health already leads with Buy Box withheld
+ * (withheld / current), so this face uses the next-best tab figure: confirmed
+ * high-price share of current readings. Missing data stays worded — never a fake 0%.
+ */
+export function suppressedBubble(
+  reading: RetailReading<SuppressionDetail | null>,
+): RetailBubbleFace {
+  const counts = reading.detail?.counts ?? null;
+  const numerator = counts?.confirmedHighPrice ?? null;
+  const denominator = counts != null && counts.current > 0 ? counts.current : null;
   const count = countPhrase(reading, reading.headlineNoun ?? "listing");
   const coverage = coveragePill(reading);
-  const label = readingLabel(reading, "Suppressed Listings");
-  return face(
-    label,
+  return satelliteFace(
+    "Suppressed Listings",
     reading,
+    {
+      value: shareHeroValue(reading, numerator, denominator),
+      label: "confirmed high-price",
+    },
     [...(count ? [count] : []), ...(coverage ? [coverage] : [])],
-    reading.missingMessage ??
-      "Amazon withholds the Buy Box when the offer it observed is above the lowest price it recently found outside Amazon. Amazon does not name that retailer.",
     "Suppressed Listings",
   );
 }
 
+/**
+ * Below-MAP listings / listings with a stored MAP comparison (`decided`).
+ * Approved exceptions are already out of the reading; while any are, the figure carries an
+ * asterisk and the satellite tooltip says how many.
+ */
 export function mapBubble(reading: RetailReading<MapLeakageDetail | null>): RetailBubbleFace {
+  const detail = reading.detail;
+  const numerator = reading.issueCount;
+  const denominator = detail != null && detail.decided > 0 ? detail.decided : null;
+  const exceptions = detail?.approvedExceptions ?? 0;
+  const mark = exceptions > 0 ? "*" : "";
   const count = countPhrase(reading, "below MAP", "below MAP");
   const gap =
-    reading.detail?.averageLeakage != null
-      ? `${formatUsd(reading.detail.averageLeakage, { signed: true })} gap`
+    detail?.averageLeakage != null
+      ? `${formatUsd(detail.averageLeakage, { signed: true })} gap`
       : null;
   const coverage = coveragePill(reading);
-  const gapNote =
-    reading.detail?.averageLeakage != null
-      ? `Average worst stored price gap ${formatUsd(reading.detail.averageLeakage, { signed: true })}. This is a price gap, not a revenue estimate.`
-      : null;
-  const tooltip = [gapNote, reading.missingMessage].filter(Boolean).join(" ");
-  return face(
+  const share = shareHeroValue(reading, numerator, denominator);
+  const face = satelliteFace(
     "MAP Leakage",
     reading,
-    [...(count ? [count] : []), ...(gap ? [gap] : []), ...(coverage ? [coverage] : [])],
-    tooltip || "MAP leakage uses stored channel prices only.",
-    "MAP",
+    { value: numerator != null && denominator != null ? `${share}${mark}` : share, label: "" },
+    [...(count ? [`${count}${mark}`] : []), ...(gap ? [gap] : []), ...(coverage ? [coverage] : [])],
+    RETAIL_FINDING_LABELS.map_leakage,
   );
+  if (exceptions > 0) face.tooltip = { title: "MAP leakage", desc: approvedExceptionsSentence(exceptions) };
+  return face;
 }
 
-export function catalogBubble(reading: RetailReading<unknown>): RetailBubbleFace {
-  const count = countPhrase(reading, "bundle");
+/** Unnested bundles / bundles with a live offer (R-13). */
+export function catalogBubble(
+  reading: RetailReading<UnnestedBundleDetail | null>,
+): RetailBubbleFace {
+  const detail = reading.detail;
+  const numerator = reading.issueCount;
+  const denominator = detail != null && detail.bundlesInRead > 0 ? detail.bundlesInRead : null;
+  const count =
+    numerator != null && denominator != null
+      ? `${formatInt(numerator)} of ${formatInt(denominator)} ${LIVE_OFFER_BUNDLES}`
+      : countPhrase(reading, "bundle");
   const coverage = coveragePill(reading);
-  return face(
+  const face = satelliteFace(
     "Catalog Governance",
     reading,
+    {
+      value: shareHeroValue(reading, numerator, denominator),
+      label: "Splintered Listings",
+    },
     [...(count ? [count] : []), ...(coverage ? [coverage] : [])],
-    CATALOG_TOOLTIP,
     "Catalog Governance",
   );
+  const tip = bundlePopulationTip(reading);
+  if (tip) face.tooltip = { title: "Splintered Listings", desc: tip };
+  return face;
 }
 
-function waitingFace(title: string, subTab: string | undefined, stats: string[], desc: string): RetailBubbleFace {
+function waitingFace(
+  title: string,
+  subTab: string | undefined,
+  stats: string[],
+  desc: string,
+  heroLabel?: string,
+): RetailBubbleFace {
   return {
     title,
     stats,
     status: "warning",
     subTab,
-    tooltip: { title, desc },
+    // Satellite waiting faces carry a worded hero; main Catalog Health leaves hero unset.
+    ...(heroLabel != null ? { heroValue: { value: stats[0] ?? "Loading", label: heroLabel }, tooltip: { ...EMPTY_TOOLTIP } } : { tooltip: { title, desc } }),
+  };
+}
+
+const RETAIL_READ_FAILED = "The retail read did not load. The figure is left out rather than shown as zero.";
+
+/**
+ * Catalog Health main spoke: Buy Box withheld share of current readings (same figure as the
+ * Retail Overview lead pie). Status follows that share's tone bands. Never invents a 0%.
+ */
+export function catalogHealthMainFace(read: RetailCanvasRead): RetailBubbleFace {
+  if (read.phase === "loading") {
+    return {
+      title: "Catalog Health",
+      stats: [],
+      heroValue: { value: "Loading", label: "Buy Box withheld" },
+      status: "neutral",
+      subTab: RETAIL_OVERVIEW_TAB,
+      tooltip: { title: "", desc: "" },
+    };
+  }
+  if (read.phase === "error") {
+    return {
+      title: "Catalog Health",
+      stats: [],
+      heroValue: { value: READ_NOT_AVAILABLE, label: "Buy Box withheld" },
+      status: "neutral",
+      subTab: RETAIL_OVERVIEW_TAB,
+      tooltip: { title: PARTIAL_TITLE["read-failed"], desc: RETAIL_READ_FAILED },
+    };
+  }
+
+  const hero = buyBoxHero(read.snapshot);
+  const ready = hero.numerator != null && hero.denominator != null;
+  return {
+    title: "Catalog Health",
+    stats: [],
+    heroValue: {
+      value: ready ? hero.percent : "Not available",
+      label: "Buy Box withheld",
+    },
+    status: hero.tone,
+    subTab: RETAIL_OVERVIEW_TAB,
+    tooltip: { title: "", desc: "" },
   };
 }
 
@@ -285,27 +400,30 @@ export function retailBubbleFaces(read: RetailCanvasRead): {
   if (read.phase === "loading") {
     const desc = "The retail reading is still loading.";
     return {
-      // The main spoke's "Loading" stat is self-sufficient; no hover explainer.
-      main: { ...waitingFace("Catalog Health", RETAIL_OVERVIEW_TAB, ["Loading"], desc), tooltip: { title: "", desc: "" } },
-      suppressed: waitingFace("Suppressed Listings", "Suppressed Listings", ["Loading"], desc),
-      map: waitingFace("MAP Leakage", "MAP", ["Loading"], desc),
-      catalog: waitingFace("Catalog Governance", "Catalog Governance", ["Loading"], desc),
+      main: catalogHealthMainFace(read),
+      suppressed: waitingFace("Suppressed Listings", "Suppressed Listings", ["Loading"], desc, "confirmed high-price"),
+      map: waitingFace("MAP Leakage", RETAIL_FINDING_LABELS.map_leakage, ["Loading"], desc, ""),
+      catalog: waitingFace("Catalog Governance", "Catalog Governance", ["Loading"], desc, "Splintered Listings"),
     };
   }
 
   if (read.phase === "error") {
-    const desc = "The retail read could not be loaded.";
+    const failed = (face: RetailBubbleFace): RetailBubbleFace => ({
+      ...face,
+      status: "neutral",
+      tooltip: { title: PARTIAL_TITLE["read-failed"], desc: RETAIL_READ_FAILED },
+    });
     return {
-      main: { ...waitingFace("Catalog Health", RETAIL_OVERVIEW_TAB, ["Read failed"], desc), tooltip: { title: "", desc: "" } },
-      suppressed: waitingFace("Suppressed Listings", "Suppressed Listings", ["Read failed"], desc),
-      map: waitingFace("MAP Leakage", "MAP", ["Read failed"], desc),
-      catalog: waitingFace("Catalog Governance", "Catalog Governance", ["Read failed"], desc),
+      main: catalogHealthMainFace(read),
+      suppressed: failed(waitingFace("Suppressed Listings", "Suppressed Listings", [READ_NOT_AVAILABLE], RETAIL_READ_FAILED, "confirmed high-price")),
+      map: failed(waitingFace("MAP Leakage", RETAIL_FINDING_LABELS.map_leakage, [READ_NOT_AVAILABLE], RETAIL_READ_FAILED, "")),
+      catalog: failed(waitingFace("Catalog Governance", "Catalog Governance", [READ_NOT_AVAILABLE], RETAIL_READ_FAILED, "Splintered Listings")),
     };
   }
 
   const snapshot = read.snapshot;
   return {
-    main: headlineBubble(snapshot),
+    main: catalogHealthMainFace(read),
     suppressed: suppressedBubble(snapshot.suppressedListings),
     map: mapBubble(snapshot.mapLeakage),
     catalog: catalogBubble(snapshot.unnestedBundles),

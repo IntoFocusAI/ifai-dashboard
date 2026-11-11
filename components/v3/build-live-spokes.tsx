@@ -10,25 +10,35 @@ import { CompetitorsSpokeDescription } from "@/components/v3/live/ai-search/Comp
 import { RunHistoryControl } from "@/components/v3/live/ai-search/RunHistoryControl";
 import { RunSummaryPanel } from "@/components/v3/live/ai-search/RunSummaryPanel";
 import { SimulationsExplorer } from "@/components/v3/live/ai-search/SimulationsExplorer";
+import { BriefingRetailHero } from "@/components/v3/live/BriefingRetailHero";
+import { ConsensusScoresPanel } from "@/components/v3/live/ConsensusScoresPanel";
 import { FenderDivisionsTable } from "@/components/v3/live/FenderDivisionsTable";
 import { MapChannelPanel } from "@/components/v3/live/MapChannelPanel";
 import { RetailOverview } from "@/components/v3/live/RetailOverview";
+import { ActionItemsPanel } from "@/components/v3/live/ActionItemsPanel";
+import { RoadmapFindingsPanel } from "@/components/v3/live/RoadmapFindingsPanel";
+import { StockLossPanel } from "@/components/v3/live/StockLossPanel";
 import { SuppressedListingsPanel } from "@/components/v3/live/SuppressedListingsPanel";
 import { CatalogReadinessSpec } from "@/components/v3/live/CatalogReadinessSpec";
 import { FindabilityPanel } from "@/components/v3/live/findability/FindabilityPanel";
-import { AplusExplanation, SchemaExplanation } from "@/components/v3/live/FenderSpecNarratives";
-import { SchemaAdditionalPropertyList } from "@/components/v3/live/SchemaAdditionalPropertyList";
+import { AplusMatrixPanel } from "@/components/v3/live/AplusMatrixPanel";
+import { MachineReadabilityPanel } from "@/components/v3/live/MachineReadabilityPanel";
+import { readFallbackTab } from "@/components/v3/read-fallbacks";
 import type { SpokeDefinition, SpokeId } from "@/components/v3/spoke-data-types";
 import { spokeData } from "@/components/v3/spoke-data";
-import { aiActionCardHtml, aiSpokeDesc, competitorsSpokeDesc } from "@/lib/ai-search/canvas-surfaces";
+import { aiSpokeDesc, competitorsSpokeDesc } from "@/lib/ai-search/canvas-surfaces";
 import type { AiSearchRead } from "@/lib/ai-search/types";
-import { findabilitySpokeDescription, type FindabilityRead } from "@/lib/findability/copy";
+import type { FindabilityRead } from "@/lib/findability/copy";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
-import { RETAIL_PANEL_TABS, type RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
+import {
+  RETAIL_PANEL_TABS,
+  STOCK_LOSS_TAB,
+  type RetailCanvasRead,
+} from "@/lib/fender-canvas/portfolio-retail-display";
 import { MUSICIANS_FRIEND_FRESHNESS_JOB } from "@/lib/fender-canvas/map-reading-status";
 import { retailTemplateVars } from "@/lib/fender-canvas/retail-copy";
-import { bindNarrativeSpoke } from "@/lib/fender-canvas/spoke-narrative";
-import { buildTemplateVars } from "@/lib/fender-canvas/template-vars";
+import { bindNarrativeSpoke, clientNarrative } from "@/lib/fender-canvas/spoke-narrative";
+import { bindCopy, buildTemplateVars } from "@/lib/fender-canvas/template-vars";
 
 function htmlBlock(html: string) {
   return <div dangerouslySetInnerHTML={{ __html: html }} />;
@@ -40,11 +50,24 @@ type TabOverride = (
   retail: RetailCanvasRead,
 ) => ReactNode | null;
 
+const HUB_BRIEFING_HTML = clientNarrative().spokes.hub.tabTemplates[0];
+
 const TAB_OVERRIDES: Partial<
   Record<SpokeId, Partial<Record<number, TabOverride>>>
 > = {
   hub: {
-    1: (bundle) => <FenderDivisionsTable divisions={bundle.divisions} />,
+    0: (bundle, vars, retail) => (
+      <>
+        <BriefingRetailHero bundle={bundle} read={retail} />
+        {htmlBlock(bindCopy(HUB_BRIEFING_HTML, vars))}
+      </>
+    ),
+    1: (bundle, _vars, retail) => (
+      <>
+        <ConsensusScoresPanel bundle={bundle} retail={retail} />
+        <FenderDivisionsTable divisions={bundle.divisions} />
+      </>
+    ),
   },
   ecommerce: {
     0: (bundle, _vars, retail) => <RetailOverview read={retail} freshness={bundle.fresh} />,
@@ -60,6 +83,7 @@ const TAB_OVERRIDES: Partial<
       />
     ),
     3: (_bundle, _vars, retail) => <CatalogGovernancePanel read={retail} />,
+    4: () => <StockLossPanel />,
   },
   aeo: {
     0: () => (
@@ -86,18 +110,20 @@ const TAB_OVERRIDES: Partial<
   specs: {
     0: () => <FindabilityPanel />,
     1: (bundle) => <CatalogReadinessSpec bundle={bundle} />,
-    2: () => (
-      <div className="readiness-surface">
-        <SchemaExplanation />
-        <SchemaAdditionalPropertyList />
-      </div>
-    ),
-    3: () => <AplusExplanation />,
+    2: (bundle) => <MachineReadabilityPanel summary={bundle.specPages ?? null} metrics={bundle.m} />,
+    3: (bundle) => <AplusMatrixPanel summary={bundle.listingContent ?? null} />,
   },
   competitors: {
     0: () => <CategoryBattlecardsPanel />,
     1: () => <CompetitorWinsPanel />,
     2: () => <EngineComparisonPanel />,
+  },
+  // Action Items and the Roadmap read the same plan on the map's AI population (decision 7).
+  suggestions: {
+    0: (bundle, _vars, retail) => <ActionItemsPanel read={retail} bundle={bundle} />,
+  },
+  roadmap: {
+    0: (bundle, _vars, retail) => <RoadmapFindingsPanel read={retail} bundle={bundle} />,
   },
 };
 
@@ -107,7 +133,7 @@ function wrapSpoke(
   vars: Record<string, string>,
   retail: RetailCanvasRead,
   ai: AiSearchRead,
-  findability: FindabilityRead,
+  _findability: FindabilityRead,
 ): SpokeDefinition {
   const bound = bindNarrativeSpoke(spokeData[id], vars);
   const overrides = TAB_OVERRIDES[id] ?? {};
@@ -117,8 +143,9 @@ function wrapSpoke(
     ...(id === "ecommerce"
       ? {
           title: "Catalog Health",
-          desc: "Suppressed Buy Boxes, MAP leakage, and unnested bundles, and how those catalog and retail issues change what AI search can recommend.",
+          desc: "Suppressed Buy Boxes, MAP leakage, unnested bundles, and out-of-stock days, and how those catalog and retail issues change what AI search can recommend.",
           tabs: [...RETAIL_PANEL_TABS],
+          newTabs: [STOCK_LOSS_TAB],
         }
       : {}),
     ...(id === "aeo"
@@ -134,9 +161,13 @@ function wrapSpoke(
           headerAccessory: <RunHistoryControl />,
         }
       : {}),
-    ...(id === "specs" ? { desc: findabilitySpokeDescription(findability) } : {}),
+    // Findability counts live in the tab body. An empty desc must not leave a gap.
+    ...(id === "specs" ? { desc: "" } : {}),
+    // The Roadmap opens on its owner sentence and plan; no retail-headline preface.
+    ...(id === "roadmap" ? { desc: "" } : {}),
     render: (tabIdx) => {
-      const custom = overrides[tabIdx]?.(bundle, vars, retail);
+      const custom =
+        readFallbackTab(id, tabIdx, bundle, retail) ?? overrides[tabIdx]?.(bundle, vars, retail);
       if (custom) return custom;
       const content = bound.render(tabIdx);
       if (typeof content === "string") return htmlBlock(content);
@@ -154,7 +185,6 @@ export function buildLiveSpokes(
   const vars = {
     ...buildTemplateVars(bundle),
     ...retailTemplateVars(bundle, retail),
-    ai_action_card: aiActionCardHtml(ai),
   };
   const ids = Object.keys(spokeData) as SpokeId[];
   const out = {} as Record<SpokeId, SpokeDefinition>;

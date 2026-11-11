@@ -1,0 +1,153 @@
+import { expect, test, type Page } from "@playwright/test";
+import { Canvas } from "./fixtures";
+import { mockCanvasRead } from "./spec-read-mock";
+
+/**
+ * Brand-Site Specs leads with fender.com page found (the AI Readiness bubble's figure)
+ * and opens every checked SKU behind it. The mock has 2 of 4 found: one false row and
+ * one null flag are not found, and neither stores a reason. Findability has a row for
+ * the false one only.
+ */
+
+const FINDABILITY = [
+  { asin: "B00MISSING", title: "Missing Page Guitar", latest_state: "completed_not_found", counts_as_completed_not_found: true },
+  { asin: "B00FOUND01", title: "Found Strat", latest_state: "official_family_page", counts_as_confirmed: true },
+];
+
+async function openAiReadiness(page: Page, canvas: Canvas) {
+  await canvas.open();
+  await expect(async () => {
+    await page.locator(".graph-node").filter({ hasText: /AI\s*Readiness/i }).click({ force: true });
+    await expect(page.locator(".ifai-canvas.column-layout")).toHaveCount(1, { timeout: 2000 });
+  }).toPass({ timeout: 20_000 });
+}
+
+test("Brand-Site Specs shows the page-found hero and opens its checked SKUs", async ({ page }) => {
+  await mockCanvasRead(page, { findability: FINDABILITY });
+  const canvas = new Canvas(page);
+  await openAiReadiness(page, canvas);
+  await expect(canvas.activeTab).toContainText("Brand-Site Specs");
+
+  const hero = page.locator("[data-machine-hero='page_found']");
+  await expect(hero.locator("[data-hero-percent]")).toHaveText(/^50\.0%\*?$/);
+  await expect(hero.locator("[data-hero-ratio]")).toHaveText("2 of 4");
+  await expect(hero.locator("[data-citation-pie-disc]")).toBeVisible();
+  await expect(hero.locator("span.ifai-term").first()).toHaveAttribute(
+    "data-ifai-tooltip-desc",
+    /fender\.com product check; the Findability tab runs its own official-page check, so the two can differ\./,
+  );
+  await expect(hero.locator("span.ifai-term").first()).toHaveAttribute(
+    "data-ifai-tooltip-desc",
+    /Last checked Oct 8, 2026, 12:00 AM UTC\./,
+  );
+  await expect(hero).not.toContainText(/older|spec read|Findability/);
+
+  // The bubble lands with this table open.
+  await expect(hero.getByRole("button", { name: "fender.com page found" })).toHaveAttribute("aria-expanded", "true");
+  const table = page.locator("#brand-site-page-found-skus");
+  await expect(table).toHaveAttribute("data-page-found-table", "ready");
+  await expect(table).toHaveAttribute("data-page-found-found", "2");
+  await expect(table).toHaveAttribute("data-page-found-not-found", "2");
+  await expect(table).toHaveAttribute("data-page-found-checked", "4");
+  await expect(table).toHaveAttribute("data-page-found-matches-hero", "true");
+  await expect(table.locator("[data-page-found-row]")).toHaveCount(4);
+
+  const found = table.locator("[data-page-found-row='found']");
+  await expect(found).toHaveCount(2);
+  for (const link of await found.locator("a[data-page-found-link]").all()) {
+    await expect(link).toHaveAttribute("href", /^https:\/\/www\.fender\.com\//);
+    await expect(link).toHaveAttribute("target", "_blank");
+  }
+  const notFound = table.locator("[data-page-found-row='not_found']");
+  await expect(notFound).toHaveCount(2);
+  const noPage = table.locator("[data-page-found-row='not_found'][data-asin='B00MISSING']");
+  await expect(noPage.locator("[data-page-found-reason]")).toHaveAttribute("data-page-found-reason", "No Defensible Page");
+  await expect(noPage.locator("[data-page-found-findability='completed_not_found']")).toHaveText(
+    /^Findability:\s*No Defensible Page$/,
+  );
+  const term = noPage.locator("[data-page-found-findability] .ifai-term");
+  await expect(term).toHaveAttribute("data-ifai-tooltip-title", "No Defensible Page");
+  await expect(term).toHaveAttribute("data-ifai-tooltip-desc", /finished looking and did not accept a page/);
+  await expect(term).not.toHaveAttribute("title");
+  const noRow = table.locator("[data-page-found-row='not_found'][data-asin='B00NULLFLG']");
+  await expect(noRow.locator("[data-page-found-reason]")).toHaveText("Reason not recorded");
+
+  const header = table.locator("th span.ifai-term", { hasText: "fender.com page or reason" });
+  await expect(header).toHaveAttribute("data-ifai-tooltip-desc", /runs its own official-page check, so the two can differ\./);
+  await expect(table.locator("tbody")).not.toContainText("runs its own official-page check");
+
+  await table.locator("[data-page-found-filter='not_found']").click();
+  await expect(table.locator("[data-page-found-row]")).toHaveCount(2);
+  const reasons = table.locator(".page-found-filters").getByRole("combobox", { name: "Reason" });
+  await expect(reasons).toHaveValue("all");
+  await expect(reasons.locator("option")).toHaveText(["All reasons (2)", "No Defensible Page (1)", "Reason not recorded (1)"]);
+  await expect(table.locator("button[data-page-found-reason-filter]")).toHaveCount(0);
+  await reasons.selectOption("No Defensible Page");
+  await expect(table.locator("[data-page-found-row]")).toHaveCount(1);
+  await expect(table.locator("[data-page-found-row]")).toHaveAttribute("data-asin", "B00MISSING");
+  await reasons.selectOption("all");
+  await expect(table.locator("[data-page-found-row]")).toHaveCount(2);
+  await expect(table).toHaveAttribute("data-page-found-not-found", "2");
+  await expect(hero.locator("[data-hero-ratio]")).toHaveText("2 of 4");
+  await expect(page.locator("#machine-readability-pages")).toHaveCount(0);
+});
+
+test("the AI Readiness bubble's page-found figure opens Brand-Site Specs at that hero with its table open", async ({ page }) => {
+  await mockCanvasRead(page);
+  const canvas = new Canvas(page);
+  await canvas.open();
+  const bubble = page.locator("[data-graph-node-id='spoke-specs']");
+  await expect(bubble).toContainText("Page found");
+  await expect(bubble).toContainText("50.0%");
+
+  await openAiReadiness(page, canvas);
+  await expect(canvas.activeTab).toContainText("Brand-Site Specs");
+  const hero = page.locator("#brand-site-page-found[data-machine-hero='page_found']");
+  const pageFound = page.locator("#brand-site-page-found-skus");
+  const missingSpecs = page.locator("#machine-readability-pages");
+  await expect(hero).toBeInViewport();
+  await expect(hero.locator("[data-hero-percent]")).toHaveText(/^50\.0%\*?$/);
+  await expect(pageFound).toHaveAttribute("data-page-found-table", "ready");
+  await expect(missingSpecs).toHaveCount(0);
+
+  // Already on Brand-Site Specs and scrolled away: the bubble still lands on the hero.
+  await page.locator(".drilldown-body").evaluate((body) => {
+    body.scrollTop = body.scrollHeight;
+  });
+  await expect(hero).not.toBeInViewport({ ratio: 0.5 });
+  await page.locator("[data-graph-node-id='spoke-specs']").click({ force: true });
+  await expect(canvas.activeTab).toContainText("Brand-Site Specs");
+  await expect(hero).toBeInViewport({ ratio: 1 });
+  await expect(pageFound).toHaveAttribute("data-page-found-table", "ready");
+
+  // Already open on the missing-specs table: the bubble switches back to the page-found table.
+  await page.locator("[data-machine-hero='missing_specs'] button.retail-explore").click();
+  await expect(missingSpecs).toBeVisible();
+  await expect(pageFound).toHaveCount(0);
+  await page.locator("[data-graph-node-id='spoke-specs']").click({ force: true });
+  await expect(pageFound).toHaveAttribute("data-page-found-table", "ready");
+  await expect(missingSpecs).toHaveCount(0);
+  await expect(hero).toBeInViewport({ ratio: 1 });
+
+  // Any other way in keeps the missing-specs table as the default.
+  await canvas.openTab("Findability");
+  await canvas.openTab("Brand-Site Specs");
+  await expect(missingSpecs).toBeVisible();
+  await expect(pageFound).toHaveCount(0);
+});
+
+test("the Brand-Site Specs satellite still opens on missing machine-readable specs", async ({ page }) => {
+  await mockCanvasRead(page);
+  const canvas = new Canvas(page);
+  await canvas.open();
+  const satellite = page.locator("[data-graph-node-id='sat-schema']");
+  await expect(async () => {
+    await page.locator("[data-graph-node-id='spoke-specs']").hover({ force: true });
+    await expect(page.locator(".satellite-group.visible")).toHaveCount(1, { timeout: 2000 });
+    await satellite.click({ force: true });
+    await expect(page.locator(".ifai-canvas.column-layout")).toHaveCount(1, { timeout: 2000 });
+  }).toPass({ timeout: 20_000 });
+  await expect(canvas.activeTab).toContainText("Brand-Site Specs");
+  await expect(page.locator("#machine-readability-pages")).toBeVisible();
+  await expect(page.locator("#brand-site-page-found-skus")).toHaveCount(0);
+});

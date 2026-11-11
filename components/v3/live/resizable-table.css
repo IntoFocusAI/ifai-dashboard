@@ -1,0 +1,75 @@
+/* Headers break between words only. ResizableTable floors each column at its longest header word. */
+.resizable-table .resizable-th .ifai-sort-btn,
+.resizable-table .resizable-th .resizable-th-label {
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+/* X-33 / X-10: search, match count, and Download CSV above each table. */
+.table-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin: 8px 0;
+}
+
+.table-search {
+  flex: 0 1 260px;
+  min-width: 160px;
+  height: 30px;
+  padding: 0 10px;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-main);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-dark);
+  border-radius: var(--radius-button, 6px);
+}
+
+.table-search::placeholder {
+  color: var(--text-subtle);
+}
+
+.table-search:focus-visible,
+.table-download-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.table-toolbar-count {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.table-download-btn {
+  margin-left: auto;
+  height: 30px;
+  padding: 0 12px;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-main);
+  background: transparent;
+  border: 1px solid var(--border-dark);
+  border-radius: var(--radius-button, 6px);
+  cursor: pointer;
+}
+
+.table-download-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: var(--bg-surface-hover);
+}
+
+.table-download-btn:disabled {
+  cursor: progress;
+  opacity: 0.7;
+}
+
+.table-toolbar-error {
+  flex-basis: 100%;
+  font-size: 12px;
+  color: var(--text-muted);
+}

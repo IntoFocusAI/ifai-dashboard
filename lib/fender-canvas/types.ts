@@ -1,3 +1,6 @@
+import type { ListingContentSummary } from "@/lib/fender-canvas/listing-content";
+import type { SpecPageSummary } from "@/lib/fender-canvas/machine-readability";
+
 export type CanvasMetricsRow = {
   kpi?: Record<string, unknown> | null;
   catalog_skus: number | null;
@@ -25,6 +28,10 @@ export type CanvasMetricsRow = {
   bundle_reviews: number | null;
   spec_checked: number | null;
   spec_avg_amazon_pct: number | null;
+  /** Sum of amazon_fields_found on Amazon-checked listings (spec_amazon_completeness numerator). */
+  spec_amazon_fields_found?: number | null;
+  /** Sum of amazon_fields_expected on Amazon-checked listings (spec_amazon_completeness denominator). */
+  spec_amazon_fields_expected?: number | null;
   spec_fender_found: number | null;
   spec_fender_found_pct: number | null;
   spec_avg_fender_pct: number | null;
@@ -146,8 +153,12 @@ export type CanvasSpecReadinessRow = {
   asin: string;
   title: string | null;
   amazon_completeness_pct: number | null;
+  amazon_checked?: boolean | null;
+  amazon_fields_found?: number | null;
+  amazon_fields_expected?: number | null;
   fender_completeness_pct: number | null;
   fender_found: boolean | null;
+  fender_url: string | null;
   amazon_missing_fields: string | null;
 };
 
@@ -163,7 +174,29 @@ export function specFenderFoundLabel(found: boolean | null | undefined): string 
   return "";
 }
 
+/** The seven bundle reads, then the two page reads that already load beside them. */
+export type CanvasReadKey =
+  | "m"
+  | "cats"
+  | "engines"
+  | "sov"
+  | "divisions"
+  | "missing"
+  | "fresh"
+  | "specPages"
+  | "listingContent";
+
+export type CanvasReadFailure = {
+  key: CanvasReadKey;
+  /** The view the read asked for, e.g. canvas_divisions. */
+  source: string;
+  /** Plain name for the read, e.g. "Catalog division read". */
+  label: string;
+  message: string | null;
+};
+
 export type CanvasBundle = {
+  /** An all-null row when the canvas_metrics read failed; never zeros. */
   m: CanvasMetricsRow;
   cats: CanvasAiCategoryRow[];
   engines: CanvasAiEngineRow[];
@@ -171,4 +204,10 @@ export type CanvasBundle = {
   divisions: CanvasDivisionRow[];
   missing: CanvasSpecMissingRow[];
   fresh: CanvasFreshnessRow[];
+  /** fender.com pages from the spec read, one entry per page. Null when that read failed. */
+  specPages?: SpecPageSummary | null;
+  /** Amazon listing content on live listings. Null when that read failed. */
+  listingContent?: ListingContentSummary | null;
+  /** Reads that failed on this load. A failed list piece is empty and its figures read Not available*. */
+  unavailable?: Partial<Record<CanvasReadKey, CanvasReadFailure>>;
 };

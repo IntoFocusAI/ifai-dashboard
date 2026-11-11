@@ -1,11 +1,12 @@
 import { citationEvidence, groupCitations } from "@/lib/ai-search/citations";
+import type { DataStatus } from "@/lib/canvas-sdk/data-status";
 import { largestCompetitorGap, type CategoryBattle, competitorTallies } from "@/lib/ai-search/competitors";
 import { driftRead, type DriftRead } from "@/lib/ai-search/drift";
 import { roleTally, type RoleTally } from "@/lib/ai-search/question-role";
 import {
   categoryTallies,
   engineLabel,
-  engineTallies,
+  engineResultTallies,
   enginesAndModels,
   errorsByEngine,
   formatRunTime,
@@ -19,6 +20,8 @@ import {
   type RunCompleteness,
 } from "@/lib/ai-search/run-metrics";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
+import { formatInt } from "@/lib/fender-canvas/format";
+import { leadBrand } from "@/lib/brand-copy";
 
 /** Everything the map, widgets, tour, and command center say about the published run. */
 export type AiRunSummary = {
@@ -61,7 +64,8 @@ export type AiRunSummary = {
 
 export function summarizeRun(snapshot: AiSearchSnapshot): AiRunSummary {
   const { run, calls, probes, citations } = snapshot;
-  const engines = engineTallies(calls);
+  // Failed engines (all errors / all empty) stay off result lists; errorEngines keeps the count.
+  const engines = engineResultTallies(calls);
   const largest = Math.max(0, ...engines.map((engine) => engine.resolved));
   const cited = citationEvidence(calls, citations, "commercial");
   const competitors = competitorTallies(calls);
@@ -111,13 +115,52 @@ export function pct(numerator: number, denominator: number): string {
   return denominator > 0 ? `${((100 * numerator) / denominator).toFixed(1)}%` : "No resolved answers";
 }
 
+/** Map hero bands for Unbranded Discovery (red below 30, green above 65). */
+export const UNBRANDED_RATE_BANDS = { redBelow: 30, greenAbove: 65 } as const;
+
+/** Map hero bands for Branded Consideration (red below 70, green above 90). */
+export const BRANDED_RATE_BANDS = { redBelow: 70, greenAbove: 90 } as const;
+
+/** The theme's status colors, by the names the panels already use. */
+export const STATUS_COLOR: Record<DataStatus, string> = {
+  bad: "var(--danger-red)",
+  okay: "var(--warning-amber)",
+  good: "var(--success-green)",
+};
+
+/**
+ * One Run Details lead rate: pct() string and the same traffic-light color as the map
+ * heroes (red below redBelow, yellow through greenAbove inclusive, green above).
+ * Zero resolved never becomes a percentage or a color.
+ */
+export function roleRateLead(
+  tally: Pick<RoleTally, "fenderWins" | "resolved">,
+  bands: { redBelow: number; greenAbove: number },
+): { rate: string | null; color: string | null; status: DataStatus | null } {
+  if (tally.resolved <= 0) {
+    return { rate: null, color: null, status: null };
+  }
+  const rateNum = (100 * tally.fenderWins) / tally.resolved;
+  const status: DataStatus = rateNum < bands.redBelow ? "bad" : rateNum > bands.greenAbove ? "good" : "okay";
+  // The figure's color, mark, and word travel together: render `status` with StatusMark.
+  return { rate: pct(tally.fenderWins, tally.resolved), color: STATUS_COLOR[status], status };
+}
+
+/** Lives in the lead rate's tooltip, never as a line under the rates. */
+export const LEAD_RATE_BASIS = "A provider error or an answer with no clear leader is neither a win nor a loss.";
+
+/** Tooltip on a lead rate: its N of M, then what stays outside it. */
+export function leadRateTip(tally: Pick<RoleTally, "fenderWins" | "resolved">): string {
+  return `${formatInt(tally.fenderWins)} of ${formatInt(tally.resolved)} resolved answers named ${leadBrand()} most. ${LEAD_RATE_BASIS}`;
+}
+
 /** Visible label on a rate that is too small to rank against the rows beside it. */
 export const SMALL_SAMPLE_LABEL = "Small sample";
 
 /** Exact observed rate, such as "25.0% (1 of 4)". Null when the denominator is zero. */
 export function formatObservedRate(wins: number, resolved: number): string | null {
   if (resolved <= 0) return null;
-  return `${pct(wins, resolved)} (${wins} of ${resolved})`;
+  return `${pct(wins, resolved)} (${formatInt(wins)} of ${formatInt(resolved)})`;
 }
 
 /** The words a role cell shows. A small sample keeps its percentage and is marked. */
@@ -152,8 +195,13 @@ export function errorLine(summary: AiRunSummary): string {
   if (engines.length === 0) return "No provider errors";
   const total = engines.reduce((sum, entry) => sum + entry.errors, 0);
   const noun = total === 1 ? "provider error" : "provider errors";
-  if (engines.length === 1) return `${total} ${noun}, all ${engineLabel(engines[0].engine)}`;
-  return `${total} ${noun} (${engines.map((e) => `${e.errors} ${engineLabel(e.engine)}`).join(", ")})`;
+  if (engines.length === 1) return `${formatInt(total)} ${noun}, all ${engineLabel(engines[0].engine)}`;
+  return `${formatInt(total)} ${noun} (${engines.map((e) => `${formatInt(e.errors)} ${engineLabel(e.engine)}`).join(", ")})`;
+}
+
+/** "4,601 answered of 6,628 calls", both counts from the call rows this read returned. */
+export function answeredOfCallsLine(c: RunCompleteness): string {
+  return `${formatInt(c.answeredRows)} answered of ${formatInt(c.rowsRead)} ${c.rowsRead === 1 ? "call" : "calls"}`;
 }
 
 export function runStateLabel(state: string): string {
@@ -165,10 +213,10 @@ export function runStateLabel(state: string): string {
 /** "13 of 23 resolved answers (56.5%)", or a non-zero phrase when nothing resolved. */
 export function resolvedPhrase(tally: OutcomeTally): string {
   if (tally.resolved <= 0) return "no resolved answers";
-  return `${tally.fenderWins} of ${tally.resolved} resolved answers (${pct(tally.fenderWins, tally.resolved)})`;
+  return `${formatInt(tally.fenderWins)} of ${formatInt(tally.resolved)} resolved answers (${pct(tally.fenderWins, tally.resolved)})`;
 }
 
 /** The two rates that lead AI Search. Shopping guidance and product-fact questions are not in either one. */
 export function headlineLine(summary: AiRunSummary): string {
-  return `Unbranded discovery: Fender/Squier named most in ${resolvedPhrase(summary.roles.unbranded)}. Branded consideration: ${resolvedPhrase(summary.roles.branded)}.`;
+  return `Unbranded discovery: ${leadBrand()} named most in ${resolvedPhrase(summary.roles.unbranded)}. Branded consideration: ${resolvedPhrase(summary.roles.branded)}.`;
 }

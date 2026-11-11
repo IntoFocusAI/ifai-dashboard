@@ -16,6 +16,8 @@ export type SpokeDefinition = {
   /** Live description. Rendered instead of `desc` when the sentence follows panel data. */
   descSlot?: ReactNode;
   tabs: string[];
+  /** Tab names that carry a "New" marker. */
+  newTabs?: string[];
   navLabel: string;
   next: SpokeId;
   render: (tabIdx: number) => ReactNode | string;

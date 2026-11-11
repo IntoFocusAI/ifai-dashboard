@@ -1,12 +1,20 @@
 "use client";
 
+import "@/components/v3/live/resizable-table.css";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { TableToolbar, withSearchEmpty } from "@/components/v3/live/TableToolbar";
+import { sourceRowKey, tableControlsFor, type TableControls } from "@/components/v3/live/table-controls";
+import { useTableRowLimit } from "@/components/v3/live/TableRowLimit";
+import { useHeaderFloors } from "@/components/v3/live/useHeaderFloors";
 import {
   columnWidthStorageKey,
-  filledColumnWidths,
+  fitResizableColumnWidths,
   mergeColumnWidths,
+  pickFillColumnId,
+  withHeaderFloors,
   type ColumnWidthSpec,
 } from "@/lib/fender-canvas/retail-column-layout";
+import { measureColumnOneLineMins } from "@/lib/fender-canvas/table-column-measure";
 import {
   ariaSortValue,
   tableScrollClass,
@@ -21,6 +29,8 @@ export type RetailColumn = ColumnWidthSpec & {
   className?: string;
   /** When set, the header sorts this column. Currency and counts use "number". */
   sort?: SortKind;
+  /** Optional dotted-underline definition on the header label. */
+  headerTooltip?: { title: string; description: string };
 };
 
 export function clientColumn(
@@ -35,6 +45,45 @@ export function clientColumn(
 }
 
 const KEY_STEP = 16;
+
+function ColumnHeaderLabel({ column }: { column: RetailColumn }) {
+  const label = column.label;
+  if (!column.headerTooltip) return <>{label}</>;
+  const { title, description } = column.headerTooltip;
+  return (
+    <span
+      className="ifai-term"
+      data-ifai-tooltip-title={title}
+      data-ifai-tooltip-desc={description}
+      tabIndex={0}
+      aria-label={`${title}: ${description}`}
+    >
+      {label}
+    </span>
+  );
+}
+
+/** Same path as retail-explore-chevron; direction comes from data-sort-dir CSS. */
+function SortChevron() {
+  return (
+    <svg
+      className="retail-explore-chevron ifai-sort-chevron"
+      viewBox="0 0 12 12"
+      width="12"
+      height="12"
+      aria-hidden="true"
+    >
+      <path
+        d="M2.2 4.2 6 8l3.8-3.8"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
 
 function readStoredRaw(tableId: string): unknown {
   if (typeof window === "undefined") return null;
@@ -74,7 +123,7 @@ function useColumnWidths(tableId: string, columns: readonly RetailColumn[]) {
     });
   }, [tableId]);
 
-  return { widths, setWidth };
+  return { widths, setWidth, signature };
 }
 
 function ColumnResizeHandle({
@@ -142,27 +191,49 @@ export function ResizableTable({
   tableId,
   columns,
   fillColumnId,
+  wrapColumnIds,
   freezeHeader = true,
   maxHeight = 520,
   sort = null,
   onSort,
+  tableClassName,
+  toolbar = true,
+  filterLabel = null,
+  exportScope,
+  controls: controlsProp,
   children,
 }: {
   tableId: string;
   columns: readonly RetailColumn[];
   /** Column that grows so the table fills the panel until someone resizes. */
   fillColumnId?: string;
+  /** Extra columns allowed to wrap; skipped when measuring one-line floors. */
+  wrapColumnIds?: readonly string[];
   freezeHeader?: boolean;
   maxHeight?: number;
   sort?: TableSort | null;
   onSort?: (columnId: string) => void;
+  /** Extra classes on the table (e.g. table-no-row-hover). */
+  tableClassName?: string;
+  toolbar?: boolean; // Search box and Download CSV above the table.
+  /** Plain words for the view filter this table sits under, written into the download. */
+  filterLabel?: string | null;
+  exportScope?: Record<string, unknown> | null; // What the view shows, sent with Download CSV. Null hides it.
+  /** The sort hook's `controls`, for a table that wraps the hook's `onSort` in its own handler. */
+  controls?: TableControls | null;
   children: ReactNode;
 }) {
-  const { widths, setWidth } = useColumnWidths(tableId, columns);
+  const { widths, setWidth, signature } = useColumnWidths(tableId, columns);
+  const controls = controlsProp ?? tableControlsFor(onSort);
+  const rowLimit = useTableRowLimit(withSearchEmpty(children, controls, columns.length));
   const tableRef = useRef<HTMLTableElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
+  const [contentMins, setContentMins] = useState<Record<string, number>>({});
   const [manual, setManual] = useState(false);
+  const fillId = pickFillColumnId(columns, fillColumnId);
+  const wrapIds = wrapColumnIds ?? [];
+  const wrapSignature = wrapIds.join("|");
 
   useEffect(() => {
     setManual(readStoredRaw(tableId) != null);
@@ -170,16 +241,43 @@ export function ResizableTable({
 
   useEffect(() => {
     const node = scrollRef.current;
-    if (!node || !fillColumnId) return;
+    if (!node) return;
     const measure = () => setContainerWidth(node.clientWidth);
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(node);
     return () => observer.disconnect();
-  }, [fillColumnId]);
+  }, []);
 
-  const displayWidths =
-    fillColumnId && !manual ? filledColumnWidths(columns, fillColumnId, containerWidth) : widths;
+  useEffect(() => {
+    if (manual) return;
+    const table = tableRef.current;
+    if (!table) return;
+    const columnIds = signature.split("|").map((part) => part.split(":")[0]).filter(Boolean);
+    const skipIds = [fillId, ...wrapIds.filter(Boolean)];
+    const run = () => {
+      const next = measureColumnOneLineMins(table, columnIds, skipIds);
+      setContentMins((current) => {
+        const same = columnIds.every((id) => (current[id] ?? 0) === (next[id] ?? 0));
+        return same ? current : next;
+      });
+    };
+    run();
+    const body = table.tBodies[0];
+    if (!body) return;
+    const observer = new MutationObserver(run);
+    observer.observe(body, { childList: true, subtree: true, characterData: true });
+    return () => observer.disconnect();
+  }, [manual, fillId, signature, wrapSignature, containerWidth]);
+
+  const headerFloors = useHeaderFloors(tableRef, signature, containerWidth);
+  const floored = withHeaderFloors(columns, headerFloors);
+  const displayWidths = manual
+    ? mergeColumnWidths(floored, widths)
+    : fitResizableColumnWidths(floored, containerWidth, {
+        fillColumnId: fillId,
+        contentMins,
+      });
   const displayRef = useRef(displayWidths);
   displayRef.current = displayWidths;
   const total = columns.reduce((sum, column) => sum + (displayWidths[column.id] ?? column.width), 0);
@@ -209,16 +307,20 @@ export function ResizableTable({
     tableRef.current?.closest(".ifai-canvas")?.classList.toggle("col-resize-active", active);
   };
 
-  return (
+  const scroller = (
     <div
       ref={scrollRef}
       className={tableScrollClass(freezeHeader)}
       style={maxHeight != null ? { maxHeight } : undefined}
       data-table-id={tableId}
       data-freeze-header={freezeHeader ? "true" : "false"}
-      data-fill-column={fillColumnId}
+      data-fill-column={fillId}
     >
-      <table ref={tableRef} className="table-sm resizable-table" style={{ width: total }}>
+      <table
+        ref={tableRef}
+        className={`table-sm resizable-table${tableClassName ? ` ${tableClassName}` : ""}`}
+        style={{ width: total }}
+      >
         <colgroup>
           {columns.map((column) => (
             <col
@@ -230,7 +332,7 @@ export function ResizableTable({
         </colgroup>
         <thead>
           <tr>
-            {columns.map((column) => {
+            {floored.map((column) => {
               const width = displayWidths[column.id] ?? column.width;
               return (
                 <th
@@ -251,10 +353,13 @@ export function ResizableTable({
                         onSort?.(column.id);
                       }}
                     >
-                      {column.label}
+                      <ColumnHeaderLabel column={column} />
+                      <SortChevron />
                     </button>
                   ) : (
-                    <span className="resizable-th-label">{column.label}</span>
+                    <span className="resizable-th-label">
+                      <ColumnHeaderLabel column={column} />
+                    </span>
                   )}
                   <ColumnResizeHandle
                     name={column.name}
@@ -272,8 +377,22 @@ export function ResizableTable({
             })}
           </tr>
         </thead>
-        {children}
+        {rowLimit.children}
       </table>
     </div>
+  );
+
+  // Always the same fragment, so the table is not remounted when the footer appears or goes.
+  return (
+    <>
+      {toolbar && (
+        <TableToolbar
+          {...{ tableId, columns, sort, controls, filterLabel, exportScope }}
+          shownKeys={rowLimit.keys.map(sourceRowKey)}
+        />
+      )}
+      {scroller}
+      {rowLimit.footer}
+    </>
   );
 }

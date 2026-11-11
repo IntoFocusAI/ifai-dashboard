@@ -1,66 +1,16 @@
 "use client";
 
+import { AuthorizedSellersControl } from "@/components/v3/live/AuthorizedSellersControl";
+import { CommerceConsensusPanel } from "@/components/v3/live/CommerceConsensusPanel";
 import { ExploreListings } from "@/components/v3/live/ExploreListings";
 import { DefinedTerm } from "@/components/v3/live/DefinedTerm";
 import { FeaturedOfferReadings } from "@/components/v3/live/FeaturedOfferReadings";
-import { RetailFindingVisual } from "@/components/v3/live/RetailFindingVisual";
-import { formatUsd } from "@/lib/fender-canvas/format";
-import {
-  RETAIL_FINDING_LABELS,
-  type PortfolioRetailSnapshot,
-} from "@/lib/fender-canvas/portfolio-retail";
-import { readingLabel, type RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
+import { figureTipAttrs } from "@/components/v3/live/FigureTip";
+import { authorizedSellerControlOffered, sellerTypeDefinition } from "@/lib/fender-canvas/authorized-sellers";
+import { activeClient } from "@/lib/client/active-client";
+import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
 import type { CanvasFreshnessRow } from "@/lib/fender-canvas/types";
 
-function priceGap(snapshot: PortfolioRetailSnapshot): string | null {
-  const gap = snapshot.mapLeakage.detail?.averageLeakage;
-  if (gap == null) return null;
-  return `Average price gap ${formatUsd(gap, { signed: true })}. This is a price gap, not revenue.`;
-}
-
-function Findings({ snapshot }: { snapshot: PortfolioRetailSnapshot }) {
-  const suppressed = snapshot.suppressedListings.detail;
-  const map = snapshot.mapLeakage.detail;
-  const bundles = snapshot.unnestedBundles.detail;
-
-  return (
-    <div className="retail-finding-grid">
-      <RetailFindingVisual
-        label={readingLabel(
-          snapshot.suppressedListings,
-          RETAIL_FINDING_LABELS.suppressed_listings,
-        )}
-        tab={RETAIL_FINDING_LABELS.suppressed_listings}
-        reading={snapshot.suppressedListings}
-        coverage={
-          suppressed && suppressed.population > 0
-            ? { checked: suppressed.audited, total: suppressed.population }
-            : null
-        }
-      />
-      <RetailFindingVisual
-        label="MAP leakage"
-        tab={RETAIL_FINDING_LABELS.map_leakage}
-        reading={snapshot.mapLeakage}
-        extra={priceGap(snapshot)}
-        coverage={
-          map && map.population > 0 ? { checked: map.decided, total: map.population } : null
-        }
-      />
-      <RetailFindingVisual
-        label={RETAIL_FINDING_LABELS.unnested_bundles}
-        tab={RETAIL_FINDING_LABELS.unnested_bundles}
-        reading={snapshot.unnestedBundles}
-        extra="Bundles in this retail read with no usable parent ASIN."
-        coverage={
-          bundles && bundles.catalogBundles != null && bundles.catalogBundles > 0
-            ? { checked: bundles.bundlesInRead, total: bundles.catalogBundles }
-            : null
-        }
-      />
-    </div>
-  );
-}
 
 export function RetailOverview({
   read,
@@ -69,6 +19,7 @@ export function RetailOverview({
   read: RetailCanvasRead;
   freshness?: CanvasFreshnessRow[] | null;
 }) {
+  const RETAIL_SELLER_TYPE = activeClient().sellerModel;
   const counts =
     read.phase === "ready" ? read.snapshot.suppressedListings.detail?.counts ?? null : null;
 
@@ -76,11 +27,21 @@ export function RetailOverview({
     <div className="retail-health retail-surface">
       <p
         className="metric-card-sub"
+        data-seller-type={RETAIL_SELLER_TYPE}
         style={{ margin: "0 0 10px", fontSize: 11, letterSpacing: "0.02em" }}
       >
-        Seller type: Partner-led
+        Seller type:{" "}
+        <span {...figureTipAttrs(RETAIL_SELLER_TYPE, sellerTypeDefinition(RETAIL_SELLER_TYPE), "seller-type")}>
+          {RETAIL_SELLER_TYPE}
+        </span>
       </p>
-      <div className="ceo-callout">
+      {authorizedSellerControlOffered(RETAIL_SELLER_TYPE) ? (
+        <AuthorizedSellersControl read={read} />
+      ) : null}
+
+      <CommerceConsensusPanel read={read} />
+
+      <div className="ceo-callout" style={{ marginTop: 12 }}>
         <div className="ceo-callout-header">
           <span>How do these retail findings change AI search?</span>
         </div>
@@ -103,13 +64,6 @@ export function RetailOverview({
         </div>
       </div>
 
-      {read.phase === "loading" ? (
-        <p className="retail-missing">Loading the retail reading…</p>
-      ) : null}
-      {read.phase === "error" ? (
-        <p className="retail-missing">The retail read could not be loaded.</p>
-      ) : null}
-      {read.phase === "ready" ? <Findings snapshot={read.snapshot} /> : null}
       {counts ? <FeaturedOfferReadings counts={counts} freshness={freshness} /> : null}
 
       <ExploreListings />

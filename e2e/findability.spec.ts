@@ -130,9 +130,10 @@ const ROWS: Row[] = [
 async function openFindability(page: Page) {
   const canvas = new Canvas(page);
   await canvas.open();
-  await canvas.openSpokeFromMap("AI Readiness");
-  await canvas.openTab("Findability");
-  await expect(page.locator("[data-findability-headline]")).toBeVisible();
+  await page.goto("/dashboard?spoke=specs&tab=findability");
+  await expect(page.locator(".ifai-canvas.column-layout")).toHaveCount(1);
+  await expect(canvas.activeTab).toContainText("Findability");
+  await expect(page.locator("[data-findability-lead]")).toBeVisible();
   return canvas;
 }
 
@@ -140,59 +141,248 @@ test("the five outcome counts stay distinct and open the listings behind them", 
   await mockCanvasRead(page, { findability: ROWS });
   await openFindability(page);
 
-  const headline = page.locator("[data-findability-headline]");
-  await expect(headline).toContainText("2 exact official product pages");
-  await expect(headline).toContainText("1 official family page");
-  await expect(headline).toContainText("1 finished search with no defensible page");
-  await expect(headline).toContainText("1 ambiguous match");
-  await expect(headline).toContainText("1 unchecked listing");
-  await expect(headline).not.toContainText("13.3%");
-  await expect(headline).not.toContainText("one third");
-  await expect(page.locator(".drilldown-desc")).not.toContainText("13.3%");
+  const lead = page.locator("[data-findability-lead]");
+  await expect(lead).toBeVisible();
+  await expect(page.locator("[data-findability-lead-outcome]")).toHaveCount(5);
+  await expect(page.locator(".findability-headline")).toHaveCount(0);
+  await expect(page.locator("[data-findability-headline]")).toHaveCount(0);
+
+  const exactHero = page.locator("[data-findability-lead-outcome='exact_official_product']");
+  await expect(exactHero).toContainText("Exact official product page");
+  // The mocked rows were checked on 12 Oct 2026, so none falls in the last 14 days (X-25).
+  await expect(exactHero.locator("[data-findability-lead-figure]")).toHaveText("33.3%*");
+  await expect(exactHero.locator("[data-partial-figure='coverage']")).toBeVisible();
+  await expect(exactHero.locator("[data-figure-tip='findability-stale']")).toHaveAttribute(
+    "data-ifai-tooltip-desc",
+    /^6 of 6 listings have no official-page check in 14 days\./,
+  );
+  await expect(exactHero.locator("[data-status='okay']")).toContainText("Fair");
+  await expect(exactHero.locator("[data-findability-lead-figure]")).toHaveAttribute("data-findability-exact", "2");
+  await expect(exactHero.locator("[data-findability-lead-ratio]")).toHaveText("2 of 6");
+  await expect(exactHero.locator("[data-citation-pie-disc='findability-exact_official_product']")).toBeVisible();
+  await expect(exactHero.locator(".citation-pie-disc-findability")).toBeVisible();
+
+  await expect(page.locator("[data-findability-lead-outcome='official_family_page'] [data-findability-lead-figure]")).toHaveText(
+    "16.7%*",
+  );
+  await expect(page.locator("[data-findability-lead-outcome='completed_not_found'] [data-findability-lead-ratio]")).toHaveText(
+    "1 of 6",
+  );
+  await expect(page.locator("[data-findability-lead-outcome='ambiguous_candidate']")).toBeVisible();
+  await expect(page.locator("[data-findability-lead-outcome='not_checked']")).toBeVisible();
+
+  const lastChecked = page.locator("[data-findability-last-checked]");
+  await expect(lastChecked).toBeVisible();
+  await expect(lastChecked).toHaveAttribute("data-findability-last-checked", "2026-10-12T20:27:46.000Z");
+  await expect(lastChecked).toHaveText("Last checked Oct 12, 2026, 8:27 PM UTC.");
+  // The newest check stays on screen; its tooltip says how many listings the 14-day window covers.
+  await expect(lastChecked.locator("[data-findability-last-checked-tip]")).toHaveAttribute(
+    "data-ifai-tooltip-desc",
+    "This is the newest official-page check. 0 of 6 listings checked in the last 14 days.",
+  );
+  await expect(page.locator("[data-findability-outcome='exact_official_product']")).toHaveAttribute(
+    "data-selected",
+    "true",
+  );
+  await expect(page.locator("#findability-listings")).toHaveCount(1);
+
+  const outcomeTips: Array<{ outcome: string; title: string; desc: string }> = [
+    {
+      outcome: "exact_official_product",
+      title: "Exact official product page",
+      desc: "We found the fender.com page for this one product. An assistant can use that page's specs for this Amazon listing.",
+    },
+    {
+      outcome: "official_family_page",
+      title: "Official family page",
+      desc: "We found a fender.com page for the whole line. Specs on it can belong to a different color or model.",
+    },
+    {
+      outcome: "completed_not_found",
+      title: "No Defensible Page",
+      desc: "We finished looking and did not accept a page. This does not prove the product is missing from fender.com.",
+    },
+    {
+      outcome: "ambiguous_candidate",
+      title: "Ambiguous match",
+      desc: "More than one fender.com page could fit, so we did not pick one.",
+    },
+    {
+      outcome: "not_checked",
+      title: "Unchecked",
+      desc: "This listing was not checked and should be opened for that reason. A blank result is not a missing page.",
+    },
+  ];
+  for (const { outcome, title, desc } of outcomeTips) {
+    const leadTerm = page.locator(
+      `[data-findability-lead-outcome='${outcome}'] span.ifai-term[data-ifai-tooltip-title='${title}']`,
+    );
+    await expect(leadTerm).toHaveAttribute("data-ifai-tooltip-desc", desc);
+    await expect(leadTerm).toHaveAttribute("tabindex", "0");
+    await expect(leadTerm).not.toHaveAttribute("title");
+
+    const countTerm = page.locator(
+      `[data-findability-outcome='${outcome}'] span.ifai-term[data-ifai-tooltip-title='${title}']`,
+    );
+    await expect(countTerm).toHaveAttribute("data-ifai-tooltip-desc", desc);
+    await expect(countTerm).not.toHaveAttribute("title");
+  }
+
+  await expect(page.locator(".drilldown-desc")).toHaveCount(0);
+  await expect(page.locator(".drilldown-title-main")).not.toContainText("finished search");
+  await expect(page.locator(".drilldown-title-main")).not.toContainText("Machine Readability is a separate");
+  await expect(page.getByText("No Defensible Page", { exact: true }).first()).toBeVisible();
   await expect(page.locator("[data-findability-total]")).toHaveAttribute("data-findability-total", "6");
-  await expect(page.locator(".findability-note").filter({ hasText: "JSON-LD was not audited" })).toBeVisible();
-  await expect(page.locator(".findability-note").filter({ hasText: "older spec read" })).toBeVisible();
+  await expect(page.locator(".findability-note").filter({ hasText: "Each listing is one outcome" })).toBeVisible();
+  await expect(page.locator(".findability-note").filter({ hasText: "on Brand-Site Specs" })).toBeVisible();
+  await expect(
+    page.locator(".findability-note").filter({
+      hasText: "Schema.org product data on each fender.com page is on Brand-Site Specs.",
+    }),
+  ).toBeVisible();
 
   const exact = page.locator("[data-findability-outcome='exact_official_product']");
+  await expect(exact).toHaveAttribute("data-selected", "true");
+  await expect(exact.locator("[data-findability-count]")).toHaveAttribute("aria-pressed", "true");
   await expect(exact.locator("[data-findability-count]")).toHaveAttribute("data-findability-count", "2");
-  await exact.locator("[data-findability-count]").click();
   const table = page.locator("#findability-listings");
+  await expect(table).toHaveCount(1);
+  await expect(page.locator(".findability-panel .content-box-title")).toContainText("Exact official product page");
   await expect(table).toContainText("B00ZEBRA");
   await expect(table).toContainText("B00ALPHA");
   await expect(table).not.toContainText("B00FAMILY");
   await expect(table.locator("thead")).toContainText("Listing");
-  await expect(table.locator("thead")).toContainText("Official page");
+  // Seven columns fit 1280 px: the outcome is the box title, and related facts share a cell.
+  await expect(table.locator("thead th[data-col-id]")).toHaveCount(7);
+  await expect(table.locator("thead th[data-col-id='outcome']")).toHaveCount(0);
+  await expect(table.locator("thead th[data-col-id='page']")).toContainText("Official page");
+  await expect(table.locator("thead th[data-col-id='checked']")).toContainText("Checked");
+  await expect(table.locator("thead th[data-col-id='confidence']")).toContainText("Confidence");
+  await expect(table.locator("thead th[data-col-id='bundle']")).toContainText("Dealer bundle");
+  await expect(table.locator("thead th[data-col-id='reason']")).toHaveCount(0);
+  // The dealer-bundle caveat is in the header tooltip, not on screen.
+  await expect(page.locator(".findability-panel")).not.toContainText("correlation");
+  await expect(table.locator("thead .ifai-term[data-ifai-tooltip-title='Dealer bundle']")).toHaveAttribute(
+    "data-ifai-tooltip-desc",
+    /correlation, not a proven cause/,
+  );
 
   const link = table.locator("[data-findability-official-url]").first();
   await expect(link).toHaveAttribute("href", /brand\.example/);
   await expect(link).toHaveAttribute("target", "_blank");
+  const zebra = table.locator("[data-findability-asin='B00ZEBRA']");
+  await expect(zebra.locator("td.asin-col a")).toHaveCount(0);
+  await expect(zebra.locator("td.asin-col .asin-chip")).toHaveText("B00ZEBRA");
+  // Variant SKU sits under the official page as text.
+  await expect(zebra.locator("td").nth(2)).toContainText("Variant SKU 0140000001");
+  await expect(zebra.locator("td").nth(2).locator(".findability-cell-sub a")).toHaveCount(0);
 
-  await table.locator("thead").getByRole("button", { name: "Listing" }).click();
+  await table.locator("thead th[data-col-id='title']").getByRole("button").click();
   await expect(table.locator("tbody tr").first()).toContainText("Alpha Exact");
 
   await page.locator("[data-findability-outcome='official_family_page'] [data-findability-count]").click();
+  await expect(exact).toHaveAttribute("data-selected", "false");
+  await expect(page.locator("[data-findability-outcome='official_family_page']")).toHaveAttribute(
+    "data-selected",
+    "true",
+  );
+  await expect(table).toHaveCount(1);
   await expect(table).toContainText("B00FAMILY");
-  await expect(table).toContainText("Not an exact product page");
+  await expect(table).toContainText("Official family page with 4 variants.");
   await expect(table).not.toContainText("B00ZEBRA");
+  await expect(table.locator("thead")).not.toContainText("How it is counted");
   await expect(table.locator("[data-findability-official-url]")).toHaveAttribute(
     "href",
     "https://brand.example/products/family",
   );
+  const skuHeader = table.locator("thead .ifai-term[data-ifai-tooltip-title='Official page']");
+  await expect(skuHeader).toHaveAttribute("data-ifai-tooltip-desc", /The variant SKU is not the Amazon ASIN\./);
+  await expect(skuHeader).toHaveAttribute("tabindex", "0");
+  await expect(skuHeader).not.toHaveAttribute("title");
+  await expect(table.locator("thead th[data-col-id='confidence']")).toContainText("Confidence");
 
   await page.locator("[data-findability-outcome='completed_not_found'] [data-findability-count]").click();
   await expect(table).toContainText("B00BUNDLE1");
-  await expect(table).toContainText("no defensible page");
+  const bundleAsin = table.locator("[data-findability-asin='B00BUNDLE1'] td.asin-col a.listing-link");
+  await expect(bundleAsin).toHaveAttribute("href", "https://www.amazon.com/dp/B00BUNDLE1");
+  await expect(bundleAsin).toHaveAttribute("target", "_blank");
+  await expect(bundleAsin).toHaveAttribute("rel", "noopener noreferrer");
+  await expect(bundleAsin.locator(".asin-chip")).toHaveText("B00BUNDLE1");
+  await expect(table.locator("[data-findability-address='finished-without-page']")).toHaveText("not found");
+  await expect(table).toContainText("Search finished without a defensible official page.");
   await expect(table).toContainText("Yes");
 
   await page.locator("[data-findability-outcome='ambiguous_candidate'] [data-findability-count]").click();
   await expect(table).toContainText("B00AMBIG");
-  await expect(table).toContainText("No official page was accepted");
+  await expect(table.locator("[data-findability-address='ambiguous']")).toHaveText("not found");
 
   await page.locator("[data-findability-outcome='not_checked'] [data-findability-count]").click();
   await expect(table).toContainText("B00UNCHECKED");
-  await expect(table.locator("[data-findability-address='unchecked']")).toContainText("Not checked yet");
-  await expect(table.locator("[data-findability-address='unchecked']")).not.toContainText("no defensible page");
+  await expect(table.locator("[data-findability-asin='B00UNCHECKED'] td.asin-col a")).toHaveCount(0);
+  await expect(table.locator("[data-findability-asin='B00UNCHECKED'] td.asin-col .asin-chip")).toHaveText("B00UNCHECKED");
+  await expect(table.locator("thead th").nth(0)).toHaveAttribute("data-col-id", "asin");
+  await expect(table.locator("thead th").nth(1)).toHaveAttribute("data-col-id", "title");
+  await expect(table.locator("thead th").nth(2)).toHaveAttribute("data-col-id", "reason");
+  await expect(table.locator("thead th[data-col-id='page']")).toHaveCount(0);
+  await expect(table.locator("thead th[data-col-id='http']")).toHaveCount(0);
+  await expect(table.locator("thead th[data-col-id='checked']")).toHaveCount(0);
+  await expect(table.locator("thead th[data-col-id='outcome']")).toHaveCount(0);
+  await expect(table.locator("thead th[data-col-id='sku']")).toHaveCount(0);
+  await expect(table.locator("thead th[data-col-id='confidence']")).toHaveCount(0);
+  await expect(table.locator("thead th[data-col-id='source']")).toHaveCount(0);
+  await expect(table.locator("thead")).not.toContainText("Variant SKU");
+  await expect(table.locator("thead")).not.toContainText("Confidence");
+  await expect(table.locator("thead")).not.toContainText("How it was matched");
+  await expect(table.locator("thead th[data-col-id='category']")).toContainText("Category");
+  await expect(table.locator("thead th[data-col-id='kind']")).toContainText("Product kind");
+  await expect(table.locator("thead th[data-col-id='explanation']")).toContainText("Explanation");
+  await expect(table.locator("thead th[data-col-id='bundle']")).toContainText("Dealer bundle");
+  await expect(table.locator("[data-findability-address='unchecked']")).toHaveCount(0);
+  await expect(table.locator("[data-findability-reason]")).toHaveText("Reason not recorded");
   await expect(table.locator("[data-findability-row='not_checked']")).not.toContainText("unsuccessful");
+  await expect(table.locator("[data-findability-row='not_checked']")).not.toContainText("Not checked yet");
+  await expect(table.locator("[data-findability-row='not_checked']")).toContainText("None");
+
+  await page.locator("[data-findability-outcome='exact_official_product'] [data-findability-count]").click();
+  await expect(exact).toHaveAttribute("data-selected", "true");
+  await expect(page.locator("[data-findability-outcome='not_checked']")).toHaveAttribute("data-selected", "false");
+  await expect(table).toHaveCount(1);
+  await expect(table).toContainText("B00ZEBRA");
+  await expect(table).not.toContainText("B00UNCHECKED");
+  await expect(table.locator("thead th[data-col-id='page']")).toContainText("Official page");
+  await expect(table.locator("thead th[data-col-id='checked']")).toContainText("Checked");
+  await expect(table.locator("thead th[data-col-id='confidence']")).toContainText("Confidence");
+  await expect(table.locator("thead th[data-col-id='reason']")).toHaveCount(0);
+  await expect(table.locator("[data-findability-official-url]").first()).toHaveAttribute("href", /brand\.example/);
+});
+
+test("last checked shows Not available* when checked rows have no attempt time", async ({ page }) => {
+  await mockCanvasRead(page, {
+    findability: ROWS.map((row) =>
+      row.latest_state === "not_checked" ? row : { ...row, latest_attempt_at: null },
+    ),
+  });
+  await openFindability(page);
+
+  await expect(page.locator("[data-findability-lead-outcome]")).toHaveCount(5);
+  const lastChecked = page.locator("[data-findability-last-checked]");
+  await expect(lastChecked).toBeVisible();
+  await expect(lastChecked).toHaveAttribute("data-findability-last-checked", "");
+  await expect(lastChecked).toContainText("Not available*");
+  const tip = lastChecked.locator(".ifai-term");
+  await expect(tip).toHaveAttribute("data-ifai-tooltip-title", "Last checked");
+  await expect(tip).toHaveAttribute(
+    "data-ifai-tooltip-desc",
+    "This official-page read has no stored check time.",
+  );
+  await expect(tip).toHaveAttribute("tabindex", "0");
+  await expect(tip).not.toHaveAttribute("title");
+  await expect(page.locator("[data-findability-outcome='exact_official_product']")).toHaveAttribute(
+    "data-selected",
+    "true",
+  );
+  await expect(page.locator("#findability-listings")).toHaveCount(1);
+  await expect(page.locator("#findability-listings")).toContainText("B00ZEBRA");
 });
 
 test("an empty official-page read does not describe unchecked as a finished search", async ({ page }) => {
@@ -200,8 +390,9 @@ test("an empty official-page read does not describe unchecked as a finished sear
   await openFindability(page);
 
   await expect(page.locator("[data-findability-shape]")).toHaveAttribute("data-findability-shape", "empty");
-  await expect(page.locator("[data-findability-headline]")).toContainText("no listings");
-  await expect(page.locator("[data-findability-headline]")).not.toContainText("%");
+  await expect(page.locator("[data-findability-empty]")).toContainText("no listings");
+  await expect(page.locator("[data-findability-empty]")).not.toContainText("%");
+  await expect(page.locator("[data-findability-lead-outcome]")).toHaveCount(0);
   for (const outcome of [
     "exact_official_product",
     "official_family_page",
@@ -215,9 +406,30 @@ test("an empty official-page read does not describe unchecked as a finished sear
     );
   }
 
+  const exact = page.locator("[data-findability-outcome='exact_official_product']");
+  await expect(exact).toHaveAttribute("data-selected", "true");
+  await expect(exact.locator("[data-findability-count]")).toHaveAttribute("aria-pressed", "true");
+  const exactTable = page.locator("#findability-listings");
+  await expect(exactTable).toHaveCount(1);
+  await expect(exactTable).toContainText("No listings in this outcome.");
+  await expect(exactTable.locator("thead th[data-col-id='page']")).toContainText("Official page");
+  await expect(exactTable.locator("thead th[data-col-id='reason']")).toHaveCount(0);
+
   await page.locator("[data-findability-outcome='not_checked'] [data-findability-count]").click();
+  await expect(exact).toHaveAttribute("data-selected", "false");
   const table = page.locator("#findability-listings");
+  await expect(table).toHaveCount(1);
   await expect(table).toContainText("No listings in this outcome.");
+  await expect(table.locator("thead th[data-col-id='reason']")).toHaveCount(1);
+  await expect(table.locator("thead th[data-col-id='page']")).toHaveCount(0);
+  await expect(table.locator("thead th[data-col-id='http']")).toHaveCount(0);
+  await expect(table.locator("thead th[data-col-id='checked']")).toHaveCount(0);
+  await expect(table.locator("thead th[data-col-id='outcome']")).toHaveCount(0);
+  await expect(table.locator("thead th[data-col-id='sku']")).toHaveCount(0);
+  await expect(table.locator("thead th[data-col-id='confidence']")).toHaveCount(0);
+  await expect(table.locator("thead th[data-col-id='source']")).toHaveCount(0);
+  await expect(table.locator("thead th[data-col-id='kind']")).toContainText("Product kind");
+  await expect(table.locator("thead th[data-col-id='explanation']")).toContainText("Explanation");
   await expect(table).not.toContainText("no defensible page");
   await expect(table).not.toContainText("unsuccessful");
 });
@@ -230,11 +442,34 @@ test("a partial read keeps zero outcomes separate from the rows that were checke
 
   await expect(page.locator("[data-findability-shape]")).toHaveAttribute("data-findability-shape", "partial");
   await expect(page.locator("[data-findability-total]")).toHaveAttribute("data-findability-total", "3");
-  await expect(page.locator("[data-findability-headline]")).toContainText("0 official family pages");
-  await expect(page.locator("[data-findability-headline]")).toContainText("0 finished searches with no defensible page");
+  await expect(page.locator("[data-findability-lead-outcome]")).toHaveCount(5);
+  await expect(
+    page.locator("[data-findability-lead-outcome='official_family_page'] [data-findability-lead-figure]"),
+  ).toHaveText("0.0%*");
+  await expect(
+    page.locator("[data-findability-lead-outcome='official_family_page'] [data-findability-lead-ratio]"),
+  ).toHaveText("0 of 3");
+  await expect(
+    page.locator("[data-findability-lead-outcome='completed_not_found'] [data-findability-lead-ratio]"),
+  ).toHaveText("0 of 3");
+  await expect(page.getByText("No Defensible Page", { exact: true }).first()).toBeVisible();
   await expect(page.getByText("A zero is a real count.")).toBeVisible();
 
+  await expect(page.locator("[data-findability-outcome='exact_official_product']")).toHaveAttribute(
+    "data-selected",
+    "true",
+  );
+  await expect(page.locator("#findability-listings")).toContainText("B00ZEBRA");
   await page.locator("[data-findability-outcome='official_family_page'] [data-findability-count]").click();
+  await expect(page.locator("[data-findability-outcome='exact_official_product']")).toHaveAttribute(
+    "data-selected",
+    "false",
+  );
+  await expect(page.locator("[data-findability-outcome='official_family_page']")).toHaveAttribute(
+    "data-selected",
+    "true",
+  );
+  await expect(page.locator("#findability-listings")).toHaveCount(1);
   await expect(page.locator("#findability-listings")).toContainText("No listings in this outcome.");
   await expect(page.locator("#findability-listings")).not.toContainText("B00ZEBRA");
 });
@@ -252,7 +487,7 @@ async function openFindabilityFromBubble(page: Page) {
   const slot = page.locator("[data-hub-slot='opportunity']");
   await expect(slot.locator("[data-hub-slot-figure]")).toHaveText("2");
   await expect(slot).toContainText("1 family page");
-  await expect(slot).toContainText("1 finished search with no defensible page");
+  await expect(slot).toContainText("1 No Defensible Page");
   await expect(slot).toContainText("1 ambiguous match");
   await expect(slot).toContainText("1 unchecked listing");
   await expect(slot).not.toContainText("%");
@@ -283,13 +518,19 @@ async function expectOutcomeChevron(page: Page, outcome: string, open: boolean) 
   await expect.poll(() => chevronAngle(button)).toBe(open ? 180 : 0);
 }
 
-async function openOutcomeAndCount(page: Page, outcome: string, count: string, listing: string) {
-  await expectOutcomeChevron(page, outcome, false);
-  await page.locator(`[data-findability-outcome='${outcome}'] [data-findability-count]`).click();
+async function expectOpenOutcome(page: Page, outcome: string, count: string, listing: string) {
   await expectOutcomeChevron(page, outcome, true);
+  await expect(page.locator(`[data-findability-outcome='${outcome}']`)).toHaveAttribute("data-selected", "true");
+  await expect(page.locator("#findability-listings")).toHaveCount(1);
   await expect(page.locator(".content-box-title .tag-badge")).toHaveText(`${count} listings`);
   await expect(page.locator("#findability-listings tbody tr")).toHaveCount(Number(count));
   await expect(page.locator("#findability-listings")).toContainText(listing);
+}
+
+async function openOutcomeAndCount(page: Page, outcome: string, count: string, listing: string) {
+  await expectOutcomeChevron(page, outcome, false);
+  await page.locator(`[data-findability-outcome='${outcome}'] [data-findability-count]`).click();
+  await expectOpenOutcome(page, outcome, count, listing);
 }
 
 for (const viewport of [
@@ -307,13 +548,17 @@ for (const viewport of [
     await expect(page.locator("[data-findability-total]")).toHaveAttribute("data-findability-total", "6");
 
     for (const [outcome, count, listing] of OUTCOME_LISTINGS) {
-      await openOutcomeAndCount(page, outcome, count, listing);
+      if (outcome === "exact_official_product") {
+        await expectOpenOutcome(page, outcome, count, listing);
+      } else {
+        await openOutcomeAndCount(page, outcome, count, listing);
+      }
       await page.locator(`[data-findability-outcome='${outcome}'] [data-findability-count]`).click();
       await expectOutcomeChevron(page, outcome, false);
       await expect(page.locator("#findability-listings")).toHaveCount(0);
     }
 
-    await page.locator(".hdr-btn[title='Toggle Light / Dark']").click();
+    await page.locator(".hdr-btn[aria-label='Toggle Light / Dark']").click();
     await expect(page.locator(".ifai-canvas.light-theme")).toHaveCount(1);
     for (const [outcome, count, listing] of OUTCOME_LISTINGS) {
       await openOutcomeAndCount(page, outcome, count, listing);
@@ -348,4 +593,169 @@ test("a stored other outcome uses the same chevron", async ({ page }) => {
   await expectOutcomeChevron(page, "other", true);
   await expect(page.locator(".content-box-title .tag-badge")).toHaveText("1 listings");
   await expect(page.locator("#findability-listings")).toContainText("B00BLOCK");
+  await expect(page.locator("#findability-listings thead th[data-col-id='page']")).toContainText("Official page");
+  await expect(page.locator("#findability-listings thead th[data-col-id='checked']")).toContainText("Checked");
+  await expect(page.locator("#findability-listings thead th[data-col-id='confidence']")).toContainText("Confidence");
+  await expect(page.locator("#findability-listings thead th[data-col-id='explanation']")).toContainText("Explanation");
+  await expect(page.locator("#findability-listings thead th[data-col-id='reason']")).toHaveCount(0);
+  await expect(page.locator("#findability-listings [data-findability-asin='B00BLOCK'] td.asin-col a")).toHaveCount(0);
+  await expect(page.locator("#findability-listings [data-findability-asin='B00BLOCK'] td.asin-col .asin-chip")).toHaveText(
+    "B00BLOCK",
+  );
+});
+
+test("a 10-character ASIN opens its Amazon page from every Findability outcome table", async ({ page }) => {
+  const variantSku = "B0VARSKU01";
+  const outcomes: Array<{ outcome: string; asin: string; plain: string; row: Row }> = [
+    {
+      outcome: "exact_official_product",
+      asin: "B0EXACT001",
+      plain: "b0exact001",
+      row: {
+        latest_state: "exact_official_product",
+        latest_canonical_url: EXACT,
+        counts_as_confirmed: true,
+        counts_as_finished_search: true,
+      },
+    },
+    {
+      outcome: "official_family_page",
+      asin: "B0FAMILY01",
+      plain: "B0FAMILY",
+      row: {
+        latest_state: "official_family_page",
+        latest_canonical_url: "https://brand.example/products/family",
+        counts_as_confirmed: true,
+        counts_as_finished_search: true,
+      },
+    },
+    {
+      outcome: "completed_not_found",
+      asin: "B0NOPAGE01",
+      plain: "B0-NOPAGE1",
+      row: {
+        latest_state: "completed_not_found",
+        counts_as_completed_not_found: true,
+        counts_as_finished_search: true,
+      },
+    },
+    {
+      outcome: "ambiguous_candidate",
+      asin: "B0AMBIG001",
+      plain: "B00AMBIG",
+      row: {
+        latest_state: "ambiguous_candidate",
+        counts_as_ambiguous: true,
+        counts_as_finished_search: true,
+      },
+    },
+    {
+      outcome: "not_checked",
+      asin: "B0UNCHECK1",
+      plain: "B00UNCHECKED",
+      row: {
+        latest_state: "not_checked",
+        counts_as_unchecked: true,
+        counts_as_finished_search: false,
+        product_kind: null,
+        explanation: null,
+      },
+    },
+    {
+      outcome: "other",
+      asin: "B0OTHER001",
+      plain: "B0OTHER",
+      row: {
+        latest_state: "blocked",
+        counts_as_blocked: true,
+        counts_as_unchecked: false,
+        counts_as_finished_search: false,
+      },
+    },
+  ];
+
+  const findability = outcomes.flatMap(({ asin, plain, row }) => [
+    {
+      title: `${asin} listing`,
+      category: "Solid Body",
+      product_kind: "instrument",
+      latest_canonical_url: null,
+      latest_variant_sku: variantSku,
+      confidence: "sku",
+      explanation: "Stored explanation.",
+      source_method: "derived_handle",
+      http_status: 200,
+      latest_attempt_at: "2026-10-12T20:27:42.000Z",
+      jsonld_status: "not_checked",
+      counts_as_confirmed: false,
+      counts_as_finished_search: false,
+      counts_as_ambiguous: false,
+      counts_as_unchecked: false,
+      counts_as_completed_not_found: false,
+      ...row,
+      asin,
+    },
+    {
+      title: `${plain} listing`,
+      category: "Solid Body",
+      product_kind: "instrument",
+      latest_canonical_url: null,
+      latest_variant_sku: variantSku,
+      confidence: "sku",
+      explanation: "Stored explanation.",
+      source_method: "derived_handle",
+      http_status: 200,
+      latest_attempt_at: "2026-10-12T20:27:42.000Z",
+      jsonld_status: "not_checked",
+      counts_as_confirmed: false,
+      counts_as_finished_search: false,
+      counts_as_ambiguous: false,
+      counts_as_unchecked: false,
+      counts_as_completed_not_found: false,
+      ...row,
+      asin: plain,
+    },
+  ]);
+
+  await mockCanvasRead(page, { findability });
+  await openFindability(page);
+  await expect(page.locator("[data-findability-outcome='exact_official_product']")).toHaveAttribute(
+    "data-selected",
+    "true",
+  );
+  await expect(page.locator("#findability-listings")).toHaveCount(1);
+
+  for (const { outcome, asin, plain } of outcomes) {
+    const card = page.locator(`[data-findability-outcome='${outcome}']`);
+    if ((await card.getAttribute("data-selected")) !== "true") {
+      await card.locator("[data-findability-count]").click();
+    }
+    await expect(card).toHaveAttribute("data-selected", "true");
+    const table = page.locator("#findability-listings");
+    await expect(table).toHaveCount(1);
+    const linked = table.locator(`[data-findability-asin='${asin}'] td.asin-col a.listing-link`);
+    await expect(linked).toHaveCount(1);
+    await expect(linked).toHaveAttribute("href", `https://www.amazon.com/dp/${asin}`);
+    await expect(linked).toHaveAttribute("target", "_blank");
+    await expect(linked).toHaveAttribute("rel", "noopener noreferrer");
+    await expect(linked.locator(".asin-chip")).toHaveText(asin);
+
+    const plainCell = table.locator(`[data-findability-asin='${plain}'] td.asin-col`);
+    await expect(plainCell.locator("a")).toHaveCount(0);
+    await expect(plainCell.locator(".asin-chip")).toHaveText(plain);
+    await expect(table.locator("a.listing-link")).toHaveCount(1);
+    await expect(table.locator(`a[href='https://www.amazon.com/dp/${variantSku}']`)).toHaveCount(0);
+
+    if (outcome === "not_checked") {
+      await expect(table.locator("thead th[data-col-id='sku']")).toHaveCount(0);
+      await expect(table.locator("thead")).not.toContainText("Variant SKU");
+      await expect(table.locator("thead th").nth(6)).toHaveAttribute("data-col-id", "bundle");
+    } else {
+      // The variant SKU sits under the official page, as text.
+      await expect(table.locator("thead th").nth(2)).toHaveAttribute("data-col-id", "page");
+      const skuLine = table.locator(`[data-findability-asin='${asin}'] td`).nth(2).locator(".findability-cell-sub");
+      await expect(skuLine).toHaveText(`Variant SKU ${variantSku}`);
+      await expect(skuLine.locator("a")).toHaveCount(0);
+    }
+  }
 });

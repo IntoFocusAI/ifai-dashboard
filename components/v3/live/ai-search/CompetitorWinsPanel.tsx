@@ -5,17 +5,28 @@ import { clientColumn, ResizableTable } from "@/components/v3/live/ResizableTabl
 import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
 import { useAiHistoryOptional } from "@/components/v3/live/ai-search/AiHistoryContext";
 import { AiReadGate, EmptyRows, mutedText } from "@/components/v3/live/ai-search/AiReadGate";
+import { EngineGroupScope } from "@/components/v3/live/ai-search/EngineGroupScope";
 import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
+import { CompetitorWinsBars, CompetitorWinsHero } from "@/components/v3/live/ai-search/CompetitorWinsHero";
 import { EvidenceLink } from "@/components/v3/live/ai-search/EvidenceLink";
 import { WhyNotFender } from "@/components/v3/live/ai-search/WhyNotFender";
+import { useAiExportScope } from "@/components/v3/live/ai-search/useAiExport";
 import { useEvidenceFocus } from "@/components/v3/live/ai-search/useEvidenceFocus";
 import { AI_TABS } from "@/lib/ai-search/canvas-surfaces";
 import { citationEvidence } from "@/lib/ai-search/citations";
 import { competitorTallies, isUnbrandedDiscovery, type CompetitorTally } from "@/lib/ai-search/competitors";
+import {
+  competitorCategoryLine,
+  competitorEngineLine,
+  competitorLeadsCell,
+} from "@/lib/ai-search/radar-tables";
 import { callOutcome, categoryLabel, cleanPrompt, engineLabel, modelLabel } from "@/lib/ai-search/run-metrics";
+import { summarizeRun } from "@/lib/ai-search/summary";
+import { formatInt } from "@/lib/fender-canvas/format";
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
-import { hasMixedScoringMethods, isWindowHistoryKind, MIXED_SCORING_NOTE } from "@/lib/ai-search/window-display";
+import { isWindowHistoryKind } from "@/lib/ai-search/window-display";
+import { leadBrand } from "@/lib/brand-copy";
 
 const COLUMNS = [
   clientColumn("competitor", "Competitor", "text", 160, 110),
@@ -24,19 +35,22 @@ const COLUMNS = [
   clientColumn("engines", "Engines", "text", 240, 120),
 ];
 
+/** Categories takes the panel's spare width; both long lists wrap so the table never scrolls sideways. */
+const FILL_COLUMN = "categories";
+const WRAP_COLUMNS = ["engines"];
+
 function tallySortValue(row: CompetitorTally, columnId: string): SortInput {
   if (columnId === "competitor") return row.brand;
   if (columnId === "leads") return row.wins;
-  if (columnId === "categories") {
-    return row.byCategory.map((c) => `${categoryLabel(c.category)} ${c.wins} of ${c.resolved}`).join(", ") || null;
-  }
-  return row.byEngine.map((e) => `${engineLabel(e.engine)} ${e.wins} of ${e.resolved}`).join(", ") || null;
+  if (columnId === "categories") return competitorCategoryLine(row) || null;
+  return competitorEngineLine(row) || null;
 }
+
+const tallyKey = (row: CompetitorTally) => row.brand;
 
 function Wins({ snapshot }: { snapshot: AiSearchSnapshot }) {
   const history = useAiHistoryOptional();
   const windowed = isWindowHistoryKind(history?.mode.kind);
-  const mixed = hasMixedScoringMethods(snapshot);
   const focus = useEvidenceFocus();
   const [brand, setBrand] = useState(focus?.field === "competitor" ? focus.value : "");
 
@@ -48,7 +62,8 @@ function Wins({ snapshot }: { snapshot: AiSearchSnapshot }) {
   }
 
   const tallies = competitorTallies(snapshot.calls);
-  const sorted = useClientTableSort(tallies, COLUMNS, tallySortValue);
+  const sorted = useClientTableSort(tallies, COLUMNS, tallySortValue, tallyKey);
+  const exportScope = useAiExportScope();
   const losses = useMemo(
     () =>
       snapshot.calls
@@ -62,86 +77,89 @@ function Wins({ snapshot }: { snapshot: AiSearchSnapshot }) {
   );
   const shown = brand ? losses.filter((row) => row.primary_brand === brand) : losses;
   const emptyUnit = windowed ? "selection" : "run";
-
-  if (losses.length === 0) {
-    return (
-      <div className="content-box">
-        <EmptyRows>
-          No competitor was named most in a resolved <AiTerm term="unbranded discovery">unbranded discovery</AiTerm>{" "}
-          answer in this {emptyUnit}.
-        </EmptyRows>
-      </div>
-    );
-  }
+  const competitorWins = summarizeRun(snapshot).competitorWins;
 
   return (
     <>
-      <div className="content-box ai-competitor-tallies">
-        <div className="content-box-title">Competitors named more than Fender/Squier</div>
-        {mixed ? (
-          <p style={mutedText} data-ai-mixed-scoring>
-            {MIXED_SCORING_NOTE}
-          </p>
-        ) : null}
-        <ResizableTable
-          tableId="competitor-wins"
-          columns={COLUMNS}
-          freezeHeader
-          maxHeight={520}
-          sort={sorted.sort}
-          onSort={sorted.onSort}
-        >
-          <tbody>
-            {sorted.rows.map((t) => (
-              <tr key={t.brand} data-competitor={t.brand}>
-                <td>
-                  <button
-                    type="button"
-                    className={`segmented-btn${brand === t.brand ? " active" : ""}`}
-                    aria-pressed={brand === t.brand}
-                    onClick={() => setBrand(brand === t.brand ? "" : t.brand)}
-                  >
-                    {t.brand}
-                  </button>
-                </td>
-                <td>
-                  {t.wins} of {t.resolved} resolved
-                </td>
-                <td>{t.byCategory.map((c) => `${categoryLabel(c.category)} ${c.wins} of ${c.resolved}`).join(", ")}</td>
-                <td>{t.byEngine.map((e) => `${engineLabel(e.engine)} ${e.wins} of ${e.resolved}`).join(", ")}</td>
-              </tr>
-            ))}
-          </tbody>
-        </ResizableTable>
-        <p style={mutedText}>
-          Each lead is a win of that many resolved <AiTerm term="unbranded discovery">unbranded discovery</AiTerm>{" "}
-          answers. Branded consideration is not in this rate.
-        </p>
-      </div>
+      <CompetitorWinsBars snapshot={snapshot} />
 
-      <div className="content-box ai-competitor-answers" style={{ marginTop: 12 }}>
-        <div className="content-box-title">
-          <span>{brand ? `Answers where ${brand} led` : "Every answer a competitor led"}</span>
-          <span className="tag-badge tag-neutral">{shown.length} answers</span>
+      {competitorWins === 0 ? (
+        <div className="content-box" style={{ marginTop: 12 }}>
+          <EmptyRows>
+            No competitor was named most in a resolved <AiTerm term="unbranded discovery">unbranded discovery</AiTerm>{" "}
+            answer in this {emptyUnit}.
+          </EmptyRows>
         </div>
-        {shown.map((row) => (
-          <div key={row.id} className="action-card" data-sim-id={row.sim_id} style={{ marginTop: 6 }}>
-            <div className="action-head">
-              <EvidenceLink focus={{ field: "sim", value: row.id }} tab={AI_TABS.simulations}>
-                {cleanPrompt(row.prompt)}
-              </EvidenceLink>
-            </div>
-            <div className="action-details" style={{ fontSize: 12 }}>
-              {categoryLabel(row.category)} · {engineLabel(row.engine)} · {modelLabel(row.model)}
-            </div>
-            <WhyNotFender row={row} pages={cited.filter((citation) => citation.simulationId === row.id)} />
+      ) : (
+        <>
+          <div className="content-box ai-competitor-tallies" style={{ marginTop: 12 }}>
+            <div className="content-box-title">Competitors named more than {leadBrand()}</div>
+            <ResizableTable
+              tableId="competitor-wins"
+              columns={COLUMNS}
+              fillColumnId={FILL_COLUMN}
+              wrapColumnIds={WRAP_COLUMNS}
+              exportScope={exportScope}
+              freezeHeader
+              maxHeight={520}
+              sort={sorted.sort}
+              onSort={sorted.onSort}
+            >
+              <tbody>
+                {sorted.rows.map((t) => (
+                  <tr key={t.brand} data-competitor={t.brand}>
+                    <td>
+                      <button
+                        type="button"
+                        className={`segmented-btn${brand === t.brand ? " active" : ""}`}
+                        aria-pressed={brand === t.brand}
+                        onClick={() => setBrand(brand === t.brand ? "" : t.brand)}
+                      >
+                        {t.brand}
+                      </button>
+                    </td>
+                    <td>{competitorLeadsCell(t)}</td>
+                    <td>{competitorCategoryLine(t)}</td>
+                    <td>{competitorEngineLine(t)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </ResizableTable>
+            <p style={mutedText}>
+              Each lead is a win of that many resolved <AiTerm term="unbranded discovery">unbranded discovery</AiTerm>{" "}
+              answers. Branded consideration is not in this rate.
+            </p>
           </div>
-        ))}
-      </div>
+
+          <div className="content-box ai-competitor-answers" style={{ marginTop: 12 }}>
+            <div className="content-box-title">
+              <span>{brand ? `Answers where ${brand} led` : "Every answer a competitor led"}</span>
+              <span className="tag-badge tag-neutral">{formatInt(shown.length)} answers</span>
+            </div>
+            {shown.map((row) => (
+              <div key={row.id} className="action-card" data-sim-id={row.sim_id} style={{ marginTop: 6 }}>
+                <div className="action-head">
+                  <EvidenceLink focus={{ field: "sim", value: row.id }} tab={AI_TABS.simulations}>
+                    {cleanPrompt(row.prompt)}
+                  </EvidenceLink>
+                </div>
+                <div className="action-details" style={{ fontSize: 12 }}>
+                  {categoryLabel(row.category)} · {engineLabel(row.engine)} · {modelLabel(row.model)}
+                </div>
+                <WhyNotFender row={row} pages={cited.filter((citation) => citation.simulationId === row.id)} />
+              </div>
+            ))}
+          </div>
+        </>
+      )}
     </>
   );
 }
 
 export function CompetitorWinsPanel() {
-  return <AiReadGate>{(snapshot) => <Wins snapshot={snapshot} />}</AiReadGate>;
+  return (
+    <EngineGroupScope trailing={<CompetitorWinsHero />}>
+      <AiReadGate>{(snapshot) => <Wins snapshot={snapshot} />}</AiReadGate>
+    </EngineGroupScope>
+  );
 }

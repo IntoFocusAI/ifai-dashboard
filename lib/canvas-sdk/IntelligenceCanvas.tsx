@@ -2,9 +2,9 @@
 
 import { CanvasGraph } from "@/lib/canvas-sdk/CanvasGraph";
 import { CanvasShell } from "@/lib/canvas-sdk/CanvasShell";
-import type { CanvasSpec } from "@/lib/canvas-sdk/types";
+import type { CanvasSpecWithViews } from "@/lib/canvas-sdk/minimal-view-types";
 
-export function IntelligenceCanvas({ spec }: { spec: CanvasSpec }) {
+export function IntelligenceCanvas({ spec }: { spec: CanvasSpecWithViews }) {
   return (
     <CanvasShell spec={spec}>
       {(ctx) => (

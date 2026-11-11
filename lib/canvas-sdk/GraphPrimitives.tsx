@@ -1,11 +1,12 @@
 "use client";
 
-import type { KeyboardEvent, MouseEvent, ReactElement } from "react";
+import { type KeyboardEvent, type MouseEvent, type ReactElement } from "react";
+import { BUBBLE_TEXT_MIN, bubbleTextMin, fitMainHero, heroStatus } from "@/lib/canvas-sdk/hero-fit";
 import { SatelliteHeroFace } from "@/lib/canvas-sdk/SatelliteHeroFace";
 import type { CanvasEdge, NodeStatus } from "@/lib/canvas-sdk/types";
 
 /** Stat pill label size inside IOM / v3 bubbles (SVG units before optional face scale). */
-const IOM_STAT_PILL_FONT = 10;
+const IOM_STAT_PILL_FONT = 11;
 
 function polar(radius: number, deg: number) {
   const angle = (deg * Math.PI) / 180;
@@ -86,10 +87,9 @@ function pillMetrics(label: string, fontSize: number, maxWidth?: number) {
 }
 
 /**
- * One big status-colored number with a short label, in place of the stacked stat pills.
- * The value's font size shrinks to the circle's width, and the whole value-plus-label
- * stack shrinks together if the label still wraps to more lines than the circle has
- * room for below `startY`, so neither line ever crosses the ring.
+ * One big number with a short label, in place of the stacked stat pills. The number carries
+ * its status color; the status word lives on the tab. Sizing lives in `fitMainHero` so every
+ * row clears the ring at this radius and renders at 11px or more at 1280x720.
  */
 function HeroValue({
   value,
@@ -97,55 +97,42 @@ function HeroValue({
   status,
   radius,
   startY,
+  minText = BUBBLE_TEXT_MIN,
+  explainer = false,
 }: {
   value: string;
   label: string;
+  /** Reads as a clarifying line under the title: label size, label grey. */
+  explainer?: boolean;
   status: NodeStatus;
   radius: number;
   startY: number;
+  minText?: number;
 }) {
-  const maxWidth = Math.max(40, radius * 2 - 16);
-  const bottomLimit = radius - 7;
-  const fitToWidth = (text: string, size: number) => {
-    const width = textWidth(text, size);
-    return width > maxWidth ? size * (maxWidth / width) : size;
-  };
-
-  let valueSize = fitToWidth(value, Math.max(14, radius * 0.46));
-  let labelSize = Math.max(7, valueSize * 0.33);
-  let labelLines = wrapText(label, maxWidth, labelSize);
-  let labelLineH = labelSize + 2;
-
-  // However many lines the label wraps to, shrink the value and the label together
-  // until the stack clears the circle's bottom edge (a few passes converge quickly).
-  for (let pass = 0; pass < 4; pass += 1) {
-    const gap = Math.max(3, valueSize * 0.18);
-    const stackBottom = startY + valueSize * 0.78 + gap + labelLines.length * labelLineH;
-    if (stackBottom <= bottomLimit || valueSize <= 9) break;
-    const scale = Math.max(0.7, (bottomLimit - startY) / (stackBottom - startY));
-    valueSize *= scale;
-    labelSize = Math.max(6, labelSize * scale);
-    labelLines = wrapText(label, maxWidth, labelSize);
-    labelLineH = labelSize + 2;
-  }
-
-  const gap = Math.max(3, valueSize * 0.18);
-  const valueY = startY + valueSize * 0.78;
-  const labelY = valueY + gap + labelSize * 0.82;
-  const statusClass = status !== "neutral" ? ` status-${status}` : "";
+  const shown = heroStatus(status, value);
+  const fit = fitMainHero(value, label, radius, startY, minText, explainer);
+  const statusClass = shown ? ` status-${status}` : "";
 
   return (
     <g className="node-hero">
-      <text className={`node-hero-value${statusClass}`} y={valueY} textAnchor="middle" fontSize={valueSize}>
+      <text
+        className={explainer ? "node-hero-label" : `node-hero-value${statusClass}`}
+        data-hero-status={shown ?? undefined}
+        y={fit.valueY}
+        textAnchor="middle"
+        fontSize={fit.valueSize}
+      >
         {value}
       </text>
-      <text className="node-hero-label" y={labelY} textAnchor="middle" fontSize={labelSize}>
-        {labelLines.map((line, index) => (
-          <tspan key={`${line}-${index}`} x={0} dy={index === 0 ? 0 : labelLineH}>
-            {line}
-          </tspan>
-        ))}
-      </text>
+      {fit.labelLines.length ? (
+        <text className="node-hero-label" y={fit.labelY} textAnchor="middle" fontSize={fit.labelSize}>
+          {fit.labelLines.map((line, index) => (
+            <tspan key={`${line}-${index}`} x={0} dy={index === 0 ? 0 : fit.labelLineH}>
+              {line}
+            </tspan>
+          ))}
+        </text>
+      ) : null}
     </g>
   );
 }
@@ -261,7 +248,8 @@ export function CenteredStack({
   flowStartY?: number;
 }) {
   const pillMax = maxWidth ?? Math.max(radius * 2 - 14, fontSize * 4);
-  const metaSize = fontSize * 0.82;
+  // Meta used to shrink to 82% of the pill; at the 11px floor that reads under 11px.
+  const metaSize = fontSize;
   const metaMax = pillMax;
   const gap = radius < 62 ? 4 : 5;
 
@@ -319,8 +307,6 @@ const PRIMARY_SPOKES = new Set([
   "spoke-roadmap",
 ]);
 
-/** Flip on to restore the flame and red alert pill above critical bubbles. */
-const SHOW_QUEST_FLAMES = false;
 
 const SPOKE_ICONS: Record<string, BubbleIcon> = {
   "spoke-aeo": "sparkles",
@@ -407,6 +393,7 @@ function CenteredFace({
   titleSize: titleSizeOverride,
   statPillSize,
   heroValue,
+  minText = BUBBLE_TEXT_MIN,
 }: {
   title: string;
   stats: string[];
@@ -420,26 +407,31 @@ function CenteredFace({
   plate?: boolean;
   titleSize?: number;
   statPillSize?: number;
-  heroValue?: { value: string; label: string };
+  heroValue?: { value: string; label: string; explainer?: boolean };
+  /** Smallest text in this face's units that renders at 11px at 1280x720. */
+  minText?: number;
 }) {
-  const pillFont = statPillSize ?? IOM_STAT_PILL_FONT;
+  const pillFont = Math.max(statPillSize ?? IOM_STAT_PILL_FONT, minText);
 
   if (hub) {
     const lines = titleLines(title);
-    const titleY = logoSrc ? 6 : -16;
-    const titleStep = logoSrc ? 26 : 28;
-    const titleSize = logoSrc ? 20 : 22;
-    const stackStartY = titleY + lines.length * titleStep + (meta || stats.length ? 8 : 0);
+    // With a hero figure under the logo, keep the title compact so the value stays readable.
+    const compact = Boolean(heroValue && logoSrc);
+    const titleY = logoSrc ? (compact ? 0 : 6) : -16;
+    const titleStep = logoSrc ? (compact ? 18 : 26) : 28;
+    const titleSize = logoSrc ? (compact ? 15 : 20) : 22;
+    const stackStartY =
+      titleY + lines.length * titleStep + (meta || stats.length || heroValue ? (compact ? 4 : 8) : 0);
     return (
       <g className="node-face">
         {logoSrc ? (
           <image
             className="hub-logo"
             href={logoSrc}
-            x={-60}
-            y={-72}
-            width={120}
-            height={45}
+            x={-56}
+            y={compact ? -78 : -72}
+            width={112}
+            height={compact ? 40 : 45}
             preserveAspectRatio="xMidYMid meet"
           />
         ) : null}
@@ -454,7 +446,17 @@ function CenteredFace({
             {line}
           </text>
         ))}
-        {stats.length || meta ? (
+        {heroValue ? (
+          <HeroValue
+            value={heroValue.value}
+            label={heroValue.label}
+            explainer={heroValue.explainer}
+            status={status}
+            radius={radius}
+            startY={stackStartY}
+            minText={minText}
+          />
+        ) : stats.length || meta ? (
           <CenteredStack
             radius={radius}
             stats={stats}
@@ -474,12 +476,21 @@ function CenteredFace({
     return <SatelliteHeroFace title={title} value={heroValue.value} label={heroValue.label} status={status} />;
   }
 
-  const lines = titleLines(title);
-  const titleSize =
-    titleSizeOverride ?? (prominent ? 13 : radius >= 74 ? 11.5 : 10.5);
+  const titleSize = Math.max(minText, titleSizeOverride ?? (prominent ? 13 : radius >= 74 ? 11.5 : 11));
+  // A title that fits one line with room to spare stays on one line, so the hero figure and its
+  // label get the row it saves.
+  const oneLine = Boolean(icon && prominent && heroValue) && textWidth(title, titleSize) / 2 + 6 <= radius - 14;
+  const lines = oneLine ? [title] : titleLines(title);
   const lineH = titleSize + 3;
-  const iconY = icon ? -radius * (prominent ? 0.44 : 0.36) : 0;
-  const titleStart = icon ? (prominent ? 4 : -radius * 0.02) : -lineH * (lines.length / 2);
+  // A main bubble with a hero lifts its icon and title so the figure and its label, at the 11px
+  // floor, sit in the wide middle of the circle instead of its narrow bottom.
+  const lifted = Boolean(icon && prominent && heroValue);
+  const iconY = icon ? -radius * (lifted ? 0.56 : prominent ? 0.44 : 0.36) : 0;
+  const titleStart = lifted
+    ? iconY + 16 + 4 + titleSize * 0.75
+    : icon
+      ? (prominent ? 4 : -radius * 0.02)
+      : -lineH * (lines.length / 2);
   const stackStartY = titleStart + lines.length * lineH + (stats.length || meta || heroValue ? 5 : 0);
 
   return (
@@ -505,9 +516,11 @@ function CenteredFace({
         <HeroValue
           value={heroValue.value}
           label={heroValue.label}
+          explainer={heroValue.explainer}
           status={status}
           radius={radius}
           startY={stackStartY}
+          minText={minText}
         />
       ) : stats.length || meta ? (
         <CenteredStack
@@ -537,7 +550,7 @@ type BubbleProps = {
   titleSize?: number;
   stats: string[];
   meta?: string;
-  heroValue?: { value: string; label: string };
+  heroValue?: { value: string; label: string; explainer?: boolean };
   centered?: boolean;
   logoSrc?: string;
   emphasis?: boolean;
@@ -593,7 +606,9 @@ export function GraphBubble({
   const faceScale = faceR > 0 && r !== faceR ? r / faceR : 1;
   const headerSize = titleSize ?? (faceR >= 70 ? 14.5 : faceR >= 50 ? 13 : 12);
   const statPillFont = (PRIMARY_SPOKES.has(id) ? 13.5 : IOM_STAT_PILL_FONT) / faceScale;
-  const statusClass = status !== "neutral" ? ` status-${status}` : "";
+  /* The ring takes the status color when the hero figure does. */
+  const ringStatus = heroValue ? heroStatus(status, heroValue.value) : null;
+  const statusClass = ringStatus ? ` status-${status}` : "";
   const stateClass = `${selected ? " node-selected" : ""}${dimmed ? " node-dimmed" : ""}`;
 
   const face = centered ? (
@@ -609,6 +624,7 @@ export function GraphBubble({
       titleSize={titleSize}
       statPillSize={statPillFont}
       heroValue={heroValue}
+      minText={bubbleTextMin(faceScale)}
     />
   ) : (
     <>
@@ -629,14 +645,9 @@ export function GraphBubble({
       onMouseLeave={onMouseLeave}
       {...inspectProps(title, onInspect, onClick)}
     >
-      <circle r={emphasis ? r + 26 : r + 10} className={`node-halo${statusClass}`} />
-      {emphasis && PRIMARY_SPOKES.has(id) ? <RingMotes radius={r} /> : null}
-      {SHOW_QUEST_FLAMES && emphasis && PRIMARY_SPOKES.has(id) && status === "danger" && stats[0] ? (
-        <QuestFlame label={stats[0]} radius={r} />
-      ) : null}
-      {selected && emphasis ? <SelectionBurst radius={r} /> : null}
+      <circle r={r + (emphasis ? 12 : 10)} className="node-halo" />
       <g className="node-inner">
-        <circle r={r} className={`node-circle${statusClass}`} filter="url(#nodeShadow)" />
+        <circle r={r} className={`node-circle${statusClass}`} />
         {faceScale === 1 ? face : <g transform={`scale(${faceScale})`}>{face}</g>}
       </g>
     </g>
@@ -654,9 +665,9 @@ export function GraphHub({
   titleSize,
   stats,
   meta,
+  heroValue,
   centered = false,
   logoSrc,
-  emphasis = false,
   selected = false,
   dimmed = false,
   onClick,
@@ -683,11 +694,16 @@ export function GraphHub({
       hub
       logoSrc={logoSrc}
       statPillSize={statPillFont}
+      heroValue={heroValue}
     />
   ) : (
     <>
       <CurvedHeader id={id} radius={faceR} title={title} fontSize={headerSize} className="node-title hub-title" />
-      <CenteredStack radius={faceR} stats={stats} meta={meta} pillSize={statPillFont} status={status} />
+      {heroValue ? (
+        <HeroValue value={heroValue.value} label={heroValue.label} explainer={heroValue.explainer} status={status} radius={faceR} startY={12} />
+      ) : (
+        <CenteredStack radius={faceR} stats={stats} meta={meta} pillSize={statPillFont} status={status} />
+      )}
     </>
   );
 
@@ -702,18 +718,9 @@ export function GraphHub({
       onMouseLeave={onMouseLeave}
       {...inspectProps(title, onInspect, onClick)}
     >
-      <circle r={pulseR} fill="url(#brandHubGradient)" opacity="0.45" className="node-pulse-ring hub-halo-pulse" />
-      {emphasis ? <RingMotes radius={r} /> : null}
-      {selected && emphasis ? <SelectionBurst radius={r} /> : null}
+      <circle r={pulseR} className="hub-halo-edge" fill="none" pointerEvents="fill" />
       <g className="node-inner">
-        <circle
-          className="hub-mid-ring"
-          r={midR}
-          fill="url(#brandHubGradient)"
-          filter="url(#nodeShadow)"
-          stroke="var(--border-dark)"
-          strokeWidth="3"
-        />
+        <circle className="hub-mid-ring" r={midR} fill="none" />
         <circle r={r} className="node-circle hub-core" />
         {faceScale === 1 ? face : <g transform={`scale(${faceScale})`}>{face}</g>}
       </g>
@@ -725,72 +732,6 @@ export function ConnLine({ x1, y1, x2, y2, kind = "default", hot = false }: Canv
   const kindClass =
     kind === "active" ? " active-spoke" : kind !== "default" ? ` ${kind}` : "";
   return <line x1={x1} y1={y1} x2={x2} y2={y2} className={`conn-line${kindClass}${hot ? " conn-hot" : ""}`} />;
-}
-
-function RingMotes({ radius }: { radius: number }) {
-  const motes = [8, 36, 62, 98, 128, 156, 188, 214, 248, 278, 312, 344].map((deg, index) => {
-    const point = polar(radius + 16 + (index % 3) * 7, deg - 90);
-    return { ...point, size: index % 4 === 0 ? 2.1 : 1.25, delay: (index % 6) * 0.28 };
-  });
-  return (
-    <g className="ring-motes" pointerEvents="none">
-      <circle className="node-outer-ring" r={radius + 18} fill="none" />
-      {motes.map((mote, index) => (
-        <circle
-          key={index}
-          className="ring-mote"
-          cx={mote.x.toFixed(2)}
-          cy={mote.y.toFixed(2)}
-          r={mote.size}
-          style={{ animationDelay: `${mote.delay}s` }}
-        />
-      ))}
-    </g>
-  );
-}
-
-function QuestFlame({ label, radius }: { label: string; radius: number }) {
-  const width = Math.max(72, label.length * 6.4 + 16);
-  return (
-    <g className="quest-beacon" transform={`translate(0, ${-radius - 36})`} pointerEvents="none">
-      <g className="quest-flame">
-        <ellipse className="flame-core" cx="0" cy="-2" rx="5" ry="9" />
-        <circle className="flame-ember" cx="-4" cy="2" r="1.5" />
-        <circle className="flame-ember flame-ember-b" cx="4" cy="1" r="1.3" />
-      </g>
-      <rect className="quest-pill" x={-width / 2} y={8} width={width} height={16} rx={8} />
-      <text className="quest-pill-text" y={19} textAnchor="middle">
-        {label}
-      </text>
-    </g>
-  );
-}
-
-function SelectionBurst({ radius }: { radius: number }) {
-  const sparks = Array.from({ length: 12 }, (_, index) => {
-    const angle = (Math.PI * 2 * index) / 12;
-    const dist = radius + 78;
-    return {
-      dx: Math.cos(angle) * dist,
-      dy: Math.sin(angle) * dist,
-      delay: (index % 3) * 28,
-      color: index % 2 === 0 ? "#00f0ff" : "#818cf8",
-    };
-  });
-  return (
-    <g className="node-firework" pointerEvents="none">
-      <circle className="node-shockwave" r={radius * 0.72} fill="none" stroke="#00f0ff" strokeWidth="2" />
-      {sparks.map((spark, index) => (
-        <circle
-          key={index}
-          className="node-spark"
-          r="3.2"
-          fill={spark.color}
-          style={{ ["--dx" as string]: `${spark.dx.toFixed(2)}px`, ["--dy" as string]: `${spark.dy.toFixed(2)}px`, animationDelay: `${spark.delay}ms` }}
-        />
-      ))}
-    </g>
-  );
 }
 
 export function TourSpotlight({
@@ -826,9 +767,8 @@ export function TourSpotlight({
         id="tour-spotlight-ring"
         r={radius}
         fill="none"
-        stroke="var(--color-indigo)"
+        stroke="var(--accent)"
         strokeWidth="2.5"
-        filter="url(#glow-accent)"
       />
       <g id="tour-spotlight-tag" transform={`translate(0, -${radius + 10})`}>
         <rect
@@ -837,19 +777,18 @@ export function TourSpotlight({
           width="190"
           height="28"
           rx="14"
-          fill="#070d18"
+          fill="var(--brand-card)"
           stroke="var(--accent-purple)"
           strokeWidth="1.8"
-          filter="url(#nodeShadow)"
         />
         <circle cx="-75" cy="0" r="4" fill="var(--accent-purple)" />
         <text
           x="6"
           y="4"
           textAnchor="middle"
-          fontSize="10.5"
-          fontWeight="800"
-          fill="#ffffff"
+          fontSize="11"
+          fontWeight="600"
+          fill="var(--brand-headline)"
           letterSpacing="0.5"
           id="tour-spotlight-tag-text"
         >
