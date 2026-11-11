@@ -60,10 +60,10 @@ test.describe("primary spoke map", () => {
 
       const roadmap = page.locator('[data-graph-node-id="spoke-roadmap"]');
       await expect(roadmap.locator(".node-meta")).toHaveCount(0);
-      // A live count, never the fixed "90 Days / 3 phases" plan.
-      await expect(roadmap.locator(".node-hero-label")).toHaveCount(0);
-      await expect(roadmap.locator(".node-hero-value")).toHaveText("30-60-90");
-      await expect(roadmap.locator(".node-hero-value")).not.toHaveAttribute("data-hero-status", /.+/);
+      // A static, muted explainer under the title (PR 172): label class, no figure, no status color.
+      await expect(roadmap.locator(".node-hero-value")).toHaveCount(0);
+      await expect(roadmap.locator(".node-hero-label")).toHaveText("30-60-90");
+      await expect(roadmap.locator("[data-hero-status]")).toHaveCount(0);
       await expect(roadmap.locator(".node-stat-pill")).toHaveCount(0);
 
       const readiness = page.locator('[data-graph-node-id="spoke-specs"]');
