@@ -98,22 +98,25 @@ function HeroValue({
   radius,
   startY,
   minText = BUBBLE_TEXT_MIN,
+  explainer = false,
 }: {
   value: string;
   label: string;
+  /** Reads as a clarifying line under the title: label size, label grey. */
+  explainer?: boolean;
   status: NodeStatus;
   radius: number;
   startY: number;
   minText?: number;
 }) {
   const shown = heroStatus(status, value);
-  const fit = fitMainHero(value, label, radius, startY, minText);
+  const fit = fitMainHero(value, label, radius, startY, minText, explainer);
   const statusClass = shown ? ` status-${status}` : "";
 
   return (
     <g className="node-hero">
       <text
-        className={`node-hero-value${statusClass}`}
+        className={explainer ? "node-hero-label" : `node-hero-value${statusClass}`}
         data-hero-status={shown ?? undefined}
         y={fit.valueY}
         textAnchor="middle"
@@ -404,7 +407,7 @@ function CenteredFace({
   plate?: boolean;
   titleSize?: number;
   statPillSize?: number;
-  heroValue?: { value: string; label: string };
+  heroValue?: { value: string; label: string; explainer?: boolean };
   /** Smallest text in this face's units that renders at 11px at 1280x720. */
   minText?: number;
 }) {
@@ -447,6 +450,7 @@ function CenteredFace({
           <HeroValue
             value={heroValue.value}
             label={heroValue.label}
+            explainer={heroValue.explainer}
             status={status}
             radius={radius}
             startY={stackStartY}
@@ -512,6 +516,7 @@ function CenteredFace({
         <HeroValue
           value={heroValue.value}
           label={heroValue.label}
+          explainer={heroValue.explainer}
           status={status}
           radius={radius}
           startY={stackStartY}
@@ -545,7 +550,7 @@ type BubbleProps = {
   titleSize?: number;
   stats: string[];
   meta?: string;
-  heroValue?: { value: string; label: string };
+  heroValue?: { value: string; label: string; explainer?: boolean };
   centered?: boolean;
   logoSrc?: string;
   emphasis?: boolean;
@@ -695,7 +700,7 @@ export function GraphHub({
     <>
       <CurvedHeader id={id} radius={faceR} title={title} fontSize={headerSize} className="node-title hub-title" />
       {heroValue ? (
-        <HeroValue value={heroValue.value} label={heroValue.label} status={status} radius={faceR} startY={12} />
+        <HeroValue value={heroValue.value} label={heroValue.label} explainer={heroValue.explainer} status={status} radius={faceR} startY={12} />
       ) : (
         <CenteredStack radius={faceR} stats={stats} meta={meta} pillSize={statPillFont} status={status} />
       )}

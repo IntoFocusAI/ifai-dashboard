@@ -9,9 +9,10 @@ import { competitorTallies } from "@/lib/ai-search/competitors";
 import {
   competitorLeadPie,
   competitorWinsCount,
+  competitorWinsStatus,
 } from "@/lib/ai-search/competitor-wins-lead";
 import { headlineCompetitorWins } from "@/lib/ai-search/question-role";
-import { pct, roleRateLead, summarizeRun, UNBRANDED_RATE_BANDS } from "@/lib/ai-search/summary";
+import { pct, STATUS_COLOR, summarizeRun } from "@/lib/ai-search/summary";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
 import { formatInt } from "@/lib/fender-canvas/format";
 import { hasMixedScoringMethods } from "@/lib/ai-search/window-display";
@@ -28,7 +29,7 @@ function HeroFigure({ snapshot, mixed }: { snapshot: AiSearchSnapshot; mixed: bo
   const resolved = summary.roles.unbranded.resolved;
   const pie = competitorLeadPie(competitorWins, resolved);
   if (resolved <= 0) return null;
-  const lead = roleRateLead({ fenderWins: resolved - competitorWins, resolved }, UNBRANDED_RATE_BANDS);
+  const status = competitorWinsStatus(competitorWins, resolved);
   const tip = pie
     ? `${formatInt(competitorWins)} competitor led. ${formatInt(resolved - competitorWins)} ${leadBrand()} led. Total ${formatInt(resolved)} resolved unbranded discovery answers.`
     : undefined;
@@ -39,7 +40,7 @@ function HeroFigure({ snapshot, mixed }: { snapshot: AiSearchSnapshot; mixed: bo
         <span className="ai-competitor-hero-figures">
           <span
             className="ai-lead-figure"
-            style={{ color: lead.color ?? undefined }}
+            style={{ color: status ? STATUS_COLOR[status] : undefined }}
             data-ai-competitor-lead-figure=""
           >
             <MixedScoringTip mixed={mixed}>{pct(competitorWins, resolved)}</MixedScoringTip>
@@ -50,7 +51,7 @@ function HeroFigure({ snapshot, mixed }: { snapshot: AiSearchSnapshot; mixed: bo
           <span className="retail-overview-hero-ratio" data-ai-competitor-ratio="">
             {competitorWinsCount(competitorWins, resolved)}
           </span>
-          {lead.status ? <StatusMark status={lead.status} /> : null}
+          {status ? <StatusMark status={status} /> : null}
         </span>
         {pie ? (
           <CitationPieDisc

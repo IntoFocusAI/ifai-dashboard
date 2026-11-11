@@ -115,7 +115,7 @@ test("Roadmap has no retail metadata line", () => {
   assert.equal(Object.hasOwn(staticRoadmap, "meta"), false);
   assert.equal(staticRoadmap.meta, undefined);
   assert.deepEqual(staticRoadmap.stats, []);
-  assert.deepEqual(staticRoadmap.heroValue, { value: "30-60-90", label: "" });
+  assert.deepEqual(staticRoadmap.heroValue, { value: "30-60-90", label: "", explainer: true });
   assert.equal(staticRoadmap.title, "Roadmap");
   assert.equal(staticRoadmap.tooltip?.desc, "");
 
@@ -125,7 +125,7 @@ test("Roadmap has no retail metadata line", () => {
   assert.equal(Object.hasOwn(liveRoadmap, "meta"), false);
   assert.equal(liveRoadmap.meta, undefined);
   assert.deepEqual(liveRoadmap.stats, []);
-  assert.deepEqual(liveRoadmap.heroValue, { value: "30-60-90", label: "" });
+  assert.deepEqual(liveRoadmap.heroValue, { value: "30-60-90", label: "", explainer: true });
   assert.equal(liveRoadmap.status, "neutral");
   assert.equal(liveRoadmap.spokeId, "roadmap");
   assert.equal(liveRoadmap.tooltip?.desc, "");

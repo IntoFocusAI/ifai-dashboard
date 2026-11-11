@@ -194,7 +194,7 @@ test("the Roadmap figure: findings that need action, of those with a stored read
 
 test("the Roadmap bubble is static: 30-60-90, neutral, no figure, for every read state", () => {
   const face = roadmapBubbleFace();
-  assert.deepEqual(face.heroValue, { value: "30-60-90", label: "" });
+  assert.deepEqual(face.heroValue, { value: "30-60-90", label: "", explainer: true });
   assert.equal(face.status, "neutral");
   assert.equal(face.subTab, "30-60-90 Days");
   assert.equal(roadmapMetric().value, "30-60-90");

@@ -118,7 +118,7 @@ export const fenderStaticNodes: CanvasNode[] = [
       title: "Roadmap",
       stats: [],
       // Static for every client: a click opens the next 90 days of strategy.
-      heroValue: { value: "30-60-90", label: "" },
+      heroValue: { value: "30-60-90", label: "", explainer: true },
       subTab: "30-60-90 Days",
       spokeId: "roadmap",
       tooltip: { title: "", desc: "" },

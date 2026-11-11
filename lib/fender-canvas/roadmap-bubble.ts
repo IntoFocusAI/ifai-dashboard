@@ -17,7 +17,7 @@ export const ROADMAP_BUBBLE_VALUE = "30-60-90";
 export function roadmapBubbleFace(): Pick<CanvasNode, "status" | "heroValue" | "subTab"> {
   return {
     status: "neutral",
-    heroValue: { value: ROADMAP_BUBBLE_VALUE, label: "" },
+    heroValue: { value: ROADMAP_BUBBLE_VALUE, label: "", explainer: true },
     subTab: ROADMAP_TAB,
   };
 }

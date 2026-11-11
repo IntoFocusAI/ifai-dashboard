@@ -27,7 +27,7 @@ export type CanvasNode = {
    * A single big status-colored number in place of the stacked stat pills. Use when a
    * bubble has one scored headline value instead of several short facts to list.
    */
-  heroValue?: { value: string; label: string };
+  heroValue?: { value: string; label: string; explainer?: boolean };
   /**
    * Why the hero figure carries the partial asterisk (X-25): what is missing, the coverage, the
    * source, the last check, and the effect. Set even on a bubble that shows no hover box, so a

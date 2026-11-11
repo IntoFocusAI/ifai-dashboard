@@ -251,9 +251,10 @@ export function fitMainHero(
   radius: number,
   startY: number,
   minText: number = BUBBLE_TEXT_MIN,
+  explainer = false,
 ): MainHeroFit {
   const trimmed = value.trim() || "Not available";
-  const worded = !isCompactHeroValue(trimmed);
+  const worded = explainer || !isCompactHeroValue(trimmed);
   const bottomLimit = radius - MAIN_RING_PAD;
   const diameterWidth = Math.max(40, radius * 2 - MAIN_RING_PAD * 2);
 

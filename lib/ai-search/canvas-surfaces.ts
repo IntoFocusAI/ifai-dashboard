@@ -6,7 +6,7 @@ import {
   joinBrands,
   type CategoryBattle,
 } from "@/lib/ai-search/competitors";
-import { competitorWinsFigure } from "@/lib/ai-search/competitor-wins-lead";
+import { competitorWinsFigure, competitorWinsStatus } from "@/lib/ai-search/competitor-wins-lead";
 import {
   factCheckHeadline,
   factCheckShortLine,
@@ -265,9 +265,12 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
       tooltip: { ...EMPTY_TOOLTIP },
     },
     satGap: {
-      // Same status rule as the Competitive Radar bubble. The hero is the competitor-led share of
+      // Status is the shared Competitor Wins rule (red above 70%, green below 35%). The hero is the competitor-led share of
       // resolved unbranded answers (84 of 214 reads 39.3%); the title is its label.
-      status: s.competitorWins > 0 ? "warning" : "success",
+      status: (() => {
+        const tone = competitorWinsStatus(s.competitorWins, s.roles.unbranded.resolved);
+        return tone === "bad" ? "danger" : tone === "good" ? "success" : tone === "okay" ? "warning" : "neutral";
+      })(),
       title: "Competitor Wins",
       stats:
         s.roles.unbranded.resolved > 0
