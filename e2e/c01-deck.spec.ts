@@ -86,21 +86,26 @@ for (const client of ["fender", "ledlenser"]) {
       });
     }
 
-    test("the deck cites the run and window the screen shows", async ({ page }) => {
-      test.setTimeout(180_000);
+    test("the deck follows the date pill: the published run on Run Summary is the run on the deck", async ({ page, canvas }) => {
+      test.setTimeout(240_000);
       await page.goto(`/dashboard?${query}spoke=aeo`);
+      const figure = page.locator("[data-ai-lead-figure='unbranded_discovery']").first();
+      await expect(figure).toHaveText(/\d+\.\d%/, { timeout: AI_READ_MS });
       const pill = page.locator("[data-ai-history-trigger]").first();
-      const run = page.locator("[data-ai-history-run]").first();
-      await expect(run).toHaveText(/^[0-9a-f]{8}/, { timeout: AI_READ_MS });
-      const pillLabel = ((await pill.textContent()) ?? "").trim();
-      const runId = ((await run.textContent()) ?? "").slice(0, 8);
+      await pill.click();
+      await page.locator("[data-ai-history-latest-run]").click();
+      await expect(pill).toHaveText(/Published run/, { timeout: AI_READ_MS });
+      await expect(figure).toHaveText(/\d+\.\d%/, { timeout: AI_READ_MS });
+      const label = ((await pill.textContent()) ?? "").replace("\u25be", "").trim();
+      const rate = ((await figure.textContent()) ?? "").match(/\d+\.\d%/)?.[0];
 
-      await page.goto(`/dashboard?${query}spoke=hub`);
+      // Summary in the same page load, so the pill's choice carries over.
+      await canvas.clickBubble("hub");
       await page.locator("[data-deck-open]").click({ timeout: 60_000 });
       await expect(page.locator("[data-deck][data-deck-slide-count]")).toBeVisible({ timeout: AI_READ_MS });
-      const line = (await page.locator(".deck-slide.is-active [data-deck-run]").textContent()) ?? "";
-      expect(line).toContain(`Run ${runId}`);
-      expect(line).toContain(pillLabel);
+      await expect(page.locator(".deck-slide.is-active [data-deck-run]")).toContainText(label);
+      await expect(page.locator(".deck-slide.is-active [data-deck-run]")).toContainText(/Published run [0-9a-f]{8}/);
+      await expect(page.locator("[data-deck-slide='s2'] [data-deck-figure='unbranded'] [data-deck-figure-value]")).toHaveText(rate ?? "missing");
     });
   });
 }

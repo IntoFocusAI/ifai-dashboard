@@ -156,7 +156,8 @@ export function buildDeck(input: DeckInput): DeckModel {
     brand: input.brand,
     title: `${input.brand} in AI search: what the listings are costing`,
     window: input.windowLabel,
-    runId: input.tabAi?.run.audit_run_id.slice(0, 8) ?? null,
+    // The map, Summary, and Action Items read the published run; the AI tabs read the window above.
+    runId: input.mapAi?.run.audit_run_id.slice(0, 8) ?? null,
     asOf: input.asOf,
     slides,
     omitted,

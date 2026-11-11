@@ -188,7 +188,7 @@ test("AI figures equal Run Summary, Product Fact Checks, and Competitor Wins for
     bars.map((bar) => [bar.label, bar.ratio]),
     tallies.slice(0, 5).map((row) => [row.brand, formatRatio(row.wins, row.resolved)]),
   );
-  assert.equal(deck.runId, input.tabAi!.run.audit_run_id.slice(0, 8));
+  assert.equal(deck.runId, input.mapAi!.run.audit_run_id.slice(0, 8));
   assert.equal(deck.window, "Last 30 days");
 });
 

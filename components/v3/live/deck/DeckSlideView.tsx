@@ -26,7 +26,7 @@ export function DeckSlideView({
 }) {
   const runLine = [
     model.window,
-    model.runId ? `Run ${model.runId}` : null,
+    model.runId ? `Published run ${model.runId}` : null,
     model.asOf ? `Data as of ${model.asOf}` : null,
   ]
     .filter(Boolean)

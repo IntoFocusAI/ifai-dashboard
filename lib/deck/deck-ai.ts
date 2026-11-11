@@ -85,7 +85,11 @@ export function openingSlides(input: DeckInput, snapshot: AiSearchSnapshot | nul
     kind: "title",
     backstage: false,
     act: ACT_ONE,
-    headline: `AI assistants recommend ${brand} in ${tenths} of 10 open shopping questions.${rest > 0 ? ` Rivals take the other ${rest}.` : ""}`,
+    // "6 of 10" reads well; at 0 or 10 the rounding hides the figure, so the exact N of M is used.
+    headline:
+      tenths > 0 && rest > 0
+        ? `AI assistants recommend ${brand} in ${tenths} of 10 open shopping questions. Rivals take the other ${rest}.`
+        : `AI assistants name ${brand} first in ${formatRatio(roles.unbranded.fenderWins, roles.unbranded.resolved)} open shopping answers.`,
     why: `Shoppers now ask an assistant what to buy before they reach a product page. Every answer that names a rival is a sale ${brand} never gets the chance to win.`,
     figures: [{ ...figures.unbranded, accent: true }],
     sources: [SOURCES.runSummary],
