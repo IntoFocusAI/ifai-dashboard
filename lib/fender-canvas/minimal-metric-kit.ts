@@ -154,8 +154,11 @@ export function bubbleEntry(
     read: (ctx) => {
       const node = ctx.node(entry.id)!;
       const value = node.heroValue?.value ?? "";
+      const reading = entry.read(ctx);
       return {
-        ...entry.read(ctx),
+        ...reading,
+        // X-25: a bubble figure with the partial asterisk keeps its tooltip in the slot.
+        missing: reading.missing ?? node.partialTip ?? null,
         value: /^not available\*?$/i.test(value.trim()) ? NOT_AVAILABLE : value,
         tone: node.status,
       };

@@ -14,7 +14,7 @@
 
 .page-found-status {
   padding: 3px 8px;
-  font-size: 10px;
+  font-size: 11px;
 }
 
 .page-found-reason {
@@ -102,4 +102,11 @@ button.page-found-findability-link:focus-visible {
   margin-top: 8px;
   font-size: 11px;
   color: var(--text-muted);
+}
+
+/* At the 12px sentence size (X-31) a hero's explainer wraps to its card's figures instead of
+   widening the card, so the three Brand-Site Specs heroes keep one row. */
+.ifai-canvas [data-brand-site-specs-lead] .findability-lead-card > .metric-card-sub {
+  width: 0;
+  min-width: 100%;
 }

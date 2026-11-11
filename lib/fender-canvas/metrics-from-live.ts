@@ -368,7 +368,7 @@ function liveMetrics(
       subTab: "Revenue Estimates",
       provenance: "estimate",
     },
-    dayNinetyBuyBoxTarget: roadmapMetric(retail, findability, ai),
+    dayNinetyBuyBoxTarget: roadmapMetric(),
   };
 }
 

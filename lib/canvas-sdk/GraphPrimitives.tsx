@@ -1,12 +1,12 @@
 "use client";
 
 import { type KeyboardEvent, type MouseEvent, type ReactElement } from "react";
-import { fitMainHero, heroStatus } from "@/lib/canvas-sdk/hero-fit";
-import { HeroStatusRow, SatelliteHeroFace } from "@/lib/canvas-sdk/SatelliteHeroFace";
+import { BUBBLE_TEXT_MIN, bubbleTextMin, fitMainHero, heroStatus } from "@/lib/canvas-sdk/hero-fit";
+import { SatelliteHeroFace } from "@/lib/canvas-sdk/SatelliteHeroFace";
 import type { CanvasEdge, NodeStatus } from "@/lib/canvas-sdk/types";
 
 /** Stat pill label size inside IOM / v3 bubbles (SVG units before optional face scale). */
-const IOM_STAT_PILL_FONT = 10;
+const IOM_STAT_PILL_FONT = 11;
 
 function polar(radius: number, deg: number) {
   const angle = (deg * Math.PI) / 180;
@@ -87,9 +87,9 @@ function pillMetrics(label: string, fontSize: number, maxWidth?: number) {
 }
 
 /**
- * One big number with a short label, in place of the stacked stat pills. A status-colored
- * number has its mark and word under the label. Sizing lives in `fitMainHero` so every row
- * clears the ring at this radius.
+ * One big number with a short label, in place of the stacked stat pills. The number carries
+ * its status color; the status word lives on the tab. Sizing lives in `fitMainHero` so every
+ * row clears the ring at this radius and renders at 11px or more at 1280x720.
  */
 function HeroValue({
   value,
@@ -97,22 +97,27 @@ function HeroValue({
   status,
   radius,
   startY,
+  minText = BUBBLE_TEXT_MIN,
+  explainer = false,
 }: {
   value: string;
   label: string;
+  /** Reads as a clarifying line under the title: label size, label grey. */
+  explainer?: boolean;
   status: NodeStatus;
   radius: number;
   startY: number;
+  minText?: number;
 }) {
   const shown = heroStatus(status, value);
-  const fit = fitMainHero(value, label, radius, startY, shown);
+  const fit = fitMainHero(value, label, radius, startY, minText, explainer);
   const statusClass = shown ? ` status-${status}` : "";
 
   return (
     <g className="node-hero">
       <text
-        className={`node-hero-value${statusClass}`}
-        x={fit.valueX || undefined}
+        className={explainer ? "node-hero-label" : `node-hero-value${statusClass}`}
+        data-hero-status={shown ?? undefined}
         y={fit.valueY}
         textAnchor="middle"
         fontSize={fit.valueSize}
@@ -128,7 +133,6 @@ function HeroValue({
           ))}
         </text>
       ) : null}
-      {shown ? <HeroStatusRow status={shown} x={fit.statusX} y={fit.statusY} size={fit.statusSize} /> : null}
     </g>
   );
 }
@@ -244,7 +248,7 @@ export function CenteredStack({
   flowStartY?: number;
 }) {
   const pillMax = maxWidth ?? Math.max(radius * 2 - 14, fontSize * 4);
-  // Meta used to shrink to 82% of the pill; at the 10px floor that reads under 10px.
+  // Meta used to shrink to 82% of the pill; at the 11px floor that reads under 11px.
   const metaSize = fontSize;
   const metaMax = pillMax;
   const gap = radius < 62 ? 4 : 5;
@@ -389,6 +393,7 @@ function CenteredFace({
   titleSize: titleSizeOverride,
   statPillSize,
   heroValue,
+  minText = BUBBLE_TEXT_MIN,
 }: {
   title: string;
   stats: string[];
@@ -402,9 +407,11 @@ function CenteredFace({
   plate?: boolean;
   titleSize?: number;
   statPillSize?: number;
-  heroValue?: { value: string; label: string };
+  heroValue?: { value: string; label: string; explainer?: boolean };
+  /** Smallest text in this face's units that renders at 11px at 1280x720. */
+  minText?: number;
 }) {
-  const pillFont = statPillSize ?? IOM_STAT_PILL_FONT;
+  const pillFont = Math.max(statPillSize ?? IOM_STAT_PILL_FONT, minText);
 
   if (hub) {
     const lines = titleLines(title);
@@ -443,9 +450,11 @@ function CenteredFace({
           <HeroValue
             value={heroValue.value}
             label={heroValue.label}
+            explainer={heroValue.explainer}
             status={status}
             radius={radius}
             startY={stackStartY}
+            minText={minText}
           />
         ) : stats.length || meta ? (
           <CenteredStack
@@ -467,13 +476,21 @@ function CenteredFace({
     return <SatelliteHeroFace title={title} value={heroValue.value} label={heroValue.label} status={status} />;
   }
 
-  const lines = titleLines(title);
-  const titleSize =
-    titleSizeOverride ?? (prominent ? 13 : radius >= 74 ? 11.5 : 10.5);
+  const titleSize = Math.max(minText, titleSizeOverride ?? (prominent ? 13 : radius >= 74 ? 11.5 : 11));
+  // A title that fits one line with room to spare stays on one line, so the hero figure and its
+  // label get the row it saves.
+  const oneLine = Boolean(icon && prominent && heroValue) && textWidth(title, titleSize) / 2 + 6 <= radius - 14;
+  const lines = oneLine ? [title] : titleLines(title);
   const lineH = titleSize + 3;
-  const iconY = icon ? -radius * (prominent ? 0.44 : 0.36) : 0;
-  // A selected bubble with a two-line title lifts the title so a two-row hero label clears the ring.
-  const titleStart = icon ? (prominent ? (lines.length > 1 && heroValue ? -2 : 4) : -radius * 0.02) : -lineH * (lines.length / 2);
+  // A main bubble with a hero lifts its icon and title so the figure and its label, at the 11px
+  // floor, sit in the wide middle of the circle instead of its narrow bottom.
+  const lifted = Boolean(icon && prominent && heroValue);
+  const iconY = icon ? -radius * (lifted ? 0.56 : prominent ? 0.44 : 0.36) : 0;
+  const titleStart = lifted
+    ? iconY + 16 + 4 + titleSize * 0.75
+    : icon
+      ? (prominent ? 4 : -radius * 0.02)
+      : -lineH * (lines.length / 2);
   const stackStartY = titleStart + lines.length * lineH + (stats.length || meta || heroValue ? 5 : 0);
 
   return (
@@ -499,9 +516,11 @@ function CenteredFace({
         <HeroValue
           value={heroValue.value}
           label={heroValue.label}
+          explainer={heroValue.explainer}
           status={status}
           radius={radius}
           startY={stackStartY}
+          minText={minText}
         />
       ) : stats.length || meta ? (
         <CenteredStack
@@ -531,7 +550,7 @@ type BubbleProps = {
   titleSize?: number;
   stats: string[];
   meta?: string;
-  heroValue?: { value: string; label: string };
+  heroValue?: { value: string; label: string; explainer?: boolean };
   centered?: boolean;
   logoSrc?: string;
   emphasis?: boolean;
@@ -587,7 +606,7 @@ export function GraphBubble({
   const faceScale = faceR > 0 && r !== faceR ? r / faceR : 1;
   const headerSize = titleSize ?? (faceR >= 70 ? 14.5 : faceR >= 50 ? 13 : 12);
   const statPillFont = (PRIMARY_SPOKES.has(id) ? 13.5 : IOM_STAT_PILL_FONT) / faceScale;
-  /* The ring takes the status color only when the face shows the matching mark and word. */
+  /* The ring takes the status color when the hero figure does. */
   const ringStatus = heroValue ? heroStatus(status, heroValue.value) : null;
   const statusClass = ringStatus ? ` status-${status}` : "";
   const stateClass = `${selected ? " node-selected" : ""}${dimmed ? " node-dimmed" : ""}`;
@@ -605,6 +624,7 @@ export function GraphBubble({
       titleSize={titleSize}
       statPillSize={statPillFont}
       heroValue={heroValue}
+      minText={bubbleTextMin(faceScale)}
     />
   ) : (
     <>
@@ -680,7 +700,7 @@ export function GraphHub({
     <>
       <CurvedHeader id={id} radius={faceR} title={title} fontSize={headerSize} className="node-title hub-title" />
       {heroValue ? (
-        <HeroValue value={heroValue.value} label={heroValue.label} status={status} radius={faceR} startY={12} />
+        <HeroValue value={heroValue.value} label={heroValue.label} explainer={heroValue.explainer} status={status} radius={faceR} startY={12} />
       ) : (
         <CenteredStack radius={faceR} stats={stats} meta={meta} pillSize={statPillFont} status={status} />
       )}
@@ -766,7 +786,7 @@ export function TourSpotlight({
           x="6"
           y="4"
           textAnchor="middle"
-          fontSize="10.5"
+          fontSize="11"
           fontWeight="600"
           fill="var(--brand-headline)"
           letterSpacing="0.5"

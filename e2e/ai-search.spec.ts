@@ -4,11 +4,13 @@ import { AI_READ_MS, expect, test } from "./fixtures";
    These cover the run summary, evidence drill-downs, citations, and old links. */
 
 test.describe("AI Search Visibility", () => {
-  test("the bubble leads with the published unbranded discovery rate and its status word", async ({ page }) => {
+  test("the bubble leads with the published unbranded discovery rate in its status color", async ({ page }) => {
     const bubble = page.locator(".graph-node").filter({ hasText: /AI\s*Search\s*Visibility/i });
     await expect(bubble).toContainText(/\d+\.\d%/, { timeout: AI_READ_MS });
     await expect(bubble).toContainText(/Unbranded\s*Discovery/);
-    await expect(bubble.locator("[data-status]")).toHaveText(/^(Poor|Fair|Good)$/);
+    // The figure carries the status color; the status word lives on the tab (11 Nov 2026).
+    await expect(bubble.locator(".node-hero-value[data-hero-status]")).toHaveAttribute("data-hero-status", /^(bad|okay|good)$/);
+    await expect(bubble).not.toContainText(/\b(Poor|Fair|Good)\b/);
     await expect(bubble).not.toContainText(/51 of 63/);
     await expect(bubble).not.toContainText(/Sims/);
   });

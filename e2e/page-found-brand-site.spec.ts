@@ -97,7 +97,7 @@ test("the AI Readiness bubble's page-found figure opens Brand-Site Specs at that
   const canvas = new Canvas(page);
   await canvas.open();
   const bubble = page.locator("[data-graph-node-id='spoke-specs']");
-  await expect(bubble).toContainText("fender.com page found");
+  await expect(bubble).toContainText("Page found");
   await expect(bubble).toContainText("50.0%");
 
   await openAiReadiness(page, canvas);

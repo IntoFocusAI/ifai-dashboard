@@ -15,9 +15,18 @@ import { pageFoundHero, pageFoundTone } from "@/lib/fender-canvas/ai-readiness-l
 import {
   PARTIAL_TITLE,
   READ_NOT_AVAILABLE,
+  freshnessLastRun,
+  markPartial,
   partialFigureTip,
   readFailedPartial,
+  type PartialFigure,
 } from "@/lib/fender-canvas/canvas-reads";
+import { aiSearchStale } from "@/lib/ai-search/stale";
+import { findabilityStale } from "@/lib/findability/last-checked";
+import { contentSharePartial } from "@/lib/fender-canvas/listing-content";
+import { specPagesStale } from "@/lib/fender-canvas/machine-readability";
+import { SPEC_CHECK_JOB } from "@/lib/fender-canvas/page-found-checked-at";
+import { pageFoundStale } from "@/lib/fender-canvas/page-found-hero";
 import { formatInt, formatPct } from "@/lib/fender-canvas/format";
 import { bulletCounts, type BulletCounts } from "@/lib/fender-canvas/listing-content";
 import { specPageCounts, type SpecPageCounts } from "@/lib/fender-canvas/machine-readability";
@@ -33,6 +42,11 @@ type MetricsMap = ReturnType<typeof buildLiveMetrics>;
 
 const EMPTY_TOOLTIP = { title: "", desc: "" } as const;
 
+/* Bubble labels stay one or two words so they render at 11px or more at 1280x720. The tab
+   behind each bubble carries the full name. */
+const FINDABILITY_BUBBLE_LABEL = "Exact page";
+const READINESS_BUBBLE_LABEL = "Page found";
+
 /** The hover box on a Not available* face: which read failed and what that leaves out. */
 function failedReadTooltip(failure: CanvasReadFailure) {
   return { title: PARTIAL_TITLE["read-failed"], desc: partialFigureTip(readFailedPartial(failure)) };
@@ -46,6 +60,27 @@ function emptyReadTooltip(source: string, missing: string) {
   };
 }
 
+type HeroFace = Pick<CanvasNode, "heroValue" | "tooltip" | "partialTip">;
+
+/**
+ * X-25: a bubble whose figure is partial (stale past its check schedule, or covering part of
+ * its population) carries the asterisk, and its hover box says what is missing. A bubble whose
+ * read failed already reads Not available* and keeps its own box. `withTip: false` keeps the
+ * asterisk without a hover box, for the AI Search Visibility and Competitive Radar bubbles,
+ * which have none (PM24-1).
+ */
+function withPartialMark<T extends HeroFace>(face: T, partial: PartialFigure | null, withTip = true): T {
+  const hero = face.heroValue;
+  if (!partial || !hero || !/\d/.test(hero.value)) return face;
+  const desc = partialFigureTip(partial);
+  return {
+    ...face,
+    heroValue: { ...hero, value: markPartial(hero.value, partial) },
+    tooltip: withTip ? { title: PARTIAL_TITLE[partial.reason], desc } : { ...EMPTY_TOOLTIP },
+    partialTip: desc,
+  };
+}
+
 /** Exact official product page share — same figure the Findability tab leads with. */
 function findabilitySatellite(findability: FindabilityRead): Pick<
   CanvasNode,
@@ -56,7 +91,7 @@ function findabilitySatellite(findability: FindabilityRead): Pick<
       status: "neutral",
       title: "Findability",
       stats: ["Loading"],
-      heroValue: { value: "Loading", label: "exact official product page" },
+      heroValue: { value: "Loading", label: FINDABILITY_BUBBLE_LABEL },
       subTab: "Findability",
       tooltip: { ...EMPTY_TOOLTIP },
     };
@@ -66,7 +101,7 @@ function findabilitySatellite(findability: FindabilityRead): Pick<
       status: "neutral",
       title: "Findability",
       stats: [READ_NOT_AVAILABLE],
-      heroValue: { value: READ_NOT_AVAILABLE, label: "exact official product page" },
+      heroValue: { value: READ_NOT_AVAILABLE, label: FINDABILITY_BUBBLE_LABEL },
       subTab: "Findability",
       tooltip: failedReadTooltip({
         key: "specPages",
@@ -82,7 +117,7 @@ function findabilitySatellite(findability: FindabilityRead): Pick<
       status: "neutral",
       title: "Findability",
       stats: ["No listings"],
-      heroValue: { value: "No listings", label: "exact official product page" },
+      heroValue: { value: "No listings", label: FINDABILITY_BUBBLE_LABEL },
       subTab: "Findability",
       tooltip: { ...EMPTY_TOOLTIP },
     };
@@ -104,10 +139,15 @@ function findabilitySatellite(findability: FindabilityRead): Pick<
       `${formatInt(counts.exact_official_product)} of ${formatInt(counts.total)} exact`,
     ],
     meta: "Official-page outcomes",
-    heroValue: { value, label: "exact official product page" },
+    heroValue: { value, label: FINDABILITY_BUBBLE_LABEL },
     subTab: "Findability",
     tooltip: { ...EMPTY_TOOLTIP },
   };
+}
+
+function findabilityFace(findability: FindabilityRead): SatelliteFace {
+  const face = findabilitySatellite(findability);
+  return findability.phase === "ready" ? withPartialMark(face, findabilityStale(findability.rows)) : face;
 }
 
 type SatelliteFace = Pick<
@@ -122,7 +162,7 @@ function machineReadabilityFace(counts: SpecPageCounts | null, failure: CanvasRe
       status: "neutral",
       title: "Brand-Site Specs",
       stats: [READ_NOT_AVAILABLE],
-      heroValue: { value: READ_NOT_AVAILABLE, label: "missing machine-readable specs" },
+      heroValue: { value: READ_NOT_AVAILABLE, label: "Specs missing" },
       subTab: "Brand-Site Specs",
       tooltip: failure
         ? failedReadTooltip(failure)
@@ -134,7 +174,7 @@ function machineReadabilityFace(counts: SpecPageCounts | null, failure: CanvasRe
     status: counts.missingSpecBlock === 0 ? "success" : "danger",
     title: "Brand-Site Specs",
     stats: [`${formatInt(counts.missingSpecBlock)} of ${formatInt(counts.pages)} pages`],
-    heroValue: { value: formatPct(missingPct), label: "missing machine-readable specs" },
+    heroValue: { value: formatPct(missingPct), label: "Specs missing" },
     subTab: "Brand-Site Specs",
     tooltip: { ...EMPTY_TOOLTIP },
   };
@@ -147,7 +187,7 @@ function aplusFace(counts: BulletCounts | null, failure: CanvasReadFailure | und
       status: "neutral",
       title: "Amazon A+ Matrix",
       stats: [READ_NOT_AVAILABLE],
-      heroValue: { value: READ_NOT_AVAILABLE, label: "Five bullets filled" },
+      heroValue: { value: READ_NOT_AVAILABLE, label: "Five bullets" },
       subTab: "Amazon A+ Matrix",
       tooltip: failure
         ? failedReadTooltip(failure)
@@ -158,7 +198,7 @@ function aplusFace(counts: BulletCounts | null, failure: CanvasReadFailure | und
     status: counts.short === 0 ? "success" : "danger",
     title: "Amazon A+ Matrix",
     stats: [`${formatInt(counts.fullBullets)} of ${formatInt(counts.listings)} listings`],
-    heroValue: { value: formatPct(counts.pct), label: "Five bullets filled" },
+    heroValue: { value: formatPct(counts.pct), label: "Five bullets" },
     subTab: "Amazon A+ Matrix",
     tooltip: { ...EMPTY_TOOLTIP },
   };
@@ -175,34 +215,36 @@ export function buildLiveNodes(
   const schemaPages = specPageCounts(bundle.specPages);
   const bullets = bulletCounts(bundle.listingContent);
   const retailFaces = retailBubbleFaces(retail);
+  const aiStale = ai.phase === "ready" ? aiSearchStale(ai.snapshot.run) : null;
   const aiFaces = aiNodeFaces(ai);
   // Main AI Readiness bubble keeps its title and page-found figure; it opens Brand-Site Specs.
   const pageHero = pageFoundHero(m);
   const pageTone = pageFoundTone(m.spec_fender_found_pct);
   const metricsFailure = bundle.unavailable?.m;
   const metricsTip = metricsFailure ? failedReadTooltip(metricsFailure) : null;
+  const pageStale = metricsTip || pageHero.ratio == null ? null : pageFoundStale(freshnessLastRun(bundle, SPEC_CHECK_JOB));
   const readinessStatus: NodeStatus = metricsTip ? "neutral" : (pageTone ?? "neutral");
   const readinessHero = metricsTip
-    ? { value: READ_NOT_AVAILABLE, label: `${brandSite()} page found` }
+    ? { value: READ_NOT_AVAILABLE, label: READINESS_BUBBLE_LABEL }
     : pageHero.ratio != null
-      ? { value: pageHero.percent, label: `${brandSite()} page found` }
-      : { value: pageHero.percent === "Pending data" ? "Pending data" : "Not available", label: `${brandSite()} page found` };
+      ? { value: markPartial(pageHero.percent, pageStale), label: READINESS_BUBBLE_LABEL }
+      : { value: pageHero.percent === "Pending data" ? "Pending data" : "Not available", label: READINESS_BUBBLE_LABEL };
 
   return [
     {
       ...satelliteNode("sat-prompts"),
       spokeId: "aeo",
-      ...aiFaces.satPrompts,
+      ...withPartialMark(aiFaces.satPrompts, aiStale),
     },
     {
       ...satelliteNode("sat-citations"),
       spokeId: "aeo",
-      ...aiFaces.satCitations,
+      ...withPartialMark(aiFaces.satCitations, aiStale),
     },
     {
       ...satelliteNode("sat-drift"),
       spokeId: "aeo",
-      ...aiFaces.satDrift,
+      ...withPartialMark(aiFaces.satDrift, aiStale),
     },
     {
       ...satelliteNode("sat-buybox"),
@@ -222,30 +264,36 @@ export function buildLiveNodes(
     {
       ...satelliteNode("sat-findability"),
       spokeId: "specs",
-      ...findabilitySatellite(findability),
+      ...findabilityFace(findability),
     },
     {
       ...satelliteNode("sat-schema"),
       spokeId: "specs",
-      ...machineReadabilityFace(schemaPages, bundle.unavailable?.specPages),
+      ...withPartialMark(
+        machineReadabilityFace(schemaPages, bundle.unavailable?.specPages),
+        schemaPages ? specPagesStale(bundle.specPages ?? null) : null,
+      ),
     },
     {
       ...satelliteNode("sat-tables"),
       spokeId: "specs",
-      ...aplusFace(bullets, bundle.unavailable?.listingContent),
+      ...withPartialMark(
+        aplusFace(bullets, bundle.unavailable?.listingContent),
+        bullets && bundle.listingContent ? contentSharePartial(bundle.listingContent, "bullets") : null,
+      ),
     },
     {
       ...satelliteNode("sat-taylor"),
       spokeId: "competitors",
-      ...aiFaces.satGap,
+      ...withPartialMark(aiFaces.satGap, aiStale),
     },
     {
       ...satelliteNode("sat-amps"),
       spokeId: "competitors",
-      ...aiFaces.satLead,
+      ...withPartialMark(aiFaces.satLead, aiStale),
     },
     {
-      ...aiFaces.spokeAeo,
+      ...withPartialMark(aiFaces.spokeAeo, aiStale, false),
       spokeId: "aeo",
       ...primarySpoke("spoke-aeo"),
     },
@@ -262,10 +310,13 @@ export function buildLiveNodes(
       heroValue: readinessHero,
       spokeId: "specs",
       subTab: "Brand-Site Specs",
-      tooltip: metricsTip ?? { title: "", desc: "" },
+      tooltip:
+        metricsTip ??
+        (pageStale ? { title: PARTIAL_TITLE[pageStale.reason], desc: partialFigureTip(pageStale) } : { title: "", desc: "" }),
+      partialTip: pageStale ? partialFigureTip(pageStale) : undefined,
     },
     {
-      ...aiFaces.spokeCompetitors,
+      ...withPartialMark(aiFaces.spokeCompetitors, aiStale, false),
       spokeId: "competitors",
       ...primarySpoke("spoke-competitors"),
     },
@@ -283,7 +334,7 @@ export function buildLiveNodes(
       ...primarySpoke("spoke-roadmap"),
       title: "Roadmap",
       stats: [],
-      ...roadmapBubbleFace(retail, findability, ai),
+      ...roadmapBubbleFace(),
       spokeId: "roadmap",
       tooltip: { title: "", desc: "" },
     },

@@ -6,6 +6,7 @@
 
 import { isPastCheckSchedule, type PartialFigure } from "@/lib/fender-canvas/canvas-reads";
 import { formatCheckedAt } from "@/lib/fender-canvas/featured-offer-copy";
+import { formatInt } from "@/lib/fender-canvas/format";
 import { findabilityOutcome, type FindabilityRow } from "@/lib/findability/outcomes";
 
 export const LAST_CHECKED_UNAVAILABLE_LABEL = "Not available*";
@@ -116,4 +117,74 @@ export function weeklyCheckStale(
     lastCheck: checkedAt ?? null,
     effect: `The ${figure} show the last check and may differ from the pages today`,
   };
+}
+
+/** A row is current while its own check is no older than twice the weekly schedule. */
+export const STALE_WINDOW_DAYS = 2 * WEEKLY_CHECK_DAYS;
+
+export type CheckCoverage = {
+  /** Rows whose own stored check is inside the stale window. */
+  recent: number;
+  /** Every row in the figure's population. */
+  total: number;
+};
+
+/**
+ * How many rows were checked inside the stale window, counted from each row's own stored
+ * check time. A row with no check (unchecked, or no stored time) is not recent.
+ */
+export function checkCoverage<T>(
+  rows: readonly T[],
+  checked: (row: T) => boolean,
+  storedAt: (row: T) => string | null | undefined,
+  now: number = Date.now(),
+): CheckCoverage {
+  const windowMs = STALE_WINDOW_DAYS * DAY_MS;
+  let recent = 0;
+  for (const row of rows) {
+    if (!checked(row)) continue;
+    const at = new Date(storedAt(row)?.trim() ?? "").getTime();
+    if (Number.isFinite(at) && now - at <= windowMs) recent += 1;
+  }
+  return { recent, total: rows.length };
+}
+
+/** Official-page rows checked in the last 14 days, of every row in the Findability read. */
+export function findabilityCoverage(rows: readonly FindabilityRow[], now: number = Date.now()): CheckCoverage {
+  return checkCoverage(
+    rows,
+    (row) => findabilityOutcome(row) !== "not_checked",
+    (row) => row.latest_attempt_at,
+    now,
+  );
+}
+
+/** "26 of 1,061 listings checked in the last 14 days" */
+export function findabilityCoverageLine({ recent, total }: CheckCoverage): string {
+  return `${formatInt(recent)} of ${formatInt(total)} listings checked in the last ${STALE_WINDOW_DAYS} days`;
+}
+
+/**
+ * The partial reading (X-25) for every Findability figure: the tab heroes, the map's
+ * Findability bubble, and the Minimal tiles. The official-page check now rechecks a few
+ * listings at a time, so the newest check says little about the rest. A figure carries the
+ * asterisk while any listing in the read has no check inside the stale window.
+ */
+export function findabilityStale(rows: readonly FindabilityRow[], now: number = Date.now()): PartialFigure | null {
+  const coverage = findabilityCoverage(rows, now);
+  if (coverage.total === 0 || coverage.recent === coverage.total) return null;
+  const older = coverage.total - coverage.recent;
+  return {
+    reason: "coverage",
+    missing: `${formatInt(older)} ${older === 1 ? "listing has" : "listings have"} no official-page check in the last ${STALE_WINDOW_DAYS} days`,
+    coverage: findabilityCoverageLine(coverage),
+    source: "canvas_spec_findability",
+    effect: "The outcome shares include older checks and may differ from the pages today",
+  };
+}
+
+/** The Last checked tooltip: the newest check, and how many listings the window covers. */
+export function findabilityLastCheckedTip(rows: readonly FindabilityRow[], now: number = Date.now()): string {
+  const coverage = findabilityCoverage(rows, now);
+  return `This is the newest official-page check. ${findabilityCoverageLine(coverage)}.`;
 }

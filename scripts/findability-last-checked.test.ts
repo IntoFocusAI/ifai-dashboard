@@ -2,7 +2,10 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
+  findabilityCoverage,
   findabilityLastCheckedSentence,
+  findabilityLastCheckedTip,
+  findabilityStale,
   newestCheckedAttemptAt,
 } from "../lib/findability/last-checked.ts";
 import type { FindabilityRow } from "../lib/findability/outcomes.ts";
@@ -135,4 +138,37 @@ test("all-null or unusable times return no time", () => {
     null,
   );
   assert.equal(findabilityLastCheckedSentence(null), null);
+});
+
+const NOW = Date.parse("2026-11-11T16:00:00.000Z");
+const DAY = 86_400_000;
+const at = (days: number) => new Date(NOW - days * DAY).toISOString();
+const exact = (asin: string, attempt: string | null) =>
+  row({ asin, latest_state: "exact_official_product", latest_attempt_at: attempt, counts_as_confirmed: true });
+
+test("coverage counts each row's own check inside the 14-day window, not the newest check", () => {
+  const rows = [
+    exact("R1", at(0)),
+    exact("R2", at(14)),
+    exact("O1", at(14.01)),
+    exact("O2", at(30)),
+    exact("N1", null),
+    row({ asin: "U1", latest_state: "not_checked", latest_attempt_at: at(1), counts_as_unchecked: true }),
+  ];
+  assert.deepEqual(findabilityCoverage(rows, NOW), { recent: 2, total: 6 });
+  const stale = findabilityStale(rows, NOW);
+  assert.ok(stale);
+  assert.equal(stale.reason, "coverage");
+  assert.equal(stale.coverage, "2 of 6 listings checked in the last 14 days");
+  assert.equal(stale.missing, "4 listings have no official-page check in the last 14 days");
+  assert.equal(
+    findabilityLastCheckedTip(rows, NOW),
+    "This is the newest official-page check. 2 of 6 listings checked in the last 14 days.",
+  );
+});
+
+test("every row checked inside the window leaves the figures plain", () => {
+  const rows = [exact("R1", at(0)), exact("R2", at(13))];
+  assert.equal(findabilityStale(rows, NOW), null);
+  assert.equal(findabilityStale([], NOW), null);
 });

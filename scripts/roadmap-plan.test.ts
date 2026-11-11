@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import type { AiCallRow, AiCitationRow, AiSearchSnapshot } from "../lib/ai-search/types.ts";
 import type { BriefingFinding, BriefingFindingId } from "../lib/fender-canvas/briefing-retail-lead.ts";
-import { roadmapHeroValue } from "../lib/fender-canvas/roadmap-bubble.ts";
+import { roadmapBubbleFace, roadmapMetric } from "../lib/fender-canvas/roadmap-bubble.ts";
 import {
   buildPlan,
   emptyPlanLine,
@@ -190,7 +190,14 @@ test("the Roadmap figure: findings that need action, of those with a stored read
   assert.equal(partial.phase === "ready" && partial.value, "0 of 4");
   assert.ok(partial.phase === "ready" && partial.partial, "a missing reading marks the figure partial");
   assert.equal(planFindingsFigure([{ ...LIVE[0]!, loading: true }]).phase, "loading");
-  assert.equal(roadmapHeroValue({ phase: "error", message: "down" }, { phase: "error", message: "down" }, { phase: "error", message: "down" }), "Not available*");
+});
+
+test("the Roadmap bubble is static: 30-60-90, neutral, no figure, for every read state", () => {
+  const face = roadmapBubbleFace();
+  assert.deepEqual(face.heroValue, { value: "30-60-90", label: "", explainer: true });
+  assert.equal(face.status, "neutral");
+  assert.equal(face.subTab, "30-60-90 Days");
+  assert.equal(roadmapMetric().value, "30-60-90");
 });
 
 test("the Roadmap tab and bubble use the map population, the owner sentence, and no fixed plan", () => {

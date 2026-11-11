@@ -74,6 +74,15 @@ function unavailableHero(definition: string = PAGE_FOUND_DEFINITION): PageFoundH
   };
 }
 
+/** The stale reading (X-25) for the page-found figures; the map's AI Readiness bubble reads it too. */
+export function pageFoundStale(checkedAt: string | null | undefined, now: number = Date.now()): PartialFigure | null {
+  return weeklyCheckStale(
+    checkedAt,
+    { check: `${brandSite()} product check`, source: "canvas_metrics", figure: "page-found figures" },
+    now,
+  );
+}
+
 /** `checkedAt` is when the fender.com product check last ran, for the definition tooltip. */
 export function brandSitePageFoundHero(
   m: CanvasMetricsRow | null | undefined,
@@ -113,10 +122,6 @@ export function brandSitePageFoundHero(
     numerator: found,
     denominator: checked,
     figureTip: null,
-    partial: weeklyCheckStale(checkedAt, {
-      check: `${brandSite()} product check`,
-      source: "canvas_metrics",
-      figure: "page-found figures",
-    }),
+    partial: pageFoundStale(checkedAt),
   };
 }

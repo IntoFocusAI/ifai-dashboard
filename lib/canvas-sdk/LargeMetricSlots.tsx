@@ -48,6 +48,7 @@ function LargeMetricBody({
           <strong
             className={`large-metric-value tone-${metric.tone ?? "neutral"}${length}${reading.missing ? " ifai-term" : ""}`}
             data-large-metric-value=""
+            data-explainer={metric.id === "day-90-buy-box-target" ? "" : undefined}
             {...metricTermAttrs(metric.value, reading.missing)}
           >
             {metric.value}
