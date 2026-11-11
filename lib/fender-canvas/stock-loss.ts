@@ -259,6 +259,12 @@ const AWAITING_REASON_ORDER: readonly AwaitingInputsReason[] = [
   "no_keepa_history",
 ];
 
+/** "1 of 3 out-of-stock listings have no sales estimate yet, so they are left out of the total." */
+export function noSalesEstimateSentence(awaiting: number, affected: number): string {
+  const fmt = new Intl.NumberFormat("en-US");
+  return `${fmt.format(awaiting)} of ${fmt.format(affected)} out-of-stock listings have no sales estimate yet, so they are left out of the total.`;
+}
+
 /**
  * How many listings are awaiting inputs, by reason, as one sentence for the total's tooltip.
  * Null when every listing is estimated.
@@ -276,8 +282,7 @@ export function awaitingInputsBreakdown(rows: readonly StockLossRow[], window: L
   const parts = AWAITING_REASON_ORDER.filter((reason) => counts.has(reason)).map(
     (reason) => `${new Intl.NumberFormat("en-US").format(counts.get(reason)!)} ${AWAITING_REASON_PHRASE[reason]}`,
   );
-  const count = new Intl.NumberFormat("en-US").format(awaiting);
-  return `${count} ${awaiting === 1 ? "listing is" : "listings are"} awaiting inputs and ${awaiting === 1 ? "is" : "are"} not counted as $0: ${parts.join("; ")}.`;
+  return `${noSalesEstimateSentence(awaiting, rows.length)} Reasons: ${parts.join("; ")}.`;
 }
 
 export function noActiveOffer(row: StockLossRow): boolean {
@@ -374,7 +379,7 @@ export function lostSalesPartial(
     awaiting > 0
       ? {
           reason: "coverage",
-          missing: `${formatInt(awaiting)} of ${formatInt(sum.affectedCount)} out-of-stock listings are awaiting inputs and not counted as $0`,
+          missing: noSalesEstimateSentence(awaiting, sum.affectedCount),
           coverage: null,
           source: "SmartScout sales and Keepa stock history",
         }

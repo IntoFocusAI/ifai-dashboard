@@ -12,6 +12,7 @@ import {
   type LostSalesSum,
   type RevenueSource,
   type StockLossRow,
+  noSalesEstimateSentence,
 } from "@/lib/fender-canvas/stock-loss";
 
 function estimateTooltipDesc(sum: LostSalesSum, populationCount: number | null): string {
@@ -21,7 +22,7 @@ function estimateTooltipDesc(sum: LostSalesSum, populationCount: number | null):
       : `${formatInt(sum.affectedCount)} listings were out of stock at least one day in the last 12 months, including listings with no active offer.`;
   return (
     `${population} ${formatInt(sum.estimatedCount)} have a sales source and are in the totals. ` +
-    `${formatInt(sum.awaitingCount)} are awaiting inputs and are not counted as $0. ` +
+    `${noSalesEstimateSentence(sum.awaitingCount, sum.affectedCount)} ` +
     `Each listing's sales per in-stock day is its source's revenue divided by Keepa in-stock days, ` +
     `times its out-of-stock days in each window. ` +
     `The rate uses 12-month revenue when at least 30 of those days were in stock, ` +
@@ -58,7 +59,7 @@ export function StockLossHero({
   const pie = lostSalesPopulationPie(year);
   const tip =
     year.affectedCount > 0
-      ? `${formatInt(year.estimatedCount)} estimated, ${formatInt(year.awaitingCount)} awaiting inputs, of ${formatInt(year.affectedCount)} out-of-stock listings.`
+      ? `${formatInt(year.estimatedCount)} of ${formatInt(year.affectedCount)} out-of-stock listings have a sales estimate. ${noSalesEstimateSentence(year.awaitingCount, year.affectedCount)}`
       : undefined;
   const estimateDesc = estimateTooltipDesc(year, populationCount);
   const partial = lostSalesPartial(rows, year);
@@ -109,7 +110,7 @@ export function StockLossHero({
             <span className="findability-lead-ratio" data-stock-loss-hero-ratio="">
               Covers {formatInt(year.estimatedCount)} of {formatInt(year.affectedCount)} out-of-stock listings.
               {year.awaitingCount > 0
-                ? ` ${formatInt(year.awaitingCount)} ${year.awaitingCount === 1 ? "is" : "are"} awaiting inputs.`
+                ? ` ${formatInt(year.awaitingCount)} ${year.awaitingCount === 1 ? "has" : "have"} no sales estimate yet.`
                 : ""}
             </span>
           ) : null}

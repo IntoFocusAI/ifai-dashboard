@@ -27,6 +27,7 @@ import {
   sumLostSales,
   type LostSalesSum,
   type RevenueSource,
+  noSalesEstimateSentence,
 } from "@/lib/fender-canvas/stock-loss";
 
 const BUY_BOX_READINGS = "current Buy Box readings";
@@ -55,9 +56,9 @@ function lostSalesEntry(source: RevenueSource): MinimalEntry {
       return {
         value: markPartial(formatUsd(total), partial),
         tone: "danger",
-        ratio: `${formatInt(year.estimatedCount)} of ${formatInt(year.affectedCount)} estimated · ${formatInt(year.awaitingCount)} awaiting inputs`,
+        ratio: `${formatInt(year.estimatedCount)} of ${formatInt(year.affectedCount)} estimated · ${formatInt(year.awaitingCount)} no sales estimate yet`,
         pie: lostSalesPopulationPie(year),
-        tip: `${formatInt(year.estimatedCount)} estimated, ${formatInt(year.awaitingCount)} awaiting inputs, of ${formatInt(year.affectedCount)} out-of-stock listings.`,
+        tip: `${formatInt(year.estimatedCount)} of ${formatInt(year.affectedCount)} out-of-stock listings have a sales estimate. ${noSalesEstimateSentence(year.awaitingCount, year.affectedCount)}`,
         missing: partial ? partialFigureTip(partial) : null,
         estimate,
       };

@@ -476,8 +476,8 @@ test("Out of Stock offers one estimate per sales source, as its tab shows them",
   assert.equal(smartscout.provenance, "estimate");
   // One listing is awaiting inputs, so the total carries the asterisk and says why (X-25).
   assert.equal(smartscout.value, `${formatUsd(1500.5)}*`);
-  assert.match(smartscout.reading.missing ?? "", /^1 of 3 out-of-stock listings are awaiting inputs and not counted as \$0/);
-  assert.equal(smartscout.reading.ratio, "2 of 3 estimated · 1 awaiting inputs");
+  assert.match(smartscout.reading.missing ?? "", /^1 of 3 out-of-stock listings have no sales estimate yet, so they are left out of the total\./);
+  assert.equal(smartscout.reading.ratio, "2 of 3 estimated · 1 no sales estimate yet");
   assert.equal(smartscout.reading.pie?.id, "stock-loss-population");
   assert.match(smartscout.detail, /^Analyst estimate\./);
   assert.equal(slots.some((slot) => slot.id === "stock-loss-12m-brand-reported"), false, "a source with no listings is left out");
