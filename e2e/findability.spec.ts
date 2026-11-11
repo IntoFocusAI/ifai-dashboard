@@ -553,7 +553,7 @@ for (const viewport of [
       await expect(page.locator("#findability-listings")).toHaveCount(0);
     }
 
-    await page.locator(".hdr-btn[title='Toggle Light / Dark']").click();
+    await page.locator(".hdr-btn[aria-label='Toggle Light / Dark']").click();
     await expect(page.locator(".ifai-canvas.light-theme")).toHaveCount(1);
     for (const [outcome, count, listing] of OUTCOME_LISTINGS) {
       await openOutcomeAndCount(page, outcome, count, listing);

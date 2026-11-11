@@ -1159,7 +1159,7 @@ export function CanvasShell({ spec, children }: Props) {
               <button
                 className="hdr-btn"
                 onClick={() => setLightTheme((value) => !value)}
-                aria-label="Toggle light or dark theme"
+                aria-label="Toggle Light / Dark"
               >
                 {lightTheme ? <Sun size={13} /> : <Moon size={13} />}
               </button>
