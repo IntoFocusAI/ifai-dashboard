@@ -5,6 +5,8 @@
  */
 
 import type { PieDiscData } from "@/lib/ai-search/citation-pies";
+import type { PartialFigure } from "@/lib/fender-canvas/canvas-reads";
+import { newestCheckTime, weeklyCheckStale } from "@/lib/findability/last-checked";
 import { formatInt, formatPct, formatRatio } from "@/lib/fender-canvas/format";
 import { getCanvasSupabase } from "@/lib/supabase/canvas-client";
 import { brandSite } from "@/lib/brand-copy";
@@ -190,6 +192,8 @@ export type MachineHeroModel = {
   explainer: string;
   numerator: number | null;
   denominator: number | null;
+  /** Stale figure (X-25) when the page read is past its weekly schedule. */
+  partial?: PartialFigure | null;
 };
 
 /** Same bands as Specs complete on Catalog Governance (higher share is better). */
@@ -325,9 +329,27 @@ function missingSpecsHero(summary: SpecPageSummary | null): MachineHeroModel {
   };
 }
 
+/** The stale reading for the page figures: the newest page read past its weekly schedule. */
+export function specPagesStale(summary: SpecPageSummary | null, now: number = Date.now()): PartialFigure | null {
+  if (!summary) return null;
+  const checkedAt = newestCheckTime(summary.pages, () => true, (page) => page.checkedAt);
+  return weeklyCheckStale(
+    checkedAt,
+    { check: `${brandSite()} product check`, source: "canvas_spec_readiness", figure: "page shares" },
+    now,
+  );
+}
+
 /** Brand-Site Specs heroes. Missing machine-readable specs leads; product basics follow. */
 export function machineReadabilityHeroes(summary: SpecPageSummary | null): MachineHeroModel[] {
   const total = summary ? summary.pages.length : null;
+  const partial = specPagesStale(summary);
+  return machineHeroes(summary, total).map((hero) =>
+    hero.denominator != null && partial ? { ...hero, partial } : hero,
+  );
+}
+
+function machineHeroes(summary: SpecPageSummary | null, total: number | null): MachineHeroModel[] {
   return [
     missingSpecsHero(summary),
     hero(

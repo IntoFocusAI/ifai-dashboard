@@ -1,7 +1,12 @@
 "use client";
 
 import { CitationPieDisc } from "@/components/v3/live/ai-search/CitationPieDisc";
+import { PartialFigureMark } from "@/components/v3/live/FigureTip";
+import { RetailStatusMark } from "@/components/v3/live/RetailOverviewFigure";
 import type { PieDiscData } from "@/lib/ai-search/citation-pies";
+import type { NodeStatus } from "@/lib/canvas-sdk/types";
+import { shareFigureTone } from "@/lib/fender-canvas/ai-readiness-lead";
+import type { PartialFigure } from "@/lib/fender-canvas/canvas-reads";
 
 const RETAIL_PIE_SIZE = "citation-pie-disc citation-pie-disc-retail";
 
@@ -19,7 +24,14 @@ export type ShareHeroModel = {
   denominator: number | null;
   /** Tooltip on the figure itself, e.g. why it is Not available*. */
   figureTip?: string | null;
+  /** Partial or stale figure (X-25): an asterisk whose tooltip names the gap. */
+  partial?: PartialFigure | null;
 };
+
+/** The status behind a graded figure's color (X-34). See shareFigureTone. */
+export function shareHeroTone(hero: ShareHeroModel): Exclude<NodeStatus, "neutral"> | null {
+  return shareFigureTone(hero.color, hero.numerator, hero.denominator);
+}
 
 function ExploreChevron() {
   return (
@@ -47,7 +59,7 @@ function HeroFigure({ hero }: { hero: ShareHeroModel }) {
   return (
     <span
       className={tip ? "ai-lead-figure ifai-term" : "ai-lead-figure"}
-      style={{ color: hero.color }}
+      style={{ color: shareHeroTone(hero) ? hero.color : "var(--text-muted)" }}
       data-hero-percent=""
       data-hero-numerator={hero.numerator ?? ""}
       data-hero-denominator={hero.denominator ?? ""}
@@ -60,7 +72,9 @@ function HeroFigure({ hero }: { hero: ShareHeroModel }) {
           }
         : {})}
     >
-      {hero.percent}
+      <PartialFigureMark partial={hero.partial} testId={hero.id + "-partial"}>
+        {hero.percent}
+      </PartialFigureMark>
     </span>
   );
 }
@@ -112,6 +126,7 @@ export function ShareHeroCard({
               {hero.ratio}
             </span>
           ) : null}
+          <RetailStatusMark tone={shareHeroTone(hero)} />
         </div>
         {hero.pie ? (
           <CitationPieDisc pie={hero.pie} sizeClass={RETAIL_PIE_SIZE} tip={hero.tip ?? undefined} />

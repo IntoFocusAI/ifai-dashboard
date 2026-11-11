@@ -91,7 +91,7 @@ button.page-found-findability-link:focus-visible {
 .page-found-mismatch {
   margin-left: 4px;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--warning-amber);
 }
 

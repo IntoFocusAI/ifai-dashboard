@@ -4,6 +4,7 @@
  * for the official-page read; Amazon Specs uses it for the Amazon spec read (FDD D-04).
  */
 
+import { isPastCheckSchedule, type PartialFigure } from "@/lib/fender-canvas/canvas-reads";
 import { formatCheckedAt } from "@/lib/fender-canvas/featured-offer-copy";
 import { findabilityOutcome, type FindabilityRow } from "@/lib/findability/outcomes";
 
@@ -77,4 +78,42 @@ export function lastCheckedSentence(iso: string | null): string | null {
 /** Client lead sentence when a usable check time exists. Null when it does not. */
 export function findabilityLastCheckedSentence(iso: string | null): string | null {
   return lastCheckedSentence(iso);
+}
+
+/**
+ * Spec and Findability checks run weekly (X-25, decision 4). A figure is stale once its
+ * newest check is older than twice that, 14 days. Change this one number to move the rule.
+ */
+export const WEEKLY_CHECK_DAYS = 7;
+
+const DAY_MS = 86_400_000;
+
+export type WeeklyCheck = {
+  /** The check, as a client reads it: "official-page check", "Amazon listing check". */
+  check: string;
+  /** The table or view the figure reads. */
+  source: string;
+  /** What the figure counts, for the effect sentence: "outcome shares". */
+  figure: string;
+};
+
+/**
+ * The stale reading (X-25) for a figure from a weekly check whose newest stored check time is
+ * past twice the schedule. Null while the check is current, or when no check time is stored
+ * (Last checked then reads Not available*).
+ */
+export function weeklyCheckStale(
+  checkedAt: string | null | undefined,
+  { check, source, figure }: WeeklyCheck,
+  now: number = Date.now(),
+): PartialFigure | null {
+  if (!isPastCheckSchedule(checkedAt, WEEKLY_CHECK_DAYS * DAY_MS, now)) return null;
+  const since = formatCheckedAt(checkedAt) ?? "the last check";
+  return {
+    reason: "stale",
+    missing: `The ${check} runs weekly and has not run since ${since}, so changes after that check are missing`,
+    source,
+    lastCheck: checkedAt ?? null,
+    effect: `The ${figure} show the last check and may differ from the pages today`,
+  };
 }
