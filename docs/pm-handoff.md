@@ -170,23 +170,26 @@ the rest of the launch build is complete (decision 46).
 Replace this whole section on handoff. Keep it under 25 lines. The FDD wins
 if this block is stale.
 
-- PM24 is the last PM. The next PM is PM25. Workers 24.3 and 24.4 are merged.
-- FDD and TDD moved into the repo on 10 Nov 2026 at version 24.4
-  (`docs/fdd`, `docs/tdd`). The Google Docs are frozen.
-- 10 Nov 2026: Brian Magazu put X-15, X-16, and R-19 in launch scope.
-  X-15 and X-16 change permissions and tables: Brian Watson applies those
-  migrations.
-- Database: public.ai_prompt_edits_list applied 10 Nov (PR 151).
-- Open from the PM24 batch: FDD decision rows PM24-1 to PM24-3 (Brian's
-  review notes).
-- Before the next view: a worker adds `npm run lint:brand` and the 1280
-  overflow check, and proposes fix or retire for the 28 failing e2e tests.
-- Next, when he says go: a parallel batch of 24.5 AI Readiness, 24.2
-  Summary, and 24.6 Competitive Radar (check their files do not overlap),
-  then 24.7 Roadmap and Action Items once decision 21 is answered. Plan the
-  X-15, X-16, and R-19 work with Brian Watson. Update the 24.5 and 24.7
-  briefs for decision 35 first.
-- Known: Fender AI Search is slow (about 14 to 24 s). Stale asterisk missing
-  on map bubbles and Minimal. Fender listings below MAP moved 118, 210, 120
-  of 633 between 9 and 10 Nov: unexplained, for Brian Watson or Ryan.
-  PR 110 still breaks metric-destinations.spec. Watson: PRs 125, 131, 139.
+- PM25 is the last PM; the next is PM26. Workers 25.1 to 25.20 are merged
+  (PRs 164 to 178). Docs at 25.20. Launch rows CURRENT: 64 of 93.
+- Decisions 1 to 72 are in docs/pm23-decisions.md; 44 to 72 are PM25's.
+- Held by Brian: X-15, X-16, R-19 until the rest of launch; A-02, A-04,
+  A-06, A-07, R-06, R-11, N-07, LATER rows, dollar formulas (R-06 includes
+  "zero sales vs awaiting inputs", decision 70).
+- Waiting on Brian: D-05 required-spec rule that works for 20+ clients (no
+  "placeholder" at launch); R-19 vs the R-18 placeholder seller list; C-01
+  deck (outline draft: docs/c01-deck-outline.md, figures from 10 Nov).
+- Waiting on Watson: views for freshness (decision 68); the Ledlenser
+  set-aside form error he is reproducing; AI Search read speed (HTTP 500s
+  under load); PR 110 wording breaks metric-destinations.
+- After about 15 Nov: verify Watson's Findability first pass, then propose
+  D-02 and D-09 CURRENT; Findability figures may shift.
+- Site-type classifier runs daily in Toolbelt (decision 55); check the
+  needs-review list and the first runs. Backlog about 974 Fender, 591
+  Ledlenser sites at 100 a day.
+- Open REFINE work: X-25 (Splintered asterisk), X-10/X-33 CSV gaps (fix
+  list has no CSV), X-18/X-27/X-34 adoption, H-07 (needs SC-03).
+- Known: overflow-1280 aeo tables scroll inside panels (AI Search follow-up);
+  three files over 400 lines (PortalView, CanvasShell, GraphPrimitives).
+- Cost: PM25 spent roughly $600 API-equivalent, PM context included (an
+  estimate; the seat window was not visible). Workers do not subscribe the PM to PR activity.
