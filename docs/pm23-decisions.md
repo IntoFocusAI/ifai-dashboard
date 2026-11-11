@@ -321,5 +321,6 @@ closeout of each view. Open items are marked OPEN and are not built.
     proposal for X-16: every canvas view exposes <source>_checked_at
     columns (keepa_, catalog_, featured_offer_, wmt_, mf_, smartscout_,
     spec_, content_, findability_), present from the start in each new
-    client schema. PM25 recommends accepting it.
+    client schema. Accepted by Brian on 11 Nov 2026. Retiring "Other
+    retailers" is left for PM26 to raise.
 
