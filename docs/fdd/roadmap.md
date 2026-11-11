@@ -30,16 +30,16 @@
 - **Desired:** Recommendation to preserve: omit Strategy Roadmap for launch because Action Items carries the work and Summary carries targets. If retained, replace current tabs with Next 90 Days and Progress. Do not invent tier workflows.
 - **User value:** Launch chrome stays honest.
 - **Acceptance:** Brian chooses omit vs Next 90 Days / Progress.
-- **Evidence:** Empty tabs verified Oct 20. Removed 4 Nov 2026 (worker 21.5, pull request 122). Brian Magazu's direction the same day is to rebuild the roadmap as a plan of activity (S-02).
+- **Evidence:** Empty tabs verified Oct 20. Removed 4 Nov 2026 (worker 21.5, pull request 122). Brian Magazu's direction the same day is to rebuild the roadmap as a plan of activity (S-02). Worker 25.6, pull request 171, approved 11 Nov 2026: one tab, 30-60-90 Days.
 - **Open decision:** None. Decided by Brian Magazu on 9 Nov 2026: keep the Roadmap with one tab, 30-60-90 Days, built as S-02. A Progress tab is LATER.
 
-**S-04 TARGET** · If roadmap retained
+**S-04 CURRENT** · If roadmap retained
 
 **Status source:** Addendum ADD-12
 
-- **Current:** Unclear whose roadmap.
+- **Current:** The tab reads "IntoFocus's recommended plan for {brand}".
 - **Desired:** Say whether the plan is IntoFocus’s, the client’s, or shared; name positions it tries to win.
 - **User value:** Accountability is clear.
 - **Acceptance:** Owner sentence on the plan.
-- **Evidence:** Not live.
+- **Evidence:** Worker 25.6, pull request 171, approved 11 Nov 2026, for Fender and Ledlenser.
 - **Open decision:** None. Decided by Brian Magazu on 9 Nov 2026: the owner sentence reads IntoFocus's recommended plan for the brand.
