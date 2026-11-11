@@ -17,8 +17,8 @@ test("Competitor Wins reads 1,064 of 1,788, and the hero still splits the count 
   assert.equal(competitorWinsFigure(175, 438), "Competitors led 175 of 438 resolved unbranded discovery answers.");
 
   const hero = flat("components/v3/live/ai-search/CompetitorWinsHero.tsx");
-  assert.match(hero, /const count = competitorWinsCount\(competitorWins, resolved\);/);
-  assert.match(hero, /<MixedScoringTip mixed=\{mixed\}>\{count\}<\/MixedScoringTip>/);
+  assert.match(hero, /\{competitorWinsCount\(competitorWins, resolved\)\}/);
+  assert.match(hero, /<MixedScoringTip mixed=\{mixed\}>\{pct\(competitorWins, resolved\)\}<\/MixedScoringTip>/);
   assert.match(hero, /\$\{formatInt\(resolved - competitorWins\)\} \$\{leadBrand\(\)\} led/);
   const surfaces = flat("lib/ai-search/canvas-surfaces.ts");
   assert.match(surfaces, /figure: competitorWinsFigure\(s\.competitorWins, s\.roles\.unbranded\.resolved\)/);

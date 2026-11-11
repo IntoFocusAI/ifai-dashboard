@@ -7,7 +7,7 @@ import { useAiHistoryOptional } from "@/components/v3/live/ai-search/AiHistoryCo
 import { AiReadGate, EmptyRows, mutedText } from "@/components/v3/live/ai-search/AiReadGate";
 import { EngineGroupScope } from "@/components/v3/live/ai-search/EngineGroupScope";
 import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
-import { CompetitorWinsHero } from "@/components/v3/live/ai-search/CompetitorWinsHero";
+import { CompetitorWinsBars, CompetitorWinsHero } from "@/components/v3/live/ai-search/CompetitorWinsHero";
 import { EvidenceLink } from "@/components/v3/live/ai-search/EvidenceLink";
 import { WhyNotFender } from "@/components/v3/live/ai-search/WhyNotFender";
 import { useAiExportScope } from "@/components/v3/live/ai-search/useAiExport";
@@ -25,7 +25,7 @@ import { summarizeRun } from "@/lib/ai-search/summary";
 import { formatInt } from "@/lib/fender-canvas/format";
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
-import { hasMixedScoringMethods, isWindowHistoryKind } from "@/lib/ai-search/window-display";
+import { isWindowHistoryKind } from "@/lib/ai-search/window-display";
 import { leadBrand } from "@/lib/brand-copy";
 
 const COLUMNS = [
@@ -51,7 +51,6 @@ const tallyKey = (row: CompetitorTally) => row.brand;
 function Wins({ snapshot }: { snapshot: AiSearchSnapshot }) {
   const history = useAiHistoryOptional();
   const windowed = isWindowHistoryKind(history?.mode.kind);
-  const mixed = hasMixedScoringMethods(snapshot);
   const focus = useEvidenceFocus();
   const [brand, setBrand] = useState(focus?.field === "competitor" ? focus.value : "");
 
@@ -82,7 +81,7 @@ function Wins({ snapshot }: { snapshot: AiSearchSnapshot }) {
 
   return (
     <>
-      <CompetitorWinsHero snapshot={snapshot} mixed={mixed} />
+      <CompetitorWinsBars snapshot={snapshot} />
 
       {competitorWins === 0 ? (
         <div className="content-box" style={{ marginTop: 12 }}>
@@ -159,7 +158,7 @@ function Wins({ snapshot }: { snapshot: AiSearchSnapshot }) {
 
 export function CompetitorWinsPanel() {
   return (
-    <EngineGroupScope>
+    <EngineGroupScope trailing={<CompetitorWinsHero />}>
       <AiReadGate>{(snapshot) => <Wins snapshot={snapshot} />}</AiReadGate>
     </EngineGroupScope>
   );
