@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { Canvas } from "./fixtures";
-import { MISSING_FIELD_ROWS, mockCanvasRead } from "./spec-read-mock";
+import { MISSING_FIELD_ROWS, mockCanvasRead, SPEC_ROWS } from "./spec-read-mock";
 
 /**
  * The AI Readiness bubble keeps its name. Its satellites and tabs share
@@ -181,6 +181,37 @@ test("Amazon Specs shows Amazon completeness only, with no fender.com page-found
   await expect(catalog.getByRole("columnheader", { name: "fender.com found" })).toHaveCount(0);
   await expect(catalog.getByRole("columnheader", { name: "Amazon completeness" })).toHaveCount(1);
   await expect(catalog.getByRole("columnheader", { name: "Missing Amazon fields" })).toHaveCount(1);
+});
+
+test("Amazon Specs names how its required fields were chosen, with no placeholder (D-05)", async ({ page }) => {
+  await mockCanvasRead(page);
+  // The same rows with a category and stored values, served after the shared mock so this route wins.
+  const rows = SPEC_ROWS.map((row, index) => ({
+    ...row,
+    category: "Headlamps",
+    amazon_spec_values: index === 0 ? { color: "Black" } : { color: "Black", upc: "123" },
+  }));
+  await page.route("**/rest/v1/canvas_spec_readiness**", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      headers: {
+        "content-range": `0-${rows.length - 1}/${rows.length}`,
+        "access-control-allow-origin": "*",
+        "access-control-expose-headers": "content-range",
+      },
+      body: JSON.stringify(rows),
+    }),
+  );
+  await openAmazonSpecs(page);
+
+  const line = page.locator("[data-amazon-specs-required-list='fill-rate']");
+  await expect(line).toContainText(`Required fields: top 10 by fill rate in Headlamps (${rows.length} listings)`);
+  const category = line.locator("[data-amazon-specs-required-category='Headlamps']");
+  await expect(category).toHaveAttribute("data-amazon-specs-required-fields", "color;upc");
+  await expect(category).toHaveAttribute("data-ifai-tooltip-desc", /filled most often across the \d+ checked Headlamps listings/);
+  await expect(category).toHaveAttribute("data-ifai-tooltip-desc", /Color 100\.0%/);
+  await expect(page.locator("[data-amazon-specs-lead]")).not.toContainText(/placeholder/i);
 });
 
 test("Amazon Specs puts Top missing fields beside the completeness hero", async ({ page }) => {

@@ -208,6 +208,7 @@ export function FindabilityTable({
     (row) => row.asin,
     CLIENT_TABLE_PAGE_SIZE,
   );
+  const exportScope = useMemo(() => ({ outcome }), [outcome]);
   const landed = useLandOnFindabilityRow(landAsin, rows, CLIENT_TABLE_PAGE_SIZE, population.setPage);
   const shownFrom = rows.length === 0 ? 0 : population.page * CLIENT_TABLE_PAGE_SIZE + 1;
   const shownTo = Math.min(rows.length, (population.page + 1) * CLIENT_TABLE_PAGE_SIZE);
@@ -223,6 +224,7 @@ export function FindabilityTable({
         wrapColumnIds={FINDABILITY_WRAP_COLUMNS}
         sort={population.sort}
         onSort={population.onSort}
+        exportScope={exportScope}
       >
         <tbody>
           {rows.length === 0 ? (

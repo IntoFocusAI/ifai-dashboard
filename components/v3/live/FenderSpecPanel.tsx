@@ -105,7 +105,8 @@ function MissingFieldRow({
       </div>
       {share.barPct != null ? (
         <div className="readiness-progress-bar" aria-hidden="true">
-          <div className="readiness-progress-fill" style={{ width: `${share.barPct}%` }} />
+          {/* Chart token, not a status color (X-34). */}
+          <div className="readiness-progress-fill" style={{ width: `${share.barPct}%`, background: "var(--chart-measured)" }} />
         </div>
       ) : (
         <div className="readiness-progress-bar" aria-hidden="true" data-spec-missing-bar-empty="">
