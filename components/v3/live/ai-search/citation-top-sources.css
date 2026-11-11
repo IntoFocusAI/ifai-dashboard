@@ -119,7 +119,7 @@
 
 .citation-top-source {
   display: grid;
-  grid-template-columns: 20px minmax(0, 2.2fr) minmax(48px, 1fr) auto;
+  grid-template-columns: 20px minmax(0, 2.6fr) minmax(48px, 1fr) auto;
   align-items: center;
   gap: 10px;
   width: 100%;
