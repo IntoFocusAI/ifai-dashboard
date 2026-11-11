@@ -10,6 +10,9 @@
  */
 
 import type { PieDiscData } from "@/lib/ai-search/citation-pies";
+import type { PartialFigure } from "@/lib/fender-canvas/canvas-reads";
+import { formatInt } from "@/lib/fender-canvas/format";
+import { combineStale, mergePartial, RECHECK_DAYS, rowsStale } from "@/lib/fender-canvas/row-stale";
 import { getCanvasSupabase } from "../supabase/canvas-client";
 
 export type RevenueSource = "brand_reported" | "smartscout";
@@ -256,6 +259,12 @@ const AWAITING_REASON_ORDER: readonly AwaitingInputsReason[] = [
   "no_keepa_history",
 ];
 
+/** "1 of 3 out-of-stock listings have no sales estimate yet, so they are left out of the total." */
+export function noSalesEstimateSentence(awaiting: number, affected: number): string {
+  const fmt = new Intl.NumberFormat("en-US");
+  return `${fmt.format(awaiting)} of ${fmt.format(affected)} out-of-stock listings have no sales estimate yet, so they are left out of the total.`;
+}
+
 /**
  * How many listings are awaiting inputs, by reason, as one sentence for the total's tooltip.
  * Null when every listing is estimated.
@@ -273,8 +282,7 @@ export function awaitingInputsBreakdown(rows: readonly StockLossRow[], window: L
   const parts = AWAITING_REASON_ORDER.filter((reason) => counts.has(reason)).map(
     (reason) => `${new Intl.NumberFormat("en-US").format(counts.get(reason)!)} ${AWAITING_REASON_PHRASE[reason]}`,
   );
-  const count = new Intl.NumberFormat("en-US").format(awaiting);
-  return `${count} ${awaiting === 1 ? "listing is" : "listings are"} awaiting inputs and ${awaiting === 1 ? "is" : "are"} not counted as $0: ${parts.join("; ")}.`;
+  return `${noSalesEstimateSentence(awaiting, rows.length)} Reasons: ${parts.join("; ")}.`;
 }
 
 export function noActiveOffer(row: StockLossRow): boolean {
@@ -322,4 +330,59 @@ export function formatDay(day: string | null | undefined): string | null {
   if (!day) return null;
   const at = new Date(`${day}T00:00:00Z`);
   return Number.isFinite(at.getTime()) ? dayFormat.format(at) : null;
+}
+
+/**
+ * X-25 per-row stale reading for the lost-sales totals. Each listing in a total has its own
+ * Keepa history (history_through, rechecked daily) and, when SmartScout supplies its sales, its
+ * own SmartScout snapshot (smartscout_snapshot_date, rechecked every 7 days).
+ */
+export function lostSalesStale(
+  rows: readonly StockLossRow[],
+  window: LossWindow = 365,
+  now: number = Date.now(),
+): PartialFigure | null {
+  const estimated = rows.filter((row) => row.revenue_source && lostSales(row, window) != null);
+  const smartscout = estimated.filter((row) => row.revenue_source === "smartscout");
+  return combineStale(
+    [
+      {
+        label: "Keepa",
+        stale: rowsStale(
+          estimated,
+          (row) => row.history_through,
+          { intervalDays: RECHECK_DAYS.keepa, check: "Keepa update", source: "canvas_listing_sales_loss_v2", figure: "missed-sales totals" },
+          now,
+        ),
+      },
+      {
+        label: "SmartScout",
+        stale: rowsStale(
+          smartscout,
+          (row) => row.smartscout_snapshot_date,
+          { intervalDays: RECHECK_DAYS.smartscout, check: "SmartScout snapshot", source: "canvas_listing_sales_loss_v2", figure: "missed-sales totals" },
+          now,
+        ),
+      },
+    ],
+  );
+}
+
+/** The X-25 asterisk on a lost-sales total: the listings it leaves out, and the older inputs it includes. */
+export function lostSalesPartial(
+  rows: readonly StockLossRow[],
+  sum: LostSalesSum,
+  now: number = Date.now(),
+): PartialFigure | null {
+  const awaiting = rows.filter((row) => !(lostSales(row, sum.window) != null && row.revenue_source)).length;
+  const coverage: PartialFigure | null =
+    awaiting > 0
+      ? {
+          reason: "coverage",
+          missing: noSalesEstimateSentence(awaiting, sum.affectedCount),
+          coverage: null,
+          source: "SmartScout sales and Keepa stock history",
+        }
+      : null;
+  return mergePartial(coverage, lostSalesStale(rows, sum.window, now));
 }

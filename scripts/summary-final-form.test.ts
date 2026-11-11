@@ -75,7 +75,7 @@ test("X-25: AI Consensus and a pillar that leave out inputs carry the partial re
   assert.equal(commerce.reason, "coverage");
   assert.match(commerce.missing, /Active products available is left out of AI Commerce/);
   assert.equal(commerce.coverage, "4 of 5 components");
-  assert.match(partialFigureTip(commerce), /never counted as zero/);
+  assert.match(partialFigureTip(commerce), /\nCovers 4 of 5 components\./);
 
   const overall = consensusPartial(consensus);
   assert.ok(overall);

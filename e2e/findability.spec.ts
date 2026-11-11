@@ -154,7 +154,7 @@ test("the five outcome counts stay distinct and open the listings behind them", 
   await expect(exactHero.locator("[data-partial-figure='coverage']")).toBeVisible();
   await expect(exactHero.locator("[data-figure-tip='findability-stale']")).toHaveAttribute(
     "data-ifai-tooltip-desc",
-    /Covers 0 of 6 listings checked in the last 14 days\./,
+    /^6 of 6 listings have no official-page check in 14 days\./,
   );
   await expect(exactHero.locator("[data-status='okay']")).toContainText("Fair");
   await expect(exactHero.locator("[data-findability-lead-figure]")).toHaveAttribute("data-findability-exact", "2");

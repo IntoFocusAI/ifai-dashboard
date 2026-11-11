@@ -12,6 +12,7 @@ import type { FindabilityRead } from "@/lib/findability/copy";
 import type { AmazonFieldTotals } from "@/lib/fender-canvas/ai-readiness-lead";
 import { scoreAgainst100Pie, scoreTone } from "@/lib/fender-canvas/consensus-score-display";
 import { formatInt, formatPct, formatRatio } from "@/lib/fender-canvas/format";
+import { markPartial, partialFigureTip, type PartialFigure } from "@/lib/fender-canvas/canvas-reads";
 import type { PortfolioRetailSnapshot } from "@/lib/fender-canvas/portfolio-retail";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
 import type { StockLossRow } from "@/lib/fender-canvas/stock-loss";
@@ -210,17 +211,19 @@ type HeroModel = {
   tip: string | null;
   explainer?: string;
   tone?: NodeStatus;
+  /** X-25: part of the population is past its recheck schedule. */
+  partial?: PartialFigure | null;
 };
 
 export function heroFigure(hero: HeroModel, noun: string, missing: string): MinimalFigure {
   if (hero.ratio == null || isNotAvailable(hero.percent)) return missingFigure(hero.explainer ?? missing);
   return {
-    value: hero.percent,
+    value: markPartial(hero.percent, hero.partial),
     tone: hero.tone ?? toneFromColor(hero.color),
     ratio: `${hero.ratio} ${noun}`,
     pie: hero.pie,
     tip: hero.tip,
-    missing: null,
+    missing: hero.partial ? partialFigureTip(hero.partial) : null,
   };
 }
 

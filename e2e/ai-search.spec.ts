@@ -530,11 +530,11 @@ test.describe("Competitive Radar", () => {
     await expect(marks.first()).toBeVisible();
     for (const mark of await marks.all()) {
       await expect(mark).toHaveText("*");
-      // The shared partial-figure tooltip (X-25): what is left out, the source, then the effect.
+      // The shared partial-figure tooltip (X-25): what is left out, then how to clear it.
       await expect(mark).toHaveAttribute("data-ifai-tooltip-title", "Filtered figure");
       await expect(mark).toHaveAttribute(
         "data-ifai-tooltip-desc",
-        `${engineName} only. Answers from the other engines are left out. Source: AI Search answers in the date pill's selection. Clear the engine to see all engines.`,
+        `${engineName} only. Answers from the other engines are left out.\nClear the engine to see all engines.`,
       );
       await expect(mark).not.toHaveAttribute("title");
     }

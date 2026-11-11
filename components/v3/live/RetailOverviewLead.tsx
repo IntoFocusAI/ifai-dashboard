@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { PartialFigureMark } from "@/components/v3/live/FigureTip";
 import { RetailShareDisc, RetailStatusMark } from "@/components/v3/live/RetailOverviewFigure";
 import {
   heroFigureColor,
@@ -36,7 +37,9 @@ function RetailHeroCard({ hero }: { hero: RetailOverviewHeroModel }) {
               data-retail-hero-denominator={hero.denominator ?? ""}
               style={{ color: heroFigureColor(hero) }}
             >
-              {hero.percent}
+              <PartialFigureMark partial={hero.partial} testId={`retail-hero-${hero.id}-stale`}>
+                {hero.percent}
+              </PartialFigureMark>
             </span>
             {hero.ratio ? (
               <span className="retail-overview-hero-ratio" data-retail-hero-ratio="">

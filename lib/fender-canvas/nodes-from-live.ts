@@ -15,7 +15,6 @@ import { pageFoundHero, pageFoundTone } from "@/lib/fender-canvas/ai-readiness-l
 import {
   PARTIAL_TITLE,
   READ_NOT_AVAILABLE,
-  freshnessLastRun,
   markPartial,
   partialFigureTip,
   readFailedPartial,
@@ -24,9 +23,7 @@ import {
 import { aiSearchStale } from "@/lib/ai-search/stale";
 import { findabilityStale } from "@/lib/findability/last-checked";
 import { contentSharePartial } from "@/lib/fender-canvas/listing-content";
-import { specPagesStale } from "@/lib/fender-canvas/machine-readability";
-import { SPEC_CHECK_JOB } from "@/lib/fender-canvas/page-found-checked-at";
-import { pageFoundStale } from "@/lib/fender-canvas/page-found-hero";
+import { pageFoundRowsStale, specPagesStale } from "@/lib/fender-canvas/machine-readability";
 import { formatInt, formatPct } from "@/lib/fender-canvas/format";
 import { bulletCounts, type BulletCounts } from "@/lib/fender-canvas/listing-content";
 import { specPageCounts, type SpecPageCounts } from "@/lib/fender-canvas/machine-readability";
@@ -79,6 +76,18 @@ function withPartialMark<T extends HeroFace>(face: T, partial: PartialFigure | n
     tooltip: withTip ? { title: PARTIAL_TITLE[partial.reason], desc } : { ...EMPTY_TOOLTIP },
     partialTip: desc,
   };
+}
+
+/**
+ * X-25 on a retail bubble: the per-row stale reading puts the asterisk on the hero and leads the
+ * hover box. A hover box the bubble already had (such as the MAP approved exceptions) follows it.
+ */
+function withRetailStale<T extends HeroFace>(face: T, partial: PartialFigure | null | undefined): T {
+  const marked = withPartialMark(face, partial ?? null);
+  const existing = face.tooltip?.desc;
+  if (marked === face || !partial || !existing) return marked;
+  const desc = `${partialFigureTip(partial)} ${existing}`;
+  return { ...marked, tooltip: { title: PARTIAL_TITLE[partial.reason], desc }, partialTip: desc };
 }
 
 /** Exact official product page share — same figure the Findability tab leads with. */
@@ -215,6 +224,7 @@ export function buildLiveNodes(
   const schemaPages = specPageCounts(bundle.specPages);
   const bullets = bulletCounts(bundle.listingContent);
   const retailFaces = retailBubbleFaces(retail);
+  const retailSnapshot = retail.phase === "ready" ? retail.snapshot : null;
   const aiStale = ai.phase === "ready" ? aiSearchStale(ai.snapshot.run) : null;
   const aiFaces = aiNodeFaces(ai);
   // Main AI Readiness bubble keeps its title and page-found figure; it opens Brand-Site Specs.
@@ -222,7 +232,7 @@ export function buildLiveNodes(
   const pageTone = pageFoundTone(m.spec_fender_found_pct);
   const metricsFailure = bundle.unavailable?.m;
   const metricsTip = metricsFailure ? failedReadTooltip(metricsFailure) : null;
-  const pageStale = metricsTip || pageHero.ratio == null ? null : pageFoundStale(freshnessLastRun(bundle, SPEC_CHECK_JOB));
+  const pageStale = metricsTip || pageHero.ratio == null ? null : pageFoundRowsStale(bundle.specPages);
   const readinessStatus: NodeStatus = metricsTip ? "neutral" : (pageTone ?? "neutral");
   const readinessHero = metricsTip
     ? { value: READ_NOT_AVAILABLE, label: READINESS_BUBBLE_LABEL }
@@ -249,17 +259,17 @@ export function buildLiveNodes(
     {
       ...satelliteNode("sat-buybox"),
       spokeId: "ecommerce",
-      ...retailFaces.suppressed,
+      ...withRetailStale(retailFaces.suppressed, retailSnapshot?.suppressedListings.stale),
     },
     {
       ...satelliteNode("sat-asin"),
       spokeId: "ecommerce",
-      ...retailFaces.catalog,
+      ...withRetailStale(retailFaces.catalog, retailSnapshot?.unnestedBundles.stale),
     },
     {
       ...satelliteNode("sat-map"),
       spokeId: "ecommerce",
-      ...retailFaces.map,
+      ...withRetailStale(retailFaces.map, retailSnapshot?.mapLeakage.stale),
     },
     {
       ...satelliteNode("sat-findability"),
@@ -298,7 +308,7 @@ export function buildLiveNodes(
       ...primarySpoke("spoke-aeo"),
     },
     {
-      ...retailFaces.main,
+      ...withRetailStale(retailFaces.main, retailSnapshot?.suppressedListings.stale),
       spokeId: "ecommerce",
       ...primarySpoke("spoke-retail"),
     },

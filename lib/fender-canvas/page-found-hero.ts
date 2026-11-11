@@ -87,6 +87,8 @@ export function pageFoundStale(checkedAt: string | null | undefined, now: number
 export function brandSitePageFoundHero(
   m: CanvasMetricsRow | null | undefined,
   checkedAt: string | null = null,
+  /** The per-row stale reading (X-25). Left out, the figure falls back to the newest check time. */
+  rowsStale?: PartialFigure | null,
 ): PageFoundHeroModel {
   const definition = pageFoundDefinition(checkedAt);
   if (!m) return unavailableHero(definition);
@@ -122,6 +124,6 @@ export function brandSitePageFoundHero(
     numerator: found,
     denominator: checked,
     figureTip: null,
-    partial: pageFoundStale(checkedAt),
+    partial: rowsStale !== undefined ? rowsStale : pageFoundStale(checkedAt),
   };
 }

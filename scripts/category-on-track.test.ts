@@ -466,7 +466,7 @@ test("with an engine chip on, every evidence link on the tab opens that engine's
   );
   assert.equal(
     engineOnlyNote("ChatGPT"),
-    "ChatGPT only. Answers from the other engines are left out. Source: AI Search answers in the date pill's selection. Clear the engine to see all engines.",
+    "ChatGPT only. Answers from the other engines are left out.\nClear the engine to see all engines.",
   );
 
   assert.match(read("components/v3/live/ai-search/EvidenceLink.tsx"), /data-ifai-evidence=\{focus \? formatEvidence\(focus\) : "all"\}/);

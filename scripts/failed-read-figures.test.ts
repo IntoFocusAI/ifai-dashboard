@@ -169,7 +169,7 @@ test("the AI Readiness bubble reads Not available* with canvas_metrics in its ho
   assert.equal(node?.tooltip.title, READ_NOT_AVAILABLE);
   assert.equal(
     node?.tooltip.desc,
-    "The catalog metrics read (canvas_metrics) did not load: forced m failure. The figure is left out rather than shown as zero.",
+    "The catalog metrics read (canvas_metrics) did not load: forced m failure.\nThe figure is left out rather than shown as zero.",
   );
 
   const loaded = buildLiveNodes(bundle(), buildLiveMetrics(bundle())).find((item) => item.id === "spoke-specs");

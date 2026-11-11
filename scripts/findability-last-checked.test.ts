@@ -159,8 +159,7 @@ test("coverage counts each row's own check inside the 14-day window, not the new
   const stale = findabilityStale(rows, NOW);
   assert.ok(stale);
   assert.equal(stale.reason, "coverage");
-  assert.equal(stale.coverage, "2 of 6 listings checked in the last 14 days");
-  assert.equal(stale.missing, "4 listings have no official-page check in the last 14 days");
+  assert.equal(stale.missing, "4 of 6 listings have no official-page check in 14 days");
   assert.equal(
     findabilityLastCheckedTip(rows, NOW),
     "This is the newest official-page check. 2 of 6 listings checked in the last 14 days.",

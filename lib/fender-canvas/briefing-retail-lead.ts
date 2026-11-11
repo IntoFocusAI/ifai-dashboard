@@ -125,7 +125,7 @@ function fromRetailHero(
     explainer,
     numerator: hero.numerator,
     denominator: hero.denominator,
-    partial: null,
+    partial: hero.partial ?? null,
     loading: false,
   };
 }

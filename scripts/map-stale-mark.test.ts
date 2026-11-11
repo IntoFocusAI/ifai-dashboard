@@ -17,8 +17,15 @@ import type { CanvasBundle, CanvasMetricsRow } from "../lib/fender-canvas/types.
 const DAY = 86_400_000;
 const daysAgo = (days: number) => new Date(Date.now() - days * DAY).toISOString();
 
-function bundle(specCheckAt: string | null = null): CanvasBundle {
+/** The spec read's checked rows: the first has the given time, the optional second is checked a day ago. */
+function specPages(first: string | null, second?: boolean) {
+  const checkedRows = [{ asin: "B00ONE", checkedAt: first }, ...(second ? [{ asin: "B00TWO", checkedAt: daysAgo(1) }] : [])];
+  return { checkedRows, pages: [], withSpecBlock: 0, withAllBasics: 0, listings: 0 };
+}
+
+function bundle(specCheckAt: string | null = null, both = false): CanvasBundle {
   return {
+    specPages: specCheckAt ? specPages(specCheckAt, both) : undefined,
     m: { catalog_skus: 3598, spec_checked: 925, spec_fender_found: 123, spec_fender_found_pct: 13.3 } as CanvasMetricsRow,
     cats: [],
     engines: [],
@@ -68,8 +75,8 @@ function ai(publishedAt: string): AiSearchRead {
   return { phase: "ready", snapshot: { ...published, run: { ...published.run, published_at: publishedAt } } };
 }
 
-function nodes(input: { find: FindabilityRead; ai: AiSearchRead; specCheckAt?: string | null }) {
-  const b = bundle(input.specCheckAt ?? null);
+function nodes(input: { find: FindabilityRead; ai: AiSearchRead; specCheckAt?: string | null; specBoth?: boolean }) {
+  const b = bundle(input.specCheckAt ?? null, input.specBoth);
   const list = buildLiveNodes(b, buildLiveMetrics(b), { phase: "loading" }, input.ai, input.find);
   return { b, list, byId: new Map(list.map((node) => [node.id, node])) };
 }
@@ -85,9 +92,9 @@ test("a Findability check older than twice its weekly schedule marks the Findabi
   const sat = node(byId, "sat-findability");
   assert.equal(sat.heroValue?.value, "50.0%*");
   assert.equal(sat.tooltip.title, PARTIAL_TITLE.coverage);
-  assert.match(sat.tooltip.desc, /^2 listings have no official-page check in the last 14 days\./);
-  assert.match(sat.tooltip.desc, /Covers 0 of 2 listings checked in the last 14 days\./);
-  assert.match(sat.tooltip.desc, /Source: canvas_spec_findability\./);
+  assert.match(sat.tooltip.desc, /^2 of 2 listings have no official-page check in 14 days\./);
+  assert.doesNotMatch(sat.tooltip.desc, /canvas_/);
+  assert.ok(sat.tooltip.desc.split("\n").length <= 3, "a lead line, then at most two short lines");
   assert.equal(sat.partialTip, sat.tooltip.desc);
 });
 
@@ -95,8 +102,7 @@ test("a fresh newest check does not clear the asterisk while another listing is 
   const { byId } = nodes({ find: findability(daysAgo(0), daysAgo(30)), ai: ai(daysAgo(1)) });
   const sat = node(byId, "sat-findability");
   assert.equal(sat.heroValue?.value, "50.0%*");
-  assert.match(sat.tooltip.desc, /^1 listing has no official-page check in the last 14 days\./);
-  assert.match(sat.tooltip.desc, /Covers 1 of 2 listings checked in the last 14 days\./);
+  assert.match(sat.tooltip.desc, /^1 of 2 listings has no official-page check in 14 days\./);
 });
 
 test("a listing with no stored check time counts as not checked in the window", () => {
@@ -112,12 +118,18 @@ test("a current Findability check leaves the bubble plain", () => {
   assert.equal(sat.partialTip, undefined);
 });
 
-test("a stale fender.com product check marks the AI Readiness bubble with its tooltip", () => {
+test("a checked listing past 14 days marks the AI Readiness bubble, counted per row (X-25)", () => {
   const stale = nodes({ find: findability(daysAgo(1)), ai: ai(daysAgo(1)), specCheckAt: daysAgo(20) });
   const bubble = node(stale.byId, "spoke-specs");
   assert.match(bubble.heroValue?.value ?? "", /^\d+(\.\d)?%\*$/);
-  assert.equal(bubble.tooltip.title, PARTIAL_TITLE.stale);
-  assert.match(bubble.tooltip.desc, /product check runs weekly/);
+  assert.equal(bubble.tooltip.title, PARTIAL_TITLE.coverage);
+  assert.match(bubble.tooltip.desc, /^1 of 1 listing has no .* product check in 14 days\./);
+
+  // The newest listing is fresh, but the other one is not: the asterisk stays.
+  const mixed = nodes({ find: findability(daysAgo(1)), ai: ai(daysAgo(1)), specCheckAt: daysAgo(20), specBoth: true });
+  const mixedBubble = node(mixed.byId, "spoke-specs");
+  assert.match(mixedBubble.heroValue?.value ?? "", /\*$/);
+  assert.match(mixedBubble.tooltip.desc, /^1 of 2 listings has no .* product check in 14 days\./);
 
   const current = nodes({ find: findability(daysAgo(1)), ai: ai(daysAgo(1)), specCheckAt: daysAgo(2) });
   assert.doesNotMatch(node(current.byId, "spoke-specs").heroValue?.value ?? "", /\*$/);
@@ -129,7 +141,7 @@ test("a stale AI Search run marks every AI figure; the two main bubbles get no h
     const bubble = node(byId, id);
     assert.match(bubble.heroValue?.value ?? "", /\*$/, `${id} carries the asterisk`);
     assert.equal(bubble.tooltip.desc, "", `${id} has no hover box`);
-    assert.match(bubble.partialTip ?? "", /No AI Search run has been published in the last 6 days/);
+    assert.match(bubble.partialTip ?? "", /^No AI Search run has been published in 6 days\./);
   }
   for (const id of ["sat-prompts", "sat-citations", "sat-drift", "sat-taylor", "sat-amps"]) {
     const sat = node(byId, id);
@@ -163,9 +175,9 @@ test("a Minimal slot that reads a stale bubble keeps the asterisk and its toolti
   const slot = slots.find((entry) => entry.id === "sat-findability");
   assert.ok(slot);
   assert.equal(slot.value, "50.0%*");
-  assert.match(slot.reading.missing ?? "", /0 of 2 listings checked in the last 14 days/);
+  assert.match(slot.reading.missing ?? "", /2 of 2 listings have no official-page check in 14 days/);
   const family = slots.find((entry) => entry.id === "findability-official-family-page");
   assert.ok(family);
   assert.equal(family.value, "50.0%*", "a Findability tile that is not a bubble carries the asterisk too");
-  assert.match(family.reading.missing ?? "", /0 of 2 listings checked in the last 14 days/);
+  assert.match(family.reading.missing ?? "", /2 of 2 listings have no official-page check in 14 days/);
 });

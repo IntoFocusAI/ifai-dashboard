@@ -7,6 +7,7 @@
 import { isPastCheckSchedule, type PartialFigure } from "@/lib/fender-canvas/canvas-reads";
 import { formatCheckedAt } from "@/lib/fender-canvas/featured-offer-copy";
 import { formatInt } from "@/lib/fender-canvas/format";
+import { RECHECK_DAYS, rowsStale } from "@/lib/fender-canvas/row-stale";
 import { findabilityOutcome, type FindabilityRow } from "@/lib/findability/outcomes";
 
 export const LAST_CHECKED_UNAVAILABLE_LABEL = "Not available*";
@@ -69,6 +70,19 @@ export function newestAmazonSpecCheckAt(rows: readonly AmazonSpecCheckRow[]): st
   );
 }
 
+/**
+ * The per-row stale reading (X-25) for the Amazon spec figures: each Amazon-checked listing's own
+ * spec_readiness.checked_at against twice the weekly schedule.
+ */
+export function amazonSpecsStale(rows: readonly AmazonSpecCheckRow[], now: number = Date.now()): PartialFigure | null {
+  return rowsStale(
+    rows.filter((row) => row.amazon_checked === true),
+    (row) => row.checked_at,
+    { intervalDays: RECHECK_DAYS.weekly, check: "Amazon spec check", source: "canvas_spec_readiness", figure: "completeness figures" },
+    now,
+  );
+}
+
 /** Lead sentence when a usable check time exists, in UTC. Null when it does not. */
 export function lastCheckedSentence(iso: string | null): string | null {
   const formatted = formatCheckedAt(iso);
@@ -105,17 +119,15 @@ export type WeeklyCheck = {
  */
 export function weeklyCheckStale(
   checkedAt: string | null | undefined,
-  { check, source, figure }: WeeklyCheck,
+  { check, source }: WeeklyCheck,
   now: number = Date.now(),
 ): PartialFigure | null {
   if (!isPastCheckSchedule(checkedAt, WEEKLY_CHECK_DAYS * DAY_MS, now)) return null;
-  const since = formatCheckedAt(checkedAt) ?? "the last check";
   return {
     reason: "stale",
-    missing: `The ${check} runs weekly and has not run since ${since}, so changes after that check are missing`,
+    missing: `The ${check} has not run in ${STALE_WINDOW_DAYS} days`,
     source,
     lastCheck: checkedAt ?? null,
-    effect: `The ${figure} show the last check and may differ from the pages today`,
   };
 }
 
@@ -176,10 +188,9 @@ export function findabilityStale(rows: readonly FindabilityRow[], now: number = 
   const older = coverage.total - coverage.recent;
   return {
     reason: "coverage",
-    missing: `${formatInt(older)} ${older === 1 ? "listing has" : "listings have"} no official-page check in the last ${STALE_WINDOW_DAYS} days`,
-    coverage: findabilityCoverageLine(coverage),
+    missing: `${formatInt(older)} of ${formatInt(coverage.total)} ${coverage.total === 1 ? "listing" : "listings"} ${older === 1 ? "has" : "have"} no official-page check in ${STALE_WINDOW_DAYS} days`,
+    coverage: null,
     source: "canvas_spec_findability",
-    effect: "The outcome shares include older checks and may differ from the pages today",
   };
 }
 

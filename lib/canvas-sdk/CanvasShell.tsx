@@ -693,6 +693,7 @@ export function CanvasShell({ spec, children }: Props) {
       { title, desc, hasMoreInfo: false, anchor: "definition" },
       rect.left + rect.width / 2,
       rect.top,
+      { left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom },
     );
   }, []);
 

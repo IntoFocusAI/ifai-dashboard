@@ -19,7 +19,7 @@ import {
 import { failedReadTip, markPartial, partialFigureTip, type PartialFigure } from "@/lib/fender-canvas/canvas-reads";
 import { findabilityStale } from "@/lib/findability/last-checked";
 import { listingContentHeroes } from "@/lib/fender-canvas/listing-content";
-import { machineReadabilityHeroes } from "@/lib/fender-canvas/machine-readability";
+import { machineReadabilityHeroes, pageFoundRowsStale } from "@/lib/fender-canvas/machine-readability";
 import { brandSitePageFoundHero } from "@/lib/fender-canvas/page-found-hero";
 import {
   bubbleEntry,
@@ -117,13 +117,15 @@ export const READINESS_ENTRIES: MinimalEntry[] = [
       if (isNotAvailable(hero.percent)) return missingFigure("The Amazon listing check has not reported an attribute completeness figure.");
       const totals = resolveAmazonFieldTotals(ctx.bundle.m, ctx.amazonFieldTotals);
       const share = presentAmazonCompletenessFieldShare(totals?.found, totals?.expected, ctx.bundle.m.spec_avg_amazon_pct);
+      // X-25: Amazon-checked listings with no spec check inside twice the weekly schedule.
+      const partial = ctx.retail.phase === "ready" ? ctx.retail.snapshot.amazonSpecGaps.stale ?? null : null;
       return {
-        value: hero.percent,
+        value: markPartial(hero.percent, partial),
         tone: toneFromColor(hero.color),
         ratio: share.kind === "share" ? `${share.ratio} Amazon attribute fields filled` : null,
         pie: hero.pie,
         tip: hero.tip,
-        missing: null,
+        missing: partial ? partialFigureTip(partial) : null,
       };
     },
   },
@@ -135,7 +137,7 @@ export const READINESS_ENTRIES: MinimalEntry[] = [
     read: (ctx) => {
       const failed = failedReadTip(ctx.bundle, "m");
       if (failed) return counted(null, "", null, null, failed);
-      const hero = brandSitePageFoundHero(ctx.bundle.m);
+      const hero = brandSitePageFoundHero(ctx.bundle.m, null, pageFoundRowsStale(ctx.bundle.specPages));
       return counted(hero.ratio, "checked SKUs", hero.pie, hero.tip, hero.figureTip ?? hero.explainer);
     },
   }),
