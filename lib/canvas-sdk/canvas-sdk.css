@@ -1425,9 +1425,10 @@
       letter-spacing: 0.08em;
       text-transform: uppercase;
       width: fit-content;
-      background: var(--danger-bg);
-      color: var(--danger-text);
-      border: 1px solid var(--danger-border);
+      /* An eyebrow, not data: no status color (X-34). */
+      background: var(--bg-surface);
+      color: var(--text-muted);
+      border: 1px solid var(--border-color);
     }
 
     .drilldown-title {
@@ -3044,9 +3045,14 @@
     }
 
     /* The critical count keeps Oxblood with its mark and word in the label (X-34). */
+    .cc-quadrant-critical .cc-quadrant-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
     .cc-quadrant-label .data-status-glyph {
       color: var(--status-bad);
-      vertical-align: -1px;
     }
 
     .cc-quadrant-val {
