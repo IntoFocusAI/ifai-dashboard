@@ -20,6 +20,8 @@
 --
 -- Applied: 11 Nov 2026 13:47 UTC on production, sandbox, mirror, and claude by Claude Code for Brian Watson.
 -- Record only; already applied.
+-- Applied with execute_sql, so production's supabase_migrations has no row for it; the file keeps the
+-- version it was written under. Checked 11 Nov 2026: the column exists on production.
 
 SET lock_timeout = '2s';
 
