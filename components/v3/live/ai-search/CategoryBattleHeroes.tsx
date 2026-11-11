@@ -18,6 +18,7 @@ import type { RoleTally } from "@/lib/ai-search/question-role";
 import { summarizeRun } from "@/lib/ai-search/summary";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
 import { formatInt } from "@/lib/fender-canvas/format";
+import { leadBrand } from "@/lib/brand-copy";
 
 const NO_LEADS_DESC =
   "No unbranded discovery answer had a clear leader in this selection, so no category can be marked on track, tied, or behind.";
@@ -62,9 +63,10 @@ function OnTrackHero({ summary, engineName }: { summary: CategoryLeadSummary; en
   );
 }
 
+/** "Taylor leads Acoustics." for each Behind category, worded as the map bubble words it. */
 function onTrackCaption(summary: CategoryLeadSummary): string {
   if (summary.measured <= 0) return "";
-  const behind = summary.behind.length ? `Behind in ${joinBrands(summary.behind)}.` : "Behind in none.";
+  const behind = summary.rivalsLead.length ? summary.rivalsLead.map((line) => `${line}.`).join(" ") : "Behind in none.";
   return summary.tied.length ? `${behind} Tied in ${joinBrands(summary.tied)}.` : behind;
 }
 
@@ -84,7 +86,7 @@ function RateCaption({
   const focus = (outcome: string) => scopeEvidence({ field: "role", value: `${role}/${outcome}` }, engineScope);
   return (
     <p className="ai-battle-hero-caption" data-ai-battle-role-total={role}>
-      <EvidenceLink focus={focus("fender_win")} tab={AI_TABS.simulations} label={`${name}: Fender/Squier leads`}>
+      <EvidenceLink focus={focus("fender_win")} tab={AI_TABS.simulations} label={`${name}: ${leadBrand()} leads`}>
         {formatInt(tally.fenderWins)}
       </EvidenceLink>
       {" of "}

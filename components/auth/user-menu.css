@@ -1,0 +1,5 @@
+/* Menu entries that navigate are links; keep them looking like the button entries. */
+.user-menu-item-link,
+.user-menu-item-link:hover {
+  text-decoration: none;
+}

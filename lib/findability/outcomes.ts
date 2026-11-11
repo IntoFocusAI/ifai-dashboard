@@ -46,7 +46,28 @@ export type FindabilityRow = {
    * Null when the listing is absent there. Undefined when that read did not load.
    */
   dealer_bundle?: boolean | null;
+  /** Brand-led clients only: the listing is on the brand's product sheet. Undefined for Fender. */
+  on_brand_sheet?: boolean | null;
 };
+
+export type SheetSplitPart = { confirmed: number; total: number };
+export type SheetSplit = { onSheet: SheetSplitPart; offSheet: SheetSplitPart };
+
+/**
+ * Official pages found, split by whether the listing is on the brand's product sheet.
+ * Null when the read carries no sheet flag (Fender) or no listing is on the sheet.
+ */
+export function sheetSplit(rows: FindabilityRow[]): SheetSplit | null {
+  const flagged = rows.filter((row) => typeof row.on_brand_sheet === "boolean");
+  if (flagged.length === 0) return null;
+  const part = (on: boolean): SheetSplitPart => {
+    const group = flagged.filter((row) => row.on_brand_sheet === on);
+    return { confirmed: group.filter((row) => row.counts_as_confirmed === true).length, total: group.length };
+  };
+  const onSheet = part(true);
+  if (onSheet.total === 0) return null;
+  return { onSheet, offSheet: part(false) };
+}
 
 export type OutcomeCounts = Record<FindabilityOutcome, number> & {
   other: number;

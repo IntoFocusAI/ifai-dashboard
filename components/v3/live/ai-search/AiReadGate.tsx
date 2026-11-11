@@ -2,10 +2,13 @@
 
 import type { ReactNode } from "react";
 import { useAiHistoryOptional } from "@/components/v3/live/ai-search/AiHistoryContext";
+import { AiStatusTag } from "@/components/v3/live/ai-search/AiStatusTag";
 import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
 import { useAiSearch } from "@/components/v3/live/ai-search/AiSearchContext";
 import { CopyTip } from "@/components/v3/live/ai-search/CopyTip";
+import { NoWindowRunNotice } from "@/components/v3/live/ai-search/NoWindowRunNotice";
 import { selectionLine, selectionSubject } from "@/lib/ai-search/displayed-read";
+import { LAST_30_DAYS_LABEL } from "@/lib/ai-search/default-window";
 import { errorLine, runStateLabel, summarizeRun } from "@/lib/ai-search/summary";
 import type { AiSearchRead, AiSearchSnapshot } from "@/lib/ai-search/types";
 import { isWindowHistoryKind } from "@/lib/ai-search/window-display";
@@ -57,7 +60,7 @@ function SelectionNotice({ read }: { read: Extract<AiSearchRead, { phase: "error
           ) : null}
           {single ? (
             <button type="button" className="segmented-btn" data-ai-history-return onClick={history?.viewMonth}>
-              Last 30 days
+              {LAST_30_DAYS_LABEL}
             </button>
           ) : null}
         </span>
@@ -77,9 +80,9 @@ export function RunFreshness({ snapshot, stale }: { snapshot: AiSearchSnapshot; 
       style={{ ...mutedText, fontSize: 11, display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 10 }}
     >
       {showState ? (
-        <span className={`tag-badge ${run.isPartial ? "tag-warning" : "tag-success"}`}>
+        <AiStatusTag tone={run.isPartial ? "warning" : "success"}>
           {run.isPartial ? <AiTerm term="partial run">Partial run</AiTerm> : runStateLabel(run.state)}
-        </span>
+        </AiStatusTag>
       ) : null}
       <span>
         {s.shortRunId} · completed {s.completedAt}
@@ -87,7 +90,7 @@ export function RunFreshness({ snapshot, stale }: { snapshot: AiSearchSnapshot; 
       <span>
         {run.answered ?? "Unknown"} of {run.expected ?? "unknown"} calls answered · {errorLine(s)}
       </span>
-      {stale ? <span className="tag-badge tag-warning">Refresh failed, showing the last good read</span> : null}
+      {stale ? <AiStatusTag tone="warning">Refresh failed, showing the last good read</AiStatusTag> : null}
     </div>
   );
 }
@@ -124,7 +127,7 @@ function GateBody({
         {history.selected.message}
         <span style={{ display: "block", marginTop: 8 }}>
           <button type="button" data-ai-history-return onClick={history.viewMonth}>
-            Last 30 days
+            {LAST_30_DAYS_LABEL}
           </button>
         </span>
       </Notice>
@@ -154,6 +157,7 @@ function GateBody({
       </Notice>
     );
   }
+  if (read.phase === "error" && read.selection === "empty" && history?.mode.kind === "month") return <NoWindowRunNotice />;
   if (read.phase === "error" && read.selection) return <SelectionNotice read={read} />;
   if (read.phase === "error") {
     return (
@@ -162,7 +166,7 @@ function GateBody({
         {historical ? (
           <span style={{ display: "block", marginTop: 8 }}>
             <button type="button" data-ai-history-return onClick={history.viewMonth}>
-              Last 30 days
+              {LAST_30_DAYS_LABEL}
             </button>
           </span>
         ) : null}
@@ -182,7 +186,7 @@ function GateBody({
         Call rows for this run did not load, so no rate is shown.
         <span style={{ display: "block", marginTop: 8 }}>
           <button type="button" data-ai-history-return onClick={history.viewMonth}>
-            Last 30 days
+            {LAST_30_DAYS_LABEL}
           </button>
         </span>
       </Notice>

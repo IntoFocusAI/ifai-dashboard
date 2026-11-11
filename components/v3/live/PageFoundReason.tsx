@@ -10,6 +10,8 @@ import {
   type NotFoundReason,
   type ReasonGroup,
 } from "@/lib/fender-canvas/page-found-reasons";
+import { storedReasonTooltip } from "@/lib/fender-canvas/page-found-stored-reason";
+import { setFindabilityRowFocus, type FindabilityRowLink } from "@/lib/findability/row-focus";
 
 export const ALL_REASONS = "all";
 
@@ -27,8 +29,41 @@ function Term({ name, description, children }: { name: string; description: stri
   );
 }
 
-function FindabilityResultText({ result }: { result: FindabilityResult }) {
+/**
+ * The listing's Findability result as a link to its row on that tab. The panel's
+ * `data-ifai-open` handler switches tabs; the capture click names the row first.
+ */
+function FindabilityResultLink({
+  result,
+  link,
+}: {
+  result: Extract<FindabilityResult, { kind: "outcome" }>;
+  link: FindabilityRowLink;
+}) {
+  const { label, definition } = result;
+  const opens = `Opens ${link.asin} on the ${link.tab} tab.`;
+  const tooltip = definition
+    ? { "data-ifai-tooltip-title": label, "data-ifai-tooltip-desc": `${definition} ${opens}` }
+    : {};
+  return (
+    <button
+      type="button"
+      {...tooltip}
+      className={`page-found-findability-link${definition ? " ifai-term" : ""}`}
+      data-ifai-open={link.spokeId}
+      data-ifai-tab={link.tab}
+      data-page-found-findability-link={link.evidence}
+      aria-label={definition ? `${label}: ${definition} ${opens}` : `${label}. ${opens}`}
+      onClickCapture={() => setFindabilityRowFocus(link.asin)}
+    >
+      {label}
+    </button>
+  );
+}
+
+function FindabilityResultText({ result, link }: { result: FindabilityResult; link: FindabilityRowLink | null }) {
   const label = findabilityResultLabel(result);
+  if (result.kind === "outcome" && link) return <FindabilityResultLink result={result} link={link} />;
   if (result.kind === "outcome" && result.definition) {
     return (
       <Term name={label} description={result.definition}>
@@ -53,8 +88,10 @@ export function NotFoundReasonCell({ reason }: { reason: NotFoundReason }) {
   return (
     <span className="page-found-reason" data-page-found-reason={reason.group}>
       {stored ? (
-        <span className="page-found-reason-line" data-page-found-stored-reason="">
-          {stored}
+        <span className="page-found-reason-line" data-page-found-stored-reason={stored.code}>
+          <Term name={stored.label} description={storedReasonTooltip(stored)}>
+            {stored.label}
+          </Term>
         </span>
       ) : null}
       {showFindability ? (
@@ -65,14 +102,14 @@ export function NotFoundReasonCell({ reason }: { reason: NotFoundReason }) {
           {findability.kind === "outcome" || findability.kind === "unavailable" ? (
             <span className="page-found-reason-source">{FINDABILITY_SOURCE}:</span>
           ) : null}
-          <FindabilityResultText result={findability} />
+          <FindabilityResultText result={findability} link={reason.link} />
         </span>
       ) : null}
     </span>
   );
 }
 
-/** Groups the not-found rows by the first reason each one shows. */
+/** One dropdown over the not-found rows, grouped by the first reason each one shows. */
 export function ReasonFilter({
   groups,
   total,
@@ -89,22 +126,20 @@ export function ReasonFilter({
     ...groups.map((group): [string, string, number] => [group.key, group.key, group.count]),
   ];
   return (
-    <div className="page-found-filters page-found-reason-filters">
-      <div className="segmented-control" role="group" aria-label="Reason">
+    <label className="filter-selector page-found-reason-select">
+      <span className="page-found-reason-select-label">Reason:</span>
+      <select
+        aria-label="Reason"
+        value={value}
+        data-page-found-reason-filter=""
+        onChange={(event) => onChange(event.target.value)}
+      >
         {options.map(([key, label, count]) => (
-          <button
-            key={key}
-            type="button"
-            className={`segmented-btn${value === key ? " active" : ""}`}
-            aria-pressed={value === key}
-            data-page-found-reason-filter={key}
-            data-page-found-reason-filter-count={count}
-            onClick={() => onChange(key)}
-          >
-            {label} {formatInt(count)}
-          </button>
+          <option key={key} value={key} data-page-found-reason-filter-count={count}>
+            {label} ({formatInt(count)})
+          </option>
         ))}
-      </div>
-    </div>
+      </select>
+    </label>
   );
 }

@@ -104,8 +104,10 @@ test("Amazon Specs opens on Amazon fields and the title chevron reveals the rest
 
   const fields = page.locator("#spec-missing-fields > div");
   await expect(fields).toHaveCount(2);
-  await expect(fields.first()).toContainText("scale_length");
-  await expect(fields.nth(1)).toContainText("neck_material");
+  // Plain field names, not stored keys.
+  await expect(fields.first()).toContainText("Scale length");
+  await expect(fields.first()).not.toContainText("scale_length");
+  await expect(fields.nth(1)).toContainText("Neck");
   // sku_count is of the same checked listings as METRICS.spec_checked (4).
   await expect(fields.first().locator("[data-spec-missing-count]")).toHaveText("3 of 4 (75.0%)");
   await expect(fields.nth(1).locator("[data-spec-missing-count]")).toHaveText("2 of 4 (50.0%)");
@@ -129,7 +131,7 @@ test("Amazon Specs opens on Amazon fields and the title chevron reveals the rest
   await expect(reveal).toHaveAttribute("aria-expanded", "true");
   await expect(page.locator("#spec-missing-fields")).not.toHaveClass(/spec-missing-fields-preview/);
   await expect(fields).toHaveCount(amazonFieldCount);
-  await expect(fields.last()).toContainText("pickup_configuration");
+  await expect(fields.last()).toContainText("Pickup Configuration");
   await expect(fields.last().locator("[data-spec-missing-count]")).toHaveText("1 of 4 (25.0%)");
 
   await reveal.click();
@@ -153,16 +155,16 @@ test("Amazon Specs shows Amazon completeness only, with no fender.com page-found
 
   await expect(page.locator("[data-ai-readiness-hero]")).toHaveCount(1);
   const amazon = page.locator("[data-ai-readiness-hero='amazon_completeness']");
-  await expect(amazon.locator("[data-ai-readiness-hero-percent]")).toHaveText("48.8%");
+  await expect(amazon.locator("[data-ai-readiness-hero-percent]")).toHaveText(/^48\.8%\*?$/);
   await expect(amazon.locator("[data-ai-readiness-hero-ratio]")).toHaveText("26 of 52 (48.8%)");
   await expect(amazon.locator("[data-ai-readiness-hero-ratio]")).not.toContainText(/Across/i);
   await expect(amazon.locator("span.ifai-term")).toHaveAttribute(
     "data-ifai-tooltip-desc",
-    /across 4 checked SKUs/i,
+    /averaged across the Amazon listings of the 4 checked SKUs/i,
   );
   await expect(amazon.locator("span.ifai-term")).toHaveAttribute(
     "data-ifai-tooltip-desc",
-    /average, not a count of listings at 100%/i,
+    /average per listing, not the share of listings with every field filled/i,
   );
 
   await expect(page.locator("[data-ai-readiness-hero='page_found']")).toHaveCount(0);
@@ -299,12 +301,12 @@ test("Brand-Site Specs leads with page found and missing machine-readable specs,
   await expect(canvas.activeTab).toHaveText("Brand-Site Specs");
 
   const pageFound = page.locator("[data-machine-hero='page_found']");
-  await expect(pageFound.locator("[data-hero-percent]")).toHaveText("50.0%");
+  await expect(pageFound.locator("[data-hero-percent]")).toHaveText(/^50\.0%\*?$/);
   await expect(pageFound).toContainText("2 of 4");
 
   const missing = page.locator("[data-machine-hero='missing_specs']");
   await expect(missing).toBeVisible();
-  await expect(missing.locator("[data-hero-percent]")).toHaveText("50.0%");
+  await expect(missing.locator("[data-hero-percent]")).toHaveText(/^50\.0%\*?$/);
   await expect(missing).toContainText("1 of 2");
   await expect(missing).toContainText("Found pages missing machine-readable specs");
   await expect(missing).not.toContainText("additionalProperty");

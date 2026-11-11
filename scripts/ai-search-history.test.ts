@@ -54,7 +54,7 @@ test("default history label names the last 30 days", () => {
   assert.deepEqual(citationMonthBounds("2026-10-12"), { from: "2026-09-13", to: "2026-10-12" });
   assert.equal(
     historyControlLabel({ kind: "month" }, "2026-10-12", null),
-    "Last 30 days · Sep 13, 2026 to Oct 12, 2026",
+    "Last 30 days · Sep 13 to Oct 12, 2026",
   );
   assert.equal(historyControlLabel({ kind: "month" }, null, null), "Last 30 days");
   assert.equal(historyControlLabel({ kind: "all" }, "2026-10-12", null), "All time");

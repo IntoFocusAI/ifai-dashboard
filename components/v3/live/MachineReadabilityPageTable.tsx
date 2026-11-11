@@ -21,12 +21,13 @@ import {
 } from "@/lib/fender-canvas/machine-readability";
 import { schemaPageHref } from "@/lib/fender-canvas/spec-table-sort";
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
+import { brandSite } from "@/lib/brand-copy";
 
 const PAGE = 20;
 const ASIN_PREVIEW = 3;
 
 const COLUMNS: RetailColumn[] = [
-  { id: "page", name: "fender.com page", label: "fender.com page", width: 280, minWidth: 160, sort: "text" },
+  { id: "page", name: `${brandSite()} page`, label: `${brandSite()} page`, width: 280, minWidth: 160, sort: "text" },
   { id: "listings", name: "Amazon listings", label: "Amazon listings", width: 220, minWidth: 140, sort: "number" },
   { id: "missing", name: "Missing", label: "Missing", width: 160, minWidth: 110, sort: "text" },
   { id: "checked", name: "Checked", label: "Checked", width: 170, minWidth: 130, sort: "text" },
@@ -129,7 +130,9 @@ export function MachineReadabilityPageTable({
   }
   const rows = summary.pages.filter((row) => matches(row, filter));
   const sorted = useClientTableSort(rows, COLUMNS, sortValue);
-  const slice = sorted.rows.slice(page * PAGE, page * PAGE + PAGE);
+  // A search or a sort can leave fewer pages than the one on screen.
+  const shown = Math.min(page, Math.max(0, Math.ceil(sorted.rows.length / PAGE) - 1));
+  const slice = sorted.rows.slice(shown * PAGE, shown * PAGE + PAGE);
   const setAsides = useCheckSetAsides(SET_ASIDE_CHECKS.brandSiteSpecs, "Brand-Site Specs");
 
   return (
@@ -152,6 +155,7 @@ export function MachineReadabilityPageTable({
         freezeHeader
         maxHeight={520}
         sort={sorted.sort}
+        controls={sorted.controls}
         onSort={(columnId) => {
           setPage(0);
           sorted.onSort(columnId);
@@ -169,7 +173,7 @@ export function MachineReadabilityPageTable({
                 <Fragment key={row.url}>
                 <tr data-machine-page={row.url}>
                   <td>
-                    <strong>{row.model || "fender.com page"}</strong>
+                    <strong>{row.model || `${brandSite()} page`}</strong>
                     <br />
                     {href ? (
                       <a className="listing-link" href={href} target="_blank" rel="noopener noreferrer">
@@ -204,7 +208,7 @@ export function MachineReadabilityPageTable({
           )}
         </tbody>
       </ResizableTable>
-      <Pager page={page} total={rows.length} onPage={setPage} />
+      <Pager page={shown} total={sorted.rows.length} onPage={setPage} />
       <SetAsideHistory ctl={setAsides} />
     </div>
   );

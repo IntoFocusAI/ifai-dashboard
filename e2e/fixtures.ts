@@ -1,6 +1,11 @@
 import { expect, test as base, type Locator, type Page } from "@playwright/test";
 import { mockSetAsides, type SetAsideMock } from "./set-aside-mock";
 
+/** The AI Search tabs read every call in the date window from the live database. On live data that
+ *  takes 20 to 40 seconds, so the first assertion that needs the read waits this long, and the test
+ *  calls `test.slow()` to lift its own limit. */
+export const AI_READ_MS = 90_000;
+
 /** Must outlast the hover rest before the map slides (`DWELL_MS` in useHoverFraming). */
 const MAP_SETTLE_MS = 500;
 
@@ -162,7 +167,7 @@ export class Canvas {
   async openSimulations() {
     await this.openSpokeFromMap("AI Search Visibility");
     await this.openTab("Run Details");
-    await expect(this.simulations.first()).toBeVisible();
+    await expect(this.simulations.first()).toBeVisible({ timeout: AI_READ_MS });
   }
 }
 

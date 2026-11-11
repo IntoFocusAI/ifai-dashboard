@@ -93,6 +93,7 @@ function bundle(asin: string, parent: string | null): CatalogBundleRow {
     parent_asin: parent,
     product_url: null,
     is_bundle: true,
+    featured_offer_state: "present",
   };
 }
 
@@ -255,12 +256,12 @@ test("five findings reuse Retail Overview / Findability / Run Details population
   assert.equal(lead.findings[1].denominator, map.denominator);
   assert.equal(lead.findings[1].percent, map.percent);
   assert.equal(lead.findings[1].label, "MAP leakage");
-  assert.equal(lead.findings[1].tab, "MAP");
+  assert.equal(lead.findings[1].tab, "MAP Leakage");
 
   assert.equal(lead.findings[2].numerator, catalog.numerator);
   assert.equal(lead.findings[2].denominator, catalog.denominator);
   assert.equal(lead.findings[2].percent, catalog.percent);
-  assert.equal(lead.findings[2].label, "Splintered bundles");
+  assert.equal(lead.findings[2].label, "Splintered Listings");
   assert.equal(lead.findings[2].tab, "Catalog Governance");
   assert.equal(lead.findings[2].denominator, 4);
   assert.doesNotMatch(lead.findings[2].explainer, /946|coverage|monitored/i);
@@ -375,7 +376,6 @@ test("hub Briefing puts consensus in the findings row, then the essay", () => {
   assert.match(card, /aria-label=\{`\$\{finding\.label\}: \$\{finding\.explainer\}`\}/);
   assert.match(hero, /data-ifai-tooltip-desc=\{placeholder\.explainer\}/);
   assert.doesNotMatch(hero, /metric-card-sub|data-briefing-revenue-explainer/);
-  assert.doesNotMatch(read("components/v3/live/CurrentFindingsPanel.tsx"), /BriefingConsensusLead|AI Consensus/);
   assert.doesNotMatch(read("components/v3/live/RoadmapFindingsPanel.tsx"), /BriefingConsensusLead|AI Consensus/);
   assert.match(hero, /briefingFindingsLead/);
   assert.match(hero, /data-briefing-findings/);

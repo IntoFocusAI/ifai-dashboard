@@ -1,0 +1,121 @@
+/* Security disclosure page. Colors come from the profile modal theme variables in globals.css. */
+.security-page {
+  --security-page-bg: #070d18;
+  --security-planned: #fbbf24;
+  min-height: 100%;
+  padding: 48px 24px;
+  background: var(--security-page-bg);
+  color: var(--profile-text);
+  font-family: var(--font-sans);
+}
+
+.security-page.is-light {
+  --security-page-bg: #f4f5f7;
+  --security-planned: #b45309;
+}
+
+.security-card {
+  width: min(640px, 100%);
+  margin: 0 auto;
+  border-radius: 22px;
+  border: 1px solid var(--profile-border);
+  background: var(--profile-surface);
+  box-shadow: 0 24px 70px #0b122040;
+  overflow: hidden;
+}
+
+.security-header h1 {
+  font-size: 16px;
+}
+
+.security-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--profile-btn-border);
+  background: var(--profile-btn-bg);
+  color: var(--profile-text);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.security-back:hover {
+  color: var(--profile-text);
+  text-decoration: none;
+  border-color: var(--profile-muted);
+}
+
+.security-body {
+  padding: 20px 22px 26px;
+}
+
+.security-lead {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--profile-muted);
+}
+
+.security-section {
+  margin-top: 24px;
+}
+
+.security-section h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--profile-muted);
+}
+
+.security-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--profile-muted);
+  flex-shrink: 0;
+}
+
+.security-section[data-status="live"] .security-status-dot {
+  background: var(--profile-success);
+}
+
+.security-section[data-status="planned"] .security-status-dot {
+  background: var(--security-planned);
+}
+
+.security-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.security-list li {
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--profile-border);
+  background: var(--profile-surface-2);
+}
+
+.security-item-text {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.security-item-detail {
+  margin: 4px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--profile-muted);
+}

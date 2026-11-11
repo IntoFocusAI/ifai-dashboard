@@ -1,6 +1,8 @@
 import { ownedPie, sourceMix, unbrandedBrandSites, type OwnedByQuestionType } from "@/lib/ai-search/citation-insights";
 import type { CitationRead } from "@/lib/ai-search/citations";
+import type { PieTone } from "@/lib/ai-search/pie-tones";
 import type { AiCallRow } from "@/lib/ai-search/types";
+import { brandName } from "@/lib/brand-copy";
 
 export type CitationPieSlice = {
   key: string;
@@ -8,6 +10,8 @@ export type CitationPieSlice = {
   count: number;
   /** Slice counts Fender-owned links, so bar charts draw it in Fender blue. */
   owned?: boolean;
+  /** Chart tone when the key alone does not say which slice the figure reads. */
+  tone?: PieTone;
 };
 
 /** Structural pie shape for CitationPieDisc. Citation views keep a closed id union below. */
@@ -48,11 +52,11 @@ export function citationPies(read: CitationRead): CitationPie[] | null {
     },
     {
       id: "owned",
-      title: "Fender-owned and other links",
+      title: `${brandName()}-owned and other links`,
       total: owned.total,
       totalLabel: "cited links",
       slices: [
-        { key: "owned", label: "Fender-owned", count: owned.owned },
+        { key: "owned", label: `${brandName()}-owned`, count: owned.owned },
         { key: "other", label: "Other cited links", count: owned.other },
       ].filter((slice) => slice.count > 0),
     },
@@ -68,12 +72,12 @@ export function unbrandedAnswerPie(byType: OwnedByQuestionType | null): Citation
   if (cited < 0 || missed < 0 || cited + missed !== resolved) return null;
   return {
     id: "unbranded",
-    title: "Unbranded discovery answers that cited a Fender-owned page",
+    title: `Unbranded discovery answers that cited a ${brandName()}-owned page`,
     total: resolved,
     totalLabel: "unbranded discovery answers",
     slices: [
-      { key: "owned", label: "Cited a Fender-owned page", count: cited },
-      { key: "other", label: "No Fender-owned page", count: missed },
+      { key: "owned", label: `Cited a ${brandName()}-owned page`, count: cited },
+      { key: "other", label: `No ${brandName()}-owned page`, count: missed },
     ].filter((slice) => slice.count > 0),
   };
 }

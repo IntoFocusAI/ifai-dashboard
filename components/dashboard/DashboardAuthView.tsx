@@ -19,7 +19,9 @@ export function DashboardAuthView({ mode, next, banner }: Props) {
   return (
     <DashboardIomShell className="dashboard-auth-shell">
       <div className="canvas-body dashboard-auth-body" ref={bodyRef}>
-        <div className="canvas-pointer-wash" aria-hidden="true" />
+        <div className="canvas-pointer-wash" aria-hidden="true">
+          <div className="canvas-pointer-glow" />
+        </div>
         <div className="dashboard-auth-bg-logo" aria-hidden="true">
           <span className="dashboard-auth-bg-aura" />
           {/* eslint-disable-next-line @next/next/no-img-element */}

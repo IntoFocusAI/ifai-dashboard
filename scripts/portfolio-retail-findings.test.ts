@@ -92,6 +92,7 @@ function bundle(overrides: Partial<CatalogBundleRow> & Pick<CatalogBundleRow, "a
     parent_asin: null,
     product_url: "https://www.amazon.com/dp/B0D8TFXHHT",
     is_bundle: true,
+    featured_offer_state: "present",
     ...overrides,
   };
 }
@@ -313,16 +314,17 @@ test("a bundle with a usable parent is not an unnested opportunity", () => {
   assert.equal("seller" in (reading.detail?.opportunities[0] ?? {}), false);
 });
 
-test("catalog coverage stays incomplete when the retail read omits stored bundles", () => {
+test("the catalog's wider bundle flag count does not make the live-offer figure incomplete", () => {
   const reading = unnestedBundlesFinding(
     [bundle({ asin: "B000000001", parent_asin: null })],
     { catalogBundleCount: 4 },
   );
-  assert.equal(reading.status, "incomplete");
+  assert.equal(reading.status, "available_with_issues");
   assert.equal(reading.issueCount, 1);
-  assert.match(reading.missingMessage ?? "", /1 of 4 bundle listings/);
-  assert.match(reading.missingMessage ?? "", /not a final count/);
-  assert.doesNotMatch(JSON.stringify(reading), /partner-led|authorized seller|Buy Box/i);
+  assert.equal(reading.detail?.bundlesInRead, 1);
+  assert.equal(reading.detail?.catalogBundles, 4);
+  assert.equal(reading.missingMessage, null);
+  assert.doesNotMatch(JSON.stringify(reading), /partner-led|authorized seller/i);
 });
 
 test("a complete catalog with every bundle nested is a stored zero", () => {
@@ -425,7 +427,7 @@ test("a confirmed zero is skipped and the next finding is used", () => {
     }),
   );
   assert.equal(selected?.findingId, "map_leakage");
-  assert.equal(selected?.tabSlug, "map");
+  assert.equal(selected?.tabSlug, "map-leakage");
   assert.equal(selected?.label, RETAIL_FINDING_LABELS.map_leakage);
 
   const bundles = selectRetailHeadline(
@@ -522,7 +524,7 @@ test("a failed page read is unavailable and a stored page zero stays zero", asyn
   assert.equal(failed.suppressedListings.status, "unavailable");
   assert.equal(failed.headline?.findingId, "suppressed_listings");
   assert.equal(failed.amazonSpecGaps.status, "unavailable");
-  assert.equal(failed.unnestedBundles.status, "incomplete");
+  assert.equal(failed.unnestedBundles.status, "available_with_issues");
   assert.notEqual(failed.headline?.findingId, "map_leakage");
 
   const storedZero = await loadPortfolioRetailSnapshot({

@@ -12,6 +12,7 @@ import { failedReadTip } from "@/lib/fender-canvas/canvas-reads";
 import { ACTUATION_OMITTED_REASON } from "@/lib/fender-canvas/consensus-score-display";
 import { formatInt, formatPct } from "@/lib/fender-canvas/format";
 import { categoryUnbrandedFigure } from "@/lib/fender-canvas/minimal-metrics-ai";
+import { ROADMAP_BUBBLE_VALUE } from "@/lib/fender-canvas/roadmap-bubble";
 import {
   aiFigure,
   cached,
@@ -20,6 +21,7 @@ import {
   type MinimalEntry,
   type MinimalFigure,
 } from "@/lib/fender-canvas/minimal-metric-kit";
+import { brandName, leadBrand } from "@/lib/brand-copy";
 
 const NO_TAB = "No tab shows this figure yet.";
 
@@ -64,7 +66,28 @@ function other(entry: Omit<MinimalEntry, "area">): MinimalEntry {
   return { ...entry, area: "Other" };
 }
 
+/**
+ * The Roadmap bubble's text. It is static ("30-60-90", decision 11 Nov 2026), so Minimal shows
+ * the same words. The 30-60-90 Days tab leads with the findings figure, so this is not an Other
+ * figure; it sits first so it follows Action Items in map order. It keeps its saved-slot id.
+ */
+const ROADMAP_ENTRY: MinimalEntry = {
+  id: "day-90-buy-box-target",
+  spokeId: "roadmap",
+  tab: "30-60-90 Days",
+  label: "Roadmap",
+  read: (ctx) => ({
+    value: ctx.node("spoke-roadmap")?.heroValue?.value?.trim() || ROADMAP_BUBBLE_VALUE,
+    tone: "neutral",
+    ratio: null,
+    pie: null,
+    tip: null,
+    missing: null,
+  }),
+};
+
 export const OTHER_ENTRIES: MinimalEntry[] = [
+  ROADMAP_ENTRY,
   other({
     id: "buy-box-retention",
     spokeId: "ecommerce",
@@ -113,7 +136,7 @@ export const OTHER_ENTRIES: MinimalEntry[] = [
     tab: "Catalog Governance",
     label: "Stranded customer reviews",
     definition:
-      "Customer reviews that sit on partner bundle pages instead of the main Fender listing, from the catalog metrics row. Catalog Governance lists the bundles. " +
+      `Customer reviews that sit on partner bundle pages instead of the main ${brandName()} listing, from the catalog metrics row. Catalog Governance lists the bundles. ` +
       NO_TAB,
     read: (ctx) => {
       const failed = failedReadTip(ctx.bundle, "m");
@@ -129,7 +152,7 @@ export const OTHER_ENTRIES: MinimalEntry[] = [
     tab: "Category Battlecards",
     label: "Beginner share-of-voice gap",
     definition:
-      "Fender/Squier leads minus the top competitor's leads, in points of resolved Beginner unbranded discovery answers in the published AI run. Category Battlecards shows the Beginner row. " +
+      `${leadBrand()} leads minus the top competitor's leads, in points of resolved Beginner unbranded discovery answers in the published AI run. Category Battlecards shows the Beginner row. ` +
       NO_TAB,
     read: (ctx) =>
       aiFigure(ctx, (_summary, snapshot) => {
@@ -142,8 +165,8 @@ export const OTHER_ENTRIES: MinimalEntry[] = [
           value: `${gap > 0 ? "+" : ""}${gap.toFixed(1)} pts`,
           tone: gap < 0 ? "danger" : gap > 0 ? "success" : "warning",
           ratio: rival
-            ? `Fender/Squier ${formatInt(battle.fenderWins)} vs ${rival.brand} ${formatInt(rival.wins)} ${scope}`
-            : `Fender/Squier ${formatInt(battle.fenderWins)} ${scope}. No competitor led one.`,
+            ? `${leadBrand()} ${formatInt(battle.fenderWins)} vs ${rival.brand} ${formatInt(rival.wins)} ${scope}`
+            : `${leadBrand()} ${formatInt(battle.fenderWins)} ${scope}. No competitor led one.`,
           pie: null,
           tip: null,
           missing: null,
@@ -159,7 +182,7 @@ export const OTHER_ENTRIES: MinimalEntry[] = [
       return best ? `Strongest category: ${categoryLabel(best.category)}` : "Strongest category";
     },
     definition:
-      "The question category where Fender/Squier leads the largest share of resolved unbranded discovery answers in the published AI run. Categories with too few answers to compare are skipped while others qualify. Category Battlecards shows every category. " +
+      `The question category where ${leadBrand()} leads the largest share of resolved unbranded discovery answers in the published AI run. Categories with too few answers to compare are skipped while others qualify. Category Battlecards shows every category. ` +
       NO_TAB,
     read: (ctx) =>
       aiFigure(ctx, () => {
@@ -191,18 +214,5 @@ export const OTHER_ENTRIES: MinimalEntry[] = [
     definition:
       "The third AI Consensus input: actions with an owner, evidence, and a date. No records are stored yet, so Performance lists it as Not included. No tab shows a figure for it yet.",
     read: () => missingFigure(ACTUATION_OMITTED_REASON),
-  }),
-  other({
-    id: "day-90-buy-box-target",
-    spokeId: "roadmap",
-    tab: "30-60-90 Day Milestones",
-    label: "90-day plan",
-    definition:
-      "The Strategy Roadmap bubble's 90-day plan, in phases for MAP, catalog nesting, and estimated lift. It is a plan, not a measured result. No tab shows the phases yet.",
-    read: (ctx) => {
-      const phases = ctx.node("spoke-roadmap")?.heroValue?.label?.trim();
-      if (!phases) return missingFigure("The Strategy Roadmap bubble has no plan stored.");
-      return { value: phases, tone: "neutral", ratio: "MAP, catalog nesting, and estimated lift", pie: null, tip: null, missing: null };
-    },
   }),
 ];

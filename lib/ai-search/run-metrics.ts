@@ -1,4 +1,6 @@
+import { API_ENGINE_LABELS } from "@/lib/ai-search/engine-group";
 import type { AiCallRow, AiCurrentRun } from "@/lib/ai-search/types";
+import { leadBrand } from "@/lib/brand-copy";
 
 const ENGINE_LABELS: Record<string, string> = {
   chatgpt: "ChatGPT",
@@ -16,18 +18,34 @@ export const MIN_COMPARABLE_RESOLVED = 10;
 export function engineLabel(engine: string | null | undefined): string {
   const key = (engine ?? "").trim().toLowerCase();
   if (!key) return "Engine not recorded";
-  return ENGINE_LABELS[key] ?? key.charAt(0).toUpperCase() + key.slice(1);
+  return ENGINE_LABELS[key] ?? API_ENGINE_LABELS[key] ?? key.charAt(0).toUpperCase() + key.slice(1);
+}
+
+/** Zero-width and direction marks some engines store inside a model name. */
+const INVISIBLE_CHARS = /[\u00AD\u200B-\u200F\u202A-\u202E\u2060-\u2064\uFEFF]/g;
+
+/** No-break and other Unicode spaces, which read as a plain space. */
+const UNICODE_SPACES = /[\u00A0\u1680\u2000-\u200A\u202F\u205F\u3000]/g;
+
+/**
+ * A stored model name without its invisible characters: "\u200e3.5\u00a0Flash-Lite" reads
+ * "3.5 Flash-Lite". Visible characters are kept as stored. Empty when nothing visible is left.
+ */
+export function cleanModelName(model: string | null | undefined): string {
+  return (model ?? "").replace(INVISIBLE_CHARS, "").replace(UNICODE_SPACES, " ").replace(/\s+/g, " ").trim();
 }
 
 export function modelLabel(model: string | null | undefined): string {
-  const text = model?.trim();
+  const text = cleanModelName(model);
   return text ? text : "not recorded";
 }
 
 export function categoryLabel(category: string | null | undefined): string {
   const text = category?.trim();
   if (!text) return "Uncategorized";
-  return text.charAt(0).toUpperCase() + text.slice(1);
+  if (!text.includes("_")) return text.charAt(0).toUpperCase() + text.slice(1);
+  const spaced = text.replace(/_+/g, " ").replace(/\s+/g, " ").trim().toLowerCase();
+  return spaced ? spaced.charAt(0).toUpperCase() + spaced.slice(1) : "Uncategorized";
 }
 
 const ENGINE_NAMES = Object.keys(ENGINE_LABELS).join("|");
@@ -80,8 +98,8 @@ export function callOutcome(row: AiCallRow): CallOutcome {
 }
 
 export const OUTCOME_LABELS: Record<CallOutcome, string> = {
-  fender_win: "Fender/Squier named most",
-  fender_win_disqualified: "Fender/Squier named most, with a confirmed error",
+  fender_win: `${leadBrand()} named most`,
+  fender_win_disqualified: `${leadBrand()} named most, with a confirmed error`,
   competitor_win: "Competitor named most",
   unresolved: "No clear leader",
   error: "Provider error",
@@ -192,7 +210,7 @@ export function enginesAndModels(rows: AiCallRow[]): EngineModel[] {
   for (const row of rows) {
     const engine = (row.engine ?? "").toLowerCase();
     const set = map.get(engine) ?? new Set<string>();
-    if (row.model?.trim()) set.add(row.model.trim());
+    if (cleanModelName(row.model)) set.add(cleanModelName(row.model));
     map.set(engine, set);
   }
   return [...map.entries()]

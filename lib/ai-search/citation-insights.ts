@@ -1,6 +1,8 @@
 import {
   citationEvidence,
   groupCitations,
+  isOwnedDomain,
+  LIGHTING_BRAND_SITES,
   SOURCE_CLASS_LABELS,
   SOURCE_CLASS_ORDER,
   type CitationEvidence,
@@ -19,6 +21,7 @@ import {
 } from "@/lib/ai-search/question-role";
 import { callOutcome, categoryLabel, isSmallSample } from "@/lib/ai-search/run-metrics";
 import type { AiCallRow, AiSearchSnapshot } from "@/lib/ai-search/types";
+import { brandName, brandOwned, isFenderClient } from "@/lib/brand-copy";
 
 export type OwnedPresence = {
   /** Shopping (or scoped) answers that cited at least one Fender-owned page. */
@@ -191,8 +194,8 @@ export function ownedByQuestionType(
     };
 
     const groups: [RoleOwnedGroup, RoleOwnedGroup] = [
-      toGroup("cited_owned", "Cited a Fender-owned page", withOwnedCalls),
-      toGroup("no_owned", "No Fender-owned page", withoutOwnedCalls),
+      toGroup("cited_owned", `Cited a ${brandOwned()} page`, withOwnedCalls),
+      toGroup("no_owned", `No ${brandOwned()} page`, withoutOwnedCalls),
     ];
     const largest = Math.max(groups[0].resolved, groups[1].resolved);
     groups[0].smallSample = isSmallSample(groups[0].resolved, largest);
@@ -353,7 +356,8 @@ const BRAND_SITE_NAMES: Array<[string, string]> = [
 
 function brandFromDomain(domain: string): string | null {
   const host = domain.toLowerCase();
-  for (const [root, brand] of BRAND_SITE_NAMES) {
+  if (!isFenderClient() && isOwnedDomain(host)) return brandName();
+  for (const [root, brand] of isFenderClient() ? BRAND_SITE_NAMES : LIGHTING_BRAND_SITES) {
     if (host === root || host.endsWith(`.${root}`)) return brand;
   }
   return null;

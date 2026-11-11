@@ -1,4 +1,4 @@
-import { getCanvasSupabase } from "@/lib/supabase/canvas-client";
+import { getPublicCanvasSupabase } from "@/lib/supabase/canvas-client";
 
 /** One row of command.fmic_ai_prompts, as returned by public.ai_prompts_list(). */
 export type EditablePrompt = {
@@ -28,7 +28,7 @@ function errorText(error: { message?: string } | null): string {
 }
 
 export async function loadPrompts(): Promise<{ prompts: EditablePrompt[]; status: PromptEditorStatus }> {
-  const client = getCanvasSupabase();
+  const client = getPublicCanvasSupabase();
   const [list, status] = await Promise.all([client.rpc("ai_prompts_list"), client.rpc("ai_prompts_status")]);
   if (list.error) throw new Error(errorText(list.error));
   if (status.error) throw new Error(errorText(status.error));
@@ -37,7 +37,7 @@ export async function loadPrompts(): Promise<{ prompts: EditablePrompt[]; status
 
 /** Adds a prompt when `promptKey` is null; otherwise edits its text and category. Returns the key. */
 export async function savePrompt(promptKey: string | null, promptText: string, category: string): Promise<string> {
-  const { data, error } = await getCanvasSupabase().rpc("ai_prompt_save", {
+  const { data, error } = await getPublicCanvasSupabase().rpc("ai_prompt_save", {
     p_prompt_key: promptKey,
     p_prompt_text: promptText,
     p_category: category,
@@ -48,7 +48,7 @@ export async function savePrompt(promptKey: string | null, promptText: string, c
 
 /** Remove (false) switches a prompt off; restore (true) switches it back on. */
 export async function setPromptActive(promptKey: string, active: boolean): Promise<void> {
-  const { error } = await getCanvasSupabase().rpc("ai_prompt_set_active", {
+  const { error } = await getPublicCanvasSupabase().rpc("ai_prompt_set_active", {
     p_prompt_key: promptKey,
     p_active: active,
   });

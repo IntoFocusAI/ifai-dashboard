@@ -8,10 +8,10 @@ import {
   loadPageFoundEvidence,
   PAGE_FOUND_COLUMNS,
   REASON_NOT_RECORDED,
-  storedNotFoundReason,
   type PageFoundClient,
   type PageFoundSourceRow,
 } from "../lib/fender-canvas/page-found-evidence.ts";
+import { storedNotFoundReason } from "../lib/fender-canvas/page-found-stored-reason.ts";
 import { brandSitePageFoundHero } from "../lib/fender-canvas/page-found-hero.ts";
 import type { CanvasMetricsRow } from "../lib/fender-canvas/types.ts";
 
@@ -75,7 +75,7 @@ test("a found row links to its stored fender.com page; a not-found row keeps its
   assert.equal(byAsin.get("B0FOUNDBAD")?.pageHref, null);
   assert.equal(byAsin.get("B0MISSING1")?.storedReason, null);
   assert.equal(byAsin.get("B0MISSING1")?.pageHref, null);
-  assert.equal(byAsin.get("B0MISSING2")?.storedReason, "Not found on fender.com");
+  assert.equal(byAsin.get("B0MISSING2")?.storedReason?.label, "No matching fender.com product page");
   assert.equal(byAsin.get("B0NULLFLAG")?.found, false);
   assert.equal(byAsin.get("B0NULLFLAG")?.storedReason, null);
   assert.equal(REASON_NOT_RECORDED, "Reason not recorded");
@@ -86,12 +86,12 @@ test("a found row links to its stored fender.com page; a not-found row keeps its
   );
 });
 
-test("spec field names on a not-found row are not a reason", () => {
+test("spec field names and unknown codes on a not-found row are not a reason", () => {
   assert.equal(storedNotFoundReason(null), null);
   assert.equal(storedNotFoundReason(""), null);
   assert.equal(storedNotFoundReason("additionalProperty; gtin12"), null);
-  assert.equal(storedNotFoundReason("not_found_on_fender.com"), "Not found on fender.com");
-  assert.equal(storedNotFoundReason("additionalProperty;search_timeout"), "Search timeout");
+  assert.equal(storedNotFoundReason("not_found_on_fender.com")?.label, "No matching fender.com product page");
+  assert.equal(storedNotFoundReason("additionalProperty;search_timeout"), null);
 });
 
 test("the loader reads every checked SKU in pages and throws on a failed read", async () => {

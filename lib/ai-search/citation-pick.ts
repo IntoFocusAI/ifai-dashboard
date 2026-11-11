@@ -1,6 +1,7 @@
 import { SOURCE_CLASS_LABELS, type CitationEvidence, type SourceClass } from "@/lib/ai-search/citations";
 import { citationCategoryLabel } from "@/lib/ai-search/citation-top-sources";
 import { categoryLabel, engineLabel } from "@/lib/ai-search/run-metrics";
+import { brandName } from "@/lib/brand-copy";
 
 /** A row or chart mark the cited-links table is narrowed to. */
 export type CitationPick =
@@ -25,11 +26,11 @@ export function citationPickLabel(pick: CitationPick, category: string | null = 
   const label = !pick
     ? "every cited link"
     : pick.field === "gap"
-      ? `${categoryLabel(pick.value)} gaps (no Fender-owned page)`
+      ? `${categoryLabel(pick.value)} gaps (no ${brandName()}-owned page)`
       : pick.field === "role_owned"
         ? pick.value.includes("cited_owned")
-          ? "answers that cited a Fender-owned page"
-          : "answers with no Fender-owned page"
+          ? `answers that cited a ${brandName()}-owned page`
+          : `answers with no ${brandName()}-owned page`
         : pick.field === "class"
           ? SOURCE_CLASS_LABELS[pick.value as SourceClass]
           : pick.field === "engine"

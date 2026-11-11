@@ -9,5 +9,5 @@ test("opens a spoke from a shared dashboard URL", async ({ page }) => {
   await expect(page.locator(".ifai-canvas.column-layout")).toHaveCount(1);
   await expect(page).toHaveURL(/spoke=roadmap/);
   await expect(page.locator('[data-graph-node-id="spoke-roadmap"]')).toHaveClass(/\bnode-selected\b/);
-  await expect(page.locator(".drilldown-tab-btn.active")).toContainText("30-60-90 Day Milestones");
+  await expect(page.locator(".drilldown-tab-btn.active")).toContainText("30-60-90 Days");
 });

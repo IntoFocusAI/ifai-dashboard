@@ -12,8 +12,9 @@ import {
 import { formatPct, formatRatio } from "../lib/fender-canvas/format.ts";
 import {
   catalogBundleLineLabel,
-  catalogBundleOfferLabel,
-  catalogBundleSellerLabel,
+  catalogBundleBuyBoxLabel,
+  catalogBundleSellerIdLabel,
+  LIVE_OFFER_BUNDLES,
   mapLeakageFinding,
   RETAIL_FINDING_LABELS,
   selectRetailHeadline,
@@ -73,6 +74,7 @@ function bundle(overrides: Partial<CatalogBundleRow> & Pick<CatalogBundleRow, "a
     parent_asin: null,
     product_url: "https://www.amazon.com/dp/B0D8TFXHHT",
     is_bundle: true,
+    featured_offer_state: "present",
     ...overrides,
   };
 }
@@ -124,7 +126,7 @@ test("ready Catalog Governance lead strings match catalogHero percent and ratio"
   assert.equal(hero.numerator, 1);
   assert.equal(hero.denominator, 3);
   assert.equal(hero.percent, formatPct(100 / 3));
-  assert.equal(hero.ratio, formatRatio(1, 3));
+  assert.equal(hero.ratio, `${formatRatio(1, 3)} ${LIVE_OFFER_BUNDLES}`);
   assert.equal(hero.percent, catalogHero(snap).percent);
   assert.equal(hero.ratio, catalogHero(snap).ratio);
   assert.ok(hero.pie);
@@ -150,7 +152,8 @@ test("spec hero 100 complete of 100 is 100.0% green success", () => {
   assert.equal(hero.color, "var(--success-green)");
   assert.equal(hero.tone, "success");
   assert.equal(hero.label, "Specs complete");
-  assert.match(hero.explainer, /Every Amazon spec field is filled/);
+  // The caption defines the measure. It does not read as a claim about the figure above it.
+  assert.equal(hero.explainer, "Listings with every Amazon spec field filled.");
   assert.ok(hero.explainer.length < 48);
 });
 
@@ -345,8 +348,8 @@ test("Catalog Governance places notes beside the share and the table under that 
   assert.match(panel, /data-catalog-governance-notes/);
   assert.match(panel, /data-catalog-governance-table/);
   assert.match(panel, /data-catalog-spec-hero/);
-  assert.match(panel, /CitationPieDisc/);
-  assert.match(panel, /citation-pie-disc citation-pie-disc-retail/);
+  assert.match(panel, /RetailShareDisc/);
+  assert.match(read("components/v3/live/RetailOverviewFigure.tsx"), /citation-pie-disc citation-pie-disc-retail/);
   assert.match(panel, /hero\.label/);
   assert.match(panel, /hero\.percent/);
   assert.match(panel, /hero\.ratio/);
@@ -408,10 +411,10 @@ test("Catalog Governance places notes beside the share and the table under that 
   assert.ok(lines <= 400, `CatalogGovernancePanel.tsx is ${lines} lines`);
 });
 
-test("Catalog Governance panel source shows Splintered listings chevrons and specs table", () => {
+test("Catalog Governance panel source shows Splintered Listings chevrons and specs table", () => {
   const panel = read("components/v3/live/CatalogGovernancePanel.tsx");
   const specs = read("components/v3/live/CatalogGovernanceSpecTable.tsx");
-  assert.match(panel, /Splintered listings/);
+  assert.match(panel, /Splintered Listings/);
   assert.match(panel, /Specs complete/);
   assert.match(panel, /retail-explore-chevron/);
   assert.match(panel, /aria-expanded=\{open\}/);
@@ -445,7 +448,7 @@ test("Catalog Governance panel source shows Splintered listings chevrons and spe
   assert.ok(specsAt > leadRowAt, "specs table sits after the lead row");
 });
 
-test("bundle Seller, Offer, and Line cells use short brand-facing labels", () => {
+test("bundle Buy Box and Line cells use short brand-facing labels", () => {
   const [row] = unnestedBundleOpportunities([
     bundle({
       asin: "B0000000K1",
@@ -457,31 +460,28 @@ test("bundle Seller, Offer, and Line cells use short brand-facing labels", () =>
     }),
   ]);
   assert.ok(row);
-  assert.equal(catalogBundleSellerLabel(row.buyboxSellerName), "Liberty Music Inc");
-  assert.equal(catalogBundleOfferLabel(row.buyboxStatus, row.buyboxSellerId), "A1B2C3D4E5F6G");
+  assert.equal(catalogBundleBuyBoxLabel(row.buyboxStatus, row.buyboxSellerName), "Liberty Music Inc");
+  assert.equal(catalogBundleSellerIdLabel(row.buyboxStatus, row.buyboxSellerId), "A1B2C3D4E5F6G");
   assert.equal(catalogBundleLineLabel(row.category), "Kits");
 
-  assert.equal(catalogBundleOfferLabel("3P Confirmed", "A1B2C3D4E5F6G"), "A1B2C3D4E5F6G");
-  assert.equal(catalogBundleOfferLabel("3P Confirmed", "  "), "Unknown");
-  assert.equal(catalogBundleOfferLabel("3P Confirmed", null), "Unknown");
-  assert.equal(catalogBundleOfferLabel("3P Confirmed", ""), "Unknown");
-  assert.equal(catalogBundleOfferLabel("Amazon 1P"), "Amazon");
-  assert.equal(catalogBundleOfferLabel("No Active Offer"), "No offer");
-  assert.equal(catalogBundleOfferLabel(""), "Unknown");
-  assert.equal(catalogBundleOfferLabel(null), "Unknown");
+  assert.equal(catalogBundleBuyBoxLabel("3P Confirmed", "  "), "Unknown");
+  assert.equal(catalogBundleBuyBoxLabel("3P Confirmed", null), "Unknown");
+  assert.equal(catalogBundleBuyBoxLabel("Amazon 1P", "Amazon.com"), "Amazon");
+  assert.equal(catalogBundleBuyBoxLabel("No Active Offer", null), "No active offer");
+  assert.equal(catalogBundleBuyBoxLabel(null, null), "Unknown");
+  assert.equal(catalogBundleSellerIdLabel("3P Confirmed", "  "), null);
+  assert.equal(catalogBundleSellerIdLabel("3P Confirmed", null), null);
+  assert.equal(catalogBundleSellerIdLabel("Amazon 1P", "ATVPDKIKX0DER"), null);
 
   assert.equal(catalogBundleLineLabel("Hollow & Semi-Hollow Body"), "Hollow");
   assert.equal(catalogBundleLineLabel("Solid Body"), "Solid Body");
-  assert.equal(catalogBundleSellerLabel("   "), "Unknown");
-  assert.equal(catalogBundleSellerLabel(null), "Unknown");
-  assert.equal(catalogBundleSellerLabel(""), "Unknown");
 
   for (const label of [
-    catalogBundleSellerLabel("Liberty Music Inc"),
-    catalogBundleOfferLabel("3P Confirmed", "A1B2C3D4E5F6G"),
-    catalogBundleOfferLabel("3P Confirmed", "ATVPDKIKX0DERTOOLONGTOFITCELL"),
-    catalogBundleOfferLabel("Amazon 1P"),
-    catalogBundleOfferLabel("No Active Offer"),
+    catalogBundleBuyBoxLabel("3P Confirmed", "Liberty Music Inc"),
+    catalogBundleBuyBoxLabel("3P Confirmed", "A seller name that is far too long for the cell"),
+    catalogBundleSellerIdLabel("3P Confirmed", "ATVPDKIKX0DERTOOLONGTOFITCELL") ?? "",
+    catalogBundleBuyBoxLabel("Amazon 1P", null),
+    catalogBundleBuyBoxLabel("No Active Offer", null),
     catalogBundleLineLabel("Electric Guitar Kits"),
     catalogBundleLineLabel("Hollow & Semi-Hollow Body"),
     catalogBundleLineLabel("A very long category name that exceeds"),
@@ -491,11 +491,13 @@ test("bundle Seller, Offer, and Line cells use short brand-facing labels", () =>
 });
 
 test("Catalog Governance table drops Parent ASIN and Why it is here", () => {
-  const panel = read("components/v3/live/CatalogGovernancePanel.tsx");
+  // The bundle table lives beside the panel so both files stay under 400 lines.
+  const panel = read("components/v3/live/CatalogGovernanceBundleTable.tsx");
   assert.doesNotMatch(panel, /Parent ASIN/);
   assert.doesNotMatch(panel, /Why it is here/);
   assert.doesNotMatch(panel, /Partner/);
-  assert.match(panel, /label:\s*"Seller"/);
-  assert.match(panel, /label:\s*"Offer"/);
+  assert.match(panel, /label:\s*"Buy Box"/);
+  assert.doesNotMatch(panel, /label:\s*"Seller"/);
+  assert.doesNotMatch(panel, /label:\s*"Offer"/);
   assert.match(panel, /label:\s*"Line"/);
 });

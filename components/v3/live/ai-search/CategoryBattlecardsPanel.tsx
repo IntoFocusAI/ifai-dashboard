@@ -6,12 +6,14 @@ import { clientColumn, ResizableTable } from "@/components/v3/live/ResizableTabl
 import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
 import { useAiHistoryOptional } from "@/components/v3/live/ai-search/AiHistoryContext";
 import { AiReadGate } from "@/components/v3/live/ai-search/AiReadGate";
+import { EngineGroupScope } from "@/components/v3/live/ai-search/EngineGroupScope";
 import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
 import { CategoryBattleChips } from "@/components/v3/live/ai-search/CategoryBattleChips";
 import { CategoryBattleHeroes } from "@/components/v3/live/ai-search/CategoryBattleHeroes";
 import { CategoryLeadPies, EngineMark, LeadStatusBadge } from "@/components/v3/live/ai-search/CategoryLeadPies";
 import { EvidenceLink } from "@/components/v3/live/ai-search/EvidenceLink";
 import { KeptOutNote, RoleCount, largestResolved, roleColumn, roleRateSort } from "@/components/v3/live/ai-search/RoleRateTable";
+import { useAiExportScope } from "@/components/v3/live/ai-search/useAiExport";
 import { AI_TABS } from "@/lib/ai-search/canvas-surfaces";
 import { scopeEvidence } from "@/lib/ai-search/evidence-focus";
 import {
@@ -31,10 +33,13 @@ import {
   headlineCompetitorWins,
   type RoleGroupTally,
 } from "@/lib/ai-search/question-role";
+import { battlecardRows, topCompetitorCell } from "@/lib/ai-search/radar-tables";
 import { categoryLabel, engineLabel } from "@/lib/ai-search/run-metrics";
+import { formatInt } from "@/lib/fender-canvas/format";
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
 import { isWindowHistoryKind } from "@/lib/ai-search/window-display";
+import { brandName, isFenderClient, leadBrand, leadBrandOr } from "@/lib/brand-copy";
 
 function notedColumn(id: keyof typeof BATTLE_COLUMN_NOTES, name: string, sort: "text" | "number", width: number, min: number) {
   return { ...clientColumn(id, name, sort, width, min), headerTooltip: { title: name, description: BATTLE_COLUMN_NOTES[id] } };
@@ -42,13 +47,18 @@ function notedColumn(id: keyof typeof BATTLE_COLUMN_NOTES, name: string, sort: "
 
 const COLUMNS = [
   clientColumn("category", "Category", "text", 160, 110),
-  roleColumn("unbranded_discovery"),
-  roleColumn("branded_consideration"),
+  roleColumn("unbranded_discovery", 170),
+  roleColumn("branded_consideration", 170),
   notedColumn("competitor", "Top competitor", "text", 170, 120),
   notedColumn("leads", "Competitor leads", "number", 150, 110),
   notedColumn("leader", "No leader", "number", 110, 80),
   notedColumn("errors", "Errors", "number", 90, 72),
 ];
+
+/** The two rates may wrap, so a run with Small sample marks still fits a 1280 px window. */
+const RATE_COLUMNS = ["unbranded_discovery", "branded_consideration"];
+
+const battleKey = (row: RoleGroupTally) => row.key;
 
 function battleSortValue(
   row: RoleGroupTally,
@@ -60,7 +70,7 @@ function battleSortValue(
   if (columnId === "category") return categoryLabel(row.key);
   if (columnId === "unbranded_discovery") return roleRateSort(row.roles.unbranded_discovery, largest.unbranded);
   if (columnId === "branded_consideration") return roleRateSort(row.roles.branded_consideration, largest.branded);
-  if (columnId === "competitor") return top ? `${top.brand} (${top.wins})` : "None";
+  if (columnId === "competitor") return topCompetitorCell(top);
   if (columnId === "leads") return aside.competitorWins;
   if (columnId === "leader") return aside.unresolved;
   return aside.errors;
@@ -81,18 +91,20 @@ function Battlecards({ snapshot }: { snapshot: AiSearchSnapshot }) {
   const leads = categoryLeads(groups, calls);
   const leadByKey = new Map(leads.map((lead) => [lead.key, lead]));
   const shownLeads = leads.filter((lead) => leadMatches(lead.status, filter.lead));
-  const battles = groups
-    .filter((group) => leadMatches(leadByKey.get(group.key)?.status ?? "not_available", filter.lead))
-    .sort((a, b) => headlineAside(b).competitorWins - headlineAside(a).competitorWins || a.key.localeCompare(b.key));
+  const battles = battlecardRows(calls, filter.lead);
   const largest = {
     unbranded: largestResolved(groups, "unbranded_discovery"),
     branded: largestResolved(groups, "branded_consideration"),
   };
   const leadersFor = (category: string) =>
     headlineCompetitorWins(calls.filter((row) => (row.category ?? "") === category));
-  const sorted = useClientTableSort(battles, COLUMNS, (row, columnId) =>
-    battleSortValue(row, columnId, leadersFor(row.key)[0], largest),
+  const sorted = useClientTableSort(
+    battles,
+    COLUMNS,
+    (row, columnId) => battleSortValue(row, columnId, leadersFor(row.key)[0], largest),
+    battleKey,
   );
+  const exportScope = useAiExportScope({ battlecards: filter });
   return (
     <div className="ai-role-rates">
       <div className="content-box ai-battlecards">
@@ -120,7 +132,9 @@ function Battlecards({ snapshot }: { snapshot: AiSearchSnapshot }) {
         <div className="content-box-title">Category battlecards</div>
         <ResizableTable
           tableId="category-battlecards"
+          wrapColumnIds={RATE_COLUMNS}
           columns={COLUMNS}
+          exportScope={exportScope}
           freezeHeader
           maxHeight={520}
           sort={sorted.sort}
@@ -173,10 +187,10 @@ function Battlecards({ snapshot }: { snapshot: AiSearchSnapshot }) {
                     />
                     <EngineMark engineName={battle.roles.branded_consideration.resolved > 0 ? engineName : null} />
                   </td>
-                  <td>{top ? `${top.brand} (${top.wins})` : "None"}</td>
-                  <td>{aside.competitorWins}</td>
-                  <td>{aside.unresolved}</td>
-                  <td>{aside.errors}</td>
+                  <td>{topCompetitorCell(top)}</td>
+                  <td>{formatInt(aside.competitorWins)}</td>
+                  <td>{formatInt(aside.unresolved)}</td>
+                  <td>{formatInt(aside.errors)}</td>
                 </tr>
               );
             })}
@@ -187,16 +201,18 @@ function Battlecards({ snapshot }: { snapshot: AiSearchSnapshot }) {
 
       <div className="ceo-callout" style={{ marginTop: 12 }}>
         <div className="ceo-callout-header">
-          <span>Who out-mentions Fender/Squier in AI buying answers?</span>
+          <span>Who out-mentions {leadBrand()} in AI buying answers?</span>
         </div>
         <div className="ceo-callout-body">
-          A category is on track when Fender/Squier leads more of its resolved{" "}
+          A category is on track when {leadBrand()} leads more of its resolved{" "}
           <AiTerm term="unbranded discovery">unbranded discovery</AiTerm> answers than any single other brand, tied when
-          the top other brand leads as many, and behind when one other brand leads more. Each category also shows two
-          Fender-lead rates, unbranded discovery and{" "}
-          <AiTerm term="branded consideration">branded consideration</AiTerm>. A <AiTerm term="Fender lead" /> means
-          Fender or Squier was named more than any other brand. Squier counts with Fender because it is Fender&apos;s
-          entry-level line against Yamaha and Ibanez.
+          the top other brand leads as many, and behind when one other brand leads more. Each category also shows two{" "}
+          {brandName()}-lead rates, unbranded discovery and{" "}
+          <AiTerm term="branded consideration">branded consideration</AiTerm>. A <AiTerm term="Fender lead" /> means{" "}
+          {leadBrandOr()} was named more than any other brand.
+          {isFenderClient()
+            ? " Squier counts with Fender because it is Fender's entry-level line against Yamaha and Ibanez."
+            : null}
         </div>
       </div>
     </div>
@@ -206,7 +222,9 @@ function Battlecards({ snapshot }: { snapshot: AiSearchSnapshot }) {
 export function CategoryBattlecardsPanel() {
   return (
     <div className="ai-battlecards-tab" data-ai-battlecards-tab="">
-      <AiReadGate>{(snapshot) => <Battlecards snapshot={snapshot} />}</AiReadGate>
+      <EngineGroupScope>
+        <AiReadGate>{(snapshot) => <Battlecards snapshot={snapshot} />}</AiReadGate>
+      </EngineGroupScope>
     </div>
   );
 }

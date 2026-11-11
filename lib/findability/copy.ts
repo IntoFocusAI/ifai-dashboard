@@ -9,6 +9,7 @@ import {
   type FindabilityRow,
   type OutcomeCounts,
 } from "@/lib/findability/outcomes";
+import { brandSite } from "@/lib/brand-copy";
 
 export const OUTCOME_LABEL: Record<FindabilityOutcome, string> = {
   exact_official_product: "Exact official product page",
@@ -20,13 +21,13 @@ export const OUTCOME_LABEL: Record<FindabilityOutcome, string> = {
 
 export const OUTCOME_DEFINITION: Record<FindabilityOutcome, string> = {
   exact_official_product:
-    "We found the fender.com page for this one product. An assistant can use that page's specs for this Amazon listing.",
+    `We found the ${brandSite()} page for this one product. An assistant can use that page's specs for this Amazon listing.`,
   official_family_page:
-    "We found a fender.com page for the whole line. Specs on it can belong to a different color or model.",
+    `We found a ${brandSite()} page for the whole line. Specs on it can belong to a different color or model.`,
   completed_not_found:
-    "We finished looking and did not accept a page. This does not prove the product is missing from fender.com.",
+    `We finished looking and did not accept a page. This does not prove the product is missing from ${brandSite()}.`,
   ambiguous_candidate:
-    "More than one fender.com page could fit, so we did not pick one.",
+    `More than one ${brandSite()} page could fit, so we did not pick one.`,
   not_checked:
     "This listing was not checked and should be opened for that reason. A blank result is not a missing page.",
 };
@@ -40,10 +41,13 @@ const HEADLINE_NOUN: Record<FindabilityOutcome, [string, string]> = {
 };
 
 export const MACHINE_READABILITY_POINTER =
-  "Schema.org product data on each fender.com page is on Brand-Site Specs.";
+  `Schema.org product data on each ${brandSite()} page is on Brand-Site Specs.`;
 
+/** Dealer bundle header tooltip. The caveat lives here, not on screen (let the data speak). */
 export const DEALER_BUNDLE_NOTE =
   "Dealer bundle status comes from the retail read. It can line up with an official-page outcome. That is a correlation, not a proven cause.";
+
+export const DEALER_BUNDLE_NOT_LOADED = "Dealer bundle status did not load with this read.";
 
 export const FAMILY_IS_NOT_EXACT = "A family page is not an exact product page.";
 
@@ -116,15 +120,6 @@ export function findabilityWidgetCopy(read: FindabilityRead): FindabilityWidgetC
     value: formatInt(counts.exact_official_product),
     detail: parts.join(", "),
   };
-}
-
-export function findabilityTourLine(read: FindabilityRead): string {
-  if (read.phase !== "ready") {
-    return "Official-page outcomes stay separate and load with the findability read";
-  }
-  const counts = countFindability(read.rows);
-  if (counts.total === 0) return "This official-page read has no listings";
-  return findabilityHeadline(counts);
 }
 
 export type ReadinessFace = {

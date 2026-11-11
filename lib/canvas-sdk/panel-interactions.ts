@@ -101,7 +101,8 @@ export function usePanelInteractions({ bodyRef, onOpen, storageKey, scope, gloss
       if (toggle) {
         toggle.textContent = collapsed ? "Show" : "Hide";
         toggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
-        toggle.title = collapsed ? "Show this explanation" : "Hide this explanation";
+        // No native title: the button already reads Show or Hide. The longer name is for screen readers.
+        toggle.setAttribute("aria-label", collapsed ? "Show this explanation" : "Hide this explanation");
       }
     });
 

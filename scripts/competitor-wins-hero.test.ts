@@ -135,9 +135,10 @@ test("Competitor Wins panel leads with the hero before the table title", () => {
   assert.match(hero, /headlineCompetitorWins/);
   assert.match(hero, /data-ai-competitor-graph/);
   assert.match(hero, /competitorWins > 0/);
-  const titleAt = panel.indexOf("Competitors named more than Fender/Squier");
-  const heroAt = panel.indexOf("<CompetitorWinsHero");
-  assert.ok(heroAt >= 0 && titleAt > heroAt, "title stays under the hero");
+  const titleAt = panel.indexOf("Competitors named more than {leadBrand()}");
+  const barsAt = panel.indexOf("<CompetitorWinsBars");
+  assert.ok(barsAt >= 0 && titleAt > barsAt, "title stays under the bars");
+  assert.match(panel, /trailing=\{<CompetitorWinsHero \/>\}/, "hero rides the Engines switch row");
   assert.match(panel, /No competitor was named most/);
   assert.doesNotMatch(panel, /\u2014/);
   assert.doesNotMatch(hero, /\u2014/);

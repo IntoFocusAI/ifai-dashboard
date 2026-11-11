@@ -6,7 +6,7 @@ import {
   joinBrands,
   type CategoryBattle,
 } from "@/lib/ai-search/competitors";
-import { competitorWinsFigure } from "@/lib/ai-search/competitor-wins-lead";
+import { competitorWinsFigure, competitorWinsStatus } from "@/lib/ai-search/competitor-wins-lead";
 import {
   factCheckHeadline,
   factCheckShortLine,
@@ -24,8 +24,10 @@ import {
   UNBRANDED_RATE_BANDS,
 } from "@/lib/ai-search/summary";
 import type { AiSearchRead } from "@/lib/ai-search/types";
+import { radarBubbleLead } from "@/lib/ai-search/radar-bubble";
 import { selectionLine } from "@/lib/ai-search/displayed-read";
 import { isWindowHistoryKind } from "@/lib/ai-search/window-display";
+import { brandName, leadBrand } from "@/lib/brand-copy";
 
 /** Engines with resolved unbranded answers, weakest Fender-lead share first (same order as Engine Comparison). */
 function unbrandedEnginesWeakestFirst(engines: readonly RoleGroupTally[]): RoleGroupTally[] {
@@ -53,6 +55,15 @@ export const RADAR_TABS = {
   wins: "Competitor Wins",
   engines: "Engine Comparison",
 } as const;
+
+/** One name per figure (decision 5): the map, the tabs, and the Briefing all use these. */
+export const UNBRANDED_DISCOVERY_LABEL = "Unbranded Discovery";
+export const BRANDED_CONSIDERATION_LABEL = "Branded Consideration";
+
+/** The radar bubble's label: "Yamaha leads Acoustics". */
+export function rivalLeadsLabel(brand: string, category: string | null | undefined): string {
+  return `${brand} leads ${categoryLabel(category)}`;
+}
 
 const EMPTY_TOOLTIP = { title: "", desc: "" } as const;
 
@@ -132,11 +143,11 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
   if (read.phase !== "ready") {
     return {
       spokeAeo: pending("AI Search Visibility", AI_TABS.summary, true),
-      satPrompts: satelliteStateFace(read, "Run Details", AI_TABS.simulations, "Brand Consideration"),
-      satCitations: satelliteStateFace(read, "Citations", AI_TABS.citations, "Fender-Owned Links"),
+      satPrompts: satelliteStateFace(read, "Run Details", AI_TABS.simulations, BRANDED_CONSIDERATION_LABEL),
+      satCitations: satelliteStateFace(read, "Citations", AI_TABS.citations, `${brandName()}-Owned Links`),
       satDrift: satelliteStateFace(read, "Fact Checks", AI_TABS.drift, "Accuracy"),
       spokeCompetitors: pending("Competitive Radar", RADAR_TABS.battlecards, true),
-      satGap: satelliteStateFace(read, "Competitor Wins", RADAR_TABS.wins, "competitors led"),
+      satGap: satelliteStateFace(read, "Competitor Wins", RADAR_TABS.wins, ""),
       satLead: satelliteStateFace(read, "Engine Comparison", RADAR_TABS.engines, "Unbranded discovery"),
     };
   }
@@ -144,7 +155,6 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
   const s = summarizeRun(read.snapshot);
   const { completeness: run, drift, citations } = s;
   const state = runStateLabel(run.state);
-  const gap = s.largestGap;
   const weakestEngine = unbrandedEnginesWeakestFirst(engineResultRoleTallies(read.snapshot.calls))[0] ?? null;
 
   // The main bubble and its three satellites each lead with one scored headline value.
@@ -153,21 +163,21 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
   const unbrandedHero = heroPctFace(
     ratePct(s.roles.unbranded.fenderWins, s.roles.unbranded.resolved),
     pct(s.roles.unbranded.fenderWins, s.roles.unbranded.resolved),
-    "Unbranded SOV",
+    UNBRANDED_DISCOVERY_LABEL,
     30,
     65,
   );
   const brandedHero = heroPctFace(
     ratePct(s.roles.branded.fenderWins, s.roles.branded.resolved),
     pct(s.roles.branded.fenderWins, s.roles.branded.resolved),
-    "Brand Consideration",
+    BRANDED_CONSIDERATION_LABEL,
     70,
     90,
   );
   const citationsHero = heroPctFace(
     ratePct(citations.fenderOwnedRows, citations.rows),
     pct(citations.fenderOwnedRows, citations.rows),
-    "Fender-Owned Links",
+    `${brandName()}-Owned Links`,
     15,
     35,
   );
@@ -187,11 +197,11 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
       heroValue:
         s.roles.unbranded.resolved > 0
           ? unbrandedHero.heroValue
-          : { value: "No resolved answers", label: "Unbranded SOV" },
+          : { value: "No resolved answers", label: UNBRANDED_DISCOVERY_LABEL },
       meta: `${state} run · ${run.answered ?? "?"} of ${run.expected ?? "?"} answered`,
       subTab: AI_TABS.summary,
       // The hero value above is the whole explanation. Open Run Summary for the engine and run detail.
-      tooltip: { title: "", desc: "" },
+      tooltip: { ...EMPTY_TOOLTIP },
     },
     satPrompts: {
       status: brandedHero.status,
@@ -210,7 +220,7 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
       title: "Citations",
       stats: [
         `${citations.answersWithCitation} of ${citations.answered} answers cited sources`,
-        `Fender-owned ${pct(citations.fenderOwnedRows, citations.rows)} of links`,
+        `${brandName()}-owned ${pct(citations.fenderOwnedRows, citations.rows)} of links`,
       ],
       heroValue: citationsHero.heroValue,
       meta: `${citations.rows} cited links · ${citations.domains} domains`,
@@ -233,11 +243,13 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
       title: "Competitive Radar",
       stats: [],
       heroValue: (() => {
-        const rival = gap?.leaders[0];
-        if (gap && rival != null && gap.resolved > 0) {
+        if (read.radarPending) return { value: "Loading run", label: "Unbranded discovery" };
+        // Same rows and same category-lead rule as the Category Battlecards tab.
+        const lead = radarBubbleLead((read.radarSnapshot ?? read.snapshot).calls);
+        if (lead?.topRival && lead.resolved > 0) {
           return {
-            value: pct(rival.wins, gap.resolved),
-            label: `${categoryLabel(gap.category)} · ${rival.brand}`,
+            value: pct(lead.topRival.wins, lead.resolved),
+            label: rivalLeadsLabel(lead.topRival.brand, lead.key),
           };
         }
         if (s.topCompetitor) {
@@ -250,10 +262,15 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
       })(),
       meta: `${s.competitorWins} competitor wins · unbranded discovery`,
       subTab: RADAR_TABS.battlecards,
-      tooltip: { title: "", desc: "" },
+      tooltip: { ...EMPTY_TOOLTIP },
     },
     satGap: {
-      status: s.competitorWins > 0 ? "warning" : "success",
+      // Status is the shared Competitor Wins rule (red above 70%, green below 35%). The hero is the competitor-led share of
+      // resolved unbranded answers (84 of 214 reads 39.3%); the title is its label.
+      status: (() => {
+        const tone = competitorWinsStatus(s.competitorWins, s.roles.unbranded.resolved);
+        return tone === "bad" ? "danger" : tone === "good" ? "success" : tone === "okay" ? "warning" : "neutral";
+      })(),
       title: "Competitor Wins",
       stats:
         s.roles.unbranded.resolved > 0
@@ -261,11 +278,8 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
           : ["No resolved answers"],
       heroValue:
         s.roles.unbranded.resolved > 0
-          ? {
-              value: `${s.competitorWins} of ${s.roles.unbranded.resolved}`,
-              label: "competitors led",
-            }
-          : { value: "No resolved answers", label: "competitors led" },
+          ? { value: pct(s.competitorWins, s.roles.unbranded.resolved), label: "" }
+          : { value: "No resolved answers", label: "" },
       meta: "Unbranded discovery",
       subTab: RADAR_TABS.wins,
       tooltip: { ...EMPTY_TOOLTIP },
@@ -276,16 +290,16 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
         const engineHero = heroPctFace(
           ratePct(tally.fenderWins, tally.resolved),
           pct(tally.fenderWins, tally.resolved),
-          `${engineLabel(weakestEngine.key)} unbranded`,
+          engineLabel(weakestEngine.key),
           UNBRANDED_RATE_BANDS.redBelow,
           UNBRANDED_RATE_BANDS.greenAbove,
         );
         return {
           status: engineHero.status,
           title: "Engine Comparison",
-          stats: [`${tally.fenderWins} of ${tally.resolved} Fender leads`],
+          stats: [`${tally.fenderWins} of ${tally.resolved} ${brandName()} leads`],
           heroValue: engineHero.heroValue,
-          meta: "Weakest Fender lead first",
+          meta: `Weakest ${brandName()} lead first`,
           subTab: RADAR_TABS.engines,
           tooltip: { ...EMPTY_TOOLTIP },
         };
@@ -322,7 +336,7 @@ export function aiSpokeDesc(read: AiSearchRead): string {
   if (read.phase === "error" && read.selection) return `${selectionLine(read.selection, false)}.`;
   if (read.phase === "error") return `The published AI run did not load: ${read.message}`;
   if (read.phase === "no-run") return "No AI run has been published yet, so no AI Search figure is shown.";
-  return "How AI shopping answers cite the web, and whether Fender-owned pages show up.";
+  return `How AI assistants name and cite ${brandName()}.`;
 }
 
 export type AiSpokeChip = {
@@ -409,7 +423,7 @@ export function competitorsSpokeLead(read: AiSearchRead): { figure: string; expl
   return {
     figure: competitorWinsFigure(s.competitorWins, s.roles.unbranded.resolved),
     explainer:
-      "Which brands AI engines name over Fender/Squier on unbranded discovery prompts. Branded consideration, product fact checks, provider errors, and answers with no clear leader are left out.",
+      `Which brands AI engines name over ${leadBrand()} on unbranded discovery prompts. Branded consideration, product fact checks, provider errors, and answers with no clear leader are left out.`,
   };
 }
 
@@ -427,8 +441,8 @@ export function aiPriorityItems(read: AiSearchRead): PriorityItem[] {
   if (s.drift.totalConfirmed > 0) {
     items.push({
       id: "ai-confirmed-contradiction",
-      title: `${s.drift.totalConfirmed} AI answers contradict a verified Fender fact`,
-      why: `In the published run, ${s.drift.totalConfirmed} of ${s.drift.totalChecked} checked answers stated something an official Fender page contradicts. The Product Fact Checks tab shows each question, the verified fact, its Fender source page, and the answer.`,
+      title: `${s.drift.totalConfirmed} AI answers contradict a verified ${brandName()} fact`,
+      why: `In the published run, ${s.drift.totalConfirmed} of ${s.drift.totalChecked} checked answers stated something an official ${brandName()} page contradicts. The Product Fact Checks tab shows each question, the verified fact, its ${brandName()} source page, and the answer.`,
       impact: "A shopper who reads a wrong spec may buy the wrong product or return it.",
       severity: "critical",
       spokeId: "aeo",
@@ -454,7 +468,7 @@ export function aiPriorityItems(read: AiSearchRead): PriorityItem[] {
     items.push({
       id: "ai-competitor-gap",
       title: battleSentence(gap),
-      why: `In the published run, ${engines} named ${joinBrands(gap.leaders.map((l) => l.brand))} more often than Fender/Squier in ${gap.competitorWins} of ${gap.resolved} resolved unbranded discovery ${gap.category} answers.${domains.length ? ` Those answers cited ${domains.join(", ")}.` : ""} Start with those pages: check how they describe Fender's ${gap.category} line against the brand they favor.`,
+      why: `In the published run, ${engines} named ${joinBrands(gap.leaders.map((l) => l.brand))} more often than ${leadBrand()} in ${gap.competitorWins} of ${gap.resolved} resolved unbranded discovery ${gap.category} answers.${domains.length ? ` Those answers cited ${domains.join(", ")}.` : ""} Start with those pages: check how they describe ${brandName()}'s ${gap.category} line against the brand they favor.`,
       impact: `The Competitor Wins tab lists each of the ${gap.competitorWins} answers with its engine, model, and cited pages.`,
       severity: "high",
       spokeId: "competitors",
@@ -559,7 +573,7 @@ export function aiMetrics(read: AiSearchRead): Record<AiMetricKey, CanvasMetric>
         ? `${(((beginnerBattle.fenderWins - (rival?.wins ?? 0)) * 100) / beginnerBattle.resolved).toFixed(1)} pts`
         : "No beginner prompts",
       detail: beginnerBattle
-        ? `Fender/Squier ${beginnerBattle.fenderWins} vs ${rival ? `${rival.brand} ${rival.wins}` : "no rival"} of ${beginnerBattle.resolved} resolved`
+        ? `${leadBrand()} ${beginnerBattle.fenderWins} vs ${rival ? `${rival.brand} ${rival.wins}` : "no rival"} of ${beginnerBattle.resolved} resolved`
         : "Not in this run",
       tone: "neutral",
     },
@@ -586,7 +600,7 @@ export function aiTourLines(read: AiSearchRead): AiTourLines {
     aeo: [
       `${runStateLabel(s.completeness.state)} run: ${s.completeness.answered} of ${s.completeness.expected} calls answered, completed ${s.completedAt}`,
       lead,
-      `${factsCheckedLine(s.drift.coverage)} against official Fender pages: ${factCheckShortLine(s.drift.coverage).toLowerCase()}`,
+      `${factsCheckedLine(s.drift.coverage)} against official ${brandName()} pages: ${factCheckShortLine(s.drift.coverage).toLowerCase()}`,
     ],
     competitors: [
       s.topCompetitor

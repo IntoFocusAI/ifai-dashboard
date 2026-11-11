@@ -71,9 +71,9 @@ test("paged tables page by the same 25 rows, so a page never nests a Show more",
 
 test("ResizableTable limits drawn rows once, for every table", () => {
   const table = readFileSync("components/v3/live/ResizableTable.tsx", "utf8");
-  assert.match(table, /const rowLimit = useTableRowLimit\(children\);/);
+  assert.match(table, /const rowLimit = useTableRowLimit\(withSearchEmpty\(children, controls, columns\.length\)\);/);
   assert.match(table, /\{rowLimit\.children\}\s*<\/table>/);
-  assert.match(table, /<>\s*\{scroller\}\s*\{rowLimit\.footer\}\s*<\/>/);
+  assert.match(table, /<>\s*\{toolbar && \([\s\S]*?<TableToolbar[\s\S]*?\)\}\s*\{scroller\}\s*\{rowLimit\.footer\}\s*<\/>/);
   assert.ok(table.split("\n").length <= 400, "ResizableTable stays at or under 400 lines");
   const limit = readFileSync("components/v3/live/TableRowLimit.tsx", "utf8");
   assert.match(limit, /Showing \{formatInt\(shown\)\} of \{formatInt\(total\)\} rows/);
