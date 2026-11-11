@@ -49,7 +49,7 @@ function ReadinessHero({ hero, stale }: { hero: AiReadinessHeroModel; stale: Par
             style={hero.color ? { color: hero.color } : undefined}
             data-ai-readiness-hero-percent=""
           >
-            <PartialFigureMark partial={stale} testId="amazon-specs-stale">
+            <PartialFigureMark partial={/\d/.test(hero.percent) ? stale : null} testId="amazon-specs-stale">
               {hero.percent}
             </PartialFigureMark>
           </span>

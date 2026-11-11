@@ -94,6 +94,10 @@ test("an Amazon Specs listing can be marked done with just a name", async ({ can
 test.describe("Ledlenser", () => {
   async function openLedlenserAmazonSpecs(page: Page, baseURL: string | undefined) {
     const host = new URL(baseURL ?? "http://localhost").hostname;
+    // Ledlenser's site-type read is not in the database yet; it is not what this spec checks.
+    await page.route("**/rest/v1/canvas_site_types*", (route) =>
+      route.fulfill({ status: 200, contentType: "application/json", body: "[]" }),
+    );
     await page.context().addCookies([{ name: "ifai_guest_ledlenser", value: "1", domain: host, path: "/" }]);
     await page.goto("/dashboard?client=ledlenser&spoke=specs&tab=amazon-specs");
     const skipLogin = page.getByRole("button", { name: "Skip Login" });
@@ -113,7 +117,7 @@ test.describe("Ledlenser", () => {
     });
   });
 
-  test("an Unknown client. answer from the database is shown on the form", async ({ page, baseURL, setAsides }) => {
+  test("an Unknown client. answer from the database is shown on the form", async ({ page, baseURL, setAsides, pageErrors }) => {
     await page.route("**/rest/v1/rpc/set_aside_issue", (route) =>
       route.fulfill({
         status: 400,
@@ -127,5 +131,7 @@ test.describe("Ledlenser", () => {
       "not set up for set-asides yet",
     );
     expect(setAsides.rows).toHaveLength(0);
+    // The 400 is the answer this test sends on purpose.
+    pageErrors.splice(0, pageErrors.length, ...pageErrors.filter((line) => !line.includes("rpc/set_aside_issue")));
   });
 });
