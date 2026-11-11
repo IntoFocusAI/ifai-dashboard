@@ -314,4 +314,12 @@ closeout of each view. Open items are marked OPEN and are not built.
     sites list feeds it.
 72. PRs 176, 177, and 178 approved and merged on 11 Nov 2026. PM25 hands off
     to PM26 after this closeout.
+73. Watson, 11 Nov: canvas_listing_channel_price is empty for both clients
+    (built for Sweetwater and Reverb, never checked); Walmart and Musician's
+    Friend prices come from canvas_retail_listings, which stays correct.
+    Open for Brian: retire the "Other retailers" read. Watson's freshness
+    proposal for X-16: every canvas view exposes <source>_checked_at
+    columns (keepa_, catalog_, featured_offer_, wmt_, mf_, smartscout_,
+    spec_, content_, findability_), present from the start in each new
+    client schema. PM25 recommends accepting it.
 

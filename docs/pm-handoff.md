@@ -179,9 +179,13 @@ if this block is stale.
 - Waiting on Brian: D-05 required-spec rule that works for 20+ clients (no
   "placeholder" at launch); R-19 vs the R-18 placeholder seller list; C-01
   deck (outline draft: docs/c01-deck-outline.md, figures from 10 Nov).
-- Waiting on Watson: views for freshness (decision 68); the Ledlenser
-  set-aside form error he is reproducing; AI Search read speed (HTTP 500s
-  under load); PR 110 wording breaks metric-destinations.
+- Watson PR coming (11 Nov): Ledlenser API views + API switch for every
+  client (Ledlenser AI figures will change; review both clients after it
+  merges); catalog_checked_at and Keepa load time on views (then wire the
+  Splintered and Keepa asterisks, X-25 to CURRENT). Brian decides: retire
+  the empty "Other retailers" channel read (decision 73).
+- Also waiting on Watson: the Ledlenser set-aside form error; AI Search
+  read speed (HTTP 500s under load); PR 110 wording (metric-destinations).
 - After about 15 Nov: verify Watson's Findability first pass, then propose
   D-02 and D-09 CURRENT; Findability figures may shift.
 - Site-type classifier runs daily in Toolbelt (decision 55); check the
