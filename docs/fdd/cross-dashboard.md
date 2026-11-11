@@ -125,7 +125,7 @@
 - **Evidence:** Verified in source/CSS variance Oct 20. Approved by Brian Magazu on 9 Nov 2026. Worker 23.1, pull request 148 (main c8561cb): all dashboard text is Geist (400 body, 600 headings) with Geist Mono for labels and table numbers; Playfair and the system monospace are gone from shared CSS. REFINE until the view stylesheets that still use weights of 700 or more, and prompts-editor.css, follow. Worker 24.3 (PR 152, main ca22e8a) and worker 24.4 (PR 151, main f1df1f5): Catalog Health and AI Search follow the type rules; other views to follow.
 - **Open decision:** None. Decided by Brian Magazu on 9 Nov 2026, following the IntoFocus AI Brand Book V2 (docs/brand in the repo): Geist for all text, 400 for body and 600 for headlines and hero figures, never heavier than 600. Geist Mono only for eyebrows, labels, sources, and table numbers. Sizes stay on the X-31 dashboard scale.
 
-**X-31 CURRENT** · Launch
+**X-31 REFINE** · Launch
 
 **Status source:** Explicit
 
@@ -135,7 +135,7 @@ Nothing on the client dashboard is smaller than 10px. The version label is 10px.
 
 **Desired**
 
-Nothing on the client dashboard is smaller than 10px. Labels, uppercase marks, and table chrome may sit at 10px. A sentence uses the body size already used nearby, 12px or 13px. Hero numbers stay the large metric size. One type scale. After the change, the raised type causes no overlaps, wraps, or collisions.
+Nothing on the client dashboard is smaller than 11px (Brian Magazu, 11 Nov 2026, decision 50). Labels, uppercase marks, and table chrome may sit at 11px. A sentence uses the body size already used nearby, 12px or 13px. Hero numbers stay the large metric size. One type scale. After the change, the raised type causes no overlaps, wraps, or collisions.
 
 **User value**
 

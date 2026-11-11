@@ -82,3 +82,4 @@
 |---|---|---|---|
 | 2026-11-10 | 24.8 Documentation version 24.9. The Competitive Radar map bubble reads the Battlecards rows for the 30-day window at map load (lib/ai-search/radar-bubble.ts), the one exception to the published-run map read. | Decision 40 (PM24-2 option A). | PR 158, main 77e4c7e; Worker 24.8 |
 | 2026-11-10 | 24.9 and Tooling Worker: test strategy adds lint:brand, overflow-1280, and AI_READ_MS; two loosened checks to restore. | Repeatable brand and layout checks; e2e cleanup. | PR 159 (main b192365), PR 161 (main be18730) |
+| 2026-11-11 | 25.x Documentation version 25.5. Summary AI figures read useSummaryAiRead (the map's useMapAiSearch). New server CSV tables: catalog-divisions and four Radar tables (lib/export). lib/ai-search/radar-tables.ts and EngineCategoryGrid added; EngineGroupScope takes an optional trailing slot. | Batch PRs 165, 166, 167. | Workers 25.1, 25.2, 25.3, 25.5 |

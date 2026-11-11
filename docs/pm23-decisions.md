@@ -242,3 +242,17 @@ closeout of each view. Open items are marked OPEN and are not built.
     read-only log review by a worker (option 2) only if he asks for it.
 49. Go ahead on the parallel batch 24.5 AI Readiness, 24.2 Summary, and
     24.6 Competitive Radar.
+50. X-31: nothing on the client dashboard is smaller than 11px (was 10px).
+51. No "placeholder" label ships at launch. The required-spec lists (D-05)
+    need a rule that works for 20 or more future clients; Brian decides it
+    later. R-19 versus the R-18 placeholder seller list and the C-01 deck
+    are also open; the deck needs values we can defend.
+52. Catalog Health's AI Commerce card shows "vs target 70", as Summary does.
+53. Ledlenser's "Work_lights" reads "Work lights" everywhere, the map
+    bubble included.
+54. PRs 165, 166, and 167 approved and merged on 11 Nov 2026. The
+    Competitor Wins hero keeps the status color and word (approved as
+    built). Follow-ups: Engine Comparison puts engine names on the bar
+    rows; MAP Leakage puts the per-retailer list to the right of the
+    Discounted retail value card.
+
