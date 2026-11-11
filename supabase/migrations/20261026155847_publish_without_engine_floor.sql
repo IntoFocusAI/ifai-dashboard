@@ -6,6 +6,10 @@
 -- That floor is removed. Provider errors remain on the run and stay visible.
 -- A run still has to be completed or partial, match the active prompt set,
 -- and store one row for every expected call.
+--
+-- Applied: production, 26 Oct 2026, recorded as version 20261026155847
+-- (replace_fmic_ai_publish_run); this file was 20261026160000 in the pull request.
+-- Checked 11 Nov 2026: the live command.fmic_ai_publish_run matches this definition.
 
 CREATE OR REPLACE FUNCTION command.fmic_ai_publish_run(p_run_id uuid) RETURNS void
 LANGUAGE plpgsql SET search_path = ''
