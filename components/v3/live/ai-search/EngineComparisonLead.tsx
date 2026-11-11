@@ -1,5 +1,7 @@
 "use client";
 
+import { StatusMark } from "@/components/v3/live/StatusMark";
+import { AiStaleMark } from "@/components/v3/live/ai-search/AiStaleMark";
 import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
 import { CitationPieDisc, type PieDiscInput } from "@/components/v3/live/ai-search/CitationPieDisc";
 import { EvidenceLink } from "@/components/v3/live/ai-search/EvidenceLink";
@@ -15,10 +17,12 @@ import {
 } from "@/lib/ai-search/question-role";
 import {
   BRANDED_RATE_BANDS,
+  leadRateTip,
   roleRateLead,
   UNBRANDED_RATE_BANDS,
 } from "@/lib/ai-search/summary";
 import type { OutcomeTally } from "@/lib/ai-search/run-metrics";
+import { formatInt } from "@/lib/fender-canvas/format";
 import { leadBrand } from "@/lib/brand-copy";
 
 const SIM = AI_TABS.simulations;
@@ -70,20 +74,24 @@ function RateSide({ role, tally, mixed }: { role: HeadlineRole; tally: OutcomeTa
               data-ai-win-rate={role}
               data-ai-lead-figure={role}
             >
-              <MixedScoringTip mixed={mixed}>{lead.rate}</MixedScoringTip>
+              <MixedScoringTip mixed={mixed} basis={{ label: `${title} rate`, note: leadRateTip(tally) }}>
+                {lead.rate}
+              </MixedScoringTip>
             </span>
+            <AiStaleMark />
             <CitationPieDisc
               pie={ratePie(`engine-${role}`, title, tally)}
-              tip={`${tally.fenderWins} ${leadBrand()} leads. ${tally.resolved - tally.fenderWins} rest of resolved answers. Total ${tally.resolved} resolved answers.`}
+              tip={`${formatInt(tally.fenderWins)} ${leadBrand()} leads. ${formatInt(tally.resolved - tally.fenderWins)} rest of resolved answers. Total ${formatInt(tally.resolved)} resolved answers.`}
             />
           </div>
+          {lead.status ? <StatusMark status={lead.status} /> : null}
           <p className="ai-role-footnote" style={{ margin: "6px 0 0" }} data-ai-role-total={role}>
             <EvidenceLink focus={{ field: "role", value: `${role}/fender_win` }} tab={SIM} label={`${name}: ${leadBrand()} leads`}>
-              {tally.fenderWins}
+              {formatInt(tally.fenderWins)}
             </EvidenceLink>
             {" of "}
             <EvidenceLink focus={{ field: "role", value: `${role}/resolved` }} tab={SIM} label={`${name}: resolved answers`}>
-              {tally.resolved}
+              {formatInt(tally.resolved)}
             </EvidenceLink>
             {" resolved answers"}
           </p>

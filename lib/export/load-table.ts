@@ -46,6 +46,10 @@ const LOADERS: Record<FixedExportTableId, Loader> = {
   "citation-engines": ai("citation-engines"),
   "citation-categories": ai("citation-categories"),
   "citation-evidence": ai("citation-evidence"),
+  "category-battlecards": ai("category-battlecards"),
+  "competitor-wins": ai("competitor-wins"),
+  "engine-comparison": ai("engine-comparison"),
+  "engine-category": ai("engine-category"),
   "prompt-history": loadPromptHistorySource,
 };
 

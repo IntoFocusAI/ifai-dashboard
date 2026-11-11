@@ -1462,30 +1462,37 @@
       list-style: none;
     }
 
+    .ai-competitor-win-bars > li {
+      display: grid;
+      grid-template-columns: 160px minmax(0, 1fr) 72px;
+      align-items: center;
+      gap: 12px;
+    }
+
     .ai-competitor-win-bars > li + li {
-      margin-top: 8px;
+      margin-top: 6px;
     }
 
-    .ai-competitor-win-meta {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: baseline;
-      justify-content: space-between;
-      gap: 4px 12px;
-      color: var(--text-muted);
-      font-size: 12px;
-    }
-
-    .ai-competitor-win-meta strong {
+    .ai-competitor-win-name {
       color: var(--text-main);
       font-size: 13px;
+      font-weight: 600;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .ai-competitor-win-count {
+      color: var(--text-muted);
+      font-size: 12px;
+      text-align: right;
+      white-space: nowrap;
     }
 
     .ai-competitor-win-track {
       display: block;
       width: 100%;
       height: 12px;
-      margin-top: 4px;
       border-radius: 999px;
       background: color-mix(in srgb, var(--border-color) 70%, transparent);
       overflow: hidden;

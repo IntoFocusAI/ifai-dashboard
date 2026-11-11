@@ -52,7 +52,7 @@
 
 .ai-battle-engine-mark {
   margin-left: 1px;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 @container (max-width: 620px) {
@@ -244,7 +244,7 @@
 .ai-battle-chip-group-label {
   margin-right: 2px;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--text-muted);
 }
 
@@ -330,8 +330,13 @@
   color: var(--text-main);
   font: inherit;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 600;
   text-decoration: underline;
   text-underline-offset: 2px;
   cursor: pointer;
+}
+
+/* Engine Comparison grid: a rate and its counts each stay on one line, so a narrow column breaks between them. */
+.ai-engine-category .ai-grid-rate-part {
+  white-space: nowrap;
 }
