@@ -2,6 +2,7 @@ import { callOutcome, cleanPrompt, type CallOutcome } from "@/lib/ai-search/run-
 import type { AiCallRow, AiCitationRow } from "@/lib/ai-search/types";
 import { activeClient } from "@/lib/client/active-client";
 import { brandOwned, isFenderClient } from "@/lib/brand-copy";
+import { storedSourceClass } from "@/lib/ai-search/site-types";
 
 const EMPTY_VALUES = new Set(["", "null", "undefined", "none", "nan", "n/a"]);
 
@@ -74,7 +75,7 @@ export const SOURCE_CLASS_ORDER: SourceClass[] = [
 ];
 
 /** FMIC's brand sites. Other clients use their own brand-site domains. */
-const FMIC_OWNED_DOMAINS = ["fender.com", "fmicassets.com", "squier.com", "gretschguitars.com", "jacksonguitars.com", "charvel.com", "evhgear.com"];
+export const FMIC_OWNED_DOMAINS = ["fender.com", "fmicassets.com", "squier.com", "gretschguitars.com", "jacksonguitars.com", "charvel.com", "evhgear.com"];
 
 /** Brand-owned domains for the active client. The class keeps its fender_owned key. */
 export function ownedDomains(): string[] {
@@ -93,7 +94,7 @@ export function isOwnedDomain(domain: string): boolean {
   return stems.some((stem) => new RegExp(`(^|\\.)${stem}\\.[a-z]{2,3}(\\.[a-z]{2})?$`).test(d));
 }
 
-const FENDER_CLASS_DOMAINS: Array<[SourceClass, string[]]> = [
+export const FENDER_CLASS_DOMAINS: Array<[SourceClass, string[]]> = [
   [
     "retailer",
     [
@@ -158,7 +159,7 @@ export const LIGHTING_BRAND_SITES: Array<[string, string]> = [
   ["dewalt.com", "DeWalt"],
 ];
 
-const LIGHTING_CLASS_DOMAINS: Array<[SourceClass, string[]]> = [
+export const LIGHTING_CLASS_DOMAINS: Array<[SourceClass, string[]]> = [
   [
     "retailer",
     [
@@ -202,9 +203,15 @@ function matchesDomain(domain: string, root: string) {
   return domain === root || domain.endsWith(`.${root}`);
 }
 
-/** IntoFocus's source class for a cited domain. Not a field stored by the collector. */
+/**
+ * IntoFocus's source class for a cited domain. The stored site type (staff override, else AI or
+ * seed; public.canvas_site_types) answers first. A domain with no stored type, or any domain
+ * while the view is not there, uses the lists in code.
+ */
 export function classifySource(domain: string): SourceClass {
   const d = domain.toLowerCase();
+  const stored = storedSourceClass(d);
+  if (stored) return stored;
   if (isOwnedDomain(d)) return "fender_owned";
   for (const [kind, roots] of classDomains()) {
     if (roots.some((root) => matchesDomain(d, root))) return kind;

@@ -9,7 +9,8 @@ import { useSummaryAiRead, useSummaryAiStale } from "@/components/v3/live/useSum
 import { apiRunsCoveringBattery, batteryQuestions, nearestApiRun } from "@/lib/ai-search/api-runs";
 import { engineGroupRead } from "@/lib/ai-search/engine-group-read";
 import { compareRuns, isTrustworthyRun, type HistoryRunSummary } from "@/lib/ai-search/history-eligibility";
-import { loadHistorySnapshot, type HistorySnapshotResult } from "@/lib/ai-search/history-queries";
+import { afterSiteTypes } from "@/lib/ai-search/site-types";
+import { loadHistorySnapshot,type HistorySnapshotResult } from "@/lib/ai-search/history-queries";
 import type { AiSearchRead, AiSearchSnapshot } from "@/lib/ai-search/types";
 import { briefingFindingsLead, type BriefingFinding } from "@/lib/fender-canvas/briefing-retail-lead";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
@@ -24,7 +25,7 @@ const runReads = new Map<string, Promise<HistorySnapshotResult>>();
 function readRun(runId: string): Promise<HistorySnapshotResult> {
   const cached = runReads.get(runId);
   if (cached) return cached;
-  const read = loadHistorySnapshot(getCanvasSupabase() as never, runId).then((result) => {
+  const read = afterSiteTypes(getCanvasSupabase(), () => loadHistorySnapshot(getCanvasSupabase() as never, runId)).then((result) => {
     if (result.phase === "error") runReads.delete(runId);
     return result;
   });
