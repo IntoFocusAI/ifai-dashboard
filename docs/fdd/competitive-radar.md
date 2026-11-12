@@ -1,14 +1,14 @@
 # 11. Competitive Radar requirements
 
-**C-01 TARGET** · Launch
+**C-01 CURRENT** · Launch
 
 **Status source:** Explicit
 
-- **Current:** No generated deck from study + window.
+- **Current:** Summary > Briefing > Present as deck opens a deck for the client and date-pill window: 9 slides plus backstage, every figure with its N of M and source tab, printable to PDF.
 - **Desired:** Generated deck from study + latest window.
 - **User value:** Sales gets a story pack.
 - **Acceptance:** Deck cites the same run as the screen.
-- **Evidence:** Not live.
+- **Evidence:** Worker 26.5, pull request 187, approved and merged by Brian Magazu on 12 Nov 2026. Three outline lines are not yet in the deck (below-MAP by retailer, Electric Guitar Kits share, discounted retail value).
 - **Open decision:** None.
 
 **C-02 CURRENT** · Launch
