@@ -280,6 +280,7 @@ export function PromptsEditor({ onClose }: Props) {
             onQuery={search.setQuery}
             shown={search.shownActive.length}
             total={active.length}
+            shownKeys={search.shownKeys}
           />
           {!loading && active.length > 0 && search.shownActive.length === 0 ? (
             <p className="pe-empty">No prompt matches this search.</p>
@@ -344,8 +345,7 @@ export function PromptsEditor({ onClose }: Props) {
           {removed.length ? (
             <section className="pe-removed">
               <button className="pe-link" onClick={() => setShowRemoved((v) => !v)}>
-                {showRemoved ? "Hide" : "Show"} removed prompts ({search.query.trim() ? `${search.shownRemoved.length} of ` : ""}
-                {removed.length})
+                {showRemoved ? "Hide" : "Show"} removed prompts ({search.shownRemoved.length} of {removed.length})
               </button>
               {showRemoved ? (
                 <ul className="pe-list">

@@ -32,6 +32,12 @@ export const EXPORT_TABLE_IDS = [
   "engine-category",
   "prompt-history",
   "explore-listings",
+  // Catalog Health: the Findability listings of the outcome on screen.
+  "findability-listings",
+  // Action Items: the fix list, rebuilt on the server from the same seven reads as the screen.
+  "action-items-fixes",
+  // The prompt list in the prompts editor.
+  "prompts",
 ] as const;
 
 export type FixedExportTableId = (typeof EXPORT_TABLE_IDS)[number];
@@ -65,3 +71,6 @@ export function exportHref(tableId: string, clientKey: string): string {
 export function exportFileName(tableId: string, now = new Date()): string {
   return `${tableId}-${now.toISOString().slice(0, 10)}.csv`;
 }
+
+/** The prompt list in the prompts editor, which is not a ResizableTable. */
+export const PROMPTS_EXPORT_TABLE = "prompts" satisfies FixedExportTableId;
