@@ -146,6 +146,11 @@ export function setSiteTypes(index: SiteTypeIndex | null) {
   current = index;
 }
 
+/** The installed index itself, so a cache of classified rows can tell when the stored types changed. */
+export function installedSiteTypes(): SiteTypeIndex | null {
+  return current;
+}
+
 /** The stored source class for a domain, or null when nothing is stored (use the lists in code). */
 export function storedSourceClass(domain: string): SourceClass | null {
   if (!current) return null;
