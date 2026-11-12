@@ -43,6 +43,7 @@ import {
   Sparkles,
   Sun,
   TrendingUp,
+  Wand2,
   X,
 } from "lucide-react";
 import {
@@ -56,6 +57,7 @@ import {
   type ReactNode,
 } from "react";
 import { flushSync } from "react-dom";
+import { useRouter } from "next/navigation";
 
 const DEFAULT_DRILLDOWN_WIDTH = 620;
 const DEFAULT_FOCUS_SCALE = 1.55;
@@ -129,6 +131,7 @@ export function CanvasShell({ spec, children }: Props) {
   );
   const [lightTheme, setLightTheme] = useState(!iom);
   const [promptsOpen, setPromptsOpen] = useState(false);
+  const router = useRouter();
   const closePrompts = useCallback(() => setPromptsOpen(false), [setPromptsOpen]);
   const tooltipRef = useRef<NodeTooltipHandle>(null);
   const [activeSpoke, setActiveSpoke] = useState<string | null>(null);
@@ -1101,6 +1104,22 @@ export function CanvasShell({ spec, children }: Props) {
                 <MessageSquareText size={12} />
                 <span>Prompts</span>
               </button>
+            ) : null}
+
+            {spec.promptBuilderHref ? (
+              <a
+                className="hdr-btn"
+                href={spec.promptBuilderHref}
+                onClick={(e) => {
+                  // Keep the client and theme from the current URL.
+                  e.preventDefault();
+                  router.push(`${spec.promptBuilderHref}${window.location.search}`);
+                }}
+                title="Build new AI-Search prompts from shopper details"
+              >
+                <Wand2 size={12} />
+                <span>Build prompts</span>
+              </a>
             ) : null}
 
             {commandCenter ? (
