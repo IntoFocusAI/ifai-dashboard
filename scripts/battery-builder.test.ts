@@ -94,3 +94,11 @@ test("the page saves through the editor's save, one prompt at a time, and the ed
   const editor = readFileSync("components/v3/prompts/PromptsEditor.tsx", "utf8");
   assert.match(editor, /\$\{DASHBOARD_PATH\}\/battery-builder/);
 });
+
+test("the dashboard header has a Build prompts button, only for clients edited from the dashboard", () => {
+  const spec = readFileSync("lib/fender-canvas/build-canvas-spec.tsx", "utf8");
+  assert.match(spec, /promptBuilderHref: activeClient\(\)\.promptsEditable \? `\$\{DASHBOARD_PATH\}\/battery-builder` : undefined/);
+  const shell = readFileSync("lib/canvas-sdk/CanvasShell.tsx", "utf8");
+  assert.match(shell, /spec\.promptBuilderHref \?/);
+  assert.match(shell, /<span>Build prompts<\/span>/);
+});

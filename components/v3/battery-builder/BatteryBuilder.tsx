@@ -3,31 +3,20 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Plus, Trash2 } from "lucide-react";
-import { ROLE_LABELS } from "@/lib/ai-search/question-role";
+import { ArrowLeft } from "lucide-react";
 import { loadPrompts, savePrompt, type EditablePrompt, type PromptEditorStatus } from "@/lib/ai-search/prompt-editor";
-import {
-  callsPerRun,
-  cleanValues,
-  generateQuestions,
-  reviewQuestions,
-  type BuilderVariable,
-  type DesignMode,
-  type ReviewedQuestion,
-} from "@/lib/battery-builder/generate";
+import { callsPerRun, generateQuestions, reviewQuestions, type DesignMode, type ReviewedQuestion } from "@/lib/battery-builder/generate";
 import { FENDER_PRESETS, type BuilderPreset } from "@/lib/battery-builder/presets";
-import { SLOTS, SLOT_EXAMPLES, SLOT_LABELS, type Attributes, type Slot } from "@/lib/battery-builder/render";
+import { renderPrompt, type Attributes, type Slot } from "@/lib/battery-builder/render";
 import { DASHBOARD_PATH } from "@/lib/auth/dashboard-path";
 import { activeClient } from "@/lib/client/active-client";
+import { AdvancedSettings } from "./AdvancedSettings";
+import { DetailRow, type Detail } from "./DetailRow";
+import { QuestionList } from "./QuestionList";
 import "./battery-builder.css";
 
-/** Roles the AI Search headline counts. A question in another role still runs but is not in the headline. */
-const HEADLINE = new Set(["unbranded_discovery", "branded_consideration"]);
-
-type EditableVariable = BuilderVariable & { valuesText: string };
-
-function toEditable(variables: readonly BuilderVariable[]): EditableVariable[] {
-  return variables.map((v) => ({ ...v, values: [...v.values], valuesText: v.values.join("\n") }));
+function toDetails(preset: BuilderPreset): Detail[] {
+  return preset.variables.map((v) => ({ ...v, values: [...v.values], addedValues: [], custom: false }));
 }
 
 function slugName(label: string, taken: ReadonlySet<string>): string {
@@ -35,6 +24,11 @@ function slugName(label: string, taken: ReadonlySet<string>): string {
   let name = base;
   for (let n = 2; taken.has(name); n++) name = `${base}_${n}`;
   return name;
+}
+
+/** "Which brand makes the best {request}?" reads as "Which brand makes the best [product]?" on its chip. */
+function styleLabel(value: string): string {
+  return value.replaceAll("{a_request}", "a [product]").replaceAll("{request}", "[product]");
 }
 
 function errorText(e: unknown): string {
@@ -51,7 +45,7 @@ export function BatteryBuilder() {
   const preset: BuilderPreset = FENDER_PRESETS.find((p) => p.category === presetCategory) ?? FENDER_PRESETS[0];
   const [item, setItem] = useState(preset.item);
   const [personaNoun, setPersonaNoun] = useState(preset.personaNoun);
-  const [variables, setVariables] = useState<EditableVariable[]>(() => toEditable(preset.variables));
+  const [details, setDetails] = useState<Detail[]>(() => toDetails(preset));
   const [baseline, setBaseline] = useState<Attributes>(preset.baseline);
   const [tested, setTested] = useState<string[]>(preset.tested);
   const [mode, setMode] = useState<DesignMode>("one_at_a_time");
@@ -62,9 +56,6 @@ export function BatteryBuilder() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [saving, setSaving] = useState(false);
   const [result, setResult] = useState<{ added: string[]; error: string | null } | null>(null);
-
-  const [newLabel, setNewLabel] = useState("");
-  const [newSlot, setNewSlot] = useState<Slot>("clause");
 
   const refresh = useCallback(async () => {
     const data = await loadPrompts();
@@ -93,29 +84,32 @@ export function BatteryBuilder() {
     setPresetCategory(next.category);
     setItem(next.item);
     setPersonaNoun(next.personaNoun);
-    setVariables(toEditable(next.variables));
+    setDetails(toDetails(next));
     setBaseline(next.baseline);
     setTested(next.tested);
     setSelected(new Set());
     setResult(null);
   }
 
-  function updateVariable(name: string, patch: Partial<EditableVariable>) {
-    setVariables((vs) => vs.map((v) => (v.name === name ? { ...v, ...patch } : v)));
+  function updateDetail(name: string, change: (d: Detail) => Detail) {
+    setDetails((ds) => ds.map((d) => (d.name === name ? change(d) : d)));
   }
 
-  function setValuesText(v: EditableVariable, text: string) {
-    const values = cleanValues(text.split("\n"));
-    updateVariable(v.name, { valuesText: text, values });
-    if (baseline[v.name] && !values.includes(baseline[v.name])) setBaseline((b) => ({ ...b, [v.name]: "" }));
+  function addValue(name: string, value: string) {
+    updateDetail(name, (d) => (d.values.includes(value) ? d : { ...d, values: [...d.values, value], addedValues: [...d.addedValues, value] }));
   }
 
-  function toggleTested(name: string) {
+  function removeValue(name: string, value: string) {
+    updateDetail(name, (d) => ({ ...d, values: d.values.filter((v) => v !== value), addedValues: d.addedValues.filter((v) => v !== value) }));
+    setBaseline((b) => (b[name] === value ? { ...b, [name]: "" } : b));
+  }
+
+  function toggleTried(name: string) {
     setTested((t) => (t.includes(name) ? t.filter((n) => n !== name) : [...t, name]));
   }
 
-  function removeVariable(name: string) {
-    setVariables((vs) => vs.filter((v) => v.name !== name));
+  function removeDetail(name: string) {
+    setDetails((ds) => ds.filter((d) => d.name !== name));
     setTested((t) => t.filter((n) => n !== name));
     setBaseline((b) => {
       const next = { ...b };
@@ -124,25 +118,22 @@ export function BatteryBuilder() {
     });
   }
 
-  function addVariable() {
-    const label = newLabel.trim();
-    if (!label) return;
-    const name = slugName(label, new Set(variables.map((v) => v.name)));
-    const template = newSlot === "clause" ? "wants {value}" : "{value}";
-    setVariables((vs) => [...vs, { name, label, slot: newSlot, template, values: [], valuesText: "" }]);
+  function addDetail(label: string, slot: Slot) {
+    const name = slugName(label, new Set(details.map((d) => d.name)));
+    const template = slot === "clause" ? "wants {value}" : "{value}";
+    setDetails((ds) => [...ds, { name, label, slot, template, values: [], addedValues: [], custom: true }]);
     setTested((t) => [...t, name]);
-    setNewLabel("");
   }
 
+  const product = { item, personaNoun };
   const generated = useMemo(
-    () => generateQuestions({ item, personaNoun }, variables, { mode, baseline, tested }),
-    [item, personaNoun, variables, mode, baseline, tested],
+    () => generateQuestions({ item, personaNoun }, details, { mode, baseline, tested }),
+    [item, personaNoun, details, mode, baseline, tested],
   );
   const reviewed: ReviewedQuestion[] = useMemo(() => reviewQuestions(generated.questions, existing), [generated, existing]);
-  const notes = generated.notes;
+  const startQuestion = renderPrompt(product, details, baseline);
 
-  const addable = reviewed.filter((q) => !q.duplicateOf);
-  const chosen = addable.filter((q) => selected.has(q.text));
+  const chosen = reviewed.filter((q) => !q.duplicateOf && selected.has(q.text));
   const locked = status?.locked ?? false;
   const activeAfter = (status?.active_count ?? 0) + chosen.length;
   const overLimit = status ? activeAfter > status.max_active : false;
@@ -182,37 +173,48 @@ export function BatteryBuilder() {
     setSaving(false);
   }
 
+  const header = (
+    <header className="bb-header">
+      <div>
+        <h1>Build prompts</h1>
+        <p className="bb-sub">Describe a shopper and get AI-search questions to add to {client.brandName}&apos;s battery.</p>
+      </div>
+      <Link href={backHref} className="bb-back">
+        <ArrowLeft size={14} aria-hidden /> <span>Dashboard</span>
+      </Link>
+    </header>
+  );
+
   if (!client.promptsEditable) {
     return (
       <main className={`bb-page profile-modal-theme-canvas${light ? " is-light" : ""}`}>
         <article className="bb-card">
-          <header className="bb-header">
-            <h1>Build prompts</h1>
-            <Link href={backHref} className="bb-back">
-              <ArrowLeft size={14} aria-hidden /> <span>Dashboard</span>
-            </Link>
-          </header>
+          {header}
           <p className="bb-lead">{client.brandName} prompts are not edited from the dashboard.</p>
         </article>
       </main>
     );
   }
 
+  const rowFor = (d: Detail) => (
+    <DetailRow
+      key={d.name}
+      detail={d}
+      picked={baseline[d.name] ?? ""}
+      tried={tested.includes(d.name)}
+      valueLabel={d.slot === "frame" ? styleLabel : undefined}
+      onPick={(value) => setBaseline((b) => ({ ...b, [d.name]: value }))}
+      onToggleTry={() => toggleTried(d.name)}
+      onAddValue={(value) => addValue(d.name, value)}
+      onRemoveValue={(value) => removeValue(d.name, value)}
+      onRemoveDetail={() => removeDetail(d.name)}
+    />
+  );
+
   return (
     <main className={`bb-page profile-modal-theme-canvas${light ? " is-light" : ""}`}>
       <article className="bb-card">
-        <header className="bb-header">
-          <div>
-            <h1>Build prompts</h1>
-            <p className="bb-sub">
-              Pick the shopper details to vary. Every question changes one detail from the starting question, so a
-              change in {client.brandName}&apos;s results points to that detail.
-            </p>
-          </div>
-          <Link href={backHref} className="bb-back">
-            <ArrowLeft size={14} aria-hidden /> <span>Dashboard</span>
-          </Link>
-        </header>
+        {header}
 
         {locked ? (
           <div className="bb-banner bb-banner-warn" role="status">
@@ -228,161 +230,74 @@ export function BatteryBuilder() {
           </div>
         ) : null}
 
-        <div className="bb-layout">
-          <section className="bb-panel" aria-labelledby="bb-setup">
-            <h2 id="bb-setup">Setup</h2>
-            <label className="bb-field">
-              <span>Category</span>
-              <select value={presetCategory} onChange={(e) => choosePreset(e.target.value)}>
-                {FENDER_PRESETS.map((p) => (
-                  <option key={p.category} value={p.category}>
-                    {p.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <div className="bb-row">
-              <label className="bb-field">
-                <span>Product</span>
-                <input value={item} onChange={(e) => setItem(e.target.value)} />
-              </label>
-              <label className="bb-field">
-                <span>Shopper</span>
-                <input value={personaNoun} onChange={(e) => setPersonaNoun(e.target.value)} />
-              </label>
-            </div>
-            <fieldset className="bb-mode">
-              <legend>Questions</legend>
-              <label>
-                <input type="radio" checked={mode === "one_at_a_time"} onChange={() => setMode("one_at_a_time")} />
-                One detail at a time
-              </label>
-              <label>
-                <input type="radio" checked={mode === "combination"} onChange={() => setMode("combination")} />
-                Every combination
-              </label>
-            </fieldset>
-
-            <h2>Shopper details</h2>
-            <ul className="bb-vars">
-              {variables.map((v) => (
-                <li key={v.name} className="bb-var">
-                  <div className="bb-var-head">
-                    <label className="bb-check">
-                      <input type="checkbox" checked={tested.includes(v.name)} onChange={() => toggleTested(v.name)} />
-                      <strong>{v.label}</strong>
-                    </label>
-                    <span className="bb-slot" title={SLOT_EXAMPLES[v.slot]}>
-                      {SLOT_LABELS[v.slot]}
-                    </span>
-                    <button className="bb-icon-btn" onClick={() => removeVariable(v.name)} aria-label={`Remove ${v.label}`} title="Remove">
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                  <label className="bb-field">
-                    <span>In the starting question</span>
-                    <select value={baseline[v.name] ?? ""} onChange={(e) => setBaseline((b) => ({ ...b, [v.name]: e.target.value }))}>
-                      <option value="">Left out</option>
-                      {v.values.map((value) => (
-                        <option key={value} value={value}>
-                          {value}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label className="bb-field">
-                    <span>Values, one per line</span>
-                    <textarea rows={Math.min(6, Math.max(2, v.values.length + 1))} value={v.valuesText} onChange={(e) => setValuesText(v, e.target.value)} />
-                  </label>
-                  {v.slot === "frame" ? (
-                    <p className="bb-hint">
-                      {"{request}"} becomes the product with its details, such as “electric guitar under $1,000 for an intermediate player”.{" "}
-                      {"{a_request}"} adds “a” or “an” in front.
-                    </p>
-                  ) : null}
-                </li>
-              ))}
-            </ul>
-            <div className="bb-add-var">
-              <input placeholder="New detail, e.g. Tone" value={newLabel} onChange={(e) => setNewLabel(e.target.value)} />
-              <select value={newSlot} onChange={(e) => setNewSlot(e.target.value as Slot)} aria-label="Where it goes">
-                {SLOTS.map((slot) => (
-                  <option key={slot} value={slot}>
-                    {SLOT_LABELS[slot]}
-                  </option>
-                ))}
-              </select>
-              <button className="bb-btn" onClick={addVariable} disabled={!newLabel.trim()}>
-                <Plus size={14} aria-hidden /> Add
+        <section className="bb-step bb-step-wide" aria-labelledby="bb-step-1">
+          <h2 id="bb-step-1">
+            <span className="bb-step-num">1</span> What&apos;s the shopper looking for?
+          </h2>
+          <div className="bb-cats" role="radiogroup" aria-labelledby="bb-step-1">
+            {FENDER_PRESETS.map((p) => (
+              <button
+                key={p.category}
+                type="button"
+                role="radio"
+                aria-checked={p.category === presetCategory}
+                className={`bb-cat${p.category === presetCategory ? " is-on" : ""}`}
+                onClick={() => choosePreset(p.category)}
+              >
+                {p.label}
               </button>
-            </div>
+            ))}
+          </div>
+        </section>
+
+        <div className="bb-layout">
+          <section className="bb-step" aria-labelledby="bb-step-2">
+            <h2 id="bb-step-2">
+              <span className="bb-step-num">2</span> Describe the shopper
+            </h2>
+            <p className="bb-help">Click a value to put it in the starting question. Turn on “Try each” to get one question per value.</p>
+            <figure className="bb-start">
+              <figcaption>Starting question</figcaption>
+              <blockquote>{startQuestion}</blockquote>
+            </figure>
+            <ul className="bb-details">{details.filter((d) => d.slot !== "frame").map(rowFor)}</ul>
+            <AdvancedSettings
+              styleRows={details.filter((d) => d.slot === "frame").map(rowFor)}
+              mode={mode}
+              onMode={setMode}
+              item={item}
+              onItem={setItem}
+              personaNoun={personaNoun}
+              onPersonaNoun={setPersonaNoun}
+              onAddDetail={addDetail}
+            />
           </section>
 
-          <section className="bb-panel bb-preview-panel" aria-labelledby="bb-preview">
-            <div className="bb-preview-head">
-              <h2 id="bb-preview">
-                {reviewed.length} question{reviewed.length === 1 ? "" : "s"}
-              </h2>
-              <div className="bb-row-actions">
-                <button className="bb-link" onClick={() => setSelected(new Set(addable.map((q) => q.text)))}>
-                  Select all new
-                </button>
-                <button className="bb-link" onClick={() => setSelected(new Set())}>
-                  Clear
-                </button>
-              </div>
-            </div>
-            {notes.map((note) => (
-              <p key={note} className="bb-note">
-                {note}
-              </p>
-            ))}
-            <ul className="bb-questions">
-              {reviewed.map((q) => (
-                <li key={q.text} className={`bb-q${q.duplicateOf ? " is-duplicate" : ""}`}>
-                  <label className="bb-check">
-                    <input
-                      type="checkbox"
-                      disabled={!!q.duplicateOf}
-                      checked={!q.duplicateOf && selected.has(q.text)}
-                      onChange={() => toggle(q.text)}
-                    />
-                    <span className="bb-q-text">{q.text}</span>
-                  </label>
-                  <div className="bb-q-meta">
-                    <span className="bb-chip">{q.kind === "start" ? "Starting question" : q.change}</span>
-                    <span
-                      className={`bb-chip${q.role === "other" ? " bb-chip-warn" : HEADLINE.has(q.role) ? " bb-chip-good" : ""}`}
-                      title={
-                        q.role === "other"
-                          ? "The dashboard can't tell what kind of question this is, so it won't count in any role. Reword it."
-                          : HEADLINE.has(q.role)
-                            ? "Counts toward the AI Search headline."
-                            : "Runs and shows on the dashboard; not in the headline."
-                      }
-                    >
-                      {ROLE_LABELS[q.role]}
-                    </span>
-                    {q.duplicateOf ? <span className="bb-chip">Already {q.duplicateOf}</span> : null}
-                  </div>
-                </li>
-              ))}
-            </ul>
+          <section className="bb-step bb-questions-step" aria-label="Pick the questions to add">
+            <QuestionList
+              questions={reviewed}
+              notes={generated.notes}
+              selected={selected}
+              onToggle={toggle}
+              onSelect={(texts) => setSelected(new Set(texts))}
+            />
           </section>
         </div>
 
         <footer className="bb-footer">
           <p className="bb-sub">
-            {chosen.length} selected · {callsPerRun(chosen.length, engines, repeats).toLocaleString()} more calls per run ({engines} engines ×{" "}
-            {repeats} answers each)
-            {status ? ` · ${activeAfter} of ${status.max_active} active prompts` : ""}
+            <strong>{chosen.length} selected</strong>
+            <span title={`${engines} engines × ${repeats} answers each`}>
+              {" "}· +{callsPerRun(chosen.length, engines, repeats).toLocaleString()} calls per run
+            </span>
+            {status ? <span className={overLimit ? "bb-over" : undefined}> · {activeAfter} of {status.max_active} active prompts</span> : null}
           </p>
           <button
             className="bb-btn bb-btn-primary"
             disabled={saving || locked || chosen.length === 0 || overLimit || !status}
             onClick={() => void addToBattery()}
           >
-            {saving ? "Adding…" : `Add ${chosen.length} to the battery`}
+            {saving ? "Adding…" : chosen.length === 1 ? "Add 1 prompt" : `Add ${chosen.length} prompts`}
           </button>
         </footer>
       </article>
