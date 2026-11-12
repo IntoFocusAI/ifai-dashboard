@@ -35,7 +35,7 @@ test("Amazon Specs judges each product type against its list and names the field
     category: "Solid Body",
     amazon_spec_values: { color: "Black", scale_length: "25.5", upc: "123" },
   }));
-  const types = rows.map((row, index) => ({ asin: row.asin, product_type: index < 3 ? "GUITARS" : "SHIRT" }));
+  const types = SPEC_ROWS.map((row, index) => ({ asin: String(row.asin), product_type: index < 3 ? "GUITARS" : "SHIRT" }));
   await page.route("**/rest/v1/canvas_spec_readiness**", (route) => route.fulfill(fulfill(rows)));
   await page.route("**/rest/v1/canvas_amazon_product_types**", (route) => route.fulfill(fulfill(types)));
   await openAmazonSpecs(page);
