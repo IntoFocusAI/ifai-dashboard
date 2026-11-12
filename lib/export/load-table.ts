@@ -18,6 +18,7 @@ import { loadStockEpisodesSource } from "@/lib/export/stock-episodes-export";
 import { loadSuppressedSource } from "@/lib/export/suppressed-export";
 import { stockEpisodesAsin, type ExportTableId, type FixedExportTableId } from "@/lib/export/tables";
 import type { SourceRead } from "@/lib/export/types";
+import { loadSitesToReviewSource } from "@/lib/export/sites-to-review-export";
 import { loadFindabilitySource } from "@/lib/findability/findability-export";
 
 type Loader = (scope: Record<string, unknown> | null) => Promise<SourceRead>;
@@ -57,6 +58,7 @@ const LOADERS: Record<FixedExportTableId, Loader> = {
   "findability-listings": loadFindabilitySource,
   "action-items-fixes": loadActionItemsSource,
   "prompts": loadPromptsSource,
+  "sites-to-review": loadSitesToReviewSource,
 };
 
 /** Every row the table can show, read with the table's own query and the view's scope. */

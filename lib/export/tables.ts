@@ -38,6 +38,8 @@ export const EXPORT_TABLE_IDS = [
   "action-items-fixes",
   // The prompt list in the prompts editor.
   "prompts",
+  // Staff only: Sites to review (flagged site types). The loader checks staff.
+  "sites-to-review",
 ] as const;
 
 export type FixedExportTableId = (typeof EXPORT_TABLE_IDS)[number];
