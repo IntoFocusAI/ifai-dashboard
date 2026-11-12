@@ -143,7 +143,8 @@ test.use({ viewport: { width: 1280, height: 720 } });
 
 test.describe("AI Search opens on the last 30 days", () => {
   test("the window adds published runs with answers only, and the latest run is one click away", async ({ canvas, page }) => {
-    await expect(aiBubble(page)).toContainText("65.0%");
+    // Brian Magazu, 12 Nov 2026: the map reads the date-pill window, as the tab does.
+    await expect(aiBubble(page)).toContainText("60.5%");
     const mapBefore = await mapFigure(page);
 
     await canvas.openSpokeFromMap("AI Search Visibility");
@@ -184,6 +185,7 @@ test.describe("AI Search opens on the last 30 days", () => {
     await expect(trigger).toHaveText(/^Published run · Oct 20, 2026/);
     await page.locator(".drilldown-tab-btn", { hasText: "Run Summary" }).click();
     await expect(page.locator("[data-ai-win-rate='unbranded_discovery']")).toHaveText("65.0%");
+    await expect(aiBubble(page)).toContainText("65.0%");
     await expect(page.locator("[data-ai-win-rate='branded_consideration']")).toHaveText("100.0%");
     await expect(lead.locator("[data-ai-role-total='unbranded_discovery']")).toHaveText("13 Fender/Squier leads of 20 resolved answers");
     await expect(lead.locator("[data-ai-win-rate='unbranded_discovery']")).toBeInViewport({ ratio: 1 });
@@ -194,13 +196,12 @@ test.describe("AI Search opens on the last 30 days", () => {
     await dialog.locator("[data-ai-history-last-30-days]").click();
     await expect(trigger).toHaveText(/^Last 30 days · Sep 21 to Oct 20, 2026/);
     await expect(page.locator("[data-ai-win-rate='unbranded_discovery']")).toHaveText("60.5%");
+    await expect.poll(() => mapFigure(page)).toBe(mapBefore);
 
     await trigger.click();
     await page.getByRole("button", { name: "All time" }).click();
     await expect(trigger).toHaveText(/^All time/);
     await expect(page.locator("[data-ai-window-completeness]")).toContainText("Runs in this selection6");
-
-    expect(await mapFigure(page)).toBe(mapBefore);
   });
 
 });
@@ -215,8 +216,8 @@ test.describe("AI Search last 30 days with no published run", () => {
   });
 
   test("a window with no published run says so and offers the latest run", async ({ canvas, page }) => {
-    await expect(aiBubble(page)).toContainText("65.0%");
-    const mapBefore = await mapFigure(page);
+    // The map reads the same empty window: no figure, and not a failed read.
+    await expect(aiBubble(page)).toContainText("No run in period");
     await canvas.openSpokeFromMap("AI Search Visibility");
     const trigger = page.locator("[data-ai-history-trigger]");
     await expect(trigger).toHaveText(/^Last 30 days · Nov 4 to Dec 3, 2026/);
@@ -234,6 +235,6 @@ test.describe("AI Search last 30 days with no published run", () => {
     await expect(trigger).toHaveText(/^Published run · Dec 3, 2026/);
     await page.locator(".drilldown-tab-btn", { hasText: "Run Summary" }).click();
     await expect(page.locator("[data-ai-win-rate='unbranded_discovery']")).toHaveText("65.0%");
-    expect(await mapFigure(page)).toBe(mapBefore);
+    await expect(aiBubble(page)).toContainText("65.0%");
   });
 });
