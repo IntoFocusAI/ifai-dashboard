@@ -154,11 +154,4 @@ export type AiSearchRead =
       phase: "ready";
       snapshot: AiSearchSnapshot;
       stale?: boolean;
-      /**
-       * The rows the Category Battlecards tab reads (the date-pill window, narrowed by the engine
-       * switch). Only the map's Competitive Radar bubble uses it. Absent until that window loads.
-       */
-      radarSnapshot?: AiSearchSnapshot;
-      /** True while that window still loads, so the radar bubble waits instead of showing another population. */
-      radarPending?: boolean;
     };

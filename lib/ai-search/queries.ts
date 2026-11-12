@@ -74,29 +74,15 @@ async function readAll<T>(
   return rows;
 }
 
-type SingleClient = {
-  from: (view: string) => {
-    select: (columns: string) => {
-      eq: (column: string, value: string) => {
-        maybeSingle: () => PromiseLike<{ data: unknown; error: { message: string } | null }>;
-      };
-    };
-  };
-};
-
-/** The engine's answer for one call, read only when its evidence drawer opens. */
-export async function answerTextQuery(
-  client: SingleClient,
-  id: string,
-): Promise<{ answer: string | null; error: string | null }> {
-  const { data, error } = await client
-    .from("canvas_ai_simulations")
-    .select("answer_text")
-    .eq("id", id)
-    .maybeSingle();
-  if (error) return { answer: null, error: error.message };
-  const answer = (data as { answer_text?: string | null } | null)?.answer_text?.trim();
-  return { answer: answer || null, error: null };
+/**
+ * The published run's row alone, as loadAiSearchRead reads it, so the date-pill window can start
+ * reading its runs while the published run's calls still load. Null when there is not exactly
+ * one published run or the read fails; the window then waits for the full read as before.
+ */
+export async function loadPublishedRunRow(client: AiReadClient): Promise<AiCurrentRun | null> {
+  const result = await client.from("canvas_ai_current_run").select("*");
+  const runs = (result.data ?? []) as AiCurrentRun[];
+  return !result.error && runs.length === 1 ? runs[0] : null;
 }
 
 /**

@@ -21,7 +21,7 @@ export function ConsensusScoresPanel({
   retail: RetailCanvasRead;
 }) {
   const findability = useFindability();
-  // The map's population (decision 7), the same read as the Briefing's AI Consensus.
+  // The date-pill window, the same read as the Briefing's AI Consensus.
   const ai = useSummaryAiRead();
   const [saved] = useAuthorizedSellers();
   const authorizedPartners = authorizedPartnersFromSave(saved);

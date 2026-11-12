@@ -449,3 +449,22 @@ export function boundaryReason(boundary: TrendBoundary): string {
   if (reasons.length === 0) reasons.push(`The runs ${between} differ.`);
   return `${reasons.join(" ")} Runs on either side are not directly comparable.`;
 }
+
+/**
+ * The day the question set changed inside a window of review runs (the later run's day), or null
+ * when one question set covers the whole window. The trend's boundary rule decides it, so a
+ * headline rate and the trend line break on the same run. The latest change wins.
+ */
+export function windowQuestionSetChange(snapshots: readonly AiSearchSnapshot[]): string | null {
+  const runs = snapshots
+    .filter((snapshot) => isReviewHistoryRun(snapshot.run as HistoryRunSummary))
+    .sort((a, b) => compareRuns(a.run as HistoryRunSummary, b.run as HistoryRunSummary));
+  const ids = runs.map((snapshot) => snapshot.run.audit_run_id);
+  let changed: string | null = null;
+  for (let index = 1; index < runs.length; index += 1) {
+    if (adjacentBreak(runs[index - 1], runs[index], ids, { kind: "all" }).promptSetChanged) {
+      changed = dayOf(runs[index]) ?? changed;
+    }
+  }
+  return changed;
+}

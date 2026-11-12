@@ -28,5 +28,5 @@ export const HISTORY_READ_CONCURRENCY = 4;
 /** Shared by every AI Search history read in the browser. */
 export const historyReadLimit = createReadLimit(HISTORY_READ_CONCURRENCY);
 
-/** The API-engine reads are a page or two per run; their own queue keeps them from holding up the battery runs. */
-export const apiReadLimit = createReadLimit(2);
+/** The API-engine reads are a page or two per run. Their own queue keeps them from holding up the battery runs; four at a time lets a 30-day window of API runs finish while the battery runs load. */
+export const apiReadLimit = createReadLimit(4);

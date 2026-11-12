@@ -62,7 +62,7 @@ test("each tab's lead figure carries the mark, with the shared custom tooltip", 
   }
   assert.equal(read(`${dir}/FactCheckLead.tsx`).match(/<AiStaleMark \/>/g)?.length, 2, "catalog lead and Accuracy");
   const mark = read(`${dir}/AiStaleMark.tsx`);
-  assert.match(mark, /figureTipAttrs\(PARTIAL_TITLE\.stale, partialFigureTip\(stale\), "ai-stale"\)/);
+  assert.match(mark, /figureTipAttrs\(PARTIAL_TITLE\[stale\.reason\], partialFigureTip\(stale\), "ai-stale"\)/);
   assert.match(mark, /if \(!run \|\| !mode \|\| source !== "live"\) return null;/, "the labeled sample copy is not marked");
   assert.doesNotMatch(mark, /\stitle=/);
 });

@@ -2,6 +2,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
+import { displayedAiRead } from "../lib/ai-search/displayed-read.ts";
 import { engineGroupRead } from "../lib/ai-search/engine-group-read.ts";
 import { aiSearchStale } from "../lib/ai-search/stale.ts";
 import { TRUSTED_COLLECTOR_VERSION, type HistoryRunSummary } from "../lib/ai-search/history-eligibility.ts";
@@ -92,6 +93,13 @@ function snapshot(id: string, cited: number): AiSearchSnapshot {
 
 const SNAPSHOTS: Record<string, AiSearchSnapshot> = { r1: snapshot("r1", 2), r2: snapshot("r2", 0), r3: snapshot("r3", 3) };
 const PUBLISHED: AiSearchRead = { phase: "ready", snapshot: SNAPSHOTS.r3! };
+const BATTERY = [SNAPSHOTS.r1!, SNAPSHOTS.r2!, SNAPSHOTS.r3!];
+/** The date-pill window (last 30 days ending Nov 3): the three runs pooled, no API views. */
+const WINDOW: AiSearchRead = engineGroupRead(
+  displayedAiRead({ kind: "month" }, { phase: "idle" }, { phase: "ready", snapshots: BATTERY }, PUBLISHED),
+  { phase: "missing" },
+  "all",
+);
 const STOCK = { phase: "ready" as const, rows: [{} as never, {} as never], populationCount: 8 };
 const FINDABILITY = { phase: "error" as const, message: "fixture" };
 
@@ -101,6 +109,7 @@ const READS: ActionItemsReads = {
   findability: async () => FINDABILITY,
   stock: async () => STOCK,
   published: async () => PUBLISHED,
+  window: async () => ({ phase: "ready", read: WINDOW, battery: BATTERY, mode: { kind: "month" } }),
   historyCatalog: async () => ({ phase: "ready", runs: Object.keys(DAYS).map(summary) }),
   apiCatalog: async () => ({ phase: "off" }),
   run: async (id) => ({ phase: "ready", snapshot: SNAPSHOTS[id]! }),
@@ -108,16 +117,18 @@ const READS: ActionItemsReads = {
 };
 
 /**
- * The browser's steps with the same fixtures: useSummaryAiRead and useMapPopulation (no API
- * views, so the switch reads missing), useSourceRuns, useFocusWindows, then useRoadmapPlan.
+ * The browser's steps with the same fixtures: useSummaryAiRead (the date-pill window; no API
+ * views, so the switch reads missing), useSourceRuns from the newest run in the window,
+ * useFocusWindows, then useRoadmapPlan.
  */
 function browserRows(today: Date): string[][] {
   const missing = { phase: "missing" as const };
-  const ai = engineGroupRead(PUBLISHED, missing, "all");
+  const ai = WINDOW;
   const runs = Object.keys(DAYS).map(summary);
   const ids = priorRunIds(runs, "r3");
   const prior = ids.map((id) => engineGroupRead({ phase: "ready", snapshot: SNAPSHOTS[id]! }, missing, "all"));
-  const sources = sourceRunsRead({ current: ai, ids, live: true, catalogFailed: false, prior });
+  const newest = engineGroupRead(PUBLISHED, missing, "all");
+  const sources = sourceRunsRead({ current: newest, ids, live: true, catalogFailed: false, prior });
   const window = focusWindowRuns(runs, "2026-11-03");
   const pick = (list: HistoryRunSummary[]) => list.map((run) => SNAPSHOTS[run.audit_run_id]!);
   const split = { current: pick(window.current), previous: pick(window.previous) };
@@ -128,7 +139,7 @@ function browserRows(today: Date): string[][] {
     bundle: null,
     findability: FINDABILITY,
     ai,
-    aiStale: ai.phase === "ready" ? aiSearchStale(ai.snapshot.run) : null,
+    aiStale: aiSearchStale(SNAPSHOTS.r3!.run),
     stock: STOCK,
     sources,
     windows,
@@ -157,9 +168,11 @@ test("the Action Items hooks build the plan with the shared functions", () => {
   assert.match(data, /assembleRoadmapPlan\(\{ retail, bundle, findability, ai, aiStale, stock, sources, windows, focus \}\)/);
   assert.match(data, /sourceRunsRead\(/);
   assert.match(data, /pairedApiRuns\(/);
+  assert.match(data, /useSourceRuns\(useRunWithApi\(useNewestWindowRun\(\)\)\)/);
   assert.match(read("components/v3/live/useFocusWindows.ts"), /focusWindowsReady\(split, pending, currentApi, previousApi\)/);
   assert.match(read("components/v3/live/useFocusWindows.ts"), /focusWindowApiRuns\(/);
-  assert.match(read("components/v3/live/ai-search/useApiEngineLoad.ts"), /pairedApiRuns\(catalog\.runs, snapshot\)/);
+  assert.match(read("components/v3/live/ai-search/useApiEngineLoad.ts"), /engineGroupRead\(displayed, windowApi, choice\)/);
+  assert.match(read("components/v3/live/ActionItemsFixTable.tsx"), /exportScope=\{exportScope\}/);
   assert.match(read("components/v3/live/ActionItemsFixTable.tsx"), /FIX_TABLE_ID = "action-items-fixes"/);
 });
 

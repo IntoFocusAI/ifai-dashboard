@@ -14,6 +14,7 @@ import {
 } from "@/lib/ai-search/history-mode";
 import { afterSiteTypes } from "@/lib/ai-search/site-types";
 import { loadHistoryCatalog,loadHistorySnapshot, type HistorySnapshotResult } from "@/lib/ai-search/history-queries";
+import { loadPublishedRunRow } from "@/lib/ai-search/queries";
 import { runsInSelection } from "@/lib/ai-search/selection";
 import type { AiSearchRead, AiSearchSnapshot } from "@/lib/ai-search/types";
 import { readsWindowRemotely } from "@/lib/ai-search/window-read";
@@ -80,7 +81,21 @@ export function AiHistoryProvider({ current, children }: { current: AiSearchRead
   const publishedDay =
     current.phase === "ready" ? utcDay(current.snapshot.run.published_at ?? current.snapshot.run.completed_at) : null;
   const publishedRunId = current.phase === "ready" ? current.snapshot.run.audit_run_id : null;
-  const windowEnd = source === "fixture" ? latestPublishedDay(fixtureRuns) : publishedDay;
+  // The published run's day arrives with its row, before its calls do, so the window starts early.
+  const [earlyDay, setEarlyDay] = useState<string | null>(null);
+  const liveEnd = publishedDay ?? (current.phase === "loading" ? earlyDay : null);
+  const windowEnd = source === "fixture" ? latestPublishedDay(fixtureRuns) : liveEnd;
+
+  useEffect(() => {
+    if (source === "fixture") return;
+    let cancelled = false;
+    void loadPublishedRunRow(getCanvasSupabase() as never).then((run) => {
+      if (!cancelled && run) setEarlyDay(utcDay(run.published_at ?? run.completed_at));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [source]);
 
   useEffect(() => {
     if (source === "fixture") return;
@@ -176,8 +191,9 @@ export function AiHistoryProvider({ current, children }: { current: AiSearchRead
       const first: { failed: Exclude<HistorySnapshotResult, { phase: "ready" }> | null } = { failed: null };
       const loaded = await Promise.all(
         trusted.map((run) =>
+          // No answer text: a window holds thousands of calls, and an evidence drawer reads its answer on demand.
           afterSiteTypes(getCanvasSupabase(), () =>
-            loadHistorySnapshot(getCanvasSupabase() as never, run.audit_run_id, { signal: stop.signal }),
+            loadHistorySnapshot(getCanvasSupabase() as never, run.audit_run_id, { signal: stop.signal, withAnswers: false }),
           ).then((result) => {
             if (result.phase !== "ready" && !first.failed && !stop.signal.aborted) {
               first.failed = result;

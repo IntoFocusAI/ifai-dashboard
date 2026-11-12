@@ -352,16 +352,16 @@ test("Run Summary, Citation Ecosystem, the trend, and the run detail read the sw
   assert.match(read("components/v3/live/ai-search/RunHistoryControl.tsx"), /<PairedApiRun runId=\{run.audit_run_id\} day=\{day\} \/>/);
 });
 
-test("the Competitive Radar bubble names the rival the Battlecards tab names, from the window rows when given", () => {
+test("every map bubble, the Competitive Radar bubble included, reads the date-pill window the tabs read", () => {
   const rivalCalls = (brand: string, n: number) =>
     Array.from({ length: n }, () => call("w", "chatgpt", { outcome: "competitor_win", primary_brand: brand }));
-  // The published run alone: Yamaha ahead. The window it sits in: Taylor ahead.
-  const published = { ...NOV3, calls: [...rivalCalls("Yamaha", 3), ...rivalCalls("Taylor", 2)] };
+  // The window: Taylor ahead. The bubble names the window's leader, as Category Battlecards does.
   const window = { ...NOV3, calls: [...rivalCalls("Yamaha", 3), ...rivalCalls("Taylor", 6)] };
   const hero = (read: Parameters<typeof aiNodeFaces>[0]) => aiNodeFaces(read).spokeCompetitors.heroValue;
-  assert.match(String(hero({ phase: "ready", snapshot: published })?.label), /^Yamaha leads/);
-  const both = hero({ phase: "ready", snapshot: published, radarSnapshot: window });
-  assert.match(String(both?.label), /^Taylor leads/);
+  assert.match(String(hero({ phase: "ready", snapshot: window })?.label), /^Taylor leads/);
   const wiring = readFileSync(new URL("../components/v3/live/ai-search/useApiEngineLoad.ts", import.meta.url), "utf8");
-  assert.match(wiring, /radarSnapshot: radar\.snapshot/);
+  // Brian Magazu, 12 Nov 2026 (replaces decision 7): the map reads the window, not the published run.
+  assert.match(wiring, /const displayed = useDisplayedAiSearch\(published\);/);
+  assert.match(wiring, /engineGroupRead\(displayed, windowApi, choice\)/);
+  assert.doesNotMatch(wiring, /pairedApiRuns/);
 });

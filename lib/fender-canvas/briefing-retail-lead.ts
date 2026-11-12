@@ -84,7 +84,7 @@ export type BriefingFinding = {
 
 /** Options for the AI finding. Summary passes the map's read and its stale reading. */
 export type BriefingAiOptions = {
-  /** The published run is past its check schedule (lib/ai-search/stale.ts). */
+  /** The window is stale or mixes question sets (lib/ai-search/stale.ts, X-25). */
   aiStale?: PartialFigure | null;
 };
 
@@ -283,7 +283,7 @@ function unbrandedPie(fenderWins: number, resolved: number): PieDiscData | null 
 }
 
 const AI_READ_FAILED =
-  "The published AI Search run did not load, so this figure is left out rather than shown as zero.";
+  "The AI Search runs in the selected period did not load, so this figure is left out rather than shown as zero.";
 
 function unbrandedFinding(read: AiSearchRead, options: BriefingAiOptions): BriefingFinding {
   if (read.phase !== "ready") {
@@ -293,7 +293,7 @@ function unbrandedFinding(read: AiSearchRead, options: BriefingAiOptions): Brief
       "aeo",
       "Run Details",
       "Unbranded Discovery",
-      loading ? "Loading the published AI Search run." : AI_READ_FAILED,
+      loading ? "Loading the AI Search runs in the selected period." : AI_READ_FAILED,
       loading,
     );
   }
