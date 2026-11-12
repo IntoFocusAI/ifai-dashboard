@@ -101,7 +101,9 @@ export function ListingContentTable({
   }
   const rows = contentGapRows(summary, filter);
   const sorted = useClientTableSort(rows, COLUMNS, sortValue);
-  const slice = sorted.rows.slice(page * PAGE, page * PAGE + PAGE);
+  // A search or a sort can leave fewer pages than the one on screen.
+  const shown = Math.min(page, Math.max(0, Math.ceil(sorted.rows.length / PAGE) - 1));
+  const slice = sorted.rows.slice(shown * PAGE, shown * PAGE + PAGE);
   const setAsides = useCheckSetAsides(SET_ASIDE_CHECKS.listingContent, "Listing Content");
 
   return (
@@ -119,6 +121,7 @@ export function ListingContentTable({
         freezeHeader
         maxHeight={520}
         sort={sorted.sort}
+        controls={sorted.controls}
         onSort={(columnId) => {
           setPage(0);
           sorted.onSort(columnId);
@@ -170,7 +173,7 @@ export function ListingContentTable({
           )}
         </tbody>
       </ResizableTable>
-      <Pager page={page} total={rows.length} onPage={setPage} />
+      <Pager page={shown} total={sorted.rows.length} onPage={setPage} />
       <SetAsideHistory ctl={setAsides} />
     </div>
   );

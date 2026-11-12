@@ -5,6 +5,7 @@
  */
 
 import type { PieDiscData } from "@/lib/ai-search/citation-pies";
+import { brandSite } from "@/lib/brand-copy";
 import type { NodeStatus } from "@/lib/canvas-sdk/types";
 import { metricsRowFailure, READ_NOT_AVAILABLE, readFailureTip } from "@/lib/fender-canvas/canvas-reads";
 import { formatInt, formatPct, formatRatio, pendingLabel } from "@/lib/fender-canvas/format";
@@ -124,6 +125,8 @@ export type AiReadinessHeroModel = {
   /** N of M, or a count phrase that cannot be read as a second percentage. */
   ratio: string | null;
   color: string | null;
+  /** Status (X-34) behind `color`, for the mark and word beside the figure. */
+  tone: Exclude<NodeStatus, "neutral"> | null;
   pie: PieDiscData | null;
   tip: string | null;
 };
@@ -156,6 +159,22 @@ export function fenderCompletenessTone(pct: number | null): Exclude<NodeStatus, 
 
 export function toneColor(tone: Exclude<NodeStatus, "neutral"> | null): string | null {
   return tone ? TONE_COLOR[tone] : null;
+}
+
+/**
+ * The status behind a graded share's color (X-34), so the figure carries its mark and word.
+ * A figure without a population is not graded: it has no status and shows in muted text.
+ */
+export function shareFigureTone(
+  color: string | null,
+  numerator: number | null,
+  denominator: number | null,
+): Exclude<NodeStatus, "neutral"> | null {
+  if (numerator == null || denominator == null || !color) return null;
+  const match = (Object.keys(TONE_COLOR) as Array<Exclude<NodeStatus, "neutral">>).find(
+    (tone) => TONE_COLOR[tone] === color,
+  );
+  return match ?? null;
 }
 
 /** Disc of a 0-100 average percent (filled versus remainder to full). */
@@ -225,16 +244,17 @@ function failedReadHero(hero: AiReadinessHeroModel, m: CanvasMetricsRow): AiRead
     percent: READ_NOT_AVAILABLE,
     ratio: null,
     color: null,
+    tone: null,
     pie: null,
     tip: null,
   };
 }
 
-export const PAGE_FOUND_LABEL = "fender.com page found";
+export const PAGE_FOUND_LABEL = `${brandSite()} page found`;
 
 /** Said once wherever the fender.com product check and Findability can disagree. */
 export const FENDER_CHECK_DIFFERS =
-  "This is the fender.com product check; the Findability tab runs its own official-page check, so the two can differ.";
+  `This is the ${brandSite()} product check; the Findability tab runs its own official-page check, so the two can differ.`;
 
 /** The definition with "Last checked …" after it, when the check time is known. */
 function checkedDefinition(what: string, checkedAt: string | null | undefined, after?: string): string {
@@ -242,7 +262,7 @@ function checkedDefinition(what: string, checkedAt: string | null | undefined, a
 }
 
 const PAGE_FOUND_WHAT =
-  "Checked SKUs with a matching fender.com product page, out of every SKU the fender.com product check covered.";
+  `Checked SKUs with a matching ${brandSite()} product page, out of every SKU the ${brandSite()} product check covered.`;
 
 export function pageFoundDefinition(checkedAt?: string | null): string {
   return checkedDefinition(PAGE_FOUND_WHAT, checkedAt, FENDER_CHECK_DIFFERS);
@@ -262,7 +282,8 @@ export function pageFoundHero(m: CanvasMetricsRow, checkedAt: string | null = nu
     percent: ready ? formatPct(pct) : pendingLabel(),
     ratio: ready ? formatRatio(found, checked) : null,
     color: toneColor(pageFoundTone(pct)),
-    pie: ready ? shareCountPie("ai-readiness-page-found", "fender.com page found", "Page found", found!, checked!) : null,
+    tone: pageFoundTone(pct),
+    pie: ready ? shareCountPie("ai-readiness-page-found", `${brandSite()} page found`, "Page found", found!, checked!) : null,
     tip: ready ? `${formatInt(found)} of ${formatInt(checked)} checked SKUs` : null,
   }, m);
 }
@@ -296,6 +317,7 @@ export function amazonCompletenessHero(
     percent: ready ? formatPct(pct) : pendingLabel(),
     ratio: share.label,
     color: tone ? TONE_COLOR[tone] : null,
+    tone,
     pie: averagePercentPie("ai-readiness-amazon-completeness", "Amazon attribute completeness", pct),
     tip: ready ? formatPct(pct) : null,
   }, m);
@@ -307,15 +329,16 @@ export function fenderCompletenessHero(m: CanvasMetricsRow, checkedAt: string | 
   const ready = pct != null && !Number.isNaN(pct);
   return failedReadHero({
     id: "fender_completeness",
-    label: "fender.com completeness when a page is found",
+    label: `${brandSite()} completeness when a page is found`,
     definition: checkedDefinition(
-      "Filled spec fields out of the fields each fender.com product page should have, averaged across the checked SKUs with a matching fender.com product page.",
+      `Filled spec fields out of the fields each ${brandSite()} product page should have, averaged across the checked SKUs with a matching ${brandSite()} product page.`,
       checkedAt,
     ),
     percent: ready ? formatPct(pct) : pendingLabel(),
     ratio: averageAcrossRatio(found != null && found > 0 ? found : null, "found pages"),
     color: toneColor(fenderCompletenessTone(pct)),
-    pie: averagePercentPie("ai-readiness-fender-completeness", "fender.com completeness", pct),
+    tone: fenderCompletenessTone(pct),
+    pie: averagePercentPie("ai-readiness-fender-completeness", `${brandSite()} completeness`, pct),
     tip: ready ? formatPct(pct) : null,
   }, m);
 }
@@ -329,12 +352,13 @@ export function missingAdditionalPropertyHero(m: CanvasMetricsRow, checkedAt: st
     id: "missing_additional_property",
     label: "Found pages missing additionalProperty",
     definition: checkedDefinition(
-      "Checked SKUs whose matching fender.com product page has no machine-readable spec list (additionalProperty), out of every checked SKU with a matching page.",
+      `Checked SKUs whose matching ${brandSite()} product page has no machine-readable spec list (additionalProperty), out of every checked SKU with a matching page.`,
       checkedAt,
     ),
     percent: ready ? formatPct(pct) : pendingLabel(),
     ratio: ready ? formatRatio(missing, found) : null,
     color: null,
+    tone: null,
     pie: ready
       ? shareCountPie(
           "ai-readiness-missing-additional-property",

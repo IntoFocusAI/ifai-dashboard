@@ -7,6 +7,7 @@ import type {
   CanvasReadFailure,
   CanvasReadKey,
 } from "@/lib/fender-canvas/types";
+import { brandSite } from "@/lib/brand-copy";
 
 export type BundleReadKey = Exclude<CanvasReadKey, "specPages" | "listingContent">;
 
@@ -18,7 +19,7 @@ export const CANVAS_READS: Record<CanvasReadKey, { source: string; label: string
   divisions: { source: "canvas_divisions", label: "Catalog division read" },
   missing: { source: "canvas_spec_missing_fields", label: "Missing spec field read" },
   fresh: { source: "canvas_freshness", label: "Data freshness read" },
-  specPages: { source: "canvas_spec_readiness", label: "fender.com page read" },
+  specPages: { source: "canvas_spec_readiness", label: `${brandSite()} page read` },
   listingContent: { source: "canvas_listing_content", label: "Amazon listing content read" },
 };
 
@@ -250,4 +251,120 @@ export function withLastGood(
     stale = true;
   }
   return { bundle, stale };
+}
+
+/**
+ * Why a figure is partial (X-25): a filter narrows it, it covers part of its population,
+ * an input read failed, or its data is older than twice its normal check schedule.
+ */
+export type PartialReason = "filtered" | "coverage" | "read-failed" | "stale";
+
+export type PartialFigure = {
+  reason: PartialReason;
+  /** What the figure leaves out, as a sentence. */
+  missing: string;
+  /** How much of the population the figure covers, such as "121 of 633 listings". */
+  coverage?: string | null;
+  /** The table or view the figure reads. */
+  source: string;
+  /** When that source last ran (ISO time), or null when it was never recorded. */
+  lastCheck?: string | null;
+  /** What the gap does to the figure, as a sentence. */
+  effect?: string | null;
+};
+
+export const PARTIAL_MARK = "*";
+
+export const PARTIAL_TITLE: Record<PartialReason, string> = {
+  filtered: "Filtered figure",
+  coverage: "Partial coverage",
+  "read-failed": READ_NOT_AVAILABLE,
+  stale: "Older than its check schedule",
+};
+
+const lastCheckFormat = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+  hour: "numeric",
+  minute: "2-digit",
+  timeZone: "UTC",
+  timeZoneName: "short",
+});
+
+function sentence(text: string): string {
+  const trimmed = text.trim();
+  return /[.!?]$/.test(trimmed) ? trimmed : `${trimmed}.`;
+}
+
+/** "Mar 3, 2026, 4:10 PM UTC", or null for a missing or unreadable time. */
+export function formatLastCheck(at: string | null | undefined): string | null {
+  if (!at) return null;
+  const time = new Date(at);
+  return Number.isFinite(time.getTime()) ? lastCheckFormat.format(time) : null;
+}
+
+const lastCheckDayFormat = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+  timeZone: "UTC",
+});
+
+/** "Mar 3, 2026", or null for a missing or unreadable time. */
+export function formatLastCheckDay(at: string | null | undefined): string | null {
+  if (!at) return null;
+  const time = new Date(at);
+  return Number.isFinite(time.getTime()) ? lastCheckDayFormat.format(time) : null;
+}
+
+/**
+ * The tooltip for a partial figure, kept short and split into lines: what the asterisk means
+ * for this figure, then what it covers (when that is not already in the first line), then the
+ * last check day. A filtered figure keeps its line on how to clear the filter, and a failed read its line on the figure left out.
+ */
+export function partialFigureTip(partial: PartialFigure): string {
+  const checked = formatLastCheckDay(partial.lastCheck);
+  return sanitizeUiText(
+    [
+      ...partial.missing.split("\n").map((line) => sentence(line)),
+      partial.coverage ? `Covers ${sentence(partial.coverage)}` : null,
+      checked ? `Last check: ${checked}.` : partial.lastCheck === undefined ? null : "Last check: not recorded.",
+      (partial.reason === "filtered" || partial.reason === "read-failed") && partial.effect ? sentence(partial.effect) : null,
+    ]
+      .filter(Boolean)
+      .join("\n"),
+  );
+}
+
+/** The figure's text with its asterisk when it is partial. Adds one asterisk at most. */
+export function markPartial(text: string, partial: PartialFigure | null | undefined): string {
+  if (!partial || text.trimEnd().endsWith(PARTIAL_MARK)) return text;
+  return `${text}${PARTIAL_MARK}`;
+}
+
+/** A failed input read, as a partial figure. */
+export function readFailedPartial(failure: CanvasReadFailure, effect?: string): PartialFigure {
+  return {
+    reason: "read-failed",
+    missing: readFailureTip(failure),
+    source: failure.source,
+    effect: effect ?? "The figure is left out rather than shown as zero.",
+  };
+}
+
+/** True when data last checked at `lastRunAt` is older than twice its normal check schedule. */
+export function isPastCheckSchedule(
+  lastRunAt: string | null | undefined,
+  scheduleMs: number,
+  now = Date.now(),
+): boolean {
+  if (!lastRunAt || !(scheduleMs > 0)) return false;
+  const at = new Date(lastRunAt).getTime();
+  return Number.isFinite(at) && now - at > 2 * scheduleMs;
+}
+
+/** The last run of one job in `canvas_freshness`, or null when the job has no row. */
+export function freshnessLastRun(bundle: CanvasBundle, jobKey: string): string | null {
+  return bundle.fresh.find((row) => row.job_key === jobKey)?.last_run_at ?? null;
 }

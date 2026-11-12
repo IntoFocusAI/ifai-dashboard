@@ -43,7 +43,7 @@ export function TourCard({
           </span>
           <span className="tour-category-badge">{step.category}</span>
         </div>
-        <button className="tour-close-btn" onClick={onClose} title="Close Tour (ESC)">
+        <button className="tour-close-btn" onClick={onClose} aria-label="Close tour">
           <X size={15} />
         </button>
       </div>
@@ -77,8 +77,8 @@ export function TourCard({
 
         <div className="tour-info-card primary-value">
           <div className="tour-card-header">
-            <Sparkles size={13} color="var(--success-green)" />
-            <span style={{ color: "var(--success-text)" }}>
+            <Sparkles size={13} color="var(--accent-purple)" />
+            <span style={{ color: "var(--text-main)" }}>
               Client Value & Executive Intelligence
             </span>
           </div>
@@ -88,7 +88,7 @@ export function TourCard({
         <button className="tour-drilldown-link-btn" onClick={onOpenDrilldown}>
           <ExternalLink size={12} />
           <span>Explore Full Deep-Dive Panel →</span>
-          <em className="tour-drilldown-hint">Tour pauses here. You&apos;ll come back to it.</em>
+          <em className="tour-drilldown-hint">The tour pauses here. You will come back to it.</em>
         </button>
       </div>
 

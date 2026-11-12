@@ -17,7 +17,6 @@ import {
   ENGINE_GROUP_CHOICES,
   engineGroup,
   filterSnapshotByEngineGroup,
-  fixedFactChecksTip,
   isApiEngine,
   isRotatingFactCheck,
   withApiSnapshots,
@@ -167,33 +166,29 @@ test("Without API keeps the search engines and every fact check, rotating ones i
   assert.deepEqual([...new Set(search.calls.map((row) => row.engine))].sort(), ["chatgpt", "gemini"]);
   assert.equal(search.calls.length, 5);
   assert.equal(search.probes.length, 2);
-  assert.equal(search.engineScope?.fixedFactChecksOnly, false);
-  assert.equal(fixedFactChecksTip(search.engineScope, 2), null);
+  assert.equal(search.engineScope?.choice, "search");
+  assert.equal(search.engineScope?.probesBefore, merged.probes);
 });
 
-test("All puts API engines beside the search engines and keeps the fixed fact checks only", () => {
+test("All puts API engines beside the search engines and keeps the rotating fact checks (decision 13)", () => {
   const merged = withApiSnapshots(battery(), [apiSnapshot()]);
   const all = filterSnapshotByEngineGroup(merged, "all")!;
-  assert.equal(all.calls.length, 9);
-  assert.equal(all.calls.some((row) => row.prompt_key === "p35"), false);
-  assert.deepEqual(all.probes.map((row) => row.prompt_key).sort(), ["p17", "p17"]);
-  assert.equal(all.citations.some((row) => row.prompt_key === "p35"), false);
-  assert.equal(all.engineScope?.fixedFactChecksOnly, true);
-  assert.equal(all.engineScope?.rotatingLeftOut, 1);
-  const tip = fixedFactChecksTip(all.engineScope, all.calls.filter((row) => row.prompt_kind === "probe").length)!;
-  assert.match(tip, /fixed questions only/);
-  assert.match(tip, /2 of 3 fact-check calls are counted/);
-  // Run counts are recounted for the narrowed selection; expected is not known for a subset.
-  assert.equal(all.run.attempted_calls, 9);
-  assert.equal(all.run.error_calls, 2);
-  assert.equal(all.run.expected_calls, null);
+  assert.equal(all.calls.length, merged.calls.length);
+  assert.equal(all.calls.filter((row) => row.prompt_key === "p35").length, 1);
+  assert.deepEqual(all.probes.map((row) => row.prompt_key).sort(), ["p17", "p17", "p35"]);
+  assert.equal(all.citations.some((row) => row.prompt_key === "p35"), merged.citations.some((row) => row.prompt_key === "p35"));
+  assert.equal(all.engineScope?.choice, "all");
+  // Nothing is narrowed on All, so the run's own counts stand.
+  assert.equal(all.run, merged.run);
 });
 
 test("API only shows the API engines; a failed-every-call engine has no result (A-09)", () => {
   const merged = withApiSnapshots(battery(), [apiSnapshot()]);
   const api = filterSnapshotByEngineGroup(merged, "api")!;
   assert.ok(api.calls.every((row) => isApiEngine(row.engine)));
-  assert.equal(api.engineScope?.fixedFactChecksOnly, true);
+  // The API job asks no rotating question; the scope still carries the selection's fact checks.
+  assert.equal(api.probes.some((row) => isRotatingFactCheck(row)), false);
+  assert.equal(api.engineScope?.probesBefore.some((row) => isRotatingFactCheck(row)), true);
   const engines = engineResultTallies(api.calls).map((row) => row.key);
   assert.deepEqual(engines, ["openai_api"]);
   const chatgptApi = tallyCommercial(api.calls.filter((row) => row.engine === "openai_api"));
@@ -251,7 +246,7 @@ test("All and API only wait for the API runs; Without API does not", () => {
 test("a ready API load merges and narrows; a failed displayed read passes through", () => {
   const load: ApiEngineLoad = { phase: "ready", snapshots: [apiSnapshot()] };
   const all = engineGroupRead(ready(battery()), load, "all");
-  assert.equal(all.phase === "ready" && all.snapshot.calls.length, 9);
+  assert.equal(all.phase === "ready" && all.snapshot.calls.length, 10);
   const api = engineGroupRead(ready(battery()), load, "api");
   assert.equal(api.phase === "ready" && api.snapshot.calls.every((row) => isApiEngine(row.engine)), true);
   const failed: AiSearchRead = { phase: "error", message: "x", selection: "failed" };

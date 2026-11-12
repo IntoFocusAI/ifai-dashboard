@@ -220,8 +220,10 @@ test("Retail Overview places three heroes before the essay and drops the stacked
   const readings = read("components/v3/live/FeaturedOfferReadings.tsx");
 
   assert.match(overview, /CommerceConsensusPanel/);
-  assert.match(overview, /Seller type: \{RETAIL_SELLER_TYPE\}/);
-  assert.match(overview, /const RETAIL_SELLER_TYPE = "Partner-led"/);
+  assert.match(overview, /Seller type:/);
+  assert.match(overview, /data-seller-type=\{RETAIL_SELLER_TYPE\}/);
+  assert.match(overview, /sellerTypeDefinition\(RETAIL_SELLER_TYPE\)/);
+  assert.match(overview, /const RETAIL_SELLER_TYPE = activeClient\(\)\.sellerModel/);
   assert.match(overview, /authorizedSellerControlOffered\(RETAIL_SELLER_TYPE\)/);
   assert.match(overview, /AuthorizedSellersControl/);
   assert.match(overview, /How do these retail findings change AI search\?/);
@@ -235,11 +237,18 @@ test("Retail Overview places three heroes before the essay and drops the stacked
 
   // AI Commerce sits in the same band as the three share pies.
   assert.match(commerce, /RetailOverviewLead/);
-  assert.match(commerce, /CommerceHeroCard/);
+  // The AI Commerce card is drawn here so it matches its three siblings: status mark and word,
+  // and the disc in the chart tokens.
+  assert.match(commerce, /function CommerceCard/);
+  assert.match(commerce, /retail-overview-hero/);
+  assert.match(commerce, /RetailStatusMark tone=\{tone\}/);
+  assert.match(commerce, /RetailShareDisc/);
+  assert.match(commerce, /scoreTone\(score\)/);
+  assert.doesNotMatch(commerce, /CitationPieDisc|CommerceHeroCard/);
   assert.match(lead, /leading/);
   assert.match(lead, /retailOverviewHeroes/);
   assert.match(lead, /ai-lead-figure/);
-  assert.match(lead, /CitationPieDisc/);
+  assert.match(lead, /RetailShareDisc/);
   assert.match(lead, /data-ifai-open="ecommerce"/);
   assert.match(lead, /data-ifai-tab=\{hero\.tab\}/);
   assert.match(lead, /retail-overview-heroes/);
@@ -251,7 +260,8 @@ test("Retail Overview places three heroes before the essay and drops the stacked
 
   assert.doesNotMatch(readings, /confirmedSuppressionSentence/);
   assert.doesNotMatch(readings, /classificationCoverageSentence/);
-  assert.match(readings, /benchmarkCoverageSentence/);
+  assert.match(readings, /BenchmarkCoverageText/);
+  assert.match(readings, /benchmarkCoverageParts/);
   assert.match(readings, /Buy Box readings/);
 
   assert.doesNotMatch(overview, /\u2014/);

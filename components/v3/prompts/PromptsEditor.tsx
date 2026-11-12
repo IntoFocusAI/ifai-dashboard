@@ -1,6 +1,10 @@
 "use client";
 
+import { StatusGlyph } from "@/components/v3/live/StatusMark";
+import { PromptHistory, PromptHistoryNotice, PromptHistoryToggle } from "@/components/v3/prompts/PromptHistory";
+import { PromptSearchBar, usePromptSearch } from "@/components/v3/prompts/PromptSearch";
 import "@/components/v3/prompts/prompts-editor.css";
+import { loadPromptEditHistory, promptEditsFor, type PromptEditHistory } from "@/lib/ai-search/prompt-edit-history";
 import {
   loadPrompts,
   savePrompt,
@@ -85,11 +89,15 @@ export function PromptsEditor({ onClose }: Props) {
   const [editingKey, setEditingKey] = useState<string | null>(null);
   const [editing, setEditing] = useState<Draft>(EMPTY_DRAFT);
   const [showRemoved, setShowRemoved] = useState(false);
+  const [history, setHistory] = useState<PromptEditHistory | null>(null);
+  const [historyKey, setHistoryKey] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     const data = await loadPrompts();
     setPrompts(data.prompts);
     setStatus(data.status);
+    // One read returns every prompt's stored changes. A failed read never blocks the editor.
+    setHistory(await loadPromptEditHistory());
   }, []);
 
   useEffect(() => {
@@ -106,6 +114,9 @@ export function PromptsEditor({ onClose }: Props) {
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
+    void loadPromptEditHistory().then((result) => {
+      if (!cancelled) setHistory(result);
+    });
     return () => {
       cancelled = true;
     };
@@ -121,6 +132,7 @@ export function PromptsEditor({ onClose }: Props) {
 
   const active = useMemo(() => prompts.filter((p) => p.active), [prompts]);
   const removed = useMemo(() => prompts.filter((p) => !p.active), [prompts]);
+  const search = usePromptSearch(active, removed);
   const categories = status?.categories ?? [];
   const locked = Boolean(status?.locked);
   const disabled = locked || busy || loading;
@@ -177,6 +189,18 @@ export function PromptsEditor({ onClose }: Props) {
   }
 
   const canAdd = adding.text.trim().length >= 10 && draftCategory(adding).trim().length > 0;
+  const edits = history?.status === "ready" ? history.rows : null;
+  const historyToggle = (key: string) =>
+    edits ? (
+      <PromptHistoryToggle
+        promptKey={key}
+        count={promptEditsFor(edits, key).length}
+        open={historyKey === key}
+        onToggle={() => setHistoryKey((current) => (current === key ? null : key))}
+      />
+    ) : null;
+  const historyRows = (key: string) =>
+    edits && historyKey === key ? <PromptHistory promptKey={key} rows={promptEditsFor(edits, key)} /> : null;
 
   return (
     <div className="pe-backdrop" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
@@ -209,8 +233,18 @@ export function PromptsEditor({ onClose }: Props) {
             </span>
           </div>
         ) : null}
-        {error ? <div className="pe-banner pe-banner-error">{error}</div> : null}
-        {notice ? <div className="pe-banner pe-banner-ok">{notice}</div> : null}
+        {error ? (
+          <div className="pe-banner pe-banner-error">
+            <StatusGlyph status="bad" />
+            <span>{error}</span>
+          </div>
+        ) : null}
+        {notice ? (
+          <div className="pe-banner pe-banner-ok">
+            <StatusGlyph status="good" />
+            <span>{notice}</span>
+          </div>
+        ) : null}
 
         <div className="pe-body">
           <section className="pe-add">
@@ -237,15 +271,28 @@ export function PromptsEditor({ onClose }: Props) {
             being asked and can be restored.
           </p>
 
+          <PromptHistoryNotice history={history} />
+
           {loading ? <p className="pe-empty">Loading prompts…</p> : null}
 
+          <PromptSearchBar
+            query={search.query}
+            onQuery={search.setQuery}
+            shown={search.shownActive.length}
+            total={active.length}
+          />
+          {!loading && active.length > 0 && search.shownActive.length === 0 ? (
+            <p className="pe-empty">No prompt matches this search.</p>
+          ) : null}
+
           <ul className="pe-list">
-            {active.map((p) => (
+            {search.shownActive.map((p) => (
               <li key={p.prompt_key} className="pe-item">
                 <div className="pe-item-meta">
                   <span className="pe-key">{p.prompt_key}</span>
                   <span className="pe-chip">{p.category}</span>
                   {p.prompt_kind === "probe" ? <span className="pe-chip pe-chip-probe">Fact check</span> : null}
+                  {historyToggle(p.prompt_key)}
                 </div>
                 {editingKey === p.prompt_key ? (
                   <div className="pe-edit">
@@ -265,14 +312,14 @@ export function PromptsEditor({ onClose }: Props) {
                     <div className="pe-row-actions">
                       <CategoryPicker draft={editing} categories={categories} disabled={busy} onChange={setEditing} />
                       <button className="pe-btn" disabled={busy} onClick={() => setEditingKey(null)}>
-                        Cancel
+                        Cancel edit
                       </button>
                       <button
                         className="pe-btn pe-btn-primary"
                         disabled={disabled || editing.text.trim().length < 10 || !draftCategory(editing).trim()}
                         onClick={() => void saveEdit(p.prompt_key)}
                       >
-                        Save
+                        Save prompt
                       </button>
                     </div>
                   </div>
@@ -280,15 +327,16 @@ export function PromptsEditor({ onClose }: Props) {
                   <div className="pe-item-main">
                     <p className="pe-text">{p.prompt_text}</p>
                     <div className="pe-item-actions">
-                      <button className="pe-icon-btn" disabled={disabled} onClick={() => startEdit(p)} aria-label={`Edit ${p.prompt_key}`} title="Edit">
+                      <button className="pe-icon-btn" disabled={disabled} onClick={() => startEdit(p)} aria-label={`Edit ${p.prompt_key}`}>
                         <Pencil size={14} />
                       </button>
-                      <button className="pe-icon-btn pe-danger" disabled={disabled} onClick={() => remove(p)} aria-label={`Remove ${p.prompt_key}`} title="Remove">
+                      <button className="pe-icon-btn pe-danger" disabled={disabled} onClick={() => remove(p)} aria-label={`Remove ${p.prompt_key}`}>
                         <Trash2 size={14} />
                       </button>
                     </div>
                   </div>
                 )}
+                {historyRows(p.prompt_key)}
               </li>
             ))}
           </ul>
@@ -296,25 +344,28 @@ export function PromptsEditor({ onClose }: Props) {
           {removed.length ? (
             <section className="pe-removed">
               <button className="pe-link" onClick={() => setShowRemoved((v) => !v)}>
-                {showRemoved ? "Hide" : "Show"} removed prompts ({removed.length})
+                {showRemoved ? "Hide" : "Show"} removed prompts ({search.query.trim() ? `${search.shownRemoved.length} of ` : ""}
+                {removed.length})
               </button>
               {showRemoved ? (
                 <ul className="pe-list">
-                  {removed.map((p) => (
+                  {search.shownRemoved.map((p) => (
                     <li key={p.prompt_key} className="pe-item pe-item-removed">
                       <div className="pe-item-meta">
                         <span className="pe-key">{p.prompt_key}</span>
                         <span className="pe-chip">{p.category}</span>
+                        {historyToggle(p.prompt_key)}
                       </div>
                       <div className="pe-item-main">
                         <p className="pe-text">{p.prompt_text}</p>
                         <div className="pe-item-actions">
                           <button className="pe-btn" disabled={disabled} onClick={() => restore(p)}>
                             <RotateCcw size={14} />
-                            Restore
+                            Restore prompt
                           </button>
                         </div>
                       </div>
+                      {historyRows(p.prompt_key)}
                     </li>
                   ))}
                 </ul>

@@ -11,6 +11,7 @@ import {
   type TopCitedSource,
   type TopSitesMeasure,
 } from "@/lib/ai-search/citation-top-sources";
+import { brandOwned } from "@/lib/brand-copy";
 
 const MEASURES: Array<[TopSitesMeasure, string]> = [
   ["answers", "Answers"],
@@ -43,7 +44,7 @@ function SourceRow({
   active: boolean;
   onPick: (domain: string) => void;
 }) {
-  const owner = source.fenderOwned ? "Fender-owned" : "Not Fender-owned";
+  const owner = source.fenderOwned ? brandOwned() : `Not ${brandOwned()}`;
   const [n, m] = measure === "links" ? [source.links, source.linksTotal] : [source.answers, source.answered];
   const counts = `Cited in ${count(source.answers)} of ${count(source.answered)} ${scopeNoun}, ${count(source.links)} of ${count(source.linksTotal)} links.`;
   return (
@@ -73,7 +74,7 @@ function SourceRow({
         <span className="citation-top-source-site">
           <span className="citation-top-source-domain">{source.domain}</span>
           {source.fenderOwned ? (
-            <span className="citation-top-source-owner">Fender-owned</span>
+            <span className="citation-top-source-owner">{brandOwned()}</span>
           ) : (
             <span className="citation-top-source-class">{source.classLabel}</span>
           )}

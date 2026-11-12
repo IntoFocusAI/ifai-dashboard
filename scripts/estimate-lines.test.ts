@@ -124,8 +124,9 @@ test("Urgent Interventions lists findings via urgent_interventions, not example 
   const template = spec.spokes.suggestions.tabTemplates[0] as string;
   assert.match(template, /\{urgent_interventions\}/);
   assert.equal(/Austin Bazaar|Bundle MAP|comparison matrix|buy button/i.test(template), false);
-  const helper = readFileSync(new URL("lib/fender-canvas/urgent-interventions-html.ts", root), "utf8");
-  assert.match(helper, /briefingFindingsLead/);
-  assert.match(helper, /data-ifai-open/);
+  const data = readFileSync(new URL("components/v3/live/RoadmapPlanData.ts", root), "utf8");
+  assert.match(data, /briefingFindingsLead/);
+  const parts = readFileSync(new URL("components/v3/live/RoadmapPlanParts.tsx", root), "utf8");
+  assert.match(parts, /data-ifai-open/);
   assert.match(readFileSync(new URL("lib/fender-canvas/briefing-retail-lead.ts", root), "utf8"), /Buy Box withheld/);
 });

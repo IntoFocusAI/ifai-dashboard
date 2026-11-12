@@ -15,7 +15,7 @@ const TABS: Tab[] = [
   [
     "ecommerce",
     "Catalog Health",
-    ["Retail Overview", "Suppressed Listings", "MAP", "Catalog Governance", "Out of Stock"],
+    ["Retail Overview", "Suppressed Listings", "MAP Leakage", "Catalog Governance", "Out of Stock"],
   ],
   [
     "aeo",
@@ -25,7 +25,7 @@ const TABS: Tab[] = [
   ["specs", "AI Readiness", ["Findability", "Amazon Specs", "Brand-Site Specs", "Amazon A+ Matrix"]],
   ["competitors", "Competitive Radar", ["Category Battlecards", "Competitor Wins", "Engine Comparison"]],
   ["suggestions", "Action Items", ["Urgent Interventions", "Revenue Estimates"]],
-  ["roadmap", "Strategy Roadmap", ["30-60-90 Day Milestones"]],
+  ["roadmap", "Roadmap", ["30-60-90 Days"]],
 ].flatMap(([spoke, area, tabs]) =>
   (tabs as string[]).map((tab) => ({
     spoke: spoke as string,
@@ -189,8 +189,8 @@ test.describe("figure-first audit at 1280×720 (X-03, X-04)", () => {
     });
   }
 
-  test("Strategy Roadmap keeps only its findings tab, with no blank tabs", async ({ page, baseURL }) => {
+  test("Roadmap keeps only its findings tab, with no blank tabs", async ({ page, baseURL }) => {
     await openSpokeTab(page, baseURL, "roadmap", "30-60-90-day-milestones");
-    await expect(page.locator(".drilldown-tab-btn")).toHaveText(["30-60-90 Day Milestones"]);
+    await expect(page.locator(".drilldown-tab-btn")).toHaveText(["30-60-90 Days"]);
   });
 });

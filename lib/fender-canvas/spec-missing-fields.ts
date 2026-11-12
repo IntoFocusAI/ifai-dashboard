@@ -1,4 +1,10 @@
+import { specFieldLabel } from "@/lib/fender-canvas/catalog-governance-findings";
 import { formatInt, formatPct, formatRatio, pendingLabel } from "@/lib/fender-canvas/format";
+
+/** Plain name for a stored Amazon field ("scale_length" reads "Scale length"). */
+export function amazonFieldLabel(field: string): string {
+  return specFieldLabel(field);
+}
 
 export const NO_MISSING_AMAZON_FIELDS = "No missing fields";
 export const MISSING_AMAZON_FIELDS_DETAIL_UNAVAILABLE = "Missing-field detail is not stored.";

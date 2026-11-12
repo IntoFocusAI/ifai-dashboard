@@ -109,14 +109,14 @@ test("the map uses the grown spokes and leaves satellites and the hub alone", ()
   assert.equal(mapSatellite?.r, SATELLITE_LAYOUT["sat-map"].r);
 });
 
-test("Strategy Roadmap has no retail metadata line", () => {
+test("Roadmap has no retail metadata line", () => {
   const staticRoadmap = fenderStaticNodes.find((node) => node.id === "spoke-roadmap");
   assert.ok(staticRoadmap);
   assert.equal(Object.hasOwn(staticRoadmap, "meta"), false);
   assert.equal(staticRoadmap.meta, undefined);
   assert.deepEqual(staticRoadmap.stats, []);
-  assert.deepEqual(staticRoadmap.heroValue, { value: "90 Days", label: "3 phases" });
-  assert.equal(staticRoadmap.title, "Strategy Roadmap");
+  assert.deepEqual(staticRoadmap.heroValue, { value: "30-60-90", label: "", explainer: true });
+  assert.equal(staticRoadmap.title, "Roadmap");
   assert.equal(staticRoadmap.tooltip?.desc, "");
 
   const bundle = { m: {}, divisions: [], cats: [], engines: [], sov: [], missing: [], fresh: [] } as CanvasBundle;
@@ -125,13 +125,14 @@ test("Strategy Roadmap has no retail metadata line", () => {
   assert.equal(Object.hasOwn(liveRoadmap, "meta"), false);
   assert.equal(liveRoadmap.meta, undefined);
   assert.deepEqual(liveRoadmap.stats, []);
-  assert.deepEqual(liveRoadmap.heroValue, { value: "90 Days", label: "3 phases" });
+  assert.deepEqual(liveRoadmap.heroValue, { value: "30-60-90", label: "", explainer: true });
+  assert.equal(liveRoadmap.status, "neutral");
   assert.equal(liveRoadmap.spokeId, "roadmap");
   assert.equal(liveRoadmap.tooltip?.desc, "");
 
   const specs = fenderStaticNodes.find((node) => node.id === "spoke-specs");
   assert.deepEqual(specs?.stats, []);
-  assert.deepEqual(specs?.heroValue, { value: "Pending data", label: "fender.com page found" });
+  assert.deepEqual(specs?.heroValue, { value: "Pending data", label: "Page found" });
 });
 
 test("connectors and camera targets land on the new spoke centers", () => {

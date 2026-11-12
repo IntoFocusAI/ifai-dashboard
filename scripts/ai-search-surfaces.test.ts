@@ -153,7 +153,7 @@ test("protected surfaces are unchanged", () => {
 test("the fact-check headline leads with the business result, not a zero", () => {
   const panel = read("components/v3/live/ai-search/AiDriftPanel.tsx");
   const copy = read("lib/ai-search/fact-check-copy.ts");
-  assert.match(copy, /Fender product fact/);
+  assert.match(copy, /\$\{brandName\(\)\} product fact/);
   assert.match(copy, /No contradictions were found in/);
   assert.match(copy, /These checks cover the selected facts only/);
   assert.match(copy, /not every factual claim in the shopping answers/);
@@ -167,10 +167,10 @@ test("the fact-check headline leads with the business result, not a zero", () =>
 
 test("the fact-check evidence view runs question, fact, source, answer, result", () => {
   const view = read("components/v3/live/ai-search/FactCheckEvidence.tsx");
-  const order = ["Question checked", "Verified Fender fact", "Official Fender source", "AI answer", "Result"];
+  const order = ["Question checked", "Verified ${brandName()} fact", "Official ${brandName()} source", "AI answer", "Result"];
   let cursor = -1;
   for (const [index, heading] of order.entries()) {
-    const at = view.indexOf(`heading="${heading}"`);
+    const at = Math.max(view.indexOf(`heading="${heading}"`), view.indexOf(`heading={\`${heading}\`}`));
     assert.ok(at > cursor, `step ${index + 1} is ${heading}`);
     cursor = at;
   }
@@ -220,8 +220,8 @@ test("citation copy separates answers from links and avoids causal claims", () =
   assert.match(note, /export const CITED_LINK_COUNT_CAVEAT = "A low count does not prove a source had no influence/);
   const callout = note.slice(note.indexOf("export function CitationRoleNote"));
   assert.doesNotMatch(callout, /A low count|not a worse outcome/, "the callout keeps no qualifier on screen");
-  for (const title of ["Links", "Fender-owned links"]) {
-    const tooltip = new RegExp(`headerTooltip: \\{ title: "${title}", description: \`[^\`]*\\$\\{CITED_LINK_COUNT_CAVEAT\\}\``);
+  for (const title of ['"Links"', "`\\$\\{brandOwned\\(\\)\\} links`"]) {
+    const tooltip = new RegExp(`headerTooltip: \\{ title: ${title}, description: \`[^\`]*\\$\\{CITED_LINK_COUNT_CAVEAT\\}\``);
     assert.match(panel, tooltip, `the low-count caveat sits in the ${title} column tooltip`);
   }
   assert.match(panel, /columns=\{ENGINE_COLUMNS\}/);

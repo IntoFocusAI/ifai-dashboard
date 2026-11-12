@@ -1,7 +1,11 @@
 "use client";
 
 import type { ReactNode } from "react";
+import "@/components/v3/live/catalog-health.css";
+import { figureTipAttrs } from "@/components/v3/live/FigureTip";
 import type { RetailColumn } from "@/components/v3/live/ResizableTable";
+import { ListingName } from "@/components/v3/live/RetailOverviewFigure";
+import { StatusMark } from "@/components/v3/live/StatusMark";
 import { formatUsd } from "@/lib/fender-canvas/format";
 import {
   aboveBenchmarkDollars,
@@ -11,20 +15,24 @@ import {
   observedOfferDollars,
   type FeaturedOfferRow as Row,
 } from "@/lib/fender-canvas/featured-offer";
-import { formatCheckedAt } from "@/lib/fender-canvas/featured-offer-copy";
+import {
+  NO_COMPARABLE_PAIR_LABEL,
+  NO_COMPARABLE_PAIR_TIP,
+  formatCheckedAt,
+} from "@/lib/fender-canvas/featured-offer-copy";
 
 /**
  * Suppressed Listings only shows withheld offers, so a Buy Box column would never vary.
  * A Source column would be constant too: withheld state only comes from an Amazon listing read.
  */
 export const SUPPRESSED_LISTINGS_TABLE_COLUMNS: RetailColumn[] = [
-  { id: "listing", name: "Listing", label: "Listing", width: 230, minWidth: 140, sort: "text" },
+  { id: "listing", name: "Listing", label: "Listing", width: 230, minWidth: 200, sort: "text" },
   {
     id: "offer",
     name: "Observed offer",
     label: "Observed offer",
-    width: 130,
-    minWidth: 100,
+    width: 108,
+    minWidth: 96,
     className: "money",
     sort: "number",
   },
@@ -32,8 +40,8 @@ export const SUPPRESSED_LISTINGS_TABLE_COLUMNS: RetailColumn[] = [
     id: "benchmark",
     name: "Competitive External Price",
     label: "Competitive External Price",
-    width: 190,
-    minWidth: 140,
+    width: 124,
+    minWidth: 108,
     className: "money",
     sort: "number",
   },
@@ -41,12 +49,12 @@ export const SUPPRESSED_LISTINGS_TABLE_COLUMNS: RetailColumn[] = [
     id: "gap",
     name: "Above benchmark",
     label: "Above benchmark",
-    width: 140,
-    minWidth: 110,
+    width: 136,
+    minWidth: 120,
     className: "money",
     sort: "number",
   },
-  { id: "checked", name: "Checked", label: "Checked", width: 170, minWidth: 120, sort: "date" },
+  { id: "checked", name: "Checked", label: "Checked", width: 124, minWidth: 108, sort: "date" },
 ];
 
 export const SUPPRESSED_LISTINGS_TABLE_COLUMN_COUNT = SUPPRESSED_LISTINGS_TABLE_COLUMNS.length;
@@ -82,8 +90,7 @@ export function FeaturedOfferTableRow({
   return (
     <tr>
       <td>
-        <strong>{listingLabel(row)}</strong>
-        <br />
+        <ListingName name={listingLabel(row)} />
         <span className="asin-line">
           {href && asin ? (
             <a
@@ -105,11 +112,16 @@ export function FeaturedOfferTableRow({
       <td className="money">
         {benchmark != null ? formatUsd(benchmark) : <span className="fo-note">{benchmarkNote(row)}</span>}
       </td>
-      <td className="money" style={gap != null ? { color: "var(--danger-red)", fontWeight: 700 } : undefined}>
+      <td className="money">
         {gap != null ? (
-          formatUsd(gap, { signed: true })
+          <StatusMark status="bad" word={`${formatUsd(gap, { signed: true })} above`} className="fo-gap" />
         ) : (
-          <span className="fo-note">No comparable pair</span>
+          <span
+            {...figureTipAttrs(NO_COMPARABLE_PAIR_LABEL, NO_COMPARABLE_PAIR_TIP, "no-comparable-pair")}
+            className="ifai-term fo-note"
+          >
+            {NO_COMPARABLE_PAIR_LABEL}
+          </span>
         )}
       </td>
       <td>{checkedAt ?? <span className="fo-note">Never</span>}</td>

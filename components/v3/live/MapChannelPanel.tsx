@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { CitationPieDisc } from "@/components/v3/live/ai-search/CitationPieDisc";
 import { DefinedCopy } from "@/components/v3/live/DefinedTerm";
-import { FigureTip } from "@/components/v3/live/FigureTip";
+import { FigureTip, PartialFigureMark } from "@/components/v3/live/FigureTip";
+import { MapExposureCard, type MapExposureState } from "@/components/v3/live/MapExposureCard";
 import { MapListingsTable } from "@/components/v3/live/MapListingsTable";
+import { RetailShareDisc, RetailStatusMark } from "@/components/v3/live/RetailOverviewFigure";
 import {
   listingChannelPricesQuery,
   listingsQuery,
@@ -19,20 +20,29 @@ import {
 import {
   channelReadingNote,
   channelSummaryText,
+  mapChannelStale,
+  type ChannelStale,
 } from "@/lib/fender-canvas/map-reading-status";
 import {
   approvedExceptionAsins,
+  approvedExceptionsSentence,
   withoutApprovedExceptions,
 } from "@/lib/fender-canvas/map-approved-exceptions";
+import {
+  loadMapUnits,
+  mapExposureOrder,
+  mapExposureSummary,
+  mapUnitsLookup,
+  type MapUnitsLookup,
+} from "@/lib/fender-canvas/map-exposure";
 import { MAP_PRICES_NOT_STORED } from "@/lib/fender-canvas/portfolio-retail";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
-import { averageGapTip, mapHero } from "@/lib/fender-canvas/retail-overview-lead";
+import { averageGapTip, heroFigureColor, heroFigureTone, mapHero } from "@/lib/fender-canvas/retail-overview-lead";
 import type { CanvasFreshnessRow } from "@/lib/fender-canvas/types";
-import { FMIC_CLIENT_KEY, SET_ASIDE_CHECKS } from "@/lib/set-aside/keys";
+import { SET_ASIDE_CHECKS, activeSetAsideClientKey } from "@/lib/set-aside/keys";
 import { useSetAsides } from "@/lib/set-aside/set-aside";
 
 const PAGE_SIZE = 1000;
-const RETAIL_PIE_SIZE = "citation-pie-disc citation-pie-disc-retail";
 
 type MapChannelLine = { key: string; name: string; count: number };
 
@@ -126,13 +136,15 @@ function MapLeakageLead({ read }: { read: RetailCanvasRead }) {
         <div className="findability-lead-figures">
           <span
             className="ai-lead-figure"
-            style={{ color: hero.color }}
+            style={{ color: heroFigureColor(hero) }}
             data-map-lead-percent=""
             data-map-lead-tone={hero.tone}
             data-map-lead-numerator={hero.numerator ?? ""}
             data-map-lead-denominator={hero.denominator ?? ""}
           >
-            {hero.percent}
+            <PartialFigureMark partial={hero.partial} testId="map-lead-stale">
+              {hero.percent}
+            </PartialFigureMark>
           </span>
           {hero.ratio ? (
             <span className="findability-lead-ratio" data-map-lead-ratio="">
@@ -141,14 +153,13 @@ function MapLeakageLead({ read }: { read: RetailCanvasRead }) {
               </FigureTip>
             </span>
           ) : null}
+          <RetailStatusMark tone={heroFigureTone(hero)} />
         </div>
-        {hero.pie ? (
-          <CitationPieDisc pie={hero.pie} sizeClass={RETAIL_PIE_SIZE} tip={hero.tip ?? undefined} />
-        ) : null}
+        {hero.pie ? <RetailShareDisc pie={hero.pie} measuredKey="contradicted" tip={hero.tip} /> : null}
       </div>
       <div data-map-lead-gap="">
         <span className="metric-card-label">Average price gap</span>
-        <div className="metric-card-val" style={{ color: "var(--danger-red)" }} data-map-lead-gap-value="">
+        <div className="metric-card-val" data-map-lead-gap-value="">
           {gap == null ? (
             "Not stored"
           ) : (
@@ -170,12 +181,12 @@ function MapNotes({
   read,
   channels,
   walmartMissing,
-  musiciansFriendLastRunAt,
+  channelStale,
 }: {
   read: RetailCanvasRead;
   channels: MapChannelLine[];
   walmartMissing: number | null;
-  musiciansFriendLastRunAt?: string | null;
+  channelStale: ChannelStale;
 }) {
   if (read.phase === "loading") {
     return <p className="retail-missing">Loading the retail reading…</p>;
@@ -196,7 +207,7 @@ function MapNotes({
   return (
     <ul className="tour-card-list" style={{ margin: 0 }} data-map-notes-channels="">
       {channels.map((channel) => {
-        const note = channelReadingNote(channel.name, { walmartMissing, musiciansFriendLastRunAt });
+        const note = channelReadingNote(channel.name, { walmartMissing, channelStale });
         return (
           <li key={channel.key} data-map-channel={channel.name}>
             <strong>{channel.name}</strong>
@@ -215,12 +226,17 @@ function MapTopRow({
   read,
   channels,
   walmartMissing,
-  musiciansFriendLastRunAt,
+  channelStale,
+  exposure,
+  exceptionsSentence,
 }: {
   read: RetailCanvasRead;
   channels: MapChannelLine[];
   walmartMissing: number | null;
-  musiciansFriendLastRunAt?: string | null;
+  channelStale: ChannelStale;
+  /** Null hides the exposure card: MAP prices are not stored, or the rows did not load. */
+  exposure: MapExposureState | null;
+  exceptionsSentence: string | null;
 }) {
   return (
     <div
@@ -234,17 +250,16 @@ function MapTopRow({
       }}
     >
       <MapLeakageLead read={read} />
-      <div
-        className="content-box"
-        data-map-notes=""
-        style={{ flex: "1 1 220px", alignSelf: "stretch", minWidth: 180, marginTop: 0 }}
-      >
-        <MapNotes
-          read={read}
-          channels={channels}
-          walmartMissing={walmartMissing}
-          musiciansFriendLastRunAt={musiciansFriendLastRunAt}
-        />
+      <div className="map-top-side" data-map-top-side="">
+        {exposure ? <MapExposureCard state={exposure} exceptionsSentence={exceptionsSentence} /> : null}
+        <div className="content-box" data-map-notes="">
+          <MapNotes
+            read={read}
+            channels={channels}
+            walmartMissing={walmartMissing}
+            channelStale={channelStale}
+          />
+        </div>
       </div>
     </div>
   );
@@ -252,7 +267,6 @@ function MapTopRow({
 
 export function MapChannelPanel({
   read,
-  musiciansFriendFreshness = null,
 }: {
   read: RetailCanvasRead;
   musiciansFriendFreshness?: CanvasFreshnessRow | null;
@@ -261,10 +275,11 @@ export function MapChannelPanel({
   const [channelPrices, setChannelPrices] = useState<ChannelPriceRow[]>([]);
   const [walmartMissing, setWalmartMissing] = useState<number | null>(null);
   const [failed, setFailed] = useState(false);
+  /** Undefined while loading, null when the unit read failed. */
+  const [units, setUnits] = useState<MapUnitsLookup | null | undefined>(undefined);
 
   const pricesNotStored = mapPricesNotStored(read);
-  const musiciansFriendLastRunAt = musiciansFriendFreshness?.last_run_at;
-  const mapSetAsides = useSetAsides(FMIC_CLIENT_KEY, SET_ASIDE_CHECKS.mapPricing);
+  const mapSetAsides = useSetAsides(activeSetAsideClientKey(), SET_ASIDE_CHECKS.mapPricing);
   const exceptions = useMemo(() => approvedExceptionAsins(mapSetAsides.rows), [mapSetAsides.rows]);
 
   useEffect(() => {
@@ -272,11 +287,15 @@ export function MapChannelPanel({
     let cancelled = false;
     Promise.all([loadMapRows(!pricesNotStored), loadChannelPrices(), loadListingsWithoutWalmartPrice()])
       .then(([nextRows, nextPrices, missing]) => {
-        if (!cancelled) {
-          setRows(nextRows);
-          setChannelPrices(nextPrices);
-          setWalmartMissing(missing);
-        }
+        if (cancelled) return;
+        setRows(nextRows);
+        setChannelPrices(nextPrices);
+        setWalmartMissing(missing);
+        if (pricesNotStored) return;
+        // R-09: the unit estimates behind discounted retail value, for the listings below MAP only.
+        void loadMapUnits(nextRows.map((row) => row.asin)).then((unitRows) => {
+          if (!cancelled) setUnits(unitRows ? mapUnitsLookup(unitRows) : null);
+        });
       })
       .catch(() => {
         if (!cancelled) setFailed(true);
@@ -286,57 +305,46 @@ export function MapChannelPanel({
     };
   }, [pricesNotStored, read.phase]);
 
-  if (failed) {
-    return (
-      <RetailSurface>
-        <MapTopRow
-          read={read}
-          channels={[]}
-          walmartMissing={walmartMissing}
-          musiciansFriendLastRunAt={musiciansFriendLastRunAt}
-        />
-        <div className="content-box" style={{ marginTop: 12 }} data-map-listings="">
-          <p className="retail-missing">Below-MAP rows are not available.</p>
-        </div>
-      </RetailSurface>
-    );
-  }
+  // The table keeps approved exceptions (with their chip); every figure leaves them out (R-12).
+  const countedRows = useMemo(
+    () => (rows ? withoutApprovedExceptions(rows, exceptions) : []),
+    [rows, exceptions],
+  );
+  const exposure: MapExposureState | null =
+    !rows || pricesNotStored
+      ? null
+      : units === undefined
+        ? { phase: "loading" }
+        : units === null
+          ? { phase: "failed" }
+          : { phase: "ready", summary: mapExposureSummary(countedRows, units) };
+  const channelStale = useMemo(() => mapChannelStale(countedRows), [countedRows]);
+  const excluded = rows ? rows.length - countedRows.length : 0;
+  const exceptionsSentence =
+    excluded > 0 || mapSetAsides.error ? approvedExceptionsSentence(excluded, Boolean(mapSetAsides.error)) : null;
 
-  if (!rows) {
-    return (
-      <RetailSurface>
-        <MapTopRow
-          read={read}
-          channels={[]}
-          walmartMissing={walmartMissing}
-          musiciansFriendLastRunAt={musiciansFriendLastRunAt}
-        />
-        <div className="content-box" style={{ marginTop: 12 }} data-map-listings="">
-          <p className="retail-missing">Loading MAP rows…</p>
-        </div>
-      </RetailSurface>
-    );
-  }
-
-  const model = mapTabModel(rows, channelPrices);
-  // The table keeps approved exceptions (with their chip); the channel counts leave them out.
-  const counted = mapTabModel(withoutApprovedExceptions(rows, exceptions), channelPrices);
-  const summaryChannels: MapChannelLine[] = pricesNotStored
-    ? []
-    : [
-        ...counted.channels.map((channel) => ({
-          key: channel.name,
-          name: channel.name,
-          count: channel.count,
-        })),
-        ...counted.extraChannels
-          .filter((channel) => channel.count > 0)
-          .map((channel) => ({
-            key: channel.channel,
+  // The table waits for the unit read, so its rows do not reorder once the estimates arrive.
+  const unitsSettled = pricesNotStored || units !== undefined;
+  const tableRows = useMemo(() => (rows && units ? mapExposureOrder(rows, units) : rows), [rows, units]);
+  const model = rows ? mapTabModel(rows, channelPrices) : null;
+  const counted = rows ? mapTabModel(countedRows, channelPrices) : null;
+  const summaryChannels: MapChannelLine[] =
+    !counted || pricesNotStored
+      ? []
+      : [
+          ...counted.channels.map((channel) => ({
+            key: channel.name,
             name: channel.name,
             count: channel.count,
           })),
-      ];
+          ...counted.extraChannels
+            .filter((channel) => channel.count > 0)
+            .map((channel) => ({
+              key: channel.channel,
+              name: channel.name,
+              count: channel.count,
+            })),
+        ];
 
   return (
     <RetailSurface>
@@ -344,15 +352,22 @@ export function MapChannelPanel({
         read={read}
         channels={summaryChannels}
         walmartMissing={walmartMissing}
-        musiciansFriendLastRunAt={musiciansFriendLastRunAt}
+        channelStale={channelStale}
+        exposure={failed ? null : exposure}
+        exceptionsSentence={exceptionsSentence}
       />
       <div className="content-box" style={{ marginTop: 12 }} data-map-listings="">
-        <MapListingsTable
-          rows={rows}
-          model={model}
-          channelPrices={channelPrices}
-          pricesNotStored={pricesNotStored}
-        />
+        {failed ? <p className="retail-missing">Below-MAP rows are not available.</p> : null}
+        {!failed && (!rows || !unitsSettled) ? <p className="retail-missing">Loading MAP rows…</p> : null}
+        {!failed && tableRows && model && unitsSettled ? (
+          <MapListingsTable
+            rows={tableRows}
+            model={model}
+            channelPrices={channelPrices}
+            pricesNotStored={pricesNotStored}
+            units={units}
+          />
+        ) : null}
       </div>
     </RetailSurface>
   );

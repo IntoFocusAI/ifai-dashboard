@@ -1,10 +1,23 @@
+import { activeClient, type ClientProfile } from "@/lib/client/active-client";
+
 /**
  * Which AI Search runs may enter the client-safe history.
- * The same rules are repeated in supabase/migrations/20261014190000_ai_search_history_views.sql.
+ * The same rules are repeated in each client's history view: Fender's in
+ * supabase/migrations/20261014190000_ai_search_history_views.sql, Ledlenser's in
+ * supabase/migrations/20261104170000_ledlenser_schema.sql.
  * A run summary is not enough for a win rate: missing calls stay missing.
  */
 
 export const TRUSTED_COLLECTOR_VERSION = "v11";
+
+/**
+ * The collector a client's history view pins. Fender's view admits only v11. Ledlenser's view
+ * has no collector pin (its collector is named ledlenser_ai_v1), so its runs pass on the other
+ * rules alone.
+ */
+export function trustedCollectorVersion(schema: ClientProfile["schema"] = activeClient().schema): string | null {
+  return schema === "public" ? TRUSTED_COLLECTOR_VERSION : null;
+}
 
 export type HistoryRunSummary = {
   audit_run_id: string;
@@ -22,13 +35,14 @@ export type HistoryRunSummary = {
   completed_at: string | null;
 };
 
-/** Published completed or partial v11 runs that attempted the full recorded battery. */
+/** Published completed or partial runs from the client's trusted collector that attempted the full recorded battery. */
 export function isTrustworthyRun(run: HistoryRunSummary): boolean {
   if (run.run_kind != null && run.run_kind !== "ai_simulation") return false;
   if (run.is_published !== true) return false;
   if (run.run_state !== "completed" && run.run_state !== "partial") return false;
   if (!run.prompt_set_hash) return false;
-  if (run.collector_version !== TRUSTED_COLLECTOR_VERSION) return false;
+  const collector = trustedCollectorVersion();
+  if (collector != null && run.collector_version !== collector) return false;
   if (run.expected_calls == null || run.attempted_calls == null) return false;
   if (run.expected_calls < 1 || run.attempted_calls !== run.expected_calls) return false;
   if (!run.published_at) return false;

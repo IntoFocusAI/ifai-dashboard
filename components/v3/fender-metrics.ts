@@ -44,7 +44,7 @@ export const FENDER_METRICS = {
     value: "Unavailable",
     detail: "The MAP listing read did not succeed.",
     tone: "warning",
-    subTab: "MAP",
+    subTab: "MAP Leakage",
     provenance: "live",
   },
   suppressedListings: {
@@ -74,7 +74,7 @@ export const FENDER_METRICS = {
     value: "Unavailable",
     detail: "The live MAP read is not available.",
     tone: "danger",
-    subTab: "MAP",
+    subTab: "MAP Leakage",
     provenance: "live",
   },
   overallAiWinRate: {
@@ -200,11 +200,11 @@ export const FENDER_METRICS = {
   dayNinetyBuyBoxTarget: {
     id: "day-90-buy-box-target",
     spokeId: "roadmap",
-    label: "90-day plan",
-    value: "3 phases",
-    detail: "MAP, catalog nesting, and estimated lift",
-    tone: "success",
-    subTab: "30-60-90 Day Milestones",
+    label: "Roadmap",
+    value: "30-60-90",
+    detail: "The next 90 days of strategy",
+    tone: "neutral",
+    subTab: "30-60-90 Days",
     provenance: "live",
   },
 } satisfies Record<string, CanvasMetric>;

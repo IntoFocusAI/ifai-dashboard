@@ -22,7 +22,7 @@ const CANVAS_PARAM_KEYS = [
   "profile",
 ] as const;
 
-const PRESERVED_QUERY_KEYS = ["next", "ai-history"] as const;
+const PRESERVED_QUERY_KEYS = ["next", "ai-history", "client"] as const;
 
 /** Row-level drill-down inside an open spoke, e.g. `evidence=sim:1161`. Dropped with the spoke. */
 const SPOKE_QUERY_KEYS = ["evidence"] as const;
@@ -58,6 +58,8 @@ const TAB_SLUG_ALIASES: Record<string, string> = {
   "rival-strategies-countermeasures": "competitor-wins",
   "multi-marketplace-channel-scope-sweetwater-reverb-walmart": "engine-comparison",
   "current-findings": "urgent-interventions",
+  "30-60-90-day-milestones": "30-60-90-days",
+  map: "map-leakage",
 };
 
 /**

@@ -21,7 +21,12 @@ function isBody(node: ReactNode): node is BodyElement {
  * Draws the first rows of the table body. The caller still sorts and filters every row,
  * so "Show more" reveals the next rows of the same order.
  */
-export function useTableRowLimit(children: ReactNode): { children: ReactNode; footer: ReactNode } {
+export function useTableRowLimit(children: ReactNode): {
+  children: ReactNode;
+  footer: ReactNode;
+  /** React keys of every body row, before the limit. */
+  keys: readonly string[];
+} {
   const parts = Children.toArray(children);
   const bodyIndex = parts.findIndex(isBody);
   const body = bodyIndex >= 0 ? (parts[bodyIndex] as BodyElement) : null;
@@ -33,13 +38,13 @@ export function useTableRowLimit(children: ReactNode): { children: ReactNode; fo
     limit = nextRowLimit(state, keys);
     setState({ limit, keys });
   }
-  if (!body) return { children, footer: null };
+  if (!body) return { children, footer: null, keys };
 
   const total = rows.length;
   const shown = rowsShown(limit, total);
   const limited = [...parts];
   limited[bodyIndex] = cloneElement(body, undefined, shown < total ? rows.slice(0, shown) : rows);
-  if (shown >= total) return { children: limited, footer: null };
+  if (shown >= total) return { children: limited, footer: null, keys };
 
   const more = Math.min(TABLE_ROW_STEP, total - shown);
   const footer = (
@@ -71,5 +76,5 @@ export function useTableRowLimit(children: ReactNode): { children: ReactNode; fo
       </button>
     </div>
   );
-  return { children: limited, footer };
+  return { children: limited, footer, keys };
 }

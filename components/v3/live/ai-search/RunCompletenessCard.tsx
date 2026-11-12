@@ -1,6 +1,8 @@
 "use client";
 
 import { useAiHistoryOptional } from "@/components/v3/live/ai-search/AiHistoryContext";
+import { AiStatusTag } from "@/components/v3/live/ai-search/AiStatusTag";
+import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
 import { EvidenceLink } from "@/components/v3/live/ai-search/EvidenceLink";
 import { mutedText } from "@/components/v3/live/ai-search/AiReadGate";
 import { AI_TABS } from "@/lib/ai-search/canvas-surfaces";
@@ -27,9 +29,13 @@ function SingleRunCard({ snapshot }: { snapshot: AiSearchSnapshot }) {
     <div className="content-box ai-run-card">
       <div className="content-box-title">
         <span>Run completeness</span>
-        <span className={`tag-badge ${s.completeness.isPartial ? "tag-warning" : "tag-success"}`}>
-          {runStateLabel(s.completeness.state)}
-        </span>
+        <AiStatusTag tone={s.completeness.isPartial ? "warning" : "success"}>
+          {s.completeness.isPartial ? (
+            <AiTerm term="partial run">{runStateLabel(s.completeness.state)}</AiTerm>
+          ) : (
+            runStateLabel(s.completeness.state)
+          )}
+        </AiStatusTag>
       </div>
       <table className="table-sm">
         <tbody>
@@ -53,13 +59,8 @@ function SingleRunCard({ snapshot }: { snapshot: AiSearchSnapshot }) {
           <tr><td>Engines and models</td><td>{engineModelLine(s.enginesAndModels)}</td></tr>
         </tbody>
       </table>
-      {s.completeness.isPartial ? (
-        <p style={{ ...mutedText, marginTop: 8 }}>
-          This run is partial. Every figure below covers answered calls only. Unanswered calls are not losses.
-        </p>
-      ) : null}
       {rowsShort ? (
-        <p style={{ ...mutedText, marginTop: 8, color: "var(--warning-text)" }}>
+        <p style={{ ...mutedText, marginTop: 8 }}>
           The read returned {formatInt(s.completeness.rowsRead)} call rows for {formatInt(s.completeness.expected)} expected calls.
         </p>
       ) : null}

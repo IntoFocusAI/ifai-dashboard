@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { driftRead } from "../lib/ai-search/drift.ts";
 import {
-  factCheckAccuracyColor,
+  factCheckAccuracyStatus,
   factCheckAccuracyLead,
   factCheckAccuracyPie,
   factCheckAccuracyPieTip,
@@ -51,7 +51,7 @@ test("accuracy lead matches satellite formula and population wording", () => {
   assert.equal(lead.rate, "66.7%");
   assert.equal(lead.population, "2 of 3 answers matched.");
   assert.equal(lead.tone, "danger");
-  assert.equal(factCheckAccuracyColor(lead.tone), "var(--danger-red)");
+  assert.equal(factCheckAccuracyStatus(lead.tone), "bad");
 });
 
 test("perfect accuracy is 100.0% green with a single pie slice", () => {
@@ -63,7 +63,7 @@ test("perfect accuracy is 100.0% green with a single pie slice", () => {
   const lead = factCheckAccuracyLead(coverage);
   assert.equal(lead.rate, "100.0%");
   assert.equal(lead.tone, "success");
-  assert.equal(factCheckAccuracyColor(lead.tone), "var(--success-green)");
+  assert.equal(factCheckAccuracyStatus(lead.tone), "good");
   const pie = factCheckAccuracyPie(coverage);
   assert.ok(pie);
   assert.equal(pie.id, "accuracy");
@@ -89,8 +89,8 @@ test("satellite yellow band includes 95% and 98%", () => {
   // 19 of 20 = 95.0% -> yellow
   assert.equal(factCheckAccuracyLead(driftRead([], twenty).coverage).tone, "warning");
   assert.equal(
-    factCheckAccuracyColor(factCheckAccuracyLead(driftRead([], twenty).coverage).tone),
-    "var(--warning-amber)",
+    factCheckAccuracyStatus(factCheckAccuracyLead(driftRead([], twenty).coverage).tone),
+    "okay",
   );
 
   const fifty = Array.from({ length: 50 }, (_, i) =>
@@ -113,7 +113,7 @@ test("empty checks show no percentage, tone, or pie", () => {
   assert.equal(empty.population, null);
   assert.equal(empty.tone, null);
   assert.equal(empty.ratePct, null);
-  assert.equal(factCheckAccuracyColor(empty.tone), undefined);
+  assert.equal(factCheckAccuracyStatus(empty.tone), null);
   assert.equal(factCheckAccuracyPie(emptyCoverage), null);
   assert.equal(factCheckHeadline(emptyCoverage), "This run sent no product fact checks.");
 

@@ -8,7 +8,7 @@
   align-items: center;
   justify-content: center;
   padding: 24px 16px;
-  background: rgba(2, 8, 16, 0.55);
+  background: rgba(7, 11, 20, 0.72);
   backdrop-filter: blur(2px);
 }
 
@@ -17,9 +17,9 @@
   flex-direction: column;
   width: min(920px, 100%);
   max-height: min(88vh, 900px);
-  background: var(--bg-surface, #0b1a2c);
-  color: var(--text-main, #f5f9ff);
-  border: 1px solid var(--border-color, rgba(100, 160, 207, 0.24));
+  background: var(--bg-surface, #0b1220);
+  color: var(--text-main, #f8fafc);
+  border: 1px solid var(--border-color, #64748b);
   border-radius: 14px;
   box-shadow: var(--shadow-soft, 0 22px 48px rgba(0, 0, 0, 0.55));
   overflow: hidden;
@@ -31,7 +31,7 @@
   justify-content: space-between;
   gap: 16px;
   padding: 18px 20px 12px;
-  border-bottom: 1px solid var(--border-color, rgba(100, 160, 207, 0.24));
+  border-bottom: 1px solid var(--border-color, #64748b);
 }
 
 .pe-header h2 {
@@ -46,7 +46,7 @@
   margin: 0;
   font-size: 12.5px;
   line-height: 1.5;
-  color: var(--text-muted, #8fa8c2);
+  color: var(--text-muted, #aeb8c7);
 }
 
 .pe-hint {
@@ -70,22 +70,25 @@
   margin-top: 2px;
 }
 
-.pe-banner-warn {
-  background: var(--warning-bg, rgba(251, 191, 36, 0.14));
-  border-color: var(--warning-border, rgba(251, 191, 36, 0.42));
-  color: var(--warning-text, #fde68a);
-}
-
-.pe-banner-error {
-  background: var(--danger-bg, rgba(251, 113, 133, 0.14));
-  border-color: var(--danger-border, rgba(251, 113, 133, 0.4));
-  color: var(--danger-text, #fecdd3);
-}
-
+/* Messages about the editor are not data: neutral box, the mark carries the status color (X-34). */
+.pe-banner-warn,
+.pe-banner-error,
 .pe-banner-ok {
-  background: var(--success-bg, rgba(52, 211, 153, 0.14));
-  border-color: var(--success-border, rgba(52, 211, 153, 0.4));
-  color: var(--success-text, #a7f3d0);
+  background: var(--bg-surface, #0b1220);
+  border-color: var(--border-color, #64748b);
+  color: var(--text-main, #f8fafc);
+}
+
+.pe-banner-warn svg {
+  color: var(--text-muted, #aeb8c7);
+}
+
+.pe-banner-error .data-status-glyph {
+  color: var(--status-bad, #cc5b63);
+}
+
+.pe-banner-ok .data-status-glyph {
+  color: var(--status-good, #6ab792);
 }
 
 .pe-body {
@@ -98,7 +101,7 @@
   flex-direction: column;
   gap: 8px;
   padding: 12px;
-  border: 1px dashed var(--border-dark, rgba(56, 189, 248, 0.42));
+  border: 1px dashed var(--border-dark, #64748b);
   border-radius: 10px;
 }
 
@@ -107,9 +110,9 @@
 .pe-dialog input[type="text"] {
   font: inherit;
   font-size: 13px;
-  color: var(--text-main, #f5f9ff);
-  background: var(--bg-card, rgba(12, 28, 47, 0.95));
-  border: 1px solid var(--border-color, rgba(100, 160, 207, 0.24));
+  color: var(--text-main, #f8fafc);
+  background: var(--bg-card, #0b1220);
+  border: 1px solid var(--border-color, #64748b);
   border-radius: 8px;
   padding: 7px 10px;
 }
@@ -123,7 +126,7 @@
 .pe-dialog textarea:focus,
 .pe-dialog select:focus,
 .pe-dialog input[type="text"]:focus {
-  outline: 2px solid var(--accent-cyan, #2eb7ff);
+  outline: 2px solid var(--accent-cyan, #a7d8f0);
   outline-offset: 0;
 }
 
@@ -154,7 +157,7 @@
   gap: 6px;
   font: inherit;
   font-size: 12.5px;
-  color: var(--text-main, #f5f9ff);
+  color: var(--text-main, #f8fafc);
   cursor: pointer;
 }
 
@@ -162,22 +165,22 @@
   padding: 6px 12px;
   border-radius: 999px;
   background: transparent;
-  border: 1px solid var(--border-color, rgba(100, 160, 207, 0.24));
+  border: 1px solid var(--border-color, #64748b);
 }
 
 .pe-btn:hover:not(:disabled) {
-  background: var(--bg-surface-hover, rgba(17, 40, 64, 0.98));
+  background: var(--bg-surface-hover, #141e33);
 }
 
 .pe-btn-primary {
-  background: var(--accent-cyan, #2eb7ff);
-  border-color: var(--accent-cyan, #2eb7ff);
-  color: #04121f;
+  background: var(--accent-cyan, #a7d8f0);
+  border-color: var(--accent-cyan, #a7d8f0);
+  color: #070b14;
   font-weight: 600;
 }
 
 .pe-btn-primary:hover:not(:disabled) {
-  background: var(--color-sky, #2eb7ff);
+  background: var(--color-sky, #a7d8f0);
   filter: brightness(1.08);
 }
 
@@ -191,12 +194,13 @@
 }
 
 .pe-icon-btn:hover:not(:disabled) {
-  background: var(--bg-surface-hover, rgba(17, 40, 64, 0.98));
-  border-color: var(--border-color, rgba(100, 160, 207, 0.24));
+  background: var(--bg-surface-hover, #141e33);
+  border-color: var(--border-color, #64748b);
 }
 
+/* Status colors mark data only, never a button (decision 27). */
 .pe-danger:hover:not(:disabled) {
-  color: var(--danger-red, #fb7185);
+  color: var(--text-main);
 }
 
 .pe-btn:disabled,
@@ -209,7 +213,7 @@
   padding: 0;
   background: none;
   border: none;
-  color: var(--accent-cyan, #2eb7ff);
+  color: var(--accent-cyan, #a7d8f0);
   text-decoration: underline;
   text-underline-offset: 2px;
 }
@@ -225,9 +229,9 @@
 
 .pe-item {
   padding: 10px 12px;
-  border: 1px solid var(--border-color, rgba(100, 160, 207, 0.24));
+  border: 1px solid var(--border-color, #64748b);
   border-radius: 10px;
-  background: var(--bg-card, rgba(12, 28, 47, 0.95));
+  background: var(--bg-card, #0b1220);
 }
 
 .pe-item-removed {
@@ -242,22 +246,42 @@
 }
 
 .pe-key {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--font-mono);
   font-size: 11.5px;
-  color: var(--text-subtle, #5e7894);
+  color: var(--text-subtle, #8b95a7);
 }
 
 .pe-chip {
   font-size: 11px;
   padding: 1px 8px;
   border-radius: 999px;
-  border: 1px solid var(--border-color, rgba(100, 160, 207, 0.24));
-  color: var(--text-muted, #8fa8c2);
+  border: 1px solid var(--border-color, #64748b);
+  color: var(--text-muted, #aeb8c7);
 }
 
 .pe-chip-probe {
-  border-color: var(--warning-border, rgba(251, 191, 36, 0.42));
-  color: var(--warning-text, #fde68a);
+  border-color: var(--accent-cyan, #a7d8f0);
+  color: var(--text-main);
+}
+
+.pe-history-toggle {
+  margin-left: auto;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.pe-history {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-color);
+}
+
+.pe-history .pe-hint {
+  margin: 0 0 8px;
+}
+
+.pe-history-side {
+  white-space: pre-line;
 }
 
 .pe-item-main {

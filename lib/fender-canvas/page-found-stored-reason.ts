@@ -8,6 +8,8 @@
  * Findability result.
  */
 
+import { brandSite } from "@/lib/brand-copy";
+
 export type StoredReasonCode =
   | "no_matching_model"
   | "candidate_page_missing"
@@ -27,25 +29,25 @@ export type StoredNotFoundReason = {
 
 export const STORED_REASONS: Record<StoredReasonCode, { label: string; definition: string }> = {
   no_matching_model: {
-    label: "No matching fender.com product page",
-    definition: "fender.com search returned product pages, but none was for this model.",
+    label: `No matching ${brandSite()} product page`,
+    definition: `${brandSite()} search returned product pages, but none was for this model.`,
   },
   candidate_page_missing: {
-    label: "Matching fender.com page is missing",
-    definition: "fender.com search pointed to a page for this model, but that page does not exist on fender.com.",
+    label: `Matching ${brandSite()} page is missing`,
+    definition: `${brandSite()} search pointed to a page for this model, but that page does not exist on ${brandSite()}.`,
   },
   lacks_this_sku: {
     label: "Matching page has no variant for this SKU",
-    definition: "fender.com has a page for this model, but none of its variants matches this listing's SKU.",
+    definition: `${brandSite()} has a page for this model, but none of its variants matches this listing's SKU.`,
   },
   lacks_part_number: {
     label: "Matching page does not list this part number",
-    definition: "fender.com has a page for this model, but this listing's part number is not on it.",
+    definition: `${brandSite()} has a page for this model, but this listing's part number is not on it.`,
   },
   page_not_read: {
-    label: "fender.com page did not load",
+    label: `${brandSite()} page did not load`,
     definition:
-      "The fender.com page the Findability tab found did not load during the fender.com product check, and no fender.com search result matched this model.",
+      `The ${brandSite()} page the Findability tab found did not load during the ${brandSite()} product check, and no ${brandSite()} search result matched this model.`,
   },
 };
 
@@ -105,7 +107,7 @@ export function storedNotFoundReason(missingFields: string | null | undefined): 
 export function pagesCheckedNote(stored: Pick<StoredNotFoundReason, "pagesChecked" | "pagesCut">): string | null {
   const count = stored.pagesChecked;
   if (count === null) return null;
-  const pages = `${count} fender.com ${count === 1 ? "page" : "pages"} checked.`;
+  const pages = `${count} ${brandSite()} ${count === 1 ? "page" : "pages"} checked.`;
   return stored.pagesCut ? `At least ${pages}` : pages;
 }
 

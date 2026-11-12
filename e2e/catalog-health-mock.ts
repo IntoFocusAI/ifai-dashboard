@@ -9,6 +9,10 @@ import { METRICS, type Row } from "./spec-read-mock";
  * through to the set-aside mock, which the spec registers first.
  */
 
+/** A check a minute ago: inside every recheck window, so no mocked figure carries the stale asterisk. */
+const FRESH_AT = new Date(Date.now() - 60_000).toISOString();
+const FRESH_DAY = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+
 export const DIVISIONS: Row[] = [
   { division: "Electric Guitar Kits", monitored_skus: 4, buybox_pct: 50, splinter_bundles: 3, schema_sync_pct: 0, primary_threat: null, strategic_action: null },
   { division: "Hollow & Semi-Hollow Body", monitored_skus: 69, buybox_pct: 0, splinter_bundles: 13, schema_sync_pct: 0, primary_threat: null, strategic_action: null },
@@ -30,6 +34,7 @@ function listing(asin: string, category: string, status: string, seller: string 
     buybox_seller_id: status === "3P Confirmed" ? "A1B2C3D4E5F6G" : null,
     buybox_status: status,
     featured_offer_state: status === "No Active Offer" ? "no_active_offer" : "present",
+    featured_offer_checked_at: FRESH_AT,
   };
 }
 
@@ -48,6 +53,7 @@ function bundleRow(asin: string, parent: string | null, state: string | null): R
     buybox_seller_id: null,
     buybox_status: state === "no_active_offer" ? "No Active Offer" : "3P Confirmed",
     featured_offer_state: state,
+    featured_offer_checked_at: FRESH_AT,
   };
 }
 
@@ -88,6 +94,9 @@ function mapRow(asin: string, map: number | null, amz: number | null, wmt: numbe
     mf_price: null,
     mf_leakage: null,
     is_map_violation: worst != null && worst < 0,
+    featured_offer_checked_at: FRESH_AT,
+    wmt_checked_at: FRESH_AT,
+    mf_checked_at: null,
   };
 }
 
@@ -101,6 +110,18 @@ export const MAP_ROWS: Row[] = [
   mapRow("B00MAP0006", null, null),
 ];
 
+/**
+ * SmartScout monthly unit estimates for the listings below MAP (R-09): five units on the first,
+ * two on the second, and no SmartScout record for the third. Discounted retail value is
+ * $100 x 5 + $50 x 2 = $600 a month, with 2 of 3 listings estimated and 1 awaiting inputs.
+ */
+export const MAP_UNIT_ROWS: Row[] = [
+  { asin: "B00MAP0001", smartscout_monthly_units: 5, smartscout_snapshot_date: FRESH_DAY },
+  { asin: "B00MAP0002", smartscout_monthly_units: 2, smartscout_snapshot_date: FRESH_DAY },
+];
+
+const MAP_UNITS_SELECT = "asin,smartscout_monthly_units,smartscout_snapshot_date";
+
 const CHANNEL_PRICES: Row[] = MAP_ROWS.filter((row) => row.wmt_price != null).map((row) => ({
   asin: row.asin,
   channel: "walmart",
@@ -109,7 +130,7 @@ const CHANNEL_PRICES: Row[] = MAP_ROWS.filter((row) => row.wmt_price != null).ma
   checked_at: "2026-11-03T12:00:00.000Z",
 }));
 
-const CHECKED_AT = new Date(Date.now() - 60_000).toISOString();
+const CHECKED_AT = FRESH_AT;
 
 function suppressionRow(asin: string, withheld: boolean): Row {
   return {
@@ -161,15 +182,15 @@ function retailRows(url: URL): Row[] {
 
 /** Four Amazon spec readings: three checked (one missing a field), one not checked. */
 export const SPEC_ROWS: Row[] = [
-  { asin: "B00SPC0001", title: "Spec listing 01", amazon_checked: true, amazon_missing_fields: "scale_length" },
-  { asin: "B00SPC0002", title: "Spec listing 02", amazon_checked: true, amazon_missing_fields: null },
-  { asin: "B00SPC0003", title: "Spec listing 03", amazon_checked: true, amazon_missing_fields: null },
-  { asin: "B00SPC0004", title: "Spec listing 04", amazon_checked: false, amazon_missing_fields: null },
+  { asin: "B00SPC0001", title: "Spec listing 01", amazon_checked: true, amazon_missing_fields: "scale_length", checked_at: FRESH_AT },
+  { asin: "B00SPC0002", title: "Spec listing 02", amazon_checked: true, amazon_missing_fields: null, checked_at: FRESH_AT },
+  { asin: "B00SPC0003", title: "Spec listing 03", amazon_checked: true, amazon_missing_fields: null, checked_at: FRESH_AT },
+  { asin: "B00SPC0004", title: "Spec listing 04", amazon_checked: false, amazon_missing_fields: null, checked_at: FRESH_AT },
 ];
 
 function bodyFor(url: URL, accept: string): unknown[] | Row {
   const table = url.pathname.split("/").pop() ?? "";
-  if (table === "canvas_spec_readiness" && url.searchParams.get("select") === "asin,title,amazon_checked,amazon_missing_fields") {
+  if (table === "canvas_spec_readiness" && url.searchParams.get("select") === "asin,title,amazon_checked,amazon_missing_fields,checked_at") {
     return SPEC_ROWS;
   }
   if (table === "canvas_metrics") {
@@ -178,6 +199,9 @@ function bodyFor(url: URL, accept: string): unknown[] | Row {
   if (table === "canvas_divisions") return DIVISIONS;
   if (table === "canvas_retail_listings") return retailRows(url);
   if (table === "canvas_listing_channel_price") return CHANNEL_PRICES;
+  if (table === "canvas_listing_sales_loss_v2" && url.searchParams.get("select") === MAP_UNITS_SELECT) {
+    return MAP_UNIT_ROWS;
+  }
   return [];
 }
 

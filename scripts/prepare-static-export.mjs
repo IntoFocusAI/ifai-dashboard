@@ -15,6 +15,8 @@ const STASH_PATHS = [
   "app/portal",
   "app/sdk",
   "app/v3",
+  // Server CSV route handlers. GitHub Pages static export has no request-time routes.
+  "app/(canvas)/dashboard/export",
 ];
 
 const PAGE_SWAP = [

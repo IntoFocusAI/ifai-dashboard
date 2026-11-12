@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { figureTipAttrs } from "@/components/v3/live/FigureTip";
 import type { RetailColumn } from "@/components/v3/live/ResizableTable";
+import { StatusGlyph } from "@/components/v3/live/StatusMark";
 import { formatInt } from "@/lib/fender-canvas/format";
-import { FMIC_CLIENT_KEY, SET_ASIDE_CHECKS } from "@/lib/set-aside/keys";
+import { SET_ASIDE_CHECKS, activeSetAsideClientKey } from "@/lib/set-aside/keys";
 import { DoneForm, ReopenForm, SetAsideForm } from "@/lib/set-aside/SetAsideForm";
 import { formatSetAsideDate, outcomeLabel, useSetAsides, type SetAsideRow } from "@/lib/set-aside/set-aside";
 
@@ -25,14 +27,25 @@ export function setAsideHint(checkKey: string): string {
   return "Done and set-aside rows stay in the table and in the figures above until the data stops flagging them. They are marked so the team knows what was decided.";
 }
 
-/** Not sortable: a set-aside is an overlay on the check, not a field of its read. */
+export const SET_ASIDE_COLUMN_ID = "setaside";
+
+/**
+ * The Status column without a sort. Kept for tables whose sort value does not read the
+ * set-aside overlay yet; a table that does uses SET_ASIDE_SORT_COLUMN.
+ */
 export const SET_ASIDE_COLUMN: RetailColumn = {
-  id: "setaside",
+  id: SET_ASIDE_COLUMN_ID,
   name: "Status",
   label: "Status",
   width: 190,
   minWidth: 150,
 };
+
+/**
+ * The Status column with its sort (X-33). The table's sort value answers this column with
+ * `setAsideSortValue`, so Done and set-aside rows group together and open rows sort last.
+ */
+export const SET_ASIDE_SORT_COLUMN: RetailColumn = { ...SET_ASIDE_COLUMN, sort: "text" };
 
 export type FormMode = "done" | "set_aside";
 
@@ -46,7 +59,7 @@ export type CheckSetAsides = ReturnType<typeof useSetAsides> & {
 };
 
 export function useCheckSetAsides(checkKey: string, checkName: string): CheckSetAsides {
-  const setAsides = useSetAsides(FMIC_CLIENT_KEY, checkKey);
+  const setAsides = useSetAsides(activeSetAsideClientKey(), checkKey);
   const [formFor, setFormFor] = useState<{ key: string; mode: FormMode } | null>(null);
   return {
     ...setAsides,
@@ -59,6 +72,15 @@ export function useCheckSetAsides(checkKey: string, checkName: string): CheckSet
       ),
     closeForm: () => setFormFor(null),
   };
+}
+
+/** What the Status cell shows for one row: its chip text, or null for a row still open. */
+export function setAsideSortValue(
+  ctl: { active: ReadonlyMap<string, SetAsideRow> },
+  entityKey: string,
+): string | null {
+  const active = ctl.active.get(entityKey);
+  return active ? outcomeLabel(active) : null;
 }
 
 export function setAsideTitle(row: SetAsideRow): string {
@@ -84,11 +106,12 @@ export function SetAsideCell({
     <td>
       {active ? (
         <span
-          className={`tag-badge ${active.outcome === "done" ? "tag-success" : "tag-neutral"} set-aside-chip`}
-          title={setAsideTitle(active)}
+          {...figureTipAttrs(outcomeLabel(active), setAsideTitle(active), "set-aside-chip")}
+          className={`tag-badge ${active.outcome === "done" ? "tag-success" : "tag-neutral"} set-aside-chip ifai-term`}
           data-set-aside-chip={entityKey}
           data-outcome={active.outcome}
         >
+          {active.outcome === "done" ? <StatusGlyph status="good" /> : null}
           {outcomeLabel(active)}
         </span>
       ) : canSetAside && ctl.enabled ? (

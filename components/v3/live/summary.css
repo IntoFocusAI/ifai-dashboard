@@ -1,0 +1,64 @@
+/* Summary (Briefing, Performance). Type follows X-27: Geist, never heavier than 600. */
+
+/* Briefing: equal finding cards. Every card takes the same width; a row that cannot hold seven
+   cards at 200px wraps into equal rows of cards rather than squeezing the figure into its disc. */
+.ifai-canvas .briefing-findings {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+  align-items: stretch;
+}
+
+.ifai-canvas .briefing-findings > .briefing-finding,
+.ifai-canvas .briefing-findings > .briefing-revenue-placeholder {
+  min-width: 0;
+  max-width: none;
+}
+
+.ifai-canvas .briefing-finding .retail-overview-hero-figures {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 0;
+}
+
+.ifai-canvas .briefing-finding .retail-overview-hero-figures > .data-status {
+  margin-top: 2px;
+}
+
+.ifai-canvas .briefing-finding .retail-overview-hero-ratio {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+/* Performance: the status mark and word sit under each score and its target. */
+.ifai-canvas [data-consensus-pillar] .findability-lead-figures > .data-status {
+  margin-top: 2px;
+}
+
+.ifai-canvas .consensus-component-bar-wrap > .data-status {
+  flex: 0 0 auto;
+}
+
+/* Catalog divisions: the next step is the only control in a row. */
+.ifai-canvas .summary-division-next {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: var(--text-main);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-align: left;
+}
+
+/* At hero size the asterisk's dotted underline falls below the glyph onto the next line, so the
+   asterisk alone is the tooltip target on Summary score and finding figures. */
+.ifai-canvas .briefing-findings .ai-lead-figure .partial-figure-mark.ifai-term,
+.ifai-canvas [data-consensus-pillar] .ai-lead-figure .partial-figure-mark.ifai-term {
+  border-bottom: 0;
+  text-decoration: none;
+}

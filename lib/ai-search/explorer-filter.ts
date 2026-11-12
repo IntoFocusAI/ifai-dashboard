@@ -1,7 +1,7 @@
 import { isApiEngine } from "@/lib/ai-search/engine-group";
 import type { EvidenceFocus } from "@/lib/ai-search/evidence-focus";
 import { questionRole, type QuestionRole } from "@/lib/ai-search/question-role";
-import { callOutcome, type CallOutcome } from "@/lib/ai-search/run-metrics";
+import { callOutcome, cleanModelName, type CallOutcome } from "@/lib/ai-search/run-metrics";
 import type { AiCallRow } from "@/lib/ai-search/types";
 
 export type PromptScope = "commercial" | "probe" | "all";
@@ -113,7 +113,7 @@ export function applyExplorerFilter(rows: AiCallRow[], filter: ExplorerFilter): 
     if (filter.simId != null) return row.sim_id === filter.simId;
     if (filter.scope !== "all" && row.prompt_kind !== filter.scope) return false;
     if (filter.engine && (row.engine ?? "").toLowerCase() !== filter.engine) return false;
-    if (filter.model && (row.model?.trim() || "") !== filter.model) return false;
+    if (filter.model && cleanModelName(row.model) !== filter.model) return false;
     if (filter.category && row.category !== filter.category) return false;
     if (filter.outcome) {
       const outcome = callOutcome(row);

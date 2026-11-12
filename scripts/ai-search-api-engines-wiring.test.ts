@@ -10,7 +10,14 @@ import {
   nearestApiRun,
   type ApiRunSummary,
 } from "../lib/ai-search/api-runs.ts";
-import { API_REPEAT_CAP, API_REPEAT_RULE, capApiRepeats, fixedQuestionCount } from "../lib/ai-search/engine-group.ts";
+import {
+  API_REPEAT_CAP,
+  API_REPEAT_RULE,
+  capApiRepeats,
+  citationPopulation,
+  fixedQuestionCount,
+  withApiSnapshots,
+} from "../lib/ai-search/engine-group.ts";
 import { engineGroupTrend, engineGroupWindow, pairApiRuns } from "../lib/ai-search/engine-group-window.ts";
 import { aiNodeFaces } from "../lib/ai-search/canvas-surfaces.ts";
 import { engineGroupRead, type ApiEngineLoad } from "../lib/ai-search/engine-group-read.ts";
@@ -139,22 +146,41 @@ test("each API run joins the battery run nearest its day; a tie goes to the late
 });
 
 test("All keeps every battery point, puts the API calls on the nearest one, and keeps that run's date", () => {
-  const window = engineGroupWindow([OCT20, NOV3], [API_NOV2], "all", "citations");
+  const window = engineGroupWindow([OCT20, NOV3], [API_NOV2], "all");
   assert.deepEqual(window.snapshots.map((row) => row.run.audit_run_id), ["b-oct20", "b-nov3"]);
   const nov3 = window.snapshots[1];
   assert.equal(nov3.run.published_at, NOV3.run.published_at);
-  assert.deepEqual(nov3.calls.map((row) => row.engine).sort(), ["chatgpt", "gemini", "openai_api", "openai_api"]);
+  assert.deepEqual(nov3.calls.filter((row) => row.prompt_key !== "p35").map((row) => row.engine).sort(), ["chatgpt", "gemini", "openai_api", "openai_api"]);
   assert.ok(nov3.calls.every((row) => row.audit_run_id === "b-nov3"));
   assert.deepEqual([...window.apiDays], [["b-nov3", ["2026-11-02"]]]);
-  // The API job does not ask the rotating fact checks, so neither point keeps them.
-  assert.ok(window.snapshots.every((row) => !row.calls.some((item) => item.prompt_key === "p35")));
+  // Every engine choice keeps the rotating fact checks the search engines asked (decision 13).
+  assert.ok(window.snapshots.every((row) => row.calls.some((item) => item.prompt_key === "p35")));
+  assert.ok(window.snapshots.every((row) => row.calls.filter((item) => item.prompt_key === "p35").every((item) => item.engine !== "openai_api")));
+});
+
+test("Citation Ecosystem keeps main's population: with API engines in the window, rotating fact checks sit out", () => {
+  // Decision 13 is about Product Fact Checks. Citation totals count the fixed questions on every point.
+  const all = engineGroupWindow([OCT20, NOV3], [API_NOV2], "all", "citations");
+  assert.deepEqual(all.snapshots.map((row) => row.run.audit_run_id), ["b-oct20", "b-nov3"]);
+  assert.deepEqual(all.snapshots[1].calls.map((row) => row.engine).sort(), ["chatgpt", "gemini", "openai_api", "openai_api"]);
+  assert.ok(all.snapshots.every((row) => !row.calls.some((item) => item.prompt_key === "p35")));
+  assert.ok(all.snapshots.every((row) => !row.citations.some((item) => item.prompt_key === "p35")));
+  // Without API is the battery runs as they are, rotating checks included.
+  assert.deepEqual(engineGroupWindow([OCT20, NOV3], [API_NOV2], "search", "citations").snapshots, [OCT20, NOV3]);
+  // No API run in the window: nothing is dropped.
+  assert.deepEqual(engineGroupWindow([OCT20, NOV3], [], "all", "citations").snapshots, [OCT20, NOV3]);
+  // A single run: the rule follows whether its figures hold an API engine.
+  assert.equal(citationPopulation(NOV3), NOV3);
+  const withApi = withApiSnapshots(NOV3, [API_NOV2]);
+  assert.equal(citationPopulation(withApi).calls.some((item) => item.prompt_key === "p35"), false);
+  assert.equal(citationPopulation(withApi).calls.length, withApi.calls.filter((item) => item.prompt_key !== "p35").length);
 });
 
 test("Without API leaves the battery runs as they are; API only keeps the points with an API run", () => {
-  const search = engineGroupWindow([OCT20, NOV3], [API_NOV2], "search", "citations");
+  const search = engineGroupWindow([OCT20, NOV3], [API_NOV2], "search");
   assert.deepEqual(search.snapshots, [OCT20, NOV3]);
   assert.equal(search.apiDays.size, 0);
-  const api = engineGroupWindow([OCT20, NOV3], [API_NOV2], "api", "citations");
+  const api = engineGroupWindow([OCT20, NOV3], [API_NOV2], "api");
   assert.deepEqual(api.snapshots.map((row) => row.run.audit_run_id), ["b-nov3"]);
   assert.deepEqual(api.snapshots[0].calls.map((row) => row.engine), ["openai_api", "openai_api"]);
 });
@@ -162,8 +188,8 @@ test("Without API leaves the battery runs as they are; API only keeps the points
 test("the trend counts the API calls on their point and draws no false gap for them", () => {
   const trend = (snapshots: AiSearchSnapshot[]) =>
     buildHistoryTrend({ snapshots, metric: "unbranded_discovery", breakdown: "overall", fromDay: null, toDay: null, query: { kind: "all" } });
-  const search = trend(engineGroupWindow([OCT20, NOV3], [API_NOV2], "search", "trend").snapshots);
-  const all = trend(engineGroupWindow([OCT20, NOV3], [API_NOV2], "all", "trend").snapshots);
+  const search = trend(engineGroupWindow([OCT20, NOV3], [API_NOV2], "search").snapshots);
+  const all = trend(engineGroupWindow([OCT20, NOV3], [API_NOV2], "all").snapshots);
   assert.equal(search.status, "ready");
   assert.equal(all.status, "ready");
   const lastPoint = (model: typeof all) => model.series[0].points.at(-1)!;
@@ -171,10 +197,10 @@ test("the trend counts the API calls on their point and draws no false gap for t
   assert.equal(lastPoint(all).wins, lastPoint(search).wins + 2);
   assert.equal(lastPoint(all).notStored, lastPoint(search).notStored);
   // The trend keeps the rotating fact check, so its Partial coverage does not move with the switch.
-  const kept = engineGroupWindow([OCT20, NOV3], [API_NOV2], "all", "trend").snapshots;
+  const kept = engineGroupWindow([OCT20, NOV3], [API_NOV2], "all").snapshots;
   assert.ok(kept.every((row) => row.calls.some((item) => item.prompt_key === "p35")));
   // One API point is one run: the trend reads it as one point, not a line.
-  assert.equal(trend(engineGroupWindow([OCT20, NOV3], [API_NOV2], "api", "trend").snapshots).status, "one-run");
+  assert.equal(trend(engineGroupWindow([OCT20, NOV3], [API_NOV2], "api").snapshots).status, "one-run");
 });
 
 test("battery gaps skip API engines: API calls neither fill nor open a battery pair", () => {
@@ -193,22 +219,22 @@ test("battery gaps skip API engines: API calls neither fill nor open a battery p
 test("the window waits for the API runs on All and API only; Without API and Not available* keep the battery runs", () => {
   const ready = { phase: "ready" as const, snapshots: [OCT20, NOV3] };
   const loading: ApiEngineLoad = { phase: "loading" };
-  assert.equal(engineGroupTrend(ready, loading, "all", "trend").trend.phase, "loading");
-  assert.equal(engineGroupTrend(ready, loading, "api", "trend").trend.phase, "loading");
-  assert.equal(engineGroupTrend(ready, loading, "search", "trend").trend, ready);
-  assert.equal(engineGroupTrend(ready, { phase: "missing" }, "all", "trend").trend, ready);
-  assert.equal(engineGroupTrend(ready, { phase: "error", message: "timeout" }, "api", "trend").trend, ready);
-  assert.equal(engineGroupTrend({ phase: "loading" }, loading, "all", "trend").trend.phase, "loading");
+  assert.equal(engineGroupTrend(ready, loading, "all").trend.phase, "loading");
+  assert.equal(engineGroupTrend(ready, loading, "api").trend.phase, "loading");
+  assert.equal(engineGroupTrend(ready, loading, "search").trend, ready);
+  assert.equal(engineGroupTrend(ready, { phase: "missing" }, "all").trend, ready);
+  assert.equal(engineGroupTrend(ready, { phase: "error", message: "timeout" }, "api").trend, ready);
+  assert.equal(engineGroupTrend({ phase: "loading" }, loading, "all").trend.phase, "loading");
 
   const withApi: ApiEngineLoad = { phase: "ready", snapshots: [API_NOV2] };
-  const all = engineGroupTrend(ready, withApi, "all", "trend");
+  const all = engineGroupTrend(ready, withApi, "all");
   assert.equal(all.trend.phase === "ready" ? all.trend.snapshots.length : -1, 2);
   assert.deepEqual([...all.apiDays.keys()], ["b-nov3"]);
 });
 
-/** A battery run that asked all 34 questions on ChatGPT and Gemini, as the live runs do. */
+/** A battery run that asked all 34 wave 1 questions on ChatGPT and Gemini, as the live runs before wave 2 did. */
 function fullBattery(id: string, day: string): AiSearchSnapshot {
-  const calls = PROMPT_BATTERY.flatMap((prompt) =>
+  const calls = PROMPT_BATTERY.filter((prompt) => prompt.wave === undefined).flatMap((prompt) =>
     ["chatgpt", "gemini"].map((engine) =>
       call(id, engine, { prompt_key: prompt.key, prompt: prompt.text, prompt_kind: prompt.kind, category: prompt.category }),
     ),
@@ -300,14 +326,12 @@ test("the API repeat cap keeps repeats 1 to 3 and the fact checks and citations 
   assert.match(API_REPEAT_RULE, /repeats 1 to 3/);
 });
 
-test("the map's AI bubbles say when they include API engines, and stay hoverless when they do not", () => {
+test("the map's AI bubbles carry no hover tooltip, with or without API engines", () => {
   const all = engineGroupRead({ phase: "ready", snapshot: NOV3 }, { phase: "ready", snapshots: [API_NOV2] }, "all");
   assert.equal(all.phase, "ready");
   const faces = aiNodeFaces(all);
-  assert.equal(faces.spokeAeo.tooltip.title, "Includes API engines");
-  assert.match(faces.spokeAeo.tooltip.desc, /2 search-engine answers plus 2 answers from the API run nearest its day \(ChatGPT API\)/);
-  assert.match(faces.spokeAeo.tooltip.desc, /Only repeats 1 to 3/);
-  assert.equal(faces.spokeCompetitors.tooltip.title, "Includes API engines");
+  assert.deepEqual(faces.spokeAeo.tooltip, { title: "", desc: "" });
+  assert.deepEqual(faces.spokeCompetitors.tooltip, { title: "", desc: "" });
 
   const alone = aiNodeFaces({ phase: "ready", snapshot: NOV3 });
   assert.deepEqual(alone.spokeAeo.tooltip, { title: "", desc: "" });
@@ -323,7 +347,21 @@ test("Run Summary, Citation Ecosystem, the trend, and the run detail read the sw
   const read = (path: string) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
   assert.match(read("components/v3/live/ai-search/RunSummaryPanel.tsx"), /<EngineGroupScope>\s*<AiReadGate>/);
   assert.match(read("components/v3/live/ai-search/CitationEcosystemPanel.tsx"), /<EngineGroupScope>\s*<CitationEcosystemBody \/>/);
-  assert.match(read("components/v3/live/ai-search/HistoryTrendsPanel.tsx"), /useEngineGroupWindow\("trend"\)/);
+  assert.match(read("components/v3/live/ai-search/HistoryTrendsPanel.tsx"), /useEngineGroupWindow\(\)/);
   assert.match(read("components/v3/live/ai-search/useCitationAggregate.ts"), /useEngineGroupWindow\("citations"\)/);
   assert.match(read("components/v3/live/ai-search/RunHistoryControl.tsx"), /<PairedApiRun runId=\{run.audit_run_id\} day=\{day\} \/>/);
+});
+
+test("the Competitive Radar bubble names the rival the Battlecards tab names, from the window rows when given", () => {
+  const rivalCalls = (brand: string, n: number) =>
+    Array.from({ length: n }, () => call("w", "chatgpt", { outcome: "competitor_win", primary_brand: brand }));
+  // The published run alone: Yamaha ahead. The window it sits in: Taylor ahead.
+  const published = { ...NOV3, calls: [...rivalCalls("Yamaha", 3), ...rivalCalls("Taylor", 2)] };
+  const window = { ...NOV3, calls: [...rivalCalls("Yamaha", 3), ...rivalCalls("Taylor", 6)] };
+  const hero = (read: Parameters<typeof aiNodeFaces>[0]) => aiNodeFaces(read).spokeCompetitors.heroValue;
+  assert.match(String(hero({ phase: "ready", snapshot: published })?.label), /^Yamaha leads/);
+  const both = hero({ phase: "ready", snapshot: published, radarSnapshot: window });
+  assert.match(String(both?.label), /^Taylor leads/);
+  const wiring = readFileSync(new URL("../components/v3/live/ai-search/useApiEngineLoad.ts", import.meta.url), "utf8");
+  assert.match(wiring, /radarSnapshot: radar\.snapshot/);
 });

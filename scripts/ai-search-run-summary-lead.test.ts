@@ -35,7 +35,7 @@ test("each lead rate is a colored percentage with its disc and N of M, like Run 
   assert.match(lead, /<MixedScoringTip mixed=\{mixed\} basis=\{\{ label: `\$\{label\} rate`, note: leadRateTip\(tally\) \}\}> \{lead\.rate\} <\/MixedScoringTip>/);
   assert.match(lead, /<CitationPieDisc pie=\{ratePie\(`summary-\$\{tally\.role\}`, label, tally\)\}/);
   assert.match(lead, /data-ai-role-total=\{tally\.role\}/);
-  assert.match(lead, /\{formatInt\(tally\.fenderWins\)\} Fender\/Squier leads <\/EvidenceLink>\{" "\} of\{" "\} <EvidenceLink focus=\{\{ field: "role", value: `\$\{tally\.role\}\/resolved` \}\} tab=\{SIM\}> \{formatInt\(tally\.resolved\)\} <\/EvidenceLink>/);
+  assert.match(lead, /\{formatInt\(tally\.fenderWins\)\} \{leadBrand\(\)\} leads <\/EvidenceLink>\{" "\} of\{" "\} <EvidenceLink focus=\{\{ field: "role", value: `\$\{tally\.role\}\/resolved` \}\} tab=\{SIM\}> \{formatInt\(tally\.resolved\)\} <\/EvidenceLink>/);
   assert.match(lead, /`No resolved answers in this \$\{unit\}`/);
   assert.doesNotMatch(lead, /\btitle=/);
   assert.match(panel, /label="Unbranded Discovery" bands=\{UNBRANDED_RATE_BANDS\}/);

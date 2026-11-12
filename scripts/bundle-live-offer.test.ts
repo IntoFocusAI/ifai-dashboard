@@ -103,7 +103,7 @@ test("the tooltip names the counted set, the rule, and the wider totals", () => 
   const tip = bundlePopulationTip(unnestedBundlesFinding(rows(), { catalogBundleCount: 945 })) ?? "";
   assert.match(tip, /^3 of 6 bundles with a live offer have no usable parent ASIN\./);
   assert.ok(tip.includes(LIVE_OFFER_RULE));
-  assert.match(tip, /9 listings in the retail read are flagged as bundles, out of 945 the catalog flags\./);
+  assert.match(tip, /9 monitored listings are flagged as bundles, out of 945 the catalog flags\./);
   assert.match(tip, /1 of them has no offer reading yet\./);
   assert.doesNotMatch(tip, /not a random|not proof|fee|retainer/i);
 });

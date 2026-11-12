@@ -14,16 +14,6 @@ function GraphStage({ spec }: { spec: CanvasSpec }) {
 
   return (
     <g className="graph-stage" pointerEvents="none">
-      <g className="stage-washes stage-washes-dark">
-        <ellipse cx={cx} cy={cy} rx={980} ry={680} fill="url(#iomStageCore)" />
-        <ellipse cx={cx - 560} cy={cy - 350} rx={720} ry={540} fill="url(#iomStageBlue)" />
-        <ellipse cx={cx + 560} cy={cy + 350} rx={800} ry={580} fill="url(#iomStageLilac)" />
-      </g>
-      <g className="stage-washes stage-washes-light">
-        <ellipse cx={cx} cy={cy} rx={980} ry={680} fill="url(#iomStageCoreLight)" />
-        <ellipse cx={cx - 560} cy={cy - 350} rx={720} ry={540} fill="url(#iomStageBlueLight)" />
-        <ellipse cx={cx + 560} cy={cy + 350} rx={800} ry={580} fill="url(#iomStageLilacLight)" />
-      </g>
       <g clipPath="url(#iomWatermarkClip)">
         <image
           href="/intofocus-ai-logo-stacked-full-color.png"
@@ -38,7 +28,7 @@ function GraphStage({ spec }: { spec: CanvasSpec }) {
   );
 }
 
-/** Full-map washes and watermark. Hidden in the column rail. */
+/** The map watermark. Hidden in the column rail. */
 export function IomGraphBackdrop({ spec }: { spec: CanvasSpec }) {
   if (spec.appearance !== "iom") return null;
   const hub = spec.nodes?.find((node) => node.variant === "hub");
@@ -51,30 +41,6 @@ export function IomGraphBackdrop({ spec }: { spec: CanvasSpec }) {
       aria-hidden="true"
     >
       <defs>
-        <radialGradient id="iomStageCore" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#143458" stopOpacity="0.62" />
-          <stop offset="72%" stopColor="#143458" stopOpacity="0" />
-        </radialGradient>
-        <radialGradient id="iomStageBlue" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#2563eb" stopOpacity="0.2" />
-          <stop offset="60%" stopColor="#2563eb" stopOpacity="0" />
-        </radialGradient>
-        <radialGradient id="iomStageLilac" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#a78bfa" stopOpacity="0.12" />
-          <stop offset="65%" stopColor="#a78bfa" stopOpacity="0" />
-        </radialGradient>
-        <radialGradient id="iomStageCoreLight" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#2563eb" stopOpacity="0.16" />
-          <stop offset="72%" stopColor="#2563eb" stopOpacity="0" />
-        </radialGradient>
-        <radialGradient id="iomStageBlueLight" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.18" />
-          <stop offset="60%" stopColor="#38bdf8" stopOpacity="0" />
-        </radialGradient>
-        <radialGradient id="iomStageLilacLight" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#a78bfa" stopOpacity="0.16" />
-          <stop offset="65%" stopColor="#a78bfa" stopOpacity="0" />
-        </radialGradient>
         <clipPath id="iomWatermarkClip">
           <rect x={(hub?.x ?? 800) - 400} y={(hub?.y ?? 500) - 300} width={800} height={580} />
         </clipPath>

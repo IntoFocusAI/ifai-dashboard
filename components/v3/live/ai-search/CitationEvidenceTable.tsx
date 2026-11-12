@@ -13,12 +13,17 @@ import type { SortInput } from "@/lib/fender-canvas/table-sort";
 
 const PAGE = 25;
 
+/* Long prompts, links, and domains wrap inside their columns, so the table fits a 1280 px panel. */
+const WRAP_COLUMNS = ["prompt", "engine", "link", "domain"] as const;
+
 const COLUMNS = [
   clientColumn("prompt", "Prompt and answer", "text", 240, 140),
-  clientColumn("engine", "Engine", "text", 140, 100),
+  clientColumn("engine", "Engine", "text", 130, 90),
   clientColumn("link", "Cited link", "text", 240, 140),
-  clientColumn("domain", "Domain and class", "text", 180, 120),
+  clientColumn("domain", "Domain and class", "text", 160, 110),
 ];
+
+const citationKey = (row: CitationEvidence) => row.key;
 
 function citationSortValue(row: CitationEvidence, columnId: string): SortInput {
   if (columnId === "prompt") return row.prompt.trim() || null;
@@ -31,13 +36,19 @@ export function CitationEvidenceTable({
   rows,
   label,
   onClear,
+  exportScope,
+  narrowed = false,
 }: {
   rows: CitationEvidence[];
   label: string;
   onClear?: () => void;
+  /** What the tab shows, sent with Download CSV. Null hides the download. */
+  exportScope?: Record<string, unknown> | null;
+  /** A picked site, class, or answer group narrows these links; the download names it. */
+  narrowed?: boolean;
 }) {
   const [limit, setLimit] = useState(PAGE);
-  const sorted = useClientTableSort(rows, COLUMNS, citationSortValue);
+  const sorted = useClientTableSort(rows, COLUMNS, citationSortValue, citationKey);
   const shown = sorted.rows.slice(0, limit);
   return (
     <div className="content-box ai-citation-evidence" style={{ marginTop: 12 }}>
@@ -55,6 +66,8 @@ export function CitationEvidenceTable({
         <ResizableTable
           tableId="citation-evidence"
           columns={COLUMNS}
+          fillColumnId="link"
+          wrapColumnIds={WRAP_COLUMNS}
           freezeHeader
           maxHeight={520}
           sort={sorted.sort}
@@ -62,6 +75,9 @@ export function CitationEvidenceTable({
             setLimit(PAGE);
             sorted.onSort(columnId);
           }}
+          controls={sorted.controls}
+          exportScope={exportScope}
+          filterLabel={narrowed ? `Cited links: ${label}` : null}
         >
           <tbody>
             {shown.map((row) => (
@@ -72,21 +88,21 @@ export function CitationEvidenceTable({
                   </EvidenceLink>
                   <div style={mutedText}>Answer {row.simId}</div>
                 </td>
-                <td>{engineLabel(row.engine)}<div style={mutedText}>{modelLabel(row.model)}</div></td>
+                <td style={{ overflowWrap: "anywhere" }}>{engineLabel(row.engine)}<div style={mutedText}>{modelLabel(row.model)}</div></td>
                 <td style={{ wordBreak: "break-all" }}>
                   <ExternalLink href={row.rawUrl}>{row.title ?? row.canonicalUrl}</ExternalLink>
                   <div style={mutedText}>Raw: {row.rawUrl}</div>
                   {row.canonicalUrl !== row.rawUrl ? <div style={mutedText}>Canonical: {row.canonicalUrl}</div> : null}
                 </td>
-                <td>{row.domain}<div style={mutedText}>{SOURCE_CLASS_LABELS[row.sourceClass]}</div></td>
+                <td style={{ overflowWrap: "anywhere" }}>{row.domain}<div style={mutedText}>{SOURCE_CLASS_LABELS[row.sourceClass]}</div></td>
               </tr>
             ))}
           </tbody>
         </ResizableTable>
       ) : null}
-      {rows.length > limit ? (
+      {sorted.rows.length > limit ? (
         <button type="button" className="segmented-btn" style={{ marginTop: 6 }} onClick={() => setLimit((n) => n + PAGE)}>
-          Show {Math.min(PAGE, rows.length - limit)} more of {rows.length - limit}
+          Show {Math.min(PAGE, sorted.rows.length - limit)} more of {sorted.rows.length - limit}
         </button>
       ) : null}
     </div>

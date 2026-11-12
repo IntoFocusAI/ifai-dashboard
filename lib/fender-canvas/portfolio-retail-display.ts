@@ -20,6 +20,7 @@ import {
   type UnnestedBundleDetail,
 } from "./portfolio-retail";
 import { approvedExceptionsSentence } from "./map-approved-exceptions";
+import { PARTIAL_TITLE, READ_NOT_AVAILABLE } from "./canvas-reads";
 import { buyBoxHero } from "./retail-overview-lead";
 
 export const RETAIL_OVERVIEW_TAB = "Retail Overview";
@@ -295,9 +296,9 @@ export function mapBubble(reading: RetailReading<MapLeakageDetail | null>): Reta
   const face = satelliteFace(
     "MAP Leakage",
     reading,
-    { value: numerator != null && denominator != null ? `${share}${mark}` : share, label: "MAP leakage" },
+    { value: numerator != null && denominator != null ? `${share}${mark}` : share, label: "" },
     [...(count ? [`${count}${mark}`] : []), ...(gap ? [gap] : []), ...(coverage ? [coverage] : [])],
-    "MAP",
+    RETAIL_FINDING_LABELS.map_leakage,
   );
   if (exceptions > 0) face.tooltip = { title: "MAP leakage", desc: approvedExceptionsSentence(exceptions) };
   return face;
@@ -320,13 +321,13 @@ export function catalogBubble(
     reading,
     {
       value: shareHeroValue(reading, numerator, denominator),
-      label: "Splintered listings",
+      label: "Splintered Listings",
     },
     [...(count ? [count] : []), ...(coverage ? [coverage] : [])],
     "Catalog Governance",
   );
   const tip = bundlePopulationTip(reading);
-  if (tip) face.tooltip = { title: "Splintered listings", desc: tip };
+  if (tip) face.tooltip = { title: "Splintered Listings", desc: tip };
   return face;
 }
 
@@ -343,9 +344,11 @@ function waitingFace(
     status: "warning",
     subTab,
     // Satellite waiting faces carry a worded hero; main Catalog Health leaves hero unset.
-    ...(heroLabel ? { heroValue: { value: stats[0] ?? "Loading", label: heroLabel }, tooltip: { ...EMPTY_TOOLTIP } } : { tooltip: { title, desc } }),
+    ...(heroLabel != null ? { heroValue: { value: stats[0] ?? "Loading", label: heroLabel }, tooltip: { ...EMPTY_TOOLTIP } } : { tooltip: { title, desc } }),
   };
 }
+
+const RETAIL_READ_FAILED = "The retail read did not load. The figure is left out rather than shown as zero.";
 
 /**
  * Catalog Health main spoke: Buy Box withheld share of current readings (same figure as the
@@ -366,10 +369,10 @@ export function catalogHealthMainFace(read: RetailCanvasRead): RetailBubbleFace 
     return {
       title: "Catalog Health",
       stats: [],
-      heroValue: { value: "Read failed", label: "Buy Box withheld" },
-      status: "danger",
+      heroValue: { value: READ_NOT_AVAILABLE, label: "Buy Box withheld" },
+      status: "neutral",
       subTab: RETAIL_OVERVIEW_TAB,
-      tooltip: { title: "", desc: "" },
+      tooltip: { title: PARTIAL_TITLE["read-failed"], desc: RETAIL_READ_FAILED },
     };
   }
 
@@ -399,18 +402,22 @@ export function retailBubbleFaces(read: RetailCanvasRead): {
     return {
       main: catalogHealthMainFace(read),
       suppressed: waitingFace("Suppressed Listings", "Suppressed Listings", ["Loading"], desc, "confirmed high-price"),
-      map: waitingFace("MAP Leakage", "MAP", ["Loading"], desc, "MAP leakage"),
-      catalog: waitingFace("Catalog Governance", "Catalog Governance", ["Loading"], desc, "Splintered listings"),
+      map: waitingFace("MAP Leakage", RETAIL_FINDING_LABELS.map_leakage, ["Loading"], desc, ""),
+      catalog: waitingFace("Catalog Governance", "Catalog Governance", ["Loading"], desc, "Splintered Listings"),
     };
   }
 
   if (read.phase === "error") {
-    const desc = "The retail read could not be loaded.";
+    const failed = (face: RetailBubbleFace): RetailBubbleFace => ({
+      ...face,
+      status: "neutral",
+      tooltip: { title: PARTIAL_TITLE["read-failed"], desc: RETAIL_READ_FAILED },
+    });
     return {
       main: catalogHealthMainFace(read),
-      suppressed: waitingFace("Suppressed Listings", "Suppressed Listings", ["Read failed"], desc, "confirmed high-price"),
-      map: waitingFace("MAP Leakage", "MAP", ["Read failed"], desc, "MAP leakage"),
-      catalog: waitingFace("Catalog Governance", "Catalog Governance", ["Read failed"], desc, "Splintered listings"),
+      suppressed: failed(waitingFace("Suppressed Listings", "Suppressed Listings", [READ_NOT_AVAILABLE], RETAIL_READ_FAILED, "confirmed high-price")),
+      map: failed(waitingFace("MAP Leakage", RETAIL_FINDING_LABELS.map_leakage, [READ_NOT_AVAILABLE], RETAIL_READ_FAILED, "")),
+      catalog: failed(waitingFace("Catalog Governance", "Catalog Governance", [READ_NOT_AVAILABLE], RETAIL_READ_FAILED, "Splintered Listings")),
     };
   }
 

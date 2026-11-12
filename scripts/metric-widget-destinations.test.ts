@@ -27,10 +27,10 @@ const EXPECTED_SUBTAB: Record<string, string> = {
   "active-offer-coverage": "Briefing",
   "buy-box-retention": "Retail Overview",
   "seller-data-coverage": "Retail Overview",
-  "flagged-asins": "MAP",
+  "flagged-asins": "MAP Leakage",
   "suppressed-listings": "Suppressed Listings",
   "stranded-reviews": "Catalog Governance",
-  "amazon-map-drift": "MAP",
+  "amazon-map-drift": "MAP Leakage",
   "overall-ai-win-rate": "Run Summary",
   "beginner-ai-win-rate": "Run Details",
   "resolved-simulations": "Run Summary",
@@ -43,7 +43,7 @@ const EXPECTED_SUBTAB: Record<string, string> = {
   "prioritized-fixes": "Urgent Interventions",
   "phase-one-lift": "Revenue Estimates",
   "enterprise-potential": "Revenue Estimates",
-  "day-90-buy-box-target": "30-60-90 Day Milestones",
+  "day-90-buy-box-target": "30-60-90 Days",
 };
 
 const RETIRED = [
@@ -213,7 +213,7 @@ test("the picker list, including live overrides, opens the named tab", () => {
 
 test("the canvas spec passes the findability read into the widget list", () => {
   const source = readFileSync(new URL("lib/fender-canvas/build-canvas-spec.tsx", root), "utf8");
-  assert.match(source, /buildLiveMetrics\(bundle, retail, findability\)/);
+  assert.match(source, /buildLiveMetrics\(bundle, retail, findability, aiSearch\)/);
   const liveSource = readFileSync(new URL("lib/fender-canvas/metrics-from-live.ts", root), "utf8");
   const catalog = readFileSync(new URL("components/v3/fender-metrics.ts", root), "utf8");
   assert.doesNotMatch(liveSource, /spec_fender_found/);

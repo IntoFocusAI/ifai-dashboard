@@ -5,6 +5,7 @@ import { clientColumn } from "@/components/v3/live/ResizableTable";
 import { AiReadGate, EmptyRows, mutedText } from "@/components/v3/live/ai-search/AiReadGate";
 import { useAiHistoryOptional } from "@/components/v3/live/ai-search/AiHistoryContext";
 import { useCitationAggregate } from "@/components/v3/live/ai-search/useCitationAggregate";
+import { useAiExportScope } from "@/components/v3/live/ai-search/useAiExport";
 import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
 import { CountTable, PickButton } from "@/components/v3/live/ai-search/CitationCountTable";
 import { CitationEvidenceTable } from "@/components/v3/live/ai-search/CitationEvidenceTable";
@@ -28,9 +29,11 @@ import {
   snapshotInCategory,
 } from "@/lib/ai-search/citation-top-sources";
 import { citationEvidence, citedAnswers, groupCitations, type CitationScope } from "@/lib/ai-search/citations";
+import { citationPopulation } from "@/lib/ai-search/engine-group";
 import { engineLabel } from "@/lib/ai-search/run-metrics";
 import { citationStorageCaution } from "@/lib/ai-search/review-runs";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
+import { brandName, brandOwned, isFenderClient } from "@/lib/brand-copy";
 
 const LINK_COLUMNS = [
   {
@@ -41,13 +44,15 @@ const LINK_COLUMNS = [
     },
   },
   {
-    ...clientColumn("owned", "Fender-owned", "number", 130, 100),
+    ...clientColumn("owned", brandOwned(), "number", 130, 100),
     headerTooltip: {
-      title: "Fender-owned links",
-      description: `Links to sites controlled by Fender or another FMIC brand. ${CITED_LINK_COUNT_CAVEAT}`,
+      title: `${brandOwned()} links`,
+      description: `Links to sites controlled by ${isFenderClient() ? "Fender or another FMIC brand" : brandName()}. ${CITED_LINK_COUNT_CAVEAT}`,
     },
   },
 ];
+
+const groupKey = (group: { key: string }) => group.key;
 
 const ENGINE_COLUMNS = [
   clientColumn("engine", "Engine", "text", 140, 100),
@@ -87,6 +92,7 @@ function Ecosystem({
   }
 
   const [category, setCategory] = useState<string | null>(null);
+  const exportScope = useAiExportScope({ citations: { scope, category } });
   const full = useMemo(
     () => citationEvidence(snapshot.calls, snapshot.citations, scope),
     [snapshot, scope],
@@ -156,8 +162,8 @@ function Ecosystem({
                   {read.rows.length} links, so one answer can cite several pages.
                 </li>
                 <li>
-                  Fender-owned links appear in {fenderAnswers} of those answers. The other{" "}
-                  {read.rows.length - fender.length} links point to sites Fender does not control.
+                  {brandOwned()} links appear in {fenderAnswers} of those answers. The other{" "}
+                  {read.rows.length - fender.length} links point to sites {brandName()} does not control.
                 </li>
                 {read.duplicates + read.invalid > 0 ? (
                   <li>
@@ -175,7 +181,7 @@ function Ecosystem({
               </ul>
               <p style={{ ...mutedText, marginTop: 8 }}>
                 A cited link appears alongside an answer. This read does not measure whether the page
-                caused the recommendation, and a citation is not an endorsement of Fender by that source.
+                caused the recommendation, and a citation is not an endorsement of {brandName()} by that source.
               </p>
             </details>
           </>
@@ -203,6 +209,8 @@ function Ecosystem({
               tableId="citation-engines"
               columns={ENGINE_COLUMNS}
               rows={byEngine}
+              keyOf={groupKey}
+              exportScope={exportScope}
               value={(g, id) => {
                 if (id === "engine") return engineLabel(g.key);
                 if (id === "cited") return g.cited;
@@ -234,6 +242,8 @@ function Ecosystem({
                 tableId="citation-categories"
                 columns={CATEGORY_COLUMNS}
                 rows={byCategory}
+                keyOf={groupKey}
+                exportScope={exportScope}
                 value={(g, id) => {
                   if (id === "category") return citationCategoryLabel(g.key);
                   if (id === "cited") return g.cited;
@@ -265,12 +275,14 @@ function Ecosystem({
           rows={filtered}
           label={citationPickLabel(pick, category)}
           onClear={pick ? () => setPick(null) : undefined}
+          exportScope={exportScope}
+          narrowed={pick != null}
         />
       ) : null}
 
       {!caution && citationUrlsLoaded && read.rows.length > 0 ? (
         <p style={{ ...mutedText, marginTop: 10 }} data-citation-reconcile>
-          Cited links by source totals {read.rows.length}. Fender-owned and other links totals{" "}
+          Cited links by source totals {read.rows.length}. {brandOwned()} and other links totals{" "}
           {read.rows.length}.
         </p>
       ) : null}
@@ -330,7 +342,7 @@ function CitationEcosystemBody() {
   if (history?.mode.kind === "run") {
     return (
       <AiReadGate showFreshness={false}>
-        {(snapshot) => <Ecosystem snapshot={snapshot} copy="" singleRun />}
+        {(snapshot) => <Ecosystem snapshot={citationPopulation(snapshot)} copy="" singleRun />}
       </AiReadGate>
     );
   }

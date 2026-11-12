@@ -1,0 +1,203 @@
+/* Action Items fix list and the Roadmap 30-60-90 plan. Weights stay at or under 600; no text
+   is smaller than 11px (X-27, X-31). */
+
+.plan-empty,
+.plan-note {
+  margin: 8px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.plan-empty {
+  color: var(--text-main);
+}
+
+.plan-cell-label {
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.plan-cell-sub {
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+.plan-cell-figure {
+  font-weight: 600;
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+}
+
+.plan-cell-ratio {
+  margin-left: 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.plan-fact {
+  margin: 0 0 4px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.plan-action {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-main);
+}
+
+.plan-open {
+  padding: 2px 8px;
+  border-radius: var(--radius-button);
+  border: 1px solid var(--border-dark);
+  background: transparent;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--accent-purple);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.plan-open:hover {
+  background: var(--accent-purple);
+  border-color: var(--accent-purple);
+  color: var(--accent-ink);
+}
+
+.plan-pages {
+  margin-top: 6px;
+  font-size: 11px;
+}
+
+.plan-pages summary {
+  cursor: pointer;
+  color: var(--text-muted);
+}
+
+.plan-pages ul {
+  margin: 4px 0 0;
+  padding-left: 16px;
+}
+
+.plan-pages li {
+  overflow-wrap: anywhere;
+  line-height: 1.5;
+}
+
+/* Roadmap: owner sentence, positions, then three phase columns. */
+.roadmap-owner {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.roadmap-lead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-top: 10px;
+}
+
+.roadmap-lead-figure {
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-main);
+}
+
+.roadmap-lead-label {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.roadmap-positions {
+  margin: 6px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.roadmap-phases {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+@media (max-width: 1100px) {
+  .roadmap-phases {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.roadmap-phase {
+  min-width: 0;
+}
+
+.roadmap-phase-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+  margin-bottom: 8px;
+}
+
+.roadmap-phase-days {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.roadmap-phase-dates {
+  font-size: 12px;
+  color: var(--text-main);
+}
+
+.roadmap-phase-focus {
+  flex-basis: 100%;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.roadmap-item {
+  padding: 10px 0;
+  border-top: 1px solid var(--border-dark);
+  min-width: 0;
+}
+
+.roadmap-item-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 8px;
+  margin-bottom: 4px;
+}
+
+.roadmap-item-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-main);
+  overflow-wrap: anywhere;
+}
+
+.roadmap-item-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  margin-top: 6px;
+}

@@ -6,10 +6,12 @@ import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
 import { useAiHistoryOptional } from "@/components/v3/live/ai-search/AiHistoryContext";
 import { AiReadGate, EmptyRows, mutedText } from "@/components/v3/live/ai-search/AiReadGate";
 import { EngineGroupScope } from "@/components/v3/live/ai-search/EngineGroupScope";
+import { AiStatusTag, tagToneOf } from "@/components/v3/live/ai-search/AiStatusTag";
 import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
 import { RunDetailsLead } from "@/components/v3/live/ai-search/RunDetailsLead";
 import { SimulationEvidenceDrawer } from "@/components/v3/live/ai-search/SimulationEvidenceDrawer";
 import { SimulationFilters } from "@/components/v3/live/ai-search/SimulationFilters";
+import { useAiExportScope } from "@/components/v3/live/ai-search/useAiExport";
 import { useEvidenceFocus } from "@/components/v3/live/ai-search/useEvidenceFocus";
 import { citationEvidence, type CitationEvidence } from "@/lib/ai-search/citations";
 import { driftRead } from "@/lib/ai-search/drift";
@@ -36,16 +38,20 @@ import {
 import type { AiCallRow, AiSearchSnapshot } from "@/lib/ai-search/types";
 import { isWindowHistoryKind } from "@/lib/ai-search/window-display";
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
+import { brandName, leadBrand } from "@/lib/brand-copy";
+
+/* Text columns wrap inside their widths, so the table fits a 1280 px panel. */
+const SIM_WRAP_COLUMNS = ["prompt", "outcome", "model", "category", "fact", "checked"] as const;
 
 const SIM_COLUMNS = [
-  clientColumn("prompt", "Prompt", "text", 280, 160),
-  clientColumn("outcome", "Outcome", "text", 220, 140),
-  clientColumn("engine", "Engine", "text", 120, 90),
-  clientColumn("model", "Model", "text", 150, 100),
-  clientColumn("category", "Category", "text", 160, 110),
-  clientColumn("fact", "Fact check", "text", 180, 120),
-  clientColumn("cited", "Cited links", "number", 110, 90),
-  clientColumn("checked", "Checked", "date", 180, 130),
+  clientColumn("prompt", "Prompt", "text", 180, 120),
+  clientColumn("outcome", "Outcome", "text", 190, 140),
+  clientColumn("engine", "Engine", "text", 90, 80),
+  clientColumn("model", "Model", "text", 100, 90),
+  clientColumn("category", "Category", "text", 100, 90),
+  clientColumn("fact", "Fact check", "text", 100, 90),
+  clientColumn("cited", "Cited links", "number", 80, 72),
+  clientColumn("checked", "Checked", "date", 110, 100),
 ];
 
 function simulationSortValue(row: AiCallRow, columnId: string, cited: number): SortInput {
@@ -65,6 +71,8 @@ function simulationSortValue(row: AiCallRow, columnId: string, cited: number): S
   if (columnId === "cited") return cited;
   return row.created_at;
 }
+
+const callKey = (row: AiCallRow) => row.id;
 
 const OUTCOME_TONE: Record<CallOutcome, string> = {
   fender_win: "tag-success",
@@ -117,9 +125,13 @@ function Explorer({ snapshot }: { snapshot: AiSearchSnapshot }) {
     () => sortExplorerRows(applyExplorerFilter(snapshot.calls, filter)),
     [snapshot.calls, filter],
   );
-  const sorted = useClientTableSort(rows, SIM_COLUMNS, (row, columnId) =>
-    simulationSortValue(row, columnId, citations.get(row.id)?.length ?? 0),
+  const sorted = useClientTableSort(
+    rows,
+    SIM_COLUMNS,
+    (row, columnId) => simulationSortValue(row, columnId, citations.get(row.id)?.length ?? 0),
+    callKey,
   );
+  const exportScope = useAiExportScope({ filter });
 
   const changeFilter = (next: ExplorerFilter) => {
     setOpenId(null);
@@ -132,13 +144,13 @@ function Explorer({ snapshot }: { snapshot: AiSearchSnapshot }) {
       <RunDetailsLead snapshot={snapshot} />
       <p className="ai-lead-explainer" style={mutedText}>
         Shopping prompts are buying questions, scored by which brand the answer names most. A{" "}
-        <AiTerm term="product fact check">product fact check</AiTerm> tests one published Fender fact instead.
+        <AiTerm term="product fact check">product fact check</AiTerm> tests one published {brandName()} fact instead.
       </p>
       <SimulationFilters rows={snapshot.calls} filter={filter} onChange={changeFilter} />
       {filter.role ? (
         <p style={mutedText} data-ai-role-filter={filter.role}>
           Showing {ROLE_LABELS[filter.role]}
-          {filter.outcome === "resolved" ? " with a clear leader" : filter.outcome === "fender_win" ? " where Fender/Squier was named most" : ""}.
+          {filter.outcome === "resolved" ? " with a clear leader" : filter.outcome === "fender_win" ? ` where ${leadBrand()} was named most` : ""}.
         </p>
       ) : null}
       {filter.brand ? (
@@ -155,10 +167,12 @@ function Explorer({ snapshot }: { snapshot: AiSearchSnapshot }) {
           <ResizableTable
             tableId="ai-simulations"
             columns={SIM_COLUMNS}
+            wrapColumnIds={SIM_WRAP_COLUMNS}
             freezeHeader
             maxHeight={520}
             sort={sorted.sort}
             onSort={sorted.onSort}
+            exportScope={exportScope}
           >
             <tbody>
               {sorted.rows.map((row) => {
@@ -190,7 +204,7 @@ function Explorer({ snapshot }: { snapshot: AiSearchSnapshot }) {
                         <span data-ai-prompt>{cleanPrompt(row.prompt)}</span>
                       </td>
                       <td>
-                        <span className={`tag-badge ${OUTCOME_TONE[outcome]}`}>{outcomeLabel}</span>
+                        <AiStatusTag tone={tagToneOf(OUTCOME_TONE[outcome])}>{outcomeLabel}</AiStatusTag>
                       </td>
                       <td data-engine-group={engineGroup(row.engine)}>
                         {engineLabel(row.engine)}

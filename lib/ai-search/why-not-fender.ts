@@ -1,4 +1,5 @@
 import { classifySource, isValidCitationUrl, type SourceClass } from "@/lib/ai-search/citations";
+import { brandName, isFenderClient, leadBrand } from "@/lib/brand-copy";
 
 export type WhyNotPage = { href: string; label: string; owner: string };
 
@@ -11,7 +12,12 @@ export type WhyNotFenderView = {
   pages: WhyNotPage[];
 };
 
-const FENDER_NAME = /\b(fender|squier)\b/i;
+/** The names that count as the client brand in an answer: Fender and Squier, or the brand's own name. */
+function brandMention(): RegExp {
+  if (isFenderClient()) return /\b(fender|squier)\b/i;
+  const name = brandName().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`\\b${name}\\b`, "i");
+}
 
 /**
  * Pooled evidence ids are `${audit_run_id}:${call.id}`.
@@ -35,7 +41,7 @@ function brandKey(brand: string): string {
 }
 
 function ownerLabel(sourceClass: SourceClass, domain: string, winner: string | null): string {
-  if (sourceClass === "fender_owned") return "Fender";
+  if (sourceClass === "fender_owned") return brandName();
   if (sourceClass === "competitor_brand") {
     if (winner && brandKey(domain).includes(brandKey(winner))) return `${winner} site`;
     return "Other brand site";
@@ -55,16 +61,17 @@ function plural(n: number, one: string, many: string): string {
 function summarize(winner: string | null, mentioned: boolean | null, pages: WhyNotPage[]): string {
   const named = winner ? `${winner} was named most.` : "Another brand was named most.";
   const mention =
-    mentioned === null ? "" : mentioned ? " Fender/Squier was mentioned, but named less often." : " Fender/Squier was not mentioned.";
+    mentioned === null ? "" : mentioned ? ` ${leadBrand()} was mentioned, but named less often.` : ` ${leadBrand()} was not mentioned.`;
   if (pages.length === 0) return `${named}${mention} No cited page was stored.`;
-  const fender = pages.filter((page) => page.owner === "Fender").length;
+  const brand = brandName();
+  const fender = pages.filter((page) => page.owner === brand).length;
   const winnerSite = winner ? pages.filter((page) => page.owner === `${winner} site`).length : 0;
   const cited =
     pages.length === 1
-      ? `Its one cited page ${fender === 1 ? "is" : "is not"} a Fender page.`
+      ? `Its one cited page ${fender === 1 ? "is" : "is not"} a ${brand} page.`
       : fender === 0
-        ? `None of its ${pages.length} cited pages is a Fender page.`
-        : `${fender} of its ${plural(pages.length, "cited page", "cited pages")} ${fender === 1 ? "is a Fender page" : "are Fender pages"}.`;
+        ? `None of its ${pages.length} cited pages is a ${brand} page.`
+        : `${fender} of its ${plural(pages.length, "cited page", "cited pages")} ${fender === 1 ? `is a ${brand} page` : `are ${brand} pages`}.`;
   const rival = winnerSite > 0 ? ` ${winnerSite} ${winnerSite === 1 ? "is" : "are"} on ${winner}'s own site.` : "";
   return `${named}${mention} ${cited}${rival}`;
 }
@@ -86,6 +93,6 @@ export function whyNotFender(input: {
     const domain = hostOf(href);
     pages.push({ href, label: page.label?.trim() || href, owner: ownerLabel(classifySource(domain), domain, winner) });
   }
-  const fenderMentioned = answer === null ? null : FENDER_NAME.test(answer);
+  const fenderMentioned = answer === null ? null : brandMention().test(answer);
   return { fenderMentioned, summary: summarize(winner, fenderMentioned, pages), answer, pages };
 }

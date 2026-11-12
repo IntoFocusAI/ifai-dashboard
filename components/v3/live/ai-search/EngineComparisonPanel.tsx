@@ -6,44 +6,44 @@ import { useAiHistoryOptional } from "@/components/v3/live/ai-search/AiHistoryCo
 import { AiReadGate } from "@/components/v3/live/ai-search/AiReadGate";
 import { EngineGroupScope } from "@/components/v3/live/ai-search/EngineGroupScope";
 import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
+import { EngineCategoryGrid } from "@/components/v3/live/ai-search/EngineCategoryGrid";
 import { EngineComparisonLead } from "@/components/v3/live/ai-search/EngineComparisonLead";
 import { EngineUnbrandedGraph } from "@/components/v3/live/ai-search/EngineUnbrandedGraph";
 import { EvidenceLink } from "@/components/v3/live/ai-search/EvidenceLink";
-import { KeptOutNote, RoleCount, RolePair, largestResolved, roleColumn, roleRateSort } from "@/components/v3/live/ai-search/RoleRateTable";
+import { RoleCount, largestResolved, roleColumn, roleRateSort } from "@/components/v3/live/ai-search/RoleRateTable";
+import { useAiExportScope } from "@/components/v3/live/ai-search/useAiExport";
 import { AI_TABS } from "@/lib/ai-search/canvas-surfaces";
 import { engineGroup } from "@/lib/ai-search/engine-group";
-import {
-  engineResultRoleTallies,
-  headlineAside,
-  headlineCompetitorWins,
-  roleTally,
-  type RoleGroupTally,
-} from "@/lib/ai-search/question-role";
-import { categoryLabel, engineLabel } from "@/lib/ai-search/run-metrics";
+import { engineResultRoleTallies, headlineAside, type RoleGroupTally } from "@/lib/ai-search/question-role";
+import { competitorLeadsLine, engineCompetitorLeads } from "@/lib/ai-search/radar-tables";
+import { engineLabel } from "@/lib/ai-search/run-metrics";
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
 import type { AiCallRow, AiSearchSnapshot } from "@/lib/ai-search/types";
 import { hasMixedScoringMethods, isWindowHistoryKind } from "@/lib/ai-search/window-display";
+import { formatInt } from "@/lib/fender-canvas/format";
 
-function brandId(brand: string): string {
-  return `brand:${brand}`;
-}
+/** One competitor column that wraps, so any number of rival brands fits the panel. */
+const ENGINE_COLUMNS: RetailColumn[] = [
+  clientColumn("engine", "Engine", "text", 130, 100),
+  roleColumn("unbranded_discovery", 170),
+  roleColumn("branded_consideration", 170),
+  {
+    ...clientColumn("competitors", "Competitor leads", "number", 220, 140),
+    headerTooltip: {
+      title: "Competitor leads",
+      description:
+        "Each other brand this engine named most in a resolved unbranded discovery answer, with how many it led, most first. Sorting uses the total.",
+    },
+  },
+  clientColumn("unresolved", "No leader", "number", 110, 80),
+  clientColumn("errors", "Errors", "number", 90, 72),
+];
 
-function engineColumns(brands: string[]): RetailColumn[] {
-  return [
-    clientColumn("engine", "Engine", "text", 160, 110),
-    roleColumn("unbranded_discovery"),
-    roleColumn("branded_consideration"),
-    ...brands.map((brand) => clientColumn(brandId(brand), brand, "number", 110, 80)),
-    clientColumn("unresolved", "No leader", "number", 110, 80),
-    clientColumn("errors", "Errors", "number", 90, 72),
-  ];
-}
+/** The engine cell carries its model list, and the rates may carry a Small sample mark: all three may wrap. */
+const ENGINE_WRAPS = ["engine", "unbranded_discovery", "branded_consideration"];
 
-function brandWins(rows: AiCallRow[], engine: string, brand: string): number {
-  return headlineCompetitorWins(rows.filter((row) => (row.engine ?? "").toLowerCase() === engine)).find(
-    (entry) => entry.brand === brand,
-  )?.wins ?? 0;
-}
+const engineKey = (row: RoleGroupTally) => row.key;
+
 
 function engineSortValue(
   row: RoleGroupTally,
@@ -56,7 +56,7 @@ function engineSortValue(
   if (columnId === "branded_consideration") return roleRateSort(row.roles.branded_consideration, largest.branded);
   if (columnId === "unresolved") return headlineAside(row).unresolved;
   if (columnId === "errors") return headlineAside(row).errors;
-  if (columnId.startsWith("brand:")) return brandWins(rows, row.key, columnId.slice("brand:".length));
+  if (columnId === "competitors") return engineCompetitorLeads(rows, row.key).reduce((sum, lead) => sum + lead.wins, 0);
   return null;
 }
 
@@ -69,45 +69,13 @@ function Comparison({ snapshot }: { snapshot: AiSearchSnapshot }) {
     unbranded: largestResolved(engines, "unbranded_discovery"),
     branded: largestResolved(engines, "branded_consideration"),
   };
-  const brands = headlineCompetitorWins(snapshot.calls).map((entry) => entry.brand);
-  const categories = [
-    ...new Set(
-      snapshot.calls.filter((row) => row.prompt_kind === "commercial").map((row) => row.category ?? ""),
-    ),
-  ].sort();
-  const columns = engineColumns(brands);
-  const categoryColumns = [
-    clientColumn("category", "Category", "text", 160, 110),
-    ...engines.map((engine) => clientColumn(engine.key, engineLabel(engine.key), "number", 210, 160)),
-  ];
-  const sortedEngines = useClientTableSort(engines, columns, (row, columnId) =>
-    engineSortValue(row, columnId, snapshot.calls, largest),
+  const sortedEngines = useClientTableSort(
+    engines,
+    ENGINE_COLUMNS,
+    (row, columnId) => engineSortValue(row, columnId, snapshot.calls, largest),
+    engineKey,
   );
-  const cellOf = (category: string, engine: string) => {
-    const bucket = snapshot.calls.filter(
-      (row) => (row.category ?? "") === category && (row.engine ?? "").toLowerCase() === engine,
-    );
-    return {
-      unbranded: roleTally(bucket, "unbranded_discovery"),
-      branded: roleTally(bucket, "branded_consideration"),
-    };
-  };
-  const cellLargest = categories.reduce(
-    (max, category) => {
-      for (const engine of engines) {
-        const cell = cellOf(category, engine.key);
-        max.unbranded = Math.max(max.unbranded, cell.unbranded.resolved);
-        max.branded = Math.max(max.branded, cell.branded.resolved);
-      }
-      return max;
-    },
-    { unbranded: 0, branded: 0 },
-  );
-  const sortedCategories = useClientTableSort(categories, categoryColumns, (category, columnId) => {
-    if (columnId === "category") return categoryLabel(category);
-    const cell = cellOf(category, columnId);
-    return cell.unbranded.resolved + cell.branded.resolved > 0 ? cell.unbranded.fenderWins : null;
-  });
+  const exportScope = useAiExportScope();
 
   return (
     <>
@@ -117,7 +85,10 @@ function Comparison({ snapshot }: { snapshot: AiSearchSnapshot }) {
         <div className="content-box-title">Commercial outcomes by engine</div>
         <ResizableTable
           tableId="engine-comparison"
-          columns={columns}
+          columns={ENGINE_COLUMNS}
+          fillColumnId="competitors"
+          wrapColumnIds={ENGINE_WRAPS}
+          exportScope={exportScope}
           freezeHeader
           maxHeight={520}
           sort={sortedEngines.sort}
@@ -150,11 +121,9 @@ function Comparison({ snapshot }: { snapshot: AiSearchSnapshot }) {
                       showSmallSample={showSmallSample}
                     />
                   </td>
-                  {brands.map((brand) => (
-                    <td key={brand}>{brandWins(snapshot.calls, engine.key, brand)}</td>
-                  ))}
-                  <td>{aside.unresolved}</td>
-                  <td>{aside.errors}</td>
+                  <td data-ai-engine-competitors="">{competitorLeadsLine(engineCompetitorLeads(snapshot.calls, engine.key))}</td>
+                  <td>{formatInt(aside.unresolved)}</td>
+                  <td>{formatInt(aside.errors)}</td>
                 </tr>
               );
             })}
@@ -169,50 +138,11 @@ function Comparison({ snapshot }: { snapshot: AiSearchSnapshot }) {
               A <AiTerm term="small sample" /> keeps its percentage and is not ranked.
             </>
           ) : null}{" "}
-          Competitor columns count wins inside <AiTerm term="unbranded discovery">unbranded discovery</AiTerm> only.
+          Competitor leads count wins inside <AiTerm term="unbranded discovery">unbranded discovery</AiTerm> only.
         </p>
       </div>
 
-      <div className="content-box ai-engine-category ai-role-rates" style={{ marginTop: 12 }}>
-        <div className="content-box-title">Fender leads by engine and category</div>
-        <ResizableTable
-          tableId="engine-category"
-          columns={categoryColumns}
-          freezeHeader
-          maxHeight={520}
-          sort={sortedCategories.sort}
-          onSort={sortedCategories.onSort}
-        >
-          <tbody>
-            {sortedCategories.rows.map((category) => (
-              <tr key={category} data-category={category}>
-                <td>{categoryLabel(category)}</td>
-                {engines.map((engine) => {
-                  const cell = cellOf(category, engine.key);
-                  const errors = cell.unbranded.errors + cell.branded.errors;
-                  return (
-                    <td key={engine.key}>
-                      <RolePair
-                        unbranded={cell.unbranded}
-                        branded={cell.branded}
-                        largestUnbranded={cellLargest.unbranded}
-                        largestBranded={cellLargest.branded}
-                        showSmallSample={showSmallSample}
-                      />
-                      {errors ? <div className="ai-role-detail">{errors} provider errors</div> : null}
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
-          </tbody>
-        </ResizableTable>
-        <p className="ai-role-footnote">
-          Each cell shows both rates.
-          {showSmallSample ? " A small sample is marked beside its percentage, and the two rates are not combined into one." : " The two rates are not combined into one."}
-        </p>
-        <KeptOutNote snapshot={snapshot} />
-      </div>
+      <EngineCategoryGrid snapshot={snapshot} engines={engines} showSmallSample={showSmallSample} />
     </>
   );
 }

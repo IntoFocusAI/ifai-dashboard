@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import {
-  READING_STALE_AFTER_MS,
+  MAP_PRICE_CHECK_SCHEDULE_MS,
   channelReadingNote,
   channelSummaryText,
   musiciansFriendCheckNote,
@@ -23,14 +23,18 @@ test("Walmart missing prices are not counted as zero", () => {
   assert.doesNotMatch(walmartMissingPriceNote(919) ?? "", /\b(40|84|532|920)\b/);
 });
 
-test("Musician's Friend states the last check only after 26 hours", () => {
+// X-25, decision 4: MAP prices are checked daily; the asterisk appears past twice that schedule.
+const STALE_AFTER_MS = 2 * MAP_PRICE_CHECK_SCHEDULE_MS;
+
+test("Musician's Friend states the last check only past twice the daily MAP schedule", () => {
   const at = new Date(CHECKED).getTime();
+  assert.equal(MAP_PRICE_CHECK_SCHEDULE_MS, 24 * 60 * 60 * 1000);
   assert.equal(musiciansFriendCheckNote(null, at), null);
   assert.equal(musiciansFriendCheckNote("not-a-time", at), null);
-  assert.equal(musiciansFriendCheckNote(CHECKED, at + READING_STALE_AFTER_MS), null);
+  assert.equal(musiciansFriendCheckNote(CHECKED, at + STALE_AFTER_MS), null);
   assert.equal(
-    musiciansFriendCheckNote(CHECKED, at + READING_STALE_AFTER_MS + 1),
-    "Last checked Oct 6, 2026, 4:36 PM UTC.",
+    musiciansFriendCheckNote(CHECKED, at + STALE_AFTER_MS + 1),
+    "Last checked Oct 6, 2026, 4:36 PM UTC. MAP prices are checked daily, and this check is older than twice that schedule, so these prices may have changed.",
   );
 });
 
@@ -39,7 +43,7 @@ test("channel lines keep the below-MAP count and add only the Walmart and Musici
   const friend = channelReadingNote("Musician's Friend", {
     walmartMissing: 3,
     musiciansFriendLastRunAt: CHECKED,
-    now: new Date(CHECKED).getTime() + READING_STALE_AFTER_MS + 60_000,
+    now: new Date(CHECKED).getTime() + STALE_AFTER_MS + 60_000,
   });
   const fresh = channelReadingNote("Musician's Friend", {
     walmartMissing: 3,
@@ -65,7 +69,8 @@ test("a channel cell prints the signed gap and does not name it Amazon gap", () 
     "utf8",
   );
   assert.doesNotMatch(source, /Amazon gap/);
-  assert.match(source, /danger-red/);
+  assert.match(source, /<StatusMark status="bad"/);
+  assert.match(source, /below MAP/);
   assert.match(source, /gap < 0/);
 });
 

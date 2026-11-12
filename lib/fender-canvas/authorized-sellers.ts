@@ -10,6 +10,22 @@ export function authorizedSellerControlOffered(sellerType: string): boolean {
   return sellerType === "Partner-led";
 }
 
+/**
+ * What each seller type means and who counts as a controlled Buy Box under it (R-02, SC-02).
+ * The wording follows docs/client-seller-models.md. It describes how the brand sells; it does
+ * not rank one seller type above another.
+ */
+const SELLER_TYPE_DEFINITIONS: Record<string, string> = {
+  "Partner-led":
+    "The brand does not sell directly on Amazon. Amazon Retail and authorized partners sell its products. A Buy Box counts as controlled when Amazon Retail or an authorized partner holds it.",
+  "Brand-led":
+    "The brand sells through its own Amazon seller account, possibly alongside other sellers. A Buy Box counts as controlled when the brand's own seller account holds it.",
+};
+
+export function sellerTypeDefinition(sellerType: string): string | null {
+  return SELLER_TYPE_DEFINITIONS[sellerType] ?? null;
+}
+
 export const AMAZON_RETAIL_ALWAYS_INCLUDED = "Amazon Retail is always included.";
 
 export const AUTHORIZED_SELLERS_MARK_LINE = "Mark the sellers in this Buy Box read.";

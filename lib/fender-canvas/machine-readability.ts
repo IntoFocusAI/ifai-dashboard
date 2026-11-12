@@ -5,8 +5,11 @@
  */
 
 import type { PieDiscData } from "@/lib/ai-search/citation-pies";
+import type { PartialFigure } from "@/lib/fender-canvas/canvas-reads";
+import { RECHECK_DAYS, rowsStale } from "@/lib/fender-canvas/row-stale";
 import { formatInt, formatPct, formatRatio } from "@/lib/fender-canvas/format";
 import { getCanvasSupabase } from "@/lib/supabase/canvas-client";
+import { brandSite } from "@/lib/brand-copy";
 
 /** The spec field. Neck, pickup, and hardware specs live here. */
 export const SPEC_BLOCK_FIELD = "additionalProperty";
@@ -60,7 +63,12 @@ export type SpecPage = {
   checkedAt: string | null;
 };
 
+/** One checked row of the spec read: its listing and its own check time (X-25). */
+export type SpecCheckedRow = { asin: string; checkedAt: string | null };
+
 export type SpecPageSummary = {
+  /** Every checked listing (fender_found stored as true or false), with its own check time. Optional on fixtures. */
+  checkedRows?: SpecCheckedRow[];
   pages: SpecPage[];
   withSpecBlock: number;
   withAllBasics: number;
@@ -100,6 +108,9 @@ function later(a: string | null, b: string | null): boolean {
 
 /** Group found rows into one entry per fender.com page. Rows without a page URL are not pages. */
 export function buildSpecPages(rows: readonly SpecPageSourceRow[]): SpecPageSummary {
+  const checkedRows: SpecCheckedRow[] = rows
+    .filter((row) => row.fender_found === true || row.fender_found === false)
+    .map((row) => ({ asin: row.asin, checkedAt: row.checked_at }));
   const latest = new Map<string, SpecPageSourceRow>();
   const asins = new Map<string, Set<string>>();
 
@@ -131,6 +142,7 @@ export function buildSpecPages(rows: readonly SpecPageSourceRow[]): SpecPageSumm
   pages.sort((a, b) => b.asins.length - a.asins.length || a.url.localeCompare(b.url));
 
   return {
+    checkedRows,
     pages,
     withSpecBlock: pages.filter((page) => page.hasSpecBlock).length,
     withAllBasics: pages.filter((page) => page.missingBasics.length === 0).length,
@@ -143,10 +155,8 @@ type PageRead = PromiseLike<{ data: unknown; error: { message: string } | null }
 export type SpecPageClient = {
   from: (view: string) => {
     select: (columns: string) => {
-      eq: (column: "fender_found", value: true) => {
-        order: (column: string, options: { ascending: boolean }) => {
-          range: (from: number, to: number) => PageRead;
-        };
+      order: (column: string, options: { ascending: boolean }) => {
+        range: (from: number, to: number) => PageRead;
       };
     };
   };
@@ -155,7 +165,7 @@ export type SpecPageClient = {
 const READ_PAGE = 1000;
 const MAX_READS = 10;
 
-/** Every found row on the spec view, read in pages. Throws on a failed read. */
+/** Every checked row on the spec view, read in pages (found pages, and the check time of every checked listing). Throws on a failed read. */
 export async function loadSpecPages(client?: SpecPageClient): Promise<SpecPageSummary> {
   const supabase = client ?? (getCanvasSupabase() as unknown as SpecPageClient);
   const rows: SpecPageSourceRow[] = [];
@@ -164,7 +174,6 @@ export async function loadSpecPages(client?: SpecPageClient): Promise<SpecPageSu
     const { data, error } = await supabase
       .from("canvas_spec_readiness")
       .select(SPEC_PAGE_COLUMNS)
-      .eq("fender_found", true)
       .order("asin", { ascending: true })
       .range(from, from + READ_PAGE - 1);
     if (error) throw new Error(`canvas_spec_readiness: ${error.message}`);
@@ -189,6 +198,8 @@ export type MachineHeroModel = {
   explainer: string;
   numerator: number | null;
   denominator: number | null;
+  /** Stale figure (X-25) when the page read is past its weekly schedule. */
+  partial?: PartialFigure | null;
 };
 
 /** Same bands as Specs complete on Catalog Governance (higher share is better). */
@@ -245,7 +256,7 @@ function sharePie(
     id,
     title,
     total,
-    totalLabel: "fender.com pages checked",
+    totalLabel: `${brandSite()} pages checked`,
     slices: [
       { key: "matched", label: hasLabel, count: has },
       { key: "contradicted", label: lacksLabel, count: total - has },
@@ -272,8 +283,8 @@ function hero(
     ratio: ready ? formatRatio(has, total) : null,
     color: pct != null ? shareColor(pct) : "var(--warning-amber)",
     pie: ready ? sharePie(`machine-${id}`, label, pieLabels[0], pieLabels[1], has!, total!) : null,
-    tip: ready ? `${formatInt(has)} of ${formatInt(total)} fender.com pages checked.` : null,
-    explainer: ready ? explainer : "The fender.com page read could not be loaded.",
+    tip: ready ? `${formatInt(has)} of ${formatInt(total)} ${brandSite()} pages checked.` : null,
+    explainer: ready ? explainer : `The ${brandSite()} page read could not be loaded.`,
     numerator: ready ? has : null,
     denominator: ready ? total : null,
   };
@@ -283,7 +294,7 @@ export const SPEC_BLOCK_DEFINITION =
   "Schema.org additionalProperty on the page's product data. It carries specs such as nut width, fingerboard radius, and pickups as facts an AI engine can read.";
 
 export const MISSING_MACHINE_SPECS_DEFINITION =
-  "Share of found fender.com pages whose Schema.org product data is missing the spec block (additionalProperty) AI engines read as product facts.";
+  `Share of found ${brandSite()} pages whose Schema.org product data is missing the spec block (additionalProperty) AI engines read as product facts.`;
 
 export const PRODUCT_BASICS_DEFINITION =
   "Name, SKU, brand, UPC, description, image, and price in the page's Schema.org product data.";
@@ -299,7 +310,7 @@ function missingSpecsHero(summary: SpecPageSummary | null): MachineHeroModel {
       ? `Missing on these pages: ${named.join(", ")}.`
       : ready
         ? "Every checked page has machine-readable specs."
-        : "The fender.com page read could not be loaded.";
+        : `The ${brandSite()} page read could not be loaded.`;
   return {
     id: "missing_specs",
     label: "Found pages missing machine-readable specs",
@@ -317,16 +328,60 @@ function missingSpecsHero(summary: SpecPageSummary | null): MachineHeroModel {
           total!,
         )
       : null,
-    tip: ready ? `${formatInt(missing)} of ${formatInt(total)} found fender.com pages.` : null,
+    tip: ready ? `${formatInt(missing)} of ${formatInt(total)} found ${brandSite()} pages.` : null,
     explainer: namedLine,
     numerator: ready ? missing : null,
     denominator: ready ? total : null,
   };
 }
 
+/** The stale reading for the page figures: each found page's own latest check against twice the weekly schedule. */
+export function specPagesStale(summary: SpecPageSummary | null, now: number = Date.now()): PartialFigure | null {
+  if (!summary) return null;
+  return rowsStale(
+    summary.pages,
+    (page) => page.checkedAt,
+    {
+      intervalDays: RECHECK_DAYS.weekly,
+      check: `${brandSite()} product check`,
+      source: "canvas_spec_readiness",
+      figure: "page shares",
+      unit: "pages",
+    },
+    now,
+  );
+}
+
+/**
+ * The stale reading for the page-found figures (the AI Readiness map bubble and the Brand-Site Specs
+ * lead): each checked listing's own check against twice the weekly schedule. Null when the read
+ * carries no per-row times.
+ */
+export function pageFoundRowsStale(summary: SpecPageSummary | null | undefined, now: number = Date.now()): PartialFigure | null {
+  if (!summary?.checkedRows) return null;
+  return rowsStale(
+    summary.checkedRows,
+    (row) => row.checkedAt,
+    {
+      intervalDays: RECHECK_DAYS.weekly,
+      check: `${brandSite()} product check`,
+      source: "canvas_spec_readiness",
+      figure: "page-found figures",
+    },
+    now,
+  );
+}
+
 /** Brand-Site Specs heroes. Missing machine-readable specs leads; product basics follow. */
 export function machineReadabilityHeroes(summary: SpecPageSummary | null): MachineHeroModel[] {
   const total = summary ? summary.pages.length : null;
+  const partial = specPagesStale(summary);
+  return machineHeroes(summary, total).map((hero) =>
+    hero.denominator != null && partial ? { ...hero, partial } : hero,
+  );
+}
+
+function machineHeroes(summary: SpecPageSummary | null, total: number | null): MachineHeroModel[] {
   return [
     missingSpecsHero(summary),
     hero(
@@ -350,7 +405,7 @@ export function sharedGapSentence(summary: SpecPageSummary | null): string | nul
   const first = summary.pages[0].missingFields.join(";");
   if (!summary.pages.every((page) => page.missingFields.join(";") === first)) return null;
   if (summary.withSpecBlock === 0 && summary.withAllBasics === summary.pages.length) {
-    return `All ${formatInt(summary.pages.length)} checked pages have every basic and none has a spec block. The same gap on every page points to fender.com's shared product template, so one template change adds the spec block to every page.`;
+    return `All ${formatInt(summary.pages.length)} checked pages have every basic and none has a spec block. The same gap on every page points to ${brandSite()}'s shared product template, so one template change adds the spec block to every page.`;
   }
   return null;
 }

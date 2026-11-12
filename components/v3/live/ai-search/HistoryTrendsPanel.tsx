@@ -7,6 +7,7 @@ import { CopyTip } from "@/components/v3/live/ai-search/CopyTip";
 import { useEngineGroupWindow } from "@/components/v3/live/ai-search/EngineGroupScope";
 import { HistoryPointDetail } from "@/components/v3/live/ai-search/HistoryPointDetail";
 import { HistoryTrendChart } from "@/components/v3/live/ai-search/HistoryTrendChart";
+import { HistoryTrendTable } from "@/components/v3/live/ai-search/HistoryTrendTable";
 import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
 import { formatDay, utcDay } from "@/lib/ai-search/history-eligibility";
 import { batteryGaps } from "@/lib/ai-search/prompt-battery";
@@ -14,10 +15,8 @@ import { SCORING_LABELS, scoringLabel } from "@/lib/ai-search/review-runs";
 import {
   boundaryLabel,
   buildHistoryTrend,
-  coverageLabel,
   ONE_RUN_TREND_MESSAGE,
   queryChoices,
-  rateLabel,
   type QueryChoice,
   type TrendMetric,
 } from "@/lib/ai-search/history-trends";
@@ -43,7 +42,7 @@ export function HistoryTrendsPanel() {
   const [breakdown, setBreakdown] = useState<"overall" | "engine">("overall");
   const [query, setQuery] = useState<QueryChoice>({ kind: "all" });
   const [picked, setPicked] = useState<{ runId: string; seriesKey: string } | null>(null);
-  const { trend, apiDays, runCount } = useEngineGroupWindow("trend");
+  const { trend, apiDays, runCount } = useEngineGroupWindow();
   const { from, to } = history.bounds;
 
   const model = useMemo(() => {
@@ -133,7 +132,7 @@ export function HistoryTrendsPanel() {
                     scoringLabel(trend.phase === "ready" ? trend.snapshots.find((item) => item.run.audit_run_id === boundary.afterRunId)?.run ?? {} : {}) ?? SCORING_LABELS.original_winner
                   }. ${formatDay(boundary.beforeDay)} uses ${
                     scoringLabel(trend.phase === "ready" ? trend.snapshots.find((item) => item.run.audit_run_id === boundary.beforeRunId)?.run ?? {} : {}) ?? SCORING_LABELS.mention_share
-                  }. The line can connect these runs. The rates were not scored the same way.`
+                  }.`
                 : `${formatDay(boundary.afterDay)} to ${formatDay(boundary.beforeDay)}. Open the questions on each side before comparing the rates.`}
             </p>
             <details>
@@ -155,34 +154,7 @@ export function HistoryTrendsPanel() {
             </details>
           </div>
         ))}
-        <table className="table-sm ai-history-table">
-          <thead>
-            <tr>
-              <th>Run</th>
-              <th>Series</th>
-              <th>Rate</th>
-              <th>Outside the rate</th>
-            </tr>
-          </thead>
-          <tbody>
-            {model.series.flatMap((series) =>
-              series.points.map((point) => (
-                <tr key={`${point.runId}:${series.key}`} data-ai-trend-row={`${point.runId}:${series.key}`}>
-                  <td>
-                    {formatDay(point.day)}
-                    {point.partial ? " · Partial" : ""}
-                    {point.notStored > 0 ? " · Partial coverage" : ""}
-                    {point.scoringMethod ? ` · ${SCORING_LABELS[point.scoringMethod]}` : ""}
-                    {apiDays.get(point.runId)?.map((day) => ` · API run ${formatDay(day)}`)}
-                  </td>
-                  <td>{series.label}</td>
-                  <td>{rateLabel(point)}</td>
-                  <td>{coverageLabel(point)}</td>
-                </tr>
-              )),
-            )}
-          </tbody>
-        </table>
+        <HistoryTrendTable model={model} apiDays={apiDays} metric={metric} breakdown={breakdown} query={query} />
         {trend.phase === "ready"
           ? trend.snapshots.flatMap((snapshot) => {
               const day = utcDay(snapshot.run.published_at ?? snapshot.run.completed_at);
@@ -194,7 +166,14 @@ export function HistoryTrendsPanel() {
             })
           : null}
         {active && snapshot ? (
-          <HistoryPointDetail snapshot={snapshot} point={active.point} metric={metric} query={query} />
+          <HistoryPointDetail
+            snapshot={snapshot}
+            point={active.point}
+            seriesKey={active.series.key}
+            metric={metric}
+            breakdown={breakdown}
+            query={query}
+          />
         ) : (
           <p className="ai-history-note">Choose a point to see the calls behind it.</p>
         )}
@@ -231,9 +210,6 @@ export function HistoryTrendsPanel() {
           </button>
         </div>
       </div>
-      <p className="ai-history-note">
-        <AiTerm term="provider error">Provider errors</AiTerm> and <AiTerm term="no clear leader">unresolved answers</AiTerm> stay outside both rates.
-      </p>
       <label className="ai-history-query">
         Question
         <select

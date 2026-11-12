@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { CircleCheck, CircleMinus, Equal, TriangleAlert, type LucideIcon } from "lucide-react";
+import { StatusMark } from "@/components/v3/live/StatusMark";
 import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
 import { sliceColor } from "@/components/v3/live/ai-search/CitationPieDisc";
 import { EvidenceLink } from "@/components/v3/live/ai-search/EvidenceLink";
@@ -9,6 +10,7 @@ import { AI_TABS } from "@/lib/ai-search/canvas-surfaces";
 import { scopeEvidence, type EvidenceScope } from "@/lib/ai-search/evidence-focus";
 import {
   categoryLeadPie,
+  ENGINE_MARK_TITLE,
   engineOnlyNote,
   LEAD_STATUS_LABELS,
   leadSentence,
@@ -19,8 +21,11 @@ import {
 } from "@/lib/ai-search/category-on-track";
 import { isSmallSample } from "@/lib/ai-search/run-metrics";
 import { SMALL_SAMPLE_LABEL } from "@/lib/ai-search/summary";
+import type { DataStatus } from "@/lib/canvas-sdk/data-status";
+import { PARTIAL_MARK } from "@/lib/fender-canvas/canvas-reads";
+import { leadBrand } from "@/lib/brand-copy";
 
-/** The icon and the word carry the status. Color only repeats it. */
+/** Icons for the who-leads filter chips. The chips carry no status color. */
 export const LEAD_STATUS_ICONS: Record<CategoryLeadStatus, LucideIcon> = {
   on_track: CircleCheck,
   tied: Equal,
@@ -28,20 +33,21 @@ export const LEAD_STATUS_ICONS: Record<CategoryLeadStatus, LucideIcon> = {
   not_available: CircleMinus,
 };
 
-const BADGE_TAG: Record<CategoryLeadStatus, string> = {
-  on_track: "tag-success",
-  tied: "tag-warning",
-  behind: "tag-danger",
-  not_available: "tag-neutral",
+/** The brand book status behind each FDD word: Pine check On track, Champagne dash Tied, Oxblood x Behind. */
+const LEAD_DATA_STATUS: Record<CategoryLeadStatus, DataStatus | null> = {
+  on_track: "good",
+  tied: "okay",
+  behind: "bad",
+  not_available: null,
 };
 
 const LEGEND = [
-  { key: "fender", label: "Fender/Squier" },
+  { key: "fender", label: leadBrand() },
   { key: "competitor_brand", label: "Top rival" },
   { key: "other", label: "Other brands" },
 ];
 
-const ERROR_LEGEND = { key: "none", label: "Fender/Squier with a product error" };
+const ERROR_LEGEND = { key: "none", label: `${leadBrand()} with a product error` };
 
 export function Term({
   name,
@@ -67,24 +73,24 @@ export function Term({
   );
 }
 
-/** The asterisk on a figure the engine chip narrows. Nothing shows with all engines. */
+/** The asterisk on a figure the engine chip narrows (X-25). Nothing shows with all engines. */
 export function EngineMark({ engineName }: { engineName: string | null }) {
   if (!engineName) return null;
   return (
-    <Term name={`${engineName} only`} desc={engineOnlyNote(engineName)} className="ai-battle-engine-mark">
-      *
+    <Term name={ENGINE_MARK_TITLE} desc={engineOnlyNote(engineName)} className="partial-figure-mark ai-battle-engine-mark">
+      {PARTIAL_MARK}
     </Term>
   );
 }
 
+/** Mark, word, and color for On track, Tied, or Behind. Not available* stays plain. */
 export function LeadStatusBadge({ lead }: { lead: Pick<CategoryLead, "status" | "asked"> }) {
-  const Icon = LEAD_STATUS_ICONS[lead.status];
   const label = LEAD_STATUS_LABELS[lead.status];
+  const status = LEAD_DATA_STATUS[lead.status];
   return (
-    <span className={`tag-badge ${BADGE_TAG[lead.status]} ai-ontrack-badge`} data-ai-ontrack-badge={lead.status}>
-      <Icon size={14} strokeWidth={2.4} aria-hidden="true" />
+    <span className="ai-ontrack-badge" data-ai-ontrack-badge={lead.status}>
       <Term name={label} desc={leadStatusDefinition(lead)}>
-        {label}
+        {status ? <StatusMark status={status} word={label} /> : label}
       </Term>
     </span>
   );

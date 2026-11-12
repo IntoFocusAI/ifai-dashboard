@@ -1,0 +1,231 @@
+/* Catalog Health view styles. Shared tokens and table chrome stay in canvas-sdk.css. */
+
+/* MAP exposure card: label with its estimate tag, the monthly figure, then source and coverage. */
+.ifai-canvas .map-exposure-card {
+  flex: 0 1 auto;
+  width: fit-content;
+  max-width: 100%;
+  margin-top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ifai-canvas .map-exposure-label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.ifai-canvas .map-exposure-figure {
+  color: var(--text-main);
+  white-space: nowrap;
+}
+
+.ifai-canvas .map-exposure-period {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--text-muted);
+}
+
+/* A tag or chip that opens a tooltip keeps its pill border; no dotted underline on top of it. */
+.ifai-canvas .source-tag.ifai-term,
+.ifai-canvas .tag-badge.ifai-term {
+  border-bottom-style: solid;
+  cursor: help;
+}
+
+.ifai-canvas .tag-badge.ifai-term {
+  border-bottom: 0;
+}
+
+.ifai-canvas .source-tag-estimate.ifai-term {
+  border-bottom: 1px dashed currentColor;
+}
+
+/* The mark and word under a lead figure. */
+.ifai-canvas .findability-lead-figures > .data-status,
+.ifai-canvas .retail-overview-hero-figures > .data-status {
+  margin-top: 2px;
+}
+
+/* A below-MAP gap in a price cell: price on the first line, mark and gap beneath it. */
+.ifai-canvas .channel-gap.data-status {
+  display: flex;
+  justify-content: flex-start;
+  margin-left: 0;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* A gap above a benchmark on Suppressed Listings: the mark travels with the amount. */
+.ifai-canvas .fo-gap.data-status {
+  font-size: inherit;
+  font-weight: 600;
+}
+
+/* A Done chip carries the check mark with its word. */
+.ifai-canvas .set-aside-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Dated stretches inside an Out of Stock row sit in the shared table chrome. */
+.ifai-canvas .stock-loss-episodes .table-toolbar {
+  margin-top: 4px;
+}
+
+/*
+ * Fitted tables: every Catalog Health table fits the panel at 1280 wide with no side scroll.
+ * Cells are tighter, header tags sit under their label, and prices stack over their gap.
+ */
+/* The right padding clears the 8px resize handle; the 11px header tags (X-31) need the rest. */
+.ifai-canvas .resizable-table.retail-fit th {
+  padding: 8px 8px 8px 6px;
+}
+
+.ifai-canvas .resizable-table.retail-fit td {
+  padding: 9px 6px;
+}
+
+.ifai-canvas .retail-fit .resizable-th .ifai-sort-btn,
+.ifai-canvas .retail-fit .resizable-th .resizable-th-label {
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+.ifai-canvas .retail-fit .sourced-label {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+}
+
+.ifai-canvas .retail-fit .resizable-th .source-tag {
+  white-space: normal;
+  border-radius: 8px;
+  font-size: 11px;
+  letter-spacing: 0;
+  line-height: 1.3;
+  padding: 1px 3px;
+}
+
+.ifai-canvas .retail-fit td.channel-fact,
+.ifai-canvas .retail-fit .channel-note,
+.ifai-canvas .retail-fit td.money {
+  white-space: normal;
+  overflow-wrap: normal;
+}
+
+.ifai-canvas .retail-fit .channel-fact > a,
+.ifai-canvas .retail-fit .channel-fact > span:first-child {
+  white-space: nowrap;
+}
+
+.ifai-canvas .retail-fit .channel-gap.data-status,
+.ifai-canvas .retail-fit .fo-gap.data-status {
+  white-space: nowrap;
+}
+
+.ifai-canvas .retail-fit .asin-chip {
+  padding: 2px 4px;
+}
+
+.ifai-canvas .retail-fit .set-aside-buttons {
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.ifai-canvas .retail-fit .set-aside-chip {
+  white-space: normal;
+}
+
+/* Listing names: two lines at most. The full name is in the tooltip. */
+.ifai-canvas .listing-name {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  line-height: 1.35;
+}
+
+.ifai-canvas .listing-name.ifai-term {
+  border-bottom: 0;
+  cursor: default;
+}
+
+.ifai-canvas .listing-name.ifai-term:hover {
+  color: inherit;
+}
+
+/* Retail Overview: four cards with one layout. The disc stays beside the figures. */
+.ifai-canvas .retail-overview-heroes > .retail-overview-hero {
+  flex: 1 1 0;
+  min-width: 180px;
+}
+
+.ifai-canvas .retail-overview-hero .retail-overview-hero-row {
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.ifai-canvas .retail-overview-hero .retail-overview-hero-figures {
+  flex: 1 1 auto;
+}
+
+.ifai-canvas .retail-overview-hero .citation-pie-disc {
+  flex: 0 0 auto;
+}
+
+.ifai-canvas .retail-commerce-hero {
+  display: flex;
+  flex-direction: column;
+}
+
+.ifai-canvas .retail-commerce-hero .retail-explore {
+  margin-top: auto;
+  align-self: center;
+}
+
+/* MAP Leakage: the exposure card and the retailer list sit side by side beside the share card. */
+.ifai-canvas .map-top-side {
+  flex: 1 1 320px;
+  min-width: 0;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 12px;
+}
+
+.ifai-canvas .map-top-side > .content-box {
+  margin-top: 0;
+}
+
+.ifai-canvas .map-top-side > .map-exposure-card {
+  width: auto;
+  flex: 0 0 auto;
+}
+
+.ifai-canvas .map-top-side > [data-map-notes] {
+  flex: 1 1 240px;
+  min-width: 0;
+}
+
+/*
+ * A lead total with the partial asterisk. At hero size the asterisk's dotted underline falls
+ * far below the glyph and reads as a stray mark on the next line, so the asterisk alone is
+ * the tooltip target here.
+ */
+.ifai-canvas .stock-loss-hero .partial-figure-mark.ifai-term,
+.ifai-canvas .map-exposure-figure .partial-figure-mark.ifai-term {
+  border-bottom: 0;
+}

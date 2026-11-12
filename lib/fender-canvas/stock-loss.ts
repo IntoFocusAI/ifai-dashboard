@@ -10,6 +10,9 @@
  */
 
 import type { PieDiscData } from "@/lib/ai-search/citation-pies";
+import type { PartialFigure } from "@/lib/fender-canvas/canvas-reads";
+import { formatInt } from "@/lib/fender-canvas/format";
+import { combineStale, mergePartial, RECHECK_DAYS, rowsStale } from "@/lib/fender-canvas/row-stale";
 import { getCanvasSupabase } from "../supabase/canvas-client";
 
 export type RevenueSource = "brand_reported" | "smartscout";
@@ -242,6 +245,46 @@ export function awaitingInputsReason(row: StockLossRow): string {
   }
 }
 
+const AWAITING_REASON_PHRASE: Record<AwaitingInputsReason, string> = {
+  no_keepa_history: "with no Keepa history yet",
+  no_sales_source: "with no sales source",
+  smartscout_reports_no_sales: "where SmartScout reports no sales",
+  too_few_in_stock_days: "with too few in-stock days to set a sales rate",
+};
+
+const AWAITING_REASON_ORDER: readonly AwaitingInputsReason[] = [
+  "no_sales_source",
+  "smartscout_reports_no_sales",
+  "too_few_in_stock_days",
+  "no_keepa_history",
+];
+
+/** "1 of 3 out-of-stock listings have no sales estimate yet, so they are left out of the total." */
+export function noSalesEstimateSentence(awaiting: number, affected: number): string {
+  const fmt = new Intl.NumberFormat("en-US");
+  return `${fmt.format(awaiting)} of ${fmt.format(affected)} out-of-stock listings have no sales estimate yet, so they are left out of the total.`;
+}
+
+/**
+ * How many listings are awaiting inputs, by reason, as one sentence for the total's tooltip.
+ * Null when every listing is estimated.
+ */
+export function awaitingInputsBreakdown(rows: readonly StockLossRow[], window: LossWindow = 365): string | null {
+  const counts = new Map<AwaitingInputsReason, number>();
+  let awaiting = 0;
+  for (const row of rows) {
+    if (lostSales(row, window) != null && row.revenue_source) continue;
+    awaiting += 1;
+    const reason = row.awaiting_inputs_reason ?? "no_sales_source";
+    counts.set(reason, (counts.get(reason) ?? 0) + 1);
+  }
+  if (awaiting === 0) return null;
+  const parts = AWAITING_REASON_ORDER.filter((reason) => counts.has(reason)).map(
+    (reason) => `${new Intl.NumberFormat("en-US").format(counts.get(reason)!)} ${AWAITING_REASON_PHRASE[reason]}`,
+  );
+  return `${noSalesEstimateSentence(awaiting, rows.length)} Reasons: ${parts.join("; ")}.`;
+}
+
 export function noActiveOffer(row: StockLossRow): boolean {
   return row.featured_offer_state === "no_active_offer";
 }
@@ -250,6 +293,23 @@ export const EPISODE_STATE_LABELS: Record<StockEpisode["state"], string> = {
   out_of_stock: "Out of stock",
   no_buy_box: "No Buy Box",
 };
+
+/** The dated-stretch table's columns, shared by the screen and its CSV. */
+export const EPISODE_COLUMNS = [
+  { id: "state", name: "What happened", sort: "text", width: 150 },
+  { id: "started", name: "Started", sort: "date", width: 130 },
+  { id: "ended", name: "Ended", sort: "date", width: 130 },
+  { id: "days", name: "Days", sort: "number", width: 90 },
+] as const;
+
+/** The React key of one stretch, and its row key in a download. */
+export function episodeKey(episode: Pick<StockEpisode, "state" | "start_day">): string {
+  return `${episode.state}-${episode.start_day}`;
+}
+
+export function episodeEndLabel(episode: Pick<StockEpisode, "ongoing" | "end_day">): string {
+  return episode.ongoing ? "Still going" : (formatDay(episode.end_day) ?? "");
+}
 
 export function keepaHref(asin: string): string | null {
   return /^[A-Z0-9]{10}$/.test(asin) ? `https://keepa.com/#!product/1-${asin}` : null;
@@ -270,4 +330,59 @@ export function formatDay(day: string | null | undefined): string | null {
   if (!day) return null;
   const at = new Date(`${day}T00:00:00Z`);
   return Number.isFinite(at.getTime()) ? dayFormat.format(at) : null;
+}
+
+/**
+ * X-25 per-row stale reading for the lost-sales totals. Each listing in a total has its own
+ * Keepa history (history_through, rechecked daily) and, when SmartScout supplies its sales, its
+ * own SmartScout snapshot (smartscout_snapshot_date, rechecked every 7 days).
+ */
+export function lostSalesStale(
+  rows: readonly StockLossRow[],
+  window: LossWindow = 365,
+  now: number = Date.now(),
+): PartialFigure | null {
+  const estimated = rows.filter((row) => row.revenue_source && lostSales(row, window) != null);
+  const smartscout = estimated.filter((row) => row.revenue_source === "smartscout");
+  return combineStale(
+    [
+      {
+        label: "Keepa",
+        stale: rowsStale(
+          estimated,
+          (row) => row.history_through,
+          { intervalDays: RECHECK_DAYS.keepa, check: "Keepa update", source: "canvas_listing_sales_loss_v2", figure: "missed-sales totals" },
+          now,
+        ),
+      },
+      {
+        label: "SmartScout",
+        stale: rowsStale(
+          smartscout,
+          (row) => row.smartscout_snapshot_date,
+          { intervalDays: RECHECK_DAYS.smartscout, check: "SmartScout snapshot", source: "canvas_listing_sales_loss_v2", figure: "missed-sales totals" },
+          now,
+        ),
+      },
+    ],
+  );
+}
+
+/** The X-25 asterisk on a lost-sales total: the listings it leaves out, and the older inputs it includes. */
+export function lostSalesPartial(
+  rows: readonly StockLossRow[],
+  sum: LostSalesSum,
+  now: number = Date.now(),
+): PartialFigure | null {
+  const awaiting = rows.filter((row) => !(lostSales(row, sum.window) != null && row.revenue_source)).length;
+  const coverage: PartialFigure | null =
+    awaiting > 0
+      ? {
+          reason: "coverage",
+          missing: noSalesEstimateSentence(awaiting, sum.affectedCount),
+          coverage: null,
+          source: "SmartScout sales and Keepa stock history",
+        }
+      : null;
+  return mergePartial(coverage, lostSalesStale(rows, sum.window, now));
 }

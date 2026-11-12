@@ -249,17 +249,20 @@ test("each chain step has a one-line definition in a custom tooltip, and the spl
     showed: "Answers that listed web pages as sources. The sites and shares on this tab come from these answers.",
     none: "Answers given without showing a web page. These rely on what the model already knows.",
     links: "Every web page those answers listed. One answer can list several.",
-    owned: "Links that lead to fender.com and other Fender-owned sites.",
+    owned: "Links that lead to ${brandSite()} and other ${brandOwned()} sites.",
   };
-  for (const [key, text] of Object.entries(definitions)) assert.ok(chain.includes(`${key}: "${text}"`), key);
+  for (const [key, text] of Object.entries(definitions)) {
+    assert.ok(chain.includes(`${key}: "${text}"`) || chain.includes(`${key}: \`${text}\``), key);
+  }
   for (const [title, key, label] of [
     ["Showed sources", "showed", "showed sources"],
     ["No sources", "none", "{count(none)} no sources"],
     ["Links", "links", "links"],
-    ["To Fender-owned sites", "owned", "to Fender-owned sites"],
+    ["To ${brandOwned()} sites", "owned", "to {brandOwned()} sites"],
     ["Other sites", "other", "{count(other)} other sites"],
   ]) {
-    assert.ok(chain.includes(`<Term name="${title}" desc={CHAIN_DEFINITIONS.${key}}> ${label} </Term>`), title);
+    const name = title.includes("${") ? `{\`${title}\`}` : `"${title}"`;
+    assert.ok(chain.includes(`<Term name=${name} desc={CHAIN_DEFINITIONS.${key}}> ${label} </Term>`), title);
   }
   assert.match(chain, /data-ifai-tooltip-title=\{name\} data-ifai-tooltip-desc=\{desc\} tabIndex=\{0\} aria-label=\{`\$\{name\}: \$\{desc\}`\}/);
   assert.match(chain, /const answersDesc = `\$\{engines\.length \? `Answers from \$\{listed\(engines\)\}` : "Answers"\} in this view\./);
@@ -306,7 +309,7 @@ test("bars scale to the largest count shown, and N of M sits beside each bar", (
   assert.match(chart, /<strong>\{count\(n\)\}<\/strong> of \{count\(m\)\}/);
   assert.doesNotMatch(chart, /sliceColor/, "bars use Fender blue or slate, not a color per class");
   assert.match(chart, /\[source\.links, source\.linksTotal\] : \[source\.answers, source\.answered\]/);
-  assert.match(chart, /citation-top-source-owner">Fender-owned</);
+  assert.match(chart, /citation-top-source-owner">\{brandOwned\(\)\}</);
   const css = read("components/v3/live/ai-search/citation-glance.css");
   assert.match(css, /\.citation-glance-grid \{[^}]*grid-template-columns: minmax\(0, [\d.]+fr\) minmax\(0, 1fr\)/s);
   const chainCss = read("components/v3/live/ai-search/citation-chain.css");
@@ -346,7 +349,7 @@ test("the tab has one ranked chart of sites, and Fender-owned rows say so in wor
     assert.doesNotMatch(read(join(dir, name)), /CitationDomainsMix|data-citation-domains-mix/, name);
   }
   const chart = read(join(dir, "CitationTopSources.tsx"));
-  assert.match(chart, /citation-top-source-owner">Fender-owned</);
+  assert.match(chart, /citation-top-source-owner">\{brandOwned\(\)\}</);
   assert.match(chart, /width: `\$\{\(100 \* n\) \/ max\}%`/);
 });
 
@@ -396,7 +399,7 @@ test("on-screen Citation copy says what each figure is, and its caveats sit in t
     let source = read(join(dir, name));
     if (name === "CitationEcosystemPanel.tsx") {
       const notes = source.slice(source.indexOf('<details className="citation-method-notes">'), source.indexOf("</details>"));
-      assert.match(notes, /Fender does not control/);
+      assert.match(notes, /\{brandName\(\)\} does not control/);
       assert.match(notes, /does not measure whether the page\s+caused the recommendation/);
       source = source.replace(notes, "");
     }
@@ -416,7 +419,7 @@ test("on-screen Citation copy says what each figure is, and its caveats sit in t
   assert.match(bars, /const desc = `\$\{slice\.label\}: [^`]*\$\{caveat\}`;/, "each source-class row's tooltip");
   assert.match(bars, /data-ifai-tooltip-desc=\{desc\}/);
   const note = read(join(dir, "CitationRoleNote.tsx"));
-  assert.match(note, /export const SOURCE_MIX_CAVEAT =\s+"A useful authorized retailer citation is not a worse outcome than a Fender page/);
+  assert.match(note, /export const SOURCE_MIX_CAVEAT =\s+`A useful authorized retailer citation is not a worse outcome than a \$\{brandName\(\)\} page/);
 
   const chart = read(join(dir, "CitationTopSources.tsx"));
   assert.match(chart, /<li\s+className="citation-chart-tip ifai-term"\s+data-ifai-tooltip-title=\{source\.domain\}\s+data-ifai-tooltip-desc=\{`\$\{counts\} \$\{TOP_SITE_ASSOCIATION\}`\}/);

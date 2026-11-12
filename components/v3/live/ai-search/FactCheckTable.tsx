@@ -3,14 +3,17 @@
 import { clientColumn, ResizableTable } from "@/components/v3/live/ResizableTable";
 import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
 import { EmptyRows, mutedText } from "@/components/v3/live/ai-search/AiReadGate";
+import { AiStatusTag, tagToneOf } from "@/components/v3/live/ai-search/AiStatusTag";
 import { CopyTip } from "@/components/v3/live/ai-search/CopyTip";
 import { EvidenceLink } from "@/components/v3/live/ai-search/EvidenceLink";
 import { ExternalLink } from "@/components/v3/live/ai-search/ExternalLink";
+import { useAiExportScope } from "@/components/v3/live/ai-search/useAiExport";
 import { AI_TABS } from "@/lib/ai-search/canvas-surfaces";
 import { PROBE_STATE_LABELS, type ProbeEvidence, type ProbeState } from "@/lib/ai-search/drift";
 import { AMAZON_DIFFERS_TITLE, ANCHOR_TIP, ANCHOR_TITLE, amazonDiffersTip } from "@/lib/ai-search/fact-check-copy";
 import { engineLabel, formatRunTime, modelLabel } from "@/lib/ai-search/run-metrics";
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
+import { brandName } from "@/lib/brand-copy";
 
 const STATE_TONE: Record<ProbeState, string> = {
   confirmed: "tag-danger",
@@ -26,13 +29,18 @@ const STATE_TONE: Record<ProbeState, string> = {
  * Fact absorbs leftover width on a wider panel until someone drags a column.
  * Cells wrap inside the column when a drag makes it narrower than one line.
  */
+/* Questions, results, and facts wrap inside their columns, so the table fits a 1280 px panel. */
+const WRAP_COLUMNS = ["question", "result", "checked"] as const;
+
 const COLUMNS = [
-  clientColumn("question", "Question checked", "text", 390, 240),
-  clientColumn("engine", "Engine", "text", 130, 100),
-  clientColumn("result", "Result", "text", 340, 240),
-  clientColumn("fact", "Verified Fender fact", "text", 700, 280),
-  clientColumn("checked", "Checked", "date", 200, 160),
+  clientColumn("question", "Question checked", "text", 220, 160),
+  clientColumn("engine", "Engine", "text", 100, 90),
+  clientColumn("result", "Result", "text", 180, 150),
+  clientColumn("fact", `Verified ${brandName()} fact`, "text", 320, 200),
+  clientColumn("checked", "Checked", "date", 120, 110),
 ];
+
+const probeKey = (row: ProbeEvidence) => row.key;
 
 function factSortValue(row: ProbeEvidence, columnId: string): SortInput {
   if (columnId === "question") return row.prompt.trim() || null;
@@ -43,7 +51,8 @@ function factSortValue(row: ProbeEvidence, columnId: string): SortInput {
 }
 
 export function FactCheckTable({ rows, windowed = false }: { rows: ProbeEvidence[]; windowed?: boolean }) {
-  const sorted = useClientTableSort(rows, COLUMNS, factSortValue);
+  const sorted = useClientTableSort(rows, COLUMNS, factSortValue, probeKey);
+  const exportScope = useAiExportScope();
   const unit = windowed ? "selection" : "run";
   return (
     <div className="content-box ai-probe-table" style={{ marginTop: 12 }}>
@@ -54,10 +63,12 @@ export function FactCheckTable({ rows, windowed = false }: { rows: ProbeEvidence
           tableId="product-fact-checks"
           columns={COLUMNS}
           fillColumnId="fact"
+          wrapColumnIds={WRAP_COLUMNS}
           freezeHeader
           maxHeight={520}
           sort={sorted.sort}
           onSort={sorted.onSort}
+          exportScope={exportScope}
         >
           <tbody>
             {sorted.rows.map((row) => (
@@ -84,23 +95,23 @@ export function FactCheckTable({ rows, windowed = false }: { rows: ProbeEvidence
                   <div style={mutedText}>{modelLabel(row.model)}</div>
                 </td>
                 <td>
-                  <span className={`tag-badge ${STATE_TONE[row.state]}`}>{PROBE_STATE_LABELS[row.state]}</span>
+                  <AiStatusTag tone={tagToneOf(STATE_TONE[row.state])}>{PROBE_STATE_LABELS[row.state]}</AiStatusTag>
                 </td>
                 <td>
                   {row.claim ? (
                     <>
-                      {row.claim} <ExternalLink href={row.sourceUrl}>Fender source</ExternalLink>
+                      {row.claim} <ExternalLink href={row.sourceUrl}>{brandName()} source</ExternalLink>
                     </>
                   ) : (
                     "Not verified yet"
                   )}
                   {row.amazonDiffers ? (
                     <div data-ai-amazon-differs="">
-                      <span className="tag-badge tag-warning">
+                      <AiStatusTag tone="warning">
                         <CopyTip label={AMAZON_DIFFERS_TITLE} description={amazonDiffersTip(row.amazonValue, row.claim)}>
                           {AMAZON_DIFFERS_TITLE}
                         </CopyTip>
-                      </span>
+                      </AiStatusTag>
                     </div>
                   ) : null}
                   {row.evidence ? <div style={mutedText}>Conflicting text: {row.evidence}</div> : null}

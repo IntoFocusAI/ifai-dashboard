@@ -60,11 +60,11 @@ test.describe("API engines beside the search engines", () => {
       "Search engine",
     );
 
-    // All calls: 10 search calls less the 2 rotating fact checks, plus 12 API calls.
+    // All calls: 10 search calls, the 2 rotating fact checks included (decision 13), plus 12 API calls.
     await canvas.filterChip("All calls").click();
-    await expect(canvas.simulations).toHaveCount(20);
+    await expect(canvas.simulations).toHaveCount(22);
     const rotating = canvas.simulations.filter({ hasText: "Nut width of the Fender American Professional II" });
-    await expect(rotating).toHaveCount(0);
+    await expect(rotating).toHaveCount(2);
 
     await choose(page, "search");
     await expect(canvas.simulations).toHaveCount(10);
@@ -78,27 +78,34 @@ test.describe("API engines beside the search engines", () => {
     await expect(page.locator("[data-ai-history-trigger]")).toContainText("Last 30 days");
   });
 
-  test("fact checks with API engines count the fixed questions and say so in the tooltip", async ({ canvas, page }) => {
+  test("every engine choice counts the rotating fact checks, and the tooltip names the engines", async ({ canvas, page }) => {
     await canvas.openSpokeFromMap("AI Search Visibility");
     await canvas.openTab("Product Fact Checks");
     const figure = page.locator("[data-ai-accuracy-figure]");
-    const fixedOnly = page.locator("[data-ai-fact-fixed-only] .ifai-term");
+    const tip = figure.locator(".ifai-term");
 
-    // All: 7 of 8 answered fixed checks matched. The rotating p35 checks sit out.
-    await expect(figure).toHaveText("87.5% Accuracy*");
-    await expect(fixedOnly).toHaveAttribute("data-ifai-tooltip-desc", /fact checks count the fixed questions only/);
-    await expect(fixedOnly).toHaveAttribute("data-ifai-tooltip-desc", /10 of 12 fact-check calls are counted/);
-    await expect(fixedOnly).not.toHaveAttribute("title", /.*/);
-    await expect(page.locator("[data-ai-fact-headline]")).toContainText("1 of 8 answers contradicted");
+    // All: the search run's six checks, rotating p35 included, plus the API run's four. 8 of 10 matched.
+    await expect(figure).toHaveText("80.0% Accuracy");
+    await expect(page.locator("[data-ai-fact-fixed-only]")).toHaveCount(0);
+    await expect(tip).toHaveAttribute("data-ifai-tooltip-desc", /^8 of 10 answers matched\. This figure covers ChatGPT, ChatGPT API, Gemini, and Gemini API\./);
+    await expect(tip).not.toHaveAttribute("title", /.*/);
+    await expect(page.locator("[data-ai-fact-headline]")).toContainText("2 of 10 answers contradicted");
+    // Status travels as color, mark, and word; the pie carries no status color.
+    await expect(page.locator("[data-ai-accuracy-figure-col] [data-status='bad']")).toHaveText("Poor");
+    await expect(page.locator(".ai-drift-summary [data-citation-pie-disc='accuracy']")).toHaveCSS(
+      "background-image",
+      /conic-gradient/,
+    );
 
-    // Without API: the search run's six checks, rotating included.
+    // Without API: the search run's six checks.
     await choose(page, "search");
     await expect(figure).toHaveText("83.3% Accuracy");
-    await expect(fixedOnly).toHaveCount(0);
+    await expect(tip).toHaveAttribute("data-ifai-tooltip-desc", /This figure covers ChatGPT and Gemini\./);
     await expect(page.locator("[data-ai-fact-headline]")).toContainText("1 of 6 answers contradicted");
 
     await choose(page, "api");
-    await expect(figure).toHaveText("75.0% Accuracy*");
+    await expect(figure).toHaveText("75.0% Accuracy");
+    await expect(tip).toHaveAttribute("data-ifai-tooltip-desc", /This figure covers ChatGPT API and Gemini API\./);
     await expect(page.locator("[data-ai-fact-headline]")).toContainText("1 of 4 answers contradicted");
   });
 

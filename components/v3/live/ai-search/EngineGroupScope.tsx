@@ -40,7 +40,7 @@ const NO_HISTORY: EngineWindowLoad<AiSearchSnapshot> = { phase: "idle" };
  * The window's battery runs for the trend and the citation totals, each with the API runs nearest
  * its day, narrowed by the shared switch. `runCount` is the number of points the trend can draw.
  */
-export function useEngineGroupWindow(reader: EngineWindowReader): {
+export function useEngineGroupWindow(reader: EngineWindowReader = "trend"): {
   trend: EngineWindowLoad<AiSearchSnapshot>;
   apiDays: ReadonlyMap<string, string[]>;
   runCount: number;
@@ -62,11 +62,27 @@ export function useEngineGroupWindow(reader: EngineWindowReader): {
  * Wraps an AI Search or Competitive Radar tab body. The tab's figures read the narrowed selection.
  * The map keeps the published run.
  */
-export function EngineGroupScope({ children, showSwitch = true }: { children: ReactNode; showSwitch?: boolean }) {
+export function EngineGroupScope({
+  children,
+  showSwitch = true,
+  trailing = null,
+}: {
+  children: ReactNode;
+  showSwitch?: boolean;
+  /** Sits at the right end of the switch row. It reads the same narrowed selection as the tab. */
+  trailing?: ReactNode;
+}) {
   const { read, state, choose, pairedDay } = useEngineGroupRead();
   return (
     <>
-      {showSwitch ? <EngineGroupSwitch state={state} onChoose={choose} pairedDay={pairedDay} /> : null}
+      {showSwitch ? (
+        <EngineGroupSwitch
+          state={state}
+          onChoose={choose}
+          pairedDay={pairedDay}
+          trailing={trailing ? <AiSearchProvider read={read}>{trailing}</AiSearchProvider> : null}
+        />
+      ) : null}
       <AiSearchProvider read={read}>{children}</AiSearchProvider>
     </>
   );

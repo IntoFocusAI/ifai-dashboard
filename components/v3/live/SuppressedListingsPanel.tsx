@@ -1,15 +1,22 @@
 "use client";
 
 import { Fragment, useEffect, useState } from "react";
-import { CitationPieDisc } from "@/components/v3/live/ai-search/CitationPieDisc";
 import { DefinedTerm } from "@/components/v3/live/DefinedTerm";
+import {
+  RETAIL_FIT_TABLE,
+  RetailShareDisc,
+  RetailStatusMark,
+  wrapColumnIdsAfterFirst,
+} from "@/components/v3/live/RetailOverviewFigure";
 import { ResizableTable } from "@/components/v3/live/ResizableTable";
 import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
 import {
-  SET_ASIDE_COLUMN,
+  SET_ASIDE_COLUMN_ID,
+  SET_ASIDE_SORT_COLUMN,
   SetAsideCell,
   SetAsideFormRow,
   SetAsideHistory,
+  setAsideSortValue,
   useCheckSetAsides,
 } from "@/components/v3/live/SetAsideTable";
 import { SET_ASIDE_CHECKS } from "@/lib/set-aside/keys";
@@ -17,6 +24,7 @@ import {
   SUPPRESSED_LISTINGS_TABLE_COLUMNS,
   FeaturedOfferTableRow,
 } from "@/components/v3/live/FeaturedOfferRow";
+import { BenchmarkCoverageText } from "@/components/v3/live/FeaturedOfferReadings";
 import {
   featuredOfferColumnProbe,
   featuredOfferReadingCountQuery,
@@ -30,21 +38,20 @@ import {
   withheldListings,
   type FeaturedOfferRow,
 } from "@/lib/fender-canvas/featured-offer";
+import { PartialFigureMark } from "@/components/v3/live/FigureTip";
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
 import {
-  benchmarkCoverageSentence,
   confirmedSuppressionSentence,
   featuredOfferFreshnessSentence,
   featuredOfferJob,
 } from "@/lib/fender-canvas/featured-offer-copy";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
-import { buyBoxHero } from "@/lib/fender-canvas/retail-overview-lead";
+import { buyBoxHero, heroFigureColor, heroFigureTone } from "@/lib/fender-canvas/retail-overview-lead";
 import type { CanvasFreshnessRow } from "@/lib/fender-canvas/types";
 
 const PAGE_SIZE = 1000;
-const RETAIL_PIE_SIZE = "citation-pie-disc citation-pie-disc-retail";
 
-const TABLE_COLUMNS = [...SUPPRESSED_LISTINGS_TABLE_COLUMNS, SET_ASIDE_COLUMN];
+const TABLE_COLUMNS = [...SUPPRESSED_LISTINGS_TABLE_COLUMNS, SET_ASIDE_SORT_COLUMN];
 
 const TOP_ROW_STYLE = {
   display: "flex",
@@ -73,7 +80,7 @@ const TABLE_BLOCK_STYLE = {
 };
 
 const OBSERVED_OFFER_NOTE =
-  "The observed offer and the Competitive External Price come from the same Amazon listing read, so the gap compares one moment. A blank gap means this reading has no comparable pair yet, not a gap of zero.";
+  "The observed offer and the Competitive External Price come from the same Amazon listing read, so the gap compares one moment. A blank gap means this reading has no comparable pair yet.";
 
 function suppressedSortValue(row: FeaturedOfferRow, columnId: string): SortInput {
   if (columnId === "listing") return listingLabel(row).trim() || null;
@@ -107,24 +114,27 @@ async function loadWithheldListings(): Promise<
 }
 
 /** Reading passages for the notes callout body (one paragraph, space-separated). */
-function readingNotesText(
-  read: RetailCanvasRead,
-  freshness?: CanvasFreshnessRow[] | null,
-): string {
-  if (read.phase === "loading") return "Loading the Buy Box reading…";
-  if (read.phase === "error") return "The retail read could not be loaded.";
+function ReadingNotes({
+  read,
+  freshness,
+}: {
+  read: RetailCanvasRead;
+  freshness?: CanvasFreshnessRow[] | null;
+}) {
+  if (read.phase === "loading") return <>Loading the Buy Box reading…</>;
+  if (read.phase === "error") return <>The retail read could not be loaded.</>;
   const counts = read.snapshot.suppressedListings.detail?.counts;
   if (!counts) {
     return (
-      read.snapshot.suppressedListings.missingMessage ??
-      "The Buy Box reading has not been stored."
+      <>{read.snapshot.suppressedListings.missingMessage ?? "The Buy Box reading has not been stored."}</>
     );
   }
-  return [
-    confirmedSuppressionSentence(counts),
-    benchmarkCoverageSentence(counts),
-    featuredOfferFreshnessSentence(counts, featuredOfferJob(freshness)),
-  ].join(" ");
+  return (
+    <>
+      {confirmedSuppressionSentence(counts)} <BenchmarkCoverageText counts={counts} />{" "}
+      {featuredOfferFreshnessSentence(counts, featuredOfferJob(freshness))}
+    </>
+  );
 }
 
 /**
@@ -170,13 +180,15 @@ function SuppressedListingsLead({ read }: { read: RetailCanvasRead }) {
         <div className="findability-lead-figures">
           <span
             className="ai-lead-figure"
-            style={{ color: hero.color }}
+            style={{ color: heroFigureColor(hero) }}
             data-suppressed-listings-lead-percent=""
             data-suppressed-listings-lead-tone={hero.tone}
             data-suppressed-listings-lead-numerator={hero.numerator ?? ""}
             data-suppressed-listings-lead-denominator={hero.denominator ?? ""}
           >
-            {hero.percent}
+            <PartialFigureMark partial={hero.partial} testId="suppressed-lead-stale">
+              {hero.percent}
+            </PartialFigureMark>
           </span>
           {hero.ratio ? (
             <span
@@ -186,14 +198,9 @@ function SuppressedListingsLead({ read }: { read: RetailCanvasRead }) {
               {hero.ratio}
             </span>
           ) : null}
+          <RetailStatusMark tone={heroFigureTone(hero)} />
         </div>
-        {hero.pie ? (
-          <CitationPieDisc
-            pie={hero.pie}
-            sizeClass={RETAIL_PIE_SIZE}
-            tip={hero.tip ?? undefined}
-          />
-        ) : null}
+        {hero.pie ? <RetailShareDisc pie={hero.pie} measuredKey="contradicted" tip={hero.tip} /> : null}
       </div>
       <span className="metric-card-sub" data-suppressed-listings-lead-explainer="">
         {hero.explainer}
@@ -213,8 +220,6 @@ function SuppressedListingsNotes({
   read: RetailCanvasRead;
   freshness?: CanvasFreshnessRow[] | null;
 }) {
-  const reading = readingNotesText(read, freshness);
-
   return (
     <div
       className="ceo-callout"
@@ -228,8 +233,9 @@ function SuppressedListingsNotes({
         Amazon withholds the <DefinedTerm term="Buy Box" /> when the offer it observed,
         including shipping, is above the Competitive External Price: the lowest price it
         recently found outside Amazon. Amazon does not name that retailer, and a listing can
-        be withheld for other reasons too, so a withheld listing with no published benchmark
-        is not a confirmed price problem. {reading} {OBSERVED_OFFER_NOTE}
+        be withheld for other reasons too. A price cause is confirmed only where Amazon
+        published a benchmark. <ReadingNotes read={read} freshness={freshness} />{" "}
+        {OBSERVED_OFFER_NOTE}
       </div>
     </div>
   );
@@ -263,10 +269,10 @@ export function SuppressedListingsPanel({
 
   const rows = typeof state === "object" ? state.rows : null;
   const setAsides = useCheckSetAsides(SET_ASIDE_CHECKS.buyboxSuppression, "Suppressed Listings");
-  const sorted = useClientTableSort(
-    rows ?? [],
-    SUPPRESSED_LISTINGS_TABLE_COLUMNS,
-    suppressedSortValue,
+  const sorted = useClientTableSort(rows ?? [], TABLE_COLUMNS, (row, columnId) =>
+    columnId === SET_ASIDE_COLUMN_ID
+      ? setAsideSortValue(setAsides, typeof row.asin === "string" ? row.asin : "")
+      : suppressedSortValue(row, columnId),
   );
 
   return (
@@ -290,6 +296,8 @@ export function SuppressedListingsPanel({
             maxHeight={520}
             sort={sorted.sort}
             onSort={sorted.onSort}
+            wrapColumnIds={wrapColumnIdsAfterFirst(TABLE_COLUMNS)}
+            tableClassName={RETAIL_FIT_TABLE}
           >
             <tbody>
               {sorted.rows.length === 0 ? (

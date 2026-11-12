@@ -170,7 +170,12 @@ test("loaded runs whose calls are all provider errors, or that are unpublished, 
 test("the provider opens on the default, filters the window's loaded runs, and never resets a picked window", () => {
   const context = read("components/v3/live/ai-search/AiHistoryContext.tsx");
   assert.match(context, /useState<HistoryMode>\(DEFAULT_HISTORY_MODE\)/);
-  assert.match(context, /if \(mode\.kind === "month"\) return defaultWindowRuns\(runs, windowEnd\)\.included;/);
+  assert.match(context, /runsInSelection\(catalog\.runs, mode, windowEnd\)/);
+  // The window rule is shared with the server download, so both read the same runs.
+  assert.match(
+    read("lib/ai-search/selection.ts"),
+    /if \(mode\.kind === "month"\) return defaultWindowRuns\(runs, windowEnd\)\.included;/,
+  );
   assert.match(context, /snapshots: clientWindowSnapshots\(loaded\.snapshots\)/);
   assert.match(context, /const windowEnd = source === "fixture" \? latestPublishedDay\(fixtureRuns\) : publishedDay;/);
   assert.equal((context.match(/setMode\(/g) ?? []).length, 6, "only the six view callbacks change the window");

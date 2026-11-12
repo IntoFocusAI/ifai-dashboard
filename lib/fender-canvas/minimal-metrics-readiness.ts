@@ -6,7 +6,7 @@ import {
   outcomeLeadPie,
   outcomeLeadTip,
   outcomeRatioFigure,
-  outcomeShareColor,
+  outcomeShareTone,
   outcomeShareFigure,
 } from "@/lib/findability/lead";
 import { countFindability, type FindabilityBucket, type OutcomeCounts } from "@/lib/findability/outcomes";
@@ -16,9 +16,10 @@ import {
   presentAmazonCompletenessFieldShare,
   resolveAmazonFieldTotals,
 } from "@/lib/fender-canvas/ai-readiness-lead";
-import { failedReadTip } from "@/lib/fender-canvas/canvas-reads";
+import { failedReadTip, markPartial, partialFigureTip, type PartialFigure } from "@/lib/fender-canvas/canvas-reads";
+import { findabilityStale } from "@/lib/findability/last-checked";
 import { listingContentHeroes } from "@/lib/fender-canvas/listing-content";
-import { machineReadabilityHeroes } from "@/lib/fender-canvas/machine-readability";
+import { machineReadabilityHeroes, pageFoundRowsStale } from "@/lib/fender-canvas/machine-readability";
 import { brandSitePageFoundHero } from "@/lib/fender-canvas/page-found-hero";
 import {
   bubbleEntry,
@@ -33,6 +34,7 @@ import {
   type MinimalEntry,
   type MinimalFigure,
 } from "@/lib/fender-canvas/minimal-metric-kit";
+import { brandSite } from "@/lib/brand-copy";
 
 const LISTINGS_IN_READ = "listings in this read";
 
@@ -44,6 +46,11 @@ function pageReadFigure(ctx: MinimalContext, key: "specPages" | "listingContent"
 
 function findabilityCounts(ctx: MinimalContext): OutcomeCounts | null {
   return cached(ctx, "findability-counts", () => (ctx.findability.phase === "ready" ? countFindability(ctx.findability.rows) : null));
+}
+
+/** X-25: the official-page rows not checked in the last 14 days, shared by every Findability tile. */
+function findabilityPartial(ctx: MinimalContext): PartialFigure | null {
+  return cached(ctx, "findability-stale", () => (ctx.findability.phase === "ready" ? findabilityStale(ctx.findability.rows) : null));
 }
 
 /** One Findability outcome hero: its share of the read, N of M, and its disc. */
@@ -61,13 +68,14 @@ function outcomeEntry(bucket: Exclude<FindabilityBucket, "exact_official_product
       const share = outcomeShareFigure(counts, bucket);
       const ratio = outcomeRatioFigure(counts, bucket);
       if (!share || !ratio) return missingFigure("This official-page read has no listings.");
+      const partial = findabilityPartial(ctx);
       return {
-        value: share,
-        tone: toneFromColor(outcomeShareColor(counts, bucket)),
+        value: markPartial(share, partial),
+        tone: outcomeShareTone(counts, bucket) ?? "neutral",
         ratio: `${ratio} ${LISTINGS_IN_READ}`,
         pie: outcomeLeadPie(counts, bucket),
         tip: outcomeLeadTip(counts, bucket),
-        missing: null,
+        missing: partial ? partialFigureTip(partial) : null,
       };
     },
   };
@@ -109,13 +117,15 @@ export const READINESS_ENTRIES: MinimalEntry[] = [
       if (isNotAvailable(hero.percent)) return missingFigure("The Amazon listing check has not reported an attribute completeness figure.");
       const totals = resolveAmazonFieldTotals(ctx.bundle.m, ctx.amazonFieldTotals);
       const share = presentAmazonCompletenessFieldShare(totals?.found, totals?.expected, ctx.bundle.m.spec_avg_amazon_pct);
+      // X-25: Amazon-checked listings with no spec check inside twice the weekly schedule.
+      const partial = ctx.retail.phase === "ready" ? ctx.retail.snapshot.amazonSpecGaps.stale ?? null : null;
       return {
-        value: hero.percent,
+        value: markPartial(hero.percent, partial),
         tone: toneFromColor(hero.color),
         ratio: share.kind === "share" ? `${share.ratio} Amazon attribute fields filled` : null,
         pie: hero.pie,
         tip: hero.tip,
-        missing: null,
+        missing: partial ? partialFigureTip(partial) : null,
       };
     },
   },
@@ -127,7 +137,7 @@ export const READINESS_ENTRIES: MinimalEntry[] = [
     read: (ctx) => {
       const failed = failedReadTip(ctx.bundle, "m");
       if (failed) return counted(null, "", null, null, failed);
-      const hero = brandSitePageFoundHero(ctx.bundle.m);
+      const hero = brandSitePageFoundHero(ctx.bundle.m, null, pageFoundRowsStale(ctx.bundle.specPages));
       return counted(hero.ratio, "checked SKUs", hero.pie, hero.tip, hero.figureTip ?? hero.explainer);
     },
   }),
@@ -139,7 +149,7 @@ export const READINESS_ENTRIES: MinimalEntry[] = [
     read: (ctx) => {
       const hero = machineReadabilityHeroes(ctx.bundle.specPages ?? null)[0];
       const missing = failedReadTip(ctx.bundle, "specPages") ?? hero.explainer;
-      return counted(hero.ratio, "found fender.com pages", hero.pie, hero.tip, missing);
+      return counted(hero.ratio, `found ${brandSite()} pages`, hero.pie, hero.tip, missing);
     },
   }),
   {
@@ -149,7 +159,7 @@ export const READINESS_ENTRIES: MinimalEntry[] = [
     label: "Product basics present",
     read: (ctx) =>
       pageReadFigure(ctx, "specPages") ??
-      heroFigure(machineReadabilityHeroes(ctx.bundle.specPages ?? null)[1], "fender.com pages checked", "The fender.com page read could not be loaded."),
+      heroFigure(machineReadabilityHeroes(ctx.bundle.specPages ?? null)[1], `${brandSite()} pages checked`, `The ${brandSite()} page read could not be loaded.`),
   },
   bubbleEntry({
     id: "sat-tables",

@@ -11,9 +11,11 @@ import {
   pageFoundDefinition,
   pageFoundHero,
 } from "@/lib/fender-canvas/ai-readiness-lead";
-import { metricsRowFailure, readFailureTip } from "@/lib/fender-canvas/canvas-reads";
+import { metricsRowFailure, readFailureTip, type PartialFigure } from "@/lib/fender-canvas/canvas-reads";
+import { weeklyCheckStale } from "@/lib/findability/last-checked";
 import { formatInt } from "@/lib/fender-canvas/format";
 import type { CanvasMetricsRow } from "@/lib/fender-canvas/types";
+import { brandSite } from "@/lib/brand-copy";
 
 export const PAGE_FOUND_HERO_ID = "page_found";
 
@@ -23,7 +25,7 @@ export const PAGE_FOUND_ANCHOR = "brand-site-page-found";
 export const PAGE_FOUND_UNAVAILABLE = "Not available*";
 
 export const PAGE_FOUND_UNAVAILABLE_TIP =
-  "The fender.com product check has not reported how many SKUs it checked or how many have a matching fender.com product page, so this share is not shown.";
+  `The ${brandSite()} product check has not reported how many SKUs it checked or how many have a matching ${brandSite()} product page, so this share is not shown.`;
 
 export type PageFoundHeroModel = {
   id: typeof PAGE_FOUND_HERO_ID;
@@ -38,6 +40,8 @@ export type PageFoundHeroModel = {
   numerator: number | null;
   denominator: number | null;
   figureTip: string | null;
+  /** Stale figure (X-25) when the product check is past its weekly schedule. */
+  partial?: PartialFigure | null;
 };
 
 function pageFoundPie(found: number, checked: number): PieDiscData {
@@ -70,10 +74,21 @@ function unavailableHero(definition: string = PAGE_FOUND_DEFINITION): PageFoundH
   };
 }
 
+/** The stale reading (X-25) for the page-found figures; the map's AI Readiness bubble reads it too. */
+export function pageFoundStale(checkedAt: string | null | undefined, now: number = Date.now()): PartialFigure | null {
+  return weeklyCheckStale(
+    checkedAt,
+    { check: `${brandSite()} product check`, source: "canvas_metrics", figure: "page-found figures" },
+    now,
+  );
+}
+
 /** `checkedAt` is when the fender.com product check last ran, for the definition tooltip. */
 export function brandSitePageFoundHero(
   m: CanvasMetricsRow | null | undefined,
   checkedAt: string | null = null,
+  /** The per-row stale reading (X-25). Left out, the figure falls back to the newest check time. */
+  rowsStale?: PartialFigure | null,
 ): PageFoundHeroModel {
   const definition = pageFoundDefinition(checkedAt);
   if (!m) return unavailableHero(definition);
@@ -104,10 +119,11 @@ export function brandSitePageFoundHero(
     tip: base.tip,
     explainer:
       missing === 0
-        ? "Every checked SKU has a matching fender.com product page."
-        : `${formatInt(missing)} checked SKUs have no matching fender.com product page.`,
+        ? `Every checked SKU has a matching ${brandSite()} product page.`
+        : `${formatInt(missing)} checked SKUs have no matching ${brandSite()} product page.`,
     numerator: found,
     denominator: checked,
     figureTip: null,
+    partial: rowsStale !== undefined ? rowsStale : pageFoundStale(checkedAt),
   };
 }

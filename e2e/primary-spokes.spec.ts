@@ -2,7 +2,7 @@ import { expect, test } from "./fixtures";
 
 const PRIMARY_TITLES = [
   "Action Items",
-  "Strategy Roadmap",
+  "Roadmap",
   "AI Search Visibility",
   "Catalog Health",
   "AI Readiness",
@@ -60,13 +60,15 @@ test.describe("primary spoke map", () => {
 
       const roadmap = page.locator('[data-graph-node-id="spoke-roadmap"]');
       await expect(roadmap.locator(".node-meta")).toHaveCount(0);
-      await expect(roadmap.locator(".node-hero-value")).toContainText("90 Days");
-      await expect(roadmap.locator(".node-hero-label")).toContainText(/3 phases/i);
+      // A static, muted explainer under the title (PR 172): label class, no figure, no status color.
+      await expect(roadmap.locator(".node-hero-value")).toHaveCount(0);
+      await expect(roadmap.locator(".node-hero-label")).toHaveText("30-60-90");
+      await expect(roadmap.locator("[data-hero-status]")).toHaveCount(0);
       await expect(roadmap.locator(".node-stat-pill")).toHaveCount(0);
 
       const readiness = page.locator('[data-graph-node-id="spoke-specs"]');
       await expect(readiness.locator(".node-meta")).toHaveCount(0);
-      await expect(readiness.locator(".node-hero-label")).toContainText(/fender\.com page found/i);
+      await expect(readiness.locator(".node-hero-label")).toContainText(/Page found/i);
       await expect(readiness).not.toContainText("no page");
       await expect(readiness).not.toContainText("ambiguous");
       await expect(readiness).not.toContainText("unchecked");
