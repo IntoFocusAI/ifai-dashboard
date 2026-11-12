@@ -2,9 +2,10 @@
  * Roadmap and Action Items: source actions (decision 21 a, b, c, e, j).
  *
  * A cited site earns an action when it is cited in at least 10% of the shopping answers with
- * sources in at least 2 of the last 3 published runs. Each run is read as the map reads it: the
- * published run with its matching API run (decision 7). The site's type sets the action. A site
- * whose type is not listed reads Unclassified and gets no action.
+ * sources in at least 2 of the last 3 published runs, counted up to the newest run in the date-pill
+ * window. Each run is read with its matching API run. The figure (share, answers, pages, categories)
+ * is the date-pill window's, as every AI figure is (Brian Magazu, 12 Nov 2026). The site's type
+ * sets the action. A site whose type is not listed reads Unclassified and gets no action.
  */
 
 import {
@@ -174,11 +175,13 @@ function factLine(action: Omit<SourceAction, "fact" | "action">): string {
 /**
  * Source actions from the last published runs, latest first. Ranked by the share of answers
  * the site appears in (21f). A site needs `SOURCE_RUNS_REQUIRED` runs at or over the threshold.
+ * `window` is the date-pill window the figures read; without it they read the latest run.
  */
-export function sourceActions(runs: readonly AiSearchSnapshot[]): SourceAction[] {
+export function sourceActions(runs: readonly AiSearchSnapshot[], window?: AiSearchSnapshot | null): SourceAction[] {
   const read = runs.slice(0, SOURCE_RUNS_WINDOW).map(runShares);
-  const latest = read[0];
-  if (!latest || latest.read.answersWithCitation <= 0) return [];
+  if (!read[0]) return [];
+  const latest = window ? runShares(window) : read[0];
+  if (latest.read.answersWithCitation <= 0) return [];
   const out: SourceAction[] = [];
   for (const [domain, rows] of latest.byDomain) {
     const type = siteType(domain);

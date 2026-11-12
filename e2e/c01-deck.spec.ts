@@ -104,7 +104,6 @@ for (const client of ["fender", "ledlenser"]) {
       await page.locator("[data-deck-open]").click({ timeout: 60_000 });
       await expect(page.locator("[data-deck][data-deck-slide-count]")).toBeVisible({ timeout: AI_READ_MS });
       await expect(page.locator(".deck-slide.is-active [data-deck-run]")).toContainText(label);
-      await expect(page.locator(".deck-slide.is-active [data-deck-run]")).toContainText(/Published run [0-9a-f]{8}/);
       await expect(page.locator("[data-deck-slide='s2'] [data-deck-figure='unbranded'] [data-deck-figure-value]")).toHaveText(rate ?? "missing");
     });
   });

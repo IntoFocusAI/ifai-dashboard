@@ -28,7 +28,7 @@ export type StockLossRead =
 export type MinimalMetricInput = {
   bundle: CanvasBundle;
   retail: RetailCanvasRead;
-  /** The published run, as the map reads it. */
+  /** The date-pill window, as the map reads it. */
   ai: AiSearchRead;
   findability: FindabilityRead;
   /** The viewer's saved authorized sellers, as AI Commerce reads them. */
@@ -123,8 +123,8 @@ function retailBlocked(ctx: MinimalContext): Blocked | null {
 }
 
 function aiBlocked(ctx: MinimalContext): Blocked | null {
-  if (ctx.ai.phase === "loading") return { loading: true, reason: "The published AI run is still loading." };
-  if (ctx.ai.phase === "error") return { loading: false, reason: "The published AI run did not load." };
+  if (ctx.ai.phase === "loading") return { loading: true, reason: "The AI runs in the selected period are still loading." };
+  if (ctx.ai.phase === "error") return { loading: false, reason: "The AI runs in the selected period did not load." };
   if (ctx.ai.phase === "no-run" || !runSummary(ctx)) return { loading: false, reason: "No AI run has been published yet." };
   return null;
 }

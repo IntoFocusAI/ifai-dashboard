@@ -2,6 +2,7 @@
 
 import { useCallback } from "react";
 import { ResizableTable, type RetailColumn } from "@/components/v3/live/ResizableTable";
+import { useAiExportScope } from "@/components/v3/live/ai-search/useAiExport";
 import { PlanAction, PlanEvidence, PlanFigure, PlanStatus } from "@/components/v3/live/RoadmapPlanParts";
 import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
 import { phaseWindow } from "@/lib/fender-canvas/roadmap-dates";
@@ -48,6 +49,8 @@ export function ActionItemsFixTable({ plan, today }: { plan: readonly PlanItem[]
     return null;
   }, []);
   const sorted = useClientTableSort(plan, COLUMNS, sortValue, rowKey);
+  // The date pill and engine switch, so the download reads the window the screen reads.
+  const exportScope = useAiExportScope() ?? undefined;
 
   return (
     <ResizableTable
@@ -58,6 +61,7 @@ export function ActionItemsFixTable({ plan, today }: { plan: readonly PlanItem[]
       sort={sorted.sort}
       onSort={sorted.onSort}
       tableClassName="table-no-row-hover"
+      exportScope={exportScope}
     >
       <tbody data-fix-table="">
         {sorted.rows.map((item) => (

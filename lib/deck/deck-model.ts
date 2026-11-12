@@ -52,10 +52,10 @@ function fixAction(id: BriefingFindingId, input: DeckInput): string {
 
 const FIX_STATUS = { critical: "bad", at_risk: "okay", on_track: "good" } as const;
 
-/** The fix list rows as Action Items ranks them, on Summary's population (decision 7). */
+/** The fix list rows as Action Items ranks them, on the date-pill window every AI figure reads. */
 export function deckFixes(input: DeckInput): DeckFix[] {
-  const ai = input.mapAi ? ({ phase: "ready", snapshot: input.mapAi } as const) : ({ phase: "error", message: "" } as const);
-  const { findings } = briefingFindingsLead(input.retail, input.findability, ai, { aiStale: input.mapAiStale ?? null });
+  const ai = input.tabAi ? ({ phase: "ready", snapshot: input.tabAi } as const) : ({ phase: "error", message: "" } as const);
+  const { findings } = briefingFindingsLead(input.retail, input.findability, ai, { aiStale: input.aiStale ?? null });
   return rankedFindings(findings)
     .filter((row) => row.stored && row.status !== "no_reading")
     .slice(0, 5)
@@ -156,8 +156,6 @@ export function buildDeck(input: DeckInput): DeckModel {
     brand: input.brand,
     title: `${input.brand} in AI search: what the listings are costing`,
     window: input.windowLabel,
-    // The map, Summary, and Action Items read the published run; the AI tabs read the window above.
-    runId: input.mapAi?.run.audit_run_id.slice(0, 8) ?? null,
     asOf: input.asOf,
     slides,
     omitted,

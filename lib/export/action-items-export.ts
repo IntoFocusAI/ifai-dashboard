@@ -9,7 +9,8 @@ import {
   type ApiSnapshotResult,
 } from "@/lib/ai-search/api-runs";
 import { engineGroupRead, type ApiEngineLoad } from "@/lib/ai-search/engine-group-read";
-import { utcDay, type HistoryRunSummary } from "@/lib/ai-search/history-eligibility";
+import { compareRuns, utcDay, type HistoryRunSummary } from "@/lib/ai-search/history-eligibility";
+import type { HistoryMode } from "@/lib/ai-search/history-mode";
 import {
   loadHistoryCatalog,
   loadHistorySnapshot,
@@ -18,7 +19,10 @@ import {
 } from "@/lib/ai-search/history-queries";
 import { loadAiSearchRead, type AiReadClient } from "@/lib/ai-search/queries";
 import { ensureSiteTypes } from "@/lib/ai-search/site-types";
-import { aiSearchStale } from "@/lib/ai-search/stale";
+import { windowQuestionSetChange } from "@/lib/ai-search/history-trends";
+import { parseAiSelectionScope, type AiSelectionScope } from "@/lib/ai-search/selection";
+import { loadAiSelection } from "@/lib/ai-search/selection-load";
+import { aiSearchStale, aiWindowPartial, questionSetMixed, selectionEndsOnPublishedRun } from "@/lib/ai-search/stale";
 import type { AiSearchRead, AiSearchSnapshot } from "@/lib/ai-search/types";
 import { activeClient } from "@/lib/client/active-client";
 import { loadDashboardAsOf } from "@/lib/export/as-of";
@@ -50,7 +54,12 @@ import { getCanvasSupabase } from "@/lib/supabase/canvas-client";
 
 export const ACTION_ITEMS_EXPORT_TABLE = "action-items-fixes";
 
-/** The seven reads behind the fix list, each the read the browser makes. Tests pass fixtures. */
+/** The date-pill window every AI figure reads, with its stored battery runs and the pill's mode. */
+export type ActionItemsWindow =
+  | { phase: "ready"; read: AiSearchRead; battery: AiSearchSnapshot[]; mode: HistoryMode }
+  | { phase: "error"; message: string };
+
+/** The reads behind the fix list, each the read the browser makes. Tests pass fixtures. */
 export type ActionItemsReads = {
   retail: () => Promise<RetailCanvasRead>;
   bundle: () => Promise<CanvasBundle | null>;
@@ -58,6 +67,8 @@ export type ActionItemsReads = {
   stock: () => Promise<StockLossRead>;
   /** The published AI run (AiSearchContext). */
   published: () => Promise<AiSearchRead>;
+  /** The date-pill window with its API runs and the engine switch (useMapAiSearch). */
+  window: () => Promise<ActionItemsWindow>;
   /** The catalog of published runs (AiHistoryProvider). */
   historyCatalog: () => Promise<{ phase: "ready"; runs: HistoryRunSummary[] } | { phase: "error"; message: string }>;
   /** The API run catalog; "off" when the API-engine views are not read (useApiRunCatalog). */
@@ -93,14 +104,15 @@ function snapshotRead(result: HistorySnapshotResult): AiSearchRead {
 
 /**
  * The plan the Action Items tab shows, built with the reads and functions the browser hooks use:
- * useSummaryAiRead (the published run with its API run), useSourceRuns (the two earlier runs, each
- * with its API run), and useFocusWindows (both 30-day windows with their API runs).
+ * useSummaryAiRead (the date-pill window with its API runs and the engine switch), useSourceRuns
+ * (the newest run in the window and the two runs before it, each with its API run), and
+ * useFocusWindows (both 30-day windows with their API runs).
  */
 export async function loadActionItemsPlan(
   reads: ActionItemsReads,
   focus: PlanFocus = staffFocus(),
 ): Promise<RoadmapPlanRead> {
-  const [retail, bundle, findability, stock, published, history, apiCatalog] = await Promise.all([
+  const [retail, bundle, findability, stock, published, history, apiCatalog, win] = await Promise.all([
     reads.retail(),
     reads.bundle(),
     reads.findability(),
@@ -108,6 +120,7 @@ export async function loadActionItemsPlan(
     reads.published(),
     reads.historyCatalog(),
     reads.apiCatalog(),
+    reads.window(),
   ]);
   const pending = catalogPending(apiCatalog);
   const mapRead = async (read: AiSearchRead): Promise<AiSearchRead> => {
@@ -116,18 +129,33 @@ export async function loadActionItemsPlan(
     return engineGroupRead(read, pending ?? (await apiSnapshots(reads, paired)), "all");
   };
 
-  const ai = await mapRead(published);
-  const aiStale = ai.phase === "ready" ? aiSearchStale(ai.snapshot.run) : null;
+  const ai: AiSearchRead = win.phase === "ready" ? win.read : { phase: "error", message: win.message };
   const current = published.phase === "ready" ? published.snapshot : null;
+  const aiStale = ai.phase === "ready" && win.phase === "ready" ? windowPartial(win, current) : null;
 
-  // useSourceRuns: the runs before the map's run.
-  const ids = ai.phase === "ready" && history.phase === "ready" ? priorRunIds(history.runs, ai.snapshot.run.audit_run_id) : null;
+  // useSourceRuns: the newest run in the window, then the runs before it.
+  const newestSnapshot = win.phase === "ready" ? ([...win.battery].sort((a, b) => compareRuns(a.run as never, b.run as never)).at(-1) ?? null) : null;
+  const newest = newestSnapshot ? await mapRead({ phase: "ready", snapshot: newestSnapshot }) : ai;
+  const ids =
+    newest.phase === "ready" && history.phase === "ready" ? priorRunIds(history.runs, newest.snapshot.run.audit_run_id) : null;
   const prior = await Promise.all((ids ?? []).map(async (id) => mapRead(snapshotRead(await reads.run(id)))));
-  const sources = sourceRunsRead({ current: ai, ids, live: true, catalogFailed: history.phase === "error", prior });
+  const sources = sourceRunsRead({ current: newest, ids, live: true, catalogFailed: history.phase === "error", prior });
 
   const windows = await focusWindows(reads, history, current, apiCatalog, pending);
   return assembleRoadmapPlan({ retail, bundle, findability, ai, aiStale, stock, sources, windows, focus });
 }
+
+/** useAiStale: stale when the window ends on a stale published run; mixed across a question-set change. */
+function windowPartial(win: Extract<ActionItemsWindow, { phase: "ready" }>, published: AiSearchSnapshot | null) {
+  const run = published?.run ?? null;
+  const day = run ? utcDay(run.published_at ?? run.completed_at) : null;
+  const stale = run && selectionEndsOnPublishedRun(win.mode, run.audit_run_id, day) ? aiSearchStale(run) : null;
+  const windowed = win.mode.kind !== "run" && win.mode.kind !== "legacy";
+  return aiWindowPartial(stale, questionSetMixed(windowed ? windowQuestionSetChange(win.battery) : null));
+}
+
+/** The pill's default when a download names no selection: the last 30 days, every engine. */
+const DEFAULT_SCOPE: AiSelectionScope = { mode: { kind: "month" }, windowEnd: null, engines: "all", enginesReady: true };
 
 /** useFocusWindows: the 30 days ending on the published run and the 30 days before. */
 async function focusWindows(
@@ -160,8 +188,8 @@ async function focusWindows(
   return focusWindowsReady(split, pending, currentApi, previousApi);
 }
 
-/** The reads against the live database, as the dashboard makes them. */
-export function liveActionItemsReads(): ActionItemsReads {
+/** The reads against the live database, as the dashboard makes them, for the pill's selection. */
+export function liveActionItemsReads(scope: AiSelectionScope = DEFAULT_SCOPE): ActionItemsReads {
   const client = getCanvasSupabase();
   const history = client as unknown as HistoryReadClient;
   // Site types load once per client before any run is read (afterSiteTypes in the browser).
@@ -192,6 +220,16 @@ export function liveActionItemsReads(): ActionItemsReads {
       siteTypes
         .then(() => loadAiSearchRead(client as unknown as AiReadClient))
         .catch((error: unknown): AiSearchRead => ({ phase: "error", message: error instanceof Error ? error.message : String(error) })),
+    window: async () => {
+      try {
+        await siteTypes;
+        const loaded = await loadAiSelection(client as never, scope, { citations: true });
+        if (!loaded.ok) return { phase: "error", message: loaded.message };
+        return { phase: "ready", read: loaded.selection.read, battery: loaded.selection.battery, mode: scope.mode };
+      } catch (error) {
+        return { phase: "error", message: error instanceof Error ? error.message : String(error) };
+      }
+    },
     historyCatalog: () => loadHistoryCatalog(history),
     apiCatalog: async () => (apiEngineViewsEnabled() ? loadApiRunCatalog(history) : { phase: "off" }),
     run: (runId) => siteTypes.then(() => loadHistorySnapshot(history, runId)),
@@ -218,11 +256,12 @@ export function actionItemsExportSource(read: RoadmapPlanRead, today: Date, asOf
   };
 }
 
-/** Download CSV for the Action Items fix list (X-10). */
-export async function loadActionItemsSource(): Promise<SourceRead> {
+/** Download CSV for the Action Items fix list (X-10), on the date pill's selection when sent. */
+export async function loadActionItemsSource(scope: Record<string, unknown> | null = null): Promise<SourceRead> {
   try {
     const focus = staffFocus(activeClient().roadmapFocusCategory);
-    const [read, asOf] = await Promise.all([loadActionItemsPlan(liveActionItemsReads(), focus), loadDashboardAsOf()]);
+    const selection = parseAiSelectionScope(scope?.ai) ?? DEFAULT_SCOPE;
+    const [read, asOf] = await Promise.all([loadActionItemsPlan(liveActionItemsReads(selection), focus), loadDashboardAsOf()]);
     return { ok: true, source: actionItemsExportSource(read, new Date(), asOf.asOf, focus) };
   } catch {
     return { ok: false, message: "The fix list could not be read. Try again." };

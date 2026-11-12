@@ -9,7 +9,6 @@ import {
   batteryQuestions,
   loadApiRunCatalog,
   loadApiRunSnapshot,
-  pairedApiRuns,
   type ApiCatalogResult,
   type ApiRunSummary,
   type ApiSnapshotResult,
@@ -178,33 +177,14 @@ export function useApiEngineLoad(): ApiEngineLoad {
 }
 
 /**
- * The map's AI Search read: the published run with the counted API run nearest its day, on All,
- * as the AI Search tabs show that run. The published run alone when no API run counts beside it.
+ * The map's AI Search read (Brian Magazu, 12 Nov 2026; replaces decision 7): the date-pill window
+ * with the API runs in it, narrowed by the engine switch, exactly as the AI Search and Competitive
+ * Radar tabs read it. Every map bubble, Minimal, Summary, the Roadmap, Action Items and the deck
+ * read this one population. `published` is the published run the window ends on.
  */
 export function useMapAiSearch(published: AiSearchRead): AiSearchRead {
-  const catalog = useApiRunCatalog();
-  const snapshot = published.phase === "ready" ? published.snapshot : null;
-  const paired = useMemo(
-    () => (catalog.phase === "ready" ? pairedApiRuns(catalog.runs, snapshot) : []),
-    [catalog, snapshot],
-  );
-  const load = useApiSnapshots(paired);
-  const pending = useMemo(() => catalogLoadState(catalog), [catalog]);
-  const mapRead = useMemo(() => engineGroupRead(published, pending ?? load, "all"), [published, pending, load]);
-
-  // The Competitive Radar bubble alone reads what the Category Battlecards tab reads: the date-pill
-  // window with the API runs in it, narrowed by the engine switch. Both loads are the ones the tab
-  // and the history provider already make, shared through the caches above.
   const displayed = useDisplayedAiSearch(published);
   const windowApi = useApiEngineLoad();
   const [choice] = useEngineGroupChoice();
-  const radar = useMemo(() => engineGroupRead(displayed, windowApi, choice), [displayed, windowApi, choice]);
-  return useMemo(
-    () => {
-      if (mapRead.phase !== "ready") return mapRead;
-      if (radar.phase === "ready") return { ...mapRead, radarSnapshot: radar.snapshot };
-      return radar.phase === "loading" ? { ...mapRead, radarPending: true } : mapRead;
-    },
-    [mapRead, radar],
-  );
+  return useMemo(() => engineGroupRead(displayed, windowApi, choice), [displayed, windowApi, choice]);
 }

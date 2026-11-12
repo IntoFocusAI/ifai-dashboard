@@ -37,6 +37,8 @@ export type AiSelection = {
   citationSnapshot: AiSearchSnapshot | null;
   /** One snapshot per battery run of a window, narrowed by the switch. Empty for a single run. */
   trend: AiSearchSnapshot[];
+  /** The battery runs the selection reads, as stored: the window's runs, or the single run. */
+  battery: AiSearchSnapshot[];
   /** Battery run id to the days of the API runs on its trend point. */
   apiDays: ReadonlyMap<string, string[]>;
   /** False when the engine switch reads Not available*, so every figure is the search engines'. */
@@ -157,6 +159,7 @@ export async function loadAiSelection(
       read: narrowed,
       citationSnapshot,
       trend: windowSnapshots,
+      battery,
       apiDays: window.apiDays,
       enginesReady: engineSwitchState(load, scope.engines).kind === "ready",
       pillLabel: selectionPillLabel({ ...scope, windowEnd }, selectedDay, published?.run.audit_run_id ?? null),
