@@ -1,4 +1,3 @@
-import { activeClient } from "@/lib/client/active-client";
 import { defaultWindowRuns, runDay } from "@/lib/ai-search/default-window";
 import { API_REPEAT_CAP, capApiRepeats, fixedQuestionCount } from "@/lib/ai-search/engine-group";
 import { compareRuns, utcDay, type HistoryRunSummary } from "@/lib/ai-search/history-eligibility";
@@ -30,8 +29,8 @@ export function apiEngineViewsEnabled(
 ): boolean {
   const forced = (scope as { __IFAI_AI_API_VIEWS__?: unknown } | undefined)?.__IFAI_AI_API_VIEWS__;
   if (typeof forced === "boolean") return forced;
-  // The API-engine views exist for Fender only; other brands' AI runs come from their own schema.
-  if (activeClient().key !== "fender") return false;
+  // Every client has the API-engine views in its own schema (Ledlenser: 20261111222737), and the
+  // canvas client reads that schema, so the switch works the same for every brand.
   return flag !== "0";
 }
 
