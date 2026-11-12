@@ -177,6 +177,8 @@ type Fixtures = {
   pageErrors: string[];
   /** In-memory set-aside endpoints; specs never write the live audit log. */
   setAsides: SetAsideMock;
+  /** The run-rows function reads as absent, so each spec's mocked history views serve its runs. */
+  runRowsFunction: void;
 };
 
 /* Both fixtures are `auto` so every test starts on a loaded /v3 with the error
@@ -208,10 +210,21 @@ export const test = base.extend<Fixtures>({
     { auto: true },
   ],
 
+  runRowsFunction: [
+    async ({ page }, use) => {
+      await page.route("**/rest/v1/rpc/canvas_ai_history_run_rows", (route) =>
+        route.fulfill({ status: 200, contentType: "application/json", body: "null" }),
+      );
+      await use();
+    },
+    { auto: true },
+  ],
+
   canvas: [
-    async ({ page, pageErrors, setAsides }, use) => {
+    async ({ page, pageErrors, setAsides, runRowsFunction }, use) => {
       void pageErrors; // ordering: attach the listener before the first navigation
       void setAsides; // and the set-aside routes, so live rows never shift the queue
+      void runRowsFunction; // and the history runs come from each spec's views, never the live function
       const canvas = new Canvas(page);
       await canvas.open();
       await use(canvas);

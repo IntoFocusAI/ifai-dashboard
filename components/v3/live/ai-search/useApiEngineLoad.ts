@@ -38,7 +38,8 @@ function readCatalog(): Promise<ApiCatalogResult> {
 function readRun(run: ApiRunSummary): Promise<ApiSnapshotResult> {
   const cached = runReads.get(run.audit_run_id);
   if (cached) return cached;
-  const read = loadApiRunSnapshot(getCanvasSupabase() as never, run).then((result) => {
+  // No answer text: the map and every tab read many API runs, and a drawer reads its answer on demand.
+  const read = loadApiRunSnapshot(getCanvasSupabase() as never, run, { withAnswers: false }).then((result) => {
     if (result.phase === "error") runReads.delete(run.audit_run_id);
     return result;
   });

@@ -68,7 +68,7 @@ export type HistoryReadOptions = {
   withCitations?: boolean;
 };
 
-function withoutAnswerText(columns: string): string {
+export function withoutAnswerText(columns: string): string {
   return columns
     .split(",")
     .filter((column) => column !== "answer_text")
@@ -96,6 +96,8 @@ export type HistoryReadClient = {
   from: (view: string) => {
     select: (columns: string) => ListQuery;
   };
+  /** The browser and server clients have it; a test double without it reads by pages. */
+  rpc?: (fn: string, args: Record<string, unknown>) => PromiseLike<ReadResult>;
 };
 
 export type HistorySnapshotResult =
@@ -191,99 +193,171 @@ function keepRun<T extends { audit_run_id: string }>(rows: T[], runId: string): 
   return rows.filter((row) => row.audit_run_id === runId);
 }
 
-export async function loadHistorySnapshot(
-  client: HistoryReadClient,
-  runId: string,
-  options: HistoryReadOptions = {},
-): Promise<HistorySnapshotResult> {
+type RunRow = HistoryRunSummary & { missing_calls?: number | null };
+
+/** One run's rows as read, before they are joined into a snapshot. */
+type RunRows = {
+  runs: RunRow[];
+  calls: AiCallRow[];
+  probes: Array<AiProbeRow & { answer_text?: string | null }>;
+  citations: AiCitationRow[];
+};
+
+type RunRead = { rows: RunRows } | { failed: Exclude<HistorySnapshotResult, { phase: "ready" }> };
+
+const OUTSIDE_REVIEW: RunRead = {
+  failed: { phase: "unavailable", message: "This run is outside the review history. It is not mixed into the current figures." },
+};
+
+function failedRead(error: NonNullable<DbError>): RunRead {
+  return {
+    failed: historyViewMissing(error) ? { phase: "unavailable", message: UNAVAILABLE } : { phase: "error", message: error.message },
+  };
+}
+
+function reviewRun(runs: readonly RunRow[], runId: string): RunRow | null {
+  const run = runs.find((row) => row.audit_run_id === runId) ?? null;
+  return run && isReviewHistoryRun(run) ? run : null;
+}
+
+/**
+ * The database function that returns one run's rows from the history views in one request (supabase/migrations/
+ * 20261112230000_ai_history_run_rows.sql): the same columns and order as the page reads, without
+ * answer text. Only a reader that asks for no answers and every citation uses it.
+ */
+export const RUN_ROWS_FUNCTION = "canvas_ai_history_run_rows";
+
+/**
+ * Whether each client's schema answers the run-rows function. The first run read asks; the runs
+ * read beside it wait for that answer, so a schema without the function (Ledlenser, or before the
+ * migration is applied) is asked once per page load, not once per run.
+ */
+const runRowsFunction = new WeakMap<object, Promise<boolean>>();
+
+function functionMissing(error: NonNullable<DbError>): boolean {
+  return error.code === "PGRST202" || error.code === "42883" || error.message.toLowerCase().includes("could not find the function");
+}
+
+function runRowsOf(data: unknown): RunRows | null {
+  const rows = data as Partial<RunRows> | null;
+  if (!rows || typeof rows !== "object") return null;
+  return [rows.runs, rows.calls, rows.probes, rows.citations].every(Array.isArray) ? (rows as RunRows) : null;
+}
+
+/** The run in one request, or null to read it by pages: no function, a failed call, or rows not in its shape. */
+async function readRunAtOnce(client: HistoryReadClient, runId: string, options: HistoryReadOptions): Promise<RunRead | null> {
+  const rpc = client.rpc;
+  if (!rpc || options.withAnswers !== false || options.withCitations === false) return null;
+  const known = runRowsFunction.get(client);
+  if (known && !(await known)) return null;
+  let settle: (usable: boolean) => void = () => {};
+  if (!known) runRowsFunction.set(client, new Promise<boolean>((resolve) => (settle = resolve)));
+  const limit = options.limit ?? historyReadLimit;
+  const result = await limit<ReadResult>(() =>
+    options.signal?.aborted ? Promise.resolve({ data: null, error: STOPPED }) : rpc.call(client, RUN_ROWS_FUNCTION, { p_run_id: runId }),
+  );
+  const rows = result.error ? null : runRowsOf(result.data);
+  // A timeout or a stopped read says nothing about the function; only its absence or a foreign shape does.
+  settle(rows !== null || (result.error !== null && !functionMissing(result.error)));
+  if (!rows) return null;
+  return reviewRun(rows.runs, runId) ? { rows } : OUTSIDE_REVIEW;
+}
+
+/** The run's row, then its calls, probes, and citations, each by pages of at most 1,000 rows. */
+async function readRunByPages(client: HistoryReadClient, runId: string, options: HistoryReadOptions): Promise<RunRead> {
   const limit = options.limit ?? historyReadLimit;
   const runResult = await limit<ReadResult>(() =>
     options.signal?.aborted
       ? Promise.resolve({ data: null, error: STOPPED })
       : client.from("canvas_ai_history_runs").select(HISTORY_RUN_COLUMNS).eq("audit_run_id", runId),
   );
-  if (runResult.error) {
-    return historyViewMissing(runResult.error)
-      ? { phase: "unavailable", message: UNAVAILABLE }
-      : { phase: "error", message: runResult.error.message };
-  }
-  const runs = (runResult.data ?? []) as Array<HistoryRunSummary & { missing_calls?: number | null }>;
-  const run = runs.find((row) => row.audit_run_id === runId) ?? null;
-  if (!run || !isReviewHistoryRun(run)) {
-    return {
-      phase: "unavailable",
-      message: "This run is outside the review history. It is not mixed into the current figures.",
-    };
-  }
+  if (runResult.error) return failedRead(runResult.error);
+  const runs = (runResult.data ?? []) as RunRow[];
+  if (!reviewRun(runs, runId)) return OUTSIDE_REVIEW;
 
+  // sim_id is unique within a run, and position is unique within a call's citations.
+  const answers = options.withAnswers !== false;
+  const callColumns = answers ? HISTORY_CALL_COLUMNS : withoutAnswerText(HISTORY_CALL_COLUMNS);
+  const probeColumns = answers ? HISTORY_PROBE_COLUMNS : withoutAnswerText(HISTORY_PROBE_COLUMNS);
+  const [calls, probes, citations] = await Promise.all([
+    readRunPages<AiCallRow>(client, "canvas_ai_history_calls", callColumns, runId, ["sim_id", "id"], options),
+    readRunPages<AiProbeRow & { answer_text?: string | null }>(
+      client,
+      "canvas_ai_history_probes",
+      probeColumns,
+      runId,
+      ["sim_id"],
+      options,
+    ),
+    options.withCitations === false
+      ? Promise.resolve({ rows: [] as AiCitationRow[], error: null })
+      : readRunPages<AiCitationRow>(
+          client,
+          HISTORY_CITATION_VIEW,
+          HISTORY_CITATION_COLUMNS,
+          runId,
+          ["sim_id", "position"],
+          options,
+        ),
+  ]);
+  for (const result of [calls, probes, citations]) {
+    if (result.error) return failedRead(result.error);
+  }
+  return { rows: { runs, calls: calls.rows, probes: probes.rows, citations: citations.rows } };
+}
+
+export async function loadHistorySnapshot(
+  client: HistoryReadClient,
+  runId: string,
+  options: HistoryReadOptions = {},
+): Promise<HistorySnapshotResult> {
   try {
-    // sim_id is unique within a run, and position is unique within a call's citations.
-    const answers = options.withAnswers !== false;
-    const callColumns = answers ? HISTORY_CALL_COLUMNS : withoutAnswerText(HISTORY_CALL_COLUMNS);
-    const probeColumns = answers ? HISTORY_PROBE_COLUMNS : withoutAnswerText(HISTORY_PROBE_COLUMNS);
-    const [calls, probes, citations] = await Promise.all([
-      readRunPages<AiCallRow>(client, "canvas_ai_history_calls", callColumns, runId, ["sim_id", "id"], options),
-      readRunPages<AiProbeRow & { answer_text?: string | null }>(
-        client,
-        "canvas_ai_history_probes",
-        probeColumns,
-        runId,
-        ["sim_id"],
-        options,
-      ),
-      options.withCitations === false
-        ? Promise.resolve({ rows: [] as AiCitationRow[], error: null })
-        : readRunPages<AiCitationRow>(
-            client,
-            HISTORY_CITATION_VIEW,
-            HISTORY_CITATION_COLUMNS,
-            runId,
-            ["sim_id", "position"],
-            options,
-          ),
-    ]);
-    for (const result of [calls, probes, citations]) {
-      if (result.error) {
-        return historyViewMissing(result.error)
-          ? { phase: "unavailable", message: UNAVAILABLE }
-          : { phase: "error", message: result.error.message };
-      }
-    }
-    const callRows = keepRun(calls.rows, runId);
-    const probeRows = keepRun(probes.rows, runId).map(
-      (probe) => {
-        const call = callRows.find((row) => row.sim_id === probe.sim_id);
-        if (call && probe.answer_text !== undefined && call.answer_text === undefined) call.answer_text = probe.answer_text;
-        return probe;
-      },
-    );
-    const current: AiCurrentRun = {
-      audit_run_id: run.audit_run_id,
-      run_state: run.run_state ?? "partial",
-      collector_version: run.collector_version,
-      prompt_set_hash: run.prompt_set_hash,
-      expected_calls: run.expected_calls,
-      attempted_calls: run.attempted_calls,
-      answered_calls: run.answered_calls,
-      error_calls: run.error_calls,
-      started_at: run.started_at ?? null,
-      completed_at: run.completed_at,
-      published_at: run.published_at,
-      missing_calls: run.missing_calls ?? null,
-      is_published: run.is_published === true,
-      run_kind: run.run_kind ?? "ai_simulation",
-    };
-    const snapshot: AiSearchSnapshot = {
-      run: current,
-      calls: callRows,
-      probes: probeRows,
-      citations: keepRun(citations.rows, runId),
-    };
-    if (probeRows.some(isCatalogProbe)) snapshot.probeCoverage = await readProbeCoverage(client, runId, options);
-    return { phase: "ready", snapshot };
+    const read = (await readRunAtOnce(client, runId, options)) ?? (await readRunByPages(client, runId, options));
+    if ("failed" in read) return read.failed;
+    return { phase: "ready", snapshot: await snapshotFromRows(client, runId, read.rows, options) };
   } catch (error) {
     return { phase: "error", message: error instanceof Error ? error.message : String(error) };
   }
+}
+
+/** One run's rows joined into the snapshot every AI figure reads. Rows from another run are dropped. */
+async function snapshotFromRows(
+  client: HistoryReadClient,
+  runId: string,
+  rows: RunRows,
+  options: HistoryReadOptions,
+): Promise<AiSearchSnapshot> {
+  const run = reviewRun(rows.runs, runId) as RunRow;
+  const callRows = keepRun(rows.calls, runId);
+  const probeRows = keepRun(rows.probes, runId).map((probe) => {
+    const call = callRows.find((row) => row.sim_id === probe.sim_id);
+    if (call && probe.answer_text !== undefined && call.answer_text === undefined) call.answer_text = probe.answer_text;
+    return probe;
+  });
+  const current: AiCurrentRun = {
+    audit_run_id: run.audit_run_id,
+    run_state: run.run_state ?? "partial",
+    collector_version: run.collector_version,
+    prompt_set_hash: run.prompt_set_hash,
+    expected_calls: run.expected_calls,
+    attempted_calls: run.attempted_calls,
+    answered_calls: run.answered_calls,
+    error_calls: run.error_calls,
+    started_at: run.started_at ?? null,
+    completed_at: run.completed_at,
+    published_at: run.published_at,
+    missing_calls: run.missing_calls ?? null,
+    is_published: run.is_published === true,
+    run_kind: run.run_kind ?? "ai_simulation",
+  };
+  const snapshot: AiSearchSnapshot = {
+    run: current,
+    calls: callRows,
+    probes: probeRows,
+    citations: keepRun(rows.citations, runId),
+  };
+  if (probeRows.some(isCatalogProbe)) snapshot.probeCoverage = await readProbeCoverage(client, runId, options);
+  return snapshot;
 }
 
 /** One run's catalog coverage rows. A failed read is null, never an empty catalog. */
