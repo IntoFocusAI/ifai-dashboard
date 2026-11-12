@@ -227,29 +227,39 @@ function reviewRun(runs: readonly RunRow[], runId: string): RunRow | null {
  */
 export const RUN_ROWS_FUNCTION = "canvas_ai_history_run_rows";
 
-/** Clients whose schema has no run-rows function (Ledlenser, or before it is applied). */
-const withoutRunRowsFunction = new WeakSet<object>();
+/**
+ * Whether each client's schema answers the run-rows function. The first run read asks; the runs
+ * read beside it wait for that answer, so a schema without the function (Ledlenser, or before the
+ * migration is applied) is asked once per page load, not once per run.
+ */
+const runRowsFunction = new WeakMap<object, Promise<boolean>>();
 
 function functionMissing(error: NonNullable<DbError>): boolean {
   return error.code === "PGRST202" || error.code === "42883" || error.message.toLowerCase().includes("could not find the function");
+}
+
+function runRowsOf(data: unknown): RunRows | null {
+  const rows = data as Partial<RunRows> | null;
+  if (!rows || typeof rows !== "object") return null;
+  return [rows.runs, rows.calls, rows.probes, rows.citations].every(Array.isArray) ? (rows as RunRows) : null;
 }
 
 /** The run in one request, or null to read it by pages: no function, a failed call, or rows not in its shape. */
 async function readRunAtOnce(client: HistoryReadClient, runId: string, options: HistoryReadOptions): Promise<RunRead | null> {
   const rpc = client.rpc;
   if (!rpc || options.withAnswers !== false || options.withCitations === false) return null;
-  if (withoutRunRowsFunction.has(client)) return null;
+  const known = runRowsFunction.get(client);
+  if (known && !(await known)) return null;
+  let settle: (usable: boolean) => void = () => {};
+  if (!known) runRowsFunction.set(client, new Promise<boolean>((resolve) => (settle = resolve)));
   const limit = options.limit ?? historyReadLimit;
   const result = await limit<ReadResult>(() =>
     options.signal?.aborted ? Promise.resolve({ data: null, error: STOPPED }) : rpc.call(client, RUN_ROWS_FUNCTION, { p_run_id: runId }),
   );
-  if (result.error) {
-    if (functionMissing(result.error)) withoutRunRowsFunction.add(client);
-    return null;
-  }
-  const data = result.data as Partial<RunRows> | null;
-  if (!data || ![data.runs, data.calls, data.probes, data.citations].every(Array.isArray)) return null;
-  const rows = data as RunRows;
+  const rows = result.error ? null : runRowsOf(result.data);
+  // A timeout or a stopped read says nothing about the function; only its absence or a foreign shape does.
+  settle(rows !== null || (result.error !== null && !functionMissing(result.error)));
+  if (!rows) return null;
   return reviewRun(rows.runs, runId) ? { rows } : OUTSIDE_REVIEW;
 }
 

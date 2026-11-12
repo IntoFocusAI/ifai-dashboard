@@ -73,7 +73,7 @@ const FUNCTION_SOURCES = {
  * The REST API over the given views, 1,000 rows a page. With `fn`, it also answers the run-rows
  * function the way the migration defines it: each view's rows for the run, ordered, without answers.
  */
-function fakeClient(tables: Record<string, Row[]>, fn: "present" | "missing" | "timeout" | "absent") {
+function fakeClient(tables: Record<string, Row[]>, fn: "present" | "missing" | "timeout" | "foreign" | "absent") {
   const calls: string[] = [];
   const page = (view: string, columns: string, filters: Filter[], order: string[], limit: number | null) => {
     calls.push(view);
@@ -100,6 +100,7 @@ function fakeClient(tables: Record<string, Row[]>, fn: "present" | "missing" | "
         const error: DbError = { code: "PGRST202", message: `Could not find the function public.${name}(p_run_id) in the schema cache` };
         return Promise.resolve({ data: null, error });
       }
+      if (fn === "foreign") return Promise.resolve({ data: null, error: null });
       if (fn === "timeout") return Promise.resolve({ data: null, error: { code: "57014", message: "canceling statement due to statement timeout" } });
       const id = args.p_run_id;
       const data = Object.fromEntries(
@@ -160,14 +161,18 @@ test("one request per run gives the same snapshot and the same figures as the pa
   }
 });
 
-test("without the function the window reads pages, and asks for the function once per client", async () => {
-  const { tables, ids } = storedTables();
-  const { client, calls } = fakeClient(tables, "missing");
-  const expected = await snapshotOf(fakeClient(tables, "absent").client, ids[2]);
-  assert.deepEqual(await snapshotOf(client, ids[2]), expected);
-  await snapshotOf(client, ids[1]);
-  assert.equal(calls.filter((call) => call.startsWith("rpc:")).length, 1, "a missing function is not asked for again");
-});
+for (const fn of ["missing", "foreign"] as const) {
+  test(`without the function (${fn}) the window reads pages, and asks for it once per client`, async () => {
+    const { tables, ids } = storedTables();
+    const { client, calls } = fakeClient(tables, fn);
+    const pages = fakeClient(tables, "absent").client;
+    const expected = await Promise.all(ids.map((id) => snapshotOf(pages, id)));
+    // The window's runs load side by side; the ones beside the first wait for its answer.
+    assert.deepEqual(await Promise.all(ids.map((id) => snapshotOf(client, id))), expected);
+    await snapshotOf(client, ids[1]);
+    assert.equal(calls.filter((call) => call.startsWith("rpc:")).length, 1, "asked once, not once per run");
+  });
+}
 
 test("a failed call reads that run by pages and still tries the function for the next run", async () => {
   const { tables, ids } = storedTables();
