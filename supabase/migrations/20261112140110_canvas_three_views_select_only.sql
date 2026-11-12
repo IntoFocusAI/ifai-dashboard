@@ -24,7 +24,9 @@
 --   GRANT ALL ON public.canvas_listing_sales_loss_v2 TO anon, authenticated;
 --
 -- Alters permissions on existing views: waits for Brian Watson to apply (AGENTS.md).
--- Applied: not yet.
+-- Applied: 12 Nov 2026 14:01 UTC by Brian Watson (via Claude) to prod as version 20261112140110,
+-- then to sandbox, mirror and claude with the same version. Verified on prod: anon=r/postgres and
+-- authenticated=r/postgres on all three; the public key still reads each view (HTTP 200).
 --
 -- How to verify after apply:
 --   select c.relname, c.relacl::text from pg_class c join pg_namespace n on n.oid = c.relnamespace
