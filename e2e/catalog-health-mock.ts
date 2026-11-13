@@ -35,6 +35,7 @@ function listing(asin: string, category: string, status: string, seller: string 
     buybox_status: status,
     featured_offer_state: status === "No Active Offer" ? "no_active_offer" : "present",
     featured_offer_checked_at: FRESH_AT,
+    catalog_checked_at: FRESH_AT,
   };
 }
 
@@ -54,6 +55,7 @@ function bundleRow(asin: string, parent: string | null, state: string | null): R
     buybox_status: state === "no_active_offer" ? "No Active Offer" : "3P Confirmed",
     featured_offer_state: state,
     featured_offer_checked_at: FRESH_AT,
+    catalog_checked_at: FRESH_AT,
   };
 }
 
