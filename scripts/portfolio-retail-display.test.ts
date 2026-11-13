@@ -361,10 +361,12 @@ test("channel price cells use a stored Musician's Friend URL or Not available*",
     missingCheckedPageLabel,
   } = await import("../lib/fender-canvas/map-channels.ts");
 
-  assert.match(mapTable, /musiciansFriendCheckedPageUrl/);
-  assert.match(mapTable, /requireCheckedPage/);
-  assert.match(exploreTable, /musiciansFriendCheckedPageUrl/);
-  assert.match(exploreTable, /requireCheckedPage/);
+  // Decision 82: the empty other-retailer price table is not read on screen, so a shown
+  // Musician's Friend price keeps its Not available* mark until a page URL is stored.
+  for (const table of [mapTable, exploreTable]) {
+    assert.match(table, /requireCheckedPage/);
+    assert.doesNotMatch(table, /listingChannelPricesQuery|channelPriceLookup|loadChannelPrices/);
+  }
   assert.doesNotMatch(mapTable, /musiciansfriend\.com\/search/i);
   assert.doesNotMatch(exploreTable, /musiciansfriend\.com\/search/i);
 
