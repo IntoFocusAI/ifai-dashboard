@@ -217,7 +217,7 @@ test("engine and model provenance, with small samples flagged", () => {
     { engine: "gemini", models: ["3.6 Flash"] },
     { engine: "perplexity", models: ["turbo"] },
   ]);
-  assert.equal(modelLabel(null), "not recorded");
+  assert.equal(modelLabel(null), "Not available*");
   const engines = engineTallies(calls);
   assert.deepEqual(engines.map((e) => [e.key, e.resolved]), [["chatgpt", 2], ["gemini", 2], ["perplexity", 1]]);
   assert.equal(isSmallSample(7, 28), true);

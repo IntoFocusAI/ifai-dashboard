@@ -38,8 +38,8 @@ test("invisible characters in a model name are normalized for display", () => {
   assert.equal(modelLabel("‎3.5 Flash-Lite"), "3.5 Flash-Lite");
   assert.equal(modelLabel("3.5‎ Flash-Lite"), "3.5 Flash-Lite");
   assert.equal(modelLabel("  3.5 ​ Flash-Lite﻿ "), "3.5 Flash-Lite");
-  assert.equal(modelLabel("‎"), "not recorded");
-  assert.equal(modelLabel(null), "not recorded");
+  assert.equal(modelLabel("‎"), "Not available*");
+  assert.equal(modelLabel(null), "Not available*");
   assert.equal(cleanModelName(" "), "");
 });
 

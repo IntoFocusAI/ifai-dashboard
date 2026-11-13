@@ -1,5 +1,6 @@
 "use client";
 
+import { ModelName } from "@/components/v3/live/ai-search/ModelName";
 import { useState } from "react";
 import { mutedText } from "@/components/v3/live/ai-search/AiReadGate";
 import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
@@ -16,7 +17,6 @@ import {
   cleanPrompt,
   engineLabel,
   formatRunTime,
-  modelLabel,
   OUTCOME_LABELS,
 } from "@/lib/ai-search/run-metrics";
 import type { AiCallRow } from "@/lib/ai-search/types";
@@ -63,7 +63,7 @@ function ShoppingEvidence({ row, citations }: { row: AiCallRow; citations: Citat
           <tr><td>Prompt</td><td>{cleanPrompt(row.prompt)}</td></tr>
           <tr><td>Category</td><td>{categoryLabel(row.category)}</td></tr>
           <tr><td>Engine</td><td>{engineLabel(row.engine)}</td></tr>
-          <tr><td>Model</td><td>{modelLabel(row.model)}</td></tr>
+          <tr><td>Model</td><td><ModelName model={row.model} /></td></tr>
           <tr><td>Outcome</td><td>{OUTCOME_LABELS[outcome]}</td></tr>
           {row.primary_brand && outcome !== "error" ? (
             <tr><td>Brand named most</td><td>{row.primary_brand}</td></tr>

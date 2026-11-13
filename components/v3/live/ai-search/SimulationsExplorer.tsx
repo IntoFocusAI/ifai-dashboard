@@ -1,5 +1,6 @@
 "use client";
 
+import { ModelName } from "@/components/v3/live/ai-search/ModelName";
 import { Fragment, useMemo, useState } from "react";
 import { clientColumn, ResizableTable } from "@/components/v3/live/ResizableTable";
 import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
@@ -212,7 +213,7 @@ function Explorer({ snapshot }: { snapshot: AiSearchSnapshot }) {
                           <span className="ai-engine-group-tag">{ENGINE_GROUP_LABELS[engineGroup(row.engine)]}</span>
                         ) : null}
                       </td>
-                      <td>{modelLabel(row.model)}</td>
+                      <td><ModelName model={row.model} /></td>
                       <td>{row.prompt_kind === "probe" ? "Product fact check" : categoryLabel(row.category)}</td>
                       <td>{factCheckColumnLabel(row)}</td>
                       <td>{cited.length} cited links</td>
