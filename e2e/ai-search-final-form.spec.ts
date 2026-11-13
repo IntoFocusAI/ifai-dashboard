@@ -112,10 +112,10 @@ for (const client of CLIENTS) {
       const bubble = ((await label.textContent()) ?? "").replace(/\s+/g, " ");
       await page.goto(url(client, "spoke=competitors&tab=category-battlecards"));
       const body = page.locator(".drilldown-body");
-      await expect(body).toContainText("Top rival:", { timeout: 120_000 });
-      const first = ((await body.innerText()).match(/Behind\s*\n\s*Top rival: ([^\n]+)/) ?? [])[1];
-      expect(first, "a Behind category with a top rival").toBeTruthy();
-      expect(bubble.replace(/\s/g, "")).toContain(`${first!.trim().replace(/\s/g, "")}leads`);
+      const behind = body.locator("[data-ai-on-track-status='behind'] [data-ai-battle-leader]").first();
+      await expect(behind).toHaveText(/\S leads \S/, { timeout: 120_000 });
+      // The first Behind card reads exactly what the bubble reads: "Taylor leads Acoustics".
+      expect(((await behind.textContent()) ?? "").replace(/\s/g, "")).toBe(bubble.replace(/\s/g, ""));
     });
 
     test("Run Summary and Run Details download what they show for the date pill's selection", async ({ page }) => {

@@ -7,6 +7,7 @@ import {
   BATTLE_COLUMN_NOTES,
   battlecardEngines,
   callsForEngine,
+  categoryLeaderLabel,
   categoryLeadPie,
   categoryLeads,
   categoryLeadStatus,
@@ -345,7 +346,8 @@ test("Category Battlecards opens on the hero pie row, then the chips, the catego
   assert.match(pies, /<StatusMark status=\{status\} word=\{label\} \/>/, "a mark and a word carry each status, not color alone");
   assert.match(pies, /on_track: "good",\s*tied: "okay",\s*behind: "bad",\s*not_available: null/);
   assert.match(pies, /<EvidenceLink focus=\{focus\} tab=\{AI_TABS\.simulations\}/, "a pie opens its table row's evidence");
-  assert.match(pies, /Top rival: \{lead\.topRival\.brand\}/);
+  assert.match(pies, /const leader = categoryLeaderLabel\(lead\);/);
+  assert.doesNotMatch(pies, /Top rival: \{/, "the card words its leader the way the map bubble does");
   const chips = read("components/v3/live/ai-search/CategoryBattleChips.tsx");
   assert.match(chips, /aria-pressed=\{pressed\}/);
   assert.match(chips, /Clear filters/);
@@ -507,4 +509,16 @@ test("battlecard copy has no em dash and no native title tooltips", () => {
   for (const attr of ['"ifai-term"', "data-ifai-tooltip-title", "data-ifai-tooltip-desc", "tabIndex={0}"]) {
     assert.ok(pies.includes(attr), attr);
   }
+});
+
+test("each battlecard words its leader as the map bubble does: Taylor leads Acoustics", () => {
+  const rival = { brand: "Taylor", wins: 7 };
+  assert.equal(categoryLeaderLabel({ key: "acoustics", label: "Acoustics", status: "behind", topRival: rival }), "Taylor leads Acoustics");
+  assert.equal(
+    categoryLeaderLabel({ key: "electrics", label: "Electrics", status: "on_track", topRival: { brand: "Gibson", wins: 2 } }),
+    "Fender/Squier leads Electrics",
+  );
+  assert.equal(categoryLeaderLabel({ key: "basses", label: "Basses", status: "on_track", topRival: null }), "Fender/Squier leads Basses");
+  assert.equal(categoryLeaderLabel({ key: "acoustics", label: "Acoustics", status: "tied", topRival: rival }), "Tied in Acoustics");
+  assert.equal(categoryLeaderLabel({ key: "squier", label: "Squier", status: "not_available", topRival: null }), null);
 });

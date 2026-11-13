@@ -13,6 +13,7 @@ import {
   ENGINE_MARK_TITLE,
   engineOnlyNote,
   LEAD_STATUS_LABELS,
+  categoryLeaderLabel,
   leadSentence,
   leadStatusDefinition,
   type CategoryLead,
@@ -122,6 +123,8 @@ function CategoryPie({
   engineName: string | null;
 }) {
   const pie = categoryLeadPie(lead);
+  // "Taylor leads Acoustics": the map bubble's wording, for every category (decisions 5 and 40).
+  const leader = categoryLeaderLabel(lead);
   const focus = scopeEvidence({ field: "category", value: lead.key }, scope);
   const sentence = leadSentence(lead);
   const opens = engineName ? `Opens these ${engineName} answers in Run Details.` : "Opens these answers in Run Details.";
@@ -157,12 +160,10 @@ function CategoryPie({
           <EngineMark engineName={engineName} />
         </span>
         <LeadStatusBadge lead={lead} />
-        {lead.topRival ? (
-          <span className="ai-battle-pie-rival" data-ai-battle-rival={lead.topRival.brand}>
-            Top rival: {lead.topRival.brand}
+        {leader ? (
+          <span className="ai-battle-pie-rival" data-ai-battle-leader={leader} data-ai-battle-rival={lead.topRival?.brand}>
+            {leader}
           </span>
-        ) : lead.status !== "not_available" ? (
-          <span className="ai-battle-pie-rival">No other brand leads</span>
         ) : null}
         {small ? (
           <span className="ai-battle-pie-rival">

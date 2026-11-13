@@ -121,6 +121,18 @@ export function rivalLeadsCategory(brand: string, category: string): string {
   return `${brand} leads ${categoryLabel(category)}`;
 }
 
+/**
+ * Who leads one category, in the map bubble's wording: "Taylor leads Acoustics" when another
+ * brand leads, "Fender/Squier leads Electrics" when the brand does, and the caption's
+ * "Tied in Acoustics" on a tie. Null when the category has no resolved answer.
+ */
+export function categoryLeaderLabel(lead: Pick<CategoryLead, "key" | "label" | "status" | "topRival">): string | null {
+  if (lead.status === "behind") return lead.topRival ? rivalLeadsCategory(lead.topRival.brand, lead.key) : null;
+  if (lead.status === "on_track") return rivalLeadsCategory(leadBrand(), lead.key);
+  if (lead.status === "tied") return `Tied in ${lead.label}`;
+  return null;
+}
+
 export function categoryLeadSummary(leads: readonly CategoryLead[]): CategoryLeadSummary {
   const labels = (status: CategoryLeadStatus) => leads.filter((lead) => lead.status === status).map((lead) => lead.label);
   return {
