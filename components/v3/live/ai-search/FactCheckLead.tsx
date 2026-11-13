@@ -73,7 +73,7 @@ export function FactCheckLead({
                   </CopyTip>
                 )}
               </span>
-              <AiStaleMark />
+              <AiStaleMark questions={null} />
               <span className="ai-fact-figure-unit">{CATALOG_PRODUCTS_UNIT}</span>
               {catalogPie && catalog.phase === "ready" ? (
                 <CitationPieDisc
@@ -104,7 +104,7 @@ export function FactCheckLead({
                     {accuracy.rate} Accuracy
                   </CopyTip>
                 </span>
-                <AiStaleMark />
+                <AiStaleMark questions="probe" />
                 <CitationPieDisc
                   pie={pie}
                   sizeClass="citation-pie-disc citation-pie-disc-accuracy"

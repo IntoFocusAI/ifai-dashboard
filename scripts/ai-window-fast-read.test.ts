@@ -320,5 +320,27 @@ test("rotating fact-check wording is not a question-set change; new fact-check k
     ["p17", "Fender Player II Stratocaster neck radius and fret size"],
     ["p18", "What body wood does the Fender American Professional II Telecaster use?"],
   ]);
-  assert.equal(windowQuestionSetChange([fixed, ...rotation]), "2026-11-05", "retiring and adding fact-check keys is a change");
+  assert.equal(
+    windowQuestionSetChange([fixed, ...rotation], "probe"),
+    "2026-11-05",
+    "retiring and adding fact-check keys is a change for a fact-check figure",
+  );
+  assert.equal(windowQuestionSetChange([fixed, ...rotation], "all"), "2026-11-05", "and for a figure over every answer");
+  // Agreed 12 Nov 2026: a shopping rate (the default) counts only shopping-question changes.
+  assert.equal(windowQuestionSetChange([fixed, ...rotation]), null, "a fact-check swap does not mark a shopping rate");
+  assert.equal(windowQuestionSetChange([fixed, ...rotation], "commercial"), null);
+});
+
+test("a shopping-question change marks shopping rates and leaves fact-check figures alone", () => {
+  const checks: Array<[string, string]> = [["p17", "Fender Player II Stratocaster neck radius and fret size"]];
+  const before = snapshot("a", "2026-11-05", checks);
+  const after = snapshot("b", "2026-11-08", checks);
+  const reworded: AiSearchSnapshot = {
+    ...after,
+    calls: after.calls.map((call) => (call.prompt_key === "q1" ? { ...call, prompt: "Best electric guitar under $500" } : call)),
+  };
+  assert.equal(windowQuestionSetChange([before, after]), null);
+  assert.equal(windowQuestionSetChange([before, reworded]), "2026-11-08");
+  assert.equal(windowQuestionSetChange([before, reworded], "probe"), null);
+  assert.equal(windowQuestionSetChange([before, reworded], "all"), "2026-11-08");
 });

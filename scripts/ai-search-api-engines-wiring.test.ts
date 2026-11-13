@@ -346,9 +346,12 @@ test("the map's AI bubbles carry no hover tooltip, with or without API engines",
 test("Run Summary, Citation Ecosystem, the trend, and the run detail read the switch", () => {
   const read = (path: string) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
   assert.match(read("components/v3/live/ai-search/RunSummaryPanel.tsx"), /<EngineGroupScope>\s*<AiReadGate>/);
-  assert.match(read("components/v3/live/ai-search/CitationEcosystemPanel.tsx"), /<EngineGroupScope>\s*<CitationEcosystemBody \/>/);
+  // Citation Ecosystem reads the group its engine chips cover, and draws the switch with the chips (decision 86).
+  const citation = read("components/v3/live/ai-search/CitationEcosystemPanel.tsx");
+  assert.match(citation, /<EngineGroupScope showSwitch=\{false\} readChoice=\{filters\.readChoice\}>\s*<CitationEcosystemBody filters=\{ecosystem\} \/>/);
+  assert.match(citation, /<EngineGroupSwitch[\s\S]*custom=\{filters\.custom\}[\s\S]*<CitationEngineChips/);
   assert.match(read("components/v3/live/ai-search/HistoryTrendsPanel.tsx"), /useEngineGroupWindow\(\)/);
-  assert.match(read("components/v3/live/ai-search/useCitationAggregate.ts"), /useEngineGroupWindow\("citations"\)/);
+  assert.match(read("components/v3/live/ai-search/useCitationAggregate.ts"), /useEngineGroupWindow\("citations", readChoice\)/);
   assert.match(read("components/v3/live/ai-search/RunHistoryControl.tsx"), /<PairedApiRun runId=\{run.audit_run_id\} day=\{day\} \/>/);
 });
 

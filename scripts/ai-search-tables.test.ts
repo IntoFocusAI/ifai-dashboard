@@ -141,14 +141,28 @@ test("Product Fact Checks and the citation tables list every row they show", () 
   assert.deepEqual(evidence.header, CITATION_EVIDENCE_HEADER);
   assert.ok(evidence.rows.length > 0);
   assert.equal(new Set(evidence.rows.map((row) => row.key)).size, evidence.rows.length);
-  assert.equal(evidence.filter, "Shopping answers");
+  assert.equal(evidence.filter, "All shopping");
   const byEngine = citationEngineTable(snapshot, params);
   assert.deepEqual(byEngine.header, ["Engine", "Cited answers", "Links", "Fender-owned"]);
   assert.match(byEngine.rows[0].cells[1], /^\d+ of \d+$/);
   const links = byEngine.rows.reduce((sum, row) => sum + Number(row.cells[2].replace(/,/g, "")), 0);
   assert.equal(links, evidence.rows.length, "links by engine add up to the cited links");
   assert.equal(citationCategoryTable(snapshot, params).header[0], "Category");
-  assert.deepEqual(parseCitationParams({ scope: "everything", category: 4 }), { scope: "commercial", category: null });
+  assert.deepEqual(parseCitationParams({ scope: "everything", category: 4 }), {
+    scope: "commercial",
+    category: null,
+    question: "shopping",
+    engines: null,
+  });
+  // Decision 86: the question control and a custom chip set ride with the download.
+  const engines = [...new Set(snapshot.calls.map((call) => (call.engine ?? "").toLowerCase()))].sort();
+  const one = engines[0];
+  const custom = parseCitationParams({ question: "unbranded", engines: [one, "bad engine!"], category: null });
+  assert.deepEqual(custom, { scope: "commercial", category: null, question: "unbranded", engines: [one] });
+  const narrowed = citationEngineTable(snapshot, custom);
+  assert.ok(narrowed.rows.every((row) => row.key === one), "only the chosen engine's row");
+  assert.match(narrowed.filter, /^Unbranded shopping\. Engines: .+ \(search\)$/);
+  assert.equal(parseCitationParams({ scope: "probe" }).question, "probe", "a download sent before decision 86 still reads");
 });
 
 test("a download writes the filter, sort, as-of time, and population ahead of the rows the screen sent", () => {

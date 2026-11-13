@@ -194,7 +194,7 @@ export function citationPopulation(snapshot: AiSearchSnapshot, apiInWindow = fal
 }
 
 /** Run counts recounted from the calls the switch kept. Expected and missing are not known for a subset. */
-function withCallCounts(snapshot: AiSearchSnapshot, calls: readonly AiCallRow[]): AiSearchSnapshot["run"] {
+export function withCallCounts(snapshot: AiSearchSnapshot, calls: readonly AiCallRow[]): AiSearchSnapshot["run"] {
   const answered = calls.filter((row) => row.call_status === "answered").length;
   const errors = calls.filter((row) => row.call_status === "error" || row.outcome === "error").length;
   return {

@@ -232,8 +232,16 @@ function enginesIn(snapshots: readonly AiSearchSnapshot[]): string[] {
   return [...engines].sort((a, b) => engineLabel(a).localeCompare(engineLabel(b)));
 }
 
-function questionIdentity(calls: readonly AiCallRow[]): string {
+/**
+ * Which questions a question-set check compares. A shopping rate counts only shopping-question
+ * changes; a fact-check swap does not mark it (agreed 12 Nov 2026). A fact-check figure checks its
+ * own questions, and a figure over every answer checks both.
+ */
+export type QuestionSetKind = "commercial" | "probe" | "all";
+
+function questionIdentity(calls: readonly AiCallRow[], kind: QuestionSetKind = "all"): string {
   return questionsInRun(calls)
+    .filter((question) => kind === "all" || question.promptKind === kind)
     .map((question) => question.versionKey)
     .sort()
     .join("\n");
@@ -244,6 +252,7 @@ function adjacentBreak(
   next: AiSearchSnapshot,
   orderedIds: readonly string[],
   query: QueryChoice,
+  kind: QuestionSetKind = "all",
 ): { promptSetChanged: boolean; queryVersionChanged: boolean; gap: boolean } {
   const previousIndex = orderedIds.indexOf(previous.run.audit_run_id);
   const nextIndex = orderedIds.indexOf(next.run.audit_run_id);
@@ -256,7 +265,7 @@ function adjacentBreak(
   // Matching stored wording is the same question set, even when an older run
   // never recorded a prompt-set hash. A future wording change still breaks.
   const promptSetChanged = callsLoaded
-    ? questionIdentity(previousCalls) !== questionIdentity(nextCalls)
+    ? questionIdentity(previousCalls, kind) !== questionIdentity(nextCalls, kind)
     : previousHash !== nextHash && previousHash !== "" && nextHash !== "";
   let queryVersionChanged = false;
   if (query.kind === "lineage") {
@@ -453,16 +462,20 @@ export function boundaryReason(boundary: TrendBoundary): string {
 /**
  * The day the question set changed inside a window of review runs (the later run's day), or null
  * when one question set covers the whole window. The trend's boundary rule decides it, so a
- * headline rate and the trend line break on the same run. The latest change wins.
+ * headline rate and the trend line break on the same run. The latest change wins. `kind` names
+ * the questions the figure counts: a shopping rate (the default) ignores fact-check swaps.
  */
-export function windowQuestionSetChange(snapshots: readonly AiSearchSnapshot[]): string | null {
+export function windowQuestionSetChange(
+  snapshots: readonly AiSearchSnapshot[],
+  kind: QuestionSetKind = "commercial",
+): string | null {
   const runs = snapshots
     .filter((snapshot) => isReviewHistoryRun(snapshot.run as HistoryRunSummary))
     .sort((a, b) => compareRuns(a.run as HistoryRunSummary, b.run as HistoryRunSummary));
   const ids = runs.map((snapshot) => snapshot.run.audit_run_id);
   let changed: string | null = null;
   for (let index = 1; index < runs.length; index += 1) {
-    if (adjacentBreak(runs[index - 1], runs[index], ids, { kind: "all" }).promptSetChanged) {
+    if (adjacentBreak(runs[index - 1], runs[index], ids, { kind: "all" }, kind).promptSetChanged) {
       changed = dayOf(runs[index]) ?? changed;
     }
   }

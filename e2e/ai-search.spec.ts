@@ -249,6 +249,45 @@ test.describe("AI Search Visibility", () => {
     await expect(page.locator(".drilldown-body")).not.toContainText(/\bnull\b/);
   });
 
+  test("Citation Ecosystem engine chips and question control narrow every figure (decision 86)", async ({ page }) => {
+    test.slow();
+    for (const client of ["fender", "ledlenser"]) {
+      const query = client === "ledlenser" ? "client=ledlenser&" : "";
+      await page.goto(`/dashboard?${query}spoke=aeo&tab=citation-ecosystem`);
+      await expect(page.locator("[data-citation-chain]")).toBeVisible({ timeout: AI_READ_MS });
+      const questions = page.locator("[data-citation-question-choice]");
+      await expect(questions).toHaveText([
+        "All shopping",
+        "Unbranded shopping",
+        "Branded shopping",
+        "Product fact checks",
+        "All answers",
+      ]);
+      const chips = page.locator("[data-citation-engine-chip]");
+      await expect(chips.first()).toHaveText(/\((search|API)\)$/);
+      const labels = await chips.allInnerTexts();
+      if (client === "ledlenser") expect(labels.every((label) => label.endsWith("(search)")), labels.join()).toBe(true);
+      // A preset sets the chips: every chip is on, and no Custom pill.
+      await expect(page.locator("[data-ai-engine-choice='custom']")).toHaveCount(0);
+      await expect(chips.and(page.locator("[aria-pressed='true']"))).toHaveCount(labels.length);
+      const answers = async () => Number(await page.locator("[data-citation-chain-step='answers']").getAttribute("data-chain-count"));
+      const before = await answers();
+      await chips.first().click();
+      await expect(page.locator("[data-ai-engine-choice='custom']")).toHaveText("Custom");
+      await expect(page.locator("[data-citation-engine-filtered]").first()).toBeVisible();
+      await expect.poll(answers).toBeLessThan(before);
+      await expect(page.locator("tr[data-engine]")).toHaveCount(labels.length - 1);
+      await page.locator("[data-citation-question-choice='unbranded']").click();
+      await expect(page.locator("[data-citation-chain]")).toContainText(/unbranded shopping answers/i);
+      await expect(page.locator("[data-citation-hero-ratio]")).toContainText(/unbranded discovery answers cited/);
+      await expect(page.getByText(/^\d+ of \d+ rows$/).first()).toBeVisible();
+      // All brings every chip back.
+      await page.locator("[data-ai-engine-choice='all']").click();
+      await expect(page.locator("[data-ai-engine-choice='custom']")).toHaveCount(0);
+      await expect(chips.and(page.locator("[aria-pressed='true']"))).toHaveCount(labels.length);
+    }
+  });
+
   test("AI definitions use the custom tooltip", async ({ canvas, page }) => {
     test.slow();
     await canvas.openSpokeFromMap("AI Search Visibility");

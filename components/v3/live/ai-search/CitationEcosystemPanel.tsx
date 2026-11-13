@@ -2,18 +2,21 @@
 
 import { useMemo, useState, type ReactNode } from "react";
 import { clientColumn } from "@/components/v3/live/ResizableTable";
+import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
 import { AiReadGate, EmptyRows, mutedText } from "@/components/v3/live/ai-search/AiReadGate";
 import { useAiHistoryOptional } from "@/components/v3/live/ai-search/AiHistoryContext";
 import { useCitationAggregate } from "@/components/v3/live/ai-search/useCitationAggregate";
 import { useAiExportScope } from "@/components/v3/live/ai-search/useAiExport";
-import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
 import { CountTable, PickButton } from "@/components/v3/live/ai-search/CitationCountTable";
 import { CitationEvidenceTable } from "@/components/v3/live/ai-search/CitationEvidenceTable";
 import { CITED_LINK_COUNT_CAVEAT, CitationRoleNote } from "@/components/v3/live/ai-search/CitationRoleNote";
 import { CitationHero } from "@/components/v3/live/ai-search/CitationHero";
 import { CitationNotAvailable } from "@/components/v3/live/ai-search/CitationNotAvailable";
 import { CitationReadFailed } from "@/components/v3/live/ai-search/CitationReadFailed";
+import { CitationEngineChips } from "@/components/v3/live/ai-search/CitationEngineChips";
 import { EngineGroupScope } from "@/components/v3/live/ai-search/EngineGroupScope";
+import { EngineGroupSwitch } from "@/components/v3/live/ai-search/EngineGroupSwitch";
+import { useCitationFilters, type EcosystemFilters } from "@/components/v3/live/ai-search/useCitationFilters";
 import { NoWindowRunNotice } from "@/components/v3/live/ai-search/NoWindowRunNotice";
 import { useEvidenceFocus } from "@/components/v3/live/ai-search/useEvidenceFocus";
 import {
@@ -23,6 +26,13 @@ import {
   type CitationPick,
 } from "@/lib/ai-search/citation-pick";
 import {
+  engineKindLabel,
+  questionNoun,
+  questionScope,
+  snapshotForEngines,
+  snapshotForQuestion,
+} from "@/lib/ai-search/citation-filters";
+import {
   categoryForScope,
   citationCategoryLabel,
   citationCategoryOptions,
@@ -30,7 +40,6 @@ import {
 } from "@/lib/ai-search/citation-top-sources";
 import { citationEvidence, citedAnswers, groupCitations, type CitationScope } from "@/lib/ai-search/citations";
 import { citationPopulation } from "@/lib/ai-search/engine-group";
-import { engineLabel } from "@/lib/ai-search/run-metrics";
 import { citationStorageCaution } from "@/lib/ai-search/review-runs";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
 import { brandName, brandOwned, isFenderClient } from "@/lib/brand-copy";
@@ -70,13 +79,16 @@ function Ecosystem({
   snapshot,
   copy,
   singleRun,
+  filters,
 }: {
   snapshot: AiSearchSnapshot;
   copy: string;
   singleRun: boolean;
+  filters: EcosystemFilters;
 }) {
   const focus = useEvidenceFocus();
-  const [scope, setScope] = useState<CitationScope>("commercial");
+  const { question, narrowTo } = filters;
+  const scope: CitationScope = questionScope(question);
   const [pick, setPick] = useState<CitationPick>(() =>
     focus?.field === "domain" || focus?.field === "class"
       ? { field: focus.field, value: focus.value }
@@ -91,32 +103,26 @@ function Ecosystem({
     }
   }
 
-  const [category, setCategory] = useState<string | null>(null);
-  const exportScope = useAiExportScope({ citations: { scope, category } });
-  const full = useMemo(
-    () => citationEvidence(snapshot.calls, snapshot.citations, scope),
-    [snapshot, scope],
+  // Engine chips, then the question control, then the category: every figure, chart, and table follows them.
+  const asked = useMemo(
+    () => snapshotForQuestion(snapshotForEngines(snapshot, narrowTo), question),
+    [snapshot, narrowTo, question],
   );
-  // Every figure, chart, and table follows the category filter, the Fender-owned lead included.
-  const view = useMemo(() => snapshotInCategory(snapshot, category), [snapshot, category]);
-  const read = useMemo(
-    () => (category == null ? full : citationEvidence(view.calls, view.citations, scope)),
-    [full, view, scope, category],
+  const category = categoryForScope(asked.calls, scope, filters.category);
+  const engineFilter = narrowTo ? narrowTo.map(engineKindLabel).join(", ") : null;
+  const exportScope = useAiExportScope(
+    { citations: { question, scope, category, engines: narrowTo } },
+    filters.readChoice,
   );
+  const view = useMemo(() => snapshotInCategory(asked, category), [asked, category]);
+  const read = useMemo(() => citationEvidence(view.calls, view.citations, scope), [view, scope]);
   const fender = read.rows.filter((row) => row.sourceClass === "fender_owned");
   const fenderAnswers = new Set(fender.map((row) => row.simulationId)).size;
-  const byEngine = citedAnswers(view.calls, read.rows, scope, (call) =>
-    (call.engine ?? "").toLowerCase(),
-  );
-  const engineLinks = new Map(
-    groupCitations(read.rows, (row) => row.engine).map((g) => [g.key, g]),
-  );
+  const byEngine = citedAnswers(view.calls, read.rows, scope, (call) => (call.engine ?? "").toLowerCase());
+  const engineLinks = new Map(groupCitations(read.rows, (row) => row.engine).map((g) => [g.key, g]));
   const byCategory = citedAnswers(view.calls, read.rows, scope, (call) => call.category ?? "");
-  const categoryLinks = new Map(
-    groupCitations(read.rows, (row) => row.category).map((g) => [g.key, g]),
-  );
-  const scopeNoun =
-    scope === "probe" ? "fact-check answers" : scope === "all" ? "answers" : "shopping answers";
+  const categoryLinks = new Map(groupCitations(read.rows, (row) => row.category).map((g) => [g.key, g]));
+  const scopeNoun = questionNoun(question);
   const filtered = read.rows.filter((row) => citationPickMatches(row, pick));
 
   const caution = citationStorageCaution(snapshot.run.audit_run_id);
@@ -135,22 +141,22 @@ function Ecosystem({
             <CitationHero
               snapshot={view}
               read={read}
-              scope={scope}
+              question={question}
               scopeNoun={scopeNoun}
               showSmallSample={singleRun}
               lead={{ owned: fender.length, total: read.rows.length }}
               note={copy}
-              categories={citationCategoryOptions(snapshot.calls, scope)}
+              categories={citationCategoryOptions(asked.calls, scope)}
               category={category}
+              engineFilter={engineFilter}
               onCategory={(next) => {
-                setCategory(next);
+                filters.onCategory(next);
                 setPick(pickAfterCategoryChange);
               }}
               activeDomain={pick?.field === "domain" ? pick.value : null}
-              onScope={(next) => {
-                setScope(next);
+              onQuestion={(next) => {
+                filters.onQuestion(next);
                 setPick(null);
-                setCategory(categoryForScope(snapshot.calls, next, category));
               }}
               onPick={setPick}
             />
@@ -212,7 +218,7 @@ function Ecosystem({
               keyOf={groupKey}
               exportScope={exportScope}
               value={(g, id) => {
-                if (id === "engine") return engineLabel(g.key);
+                if (id === "engine") return engineKindLabel(g.key);
                 if (id === "cited") return g.cited;
                 if (id === "links") return engineLinks.get(g.key)?.rows ?? 0;
                 return engineLinks.get(g.key)?.fenderOwnedRows ?? 0;
@@ -221,7 +227,7 @@ function Ecosystem({
                 <tr key={g.key} data-engine={g.key}>
                   <td>
                     <PickButton pick={{ field: "engine", value: g.key }} onPick={setPick}>
-                      {engineLabel(g.key)}
+                      {engineKindLabel(g.key)}
                     </PickButton>
                   </td>
                   <td>
@@ -299,8 +305,8 @@ function RangeNotice({ heading, children, tone }: { heading: string; children: R
   );
 }
 
-function CitationAggregateBody() {
-  const aggregate = useCitationAggregate();
+function CitationAggregateBody({ filters }: { filters: EcosystemFilters }) {
+  const aggregate = useCitationAggregate(filters.readChoice);
   if (aggregate.phase === "loading") {
     return (
       <RangeNotice heading="Adding the runs in this selection" tone="loading">
@@ -325,30 +331,55 @@ function CitationAggregateBody() {
       snapshot={aggregate.snapshot}
       copy={aggregate.copy}
       singleRun={aggregate.singleRun}
+      filters={filters}
     />
   );
 }
 
+/**
+ * Citation Ecosystem. Engine chips sit beside the shared presets and a question control leads
+ * the hero (decision 86); both, the category, and the date pill narrow every figure and table.
+ */
 export function CitationEcosystemPanel() {
+  const filters = useCitationFilters();
+  const [category, setCategory] = useState<string | null>(null);
+  const { engineSwitch } = filters;
+  const ecosystem: EcosystemFilters = {
+    question: filters.question,
+    onQuestion: filters.setQuestion,
+    narrowTo: filters.narrowTo,
+    readChoice: filters.readChoice,
+    category,
+    onCategory: setCategory,
+  };
   return (
-    <EngineGroupScope>
-      <CitationEcosystemBody />
-    </EngineGroupScope>
+    <>
+      <EngineGroupSwitch
+        state={engineSwitch.state}
+        onChoose={filters.choosePreset}
+        pairedDay={engineSwitch.pairedDay}
+        custom={filters.custom}
+        chips={<CitationEngineChips available={filters.available} selected={filters.selected} onToggle={filters.toggle} />}
+      />
+      <EngineGroupScope showSwitch={false} readChoice={filters.readChoice}>
+        <CitationEcosystemBody filters={ecosystem} />
+      </EngineGroupScope>
+    </>
   );
 }
 
-function CitationEcosystemBody() {
+function CitationEcosystemBody({ filters }: { filters: EcosystemFilters }) {
   const history = useAiHistoryOptional();
   if (history?.mode.kind === "run") {
     return (
       <AiReadGate showFreshness={false}>
-        {(snapshot) => <Ecosystem snapshot={citationPopulation(snapshot)} copy="" singleRun />}
+        {(snapshot) => <Ecosystem snapshot={citationPopulation(snapshot)} copy="" singleRun filters={filters} />}
       </AiReadGate>
     );
   }
   return (
     <div className="ai-search-panel">
-      <CitationAggregateBody />
+      <CitationAggregateBody filters={filters} />
     </div>
   );
 }

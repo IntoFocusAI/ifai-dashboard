@@ -182,7 +182,7 @@ function RoleOwnedCard({
       <section className="citation-card citation-tile" data-citation-association>
         {kicker}
         <p className="citation-card-note">
-          Lead rates come from shopping answers. Choose Shopping answers or All answers to see them.
+          Lead rates come from shopping answers. Choose a shopping question or All answers to see them.
         </p>
       </section>
     );
@@ -279,6 +279,7 @@ export function CitationExecutiveGrid({
   mixPie,
   brandPie,
   byQuestionType,
+  unbrandedApplies = true,
   rolesApplicable,
   showSmallSample,
   onPickRoleGroup,
@@ -291,6 +292,8 @@ export function CitationExecutiveGrid({
   mixPie: CitationPie | null;
   brandPie: CitationPie | null;
   byQuestionType: OwnedByQuestionType | null;
+  /** False on Branded shopping: the presence tile then counts the answers in view. */
+  unbrandedApplies?: boolean;
   rolesApplicable: boolean;
   showSmallSample: boolean;
   onPickRoleGroup: (role: RoleOwnedPresence, group: RoleOwnedGroup) => void;
@@ -304,11 +307,11 @@ export function CitationExecutiveGrid({
         scopeNoun={scopeNoun}
         unbrandedPie={unbrandedPie}
         unbranded={
-          rolesApplicable && byQuestionType?.ok
+          rolesApplicable && unbrandedApplies && byQuestionType?.ok
             ? { withOwned: byQuestionType.insight.withOwned, resolved: byQuestionType.insight.resolved }
             : null
         }
-        brands={rolesApplicable ? <BrandSites pie={brandPie} /> : null}
+        brands={rolesApplicable && unbrandedApplies ? <BrandSites pie={brandPie} /> : null}
       />
       <SourceMixCard pie={mixPie} onPickClass={onPickClass} />
       <RoleOwnedCard
