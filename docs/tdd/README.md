@@ -1,4 +1,4 @@
-**Documentation version: 26.10**
+**Documentation version: 27.1**
 
 > **Source of truth.** This TDD moved from Google Docs into the repo on 10 Nov 2026 at version 24.4. History: [changelog.md](changelog.md). FDD: [../fdd/README.md](../fdd/README.md).
 

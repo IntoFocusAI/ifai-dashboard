@@ -33,9 +33,10 @@ propose status changes in the pull request body.
   a screen or column that reads Not available* on every row.
 - Never invent rules, figures, or causes. If the FDD and the decisions do
   not say, ask the PM in your report.
-- Standing rules: the map shows the published run plus its matching API
-  run, except the Competitive Radar bubble, which reads the Category
-  Battlecards rows for the date-pill window (decision 40; do not change it); the shared date pill is the only period label; dollar figures stay
+- Standing rules: every AI figure, the map included, follows the date-pill
+  window (decision 83); the Competitive Radar bubble keeps the tab's lead
+  rule (decision 40; do not change it); no tooltips on main map bubbles
+  (decision 87); the shared date pill is the only period label; dollar figures stay
   labeled analyst estimate and their formulas stay parked; nothing about
   IntoFocus fees; no delegation or paid tiers; let the data speak (caveats
   in tooltips; "analyst estimate", "Not available*", and the asterisk stay
