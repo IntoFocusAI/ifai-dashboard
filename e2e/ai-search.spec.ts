@@ -266,7 +266,9 @@ test.describe("AI Search Visibility", () => {
       const chips = page.locator("[data-citation-engine-chip]");
       await expect(chips.first()).toHaveText(/\((search|API)\)$/);
       const labels = await chips.allInnerTexts();
-      if (client === "ledlenser") expect(labels.every((label) => label.endsWith("(search)")), labels.join()).toBe(true);
+      // One dashboard for every client (decision 89): both show search and API chips.
+      expect(labels.some((label) => label.endsWith("(search)")), labels.join()).toBe(true);
+      expect(labels.some((label) => label.endsWith("(API)")), labels.join()).toBe(true);
       // A preset sets the chips: every chip is on, and no Custom pill.
       await expect(page.locator("[data-ai-engine-choice='custom']")).toHaveCount(0);
       await expect(chips.and(page.locator("[aria-pressed='true']"))).toHaveCount(labels.length);

@@ -16,6 +16,7 @@ import {
   catalogProductsFigure,
   catalogProductsPie,
   catalogProductsSubline,
+  catalogProductsNotAskedTip,
   catalogProductsTip,
   catalogProductsUnavailableTip,
   contradictionCount,
@@ -68,7 +69,14 @@ export function FactCheckLead({
                     {catalogProductsFigure(catalog)}
                   </CopyTip>
                 ) : (
-                  <CopyTip label={CATALOG_PRODUCTS_TITLE} description={catalogProductsUnavailableTip(catalog.askingEngines)}>
+                  <CopyTip
+                    label={CATALOG_PRODUCTS_TITLE}
+                    description={
+                      catalog.phase === "not-asked"
+                        ? catalogProductsNotAskedTip(catalog, windowed)
+                        : catalogProductsUnavailableTip(catalog.askingEngines)
+                    }
+                  >
                     Not available*
                   </CopyTip>
                 )}

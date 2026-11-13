@@ -15,7 +15,7 @@ import {
   API_REPEAT_RULE,
   capApiRepeats,
   citationPopulation,
-  fixedQuestionCount,
+  shoppingQuestionCount,
   withApiSnapshots,
 } from "../lib/ai-search/engine-group.ts";
 import { engineGroupTrend, engineGroupWindow, pairApiRuns } from "../lib/ai-search/engine-group-window.ts";
@@ -242,15 +242,47 @@ function fullBattery(id: string, day: string): AiSearchSnapshot {
   return { run: runOn(id, day), calls, probes: [], citations: [] };
 }
 
-test("a battery run's fixed questions leave out rotating fact checks and API engines", () => {
-  assert.equal(fixedQuestionCount(fullBattery("b", "2026-11-03")), 34);
-  // OCT20: p01 and the rotating p35 on two engines. Only p01 is fixed.
-  assert.equal(fixedQuestionCount(OCT20), 1);
+test("a battery run's API floor counts its shopping questions: fact checks and API engines sit out", () => {
+  // Wave 1: 29 shopping questions and 5 fact checks.
+  assert.equal(shoppingQuestionCount(fullBattery("b", "2026-11-03")), 29);
+  // OCT20: p01 and the rotating p35 on two engines. Only p01 is a shopping question.
+  assert.equal(shoppingQuestionCount(OCT20), 1);
   const withApi = { ...OCT20, calls: [...OCT20.calls, call("b-oct20", "openai_api", { prompt_key: "p02" })] };
-  assert.equal(fixedQuestionCount(withApi), 1);
+  assert.equal(shoppingQuestionCount(withApi), 1);
 });
 
-test("an API run counts only when it asked the fixed questions of the battery run nearest its day", () => {
+test("Ledlenser's API runs count: they ask the 29 shopping questions, not the fixed fact checks l30 to l32 (decision 89)", () => {
+  // The live Ledlenser battery: 29 shopping questions and fixed fact checks l30 to l32 on the search engines.
+  const shopping = Array.from({ length: 29 }, (_, index) => `l${String(index + 1).padStart(2, "0")}`);
+  const ledlenser = (id: string, day: string): AiSearchSnapshot => ({
+    run: runOn(id, day),
+    calls: ["chatgpt", "gemini", "perplexity"].flatMap((engine) => [
+      ...shopping.map((key) => call(id, engine, { prompt_key: key })),
+      ...["l30", "l31", "l32"].map((key) => call(id, engine, { prompt_key: key, prompt_kind: "probe", outcome: "not_scored" })),
+    ]),
+    probes: [],
+    citations: [],
+  });
+  const window = batteryQuestions([ledlenser("l-nov7", "2026-11-07"), ledlenser("l-nov10", "2026-11-10")]);
+  assert.deepEqual(window.map((item) => item.shoppingQuestions), [29, 29]);
+  const runs = [
+    apiSummary("914c665a", "2026-11-04T18:45:14Z", { run_state: "partial", questions_asked: 5, questions_matched: 5 }),
+    apiSummary("62dd5c53", "2026-11-04T22:45:20Z", { questions_asked: 29, questions_matched: 29 }),
+    apiSummary("fd8c85af", "2026-11-06T11:45:15Z", { questions_asked: 29, questions_matched: 29 }),
+    apiSummary("cdc198af", "2026-11-09T11:45:17Z", { questions_asked: 29, questions_matched: 29 }),
+    apiSummary("ac68dcc1", "2026-11-11T11:15:12Z", { questions_asked: 29, questions_matched: 29 }),
+  ];
+  assert.deepEqual(
+    apiRunsCoveringBattery(runs, window).map((run) => run.audit_run_id),
+    ["62dd5c53", "fd8c85af", "cdc198af", "ac68dcc1"],
+  );
+  // Fender's API runs ask 29 shopping questions plus fixed fact checks p17 and p33: still counted.
+  const fender = batteryQuestions([fullBattery("f-nov10", "2026-11-10")]);
+  const fenderRun = apiSummary("5ca9a3e6", "2026-11-10T07:46:46Z", { questions_asked: 31, questions_matched: 31 });
+  assert.equal(apiRunsCoveringBattery([fenderRun], fender).length, 1);
+});
+
+test("an API run counts only when it asked the shopping questions of the battery run nearest its day", () => {
   // The live API runs on 4 Nov 2026: two one-question smoke tests and two full runs.
   const runs = [
     apiSummary("28028054", "2026-10-27T20:13:01Z", { run_state: "partial", questions_asked: 1, questions_matched: 1, answered_calls: 2 }),
@@ -259,7 +291,7 @@ test("an API run counts only when it asked the fixed questions of the battery ru
     apiSummary("8aa2eb28", "2026-11-03T14:26:18Z", { run_state: "partial", questions_asked: 34, questions_matched: 34, repeats: 20 }),
   ];
   const window = batteryQuestions([fullBattery("b-oct26", "2026-10-26"), fullBattery("b-oct28", "2026-10-28"), fullBattery("b-nov3", "2026-11-03")]);
-  assert.deepEqual(window.map((item) => item.fixedQuestions), [34, 34, 34]);
+  assert.deepEqual(window.map((item) => item.shoppingQuestions), [29, 29, 29]);
   const counted = apiRunsCoveringBattery(runs, window);
   assert.deepEqual(counted.map((run) => run.audit_run_id), ["fe3ada9e", "8aa2eb28"]);
   assert.deepEqual(
@@ -272,8 +304,8 @@ test("an API run counts only when it asked the fixed questions of the battery ru
   assert.equal(nearestApiRun(single, "2026-10-26")?.audit_run_id, "fe3ada9e");
   assert.equal(nearestApiRun(runs, "2026-10-26")?.audit_run_id, "1107bf8b");
 
-  // A battery with one fixed question would take a one-question run; with no battery run, none counts.
-  assert.equal(apiRunsCoveringBattery(runs, [{ day: "2026-10-27", fixedQuestions: 1 }]).length, 4);
+  // A battery with one shopping question would take a one-question run; with no battery run, none counts.
+  assert.equal(apiRunsCoveringBattery(runs, [{ day: "2026-10-27", shoppingQuestions: 1 }]).length, 4);
   assert.deepEqual(apiRunsCoveringBattery(runs, []), []);
   assert.deepEqual(apiRunsCoveringBattery([apiSummary("no-count", "2026-11-03T10:00:00Z")], window), []);
 });

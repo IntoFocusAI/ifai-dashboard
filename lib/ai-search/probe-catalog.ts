@@ -130,6 +130,15 @@ export type CatalogProductsLead =
       askingEngines: string[];
     }
   | {
+      /**
+       * No engine on screen was asked a catalog question in this selection (decision 90), read
+       * from the fact checks themselves, so the count would be 0 of M. It reads Not available*.
+       */
+      phase: "not-asked";
+      inScope: number;
+      askingEngines: string[];
+    }
+  | {
       phase: "ready";
       /** Distinct catalog products the engines on screen were asked about. */
       checked: number;
@@ -153,7 +162,8 @@ function probeEngines(rows: readonly AiProbeRow[]): string[] {
  * N counts distinct catalog products the engines on screen were asked about, the way
  * canvas_ai_probe_coverage counts a model. M is the newest run's models_in_scope. M and the
  * engines that ask the rotating questions read the selection before the engine switch, so a
- * choice with none of those engines reads 0 of M instead of losing the line.
+ * choice whose engines were asked no catalog question keeps the line and reads Not available*
+ * (decision 90). Any engine, API included, whose answers name a catalog product counts.
  * Null before the rotation: no fact check in the selection names a catalog product.
  */
 export function catalogProductsLead(snapshot: AiSearchSnapshot): CatalogProductsLead | null {
@@ -163,6 +173,7 @@ export function catalogProductsLead(snapshot: AiSearchSnapshot): CatalogProducts
   const inScope = snapshot.probeCoverage ? newestInScope(before, snapshot.probeCoverage) : null;
   if (inScope == null) return { phase: "unavailable", askingEngines };
   const shown = snapshot.probes.filter(isCatalogProbe);
+  if (shown.length === 0) return { phase: "not-asked", inScope, askingEngines };
   const compared = shown.filter(
     (row) =>
       row.call_status !== "error" &&

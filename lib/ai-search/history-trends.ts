@@ -276,6 +276,13 @@ function adjacentBreak(
   return { promptSetChanged, queryVersionChanged, gap };
 }
 
+/** The questions the trend's boundary rule compares: the shopping questions its rates count. */
+const TREND_QUESTIONS: QuestionSetKind = "commercial";
+
+function isTrendQuestion(question: QuestionVersion): boolean {
+  return question.promptKind === TREND_QUESTIONS;
+}
+
 export function buildHistoryTrend(input: {
   snapshots: readonly AiSearchSnapshot[];
   metric: TrendMetric;
@@ -308,7 +315,9 @@ export function buildHistoryTrend(input: {
   for (let index = 1; index < matching.length; index += 1) {
     const before = matching[index - 1];
     const after = matching[index];
-    const change = adjacentBreak(before, after, orderedIds, input.query);
+    // Every trend metric is a shopping rate, so only a shopping-question change breaks the line
+    // (Brian Magazu, 13 Nov 2026); a fact-check swap such as Nov 5 does not.
+    const change = adjacentBreak(before, after, orderedIds, input.query, TREND_QUESTIONS);
     const beforeMethod = scoringMethodFor(before.run);
     const afterMethod = scoringMethodFor(after.run);
     const scoringMethodChanged = beforeMethod != null && afterMethod != null && beforeMethod !== afterMethod;
@@ -323,8 +332,8 @@ export function buildHistoryTrend(input: {
       queryVersionChanged: change.queryVersionChanged,
       scoringMethodChanged,
       gap: change.gap,
-      beforeQuestions: questionsInRun(before.calls),
-      afterQuestions: questionsInRun(after.calls),
+      beforeQuestions: questionsInRun(before.calls).filter(isTrendQuestion),
+      afterQuestions: questionsInRun(after.calls).filter(isTrendQuestion),
     });
   }
 

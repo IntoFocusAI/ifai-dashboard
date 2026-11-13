@@ -6,11 +6,11 @@ import { READ_ERROR_TITLE } from "@/components/v3/live/ai-search/AiReadGate";
 import { CopyTip } from "@/components/v3/live/ai-search/CopyTip";
 import { RunHistoryCalendar } from "@/components/v3/live/ai-search/RunHistoryCalendar";
 import { useApiRunCatalog } from "@/components/v3/live/ai-search/useApiEngineLoad";
-import { apiRunDay, apiRunsCoveringBattery, daysApart, nearestApiRun } from "@/lib/ai-search/api-runs";
-import { API_QUESTION_RULE, API_REPEAT_RULE, fixedQuestionCount } from "@/lib/ai-search/engine-group";
+import { apiRunDay, apiRunsCoveringBattery, batteryQuestions, daysApart, nearestApiRun, nearestBatteryDay } from "@/lib/ai-search/api-runs";
+import { API_QUESTION_RULE, API_REPEAT_RULE, shoppingQuestionCount } from "@/lib/ai-search/engine-group";
 import { formatDay, utcDay, type HistoryRunSummary } from "@/lib/ai-search/history-eligibility";
 import { LAST_30_DAYS_LABEL } from "@/lib/ai-search/default-window";
-import { batteryGaps, PROMPT_BATTERY } from "@/lib/ai-search/prompt-battery";
+import { batteryGaps } from "@/lib/ai-search/prompt-battery";
 import {
   citationStorageCaution,
   hasPartialCoverage,
@@ -39,9 +39,11 @@ const PAIRED_API_TIP = `API engines run on their own schedule. This run is shown
 function PairedApiRun({ runId, day }: { runId: string; day: string | null }) {
   const catalog = useApiRunCatalog();
   const history = useAiHistory();
-  const loaded =
-    (history.trend.phase === "ready" ? history.trend.snapshots.find((item) => item.run.audit_run_id === runId) : null) ??
-    (history.selected.phase === "ready" && history.selected.snapshot.run.audit_run_id === runId ? history.selected.snapshot : null);
+  const read = [
+    ...(history.trend.phase === "ready" ? history.trend.snapshots : []),
+    ...(history.selected.phase === "ready" ? [history.selected.snapshot] : []),
+  ];
+  const loaded = read.find((item) => item.run.audit_run_id === runId) ?? null;
   if (catalog.phase === "off" || !day) return null;
   let text: ReactNode;
   if (catalog.phase === "loading") text = "Loading";
@@ -55,12 +57,16 @@ function PairedApiRun({ runId, day }: { runId: string; day: string | null }) {
       </CopyTip>
     );
   } else {
-    // A run outside the loaded selection has no calls read yet, so its floor is the battery's question list.
-    const fixedQuestions = loaded ? fixedQuestionCount(loaded) : PROMPT_BATTERY.length;
-    const covering = apiRunsCoveringBattery(catalog.runs, [{ day, fixedQuestions }]);
+    // A run outside the loaded selection has no calls read yet: its floor is the shopping-question
+    // count of the loaded battery run nearest its day, read from the client's own data.
+    const shoppingQuestions = loaded
+      ? shoppingQuestionCount(loaded)
+      : (nearestBatteryDay(batteryQuestions(read), day)?.shoppingQuestions ?? null);
+    const covering = shoppingQuestions == null ? [] : apiRunsCoveringBattery(catalog.runs, [{ day, shoppingQuestions }]);
     const paired = nearestApiRun(covering, day);
     const pairedDay = paired ? apiRunDay(paired) : null;
-    if (!paired || !pairedDay) text = "No counted API run";
+    if (shoppingQuestions == null) text = "Loading";
+    else if (!paired || !pairedDay) text = "No counted API run";
     else {
       const apart = daysApart(pairedDay, day);
       const engines = (paired.engines ?? []).map(engineLabel).join(", ");
