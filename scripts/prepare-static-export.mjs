@@ -17,6 +17,8 @@ const STASH_PATHS = [
   "app/v3",
   // Server CSV route handlers. GitHub Pages static export has no request-time routes.
   "app/(canvas)/dashboard/export",
+  // Staff Sites to review: reads the signed-in session on the server.
+  "app/(canvas)/dashboard/sites-to-review",
 ];
 
 const PAGE_SWAP = [
