@@ -13,6 +13,7 @@ import { markPartial, type PartialFigure } from "@/lib/fender-canvas/canvas-read
 import type { StockLossRead } from "@/lib/fender-canvas/minimal-metric-kit";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
 import { phaseWindow } from "@/lib/fender-canvas/roadmap-dates";
+import { withLatestRunTips } from "@/lib/fender-canvas/roadmap-latest";
 import { focusActions, type FocusWindows, type HeldItem, type PlanFocus } from "@/lib/fender-canvas/roadmap-focus";
 import { ownPagesAction } from "@/lib/fender-canvas/roadmap-own-pages";
 import { buildPlan, focusPlan, phaseLabel, type PlanItem } from "@/lib/fender-canvas/roadmap-plan";
@@ -26,7 +27,7 @@ export { pairedApiRuns } from "@/lib/ai-search/api-runs";
 
 const MONTH = { kind: "month" } as const;
 
-/** The published runs before the map's run, latest first, at most two. */
+/** The published runs before the given run (the newest in the window), latest first, at most two. */
 export function priorRunIds(runs: readonly HistoryRunSummary[], currentId: string): string[] {
   const trusted = runs.filter(isTrustworthyRun).sort(compareRuns);
   const index = trusted.findIndex((run) => run.audit_run_id === currentId);
@@ -38,7 +39,7 @@ export type SourceRunsRead =
   | { phase: "loading" }
   | { phase: "ready"; snapshots: AiSearchSnapshot[]; failed: number };
 
-/** The last published runs, latest first: the map's run, then the earlier runs that read. */
+/** The last published runs, latest first: the newest run in the window, then the earlier runs that read. */
 export function sourceRunsRead(input: {
   current: AiSearchRead;
   ids: readonly string[] | null;
@@ -121,17 +122,20 @@ export type RoadmapPlanInput = {
   retail: RetailCanvasRead;
   bundle: CanvasBundle | null;
   findability: FindabilityRead;
+  /** The date-pill window with its API runs, narrowed by the engine switch, as every AI figure reads. */
   ai: AiSearchRead;
   aiStale: PartialFigure | null;
   stock: StockLossRead;
+  /** The last published runs, from the newest run in the window back, each with its API run. */
   sources: SourceRunsRead;
   windows: FocusWindowsRead;
   focus: PlanFocus;
 };
 
 /**
- * The plan on the map's AI population (decision 7). It is rebuilt on every read, so actions whose
- * trigger clears drop off and new ones enter. The staff focus narrows it to one category.
+ * The plan on the date-pill window every AI figure reads (Brian Magazu, 12 Nov 2026). It is
+ * rebuilt on every read, so actions whose trigger clears drop off and new ones enter. Each AI row
+ * names the newest run's count in its tooltip. The staff focus narrows it to one category.
  */
 export function assembleRoadmapPlan(input: RoadmapPlanInput): RoadmapPlanRead {
   const { retail, bundle, findability, ai, aiStale, stock, sources, windows, focus } = input;
@@ -143,13 +147,15 @@ export function assembleRoadmapPlan(input: RoadmapPlanInput): RoadmapPlanRead {
     windows.phase === "error"
       ? [{ id: "focus:window", label: "The last 30 days", guardrail: "data", detail: windows.message }, ...focused.held]
       : focused.held;
-  const plan = buildPlan({
+  const signals = signalActions({ retail, ai, stock });
+  const built = buildPlan({
     findings,
-    signals: signalActions({ retail, ai, stock }),
-    sources: sources.phase === "ready" ? sourceActions(sources.snapshots) : [],
+    signals,
+    sources: sources.phase === "ready" ? sourceActions(sources.snapshots, current) : [],
     ownPages: own.action,
     focus: focused.actions,
   });
+  const plan = withLatestRunTips(built, sources.phase === "ready" ? (sources.snapshots[0] ?? null) : null, signals);
   const window = windows.phase === "ready" ? windows.summary : null;
   const waiting: SourceRunsRead = windows.phase === "loading" ? { phase: "loading" } : sources;
   return { plan: focusPlan(plan, focus), findings, sources: waiting, ai, held, window, ownPagesReason: own.reason };

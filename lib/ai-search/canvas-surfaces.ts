@@ -74,13 +74,17 @@ const EMPTY_TOOLTIP = { title: "", desc: "" } as const;
  */
 function stateFace(read: AiSearchRead, title: string, subTab: string, hoverless = false): NodeFace | null {
   if (read.phase === "ready") return null;
-  const copy = {
-    loading: ["Loading run", "Reading the published AI run."],
-    error: ["Read failed", `The published AI run did not load. ${read.phase === "error" ? read.message : ""}`],
-    "no-run": ["No published run", "No AI run has been published yet, so no AI Search figure is shown."],
-  }[read.phase];
+  // A date-pill period with no stored run is not a failed read.
+  const empty = read.phase === "error" && read.selection === "empty";
+  const copy = empty
+    ? ["No run in period", "No published run in the selected period has answered calls."]
+    : {
+        loading: ["Loading run", "Reading the AI runs in the selected period."],
+        error: ["Read failed", `The AI runs in the selected period did not load. ${read.phase === "error" ? read.message : ""}`],
+        "no-run": ["No published run", "No AI run has been published yet, so no AI Search figure is shown."],
+      }[read.phase];
   return {
-    status: read.phase === "error" ? "danger" : "neutral",
+    status: read.phase === "error" && !empty ? "danger" : "neutral",
     title,
     stats: [copy[0]],
     // Main spokes render heroValue; a worded value stays at label size (never a fake 0%).
@@ -243,9 +247,8 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
       title: "Competitive Radar",
       stats: [],
       heroValue: (() => {
-        if (read.radarPending) return { value: "Loading run", label: "Unbranded discovery" };
-        // Same rows and same category-lead rule as the Category Battlecards tab.
-        const lead = radarBubbleLead((read.radarSnapshot ?? read.snapshot).calls);
+        // Same rows (the date-pill window) and same category-lead rule as the Category Battlecards tab.
+        const lead = radarBubbleLead(read.snapshot.calls);
         if (lead?.topRival && lead.resolved > 0) {
           return {
             value: pct(lead.topRival.wins, lead.resolved),
@@ -504,9 +507,9 @@ export function aiActionCardHtml(read: AiSearchRead, firstNumber = 4): string {
 
 const pendingMetric = (read: AiSearchRead) =>
   read.phase === "loading"
-    ? { value: "Loading", detail: "Reading the published AI run" }
+    ? { value: "Loading", detail: "Reading the AI runs in the selected period" }
     : read.phase === "error"
-      ? { value: "Unavailable", detail: "The published AI run did not load" }
+      ? { value: "Unavailable", detail: "The AI runs in the selected period did not load" }
       : { value: "No run", detail: "No AI run has been published" };
 
 export type AiMetricKey =

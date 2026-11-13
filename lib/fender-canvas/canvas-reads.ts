@@ -255,9 +255,10 @@ export function withLastGood(
 
 /**
  * Why a figure is partial (X-25): a filter narrows it, it covers part of its population,
- * an input read failed, or its data is older than twice its normal check schedule.
+ * an input read failed, its data is older than twice its normal check schedule, or the window
+ * mixes runs from before and after a question-set change.
  */
-export type PartialReason = "filtered" | "coverage" | "read-failed" | "stale";
+export type PartialReason = "filtered" | "coverage" | "read-failed" | "stale" | "mixed";
 
 export type PartialFigure = {
   reason: PartialReason;
@@ -280,6 +281,7 @@ export const PARTIAL_TITLE: Record<PartialReason, string> = {
   coverage: "Partial coverage",
   "read-failed": READ_NOT_AVAILABLE,
   stale: "Older than its check schedule",
+  mixed: "Question set changed",
 };
 
 const lastCheckFormat = new Intl.DateTimeFormat("en-US", {

@@ -62,6 +62,39 @@ for (const client of ["fender", "ledlenser"]) {
       await expect(page.locator("[data-briefing-consensus-score]")).toHaveText(score ?? "", { timeout: AI_READ_MS });
     });
 
+    test("Performance shows four titled score cards in one row and Consensus opens its weights", async ({ page }) => {
+      test.slow();
+      await page.goto(`/dashboard?${query}spoke=hub&tab=performance`);
+      const score = page.locator("[data-consensus-pillar='consensus'] [data-consensus-pillar-score]");
+      await expect(score).toHaveText(/^\d{1,3}\*?$/, { timeout: AI_READ_MS });
+      await expect(page.locator("[data-consensus-explainer]")).toHaveCount(0);
+      await expect(page.getByText(/What is the AI Consensus/i)).toHaveCount(0);
+
+      const titles = page.locator("[data-consensus-lead] [data-consensus-pillar-name]");
+      await expect(titles).toHaveText(["AI Consensus Score", "AI Foundation Score", "AI Commerce Score", "AI Actuation Score"]);
+      await expect(page.locator("[data-consensus-lead] [data-score-card-tip]")).toHaveCount(4);
+      const tops = await page
+        .locator("[data-consensus-lead] > [data-consensus-pillar]")
+        .evaluateAll((nodes) => nodes.map((node) => Math.round(node.getBoundingClientRect().top)));
+      expect(new Set(tops).size).toBe(1);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+
+      await page.locator("[data-consensus-pillar='consensus'] [data-score-card-tip]").hover();
+      await expect(page.locator(".node-tooltip-definition")).toContainText("AI Consensus is IntoFocus");
+
+      await expect(page.locator("[data-consensus-pillar='actuation'] button.retail-explore")).toHaveCount(0);
+      await page.locator("[data-consensus-pillar='consensus'] button.retail-explore").click();
+      const weights = page.locator("[data-consensus-weights]");
+      await expect(weights.locator("[data-consensus-weight-row='actuation']")).toContainText("Not included");
+      await expect(weights.locator("[data-consensus-weight-row='actuation'] [data-consensus-weight]")).toHaveCount(0);
+      const points = await weights
+        .locator("[data-consensus-contribution]")
+        .evaluateAll((nodes) => nodes.map((node) => Number.parseFloat(node.textContent ?? "")));
+      const sum = points.reduce((a, b) => a + b, 0);
+      const shown = Number.parseInt((await score.textContent()) ?? "", 10);
+      expect(Math.abs(sum - shown)).toBeLessThanOrEqual(0.6);
+    });
+
     test("the division table sorts, searches, and downloads its rows as CSV", async ({ page }) => {
       test.setTimeout(120_000);
       await page.goto(`/dashboard?${query}spoke=hub&tab=performance`);

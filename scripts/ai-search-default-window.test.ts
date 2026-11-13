@@ -177,7 +177,9 @@ test("the provider opens on the default, filters the window's loaded runs, and n
     /if \(mode\.kind === "month"\) return defaultWindowRuns\(runs, windowEnd\)\.included;/,
   );
   assert.match(context, /snapshots: clientWindowSnapshots\(loaded\.snapshots\)/);
-  assert.match(context, /const windowEnd = source === "fixture" \? latestPublishedDay\(fixtureRuns\) : publishedDay;/);
+  assert.match(context, /const windowEnd = source === "fixture" \? latestPublishedDay\(fixtureRuns\) : liveEnd;/);
+  // The published run's row gives the window its end before the run's calls load; the full read wins once ready.
+  assert.match(context, /const liveEnd = publishedDay \?\? \(current\.phase === "loading" \? earlyDay : null\);/);
   assert.equal((context.match(/setMode\(/g) ?? []).length, 6, "only the six view callbacks change the window");
   assert.equal((context.match(/setMode\(\{ kind: "month" \}\)/g) ?? []).length, 1);
 });

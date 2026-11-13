@@ -2,7 +2,7 @@
 
 import "@/components/v3/live/roadmap-plan.css";
 import { DefinedCopy } from "@/components/v3/live/DefinedTerm";
-import { PartialFigureMark } from "@/components/v3/live/FigureTip";
+import { figureTipAttrs, PartialFigureMark } from "@/components/v3/live/FigureTip";
 import { StatusMark } from "@/components/v3/live/StatusMark";
 import { ExternalLink } from "@/components/v3/live/ai-search/ExternalLink";
 import { formatEvidence, setEvidenceFocus, type EvidenceFocus } from "@/lib/ai-search/evidence-focus";
@@ -31,7 +31,12 @@ export function PlanFigure({ item }: { item: PlanItem }) {
         </PartialFigureMark>
       </span>
       {item.ratio ? (
-        <span className="plan-cell-ratio" data-fix-ratio="">
+        <span
+          {...(item.tip ? figureTipAttrs(item.label, item.tip, `plan-latest-${item.id}`) : {})}
+          className={item.tip ? "plan-cell-ratio ifai-term" : "plan-cell-ratio"}
+          data-fix-ratio=""
+          data-fix-latest={item.tip ?? undefined}
+        >
           {item.ratio}
         </span>
       ) : null}

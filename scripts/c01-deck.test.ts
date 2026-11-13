@@ -142,7 +142,6 @@ async function fixture(): Promise<DeckInput> {
     brandSite: "fender.com",
     leadBrand: "Fender/Squier",
     tabAi: ai,
-    mapAi: ai,
     retail: { phase: "ready", snapshot },
     findability: {
       phase: "ready",
@@ -188,7 +187,6 @@ test("AI figures equal Run Summary, Product Fact Checks, and Competitor Wins for
     bars.map((bar) => [bar.label, bar.ratio]),
     tallies.slice(0, 5).map((row) => [row.brand, formatRatio(row.wins, row.resolved)]),
   );
-  assert.equal(deck.runId, input.mapAi!.run.audit_run_id.slice(0, 8));
   assert.equal(deck.window, "Last 30 days");
 });
 
@@ -225,7 +223,7 @@ test("listing figures equal the Catalog Health and AI Readiness heroes", async (
 
 test("the fix list is Action Items' order on Summary's read", async () => {
   const input = await fixture();
-  const ai = { phase: "ready", snapshot: input.mapAi! } as const;
+  const ai = { phase: "ready", snapshot: input.tabAi! } as const;
   const ranked = rankedFindings(briefingFindingsLead(input.retail, input.findability, ai).findings).filter((row) => row.stored);
   const fixes = deckFixes(input);
   assert.deepEqual(

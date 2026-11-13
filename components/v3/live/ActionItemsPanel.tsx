@@ -11,7 +11,7 @@ import type { CanvasBundle } from "@/lib/fender-canvas/types";
 
 /**
  * Action Items · Urgent Interventions (N-01, N-04): the five current findings in priority order,
- * then the decision 21 actions, on the map's AI population. When nothing needs action the list
+ * then the decision 21 actions, on the date-pill window. When nothing needs action the list
  * says so in one plain line above the table.
  */
 export function ActionItemsPanel({ read, bundle }: { read: RetailCanvasRead; bundle: CanvasBundle | null }) {
