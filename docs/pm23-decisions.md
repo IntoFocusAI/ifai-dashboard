@@ -362,3 +362,13 @@ closeout of each view. Open items are marked OPEN and are not built.
     answers". The owned-pages-in-unbranded figure stays where it is.
 87. No tooltips on main map bubbles (12 Nov).
 88. Old draft PRs 1, 26, 27, 35, 37, 39, 40, 44 closed (12 Nov).
+89. One dashboard for every client (13 Nov). Every feature on Fender's
+    dashboard also appears on Ledlenser's and any later client's. The only
+    allowed differences are additive, such as columns for the retailers a
+    client cares about. A feature missing for one client is a defect.
+90. PR 195 decisions (13 Nov): Branded shopping means the branded headline
+    questions only; the catalog products count takes no question-set
+    asterisk; filters reset on reload for now; API engine chips stay while
+    web search on API runs is tried (resolve before launch); a catalog
+    count of 0 of M shows Not available*, computed from the data, never
+    hard-coded, so a real API result shows when one exists.

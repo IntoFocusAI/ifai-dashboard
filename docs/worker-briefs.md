@@ -23,10 +23,13 @@ propose status changes in the pull request body.
   approves, then the rows the view leaves open. Rebase on main often (Brian
   Watson merges Ledlenser work). Commit messages start "Worker N.M:".
 - Run in your own git worktree so parallel workers do not share a checkout.
-- Both clients: correct for Fender (/dashboard) and Ledlenser
-  (/dashboard?client=ledlenser). Ledlenser has no API-engine views. The set-aside
-  tables and views are shared in `public` and client-keyed (`fmic`, `ledlenser`), so
-  set-asides work for both clients; handle the rest as the code already does.
+- One dashboard for every client (decision 89): every feature Fender has,
+  Ledlenser has, checked at /dashboard and /dashboard?client=ledlenser. The
+  only allowed difference is additive, such as a retailer column a client
+  cares about. A feature missing for one client is a defect: find the cause
+  and fix it, or report it. Both clients have API-engine views (PR 184). The
+  set-aside tables and views are shared in `public` and client-keyed
+  (`fmic`, `ledlenser`).
 - Build inside the existing view. No standalone routes or pages that
   nothing links to (a server route for CSV is fine).
 - A feature whose data does not exist is BLOCKED, not built. Never deliver
