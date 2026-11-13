@@ -371,4 +371,6 @@ closeout of each view. Open items are marked OPEN and are not built.
     asterisk; filters reset on reload for now; API engine chips stay while
     web search on API runs is tried (resolve before launch); a catalog
     count of 0 of M shows Not available*, computed from the data, never
-    hard-coded, so a real API result shows when one exists.
+    hard-coded, so a real API result shows when one exists. The Run Summary trend breaks only on
+    shopping-question changes, like the asterisk; fact-check swaps are
+    routine and do not break it.
