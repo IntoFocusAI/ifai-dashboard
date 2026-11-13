@@ -11,8 +11,8 @@ export async function loadSitesToReviewSource(): Promise<SourceRead> {
   if (!session?.isIntoFocusAdmin) return { ok: false, message: "This download is for IntoFocus staff." };
   const read = await loadSitesToReview(activeClientKey());
   if (!read.ok) return { ok: false, message: read.message };
-  // The same columns the page shows: Reason with the staff read, answers when the run read worked.
-  const keep = SITES_TO_REVIEW_HEADER.map((_, i) => (i === 3 ? read.writable : i === 4 ? read.hasAnswers : true));
+  // The same columns the page shows: Reason only with the staff read.
+  const keep = SITES_TO_REVIEW_HEADER.map((_, i) => (i === 3 ? read.writable : true));
   const pick = (cells: readonly string[]) => cells.filter((_, i) => keep[i]);
   return {
     ok: true,
@@ -20,7 +20,7 @@ export async function loadSitesToReviewSource(): Promise<SourceRead> {
       table: SITES_TO_REVIEW_TABLE,
       header: pick(SITES_TO_REVIEW_HEADER),
       rows: read.rows.map((row) => ({ key: row.domain, cells: pick(reviewCells(row)) })),
-      filter: "AI site type under the review threshold, no staff override.",
+      filter: `AI site type under the review threshold, no staff override, cited in this client's AI answers. ${read.windowLabel}. Engines: ${read.apiEngines ? "All" : "Search engines (no API-engine answers read)"}`,
       sort: "Lowest confidence first.",
       population: `${formatInt(read.rows.length)} ${read.rows.length === 1 ? "site" : "sites"} to review`,
       asOf: new Date().toISOString().slice(0, 10),

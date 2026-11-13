@@ -19,30 +19,31 @@ import type { SortInput } from "@/lib/fender-canvas/table-sort";
 const READ_ONLY_TIP =
   "Saving opens once the staff override function (supabase/migrations/20261112160000_site_type_staff_review.sql) is applied to the database. Until then this list is read only.";
 
-const ANSWERS_TIP =
-  "Answers in the published AI Search run (shopping prompts and product fact checks) that cite this site or one of its subdomains.";
+/** Where the answers column counts from: the date-pill window, with or without the API engines. */
+function answersTip(windowLabel: string, apiEngines: boolean): string {
+  const engines = apiEngines ? "every engine" : "the search engines only (no API-engine answers were read for this window)";
+  return `This client's AI answers in the date-pill window (${windowLabel}) that cite this site or one of its subdomains, from ${engines}. Shopping prompts and product fact checks.`;
+}
 
 const GLOBAL_TIP =
   "The classifier answered for this site once, for every client. Saving sets the type for every client, so the site leaves each client's list.";
 
-function columnsFor(writable: boolean, hasAnswers: boolean): RetailColumn[] {
+function columnsFor(writable: boolean, answersTipText: string): RetailColumn[] {
   const columns: RetailColumn[] = [
     { id: "domain", name: "Site", label: "Site", width: 220, minWidth: 140, sort: "text" },
     { id: "type", name: "AI type", label: "AI type", width: 170, minWidth: 120, sort: "text" },
     { id: "confidence", name: "Confidence", label: "Confidence", width: 110, minWidth: 96, sort: "number" },
   ];
   if (writable) columns.push({ id: "reason", name: "Reason", label: "Reason", width: 320, minWidth: 180, sort: "text" });
-  if (hasAnswers) {
-    columns.push({
-      id: "answers",
-      name: "AI answers citing it",
-      label: "AI answers citing it",
-      width: 130,
-      minWidth: 110,
-      sort: "number",
-      headerTooltip: { title: "AI answers citing it", description: ANSWERS_TIP },
-    });
-  }
+  columns.push({
+    id: "answers",
+    name: "AI answers citing it",
+    label: "AI answers citing it",
+    width: 130,
+    minWidth: 110,
+    sort: "number",
+    headerTooltip: { title: "AI answers citing it", description: answersTipText },
+  });
   columns.push({ id: "choice", name: "Staff type", label: "Staff type", width: 280, minWidth: 240 });
   return columns;
 }
@@ -165,17 +166,22 @@ export function SitesToReviewTable({
   client,
   rows,
   writable,
-  hasAnswers,
+  windowLabel,
+  apiEngines,
 }: {
   client: ClientKey;
   rows: readonly ReviewRow[];
   writable: boolean;
-  hasAnswers: boolean;
+  windowLabel: string;
+  apiEngines: boolean;
 }) {
   const router = useRouter();
   const [decided, setDecided] = useState<ReadonlySet<string>>(() => new Set());
   const shown = useMemo(() => rows.filter((row) => !decided.has(row.domain)), [rows, decided]);
-  const columns = useMemo(() => columnsFor(writable, hasAnswers), [writable, hasAnswers]);
+  const columns = useMemo(
+    () => columnsFor(writable, answersTip(windowLabel, apiEngines)),
+    [writable, windowLabel, apiEngines],
+  );
   const keyOf = useCallback((row: ReviewRow) => row.domain, []);
   const sorted = useClientTableSort(shown, columns, sortValue, keyOf);
 
@@ -214,7 +220,7 @@ export function SitesToReviewTable({
             <td>{SITE_TYPE_LABELS[row.siteType]}</td>
             <td className="money">{formatConfidence(row.confidence)}</td>
             {writable ? <td>{row.reason ?? ""}</td> : null}
-            {hasAnswers ? <td className="money">{formatInt(row.answers)}</td> : null}
+            <td className="money">{formatInt(row.answers)}</td>
             <td>
               <TypeChoice row={row} client={client} writable={writable} onSaved={onSaved} />
             </td>

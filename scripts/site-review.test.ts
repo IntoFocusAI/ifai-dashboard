@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import {
   answersByDomain,
+  citedReviewRows,
   overridePayload,
   reviewCells,
   reviewRows,
@@ -47,7 +48,7 @@ test("the list keeps flagged AI rows only, lowest confidence first", () => {
   );
   assert.equal(rows[0].reason, null, "the public view has no reason");
   assert.equal(rows[0].isGlobal, false);
-  assert.equal(rows[0].answers, null, "no citation read, no answers");
+  assert.equal(rows[0].answers, 0, "no answers passed, none counted");
 });
 
 test("a site staff decided in this visit leaves the list; duplicates show once", () => {
@@ -91,6 +92,44 @@ test("answers count distinct answers citing the site or a subdomain", () => {
     ["adorama.com", "files.kraftmusic.com", "tonestakr.com"],
   );
   assert.deepEqual(Object.fromEntries(counts), { "adorama.com": 2, "files.kraftmusic.com": 1, "tonestakr.com": 0 });
+});
+
+test("the list holds only flagged sites this client's answers cite in the window (decision 84)", () => {
+  const raw = [
+    view("adorama.com", { confidence: 0.28 }),
+    view("ledlenser-only.de", { confidence: 0.3 }),
+    view("musiciangoods.com", { confidence: 0.55 }),
+    view("sweetwater.com", { needs_review: false }),
+  ];
+  const cited = [
+    { domain: "shop.adorama.com", simulationId: "run1:a" },
+    { domain: "adorama.com", simulationId: "run2:b" },
+    { domain: "musiciangoods.com", simulationId: "run2:b" },
+    { domain: "sweetwater.com", simulationId: "run2:c" },
+  ];
+  const rows = citedReviewRows(raw, { fromStaffRead: false }, cited);
+  assert.deepEqual(
+    rows.map((row) => [row.domain, row.answers]),
+    [
+      ["adorama.com", 2],
+      ["musiciangoods.com", 1],
+    ],
+    "an uncited flagged site is hidden; a cited unflagged site is not listed",
+  );
+  assert.deepEqual(citedReviewRows(raw, { fromStaffRead: false }, []), [], "no answers in the window, no list");
+  assert.deepEqual(
+    citedReviewRows(raw, { fromStaffRead: false, decided: new Set(["adorama.com"]) }, cited).map((row) => row.domain),
+    ["musiciangoods.com"],
+  );
+});
+
+test("the page shows a staff message, not data, to anyone but staff (decision 85)", () => {
+  const page = readFileSync(new URL("../app/(canvas)/dashboard/sites-to-review/page.tsx", import.meta.url), "utf8");
+  const notice = readFileSync(new URL("../components/staff/StaffOnlyNotice.tsx", import.meta.url), "utf8");
+  assert.match(page, /if \(!session\?\.isIntoFocusAdmin\) return <StaffOnlyNotice/);
+  assert.ok(page.indexOf("StaffOnlyNotice client") < page.indexOf("loadSitesToReview(client)"), "nothing is read before the check");
+  assert.match(notice, /This page is for IntoFocus staff\./);
+  assert.doesNotMatch(notice, /site-review-read|loadSitesToReview/);
 });
 
 test("the override payload confirms or changes the AI type at the classification's level", () => {

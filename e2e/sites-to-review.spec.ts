@@ -59,11 +59,18 @@ test.describe("Sites to review (staff only)", () => {
     expect(await check.json()).toEqual({ staff: false });
     const menu = await openMenu(page);
     await expect(menu.getByRole("menuitem", { name: "Sites to review" })).toHaveCount(0);
+    await page.goto("/dashboard?client=ledlenser");
+    const ledlenserMenu = await openMenu(page);
+    await expect(ledlenserMenu.getByRole("menuitem", { name: "Sites to review" })).toHaveCount(0);
 
+    // A forwarded link: the staff message, and no list, count, or site for either client.
     for (const path of ["/dashboard/sites-to-review", "/dashboard/sites-to-review?client=ledlenser"]) {
-      const response = await page.request.get(path);
-      expect(response.status(), path).toBe(404);
-      expect(await response.text()).not.toContain("low-confidence site type");
+      await page.goto(path);
+      await expect(page.locator("[data-staff-only]"), path).toContainText("This page is for IntoFocus staff.");
+      await expect(page.locator("[data-sites-review], [data-sites-review-row], [data-sites-review-count]")).toHaveCount(0);
+      const html = await page.content();
+      expect(html, path).not.toContain("low-confidence site type");
+      expect(html, path).not.toContain("adorama.com");
     }
 
     const csv = await page.request.post("/dashboard/export/sites-to-review", {
@@ -82,8 +89,10 @@ test.describe("Sites to review (staff only)", () => {
     await expect(link).toBeVisible();
     await expect(link).toHaveAttribute("href", "/dashboard/sites-to-review?client=ledlenser");
 
-    // The link is only a convenience: the e2e server session is not staff, so the page is a 404.
-    const response = await page.request.get("/dashboard/sites-to-review?client=ledlenser");
-    expect(response.status()).toBe(404);
+    // The link is only a convenience: the e2e server session is not staff, so the page shows the staff message.
+    await link.click();
+    await expect(page).toHaveURL(/\/dashboard\/sites-to-review\?client=ledlenser/);
+    await expect(page.locator("[data-staff-only]")).toContainText("This page is for IntoFocus staff.");
+    await expect(page.locator("[data-sites-review-row]")).toHaveCount(0);
   });
 });

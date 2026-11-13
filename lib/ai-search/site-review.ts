@@ -1,5 +1,5 @@
 /**
- * Staff "Sites to review" list (decision 21a). The cited sites whose AI site type is under the
+ * Staff "Sites to review" list (decision 21a). The sites this client's answers cite whose AI site type is under the
  * confidence threshold (needs_review in public.canvas_site_types), so IntoFocus staff can
  * confirm the type or pick another. Saving writes one staff override through
  * public.site_type_override; the override wins over the classifier, so the row leaves the list.
@@ -38,8 +38,8 @@ export type ReviewRow = {
   reason: string | null;
   /** True when the flagged answer is the global row, so the override is global too. */
   isGlobal: boolean;
-  /** AI answers in the published run that cite this site. Null when that read failed. */
-  answers: number | null;
+  /** This client's AI answers in the date-pill window that cite this site. */
+  answers: number;
 };
 
 /** A row of canvas_site_types or of site_types_to_review, before it is checked. */
@@ -57,7 +57,7 @@ function cleanDomain(value: unknown): string {
  */
 export function reviewRows(
   raw: readonly RawReviewRow[],
-  options: { fromStaffRead: boolean; decided?: ReadonlySet<string>; answers?: ReadonlyMap<string, number> | null },
+  options: { fromStaffRead: boolean; decided?: ReadonlySet<string>; answers?: ReadonlyMap<string, number> },
 ): ReviewRow[] {
   const seen = new Set<string>();
   const rows: ReviewRow[] = [];
@@ -76,7 +76,7 @@ export function reviewRows(
       confidence,
       reason,
       isGlobal: options.fromStaffRead ? row.is_global === true : false,
-      answers: options.answers ? (options.answers.get(domain) ?? 0) : null,
+      answers: options.answers?.get(domain) ?? 0,
     });
   }
   return rows.sort((a, b) => a.confidence - b.confidence || a.domain.localeCompare(b.domain));
@@ -100,6 +100,20 @@ export function answersByDomain(
     }
   }
   return new Map(domains.map((domain) => [domain, sets.get(domain)?.size ?? 0]));
+}
+
+/**
+ * The list as the page shows it: flagged rows that this client's own answers cite, with the
+ * count of those answers. A flagged site no answer in the window cites is left out (decision 84).
+ */
+export function citedReviewRows(
+  raw: readonly RawReviewRow[],
+  options: { fromStaffRead: boolean; decided?: ReadonlySet<string> },
+  cited: readonly { domain: string; simulationId: string }[],
+): ReviewRow[] {
+  const flagged = reviewRows(raw, options).map((row) => row.domain);
+  const answers = answersByDomain(cited, flagged);
+  return reviewRows(raw, { ...options, answers }).filter((row) => row.answers > 0);
 }
 
 /** The arguments public.site_type_override takes. */
@@ -153,6 +167,6 @@ export function reviewCells(row: ReviewRow): string[] {
     SITE_TYPE_LABELS[row.siteType],
     formatConfidence(row.confidence),
     row.reason ?? "",
-    row.answers == null ? "" : formatInt(row.answers),
+    formatInt(row.answers),
   ];
 }

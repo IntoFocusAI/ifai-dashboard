@@ -79,6 +79,11 @@ export function SitesToReviewView({
             <h1>Sites to review</h1>
           </div>
           <div className="sites-review-actions">
+            {read.ok ? (
+              <span className="sites-review-window" data-sites-review-window="">
+                {read.windowLabel}
+              </span>
+            ) : null}
             <ClientSwitch client={client} light={light} />
             <Link href={withTheme(clientHref(client, DASHBOARD_PATH), light)} className="sites-review-back">
               <ArrowLeft size={14} aria-hidden />
@@ -101,7 +106,7 @@ export function SitesToReviewView({
               >
                 low-confidence site type
               </span>{" "}
-              for {brand}. Confirm the type or pick another.
+              and {count === 1 ? "is" : "are"} cited in {brand}&apos;s AI answers.{count > 0 ? " Confirm the type or pick another." : ""}
             </>
           )}
         </p>
@@ -111,7 +116,8 @@ export function SitesToReviewView({
             client={client}
             rows={read.rows}
             writable={read.writable}
-            hasAnswers={read.hasAnswers}
+            windowLabel={read.windowLabel}
+            apiEngines={read.apiEngines}
           />
         ) : (
           <p className="sites-review-error" role="status">
