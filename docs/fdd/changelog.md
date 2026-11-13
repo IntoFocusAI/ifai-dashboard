@@ -105,3 +105,4 @@
 | 2026-11-12 | 26.5 C-01 generated deck from the live run and window. C-01 TARGET to CURRENT. | Brian Magazu approved PR 187. | PR 187 |
 | 2026-11-12 | 26.7 Server CSV for Action Items, prompts and Findability; N of M rows always. X-10, X-33 REFINE to CURRENT; X-27 REFINE to CURRENT on the 26.1 to 26.3 audit. | Brian Magazu approved PR 185. | PR 185 |
 | 2026-11-12 | A-07 DECISION to CURRENT (hover omitted). X-16 Acceptance adds separation rules for shared data and staff screens. New row A-11 Sites to review (TARGET). | Brian Magazu decisions 81 and 84. | PM26 close-out |
+| 2026-11-13 | 27.1 Sites to review fix round: only domains the client's answers cite, counts over the date-pill window, staff-only menu item, staff message on a forwarded link. A-11 TARGET to CURRENT. | Brian Magazu approved PR 189 (decisions 83, 84, 85). | PR 189, main 8e8cb99 |
