@@ -61,5 +61,5 @@ test("an open panel is never under the lifted map, and a hidden panel keeps its 
   assert.match(css, /width: var\(--drilldown-panel-width, var\(--drilldown-width\)\);/);
   const shell = read("lib/canvas-sdk/CanvasShell.tsx");
   assert.match(shell, /"--drilldown-panel-width": `\$\{shownDrilldownWidth\}px`/);
-  assert.match(shell, /const drilldownWidth = panelLayout === "hidden" \? 0 : shownDrilldownWidth;/);
+  assert.match(read("lib/canvas-sdk/useIomColumnLayout.ts"), /const drilldownWidth = panelLayout === "hidden" \? 0 : shownDrilldownWidth;/);
 });

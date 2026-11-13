@@ -1,16 +1,13 @@
-import { listingChannelPricesQuery, listingsQuery } from "@/lib/canvasData";
+import { listingsQuery } from "@/lib/canvasData";
 import { loadDashboardAsOf } from "@/lib/export/as-of";
 import type { SourceRead } from "@/lib/export/types";
 import { formatUsd, pendingLabel } from "@/lib/fender-canvas/format";
 import {
-  channelPriceLookup,
   listingChannelFacts,
   listingLabel,
   missingCheckedPageLabel,
   shownChannelGap,
-  musiciansFriendCheckedPageUrl,
   storedHttpUrl,
-  type ChannelPriceRow,
   type MapSourceRow,
   mapTabModel,
 } from "@/lib/fender-canvas/map-channels";
@@ -58,18 +55,6 @@ async function loadRows(violationsOnly: boolean): Promise<MapSourceRow[]> {
   throw new Error(FAILED);
 }
 
-async function loadPrices(): Promise<ChannelPriceRow[]> {
-  const rows: ChannelPriceRow[] = [];
-  for (let page = 0; page < 20; page += 1) {
-    const { data, error } = await listingChannelPricesQuery(page, PAGE_SIZE);
-    if (error) return page === 0 ? [] : rows;
-    const batch = (data ?? []) as ChannelPriceRow[];
-    rows.push(...batch);
-    if (batch.length < PAGE_SIZE) return rows;
-  }
-  return rows;
-}
-
 /** The approved MAP exceptions, read as the screen's set-aside store reads them. */
 export async function loadExceptions(): Promise<{ asins: Set<string>; failed: boolean }> {
   try {
@@ -104,9 +89,9 @@ export async function loadMapSource(): Promise<SourceRead> {
   try {
     const snapshot = await loadPortfolioRetailSnapshot();
     const pricesNotStored = snapshot.mapLeakage.missingMessage === MAP_PRICES_NOT_STORED;
-    const [readRows, prices, exceptions, asOf] = await Promise.all([
+    // Decision 82: the empty other-retailer price table is no longer read, as on the tab.
+    const [readRows, exceptions, asOf] = await Promise.all([
       loadRows(!pricesNotStored),
-      loadPrices(),
       loadExceptions(),
       loadDashboardAsOf(),
     ]);
@@ -116,8 +101,7 @@ export async function loadMapSource(): Promise<SourceRead> {
     const rows = units ? mapExposureOrder(readRows, units) : readRows;
     const counted = withMapApprovedExceptions(snapshot, exceptions.asins, { failed: exceptions.failed });
     const hero = mapHero(counted);
-    const model = mapTabModel(rows, prices);
-    const lookup = channelPriceLookup(prices);
+    const model = mapTabModel(rows);
     const header = ["Listing", "ASIN", "MAP"];
     if (model.showAmazon) header.push("Amazon");
     if (units) {
@@ -128,10 +112,9 @@ export async function loadMapSource(): Promise<SourceRead> {
     }
     if (model.showWalmart) header.push("Walmart");
     if (model.showMusiciansFriend) header.push("Musician's Friend");
-    for (const channel of model.extraChannels) header.push(channel.name);
 
     const body = rows.map((row) => {
-      const facts = new Map(listingChannelFacts(row, lookup.get(row.asin.trim())).map((fact) => [fact.key, fact]));
+      const facts = new Map(listingChannelFacts(row).map((fact) => [fact.key, fact]));
       const line = [
         listingLabel(row),
         row.asin,
@@ -148,11 +131,7 @@ export async function loadMapSource(): Promise<SourceRead> {
         line.push(exposure.units != null ? String(exposure.units) : "", exposureText(exposure));
       }
       if (model.showWalmart) push("walmart", storedHttpUrl(row.wmt_url), true);
-      if (model.showMusiciansFriend) push("musicians-friend", musiciansFriendCheckedPageUrl(lookup, row.asin), true);
-      for (const channel of model.extraChannels) {
-        const extra = lookup.get(row.asin.trim())?.get(channel.channel);
-        push(channel.channel, extra ? storedHttpUrl(extra.url) : null, true);
-      }
+      if (model.showMusiciansFriend) push("musicians-friend", null, true);
       return { key: row.asin, cells: line };
     });
 
