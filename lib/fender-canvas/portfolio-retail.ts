@@ -100,7 +100,7 @@ export const RETAIL_MAP_LEAKAGE_COLUMNS =
   "asin,map_price,offer_price,amz_leakage,wmt_leakage,mf_leakage,featured_offer_checked_at,wmt_checked_at,mf_checked_at";
 
 export const RETAIL_CATALOG_GOVERNANCE_COLUMNS =
-  "asin,model_name,title,bundle_name,parent_asin,product_url,is_bundle,category,buybox_seller_name,buybox_seller_id,buybox_status,featured_offer_state,featured_offer_checked_at";
+  "asin,model_name,title,bundle_name,parent_asin,product_url,is_bundle,category,buybox_seller_name,buybox_seller_id,buybox_status,featured_offer_state,featured_offer_checked_at,catalog_checked_at";
 
 export const RETAIL_AMAZON_SPEC_COLUMNS =
   "asin,title,amazon_checked,amazon_missing_fields,checked_at";
@@ -381,6 +381,8 @@ export type CatalogBundleRow = {
   featured_offer_state?: string | null;
   /** When the Featured Offer state was observed. Per-row stale rule, X-25. */
   featured_offer_checked_at?: string | null;
+  /** When the catalog pass last read the bundle flag and parent ASIN. Per-row stale rule, X-25. */
+  catalog_checked_at?: string | null;
 };
 
 /** Short label for the bundle population every bundle figure counts (R-13). */
@@ -753,7 +755,10 @@ export function mapLeakageFinding(
   );
 }
 
-/** Splintered Listings "for sale now": each live bundle's own featured_offer_checked_at, daily. */
+/**
+ * Splintered Listings: each live bundle's own catalog_checked_at (bundle flag and parent ASIN)
+ * and featured_offer_checked_at ("for sale now"), both daily.
+ */
 export function unnestedBundlesFinding(
   rows: CatalogBundleRow[] | null,
   options?: { truncated?: boolean; catalogBundleCount?: number | null | CanvasReadFailure; now?: number },
@@ -761,14 +766,21 @@ export function unnestedBundlesFinding(
   const reading = unnestedBundlesReading(rows, options);
   if (rows == null) return reading;
   const live = rows.filter((row) => row.is_bundle === true && text(row.asin) && hasLiveOffer(row));
-  return withStale(
-    reading,
-    rowsStale(
+  const check = (label: string, at: (row: CatalogBundleRow) => string | null | undefined, intervalDays: number) => ({
+    label,
+    stale: rowsStale(
       live,
-      (row) => row.featured_offer_checked_at,
-      { intervalDays: RECHECK_DAYS.buyBox, check: "Buy Box check", source: "canvas_retail_listings", figure: "bundle figures" },
+      at,
+      { intervalDays, check: `${label} check`, source: "canvas_retail_listings", figure: "Splintered Listings figures" },
       options?.now,
     ),
+  });
+  return withStale(
+    reading,
+    combineStale([
+      check("catalog", (row) => row.catalog_checked_at, RECHECK_DAYS.catalog),
+      check("Buy Box", (row) => row.featured_offer_checked_at, RECHECK_DAYS.buyBox),
+    ]),
   );
 }
 

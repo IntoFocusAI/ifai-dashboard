@@ -14,6 +14,8 @@ const DAY_MS = 86_400_000;
 export const RECHECK_DAYS = {
   /** Buy Box, suppression, Amazon MAP, Splintered Listings "for sale now": featured_offer_checked_at. */
   buyBox: 1,
+  /** Splintered Listings bundle flag and parent ASIN, from the catalog pass: catalog_checked_at. */
+  catalog: 1,
   /** Walmart price (Fender): wmt_checked_at. */
   walmartFender: 1,
   /** Walmart price (Ledlenser): wmt_checked_at. */
@@ -22,7 +24,7 @@ export const RECHECK_DAYS = {
   musiciansFriend: 3,
   /** Out of Stock unit estimates: smartscout_products.snapshot_date. */
   smartscout: 7,
-  /** Keepa daily history: keepa_daily.day. */
+  /** Keepa daily history: keepa_checked_at (the newest Keepa load for the listing). */
   keepa: 1,
   /** Amazon specs (spec_readiness.checked_at) and listing content (content_checked_at). */
   weekly: 7,

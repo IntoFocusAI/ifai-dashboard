@@ -94,6 +94,7 @@ function retailReady(): RetailCanvasRead {
         is_bundle: true,
         featured_offer_state: "present",
         featured_offer_checked_at: CHECKED_AT,
+        catalog_checked_at: CHECKED_AT,
       },
     ]),
     amazonSpecGaps: {
