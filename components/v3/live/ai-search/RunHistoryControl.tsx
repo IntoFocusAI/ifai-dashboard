@@ -55,8 +55,10 @@ function PairedApiRun({ runId, day }: { runId: string; day: string | null }) {
       </CopyTip>
     );
   } else {
-    // A run outside the loaded selection has no calls read yet, so its floor is the battery's question list.
-    const fixedQuestions = loaded ? fixedQuestionCount(loaded) : PROMPT_BATTERY.length;
+    // A run outside the loaded selection has no calls read yet, so its floor is the battery's shopping questions.
+    const fixedQuestions = loaded
+      ? fixedQuestionCount(loaded)
+      : PROMPT_BATTERY.filter((prompt) => prompt.kind === "commercial").length;
     const covering = apiRunsCoveringBattery(catalog.runs, [{ day, fixedQuestions }]);
     const paired = nearestApiRun(covering, day);
     const pairedDay = paired ? apiRunDay(paired) : null;
