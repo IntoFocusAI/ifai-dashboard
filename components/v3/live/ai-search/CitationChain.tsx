@@ -3,6 +3,7 @@
 import "@/components/v3/live/ai-search/citation-chain.css";
 import { useId, type CSSProperties, type ReactNode } from "react";
 import { AiStaleMark } from "@/components/v3/live/ai-search/AiStaleMark";
+import type { QuestionSetKind } from "@/lib/ai-search/history-trends";
 import { CitationFilteredMark } from "@/components/v3/live/ai-search/CitationFilteredMark";
 import { citationChain, citationOwnedLinksLead } from "@/lib/ai-search/citation-lead";
 import type { CitationRead } from "@/lib/ai-search/citations";
@@ -124,6 +125,8 @@ export function CitationChain({
   engines,
   note,
   category,
+  engineFilter = null,
+  questions = "commercial",
 }: {
   lead: CitationLeadInput;
   read: CitationRead;
@@ -133,13 +136,17 @@ export function CitationChain({
   note: string;
   /** Label of the active category. Every step then carries an asterisk. */
   category: string | null;
+  /** The engine chips when they match no preset. Every step then carries an asterisk. */
+  engineFilter?: string | null;
+  /** The questions the figures count, for the question-set asterisk. */
+  questions?: QuestionSetKind;
 }) {
   const { answered, showed, none, links, owned, other, showedShare, ownedShare } = citationChain(read, lead);
   const ownedLead = citationOwnedLinksLead(owned, links);
   const scopeTitle = scopeNoun.charAt(0).toUpperCase() + scopeNoun.slice(1);
   const answersDesc = `${engines.length ? `Answers from ${listed(engines)}` : "Answers"} in this view. Each is one engine's response to one question.`;
   const heights = [answered > 0 ? 1 : 0, drawn(showedShare), links > 0 ? 1 : 0, drawn(ownedShare)];
-  const mark = <CitationFilteredMark category={category} />;
+  const mark = <CitationFilteredMark category={category} engines={engineFilter} />;
 
   return (
     <div
@@ -151,8 +158,8 @@ export function CitationChain({
       <section className="citation-chain-step" data-citation-chain-step="answers" data-chain-count={answered}>
         <span className="citation-chain-figure">
           <span className="citation-chain-count">{count(answered)}</span>
-          <CitationFilteredMark category={category} note={note} />
-          <AiStaleMark />
+          <CitationFilteredMark category={category} engines={engineFilter} note={note} />
+          <AiStaleMark questions={questions} />
         </span>
         <span className="citation-chain-label">
           <Term name={scopeTitle} desc={answersDesc}>

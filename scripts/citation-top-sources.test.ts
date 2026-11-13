@@ -271,9 +271,11 @@ test("each chain step has a one-line definition in a custom tooltip, and the spl
 
 test("with a category picked, each chain step carries an asterisk whose tooltip names it", () => {
   const mark = read("components/v3/live/ai-search/CitationFilteredMark.tsx").replace(/\s+/g, " ");
-  assert.match(mark, /if \(!category && !note\) return null;/, "clearing the category removes the asterisk");
-  assert.match(mark, /const filter = category \? `\$\{category\} only\. Clear the category to see all categories\.` : "";/);
-  assert.match(mark, /const description = \[filter, note\]\.filter\(Boolean\)\.join\(" "\);/);
+  assert.match(mark, /if \(!category && !engines && !note\) return null;/, "clearing the category removes the asterisk");
+  assert.match(mark, /category \? `\$\{category\} only\. Clear the category to see all categories\.` : "",/);
+  // A custom engine-chip mix (decision 86) marks the same figures and names the engines.
+  assert.match(mark, /engines \? `\$\{engines\} only\. Choose a preset to see every engine in it\.` : "",/);
+  assert.match(mark, /const description = parts\.filter\(Boolean\)\.join\(" "\);/);
   assert.match(mark, /className="ifai-term citation-figure-filtered"/);
   assert.match(mark, /data-ifai-tooltip-desc=\{description\}/);
   assert.match(mark, /tabIndex=\{0\}/);
@@ -281,8 +283,12 @@ test("with a category picked, each chain step carries an asterisk whose tooltip 
   assert.match(mark, /> \* <\/span>/);
   assert.doesNotMatch(mark, /\stitle=/);
   const chain = read("components/v3/live/ai-search/CitationChain.tsx");
-  assert.equal(chain.match(/<CitationFilteredMark category=\{category\} note=\{note\} \/>/g)?.length, 1, "the first step names runs left out");
-  assert.match(chain, /const mark = <CitationFilteredMark category=\{category\} \/>;/);
+  assert.equal(
+    chain.match(/<CitationFilteredMark category=\{category\} engines=\{engineFilter\} note=\{note\} \/>/g)?.length,
+    1,
+    "the first step names runs left out",
+  );
+  assert.match(chain, /const mark = <CitationFilteredMark category=\{category\} engines=\{engineFilter\} \/>;/);
   assert.equal(chain.match(/\{showedShare == null \? null : mark\}|\{mark\}|\{ownedLead\.population \? mark : null\}/g)?.length, 3, "the other three steps");
   assert.doesNotMatch(chain, /` in \$\{|\bwithin\b/, "no on-screen \"in Amps\" wording");
   assert.doesNotMatch(read("components/v3/live/ai-search/CitationHero.tsx"), /data-citation-window|\{note\}</, "the window note lives in the asterisk tooltip");

@@ -35,9 +35,12 @@ export function cleanModelName(model: string | null | undefined): string {
   return (model ?? "").replace(INVISIBLE_CHARS, "").replace(UNICODE_SPACES, " ").replace(/\s+/g, " ").trim();
 }
 
+/** A missing model: the "Not available*" convention. On screen its reason sits in a tooltip (ModelName). */
+export const MODEL_NOT_RECORDED = "Not available*";
+
 export function modelLabel(model: string | null | undefined): string {
   const text = cleanModelName(model);
-  return text ? text : "not recorded";
+  return text ? text : MODEL_NOT_RECORDED;
 }
 
 export function categoryLabel(category: string | null | undefined): string {

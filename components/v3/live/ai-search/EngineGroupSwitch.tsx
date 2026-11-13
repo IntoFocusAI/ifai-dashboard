@@ -18,6 +18,8 @@ export function EngineGroupSwitch({
   onChoose,
   pairedDay = null,
   trailing = null,
+  custom = false,
+  chips = null,
 }: {
   state: EngineSwitchState;
   onChoose: (choice: EngineGroupChoice) => void;
@@ -25,9 +27,15 @@ export function EngineGroupSwitch({
   pairedDay?: string | null;
   /** A compact figure at the right end of the row, vertically centered with the pills. */
   trailing?: ReactNode;
+  /** The tab's engine chips match no preset: the row reads Custom and no preset is lit. */
+  custom?: boolean;
+  /** Per-engine chips beside the presets (Citation Ecosystem, decision 86). */
+  chips?: ReactNode;
 }) {
   const ready = state.kind === "ready";
-  const active: EngineGroupChoice = ready ? state.choice : "all";
+  const active: EngineGroupChoice | "custom" = custom ? "custom" : ready ? state.choice : "all";
+  // Without API engines only All applies, and it brings back every chip after a custom mix.
+  const enabled = (value: EngineGroupChoice) => ready || (custom && value === "all");
   return (
     <div className="ai-engine-switch" data-ai-engine-switch={state.kind}>
       <span className="ai-engine-switch-label">
@@ -42,14 +50,20 @@ export function EngineGroupSwitch({
             type="button"
             className={`segmented-btn${active === value ? " active" : ""}`}
             aria-pressed={active === value}
-            disabled={!ready}
+            disabled={!enabled(value)}
             data-ai-engine-choice={value}
             onClick={() => onChoose(value)}
           >
             {label}
           </button>
         ))}
+        {custom ? (
+          <span className="segmented-btn active" aria-current="true" data-ai-engine-choice="custom">
+            Custom
+          </span>
+        ) : null}
       </div>
+      {chips}
       {state.kind === "unavailable" ? (
         <span className="ai-engine-switch-na" data-ai-engine-na={state.reason}>
           <CopyTip

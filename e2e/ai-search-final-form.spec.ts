@@ -73,17 +73,18 @@ for (const client of CLIENTS) {
       await expect(page.locator("[data-ai-fact-fixed-only]")).toHaveCount(0);
 
       const all = await figure.textContent();
-      const total = all!.split(" of ")[1];
-      if (client === "fender") {
-        // Fender has API engines. They ask the fixed questions only, so the lead reads 0 of M there.
-        await page.locator("[data-ai-engine-choice='search']").click();
-        await expect(figure).toHaveText(all!);
-        await page.locator("[data-ai-engine-choice='api']").click();
-        await expect(figure).toHaveText(`0 of ${total}`);
-        await expect(tip).toHaveAttribute("data-ifai-tooltip-desc", /^No engine in this engine choice asks the rotating catalog questions/);
-      } else {
-        await expect(page.locator("[data-ai-engine-switch='unavailable']")).toBeVisible();
-      }
+      // Both clients have API engines (decision 89). Their API runs ask no catalog question, so
+      // API only reads Not available* with the reason in its tooltip (decision 90).
+      await expect(page.locator("[data-ai-engine-switch='unavailable']")).toHaveCount(0);
+      await page.locator("[data-ai-engine-choice='search']").click();
+      await expect(figure).toHaveText(all!);
+      await page.locator("[data-ai-engine-choice='api']").click();
+      await expect(page.locator("[data-ai-catalog-lead='not-asked']")).toBeVisible({ timeout: 60_000 });
+      await expect(figure).toHaveText("Not available*");
+      await expect(tip).toHaveAttribute(
+        "data-ifai-tooltip-desc",
+        /^No engine in this engine choice was asked a catalog question in this selection, so there is no count to show\./,
+      );
     });
 
     test("the map uses the decided names and the radar label stays inside its bubble at 1280", async ({ page }) => {

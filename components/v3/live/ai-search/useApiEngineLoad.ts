@@ -89,7 +89,7 @@ function selectedRunDay(history: ReturnType<typeof useAiHistoryOptional>): strin
 
 type HistoryValue = NonNullable<ReturnType<typeof useAiHistoryOptional>>;
 
-/** The battery runs the selection shows, for the fixed-question floor. Null while they load. */
+/** The battery runs the selection shows, for the shopping-question floor. Null while they load. */
 function batteryInScope(
   kind: HistoryMode["kind"] | null,
   selected: HistoryValue["selected"] | null,
@@ -144,7 +144,7 @@ export function catalogLoadState(catalog: ApiCatalogLoad): ApiEngineLoad | null 
 
 /**
  * The counted API runs dated in the selection the shared date pill names, loaded for the switch.
- * Each must have asked the fixed questions of the battery run nearest its day. A single run gets
+ * Each must have asked the shopping questions of the battery run nearest its day. A single run gets
  * the nearest API run that did.
  */
 export function useApiEngineLoad(): ApiEngineLoad {
@@ -165,7 +165,7 @@ export function useApiEngineLoad(): ApiEngineLoad {
   }, [battery, catalog, mode, windowEnd, selectedDay]);
   const load = useApiSnapshots(inScope);
 
-  // The fixed-question floor waits on the battery runs; start reading the candidates meanwhile.
+  // The shopping-question floor waits on the battery runs; start reading the candidates meanwhile.
   useEffect(() => {
     if (catalog.phase !== "ready" || battery) return;
     for (const run of apiRunsInScope(catalog.runs, mode, windowEnd, selectedDay)) void readRun(run);

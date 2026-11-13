@@ -1,5 +1,5 @@
 import { defaultWindowRuns, runDay } from "@/lib/ai-search/default-window";
-import { API_REPEAT_CAP, capApiRepeats, fixedQuestionCount } from "@/lib/ai-search/engine-group";
+import { API_REPEAT_CAP, capApiRepeats, shoppingQuestionCount } from "@/lib/ai-search/engine-group";
 import { compareRuns, utcDay, type HistoryRunSummary } from "@/lib/ai-search/history-eligibility";
 import type { HistoryMode } from "@/lib/ai-search/history-mode";
 import {
@@ -142,13 +142,13 @@ export function nearestApiRun(runs: readonly ApiRunSummary[], day: string | null
   return best?.run ?? null;
 }
 
-/** A battery run's day and its fixed-question count, the floor an API run beside it must meet. */
-export type BatteryQuestions = { day: string; fixedQuestions: number };
+/** A battery run's day and its shopping-question count, the floor an API run beside it must meet. */
+export type BatteryQuestions = { day: string; shoppingQuestions: number };
 
 export function batteryQuestions(battery: readonly Pick<AiSearchSnapshot, "run" | "calls" | "probes">[]): BatteryQuestions[] {
   return battery.flatMap((snapshot) => {
     const day = runDay(snapshot.run);
-    return day ? [{ day, fixedQuestions: fixedQuestionCount(snapshot) }] : [];
+    return day ? [{ day, shoppingQuestions: shoppingQuestionCount(snapshot) }] : [];
   });
 }
 
@@ -162,18 +162,18 @@ export function nearestBatteryDay<T extends { day: string }>(battery: readonly T
 }
 
 /**
- * The API runs that asked the battery's fixed questions: each run's questions_matched covers the
- * fixed questions of the battery run nearest its day. A one-question smoke test is left out.
+ * The API runs that asked the battery's shopping questions: each run's questions_matched covers the
+ * shopping questions of the battery run nearest its day. A one-question smoke test is left out.
  */
 export function apiRunsCoveringBattery(runs: readonly ApiRunSummary[], battery: readonly BatteryQuestions[]): ApiRunSummary[] {
   return runs.filter((run) => {
     const day = apiRunDay(run);
     const paired = day ? nearestBatteryDay(battery, day) : null;
-    return paired != null && (run.questions_matched ?? 0) >= Math.max(1, paired.fixedQuestions);
+    return paired != null && (run.questions_matched ?? 0) >= Math.max(1, paired.shoppingQuestions);
   });
 }
 
-/** The map's API run (decision 7): the counted run nearest the published run that asked its fixed questions. */
+/** The map's API run (decision 7): the counted run nearest the published run that asked its shopping questions. */
 export function pairedApiRuns(
   runs: readonly ApiRunSummary[],
   snapshot: Pick<AiSearchSnapshot, "run" | "calls" | "probes"> | null,
