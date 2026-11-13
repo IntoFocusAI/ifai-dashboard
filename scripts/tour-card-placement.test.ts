@@ -79,8 +79,9 @@ test("the path check catches a move that crosses the card between clear ends", (
 
 test("the shell hands tour placement to useTourCard and the card can sit on either side", () => {
   const shell = read("lib/canvas-sdk/CanvasShell.tsx");
-  assert.ok(!shell.includes("TOUR_CARD_ZONE"), "no fixed bottom-left card zone left in the shell");
-  assert.ok(shell.includes("useTourCard({"));
+  const tour = read("lib/canvas-sdk/useCanvasShellTour.ts");
+  assert.ok(!shell.includes("TOUR_CARD_ZONE") && !tour.includes("TOUR_CARD_ZONE"), "no fixed bottom-left card zone left in the shell");
+  assert.ok(tour.includes("useTourCard({"));
   assert.ok(shell.includes("<TourCard"));
   const css = read("lib/canvas-sdk/canvas-sdk.css");
   assert.match(css, /\.tour-modal-card\[data-side="right"\]\s*\{[^}]*right: 36px/);
