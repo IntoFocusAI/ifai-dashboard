@@ -56,9 +56,10 @@ export const CanvasGraphNode = memo(function CanvasGraphNode({
   const titleSize =
     contentRadius != null && node.railTitleSize != null ? node.railTitleSize : node.titleSize;
   // Satellites lead with one hero figure; hover adds an explanation only for a figure
-  // marked partial or Not available*, whose tooltip says what is missing.
+  // marked partial or Not available*, whose tooltip says what is missing. Main bubbles
+  // never show a hover tooltip (decision 87); their tab carries the explanation.
   const partialFace = Boolean(node.heroValue?.value.trim().endsWith("*"));
-  const showHoverTooltip = (MAIN_BUBBLES.has(node.id) || partialFace) && Boolean(node.tooltip.desc.trim());
+  const showHoverTooltip = !MAIN_BUBBLES.has(node.id) && partialFace && Boolean(node.tooltip.desc.trim());
   const inspect = onInspect ? () => onInspect(node.id) : undefined;
   return (
     <Node
