@@ -5,8 +5,8 @@
  * answers and classifySource falls back to the lists in code, so the dashboard works before the
  * migration is applied.
  *
- * Needs review is for staff. The FDD does not say where, or in what words, a client sees it, so no
- * screen shows it yet; `siteTypeNeedsReview` is the one hook for it.
+ * Needs review is for staff only: the staff Sites to review page (lib/ai-search/site-review.ts) lists
+ * those rows. No client screen shows it; `siteTypeNeedsReview` is the hook for the canvas.
  */
 
 import type { SourceClass } from "@/lib/ai-search/citations";

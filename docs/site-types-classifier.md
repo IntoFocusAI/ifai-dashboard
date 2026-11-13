@@ -71,7 +71,10 @@ never reclassified. A weekly pass may re-run AI rows under the review threshold 
 
 `site_type_classifications` (`origin = 'ai'`, `confidence`, `model`, `classified_at`, `reason`),
 with the service role, upserting on (domain, client). Staff overrides go to `site_type_overrides`
-(`set_by_name`, `set_at`, `note`), also with the service role, until a staff screen exists.
+(`set_by_name`, `set_at`, `note`). Staff set them on the Sites to review page (below) through
+`public.site_type_override`, which checks the caller is IntoFocus staff and writes only that row
+(`supabase/migrations/20261112160000_site_type_staff_review.sql`, Worker 26.12, applied to
+production 12 Nov 2026).
 
 ## Failures
 
@@ -83,4 +86,18 @@ with the service role, upserting on (domain, client). Staff overrides go to `sit
 ## Needs review
 
 An AI row with confidence under `review_below` reads `needs_review = true` in the view. It still
-shows its type. Where staff see this is open: the FDD does not place it on any screen yet.
+shows its type.
+
+Staff see these rows on **Sites to review** (`/dashboard/sites-to-review`), linked from the user
+menu for IntoFocus staff only (an active `intofocus_admin` membership on the platform organization,
+the same rule as `command.is_intofocus_admin()`). Client users get no link; a client who opens a
+forwarded link reads "This page is for IntoFocus staff" and nothing is read; the CSV and both
+database functions refuse them too (decision 85). Each client's list holds only flagged sites that
+its own AI answers cite in the date-pill window (the default, last 30 days ending on the published
+run; decisions 83 and 84), so a global flagged site no Ledlenser answer cites is not on Ledlenser's
+list. The list shows, per client: the site (a link), the AI type, confidence, the classifier's
+reason, and how many of the client's answers in the window cite the site (every engine when the
+API-engine runs read, else the search engines alone, as the column tooltip says). Staff confirm the type or pick another; the save writes one override at the same level as
+the classification (a global row gets a global override), and the row leaves the list. The reason
+column and saving need `public.site_types_to_review` and `public.site_type_override`; before they
+are applied the page lists the rows read only.
