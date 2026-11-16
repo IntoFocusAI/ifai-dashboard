@@ -9,13 +9,21 @@ import { clientHref, type ClientKey } from "@/lib/client/active-client";
  * What anyone but IntoFocus staff sees on a staff page, for example a client user who opens a
  * forwarded link (decision 85). No list, no count, no client data.
  */
-export function StaffOnlyNotice({ client, light }: { client: ClientKey; light: boolean }) {
+export function StaffOnlyNotice({
+  client,
+  light,
+  title = "Sites to review",
+}: {
+  client: ClientKey;
+  light: boolean;
+  title?: string;
+}) {
   const href = clientHref(client, DASHBOARD_PATH);
   return (
     <main className={`ifai-canvas sites-review-page${light ? " light-theme" : ""}`} data-staff-only="">
       <div className="sites-review-card">
         <header className="sites-review-header">
-          <h1>Sites to review</h1>
+          <h1>{title}</h1>
           <div className="sites-review-actions">
             <Link
               href={light ? `${href}${href.includes("?") ? "&" : "?"}theme=light` : href}
