@@ -2,6 +2,7 @@
 
 import { ConsensusLeadBand } from "@/components/v3/live/ConsensusScoreView";
 import { useFindability } from "@/components/v3/live/findability/FindabilityContext";
+import { ScoreHistoryChart } from "@/components/v3/live/ScoreHistoryChart";
 import { useSummaryAiRead } from "@/components/v3/live/useSummaryAiRead";
 import { authorizedPartnersFromSave } from "@/lib/fender-canvas/authorized-sellers";
 import { useAuthorizedSellers } from "@/lib/fender-canvas/authorized-sellers-store";
@@ -10,8 +11,7 @@ import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-disp
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
 
 /**
- * Summary → Performance: AI Consensus hero band first.
- * The division table stays below (rendered by the spoke).
+ * Summary → Performance: the score cards, then the saved weekly scores over time (decision 94).
  */
 export function ConsensusScoresPanel({
   bundle,
@@ -46,5 +46,10 @@ export function ConsensusScoresPanel({
     );
   }
 
-  return <ConsensusLeadBand consensus={consensus} />;
+  return (
+    <>
+      <ConsensusLeadBand consensus={consensus} />
+      <ScoreHistoryChart />
+    </>
+  );
 }

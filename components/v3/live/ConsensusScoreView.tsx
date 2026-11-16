@@ -22,6 +22,7 @@ import {
 } from "@/lib/fender-canvas/consensus-score-display";
 import { formatRatio } from "@/lib/fender-canvas/format";
 import type { ConsensusScore, PillarScore } from "@/lib/fender-canvas/consensus-scores";
+import { weakestScoreCard, type ScoreCardId } from "@/lib/fender-canvas/weakest-score-card";
 
 const PIE_SIZE = "citation-pie-disc citation-pie-disc-retail";
 const COMPONENTS_ID = "consensus-component-detail";
@@ -221,15 +222,17 @@ export function ActuationHeroCard({ pillar, wide }: { pillar: PillarScore; wide?
   );
 }
 
-type OpenCard = "consensus" | "foundation" | "commerce";
+type OpenCard = ScoreCardId;
 
 /**
  * Summary → Performance top band: four equal score cards in one row (AI Consensus, AI Foundation,
  * AI Commerce, AI Actuation). Each title carries its tooltip. A chevron opens the Consensus
- * weights or a pillar's components full-width below the row.
+ * weights or a pillar's components full-width below the row. The weakest card opens by default
+ * (decision 94).
  */
 export function ConsensusLeadBand({ consensus }: { consensus: ConsensusScore }) {
-  const [open, setOpen] = useState<OpenCard | null>(null);
+  const weakest = weakestScoreCard(consensus);
+  const [open, setOpen] = useState<OpenCard | null>(weakest);
 
   function toggle(id: OpenCard) {
     setOpen((current) => (current === id ? null : id));
@@ -243,7 +246,7 @@ export function ConsensusLeadBand({ consensus }: { consensus: ConsensusScore }) 
         : null;
 
   return (
-    <div data-consensus-scores="" style={{ marginBottom: 16 }}>
+    <div data-consensus-scores="" data-consensus-weakest={weakest ?? undefined} style={{ marginBottom: 16 }}>
       <div data-consensus-lead="" className="consensus-score-row">
         <ScoreHeroCard
           id="consensus"

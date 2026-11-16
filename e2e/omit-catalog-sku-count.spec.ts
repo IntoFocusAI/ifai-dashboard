@@ -17,7 +17,7 @@ test.describe("omit catalog SKU count", () => {
     }
   });
 
-  test("hub briefing and divisions table omit catalog SKU totals", async ({ canvas, page }) => {
+  test("hub briefing and performance omit catalog SKU totals", async ({ canvas, page }) => {
     await page.goto("/dashboard?spoke=hub&tab=briefing");
     await expect(page.locator(".ifai-canvas.column-layout")).toHaveCount(1);
     await expect(canvas.panel).toBeVisible();
@@ -29,8 +29,9 @@ test.describe("omit catalog SKU count", () => {
     }
 
     await canvas.openTab("Performance");
-    await expect(canvas.panel).toContainText("Catalog Division");
-    await expect(canvas.panel).toContainText("Buy Box");
+    await expect(canvas.panel).toContainText("AI Consensus Score");
+    // Decision 94: the division table is gone.
+    await expect(canvas.panel).not.toContainText("Catalog Division");
     await expect(canvas.panel).not.toContainText("Monitored SKUs");
   });
 

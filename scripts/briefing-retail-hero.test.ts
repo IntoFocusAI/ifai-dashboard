@@ -362,11 +362,9 @@ test("hub Briefing puts consensus in the findings row, then the essay", () => {
   const tab1 = hub.slice(hub.indexOf("\n    1:"));
   assert.match(tab0, /BriefingRetailHero/);
   assert.doesNotMatch(tab0, /FenderDivisionsTable|ConsensusScoresPanel|ConsensusLeadBand|BriefingConsensusLead/);
-  assert.match(
-    tab1,
-    /<ConsensusScoresPanel bundle=\{bundle\} retail=\{retail\} \/>\s*<FenderDivisionsTable divisions=\{bundle\.divisions\} \/>/,
-  );
-  assert.doesNotMatch(tab1, /BriefingConsensusLead|BriefingRetailHero/);
+  // Decision 94: the division table is gone; Performance is the score cards and their history.
+  assert.match(tab1, /<ConsensusScoresPanel bundle=\{bundle\} retail=\{retail\} \/>/);
+  assert.doesNotMatch(tab1, /FenderDivisionsTable|BriefingConsensusLead|BriefingRetailHero/);
   const card = read("components/v3/live/BriefingFindingCard.tsx");
   const buttonAt = card.indexOf("<button");
   assert.ok(buttonAt > card.indexOf("data-ifai-tooltip-desc={finding.explainer}"));

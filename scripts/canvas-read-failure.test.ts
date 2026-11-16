@@ -197,12 +197,8 @@ test("a piece that never loaded stays Not available* on refresh", async () => {
   assert.equal(READ_NOT_AVAILABLE, "Not available*");
 });
 
-test("the failed division read reads Not available* with a custom tooltip naming the source", () => {
-  const spokes = read("components/v3/build-live-spokes.tsx");
-  const fallbacks = read("components/v3/read-fallbacks.tsx");
+test("a failed read's Not available* mark names the source in a custom tooltip", () => {
   const mark = read("components/v3/live/ReadNotAvailable.tsx");
-  assert.match(spokes, /readFallbackTab\(id, tabIdx, bundle, retail\) \?\? overrides\[tabIdx\]/);
-  assert.match(fallbacks, /bundle\.unavailable\?\.divisions/);
   assert.match(mark, /className="ifai-term"/);
   assert.match(mark, /data-ifai-tooltip-desc=\{tip\}/);
   assert.match(mark, /readFailureTip\(failure\)/);
