@@ -85,7 +85,7 @@
 - **Desired:** Lead with the few sources that matter most; filter by category.
 - **User value:** Effort goes where it pays.
 - **Acceptance:** Top sources first; category filter works.
-- **Evidence:** Approved by Brian Magazu on 3 Nov 2026. Worker 20.6, pull request 107, main a1080b4.
+- **Evidence:** Approved by Brian Magazu on 3 Nov 2026. Worker 20.6, pull request 107, main a1080b4. Workers 26.15, 27.4, 27.7 and 27.9, PR 195 (main 9f13a05), approved 16 Nov 2026: Citation Ecosystem engine chips with presets and Custom, (search)/(API) labels, one question control (decision 86); Ledlenser API engines counted (decision 89); shopping-only asterisk and trend breaks (decision 90); Battlecards drop categories with no unbranded discovery questions (decision 93); tables fit at 1264 px with scrollbars.
 - **Open decision:** None.
 
 **A-07 CURRENT** · Launch
@@ -110,7 +110,7 @@
 - **Evidence:** Worker 24.4, pull request 151 (main f1df1f5): the Prompts screen shows each prompt's stored change history through the read-only function public.ai_prompt_edits_list (migration 20261109233000), applied to production on 10 Nov 2026 with Brian Magazu's approval and checked live that day.
 - **Open decision:** None. Decided by Brian Magazu on 9 Nov 2026: the Prompts screen shows each prompt's change history through one additive database read, applied after approval. Ledlenser's prompt list stays read-only.
 
-**A-11 TARGET** · Launch
+**A-11 CURRENT** · Launch
 
 **Status source:** Explicit (Brian Magazu, 12 Nov 2026)
 
@@ -118,5 +118,5 @@
 - **Desired:** A staff-only Sites to review list, linked from the user menu for IntoFocus staff only, lists the client's flagged domains that its own answers cite, with the classifier's type, confidence and reason, answers citing it in the date-pill window, and a control to confirm or change the type. A staff answer is saved as an override the classifier never changes. A client user never sees the menu item; a forwarded link shows "This page is for IntoFocus staff".
 - **User value:** Wrong site labels are corrected before they feed owned-versus-earned charts and scores.
 - **Acceptance:** Only staff can read or save; each client's list holds only domains its own answers cite; a saved type sticks.
-- **Evidence:** Worker 26.12, pull request 189 (draft). Database functions site_types_to_review and site_type_override applied to production 12 Nov 2026 by PM26 after Brian Magazu approved. Fix round pending: hide 0-citation domains, window count, staff message instead of 404.
+- **Evidence:** Workers 26.12 and 27.1, pull request 189 (main 8e8cb99), approved and merged by Brian Magazu 13 Nov 2026. Database functions site_types_to_review and site_type_override applied to production 12 Nov 2026 by PM26 after Brian Magazu approved. Fender lists 14 cited sites (14 of 14 rows); Ledlenser reads "No sites need review for Ledlenser."; counts use the last 30 days; client users see no menu item and a forwarded link shows "This page is for IntoFocus staff". Staff view verified by e2e and local screenshots only, since previews have no sign-in; recheck as staff, including saving a type, once Watson restores sign-in.
 - **Open decision:** None.

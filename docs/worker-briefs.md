@@ -23,19 +23,23 @@ propose status changes in the pull request body.
   approves, then the rows the view leaves open. Rebase on main often (Brian
   Watson merges Ledlenser work). Commit messages start "Worker N.M:".
 - Run in your own git worktree so parallel workers do not share a checkout.
-- Both clients: correct for Fender (/dashboard) and Ledlenser
-  (/dashboard?client=ledlenser). Ledlenser has no API-engine views. The set-aside
-  tables and views are shared in `public` and client-keyed (`fmic`, `ledlenser`), so
-  set-asides work for both clients; handle the rest as the code already does.
+- One dashboard for every client (decision 89): every feature Fender has,
+  Ledlenser has, checked at /dashboard and /dashboard?client=ledlenser. The
+  only allowed difference is additive, such as a retailer column a client
+  cares about. A feature missing for one client is a defect: find the cause
+  and fix it, or report it. Both clients have API-engine views (PR 184). The
+  set-aside tables and views are shared in `public` and client-keyed
+  (`fmic`, `ledlenser`).
 - Build inside the existing view. No standalone routes or pages that
   nothing links to (a server route for CSV is fine).
 - A feature whose data does not exist is BLOCKED, not built. Never deliver
   a screen or column that reads Not available* on every row.
 - Never invent rules, figures, or causes. If the FDD and the decisions do
   not say, ask the PM in your report.
-- Standing rules: the map shows the published run plus its matching API
-  run, except the Competitive Radar bubble, which reads the Category
-  Battlecards rows for the date-pill window (decision 40; do not change it); the shared date pill is the only period label; dollar figures stay
+- Standing rules: every AI figure, the map included, follows the date-pill
+  window (decision 83); the Competitive Radar bubble keeps the tab's lead
+  rule (decision 40; do not change it); no tooltips on main map bubbles
+  (decision 87); the shared date pill is the only period label; dollar figures stay
   labeled analyst estimate and their formulas stay parked; nothing about
   IntoFocus fees; no delegation or paid tiers; let the data speak (caveats
   in tooltips; "analyst estimate", "Not available*", and the asterisk stay
