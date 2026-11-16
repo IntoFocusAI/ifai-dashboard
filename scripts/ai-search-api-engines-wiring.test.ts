@@ -8,6 +8,7 @@ import {
   batteryQuestions,
   daysApart,
   nearestApiRun,
+  unreadBatteryFloor,
   type ApiRunSummary,
 } from "../lib/ai-search/api-runs.ts";
 import {
@@ -294,6 +295,24 @@ test("a Ledlenser API run that asked the 29 shopping questions and no fact check
     apiSummary("led-smoke", "2026-11-04T18:45:14Z", { run_state: "partial", questions_asked: 5, questions_matched: 5 }),
   ];
   assert.deepEqual(apiRunsCoveringBattery(runs, battery).map((run) => run.audit_run_id), ["led-api"]);
+});
+
+test("the 12 Nov Fender API run pairs with the 14 Nov wave 2 run and counts", () => {
+  // Production, 16 Nov 2026: search runs 10 Nov (29 shopping questions), a96de98f 14 Nov and
+  // 7a1c18c3 16 Nov (59 with wave 2). The 12 Nov API run asked 61; the tie goes to 14 Nov.
+  const battery = [
+    { day: "2026-11-10", fixedQuestions: 29 },
+    { day: "2026-11-14", fixedQuestions: 59 },
+    { day: "2026-11-16", fixedQuestions: 59 },
+  ];
+  const runs = [apiSummary("fender-12nov", "2026-11-12T08:30:51Z", { questions_asked: 61, questions_matched: 61 })];
+  assert.deepEqual(apiRunsCoveringBattery(runs, battery).map((run) => run.audit_run_id), ["fender-12nov"]);
+});
+
+test("a battery run not read yet takes the nearest read run's floor, else the wave 1 shopping questions", () => {
+  assert.equal(unreadBatteryFloor([{ day: "2026-10-28", fixedQuestions: 29 }, { day: "2026-11-14", fixedQuestions: 59 }], "2026-11-15"), 59);
+  // Nothing read: 29, so a Ledlenser API run (29 questions) counts and a 5-question test run does not.
+  assert.equal(unreadBatteryFloor([], "2026-11-13"), 29);
 });
 
 test("the API repeat cap keeps repeats 1 to 3 and the fact checks and citations of those calls", () => {
