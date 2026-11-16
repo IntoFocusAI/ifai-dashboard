@@ -41,7 +41,5 @@ test("the Priorities summary prints no division count", () => {
 
 test("the Summary description has no division fallback left to fill", () => {
   const spokes = read("components/v3/build-live-spokes.tsx");
-  const fallbacks = read("components/v3/read-fallbacks.tsx");
-  assert.doesNotMatch(spokes, /readFallbackDesc/);
-  assert.doesNotMatch(fallbacks, /division_count|readFallbackDesc/);
+  assert.doesNotMatch(spokes, /readFallbackDesc|division_count/);
 });

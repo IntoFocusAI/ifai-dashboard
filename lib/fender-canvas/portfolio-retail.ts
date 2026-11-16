@@ -13,7 +13,6 @@ import {
   type BuyBoxSellerCensus,
   type ControlledBuyBoxDetail,
 } from "./consensus-scores";
-import { catalogDivisionCensus, type DivisionCensus } from "./division-census";
 import {
   countFeaturedOffer,
   FEATURED_OFFER_COLUMNS,
@@ -902,8 +901,6 @@ export type PortfolioRetailSnapshot = PortfolioRetailFindings & {
   mapRead?: { rows: MapLeakageRow[]; truncated: boolean } | null;
   /** True when the MAP set-aside read failed, so no approved exception could be left out. */
   mapApprovedExceptionsFailed?: boolean;
-  /** Buy Box holders per division from the catalog read. Null when that read failed. Optional on fixtures. */
-  divisionCensus?: DivisionCensus | null;
 };
 
 export async function loadPortfolioRetailSnapshot(
@@ -940,6 +937,5 @@ export async function loadPortfolioRetailSnapshot(
     ...findings,
     headline: selectRetailHeadline(findings),
     mapRead: mapRows.ok ? { rows: mapRows.rows, truncated: mapRows.truncated } : null,
-    divisionCensus: catalogDivisionCensus(catalogRows),
   };
 }

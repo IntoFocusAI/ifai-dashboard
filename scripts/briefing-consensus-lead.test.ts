@@ -143,13 +143,9 @@ test("Briefing keeps the consensus sentence on the title tooltip inside the find
   assert.doesNotMatch(hero, /briefing-consensus-lead|briefing-buy-box-cluster/);
   assert.doesNotMatch(css, /briefing-consensus-lead|briefing-consensus-sentence|briefing-buy-box-cluster/);
 
-  const scoresAt = tab1.indexOf("<ConsensusScoresPanel");
-  const divisionsAt = tab1.indexOf("<FenderDivisionsTable");
-  assert.ok(scoresAt >= 0 && divisionsAt > scoresAt);
-  assert.match(
-    tab1,
-    /<ConsensusScoresPanel bundle=\{bundle\} retail=\{retail\} \/>\s*<FenderDivisionsTable divisions=\{bundle\.divisions\} \/>/,
-  );
+  // Decision 94: no division table under the score cards.
+  assert.match(tab1, /<ConsensusScoresPanel bundle=\{bundle\} retail=\{retail\} \/>/);
+  assert.equal(tab1.includes("FenderDivisionsTable"), false);
 
   assert.match(lead, /consensusFromLive\(/);
   assert.match(lead, /const sentence = loading \? null : briefingConsensusSentence\(consensus\)/);
