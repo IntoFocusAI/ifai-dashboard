@@ -3,15 +3,18 @@
 import "@/components/v3/live/page-found.css";
 import { useEffect, useMemo, useState } from "react";
 import type { AmazonSpecRowsRead } from "@/components/v3/live/FenderSpecPanel";
-import { PartialFigureMark } from "@/components/v3/live/FigureTip";
+import { FigureTip, PartialFigureMark } from "@/components/v3/live/FigureTip";
+import { READ_NOT_AVAILABLE } from "@/lib/fender-canvas/canvas-reads";
 import { formatInt } from "@/lib/fender-canvas/format";
 import { loadAmazonProductTypes, type AmazonProductTypesRead } from "@/lib/findability/amazon-product-types";
 import {
+  noListTooltip,
   productTypeCoverageLabel,
   productTypeCoveragePartial,
   productTypeListingLabel,
   productTypeRequiredTooltip,
   requiredFieldsByProductType,
+  type NoListGroup,
   type ProductTypeCoverage,
 } from "@/lib/findability/product-type-required-fields";
 import {
@@ -87,6 +90,27 @@ function ProductTypeTerm({ coverage }: { coverage: ProductTypeCoverage }) {
   );
 }
 
+/** Listings of a product type with no approved list yet: Not available*, no fallback list. */
+function NoListLine({ groups }: { groups: NoListGroup[] }) {
+  if (groups.length === 0) return null;
+  const names = groups
+    .map((group) => `${group.label} (${formatInt(group.listings)} ${group.listings === 1 ? "listing" : "listings"})`)
+    .join("; ");
+  return (
+    <p
+      className="findability-last-checked"
+      data-amazon-specs-required-list="no-list"
+      data-amazon-specs-no-list-types={groups.map((group) => group.productType).join(";")}
+    >
+      {`Required fields for ${names}: `}
+      <FigureTip title="No approved field list" desc={noListTooltip(groups)} testId="amazon-specs-no-list">
+        {READ_NOT_AVAILABLE}
+      </FigureTip>
+      .
+    </p>
+  );
+}
+
 function CategoryTerm({ list }: { list: CategoryRequiredList }) {
   return (
     <Term
@@ -154,7 +178,7 @@ export function AmazonSpecsRequiredFields({ read }: { read: AmazonSpecRowsRead }
   const rows = read.phase === "ready" ? read.rows : null;
   const split = useMemo(() => {
     if (!rows || productTypes.phase === "loading") return null;
-    if (productTypes.phase === "unavailable") return { coverage: [], unlisted: rows };
+    if (productTypes.phase === "unavailable") return { coverage: [], noList: [], unlisted: rows };
     return requiredFieldsByProductType(rows, productTypes.types);
   }, [rows, productTypes]);
   const fallback = useMemo(() => (split ? requiredSpecListsByCategory(split.unlisted) : []), [split]);
@@ -178,7 +202,8 @@ export function AmazonSpecsRequiredFields({ read }: { read: AmazonSpecRowsRead }
           .
         </p>
       ) : null}
-      <CategoryFallback lists={fallback} others={split.coverage.length > 0} />
+      <NoListLine groups={split.noList} />
+      <CategoryFallback lists={fallback} others={split.coverage.length > 0 || split.noList.length > 0} />
     </>
   );
 }
