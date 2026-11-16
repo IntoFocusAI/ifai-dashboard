@@ -226,9 +226,76 @@ test.describe("Prompts change history (A-08)", () => {
     await expect(page.locator("[data-prompt-history]")).toHaveCount(0);
   });
 
-  test("Ledlenser has no prompt editor, so its prompt list stays read-only", async ({ page }) => {
-    await page.goto("/dashboard?client=ledlenser");
-    await expect(page.locator(".graph-node").first()).toBeVisible({ timeout: 60_000 });
-    await expect(page.locator(".hdr-btn", { hasText: "Prompts" })).toHaveCount(0);
+});
+
+/* Decision 89 (Worker 27.10): every client has the Prompts button. Ledlenser reads its own battery
+   from ledlenser.canvas_ai_prompts, read-only; the view is mocked here until it is applied. */
+const LEDLENSER_PROMPTS = [
+  { prompt_key: "l01", prompt_text: "Best rechargeable headlamp for backpacking and hiking", category: "headlamps", prompt_kind: "commercial", active: true, created_at: "2026-11-04T15:59:37Z", updated_at: null },
+  { prompt_key: "l08", prompt_text: "Best rechargeable EDC flashlight under $100", category: "flashlights", prompt_kind: "commercial", active: true, created_at: "2026-11-04T15:59:37Z", updated_at: null },
+  { prompt_key: "l12", prompt_text: "Ledlenser P7R vs Olight Warrior 3S flashlight", category: "flashlights", prompt_kind: "commercial", active: true, created_at: "2026-11-04T15:59:37Z", updated_at: null },
+  { prompt_key: "l30", prompt_text: "Rotating catalog fact check slot A", category: "hallucinations", prompt_kind: "probe", active: true, created_at: "2026-11-04T15:59:37Z", updated_at: null },
+];
+
+test.describe("Prompts for every client (decision 89)", () => {
+  test.beforeEach(async ({ page }) => guest(page));
+
+  for (const client of CLIENTS) {
+    test(`the map header has a Prompts button (${client})`, async ({ page }) => {
+      await page.goto(url(client, ""));
+      await expect(page.locator(".graph-node").first()).toBeVisible({ timeout: 60_000 });
+      await expect(page.locator(".hdr-btn", { hasText: /^Prompts$/ })).toBeVisible();
+      // Build prompts writes Fender's list only (PR 156); Ledlenser has no write path yet.
+      await expect(page.locator(".hdr-btn", { hasText: "Build prompts" })).toHaveCount(client === "fender" ? 1 : 0);
+    });
+  }
+
+  test("Ledlenser's Prompts lists its own battery, searchable, with no edit controls", async ({ page }) => {
+    test.setTimeout(120_000);
+    await page.route("**/rest/v1/canvas_ai_prompts*", (route) =>
+      route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(LEDLENSER_PROMPTS) }),
+    );
+    let fenderListRead = false;
+    await page.route("**/rest/v1/rpc/ai_prompts_list*", (route) => {
+      fenderListRead = true;
+      return route.continue();
+    });
+    await page.goto(url("ledlenser", ""));
+    await page.locator(".hdr-btn", { hasText: /^Prompts$/ }).click();
+    const items = page.locator(".pe-item");
+    await expect(items).toHaveCount(4, { timeout: 60_000 });
+    await expect(items.first()).toContainText("Best rechargeable headlamp for backpacking and hiking");
+    await expect(items.nth(3)).toContainText("Fact check");
+    await expect(page.locator("[data-prompt-search-count]")).toHaveText("4 of 4 prompts");
+    await expect(page.locator(".pe-sub").first()).toContainText("4 active.");
+    await page.locator('[data-prompt-search] input[type="search"]').fill("flashlight");
+    await expect(page.locator("[data-prompt-search-count]")).toHaveText("2 of 4 prompts");
+    await expect(page.locator(".pe-add")).toHaveCount(0);
+    await expect(page.locator("[data-pe-builder-link]")).toHaveCount(0);
+    await expect(page.locator('[aria-label^="Edit l"]').first()).toBeHidden();
+    await expect(page.locator("[data-prompt-history-toggle]")).toHaveCount(0);
+    await expect(page.locator("[data-prompt-history-status]")).toHaveCount(0);
+    await expect(page.locator('[data-table-download="prompts"]')).toBeEnabled();
+    expect(fenderListRead).toBe(false);
+  });
+
+  test("Ledlenser's prompt CSV holds its own battery once the view is applied (live)", async ({ page }) => {
+    test.setTimeout(120_000);
+    const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+    test.skip(!base || !key, "No Supabase URL or key in this environment.");
+    const probe = await page.request.get(`${base}/rest/v1/canvas_ai_prompts?select=prompt_key&limit=1`, {
+      headers: { apikey: key!, Authorization: `Bearer ${key}`, "Accept-Profile": "ledlenser" },
+    });
+    test.skip(!probe.ok(), "ledlenser.canvas_ai_prompts is not applied yet.");
+    await page.goto(url("ledlenser", ""));
+    await page.locator(".hdr-btn", { hasText: /^Prompts$/ }).click();
+    await expect(page.locator(".pe-item").first()).toBeVisible({ timeout: 60_000 });
+    const asked = Number(await page.locator("[data-prompt-search-count]").getAttribute("data-prompt-search-count"));
+    const lines = await downloadLines(page, "prompts");
+    expect(lines[4]).toBe("Prompt key,Category,Kind,Prompt,Status");
+    const keys = lines.slice(5).map((line) => line.split(",")[0]);
+    expect(keys.every((k) => /^l\d+$/.test(k))).toBe(true);
+    expect(keys.length).toBeGreaterThanOrEqual(asked);
   });
 });

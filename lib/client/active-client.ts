@@ -23,7 +23,7 @@ export type ClientProfile = {
   brandSiteDomains: string[];
   /** Short label for the brand's own website: "fender.com". */
   brandSiteLabel: string;
-  /** The AI prompt editor writes Fender's prompt list only. */
+  /** The Prompts screen edits this client's list (add, edit, remove, restore, history, Build prompts). Fender only; every other client's list is read-only. */
   promptsEditable: boolean;
   /** Who is meant to hold the Amazon Buy Box. Partner-led: Amazon and named dealers. Brand-led: the brand's own seller accounts. */
   sellerModel: "Partner-led" | "Brand-led";

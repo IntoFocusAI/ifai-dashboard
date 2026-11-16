@@ -303,6 +303,11 @@
   gap: 2px;
 }
 
+/* A read-only prompt list (every client but Fender) has no edit, remove, or restore buttons. */
+.pe-item-actions[hidden] {
+  display: none;
+}
+
 .pe-edit {
   display: flex;
   flex-direction: column;

@@ -3,29 +3,16 @@
 import { StatusGlyph } from "@/components/v3/live/StatusMark";
 import { PromptHistory, PromptHistoryNotice, PromptHistoryToggle } from "@/components/v3/prompts/PromptHistory";
 import { PromptSearchBar, usePromptSearch } from "@/components/v3/prompts/PromptSearch";
+import { CategoryPicker, EMPTY_DRAFT, draftCategory, type Draft } from "@/components/v3/prompts/CategoryPicker";
 import "@/components/v3/prompts/prompts-editor.css";
 import { loadPromptEditHistory, promptEditsFor, type PromptEditHistory } from "@/lib/ai-search/prompt-edit-history";
-import {
-  loadPrompts,
-  savePrompt,
-  setPromptActive,
-  type EditablePrompt,
-  type PromptEditorStatus,
-} from "@/lib/ai-search/prompt-editor";
+import { savePrompt, setPromptActive, type EditablePrompt, type PromptEditorStatus } from "@/lib/ai-search/prompt-editor";
 import { DASHBOARD_PATH } from "@/lib/auth/dashboard-path";
+import { activeClient } from "@/lib/client/active-client";
+import { loadPromptList } from "@/lib/prompts/prompt-list";
 import { Lock, Pencil, Plus, RotateCcw, Trash2, Wand2, X } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-
-const NEW_CATEGORY = "__new__";
-
-type Draft = { text: string; category: string; newCategory: string };
-
-const EMPTY_DRAFT: Draft = { text: "", category: "", newCategory: "" };
-
-function draftCategory(d: Draft): string {
-  return d.category === NEW_CATEGORY ? d.newCategory : d.category;
-}
 
 function formatWhen(iso: string | null): string {
   if (!iso) return "";
@@ -33,54 +20,16 @@ function formatWhen(iso: string | null): string {
   return d.toLocaleString(undefined, { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 }
 
-function CategoryPicker({
-  draft,
-  categories,
-  disabled,
-  onChange,
-}: {
-  draft: Draft;
-  categories: string[];
-  disabled: boolean;
-  onChange: (d: Draft) => void;
-}) {
-  return (
-    <div className="pe-category">
-      <select
-        value={draft.category}
-        disabled={disabled}
-        onChange={(e) => onChange({ ...draft, category: e.target.value })}
-        aria-label="Category"
-      >
-        <option value="" disabled>
-          Category
-        </option>
-        {categories.map((c) => (
-          <option key={c} value={c}>
-            {c}
-          </option>
-        ))}
-        <option value={NEW_CATEGORY}>New category…</option>
-      </select>
-      {draft.category === NEW_CATEGORY ? (
-        <input
-          type="text"
-          value={draft.newCategory}
-          disabled={disabled}
-          maxLength={40}
-          placeholder="New category name"
-          onChange={(e) => onChange({ ...draft, newCategory: e.target.value })}
-          aria-label="New category name"
-        />
-      ) : null}
-    </div>
-  );
-}
-
 type Props = { onClose: () => void };
 
-/** Lists, adds, edits, removes and restores the prompts the AI-Search battery asks (command.fmic_ai_prompts). */
+/**
+ * The prompts the brand's AI-Search battery asks, for every client (decision 89): list, search and
+ * Download CSV. Where the list is edited from the dashboard (Fender, command.fmic_ai_prompts) it also
+ * adds, edits, removes and restores prompts and shows each prompt's change history.
+ */
 export function PromptsEditor({ onClose }: Props) {
+  // Fixed for the page load: the brand never changes without a full page load.
+  const editable = activeClient().promptsEditable;
   const [prompts, setPrompts] = useState<EditablePrompt[]>([]);
   const [status, setStatus] = useState<PromptEditorStatus | null>(null);
   const [loading, setLoading] = useState(true);
@@ -95,7 +44,7 @@ export function PromptsEditor({ onClose }: Props) {
   const [historyKey, setHistoryKey] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
-    const data = await loadPrompts();
+    const data = await loadPromptList();
     setPrompts(data.prompts);
     setStatus(data.status);
     // One read returns every prompt's stored changes. A failed read never blocks the editor.
@@ -104,7 +53,7 @@ export function PromptsEditor({ onClose }: Props) {
 
   useEffect(() => {
     let cancelled = false;
-    loadPrompts()
+    loadPromptList()
       .then((data) => {
         if (cancelled) return;
         setPrompts(data.prompts);
@@ -116,13 +65,16 @@ export function PromptsEditor({ onClose }: Props) {
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
-    void loadPromptEditHistory().then((result) => {
-      if (!cancelled) setHistory(result);
-    });
+    // The change history is the edited list's own log (Fender's), so a read-only list never reads it.
+    if (editable) {
+      void loadPromptEditHistory().then((result) => {
+        if (!cancelled) setHistory(result);
+      });
+    }
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [editable]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -217,17 +169,21 @@ export function PromptsEditor({ onClose }: Props) {
                   {status.active_count} active. Each prompt is asked {status.repeats} times per engine ({callsPerPrompt}{" "}
                   AI calls per run).
                 </>
+              ) : !loading && !error ? (
+                <>{active.length} active.</>
               ) : null}
             </p>
-            <p className="pe-sub">
-              <Link
-                className="pe-link"
-                href={`${DASHBOARD_PATH}/battery-builder${typeof window === "undefined" ? "" : window.location.search}`}
-                data-pe-builder-link
-              >
-                <Wand2 size={13} aria-hidden /> Build prompts from shopper details
-              </Link>
-            </p>
+            {editable ? (
+              <p className="pe-sub">
+                <Link
+                  className="pe-link"
+                  href={`${DASHBOARD_PATH}/battery-builder${typeof window === "undefined" ? "" : window.location.search}`}
+                  data-pe-builder-link
+                >
+                  <Wand2 size={13} aria-hidden /> Build prompts from shopper details
+                </Link>
+              </p>
+            ) : null}
           </div>
           <button className="pe-icon-btn" onClick={onClose} aria-label="Close">
             <X size={16} />
@@ -258,29 +214,33 @@ export function PromptsEditor({ onClose }: Props) {
         ) : null}
 
         <div className="pe-body">
-          <section className="pe-add">
-            <textarea
-              value={adding.text}
-              disabled={disabled}
-              maxLength={500}
-              rows={2}
-              placeholder="Add a prompt, written the way a shopper would ask it"
-              onChange={(e) => setAdding({ ...adding, text: e.target.value })}
-              aria-label="New prompt text"
-            />
-            <div className="pe-row-actions">
-              <CategoryPicker draft={adding} categories={categories} disabled={disabled} onChange={setAdding} />
-              <button className="pe-btn pe-btn-primary" disabled={disabled || !canAdd} onClick={() => void addPrompt()}>
-                <Plus size={14} />
-                Add prompt
-              </button>
-            </div>
-          </section>
+          {editable ? (
+            <>
+              <section className="pe-add">
+                <textarea
+                  value={adding.text}
+                  disabled={disabled}
+                  maxLength={500}
+                  rows={2}
+                  placeholder="Add a prompt, written the way a shopper would ask it"
+                  onChange={(e) => setAdding({ ...adding, text: e.target.value })}
+                  aria-label="New prompt text"
+                />
+                <div className="pe-row-actions">
+                  <CategoryPicker draft={adding} categories={categories} disabled={disabled} onChange={setAdding} />
+                  <button className="pe-btn pe-btn-primary" disabled={disabled || !canAdd} onClick={() => void addPrompt()}>
+                    <Plus size={14} />
+                    Add prompt
+                  </button>
+                </div>
+              </section>
 
-          <p className="pe-hint">
-            Rewording a prompt starts a new trend for it: past answers keep the old wording. Removed prompts stop
-            being asked and can be restored.
-          </p>
+              <p className="pe-hint">
+                Rewording a prompt starts a new trend for it: past answers keep the old wording. Removed prompts stop
+                being asked and can be restored.
+              </p>
+            </>
+          ) : null}
 
           <PromptHistoryNotice history={history} />
 
@@ -338,7 +298,7 @@ export function PromptsEditor({ onClose }: Props) {
                 ) : (
                   <div className="pe-item-main">
                     <p className="pe-text">{p.prompt_text}</p>
-                    <div className="pe-item-actions">
+                    <div className="pe-item-actions" hidden={!editable}>
                       <button className="pe-icon-btn" disabled={disabled} onClick={() => startEdit(p)} aria-label={`Edit ${p.prompt_key}`}>
                         <Pencil size={14} />
                       </button>
@@ -369,7 +329,7 @@ export function PromptsEditor({ onClose }: Props) {
                       </div>
                       <div className="pe-item-main">
                         <p className="pe-text">{p.prompt_text}</p>
-                        <div className="pe-item-actions">
+                        <div className="pe-item-actions" hidden={!editable}>
                           <button className="pe-btn" disabled={disabled} onClick={() => restore(p)}>
                             <RotateCcw size={14} />
                             Restore prompt

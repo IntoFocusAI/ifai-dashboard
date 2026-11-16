@@ -105,7 +105,8 @@ export function buildFenderCanvasSpec(
   const spec = defineCanvas({
     appearance: "iom",
     commandCenter,
-    promptsEditor: activeClient().promptsEditable ? (close) => <PromptsEditor onClose={close} /> : undefined,
+    // Every client has the Prompts screen (decision 89); only an editable list adds Build prompts.
+    promptsEditor: (close) => <PromptsEditor onClose={close} />,
     promptBuilderHref: activeClient().promptsEditable ? `${DASHBOARD_PATH}/battery-builder` : undefined,
     glossary: fenderGlossary,
     hubSlots: buildHubSlots({
