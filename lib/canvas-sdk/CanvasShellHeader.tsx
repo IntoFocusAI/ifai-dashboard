@@ -179,7 +179,7 @@ export function CanvasShellHeader({
                   e.preventDefault();
                   router.push(`${spec.promptBuilderHref}${window.location.search}`);
                 }}
-                title="Build new AI-Search prompts from shopper details"
+                aria-label="Build prompts: new AI-Search prompts from shopper details"
               >
                 <Wand2 size={12} />
                 <span>Build prompts</span>

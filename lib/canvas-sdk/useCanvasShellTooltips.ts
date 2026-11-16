@@ -2,6 +2,7 @@
 
 import type { CanvasSpecWithViews } from "@/lib/canvas-sdk/canvas-views";
 import type { CanvasShellState } from "@/lib/canvas-sdk/useCanvasShellState";
+import { parseTooltipRows, TOOLTIP_ROWS_ATTR } from "@/lib/canvas-sdk/tooltip-content";
 import { useDefinitionTooltips } from "@/lib/canvas-sdk/useDefinitionTooltips";
 import { useHoverFraming } from "@/lib/canvas-sdk/useHoverFraming";
 import { useCallback, useEffect, type MouseEvent as ReactMouseEvent } from "react";
@@ -124,7 +125,7 @@ export function useCanvasShellTooltips({ spec, iom, s, graphColumnLayout, pan, p
     if (!desc) return;
     const rect = target.getBoundingClientRect();
     tooltipRef.current?.show(
-      { title, desc, hasMoreInfo: false, anchor: "definition" },
+      { title, desc, hasMoreInfo: false, anchor: "definition", rows: parseTooltipRows(target.getAttribute(TOOLTIP_ROWS_ATTR)) },
       rect.left + rect.width / 2,
       rect.top,
       { left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom },

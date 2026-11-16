@@ -1,37 +1,15 @@
 "use client";
 
+import { StatusGlyph } from "@/components/v3/live/StatusMark";
+import { TOOLTIP_ROWS_ATTR } from "@/lib/canvas-sdk/tooltip-content";
+import { dataAsOf, dataSourceFreshness, dataSourceLine } from "@/lib/fender-canvas/data-source-freshness";
 import type { CanvasFreshnessRow } from "@/lib/fender-canvas/types";
 
-const JOB_LABELS: Record<string, string> = {
-  catalog_harvester: "Catalog",
-  buybox_seller_harvester: "Buy Box sellers",
-  featured_offer_keepa: "Buy Box",
-  map_leakage_walmart: "Walmart MAP",
-  map_parity_musiciansfriend: "MF MAP",
-  spec_readiness: "Spec audit",
-  kpi_recompute: "KPI recompute",
-  ai_simulations: "AI battery",
-};
-
-function relativeTime(iso: string | null): string {
-  if (!iso) return "n/a";
-  const then = new Date(iso).getTime();
-  const diffH = (Date.now() - then) / (1000 * 60 * 60);
-  if (diffH < 1) return `${Math.round(diffH * 60)}m ago`;
-  if (diffH < 48) return `${Math.round(diffH)}h ago`;
-  return `${Math.round(diffH / 24)}d ago`;
-}
-
-function maxRunAt(rows: CanvasFreshnessRow[]): Date | null {
-  let max: number | null = null;
-  for (const row of rows) {
-    if (!row.last_run_at) continue;
-    const t = new Date(row.last_run_at).getTime();
-    if (max == null || t > max) max = t;
-  }
-  return max != null ? new Date(max) : null;
-}
-
+/**
+ * "Data as of <date>" in the map header. The tooltip lists each data source the client has with
+ * its last check date; a source past twice its normal check interval reads "out of date" in the
+ * Oxblood status color with its x mark, and the visible label carries the same x.
+ */
 export function DataFreshnessBar({
   fresh,
   stale,
@@ -39,13 +17,19 @@ export function DataFreshnessBar({
   fresh: CanvasFreshnessRow[];
   stale?: boolean;
 }) {
-  const asOf = maxRunAt(fresh);
-  const asOfLabel = asOf
-    ? asOf.toLocaleString(undefined, {
+  const sources = dataSourceFreshness(fresh);
+  const asOfIso = dataAsOf(sources);
+  const asOfLabel = asOfIso
+    ? new Date(asOfIso).toLocaleString(undefined, {
         dateStyle: "medium",
         timeStyle: "short",
       })
-    : "n/a";
+    : "Not available*";
+  const lines = sources.map(dataSourceLine);
+  const rows = sources.map((source, index) => (source.outOfDate ? { text: lines[index], bad: true } : { text: lines[index] }));
+  const anyOutOfDate = sources.some((source) => source.outOfDate);
+  const desc = lines.length ? lines.join("\n") : "No data source has reported a check yet.";
+  const rowsAttr = rows.length ? { [TOOLTIP_ROWS_ATTR]: JSON.stringify(rows) } : {};
 
   return (
     <div
@@ -58,23 +42,20 @@ export function DataFreshnessBar({
       }}
     >
       <span
-        className="ifai-term"
-        data-ifai-tooltip-title="Data freshness"
-        data-ifai-tooltip-desc={fresh
-          .map(
-            (r) =>
-              `${JOB_LABELS[r.job_key] ?? r.job_key}: ${relativeTime(r.last_run_at)}${
-                r.last_run_at &&
-                Date.now() - new Date(r.last_run_at).getTime() >
-                  26 * 3600 * 1000
-                  ? " (stale)"
-                  : ""
-              }`,
-          )
-          .join("; ")}
+        className="ifai-term data-freshness-label"
+        data-ifai-tooltip-title="Last check by source"
+        data-ifai-tooltip-desc={desc}
+        {...rowsAttr}
+        data-out-of-date={anyOutOfDate ? "true" : undefined}
         tabIndex={0}
-        aria-label={`Data as of ${asOfLabel}`}
+        aria-label={`Data as of ${asOfLabel}. ${lines.join(". ")}`}
+        style={{ display: "inline-flex", alignItems: "center", gap: 4 }}
       >
+        {anyOutOfDate ? (
+          <span className="data-status-bad" data-status="bad" style={{ display: "inline-flex" }}>
+            <StatusGlyph status="bad" />
+          </span>
+        ) : null}
         Data as of {asOfLabel}
       </span>
       {stale ? (
