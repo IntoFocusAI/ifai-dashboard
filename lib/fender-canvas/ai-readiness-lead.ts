@@ -1,12 +1,13 @@
 /**
  * AI Readiness tab heroes: share figures already on the old Metric/Result summary.
  * SKUs checked is the shared denominator, not its own pie.
- * Amazon completeness keeps the existing 85 / 92 tone bands from metrics-from-live.
+ * Amazon completeness takes the Catalog Governance Specs complete bands (amazon-spec-bands).
  */
 
 import type { PieDiscData } from "@/lib/ai-search/citation-pies";
 import { brandSite } from "@/lib/brand-copy";
 import type { NodeStatus } from "@/lib/canvas-sdk/types";
+import { amazonSpecTone } from "@/lib/fender-canvas/amazon-spec-bands";
 import { metricsRowFailure, READ_NOT_AVAILABLE, readFailureTip } from "@/lib/fender-canvas/canvas-reads";
 import { formatInt, formatPct, formatRatio, pendingLabel } from "@/lib/fender-canvas/format";
 import { MISSING_FIELD_SHARE_UNAVAILABLE } from "@/lib/fender-canvas/spec-missing-fields";
@@ -89,8 +90,6 @@ export function presentAmazonCompletenessFieldShare(
   return { kind: "share", label: `${ratio} (${percent})`, ratio, percent };
 }
 
-/** Same bands as metrics-from-live toneFromPct(spec_avg_amazon_pct, 85, 92). */
-export const AMAZON_COMPLETENESS_BANDS = { dangerBelow: 85, warnBelow: 92 } as const;
 
 /**
  * fender.com page found share. Under 85 red; 85 through 95 yellow; above 95 green.
@@ -133,9 +132,7 @@ export type AiReadinessHeroModel = {
 
 function amazonCompletenessTone(pct: number | null): Exclude<NodeStatus, "neutral"> | null {
   if (pct == null || Number.isNaN(pct)) return null;
-  if (pct < AMAZON_COMPLETENESS_BANDS.dangerBelow) return "danger";
-  if (pct < AMAZON_COMPLETENESS_BANDS.warnBelow) return "warning";
-  return "success";
+  return amazonSpecTone(pct);
 }
 
 /** Inclusive yellow band between redBelow and greenAbove. */

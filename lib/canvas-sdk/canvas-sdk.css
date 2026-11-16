@@ -805,16 +805,17 @@
       fill: var(--text-main);
     }
 
-    .graph-node .node-hero-value.status-danger {
-      fill: var(--danger-red);
+    /* The figure's status color comes from the data-status tokens StatusMark draws. */
+    .graph-node .node-hero-value[data-hero-status="bad"] {
+      fill: var(--status-bad);
     }
 
-    .graph-node .node-hero-value.status-warning {
-      fill: var(--warning-amber);
+    .graph-node .node-hero-value[data-hero-status="okay"] {
+      fill: var(--status-okay);
     }
 
-    .graph-node .node-hero-value.status-success {
-      fill: var(--success-green);
+    .graph-node .node-hero-value[data-hero-status="good"] {
+      fill: var(--status-good);
     }
 
     .graph-node .node-hero-label {
@@ -1347,6 +1348,23 @@
 
     .node-tooltip .node-tooltip-desc {
       white-space: pre-line;
+    }
+
+    /* A list tooltip: one line per row; a bad row carries its x mark in Oxblood. */
+    .node-tooltip .node-tooltip-row {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      white-space: normal;
+    }
+
+    .node-tooltip .node-tooltip-row + .node-tooltip-row {
+      margin-top: 2px;
+    }
+
+    /* The map's status mark beside a bubble figure inherits its color from the inline token. */
+    .graph-node .node-hero-mark path {
+      stroke: currentColor;
     }
 
     .node-tooltip.node-tooltip-column {
