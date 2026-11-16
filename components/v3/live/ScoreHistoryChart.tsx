@@ -4,8 +4,11 @@ import "@/components/v3/live/summary.css";
 import { useEffect, useMemo, useState } from "react";
 import { activeClient } from "@/lib/client/active-client";
 import { scoreAgainstTarget, CONSENSUS_SCORE_TARGET } from "@/lib/fender-canvas/consensus-score-display";
+import { READ_NOT_AVAILABLE } from "@/lib/fender-canvas/canvas-reads";
 import {
   loadScoreHistory,
+  SCORE_SNAPSHOT_TABLE,
+  scoreHistoryFailureTip,
   scoreHistoryModel,
   scoreHistoryTip,
   weekLabel,
@@ -142,15 +145,37 @@ function ChartBody({ model, hidden }: { model: ScoreHistoryModel; hidden: Readon
   );
 }
 
+/** The chart section when the saved scores could not be read. */
+function ScoreHistoryFailed({ message }: { message: string }) {
+  const tip = scoreHistoryFailureTip(message);
+  return (
+    <details className="content-box score-history" open data-score-history="" data-score-history-failed="">
+      <summary className="content-box-title">{TITLE}</summary>
+      <span
+        className="ifai-term"
+        data-ifai-tooltip-title={READ_NOT_AVAILABLE}
+        data-ifai-tooltip-desc={tip}
+        data-read-unavailable={SCORE_SNAPSHOT_TABLE}
+        tabIndex={0}
+        aria-label={`${READ_NOT_AVAILABLE}: ${tip}`}
+      >
+        {READ_NOT_AVAILABLE}
+      </span>
+    </details>
+  );
+}
+
 /**
  * Summary → Performance (decision 94): a collapsible line chart of the saved weekly scores, one line
  * per score with a toggle each, and the target of 70 dashed. Every saved week shows; nothing is
  * filled in between. Before the table exists, or before any week is saved, the section shows nothing.
+ * Any other failed read shows the section with Not available* and the reason in its tooltip (X-25).
  */
 export function ScoreHistoryChart() {
   const read = useScoreHistory();
   const model = useMemo(() => (read.phase === "ready" ? scoreHistoryModel(read.rows) : null), [read]);
   const [hidden, setHidden] = useState<ReadonlySet<ScoreSeriesKey>>(() => new Set());
+  if (read.phase === "error") return <ScoreHistoryFailed message={read.message} />;
   if (!model || model.series.length === 0) return null;
 
   function toggle(key: ScoreSeriesKey) {

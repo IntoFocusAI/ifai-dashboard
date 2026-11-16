@@ -9,6 +9,7 @@ import type { PortfolioRetailSnapshot } from "../lib/fender-canvas/portfolio-ret
 import type { RetailCanvasRead } from "../lib/fender-canvas/portfolio-retail-display.ts";
 import {
   loadScoreHistory,
+  scoreHistoryFailureTip,
   scoreHistoryModel,
   scoreHistoryTip,
   type ScoreHistoryClient,
@@ -143,9 +144,21 @@ test("the chart reads with the public client and renders nothing while absent", 
   const chart = read("components/v3/live/ScoreHistoryChart.tsx");
   assert.match(chart, /getPublicCanvasSupabase\(\)/);
   assert.match(chart, /activeClient\(\)\.setAsideKey/);
-  assert.match(chart, /if \(!model \|\| model\.series\.length === 0\) return null;/);
-  assert.doesNotMatch(chart, /\stitle=|Not available/);
-  assert.match(read("components/v3/live/ConsensusScoresPanel.tsx"), /<ConsensusLeadBand consensus=\{consensus\} \/>\s*<ScoreHistoryChart \/>/);
+  assert.match(chart, /if \(read\.phase === "error"\) return <ScoreHistoryFailed message=\{read\.message\} \/>;\s*if \(!model \|\| model\.series\.length === 0\) return null;/);
+  assert.match(chart, /data-ifai-tooltip-desc=\{tip\}/);
+  assert.doesNotMatch(chart, /\stitle=/);
+  assert.match(read("components/v3/live/ConsensusScoresPanel.tsx"), /belowCards=\{<ScoreHistoryChart \/>\}/);
+  // Directly under the card row, above any open breakdown.
+  const band = read("components/v3/live/ConsensusScoreView.tsx");
+  assert.ok(band.indexOf("{belowCards}") < band.indexOf('{open === "consensus" ? <ConsensusWeightBreakdown'));
+});
+
+test("a failed history read names the table and the reason in its tooltip", () => {
+  assert.equal(
+    scoreHistoryFailureTip("statement timeout"),
+    "The saved weekly scores (canvas_score_snapshots) did not load: statement timeout.",
+  );
+  assert.equal(scoreHistoryFailureTip(""), "The saved weekly scores (canvas_score_snapshots) did not load.");
 });
 
 // Weekly save -----------------------------------------------------------------------------------

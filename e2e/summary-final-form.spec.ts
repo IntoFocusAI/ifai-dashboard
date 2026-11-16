@@ -151,6 +151,28 @@ for (const client of ["fender", "ledlenser"]) {
       pageErrors.splice(0, pageErrors.length, ...others);
     });
 
+    test("a failed history read shows Not available* with the reason", async ({ page, pageErrors }) => {
+      test.slow();
+      await page.route(SNAPSHOT_ROUTE, (route) =>
+        route.fulfill({
+          status: 500,
+          contentType: "application/json",
+          headers: { "access-control-allow-origin": "*" },
+          body: JSON.stringify({ code: "57014", message: "canceling statement due to statement timeout" }),
+        }),
+      );
+      await page.goto(`/dashboard?${query}spoke=hub&tab=performance`);
+      const section = page.locator("[data-score-history-failed]");
+      await expect(section).toBeVisible({ timeout: AI_READ_MS });
+      const mark = section.locator('.ifai-term[data-read-unavailable="canvas_score_snapshots"]');
+      await expect(mark).toHaveText("Not available*");
+      await expect(mark).toHaveAttribute("data-ifai-tooltip-desc", /did not load: canceling statement due to statement timeout\./);
+      // The browser logs the routed 500 as a network line; nothing on the page errors.
+      const others = pageErrors.filter((line) => !/500.*canvas_score_snapshots/.test(line));
+      expect(others).toEqual([]);
+      pageErrors.splice(0, pageErrors.length, ...others);
+    });
+
     test("Scores over time draws each saved score with a toggle and the target of 70", async ({ page }) => {
       test.slow();
       const key = client === "fender" ? "fmic" : client;
@@ -168,6 +190,14 @@ for (const client of ["fender", "ledlenser"]) {
       const section = page.locator("[data-score-history]");
       await expect(section).toBeVisible({ timeout: AI_READ_MS });
       await expect(section.locator("summary")).toHaveText("Scores over time");
+      // Directly under the card row, above the open breakdown.
+      const order = await page.evaluate(() => {
+        const row = document.querySelector("[data-consensus-lead]");
+        const chart = document.querySelector("[data-score-history]");
+        const detail = document.querySelector("#consensus-component-detail");
+        return [row?.nextElementSibling === chart, !!chart && !!detail && chart.compareDocumentPosition(detail) === Node.DOCUMENT_POSITION_FOLLOWING];
+      });
+      expect(order).toEqual([true, true]);
       const toggles = section.locator("[data-score-history-toggle]");
       await expect(toggles).toHaveText(["AI Consensus", "AI Foundation", "AI Commerce"]);
       await expect(section.locator("[data-score-history-line]")).toHaveCount(3);

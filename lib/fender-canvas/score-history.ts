@@ -1,5 +1,6 @@
 import { historyViewMissing } from "@/lib/ai-search/history-queries";
 import { formatDay } from "@/lib/ai-search/history-eligibility";
+import { sanitizeUiText } from "@/lib/fender-canvas/format";
 
 /**
  * Score history (decision 94): one saved row per client per week in public.canvas_score_snapshots,
@@ -105,6 +106,14 @@ export function scoreHistoryModel(rows: readonly ScoreSnapshotRow[]): ScoreHisto
     }),
   })).filter((line) => line.points.length > 0);
   return { weeks, series, savingStarted: weeks[0] };
+}
+
+/** X-25: the tooltip on Not available* when the saved scores could not be read (not when the table is absent). */
+export function scoreHistoryFailureTip(message: string): string {
+  const read = `The saved weekly scores (${SCORE_SNAPSHOT_TABLE}) did not load`;
+  const text = message.trim();
+  if (!text) return `${read}.`;
+  return sanitizeUiText(`${read}: ${text}${/[.!?]$/.test(text) ? "" : "."}`);
 }
 
 /** "Week of Nov 16, 2026". */

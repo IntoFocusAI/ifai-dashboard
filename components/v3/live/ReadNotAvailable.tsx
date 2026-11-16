@@ -17,23 +17,3 @@ export function ReadNotAvailableMark({ failure }: { failure: CanvasReadFailure }
     </span>
   );
 }
-
-/** A content box whose whole body came from the failed read. */
-export function ReadNotAvailableBox({
-  title,
-  failure,
-}: {
-  title: string;
-  failure: CanvasReadFailure;
-}) {
-  return (
-    <div className="content-box" data-read-unavailable-box={failure.source}>
-      <div className="content-box-title">
-        <span>{title}</span>
-      </div>
-      <div>
-        <ReadNotAvailableMark failure={failure} />
-      </div>
-    </div>
-  );
-}

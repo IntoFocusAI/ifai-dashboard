@@ -46,10 +46,5 @@ export function ConsensusScoresPanel({
     );
   }
 
-  return (
-    <>
-      <ConsensusLeadBand consensus={consensus} />
-      <ScoreHistoryChart />
-    </>
-  );
+  return <ConsensusLeadBand consensus={consensus} belowCards={<ScoreHistoryChart />} />;
 }

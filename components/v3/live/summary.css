@@ -85,7 +85,7 @@
 /* Performance: scores over time (decision 94). Lines use the chart tokens; Geist Mono only on the
    axis labels. Weights stay at or under 600. */
 .ifai-canvas .score-history {
-  margin: 0 0 16px;
+  margin: 12px 0;
 }
 
 .ifai-canvas .score-history-toggles {

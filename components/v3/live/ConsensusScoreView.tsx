@@ -1,7 +1,7 @@
 "use client";
 
 import "@/components/v3/live/summary.css";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { CitationPieDisc } from "@/components/v3/live/ai-search/CitationPieDisc";
 import { ConsensusComponentBars } from "@/components/v3/live/ConsensusComponentBars";
 import { ConsensusWeightBreakdown } from "@/components/v3/live/ConsensusWeightBreakdown";
@@ -230,7 +230,14 @@ type OpenCard = ScoreCardId;
  * weights or a pillar's components full-width below the row. The weakest card opens by default
  * (decision 94).
  */
-export function ConsensusLeadBand({ consensus }: { consensus: ConsensusScore }) {
+export function ConsensusLeadBand({
+  consensus,
+  belowCards = null,
+}: {
+  consensus: ConsensusScore;
+  /** Directly under the card row, above any open breakdown: the score history (decision 94). */
+  belowCards?: ReactNode;
+}) {
   const weakest = weakestScoreCard(consensus);
   const [open, setOpen] = useState<OpenCard | null>(weakest);
 
@@ -291,6 +298,7 @@ export function ConsensusLeadBand({ consensus }: { consensus: ConsensusScore }) 
         <ActuationHeroCard pillar={consensus.actuation} wide />
       </div>
 
+      {belowCards}
       {open === "consensus" ? <ConsensusWeightBreakdown consensus={consensus} id={COMPONENTS_ID} /> : null}
       {openPillar ? <ConsensusComponentBars pillar={openPillar} id={COMPONENTS_ID} /> : null}
     </div>
