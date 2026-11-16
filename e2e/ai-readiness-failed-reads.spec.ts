@@ -82,8 +82,9 @@ test("canvas_spec_missing_fields failing: Top missing Amazon fields stays and re
   );
   await expect(mark).not.toHaveAttribute("title");
   await expect(box.locator("[data-spec-missing-field]")).toHaveCount(0);
+  // The live figure keeps its stale asterisk (X-25) when its spec checks are old.
   await expect(canvas.panel.locator('[data-amazon-specs-hero="amazon_completeness"] [data-ai-readiness-hero-percent]')).toHaveText(
-    "48.8%",
+    /^48\.8%\*?$/,
   );
   await expectTooltip(page, mark, "(canvas_spec_missing_fields) did not load");
 });
