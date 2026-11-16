@@ -395,3 +395,8 @@ closeout of each view. Open items are marked OPEN and are not built.
     scores over time sits just below the score cards, with a toggle per
     score and the target of 70; scores are saved weekly per client.
     Brian approved the additive table and function for the weekly save.
+95. "Data as of" tooltip lines (16 Nov): AI answers (search engines), AI
+    answers (API engines), Amazon Buy Box and offers, Keepa sales history,
+    Walmart, Musician's Friend (where a client has it), Amazon specs and A+,
+    SmartScout sales estimates, and the client's website pages. Each line
+    dates from its own collector.
