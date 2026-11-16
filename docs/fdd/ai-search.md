@@ -107,7 +107,7 @@
 - **Desired:** Versioned client-editable prompt library (governed).
 - **User value:** Questions stay controlled and current.
 - **Acceptance:** Edits versioned; history compares like with like.
-- **Evidence:** Worker 24.4, pull request 151 (main f1df1f5): the Prompts screen shows each prompt's stored change history through the read-only function public.ai_prompt_edits_list (migration 20261109233000), applied to production on 10 Nov 2026 with Brian Magazu's approval and checked live that day.
+- **Evidence:** Worker 24.4, pull request 151 (main f1df1f5): the Prompts screen shows each prompt's stored change history through the read-only function public.ai_prompt_edits_list (migration 20261109233000), applied to production on 10 Nov 2026 with Brian Magazu's approval and checked live that day. Decision 99 (16 Nov 2026): every client gets the same view-only Prompts list (search, N of M, CSV); edits and history are off the client screen; prompt building is staff-only. Workers 27.10 and 27.12, PR 206 (main c518c2f); view ledlenser.canvas_ai_prompts applied 16 Nov by PM27.
 - **Open decision:** None. Decided by Brian Magazu on 9 Nov 2026: the Prompts screen shows each prompt's change history through one additive database read, applied after approval. Ledlenser's prompt list stays read-only.
 
 **A-11 CURRENT** · Launch
