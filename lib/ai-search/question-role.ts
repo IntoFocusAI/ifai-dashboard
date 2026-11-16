@@ -164,6 +164,21 @@ export function categoryRoleTallies(rows: AiCallRow[]): RoleGroupTally[] {
   return groupRoleTallies(rows, (row) => row.category ?? "").sort((a, b) => a.key.localeCompare(b.key));
 }
 
+/**
+ * Decision 93: a category is a battlecard category only when its question group holds unbranded
+ * discovery questions. Read from the calls for every client, never from a list of names: a group
+ * of branded questions only (Ledlenser "Brand", Fender "Squier") has no category race to show.
+ * Its questions still count in branded consideration and in the run's category table.
+ */
+export function discoveryCategoryRoleTallies(rows: AiCallRow[]): RoleGroupTally[] {
+  return categoryRoleTallies(rows).filter((group) => group.roles.unbranded_discovery.calls > 0);
+}
+
+/** The battlecard category keys (decision 93), A to Z. */
+export function discoveryCategories(rows: AiCallRow[]): string[] {
+  return discoveryCategoryRoleTallies(rows).map((group) => group.key);
+}
+
 export function sumRoleTallies(groups: readonly RoleGroupTally[], role: QuestionRole): OutcomeTally {
   const tally: OutcomeTally = {
     calls: 0,

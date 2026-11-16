@@ -23,7 +23,7 @@ test("a bubble click records that bubble, and any other way in clears it", () =>
 });
 
 test("the shell records the clicked bubble on every open and the map passes the bubble's id", () => {
-  const shell = read("lib/canvas-sdk/CanvasShell.tsx");
+  const shell = read("lib/canvas-sdk/useCanvasShellNav.ts");
   assert.match(shell, /\(spokeId: string, subTab\?: string, fromBubble\?: string\) => \{\n\s+const spoke = spec\.spokes\[spokeId\];\n\s+if \(!spoke\) return;\n\s+landPanelFrom\(fromBubble \?\? null\);/);
   assert.equal(shell.match(/landPanelFrom/g)?.length, 2, "one import and one call");
 

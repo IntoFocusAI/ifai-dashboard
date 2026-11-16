@@ -6,7 +6,14 @@ import { READ_ERROR_TITLE } from "@/components/v3/live/ai-search/AiReadGate";
 import { CopyTip } from "@/components/v3/live/ai-search/CopyTip";
 import { RunHistoryCalendar } from "@/components/v3/live/ai-search/RunHistoryCalendar";
 import { useApiRunCatalog } from "@/components/v3/live/ai-search/useApiEngineLoad";
-import { apiRunDay, apiRunsCoveringBattery, batteryQuestions, daysApart, nearestApiRun, nearestBatteryDay } from "@/lib/ai-search/api-runs";
+import {
+  apiRunDay,
+  apiRunsCoveringBattery,
+  batteryQuestions,
+  daysApart,
+  nearestApiRun,
+  unreadBatteryFloor,
+} from "@/lib/ai-search/api-runs";
 import { API_QUESTION_RULE, API_REPEAT_RULE, shoppingQuestionCount } from "@/lib/ai-search/engine-group";
 import { formatDay, utcDay, type HistoryRunSummary } from "@/lib/ai-search/history-eligibility";
 import { LAST_30_DAYS_LABEL } from "@/lib/ai-search/default-window";
@@ -58,10 +65,8 @@ function PairedApiRun({ runId, day }: { runId: string; day: string | null }) {
     );
   } else {
     // A run outside the loaded selection has no calls read yet: its floor is the shopping-question
-    // count of the loaded battery run nearest its day, read from the client's own data.
-    const shoppingQuestions = loaded
-      ? shoppingQuestionCount(loaded)
-      : (nearestBatteryDay(batteryQuestions(read), day)?.shoppingQuestions ?? null);
+    // count of the read battery run nearest its day, from the client's own data.
+    const shoppingQuestions = loaded ? shoppingQuestionCount(loaded) : unreadBatteryFloor(batteryQuestions(read), day);
     const covering = shoppingQuestions == null ? [] : apiRunsCoveringBattery(catalog.runs, [{ day, shoppingQuestions }]);
     const paired = nearestApiRun(covering, day);
     const pairedDay = paired ? apiRunDay(paired) : null;

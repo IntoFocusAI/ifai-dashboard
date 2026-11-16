@@ -9,7 +9,7 @@
 
 import { categoryLeads } from "@/lib/ai-search/category-on-track";
 import { driftRead } from "@/lib/ai-search/drift";
-import { categoryRoleTallies } from "@/lib/ai-search/question-role";
+import { discoveryCategoryRoleTallies } from "@/lib/ai-search/question-role";
 import type { AiSearchRead } from "@/lib/ai-search/types";
 import { brandName, brandSite, leadBrand } from "@/lib/brand-copy";
 import type { PartialFigure } from "@/lib/fender-canvas/canvas-reads";
@@ -103,7 +103,7 @@ function contradictions(ai: AiSearchRead): SignalAction | null {
 function rivalLedCategories(ai: AiSearchRead): SignalAction[] {
   if (ai.phase !== "ready") return [];
   const calls = ai.snapshot.calls;
-  const leads = categoryLeads(categoryRoleTallies(calls), calls);
+  const leads = categoryLeads(discoveryCategoryRoleTallies(calls), calls);
   const resolved = leads.reduce((sum, lead) => sum + lead.resolved, 0);
   if (resolved <= 0) return [];
   return leads.flatMap((lead) => {

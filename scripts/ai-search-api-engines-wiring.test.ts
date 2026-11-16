@@ -8,6 +8,7 @@ import {
   batteryQuestions,
   daysApart,
   nearestApiRun,
+  unreadBatteryFloor,
   type ApiRunSummary,
 } from "../lib/ai-search/api-runs.ts";
 import {
@@ -22,7 +23,8 @@ import { engineGroupTrend, engineGroupWindow, pairApiRuns } from "../lib/ai-sear
 import { aiNodeFaces } from "../lib/ai-search/canvas-surfaces.ts";
 import { engineGroupRead, type ApiEngineLoad } from "../lib/ai-search/engine-group-read.ts";
 import { buildHistoryTrend } from "../lib/ai-search/history-trends.ts";
-import { batteryGaps, BATTERY_ENGINES, PROMPT_BATTERY } from "../lib/ai-search/prompt-battery.ts";
+import { batteryGaps, BATTERY_ENGINES, clientBattery, LEDLENSER_PROMPT_BATTERY, PROMPT_BATTERY } from "../lib/ai-search/prompt-battery.ts";
+import { runWithClient } from "../lib/client/server-client.ts";
 import type { AiCallRow, AiCurrentRun, AiSearchSnapshot } from "../lib/ai-search/types.ts";
 
 const P01 = PROMPT_BATTERY.find((prompt) => prompt.key === "p01")!;
@@ -216,6 +218,36 @@ test("battery gaps skip API engines: API calls neither fill nor open a battery p
   assert.equal(batteryGaps([...missingOne, call("b", "openai_api")]).length, 1);
 });
 
+test("Ledlenser's battery gaps read Ledlenser's own question list (decision 89)", async () => {
+  const ledCalls = LEDLENSER_PROMPT_BATTERY.flatMap((prompt) =>
+    BATTERY_ENGINES.map((engine) =>
+      call("l", engine, {
+        prompt_key: prompt.key,
+        // A rotating fact-check slot stores a different product question each run.
+        prompt: prompt.kind === "probe" ? `What is the runtime of the Ledlenser ${prompt.key}?` : prompt.text,
+        prompt_kind: prompt.kind,
+        category: prompt.category,
+      }),
+    ),
+  );
+  assert.equal(LEDLENSER_PROMPT_BATTERY.filter((prompt) => prompt.kind === "commercial").length, 29);
+  const gaps = await runWithClient("ledlenser", async () => ({
+    full: batteryGaps(ledCalls),
+    missing: batteryGaps(ledCalls.filter((row) => !(row.prompt_key === "l05" && row.engine === "gemini"))),
+    battery: clientBattery().length,
+  }));
+  assert.equal(gaps.battery, 32);
+  assert.deepEqual(gaps.full, []);
+  assert.deepEqual(
+    gaps.missing.map((gap) => `${gap.promptKey}|${gap.engine}`),
+    ["l05|gemini"],
+    "a Ledlenser question one engine did not store reads as not stored",
+  );
+  // Fender's list does not know Ledlenser's keys, which is why Ledlenser showed no gaps before.
+  assert.deepEqual(batteryGaps(ledCalls.slice(1), PROMPT_BATTERY), []);
+  assert.equal(clientBattery("fender"), PROMPT_BATTERY);
+});
+
 test("the window waits for the API runs on All and API only; Without API and Not available* keep the battery runs", () => {
   const ready = { phase: "ready" as const, snapshots: [OCT20, NOV3] };
   const loading: ApiEngineLoad = { phase: "loading" };
@@ -308,6 +340,41 @@ test("an API run counts only when it asked the shopping questions of the battery
   assert.equal(apiRunsCoveringBattery(runs, [{ day: "2026-10-27", shoppingQuestions: 1 }]).length, 4);
   assert.deepEqual(apiRunsCoveringBattery(runs, []), []);
   assert.deepEqual(apiRunsCoveringBattery([apiSummary("no-count", "2026-11-03T10:00:00Z")], window), []);
+});
+
+test("a Ledlenser API run that asked the 29 shopping questions and no fact checks counts", () => {
+  // Ledlenser's battery asks 29 shopping questions and 3 fact checks; its API job asks the 29 only.
+  const shopping = Array.from({ length: 29 }, (_, i) => `l${String(i + 1).padStart(2, "0")}`);
+  const factChecks = ["l30", "l31", "l32"];
+  const calls = [
+    ...shopping.map((key) => call("led-b", "chatgpt", { prompt_key: key, prompt_kind: "commercial" })),
+    ...factChecks.map((key) => call("led-b", "chatgpt", { prompt_key: key, prompt_kind: "probe" })),
+  ];
+  const battery = batteryQuestions([{ run: runOn("led-b", "2026-11-13"), calls, probes: [], citations: [] }]);
+  assert.deepEqual(battery, [{ day: "2026-11-13", shoppingQuestions: 29 }]);
+  const runs = [
+    apiSummary("led-api", "2026-11-13T11:45:11Z", { questions_asked: 29, questions_matched: 29 }),
+    apiSummary("led-smoke", "2026-11-04T18:45:14Z", { run_state: "partial", questions_asked: 5, questions_matched: 5 }),
+  ];
+  assert.deepEqual(apiRunsCoveringBattery(runs, battery).map((run) => run.audit_run_id), ["led-api"]);
+});
+
+test("the 12 Nov Fender API run pairs with the 14 Nov wave 2 run and counts", () => {
+  // Production, 16 Nov 2026: search runs 10 Nov (29 shopping questions), a96de98f 14 Nov and
+  // 7a1c18c3 16 Nov (59 with wave 2). The 12 Nov API run asked 61; the tie goes to 14 Nov.
+  const battery = [
+    { day: "2026-11-10", shoppingQuestions: 29 },
+    { day: "2026-11-14", shoppingQuestions: 59 },
+    { day: "2026-11-16", shoppingQuestions: 59 },
+  ];
+  const runs = [apiSummary("fender-12nov", "2026-11-12T08:30:51Z", { questions_asked: 61, questions_matched: 61 })];
+  assert.deepEqual(apiRunsCoveringBattery(runs, battery).map((run) => run.audit_run_id), ["fender-12nov"]);
+});
+
+test("a battery run not read yet takes the nearest read run's floor, and none until a run is read (decision 89)", () => {
+  assert.equal(unreadBatteryFloor([{ day: "2026-10-28", shoppingQuestions: 29 }, { day: "2026-11-14", shoppingQuestions: 59 }], "2026-11-15"), 59);
+  // Nothing read: no floor yet. Another client's question list does not stand in; the cell reads Loading.
+  assert.equal(unreadBatteryFloor([], "2026-11-13"), null);
 });
 
 test("the API repeat cap keeps repeats 1 to 3 and the fact checks and citations of those calls", () => {

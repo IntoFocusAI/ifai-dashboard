@@ -96,7 +96,7 @@ function metrics(over: Partial<CanvasMetricsRow>): CanvasMetricsRow {
     spec_fender_found: 99,
     spec_fender_found_pct: 99,
     spec_avg_fender_pct: 99,
-    spec_avg_amazon_pct: 95,
+    spec_avg_amazon_pct: 98,
     spec_missing_additional_property: 0,
     ...over,
   } as CanvasMetricsRow;
@@ -165,10 +165,10 @@ test("21c: a red factor puts the own-page action in Days 1 to 30, worst first", 
 });
 
 test("21c: only yellow factors put the own-page action in Days 31 to 60", () => {
-  const own = ownPagesAction(bundle({ spec_avg_amazon_pct: 90 }, 4), null);
+  const own = ownPagesAction(bundle({ spec_avg_amazon_pct: 96 }, 4), null);
   assert.equal(own.action?.phase, "days_31_60");
   assert.match(own.action!.fact, /^Found pages missing machine-readable specs reads 4\.0% \(Fair\) and Amazon/, "a sentence opens with a capital");
-  assert.match(own.action!.fact, /Amazon attribute completeness reads 90\.0% \(Fair\)/);
+  assert.match(own.action!.fact, /Amazon attribute completeness reads 96\.0% \(Fair\)/);
 });
 
 test("21c: all green and the brand site cited under 30% gives the Days 61 to 90 wording action; 30% or more gives none", () => {
@@ -381,7 +381,7 @@ test("rolling 90 days: each refresh dates the phases from today", () => {
 });
 
 test("rolling plan: an action whose trigger clears drops off, a new one enters", () => {
-  const before = buildPlan({ findings: [], signals: [], sources: [], ownPages: ownPagesAction(bundle({ spec_avg_amazon_pct: 90 }), null).action });
+  const before = buildPlan({ findings: [], signals: [], sources: [], ownPages: ownPagesAction(bundle({ spec_avg_amazon_pct: 96 }), null).action });
   assert.deepEqual(before.map((item) => item.id), ["own:pages"]);
   const engine = weakestEngine(snapshot([...answers("chatgpt", "best electric guitar", 30, 40), ...answers("gemini", "best electric guitar", 10, 40)])).actions;
   const after = buildPlan({ findings: [], signals: [], sources: [], ownPages: ownPagesAction(bundle({}), citedRun(40, { "fender.com": 20 })).action, focus: engine });
@@ -397,7 +397,7 @@ test("client focus: the model narrows to one category and keeps brand-wide items
   const run = snapshot(calls);
   assert.deepEqual(focusOptions(run).map((o) => o.key), ["acoustics", "bass", "electric"]);
   const brand = focusActions({ windows: { current: run, previous: null }, focus: BRAND_FOCUS });
-  const plan = buildPlan({ findings: [], signals: [], sources: [], ownPages: ownPagesAction(bundle({ spec_avg_amazon_pct: 90 }), null).action, focus: brand.actions });
+  const plan = buildPlan({ findings: [], signals: [], sources: [], ownPages: ownPagesAction(bundle({ spec_avg_amazon_pct: 96 }), null).action, focus: brand.actions });
   assert.deepEqual(focusPlan(plan, BRAND_FOCUS).map((item) => item.id), plan.map((item) => item.id));
   const bass = focusPlan(plan, { kind: "category", key: "bass" });
   assert.deepEqual(bass.map((item) => item.id), ["own:pages", "focus:question:best-bass-guitar"]);

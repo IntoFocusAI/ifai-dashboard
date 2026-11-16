@@ -6,17 +6,9 @@ import { FigureTip, PartialFigureMark } from "@/components/v3/live/FigureTip";
 import { MapExposureCard, type MapExposureState } from "@/components/v3/live/MapExposureCard";
 import { MapListingsTable } from "@/components/v3/live/MapListingsTable";
 import { RetailShareDisc, RetailStatusMark } from "@/components/v3/live/RetailOverviewFigure";
-import {
-  listingChannelPricesQuery,
-  listingsQuery,
-  retailListingHeadCountQuery,
-} from "@/lib/canvasData";
+import { listingsQuery, retailListingHeadCountQuery } from "@/lib/canvasData";
 import { formatUsd } from "@/lib/fender-canvas/format";
-import {
-  mapTabModel,
-  type ChannelPriceRow,
-  type MapSourceRow,
-} from "@/lib/fender-canvas/map-channels";
+import { mapTabModel, type MapSourceRow } from "@/lib/fender-canvas/map-channels";
 import {
   channelReadingNote,
   channelSummaryText,
@@ -73,22 +65,6 @@ async function loadListingsWithoutWalmartPrice(): Promise<number | null> {
     return all.count - priced.count;
   } catch {
     return null;
-  }
-}
-
-async function loadChannelPrices(): Promise<ChannelPriceRow[]> {
-  try {
-    const rows: ChannelPriceRow[] = [];
-    for (let page = 0; page < 20; page += 1) {
-      const { data, error } = await listingChannelPricesQuery(page, PAGE_SIZE);
-      if (error) return page === 0 ? [] : rows;
-      const batch = (data ?? []) as ChannelPriceRow[];
-      rows.push(...batch);
-      if (batch.length < PAGE_SIZE) return rows;
-    }
-    return rows;
-  } catch {
-    return [];
   }
 }
 
@@ -272,7 +248,6 @@ export function MapChannelPanel({
   musiciansFriendFreshness?: CanvasFreshnessRow | null;
 }) {
   const [rows, setRows] = useState<MapSourceRow[] | null>(null);
-  const [channelPrices, setChannelPrices] = useState<ChannelPriceRow[]>([]);
   const [walmartMissing, setWalmartMissing] = useState<number | null>(null);
   const [failed, setFailed] = useState(false);
   /** Undefined while loading, null when the unit read failed. */
@@ -285,11 +260,11 @@ export function MapChannelPanel({
   useEffect(() => {
     if (read.phase === "loading") return;
     let cancelled = false;
-    Promise.all([loadMapRows(!pricesNotStored), loadChannelPrices(), loadListingsWithoutWalmartPrice()])
-      .then(([nextRows, nextPrices, missing]) => {
+    // Decision 82: the empty other-retailer price table is no longer read on screen.
+    Promise.all([loadMapRows(!pricesNotStored), loadListingsWithoutWalmartPrice()])
+      .then(([nextRows, missing]) => {
         if (cancelled) return;
         setRows(nextRows);
-        setChannelPrices(nextPrices);
         setWalmartMissing(missing);
         if (pricesNotStored) return;
         // R-09: the unit estimates behind discounted retail value, for the listings below MAP only.
@@ -326,25 +301,16 @@ export function MapChannelPanel({
   // The table waits for the unit read, so its rows do not reorder once the estimates arrive.
   const unitsSettled = pricesNotStored || units !== undefined;
   const tableRows = useMemo(() => (rows && units ? mapExposureOrder(rows, units) : rows), [rows, units]);
-  const model = rows ? mapTabModel(rows, channelPrices) : null;
-  const counted = rows ? mapTabModel(countedRows, channelPrices) : null;
+  const model = rows ? mapTabModel(rows) : null;
+  const counted = rows ? mapTabModel(countedRows) : null;
   const summaryChannels: MapChannelLine[] =
     !counted || pricesNotStored
       ? []
-      : [
-          ...counted.channels.map((channel) => ({
-            key: channel.name,
-            name: channel.name,
-            count: channel.count,
-          })),
-          ...counted.extraChannels
-            .filter((channel) => channel.count > 0)
-            .map((channel) => ({
-              key: channel.channel,
-              name: channel.name,
-              count: channel.count,
-            })),
-        ];
+      : counted.channels.map((channel) => ({
+          key: channel.name,
+          name: channel.name,
+          count: channel.count,
+        }));
 
   return (
     <RetailSurface>
@@ -363,7 +329,6 @@ export function MapChannelPanel({
           <MapListingsTable
             rows={tableRows}
             model={model}
-            channelPrices={channelPrices}
             pricesNotStored={pricesNotStored}
             units={units}
           />

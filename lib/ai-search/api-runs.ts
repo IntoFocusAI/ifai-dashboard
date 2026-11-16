@@ -162,6 +162,14 @@ export function nearestBatteryDay<T extends { day: string }>(battery: readonly T
 }
 
 /**
+ * The floor for a battery run whose calls are not read yet: the shopping questions of the nearest
+ * read run, from the client's own data. Null until a run is read (no other client's list stands in).
+ */
+export function unreadBatteryFloor(read: readonly BatteryQuestions[], day: string): number | null {
+  return nearestBatteryDay(read, day)?.shoppingQuestions ?? null;
+}
+
+/**
  * The API runs that asked the battery's shopping questions: each run's questions_matched covers the
  * shopping questions of the battery run nearest its day. A one-question smoke test is left out.
  */

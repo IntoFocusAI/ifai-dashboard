@@ -1,5 +1,8 @@
+import { activeClientKey, type ClientKey } from "@/lib/client/active-client";
+
 /**
- * The active prompt battery stored in command.fmic_ai_prompts.
+ * The active prompt battery stored in command.fmic_ai_prompts (Fender). Each client has its own
+ * list (`clientBattery`); Ledlenser's is ledlenser.ai_prompts.
  * History gaps are pairs from this battery that a run did not store.
  * A run whose stored wording differs is a question-set change, not a gap.
  * Wave 1 is the battery asked since 12 Oct 2026. Wave 2 (p38 to p67) joined in Nov 2026.
@@ -87,11 +90,62 @@ export const PROMPT_BATTERY: readonly BatteryPrompt[] = [
   { key: "p67", text: "Fender American Professional II vs Player II: is the upgrade worth the extra money?", category: "electrics", kind: "commercial", wave: 2 },
 ];
 
-const BY_KEY = new Map(PROMPT_BATTERY.map((prompt) => [prompt.key, prompt]));
+/**
+ * Ledlenser's battery, ledlenser.ai_prompts
+ * (supabase/migrations/20261104170100_ledlenser_prompt_battery.sql): 29 shopping questions and the
+ * rotating catalog fact-check slots l30 to l32, whose stored wording changes each run.
+ */
+export const LEDLENSER_PROMPT_BATTERY: readonly BatteryPrompt[] = [
+  { key: "l01", text: "Best rechargeable headlamp for backpacking and hiking", category: "headlamps", kind: "commercial" },
+  { key: "l02", text: "Brightest headlamp for night trail running", category: "headlamps", kind: "commercial" },
+  { key: "l03", text: "Best headlamp for electricians and contractors", category: "headlamps", kind: "commercial" },
+  { key: "l04", text: "Best headlamp with a focusable beam that switches between spot and flood", category: "headlamps", kind: "commercial" },
+  { key: "l05", text: "Ledlenser H7R vs Petzl Swift RL headlamp", category: "headlamps", kind: "commercial" },
+  { key: "l06", text: "Is the Ledlenser HF8R a good headlamp for camping?", category: "headlamps", kind: "commercial" },
+  { key: "l07", text: "How long does the Ledlenser H19R battery last on its highest setting?", category: "headlamps", kind: "commercial" },
+  { key: "l08", text: "Best rechargeable EDC flashlight under $100", category: "flashlights", kind: "commercial" },
+  { key: "l09", text: "Best high-lumen flashlight for search and rescue", category: "flashlights", kind: "commercial" },
+  { key: "l10", text: "Best compact keychain flashlight that charges with USB-C", category: "flashlights", kind: "commercial" },
+  { key: "l11", text: "Best tactical flashlight for law enforcement", category: "flashlights", kind: "commercial" },
+  { key: "l12", text: "Ledlenser P7R vs Olight Warrior 3S flashlight", category: "flashlights", kind: "commercial" },
+  { key: "l13", text: "Is the Ledlenser P5R worth it?", category: "flashlights", kind: "commercial" },
+  { key: "l14", text: "What is the beam distance of the Ledlenser P7R?", category: "flashlights", kind: "commercial" },
+  { key: "l15", text: "Best rechargeable work light for auto mechanics", category: "work_lights", kind: "commercial" },
+  { key: "l16", text: "Best LED floodlight for construction job sites", category: "work_lights", kind: "commercial" },
+  { key: "l17", text: "Best pen light for home inspectors", category: "work_lights", kind: "commercial" },
+  { key: "l18", text: "Ledlenser W5R Work vs Milwaukee rechargeable work light", category: "work_lights", kind: "commercial" },
+  { key: "l19", text: "Best rechargeable camping lantern for a tent", category: "lanterns", kind: "commercial" },
+  { key: "l20", text: "Best warm white camping lantern that does not attract bugs", category: "lanterns", kind: "commercial" },
+  { key: "l21", text: "Ledlenser ML6 vs Black Diamond Apollo lantern", category: "lanterns", kind: "commercial" },
+  { key: "l22", text: "Best headlamp for kids going camping", category: "kids", kind: "commercial" },
+  { key: "l23", text: "Safest flashlight for a young child", category: "kids", kind: "commercial" },
+  { key: "l24", text: "Ledlenser vs Petzl: which headlamp brand is better?", category: "brand", kind: "commercial" },
+  { key: "l25", text: "Is Ledlenser a good flashlight brand?", category: "brand", kind: "commercial" },
+  { key: "l26", text: "Fenix vs Nitecore vs Ledlenser rechargeable headlamps", category: "brand", kind: "commercial" },
+  { key: "l27", text: "Best German-engineered flashlight brand", category: "brand", kind: "commercial" },
+  { key: "l28", text: "How many lumens do I need in a headlamp for hiking?", category: "brand", kind: "commercial" },
+  { key: "l29", text: "What IP rating should a camping flashlight have?", category: "brand", kind: "commercial" },
+  { key: "l30", text: "Rotating catalog fact check slot A: question per run in ledlenser.ai_probe_plan", category: "hallucinations", kind: "probe" },
+  { key: "l31", text: "Rotating catalog fact check slot B: question per run in ledlenser.ai_probe_plan", category: "hallucinations", kind: "probe" },
+  { key: "l32", text: "Rotating catalog fact check slot C: question per run in ledlenser.ai_probe_plan", category: "hallucinations", kind: "probe" },
+];
 
-export function batteryPrompt(key: string | null | undefined): BatteryPrompt | null {
+const BATTERIES: Record<ClientKey, readonly BatteryPrompt[]> = {
+  fender: PROMPT_BATTERY,
+  ledlenser: LEDLENSER_PROMPT_BATTERY,
+};
+
+/** The client's own question list (decision 89). */
+export function clientBattery(client: ClientKey = activeClientKey()): readonly BatteryPrompt[] {
+  return BATTERIES[client] ?? [];
+}
+
+export function batteryPrompt(
+  key: string | null | undefined,
+  battery: readonly BatteryPrompt[] = clientBattery(),
+): BatteryPrompt | null {
   if (!key) return null;
-  return BY_KEY.get(key) ?? null;
+  return battery.find((prompt) => prompt.key === key) ?? null;
 }
 
 export type BatteryGap = {
@@ -114,13 +168,13 @@ type GapCall = {
  * future wording change stays a boundary rather than a list of fake gaps.
  * Fact checks match by key only: a rotating key names a different product in each repeat.
  */
-export function batteryGaps(calls: readonly GapCall[]): BatteryGap[] {
+export function batteryGaps(calls: readonly GapCall[], battery: readonly BatteryPrompt[] = clientBattery()): BatteryGap[] {
   const present = new Set<string>();
   const waves = new Set<number>();
   for (const call of calls) {
     // API engines are not battery engines, so their calls neither fill nor open a gap.
     if (!BATTERY_ENGINES.includes((call.engine ?? "").toLowerCase() as BatteryEngine)) continue;
-    const prompt = batteryPrompt(call.prompt_key);
+    const prompt = batteryPrompt(call.prompt_key, battery);
     if (!prompt) return [];
     if (call.prompt_kind !== "probe" && call.prompt && call.prompt !== prompt.text) return [];
     present.add(`${prompt.key}|${(call.engine ?? "").toLowerCase()}`);
@@ -128,7 +182,7 @@ export function batteryGaps(calls: readonly GapCall[]): BatteryGap[] {
   }
   if (present.size === 0) return [];
   const gaps: BatteryGap[] = [];
-  for (const prompt of PROMPT_BATTERY) {
+  for (const prompt of battery) {
     if (!waves.has(prompt.wave ?? 1)) continue;
     for (const engine of BATTERY_ENGINES) {
       if (present.has(`${prompt.key}|${engine}`)) continue;

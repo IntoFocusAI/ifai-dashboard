@@ -1,8 +1,9 @@
 /**
  * Hero faces: satellites grow the circle to hold fixed readable text; main bubbles keep a
  * fixed radius and shrink the value (not to a crumb) so title, value, and label clear the ring.
- * A bubble shows its title, its hero figure in the status color, and a short label. The status
- * word lives on the tab; on the map the figure's color carries it (decision, 11 Nov 2026).
+ * A bubble shows its title, its hero figure in the status color with its mark (x, dash, or
+ * check), and a short label. The status word lives on the tab (decision 59); the mark sits
+ * beside the figure so status never rests on color alone (X-34).
  */
 
 import { dataStatusFromNode, type DataStatus } from "@/lib/canvas-sdk/data-status";
@@ -39,7 +40,19 @@ const MAIN_RING_PAD = 14;
 const MAIN_MIN_VALUE = 15;
 const MAIN_MAX_VALUE_RATIO = 0.3;
 
-type Row = { text: string; size: number; kind: keyof typeof WIDTH_PER_CHAR };
+/**
+ * The status mark beside a hero figure: its side and the gap before it, as shares of the
+ * figure's font size. Fitting adds this width so the figure and its mark clear the ring.
+ */
+export const HERO_MARK_EM = 0.46;
+export const HERO_MARK_GAP_EM = 0.16;
+
+/** Width the mark and its gap add to a figure drawn at `size`. */
+export function heroMarkWidth(size: number): number {
+  return size * (HERO_MARK_EM + HERO_MARK_GAP_EM);
+}
+
+type Row = { text: string; size: number; kind: keyof typeof WIDTH_PER_CHAR; marked?: boolean };
 
 export type HeroRow = Row & { baseline: number };
 
@@ -50,7 +63,7 @@ export type HeroFaceLayout = {
 };
 
 function rowWidth(row: Row): number {
-  return row.text.length * row.size * WIDTH_PER_CHAR[row.kind];
+  return row.text.length * row.size * WIDTH_PER_CHAR[row.kind] + (row.marked ? heroMarkWidth(row.size) : 0);
 }
 
 /**
@@ -96,10 +109,10 @@ export function isCompactHeroValue(value: string): boolean {
   return false;
 }
 
-function layoutRows(titleLines: string[], value: string, labelLines: string[]): HeroFaceLayout {
+function layoutRows(titleLines: string[], value: string, labelLines: string[], marked: boolean): HeroFaceLayout {
   // A worded empty state ("No resolved answers") reads at label size, not as a giant number.
   const valueRows: Row[] = isCompactHeroValue(value)
-    ? [{ text: value.trim(), size: SATELLITE_HERO_TEXT.value, kind: "value" as const }]
+    ? [{ text: value.trim(), size: SATELLITE_HERO_TEXT.value, kind: "value" as const, marked }]
     : splitWords(value).map((text) => ({ text, size: SATELLITE_HERO_TEXT.label, kind: "valueText" as const }));
   const rows: Row[] = [
     ...titleLines.map((text) => ({ text, size: SATELLITE_HERO_TEXT.title, kind: "title" as const })),
@@ -133,15 +146,16 @@ function layoutRows(titleLines: string[], value: string, labelLines: string[]): 
 /**
  * Lay out a satellite hero face around the circle's center. The title and the label may
  * each take one or two lines; whichever arrangement needs the smallest circle wins.
+ * `marked` makes room for the status mark beside a status-colored figure.
  */
-export function satelliteHeroLayout(title: string, value: string, label: string): HeroFaceLayout {
+export function satelliteHeroLayout(title: string, value: string, label: string, marked = false): HeroFaceLayout {
   const titleOptions = [[title.trim()], ...twoLineSplits(title)];
   const labelOptions = label.trim() ? [[label.trim()], ...twoLineSplits(label)] : [[""]];
   let best: HeroFaceLayout | null = null;
   let bestScore = Infinity;
   for (const titleLines of titleOptions) {
     for (const labelLines of labelOptions) {
-      const next = layoutRows(titleLines, value, labelLines);
+      const next = layoutRows(titleLines, value, labelLines, marked);
       // A one-line title and label read best; a wrap has to save real room to win.
       const score = next.radius * (1 + 0.12 * (titleLines.length - 1) + 0.12 * (Math.max(0, labelLines.filter(Boolean).length - 1)));
       if (score < bestScore) {
@@ -157,11 +171,13 @@ export function satelliteHeroLayout(title: string, value: string, label: string)
 export function satelliteFitRadius(node: {
   r: number;
   title: string;
+  status?: NodeStatus;
   heroValue?: { value: string; label: string };
 }): number {
   if (!node.heroValue) return node.r;
   const { value, label } = node.heroValue;
-  return Math.max(node.r, satelliteHeroLayout(node.title, value, label).radius);
+  const marked = heroStatus(node.status, value) != null;
+  return Math.max(node.r, satelliteHeroLayout(node.title, value, label, marked).radius);
 }
 
 function estimateWidth(text: string, size: number, kind: "value" | "valueText" | "label"): number {
@@ -252,15 +268,17 @@ export function fitMainHero(
   startY: number,
   minText: number = BUBBLE_TEXT_MIN,
   explainer = false,
+  marked = false,
 ): MainHeroFit {
   const trimmed = value.trim() || "Not available";
   const worded = explainer || !isCompactHeroValue(trimmed);
+  const mark = (size: number) => (marked && !worded ? heroMarkWidth(size) : 0);
   const bottomLimit = radius - MAIN_RING_PAD;
   const diameterWidth = Math.max(40, radius * 2 - MAIN_RING_PAD * 2);
 
   const widthFit = (text: string, size: number, kind: "value" | "valueText" | "label", atY: number) => {
     const maxWidth = Math.min(diameterWidth, Math.max(36, chordWidth(radius, atY)));
-    const width = estimateWidth(text, size, kind);
+    const width = estimateWidth(text, size, kind) + (kind === "value" ? mark(size) : 0);
     return width > maxWidth ? size * (maxWidth / width) : size;
   };
 
@@ -287,7 +305,7 @@ export function fitMainHero(
     }
     const labelTop = lines.length ? valueBottom + gap : valueBottom;
     const labelBottom = lines.length ? labelTop + lines.length * lineH : valueBottom;
-    const valueHalf = estimateWidth(trimmed, vSize, worded ? "valueText" : "value") / 2;
+    const valueHalf = (estimateWidth(trimmed, vSize, worded ? "valueText" : "value") + mark(vSize)) / 2;
     const labelHalf = lines.length ? Math.max(...lines.map((line) => estimateWidth(line, lSize, "label"))) / 2 : 0;
     const labelOk = lines.length === 0 || boxClearsRing(labelHalf, labelTop, labelBottom, radius);
     const ok = labelBottom <= bottomLimit && boxClearsRing(valueHalf, valueTop, valueBottom, radius) && labelOk;
