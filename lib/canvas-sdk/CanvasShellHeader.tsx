@@ -1,6 +1,7 @@
 "use client";
 
 import { UserMenuDropdown } from "@/components/auth/UserMenuDropdown";
+import { isStaffViewer } from "@/components/staff/staff-check";
 import { SHOW_HEADER_TICKERS } from "@/lib/canvas-sdk/canvas-chrome-flags";
 import { ViewModeSwitch, type CanvasSpecWithViews, type useCanvasViewMode } from "@/lib/canvas-sdk/canvas-views";
 import type { TickerIcon } from "@/lib/canvas-sdk/types";
@@ -18,6 +19,7 @@ import {
   Wand2,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 function tickerIcon(kind?: TickerIcon) {
   if (kind === "sparkles") return <Sparkles size={12} />;
@@ -58,6 +60,18 @@ export function CanvasShellHeader({
   const { userMenuOpen, setUserMenuOpen, profileOpen, setProfileOpen } = s;
   const commandCenter = spec.commandCenter;
   const router = useRouter();
+  // Build prompts is for IntoFocus staff only (decision 99). This only hides the button; the page checks again.
+  const [staff, setStaff] = useState(false);
+  useEffect(() => {
+    if (!spec.promptBuilderHref) return;
+    let live = true;
+    void isStaffViewer().then((value) => {
+      if (live) setStaff(value);
+    });
+    return () => {
+      live = false;
+    };
+  }, [spec.promptBuilderHref]);
 
   function handleFilterChange(value: string) {
     const option = spec.filters?.find((item) => item.value === value);
@@ -170,7 +184,7 @@ export function CanvasShellHeader({
               </button>
             ) : null}
 
-            {spec.promptBuilderHref ? (
+            {spec.promptBuilderHref && staff ? (
               <a
                 className="hdr-btn"
                 href={spec.promptBuilderHref}
