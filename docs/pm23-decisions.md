@@ -428,3 +428,10 @@ closeout of each view. Open items are marked OPEN and are not built.
     Prompt building ("Build prompts", Watson's prompt-builder) is reached
     only through IntoFocus staff logins. Supersedes the 9 Nov A-08 split
     between Fender (editable) and Ledlenser (read-only).
+100. D-05 field lists approved as recommended (16 Nov): competitor product
+    types judged by title are accepted; white_brightness and
+    light_output_maximum count as one field; beam distance stays off (under
+    30%); variation fields (style_name, size) stay off; ELECTRIC_LIGHT and
+    ELECTRIC_LANTERN get no list yet, so those listings read Not available*
+    for specs complete. The "placeholder" label comes off the approved
+    lists. PR 204 (SC-03 phase 1) merged.
