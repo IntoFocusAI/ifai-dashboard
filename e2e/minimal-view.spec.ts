@@ -1,4 +1,4 @@
-import { expect, test } from "./fixtures";
+import { AI_READ_MS, expect, test } from "./fixtures";
 
 const heroText = (texts: string[]) => texts.map((text) => text.trim()).join(" ").trim();
 
@@ -47,6 +47,7 @@ test.describe("Minimal / Balanced view switch", () => {
   });
 
   test("each question category and each Other figure is an option that opens its tab", async ({ canvas, page }) => {
+    test.slow();
     await page.locator("[data-view-mode='minimal']").click();
     await page.getByRole("button", { name: "Add metric to large slot 1" }).click();
     let dialog = page.getByRole("dialog", { name: "Choose metric for large slot 1" });
@@ -65,7 +66,7 @@ test.describe("Minimal / Balanced view switch", () => {
     await expect(actuation).toHaveCount(1);
     await actuation.click();
     const slot = page.locator(".large-metric-body[data-metric-id='ai-actuation']");
-    await expect(slot.locator("[data-large-metric-value]")).toHaveText(/^\d+%$/);
+    await expect(slot.locator("[data-large-metric-value]")).toHaveText(/^\d+%$/, { timeout: AI_READ_MS });
     await slot.click();
     await expect(canvas.activeTab).toContainText("Performance");
     await page.locator(".drilldown-hide-btn").click();
