@@ -67,7 +67,7 @@ const SOURCES: readonly SourceRule[] = [
   },
   {
     id: "amazon_sales",
-    label: () => "Amazon sales estimates",
+    label: () => "SmartScout sales estimates",
     intervalDays: () => RECHECK_DAYS.smartscout,
     collectors: ["smartscout_snapshot"],
     support: /smartscout|sales|units|stock/,
@@ -113,9 +113,14 @@ function latest(times: (string | null)[]): string | null {
 
 /**
  * One entry per source the client has, in display order. A source's last check is its
- * collectors' latest run; supporting jobs fill in only when no collector for it has a row.
+ * collectors' latest run. Without a collector row, the source's own stored check time
+ * (`stored`, such as the newest Findability row check) stands in, then supporting jobs.
  */
-export function dataSourceFreshness(rows: readonly CanvasFreshnessRow[], now: number = Date.now()): DataSourceFreshness[] {
+export function dataSourceFreshness(
+  rows: readonly CanvasFreshnessRow[],
+  now: number = Date.now(),
+  stored: Partial<Record<DataSourceId, string | null>> = {},
+): DataSourceFreshness[] {
   const grouped = new Map<DataSourceId, { collector: (string | null)[]; other: (string | null)[] }>();
   for (const row of rows) {
     const id = sourceForJob(row.job_key);
@@ -124,9 +129,9 @@ export function dataSourceFreshness(rows: readonly CanvasFreshnessRow[], now: nu
     (rule.collectors.includes(row.job_key.toLowerCase()) ? entry.collector : entry.other).push(row.last_run_at);
     grouped.set(id, entry);
   }
-  return SOURCES.filter((source) => grouped.has(source.id)).map((source) => {
-    const entry = grouped.get(source.id)!;
-    const lastCheck = entry.collector.length ? latest(entry.collector) : latest(entry.other);
+  return SOURCES.filter((source) => grouped.has(source.id) || stored[source.id]).map((source) => {
+    const entry = grouped.get(source.id) ?? { collector: [], other: [] };
+    const lastCheck = entry.collector.length ? latest(entry.collector) : (stored[source.id] ?? latest(entry.other));
     const intervalDays = source.intervalDays();
     return {
       id: source.id,

@@ -1,9 +1,11 @@
 "use client";
 
+import { useFindability } from "@/components/v3/live/findability/FindabilityContext";
 import { StatusGlyph } from "@/components/v3/live/StatusMark";
 import { TOOLTIP_ROWS_ATTR } from "@/lib/canvas-sdk/tooltip-content";
 import { dataAsOf, dataSourceFreshness, dataSourceLine } from "@/lib/fender-canvas/data-source-freshness";
 import type { CanvasFreshnessRow } from "@/lib/fender-canvas/types";
+import { newestCheckedAttemptAt } from "@/lib/findability/last-checked";
 
 /**
  * "Data as of <date>" in the map header. The tooltip lists each data source the client has with
@@ -17,7 +19,10 @@ export function DataFreshnessBar({
   fresh: CanvasFreshnessRow[];
   stale?: boolean;
 }) {
-  const sources = dataSourceFreshness(fresh);
+  // Brand-site pages fall back to the newest Findability row check when no job row exists.
+  const findability = useFindability();
+  const brandSiteChecked = findability.phase === "ready" ? newestCheckedAttemptAt(findability.rows) : null;
+  const sources = dataSourceFreshness(fresh, Date.now(), { brand_site: brandSiteChecked });
   const asOfIso = dataAsOf(sources);
   const asOfLabel = asOfIso
     ? new Date(asOfIso).toLocaleString(undefined, {

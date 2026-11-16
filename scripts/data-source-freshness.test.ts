@@ -63,7 +63,7 @@ test("Fender lists seven sources in plain words, with no raw key and only true s
   const sources = dataSourceFreshness(FENDER, NOW);
   assert.deepEqual(
     sources.map((source) => source.label),
-    ["AI answers", "Amazon prices and Buy Box", "Walmart", "Musician's Friend", "Amazon specs and A+", "Amazon sales estimates", "fender.com pages"],
+    ["AI answers", "Amazon prices and Buy Box", "Walmart", "Musician's Friend", "Amazon specs and A+", "SmartScout sales estimates", "fender.com pages"],
   );
   // The October conflict rerun and the old API lock do not make AI answers out of date: the run is today.
   assert.equal(sources.find((source) => source.id === "ai")!.lastCheck, "2026-11-16T12:04:30Z");
@@ -81,13 +81,33 @@ test("Ledlenser shows only the sources it has, and Walmart uses its two-day inte
   const sources = dataSourceFreshness(LEDLENSER, NOW);
   assert.deepEqual(
     sources.map((source) => source.label),
-    ["AI answers", "Amazon prices and Buy Box", "Walmart", "Amazon specs and A+", "Amazon sales estimates"],
+    ["AI answers", "Amazon prices and Buy Box", "Walmart", "Amazon specs and A+", "SmartScout sales estimates"],
   );
   assert.equal(sources.find((source) => source.id === "walmart")!.intervalDays, 2);
   const late = dataSourceFreshness([{ job_key: "map_leakage_walmart", last_run_at: "2026-11-13T10:00:00Z" }], NOW)[0]!;
   assert.equal(late.outOfDate, false, "3 days is inside Ledlenser's 4-day window");
   resetActiveClientForTests("fender");
   assert.equal(dataSourceFreshness([{ job_key: "map_leakage_walmart", last_run_at: "2026-11-13T10:00:00Z" }], NOW)[0]!.outOfDate, true);
+});
+
+test("brand-site pages fall back to the newest Findability check when no job row exists, for every client", () => {
+  resetActiveClientForTests("ledlenser");
+  const withRows = dataSourceFreshness(LEDLENSER, NOW, { brand_site: "2026-11-12T08:00:00Z" });
+  const site = withRows.find((source) => source.id === "brand_site")!;
+  assert.equal(site.label, "ledlenser.com pages");
+  assert.equal(site.lastCheck, "2026-11-12T08:00:00Z");
+  assert.equal(site.outOfDate, false);
+  assert.equal(withRows.at(-1)!.id, "brand_site");
+  assert.equal(dataSourceFreshness(LEDLENSER, NOW, { brand_site: null }).some((source) => source.id === "brand_site"), false);
+  assert.equal(dataSourceFreshness(LEDLENSER, NOW, { brand_site: "2026-10-30T00:00:00Z" }).at(-1)!.outOfDate, true);
+
+  resetActiveClientForTests("fender");
+  const noJob = FENDER.filter((row) => row.job_key !== "findability_recheck");
+  assert.equal(dataSourceFreshness(noJob, NOW, { brand_site: "2026-11-15T00:00:00Z" }).at(-1)!.lastCheck, "2026-11-15T00:00:00Z");
+  // The job row wins when it exists.
+  assert.equal(dataSourceFreshness(FENDER, NOW, { brand_site: "2026-11-15T00:00:00Z" }).at(-1)!.lastCheck, "2026-11-16T06:17:13Z");
+  const bar = readFileSync("components/v3/live/DataFreshnessBar.tsx", "utf8");
+  assert.match(bar, /brand_site: brandSiteChecked/);
 });
 
 test("out of date is twice each source's own interval, not a flat 26 hours", () => {
