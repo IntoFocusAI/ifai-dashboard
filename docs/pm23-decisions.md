@@ -374,3 +374,12 @@ closeout of each view. Open items are marked OPEN and are not built.
     hard-coded, so a real API result shows when one exists. The Run Summary trend breaks only on
     shopping-question changes, like the asterisk; fact-check swaps are
     routine and do not break it.
+91. PR 197 (16 Nov): AI Readiness "Amazon attribute completeness" uses
+    the X-03 bands 98/95 like Catalog Governance "Specs complete"; map
+    bubble and satellite figures carry the StatusMark glyph without the
+    word; a tied radar card reads "Tied in <category>". The map header's
+    "Data as of" tooltip becomes one plain line per data source.
+92. Fact checks (16 Nov): Brian prefers rotating (randomized) fact checks,
+    as Fender's catalog rotation does, over fixed fact-check questions, for
+    every client. The question set is Brian's decision; Watson approves any
+    database change it needs.
