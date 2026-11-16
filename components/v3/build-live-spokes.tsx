@@ -12,7 +12,6 @@ import { RunSummaryPanel } from "@/components/v3/live/ai-search/RunSummaryPanel"
 import { SimulationsExplorer } from "@/components/v3/live/ai-search/SimulationsExplorer";
 import { BriefingRetailHero } from "@/components/v3/live/BriefingRetailHero";
 import { ConsensusScoresPanel } from "@/components/v3/live/ConsensusScoresPanel";
-import { FenderDivisionsTable } from "@/components/v3/live/FenderDivisionsTable";
 import { MapChannelPanel } from "@/components/v3/live/MapChannelPanel";
 import { RetailOverview } from "@/components/v3/live/RetailOverview";
 import { ActionItemsPanel } from "@/components/v3/live/ActionItemsPanel";
@@ -23,7 +22,6 @@ import { CatalogReadinessSpec } from "@/components/v3/live/CatalogReadinessSpec"
 import { FindabilityPanel } from "@/components/v3/live/findability/FindabilityPanel";
 import { AplusMatrixPanel } from "@/components/v3/live/AplusMatrixPanel";
 import { MachineReadabilityPanel } from "@/components/v3/live/MachineReadabilityPanel";
-import { readFallbackTab } from "@/components/v3/read-fallbacks";
 import type { SpokeDefinition, SpokeId } from "@/components/v3/spoke-data-types";
 import { spokeData } from "@/components/v3/spoke-data";
 import { aiSpokeDesc, competitorsSpokeDesc } from "@/lib/ai-search/canvas-surfaces";
@@ -62,12 +60,7 @@ const TAB_OVERRIDES: Partial<
         {htmlBlock(bindCopy(HUB_BRIEFING_HTML, vars))}
       </>
     ),
-    1: (bundle, _vars, retail) => (
-      <>
-        <ConsensusScoresPanel bundle={bundle} retail={retail} />
-        <FenderDivisionsTable divisions={bundle.divisions} />
-      </>
-    ),
+    1: (bundle, _vars, retail) => <ConsensusScoresPanel bundle={bundle} retail={retail} />,
   },
   ecommerce: {
     0: (bundle, _vars, retail) => <RetailOverview read={retail} freshness={bundle.fresh} />,
@@ -166,8 +159,7 @@ function wrapSpoke(
     // The Roadmap opens on its owner sentence and plan; no retail-headline preface.
     ...(id === "roadmap" ? { desc: "" } : {}),
     render: (tabIdx) => {
-      const custom =
-        readFallbackTab(id, tabIdx, bundle, retail) ?? overrides[tabIdx]?.(bundle, vars, retail);
+      const custom = overrides[tabIdx]?.(bundle, vars, retail);
       if (custom) return custom;
       const content = bound.render(tabIdx);
       if (typeof content === "string") return htmlBlock(content);

@@ -11,7 +11,7 @@ import { loadPortfolioRetailSnapshot } from "@/lib/fender-canvas/portfolio-retai
 import { SET_ASIDE_CHECKS, activeSetAsideClientKey } from "@/lib/set-aside/keys";
 import { useSetAsides } from "@/lib/set-aside/set-aside";
 
-// One retail read while any caller is mounted: the canvas and the Divisions table both call this hook.
+// One retail read while any caller is mounted: every panel that calls this hook shares it.
 // The read is dropped when the last caller unmounts, so a remounted canvas reads fresh rows.
 let sharedLoad: Promise<PortfolioRetailSnapshot> | null = null;
 let mountedCallers = 0;

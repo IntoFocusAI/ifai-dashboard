@@ -171,6 +171,6 @@ test("Retail Overview offers the control from the Buy Box read and stores it in 
   assert.match(commerce, /commerceInputsFromLive\(read, authorizedPartners\)/);
   assert.match(commerce, /commerceScore\(inputs, \{ authorizedPartners \}\)/);
   assert.match(scores, /authorizedPartners/);
-  assert.match(scores, /<ConsensusLeadBand consensus=\{consensus\} \/>/);
+  assert.match(scores, /<ConsensusLeadBand consensus=\{consensus\} belowCards=/);
   assert.doesNotMatch(lead, /authorizedPartners|AuthorizedSellers/);
 });

@@ -82,7 +82,7 @@ async function expectMap(page: Page) {
 }
 
 test.describe("a failed read keeps the map", () => {
-  test("canvas_divisions failing: map renders and the division figures read Not available*", async ({
+  test("canvas_divisions failing: map renders and Performance shows the score cards with no division box", async ({
     canvas,
     page,
   }, testInfo) => {
@@ -92,28 +92,15 @@ test.describe("a failed read keeps the map", () => {
     await expect(canvas.panel).toBeVisible();
     await expect(canvas.activeTab).toContainText("Performance");
 
-    const box = canvas.panel.locator('[data-read-unavailable-box="canvas_divisions"]');
-    await expect(box).toContainText("FMIC Catalog Division Performance Matrix");
-    const mark = box.locator('.ifai-term[data-read-unavailable="canvas_divisions"]');
-    await expect(mark).toHaveText("Not available*");
-    await expect(mark).toHaveAttribute("data-ifai-tooltip-desc", /\(canvas_divisions\) did not load/);
-    await expect(mark).not.toHaveAttribute("title");
-    await expect(canvas.panel).not.toContainText(/\b0 divisions\b/);
+    // Decision 94: the division table and its fallback box are gone for every client.
+    await expect(canvas.panel.locator('[data-read-unavailable-box="canvas_divisions"]')).toHaveCount(0);
+    await expect(canvas.panel).not.toContainText("Catalog Division");
+    await expect(canvas.panel.getByText("Loading AI Consensus scores")).toHaveCount(0, { timeout: FIRST_LOAD_MS });
+    await expect(canvas.panel.locator('[data-consensus-pillar="consensus"]')).toBeVisible();
 
     const desc = page.locator(".drilldown-desc");
     await expect(desc).toContainText("Overview of Fender's electric catalog health.");
     await expect(desc).not.toContainText(/divisions?/i);
-
-    await expect(canvas.panel.getByText("Loading AI Consensus scores")).toHaveCount(0, { timeout: FIRST_LOAD_MS });
-    const tooltip = page.locator(".node-tooltip-definition");
-    // A tab re-render under a resting pointer sends no new pointerover, so point again.
-    await expect(async () => {
-      await page.mouse.move(0, 0);
-      await mark.hover();
-      await expect(tooltip).toBeVisible({ timeout: 1_000 });
-    }).toPass();
-    await expect(tooltip).toContainText("canvas_divisions");
-    await expect(tooltip).toHaveCSS("opacity", "1");
 
     await page.screenshot({ path: testInfo.outputPath("failed-division-read.png") });
   });
