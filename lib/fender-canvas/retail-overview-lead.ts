@@ -222,7 +222,7 @@ export function catalogHero(snapshot: PortfolioRetailSnapshot): RetailOverviewHe
     color: TONE_COLOR[tone],
     tone,
     pie: ready
-      ? sharePie("retail-catalog", label, "Unnested bundle", numerator!, denominator!)
+      ? sharePie("retail-catalog", label, "Splintered listing", numerator!, denominator!)
       : null,
     tip: ready ? bundlePopulationTip(reading) : null,
     explainer: ready

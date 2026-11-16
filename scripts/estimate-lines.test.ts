@@ -59,8 +59,9 @@ test("the Phase 1 and enterprise ROI lines do not wear the live retail headline"
   assert.equal(enterpriseLines.some((line) => line.includes("Reverb")), false);
   assert.match(enterpriseLines.join(" "), /Amazon and Walmart/);
   assert.match(enterpriseLines.join(" "), /\+\$3,500,000 \/ yr/);
-  assert.match(pilot, /tone-success">\+\$680K est\. <span/);
-  assert.match(enterprise, /tone-success">\+\$38M to \$62M est\. <span/);
+  // X-34: an estimate is not a status, so it wears no status color.
+  assert.match(pilot, /metric-card-val">\+\$680K est\. <span/);
+  assert.match(enterprise, /metric-card-val">\+\$38M to \$62M est\. <span/);
   assert.match(enterprise, /\+\$50M midpoint/);
 });
 

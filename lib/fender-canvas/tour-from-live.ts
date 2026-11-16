@@ -135,7 +135,7 @@ export function buildLiveTourSteps(
       subtitle: "Buy Box, MAP, and catalog nesting",
       category: "RETAIL HEALTH",
       displays: [
-        "Suppressed Buy Boxes, MAP leakage, and unnested bundles",
+        "Suppressed Buy Boxes, MAP leakage, and Splintered Listings",
         "A partial reading keeps its count and says what is missing",
       ],
       value: "They change what AI can recommend and shoppers can buy.",

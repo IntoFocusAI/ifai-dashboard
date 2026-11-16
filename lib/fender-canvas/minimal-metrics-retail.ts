@@ -153,7 +153,7 @@ export const RETAIL_ENTRIES: MinimalEntry[] = [
   bubbleEntry({
     id: "sat-asin",
     spokeId: "ecommerce",
-    label: "Unnested bundles",
+    label: "Splintered Listings",
     tab: "Catalog Governance",
     read: (ctx) =>
       retailReading(ctx, (snapshot) => {

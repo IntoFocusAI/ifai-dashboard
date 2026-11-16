@@ -13,7 +13,8 @@
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:report": "playwright show-report",
     "push:v3-toolbelt": "node scripts/push-v3-toolbelt.mjs",
-    "lint:brand": "node scripts/lint-brand.mjs"
+    "lint:brand": "node scripts/lint-brand.mjs",
+    "lint:status": "node scripts/lint-status-marks.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

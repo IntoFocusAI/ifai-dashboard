@@ -576,7 +576,7 @@ function unnestedBundlesReading(
     return {
       status: "incomplete",
       issueCount: 0,
-      missingMessage: `The catalog read stores ${countLabel(catalogBundles)} bundle listings. This retail read did not include them, so zero unnested bundles is not a final result.`,
+      missingMessage: `The catalog read stores ${countLabel(catalogBundles)} bundle listings. This retail read did not include them, so zero Splintered Listings is not a final result.`,
       detail,
     };
   }
@@ -584,7 +584,7 @@ function unnestedBundlesReading(
   if (options?.truncated) {
     const known =
       opportunities.length === 0
-        ? "No unnested bundle is confirmed in the included listings."
+        ? "No splintered listing is confirmed in the included listings."
         : `${countLabel(opportunities.length)} of the included ${LIVE_OFFER_BUNDLES} ${opportunities.length === 1 ? "has" : "have"} no usable parent ASIN.`;
     return {
       status: "incomplete",

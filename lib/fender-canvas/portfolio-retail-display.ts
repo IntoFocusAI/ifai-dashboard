@@ -214,7 +214,7 @@ function combinedHeadlineStat(headline: RetailHeadline): string {
   }
 
   if (headline.findingId === "unnested_bundles") {
-    return countNoun(count, "unnested bundle");
+    return countNoun(count, "splintered listing");
   }
 
   const noun = headline.reading.headlineNoun ?? "listing";

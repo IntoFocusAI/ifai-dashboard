@@ -42,7 +42,7 @@ export function bundleReadLine(read: RetailCanvasRead): string {
     reading,
     (count) =>
       `${formatInt(count)} ${count === 1 ? "bundle has" : "bundles have"} no usable parent ASIN in this listing read.`,
-    "The catalog listing read did not succeed, so this plan does not state an unnested-bundle count.",
+    "The catalog listing read did not succeed, so this plan does not state a Splintered Listings count.",
   );
 }
 

@@ -16,7 +16,7 @@ export const fenderCommandCenter: CommandCenterSpec = {
     {
       id: "buybox-suppression",
       title: "The retail headline loads with the catalog read",
-      why: "Suppressed Buy Boxes, MAP leakage, and unnested bundles are ranked from the stored retail read. The count and any missing coverage appear when that read finishes.",
+      why: "Suppressed Buy Boxes, MAP leakage, and Splintered Listings are ranked from the stored retail read. The count and any missing coverage appear when that read finishes.",
       severity: "critical",
       spokeId: "ecommerce",
       subTab: "Retail Overview",
