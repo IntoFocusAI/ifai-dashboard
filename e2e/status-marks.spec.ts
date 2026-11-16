@@ -4,8 +4,8 @@ import { expect, test, type Page } from "@playwright/test";
    every tab, the minimal view, and the deck, for both clients. A visible element painted
    Oxblood, Champagne, or Pine (text, fill, stroke, a left rule, or a bar) must sit with an
    x, dash, or check mark: inside the same StatusMark, within its figure's box (three
-   parents up), or in the same table row (the row's Status column). Tabs are read from the panel, so a new tab is covered without editing this
-   file. The map is out of scope here: its bubbles carry the glyph without the word
+   parents up), or in the same table row or list item (its Status column or status line).
+   Tabs are read from the panel, so a new tab is covered without editing this file. The map is out of scope here: its bubbles carry the glyph without the word
    (decisions 59 and 91) and map-reading-status covers them. */
 
 const CLIENTS = ["fender", "ledlenser"] as const;
@@ -41,8 +41,9 @@ async function unmarked(page: Page, scope: string): Promise<string[]> {
         if (node.matches(MARK) || node.querySelector(MARK)) return true;
         if (node.closest(".data-status")) return true;
       }
-      // A table cell's color may lean on its row's Status column, which carries the mark and word.
-      const row = el.closest("tr");
+      // A table cell's or list item's color may lean on its row's Status column or the item's
+      // status line, which carries the mark and word (Action Items, Roadmap).
+      const row = el.closest("tr, li");
       return Boolean(row && row.querySelector(MARK));
     };
     const describe = (el: Element) => {
