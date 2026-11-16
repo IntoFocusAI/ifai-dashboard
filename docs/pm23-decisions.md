@@ -423,3 +423,8 @@ closeout of each view. Open items are marked OPEN and are not built.
     <Brand> pages it cites. Only AI engines that cite sources are counted.
     Target: 15%, about what the strongest competitor brands reach in their
     best product category."
+99. Prompts at launch (16 Nov): every client gets the same view-only
+    Prompts list (search, N of M, CSV); no client can edit questions.
+    Prompt building ("Build prompts", Watson's prompt-builder) is reached
+    only through IntoFocus staff logins. Supersedes the 9 Nov A-08 split
+    between Fender (editable) and Ledlenser (read-only).
