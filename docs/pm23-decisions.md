@@ -383,3 +383,8 @@ closeout of each view. Open items are marked OPEN and are not built.
     as Fender's catalog rotation does, over fixed fact-check questions, for
     every client. The question set is Brian's decision; Watson approves any
     database change it needs.
+93. Category Battlecards (16 Nov): a category card shows only when its
+    question group holds unbranded discovery questions, decided from the
+    data for every client. "Brand" (Ledlenser) and "Squier" (Fender) drop
+    off; their questions still count in branded consideration. The "Data
+    as of" tooltip shows out-of-date sources in red with the x mark.
