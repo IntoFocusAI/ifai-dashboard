@@ -8,7 +8,7 @@ import { getCanvasSupabase } from "@/lib/supabase/canvas-client";
  * A client whose prompt list is edited from the dashboard (Fender) reads it through the editor
  * functions, which also return the run lock and the calls per prompt. Every other client reads its
  * own battery, read-only, from `<schema>.canvas_ai_prompts`
- * (supabase/migrations/20261116200000_ledlenser_canvas_ai_prompts.sql for Ledlenser).
+ * (supabase/migrations/20261116230000_ledlenser_canvas_ai_prompts.sql for Ledlenser).
  */
 export type PromptList = {
   prompts: EditablePrompt[];
@@ -22,6 +22,18 @@ export type PromptList = {
 export const PROMPT_LIST_COLUMNS = "prompt_key,prompt_text,category,prompt_kind,active,created_at,updated_at";
 
 export const PROMPT_LIST_UNREADABLE = "The prompt list could not be read.";
+
+const ROTATING_SLOT = /^Rotating catalog fact check slot ([A-Z]): question per run in \S+$/;
+
+/**
+ * The wording the Prompts list and its CSV show. A rotating fact-check slot stores an internal note
+ * ("... question per run in command.fmic_ai_probe_plan"); the screen shows it in plain words. The
+ * stored text is unchanged.
+ */
+export function promptDisplayText(text: string): string {
+  const slot = ROTATING_SLOT.exec(text.trim());
+  return slot ? `Rotating catalog fact check, slot ${slot[1]}: a different catalog product each run` : text;
+}
 
 type Row = Partial<Record<keyof EditablePrompt, unknown>>;
 

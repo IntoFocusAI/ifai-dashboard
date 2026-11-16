@@ -4,7 +4,7 @@ import type { ExportRow, SourceRead } from "@/lib/export/types";
 import { READ_NOT_AVAILABLE } from "@/lib/fender-canvas/canvas-reads";
 import { formatCheckedAt } from "@/lib/fender-canvas/featured-offer-copy";
 import { formatInt } from "@/lib/fender-canvas/format";
-import { loadPromptList } from "@/lib/prompts/prompt-list";
+import { loadPromptList, promptDisplayText } from "@/lib/prompts/prompt-list";
 
 export { PROMPTS_EXPORT_TABLE };
 
@@ -16,7 +16,7 @@ export function promptCells(prompt: EditablePrompt): string[] {
     prompt.prompt_key,
     prompt.category,
     prompt.prompt_kind === "probe" ? "Fact check" : "Shopping",
-    prompt.prompt_text,
+    promptDisplayText(prompt.prompt_text),
     prompt.active ? "Asked" : "Removed",
   ];
 }

@@ -1,13 +1,13 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import { PROMPT_LIST_COLUMNS, promptFromRow } from "../lib/prompts/prompt-list.ts";
+import { PROMPT_LIST_COLUMNS, promptDisplayText, promptFromRow } from "../lib/prompts/prompt-list.ts";
 import { promptRows } from "../lib/export/prompts-export.ts";
 
 /* Worker 27.10, decision 89: every client has the Prompts screen, read from its own battery. */
 
 const read = (path: string) => readFileSync(path, "utf8");
-const MIGRATION = "supabase/migrations/20261116200000_ledlenser_canvas_ai_prompts.sql";
+const MIGRATION = "supabase/migrations/20261116230000_ledlenser_canvas_ai_prompts.sql";
 
 test("the header has a Prompts button for every client; Build prompts stays with the editable list", () => {
   const spec = read("lib/fender-canvas/build-canvas-spec.tsx");
@@ -74,4 +74,26 @@ test("the Ledlenser view migration is additive, read-only, granted like the othe
   assert.doesNotMatch(statements, /CREATE OR REPLACE|ALTER |DROP |INSERT |UPDATE |DELETE |FUNCTION/i);
   assert.match(sql, /-- How to undo\n--   DROP VIEW IF EXISTS ledlenser\.canvas_ai_prompts;/);
   assert.match(sql, /Status: NOT APPLIED/);
+});
+
+test("rotating fact-check slots read in plain words in the list and the CSV, for both clients", () => {
+  const plain = (letter: string) => `Rotating catalog fact check, slot ${letter}: a different catalog product each run`;
+  assert.equal(promptDisplayText("Rotating catalog fact check slot A: question per run in command.fmic_ai_probe_plan"), plain("A"));
+  assert.equal(promptDisplayText("Rotating catalog fact check slot C: question per run in ledlenser.ai_probe_plan"), plain("C"));
+  assert.equal(promptDisplayText("What is the scale length of a Fender Jaguar"), "What is the scale length of a Fender Jaguar");
+  const row = promptRows([
+    {
+      prompt_key: "p36",
+      prompt_text: "Rotating catalog fact check slot B: question per run in command.fmic_ai_probe_plan",
+      category: "hallucinations",
+      prompt_kind: "probe",
+      active: true,
+      created_at: null,
+      updated_at: null,
+    },
+  ])[0];
+  assert.equal(row.cells[3], plain("B"));
+  const editor = read("components/v3/prompts/PromptsEditor.tsx");
+  assert.equal(editor.match(/<p className="pe-text">\{promptDisplayText\(p\.prompt_text\)\}<\/p>/g)?.length, 2);
+  assert.match(read("components/v3/prompts/PromptSearch.tsx"), /promptDisplayText\(p\.prompt_text\)/);
 });

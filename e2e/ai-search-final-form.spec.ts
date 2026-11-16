@@ -184,7 +184,7 @@ test.describe("Prompts change history (A-08)", () => {
       route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(EDITS) }),
     );
     await page.goto("/dashboard");
-    await page.locator(".hdr-btn", { hasText: /^Prompts$/ }).click();
+    await page.locator(".hdr-btn", { hasText: "Prompts" }).click();
     const toggle = page.locator("[data-prompt-history-toggle='p01']");
     await expect(toggle).toHaveText("Show history · 2 changes", { timeout: 60_000 });
     await expect(page.locator("[data-prompt-history-toggle='p02']")).toHaveText("Show history · No changes");
@@ -216,7 +216,7 @@ test.describe("Prompts change history (A-08)", () => {
       }),
     );
     await page.goto("/dashboard");
-    await page.locator(".hdr-btn", { hasText: /^Prompts$/ }).click();
+    await page.locator(".hdr-btn", { hasText: "Prompts" }).click();
     const notice = page.locator("[data-prompt-history-status='missing']");
     await expect(notice).toHaveText("Change history: Not available*", { timeout: 60_000 });
     await expect(notice.locator(".ifai-term")).toHaveAttribute("data-ifai-tooltip-desc", /not applied to the database yet/);
@@ -234,7 +234,7 @@ const LEDLENSER_PROMPTS = [
   { prompt_key: "l01", prompt_text: "Best rechargeable headlamp for backpacking and hiking", category: "headlamps", prompt_kind: "commercial", active: true, created_at: "2026-11-04T15:59:37Z", updated_at: null },
   { prompt_key: "l08", prompt_text: "Best rechargeable EDC flashlight under $100", category: "flashlights", prompt_kind: "commercial", active: true, created_at: "2026-11-04T15:59:37Z", updated_at: null },
   { prompt_key: "l12", prompt_text: "Ledlenser P7R vs Olight Warrior 3S flashlight", category: "flashlights", prompt_kind: "commercial", active: true, created_at: "2026-11-04T15:59:37Z", updated_at: null },
-  { prompt_key: "l30", prompt_text: "Rotating catalog fact check slot A", category: "hallucinations", prompt_kind: "probe", active: true, created_at: "2026-11-04T15:59:37Z", updated_at: null },
+  { prompt_key: "l30", prompt_text: "Rotating catalog fact check slot A: question per run in ledlenser.ai_probe_plan", category: "hallucinations", prompt_kind: "probe", active: true, created_at: "2026-11-04T15:59:37Z", updated_at: null },
 ];
 
 test.describe("Prompts for every client (decision 89)", () => {
@@ -266,6 +266,8 @@ test.describe("Prompts for every client (decision 89)", () => {
     await expect(items).toHaveCount(4, { timeout: 60_000 });
     await expect(items.first()).toContainText("Best rechargeable headlamp for backpacking and hiking");
     await expect(items.nth(3)).toContainText("Fact check");
+    await expect(items.nth(3)).toContainText("Rotating catalog fact check, slot A: a different catalog product each run");
+    await expect(items.nth(3)).not.toContainText("ai_probe_plan");
     await expect(page.locator("[data-prompt-search-count]")).toHaveText("4 of 4 prompts");
     await expect(page.locator(".pe-sub").first()).toContainText("4 active.");
     await page.locator('[data-prompt-search] input[type="search"]').fill("flashlight");

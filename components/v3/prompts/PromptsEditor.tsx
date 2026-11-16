@@ -9,7 +9,7 @@ import { loadPromptEditHistory, promptEditsFor, type PromptEditHistory } from "@
 import { savePrompt, setPromptActive, type EditablePrompt, type PromptEditorStatus } from "@/lib/ai-search/prompt-editor";
 import { DASHBOARD_PATH } from "@/lib/auth/dashboard-path";
 import { activeClient } from "@/lib/client/active-client";
-import { loadPromptList } from "@/lib/prompts/prompt-list";
+import { loadPromptList, promptDisplayText } from "@/lib/prompts/prompt-list";
 import { Lock, Pencil, Plus, RotateCcw, Trash2, Wand2, X } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -297,7 +297,7 @@ export function PromptsEditor({ onClose }: Props) {
                   </div>
                 ) : (
                   <div className="pe-item-main">
-                    <p className="pe-text">{p.prompt_text}</p>
+                    <p className="pe-text">{promptDisplayText(p.prompt_text)}</p>
                     <div className="pe-item-actions" hidden={!editable}>
                       <button className="pe-icon-btn" disabled={disabled} onClick={() => startEdit(p)} aria-label={`Edit ${p.prompt_key}`}>
                         <Pencil size={14} />
@@ -328,7 +328,7 @@ export function PromptsEditor({ onClose }: Props) {
                         {historyToggle(p.prompt_key)}
                       </div>
                       <div className="pe-item-main">
-                        <p className="pe-text">{p.prompt_text}</p>
+                        <p className="pe-text">{promptDisplayText(p.prompt_text)}</p>
                         <div className="pe-item-actions" hidden={!editable}>
                           <button className="pe-btn" disabled={disabled} onClick={() => restore(p)}>
                             <RotateCcw size={14} />
