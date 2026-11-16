@@ -362,3 +362,69 @@ closeout of each view. Open items are marked OPEN and are not built.
     answers". The owned-pages-in-unbranded figure stays where it is.
 87. No tooltips on main map bubbles (12 Nov).
 88. Old draft PRs 1, 26, 27, 35, 37, 39, 40, 44 closed (12 Nov).
+89. One dashboard for every client (13 Nov). Every feature on Fender's
+    dashboard also appears on Ledlenser's and any later client's. The only
+    allowed differences are additive, such as columns for the retailers a
+    client cares about. A feature missing for one client is a defect.
+90. PR 195 decisions (13 Nov): Branded shopping means the branded headline
+    questions only; the catalog products count takes no question-set
+    asterisk; filters reset on reload for now; API engine chips stay while
+    web search on API runs is tried (resolve before launch); a catalog
+    count of 0 of M shows Not available*, computed from the data, never
+    hard-coded, so a real API result shows when one exists. The Run Summary trend breaks only on
+    shopping-question changes, like the asterisk; fact-check swaps are
+    routine and do not break it.
+91. PR 197 (16 Nov): AI Readiness "Amazon attribute completeness" uses
+    the X-03 bands 98/95 like Catalog Governance "Specs complete"; map
+    bubble and satellite figures carry the StatusMark glyph without the
+    word; a tied radar card reads "Tied in <category>". The map header's
+    "Data as of" tooltip becomes one plain line per data source.
+92. Fact checks (16 Nov): Brian prefers rotating (randomized) fact checks,
+    as Fender's catalog rotation does, over fixed fact-check questions, for
+    every client. The question set is Brian's decision; Watson approves any
+    database change it needs.
+93. Category Battlecards (16 Nov): a category card shows only when its
+    question group holds unbranded discovery questions, decided from the
+    data for every client. "Brand" (Ledlenser) and "Squier" (Fender) drop
+    off; their questions still count in branded consideration. The "Data
+    as of" tooltip shows out-of-date sources in red with the x mark.
+94. Summary -> Performance (16 Nov): the division table and its CSV are
+    removed for every client (Splintered Listings by division is dropped,
+    not moved). The weakest score card opens its breakdown by default.
+    Scores by product category: not now. A collapsible line chart of the
+    scores over time sits just below the score cards, with a toggle per
+    score and the target of 70; scores are saved weekly per client.
+    Brian approved the additive table and function for the weekly save.
+95. "Data as of" tooltip lines (16 Nov): AI answers (search engines), AI
+    answers (API engines), Amazon Buy Box and offers, Keepa sales history,
+    Walmart, Musician's Friend (where a client has it), Amazon specs and A+,
+    SmartScout sales estimates, and the client's website pages. Each line
+    dates from its own collector.
+96. SC-03 AI Actuation factors approved for launch (16 Nov; may be tuned
+    later): P1 community response program 20% and P2 publication and
+    reviewer outreach program 20% (planned); E1 owned answers 30%
+    (measured), E2 community responses posted 15% and E3 placements earned
+    15% (logged, staff-verified links and dates). E4 dropped: fact-check
+    accuracy is already in Foundation. Brian approved the additive table
+    for Actuation records. Build what does not need staff sign-in now.
+97. SC-03 launch (16 Nov): Actuation counts 0 at launch; the scores-over-
+    time chart marks the day scoring added Actuation ("Scoring now includes
+    AI Actuation"). E1 counts only engines that returned at least one
+    citation in the window, decided from the data, so API engines join
+    when web search returns citations. E1 target waits on a check of the
+    best competitors' own-site citation rates.
+98. E1 target (16 Nov): 15%, capped at 30 points; revisit after a quarter.
+    Benchmark (search engines, unbranded answers, Oct 17 to Nov 16): Fender
+    own site 4.5%, best competitor Yamaha 7.1% overall and 13.6% in
+    Acoustics; Ledlenser 2.2%, Olight 12.3% overall, Fenix 22.2% in
+    Flashlights. Tooltip: "Owned answers. The share of AI answers to
+    shopping questions that do not name a brand which cite at least one
+    page on <Brand>'s own sites. Each answer counts once, however many
+    <Brand> pages it cites. Only AI engines that cite sources are counted.
+    Target: 15%, about what the strongest competitor brands reach in their
+    best product category."
+99. Prompts at launch (16 Nov): every client gets the same view-only
+    Prompts list (search, N of M, CSV); no client can edit questions.
+    Prompt building ("Build prompts", Watson's prompt-builder) is reached
+    only through IntoFocus staff logins. Supersedes the 9 Nov A-08 split
+    between Fender (editable) and Ledlenser (read-only).

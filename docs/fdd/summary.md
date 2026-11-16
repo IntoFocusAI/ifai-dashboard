@@ -32,7 +32,7 @@ Former name: Brand Portfolio. Approved rename: Summary.
 - **Desired:** Summary tabs: Briefing, Performance, Opportunity. Briefing = why it matters + AI Consensus Score + one sentence. Performance = actual vs target with AI Foundation, AI Commerce, AI Actuation side by side. Opportunity = value achieved, near-term upside, full potential with drill-downs to inputs/assumptions/formulas.
 - **User value:** Executives get story, scores, and upside without hunting.
 - **Acceptance:** Three tabs only under Summary; Commercial Sizing label gone.
-- **Evidence:** Score layout approved by Brian Magazu on 29 Oct 2026. Pull request 92, commits 7bf55cf and b5c6ce2. Published on main at 65e2c79. Tab labels were desktop-verified on 21 Oct 2026, commit 1fdbfc0. A target comparison and AI Actuation remain open, so this stays REFINE.
+- **Evidence:** Score layout approved by Brian Magazu on 29 Oct 2026. Pull request 92, commits 7bf55cf and b5c6ce2. Published on main at 65e2c79. Tab labels were desktop-verified on 21 Oct 2026, commit 1fdbfc0. A target comparison and AI Actuation remain open, so this stays REFINE. Worker 27.6, PR 203 (main 4c6c0a6), approved 16 Nov 2026: division table removed, weakest score card opens by default, Scores over time chart under the cards with weekly saves (table applied 16 Nov by PM27). Stays REFINE until AI Actuation (SC-03) is on the cards.
 - **Open decision:** None. Decided by Brian Magazu on 9 Nov 2026: each score is shown against a target of 70, for example 41 vs target 70. H-07 stays REFINE until AI Actuation (SC-03) exists.
 
 **H-05 CURRENT** · Launch
@@ -121,7 +121,7 @@ These are approved design formulas. AI Foundation, AI Commerce, and AI Consensus
 **Status source:** Explicit meeting
 
 - **Current:** AI Actuation is on Summary → Performance as Not included. The reason on screen is that there is no owner, evidence, or dated record yet. It is not scored as zero, and its weight is left out of AI Consensus.
-- **Desired:** AI Actuation: Active response program for cited social/community sources 50%; active outreach to publications/influencers cited for the brand’s questions 50%. Points require owner, evidence, verification date, and unexpired date. IntoFocus sees record controls; client sees score and basis. Show on Citation Ecosystem and Summary → Performance.
+- **Desired:** AI Actuation (decisions 77, 78, 96). Planned work at most 40%: P1 community response program 20% (owner, target communities from Citation Ecosystem, cadence); P2 publication and reviewer outreach program 20% (owner, target list). Measured results at least 60%: E1 owned answers 30% (brand pages cited in unbranded discovery); E2 community responses posted 15% and E3 placements earned 15% (links and dates verified by IntoFocus staff, last 90 days). Points require owner, evidence, verification date, and an unexpired date (90 days); reminders at 30, 14 and 3 days; a lapsed factor looks like one never in place. No double counting with Foundation or Commerce. IntoFocus sees record controls; client sees score and basis. Show on Citation Ecosystem and Summary → Performance.
 - **User value:** Actuation is evidenced work, not vibes.
 - **Acceptance:** No points without owner + evidence + dates.
 - **Evidence:** Not live.
