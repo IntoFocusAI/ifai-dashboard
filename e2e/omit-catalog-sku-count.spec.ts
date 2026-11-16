@@ -1,4 +1,4 @@
-import { expect, test } from "./fixtures";
+import { AI_READ_MS, expect, test } from "./fixtures";
 
 /** Worker 16.4: catalog SKU totals must not appear in client-facing surfaces. */
 test.describe("omit catalog SKU count", () => {
@@ -29,7 +29,7 @@ test.describe("omit catalog SKU count", () => {
     }
 
     await canvas.openTab("Performance");
-    await expect(canvas.panel).toContainText("AI Consensus Score");
+    await expect(canvas.panel).toContainText("AI Consensus Score", { timeout: AI_READ_MS });
     // Decision 94: the division table is gone.
     await expect(canvas.panel).not.toContainText("Catalog Division");
     await expect(canvas.panel).not.toContainText("Monitored SKUs");

@@ -129,7 +129,7 @@ for (const client of ["fender", "ledlenser"]) {
       await expect(detail).toBeVisible();
     });
 
-    test("Scores over time shows nothing before the table exists", async ({ page }) => {
+    test("Scores over time shows nothing before the table exists", async ({ page, pageErrors }) => {
       test.slow();
       await page.route(SNAPSHOT_ROUTE, (route) =>
         route.fulfill({
@@ -139,15 +139,16 @@ for (const client of ["fender", "ledlenser"]) {
           body: JSON.stringify({ code: "PGRST205", message: "Could not find the table 'public.canvas_score_snapshots' in the schema cache" }),
         }),
       );
-      const errors: string[] = [];
-      page.on("pageerror", (error) => errors.push(error.message));
       await page.goto(`/dashboard?${query}spoke=hub&tab=performance`);
       await expect(page.locator("[data-consensus-pillar='consensus'] [data-consensus-pillar-score]")).toHaveText(/^\d{1,3}\*?$/, {
         timeout: AI_READ_MS,
       });
       await expect(page.locator("[data-score-history]")).toHaveCount(0);
       await expect(page.getByText("Scores over time")).toHaveCount(0);
-      expect(errors).toEqual([]);
+      // The browser logs the missing table's 404 as a network line; nothing on the page errors.
+      const others = pageErrors.filter((line) => !/404.*canvas_score_snapshots/.test(line));
+      expect(others).toEqual([]);
+      pageErrors.splice(0, pageErrors.length, ...others);
     });
 
     test("Scores over time draws each saved score with a toggle and the target of 70", async ({ page }) => {

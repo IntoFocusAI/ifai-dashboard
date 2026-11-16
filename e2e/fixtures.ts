@@ -179,6 +179,7 @@ type Fixtures = {
   setAsides: SetAsideMock;
   /** The run-rows function reads as absent, so each spec's mocked history views serve its runs. */
   runRowsFunction: void;
+  scoreSnapshots: void;
 };
 
 /* Both fixtures are `auto` so every test starts on a loaded /v3 with the error
@@ -220,8 +221,26 @@ export const test = base.extend<Fixtures>({
     { auto: true },
   ],
 
+  // Decision 94: the saved weekly scores answer with no rows unless a spec routes its own, so the
+  // suite does not depend on whether public.canvas_score_snapshots has been applied.
+  scoreSnapshots: [
+    async ({ page }, use) => {
+      await page.route("**/rest/v1/canvas_score_snapshots*", (route) =>
+        route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          headers: { "access-control-allow-origin": "*" },
+          body: "[]",
+        }),
+      );
+      await use();
+    },
+    { auto: true },
+  ],
+
   canvas: [
-    async ({ page, pageErrors, setAsides, runRowsFunction }, use) => {
+    async ({ page, pageErrors, setAsides, runRowsFunction, scoreSnapshots }, use) => {
+      void scoreSnapshots; // and the score history reads no live rows
       void pageErrors; // ordering: attach the listener before the first navigation
       void setAsides; // and the set-aside routes, so live rows never shift the queue
       void runRowsFunction; // and the history runs come from each spec's views, never the live function
