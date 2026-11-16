@@ -413,3 +413,13 @@ closeout of each view. Open items are marked OPEN and are not built.
     citation in the window, decided from the data, so API engines join
     when web search returns citations. E1 target waits on a check of the
     best competitors' own-site citation rates.
+98. E1 target (16 Nov): 15%, capped at 30 points; revisit after a quarter.
+    Benchmark (search engines, unbranded answers, Oct 17 to Nov 16): Fender
+    own site 4.5%, best competitor Yamaha 7.1% overall and 13.6% in
+    Acoustics; Ledlenser 2.2%, Olight 12.3% overall, Fenix 22.2% in
+    Flashlights. Tooltip: "Owned answers. The share of AI answers to
+    shopping questions that do not name a brand which cite at least one
+    page on <Brand>'s own sites. Each answer counts once, however many
+    <Brand> pages it cites. Only AI engines that cite sources are counted.
+    Target: 15%, about what the strongest competitor brands reach in their
+    best product category."
