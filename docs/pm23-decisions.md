@@ -435,3 +435,6 @@ closeout of each view. Open items are marked OPEN and are not built.
     ELECTRIC_LANTERN get no list yet, so those listings read Not available*
     for specs complete. The "placeholder" label comes off the approved
     lists. PR 204 (SC-03 phase 1) merged.
+101. SC-03 launch details (16 Nov): Actuation counts E1 (measured) from day
+    one; P1, P2, E2 and E3 count 0 until staff record them. Expiry
+    reminders at 30, 14 and 3 days post to Slack #operations (private).
