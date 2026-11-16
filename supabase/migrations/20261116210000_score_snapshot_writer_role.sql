@@ -31,7 +31,12 @@
 --   and delete the SCORE_SNAPSHOT_DB_URL repository secret (the weekly job then skips with a notice).
 --
 -- Adds a login and grants: Brian Watson applies (AGENTS.md).
--- Applied: not yet.
+-- Applied: 16 Nov 2026 17:19 UTC by Brian Watson (via Claude) to prod as version 20261116171939, after
+-- 20261116153457_canvas_score_snapshots. Production only. Verified: the login has no table or view
+-- access, USAGE on schema public only, and can execute canvas_score_snapshot_save (the only callable
+-- function; other PUBLIC-executable functions are in schema command, which it cannot use, or are
+-- trigger functions). Password set by hand; secret SCORE_SNAPSHOT_DB_URL added 17:41 UTC. Weekly score
+-- save run 43921060966 saved 2 of 2 clients for the week of 2026-11-16.
 
 DO $$
 BEGIN
