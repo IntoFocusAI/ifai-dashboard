@@ -5,13 +5,17 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import {
   claimSql,
+  dueLapseReminders,
   dueReminders,
+  lapseReminderText,
+  lapseSlackPayload,
   dueThreshold,
   readableDate,
   recordsUrl,
   releaseSql,
   reminderText,
   slackPayload,
+  type LapseCandidate,
   type ReminderCandidate,
 } from "../lib/fender-canvas/actuation-reminders.ts";
 
@@ -145,4 +149,79 @@ test("the workflow skips cleanly when the Slack webhook secret is missing", () =
   // Every step after the check runs only when the secrets are there.
   const steps = yml.split("\n      - ").slice(2);
   for (const step of steps) assert.match(step, /if: steps\.secret\.outputs\.ready == 'true'/);
+});
+
+// Worker 28.6: E2/E3 lapse reminders (decision 103).
+const item = (over: Partial<LapseCandidate> = {}): LapseCandidate => ({
+  client_key: "ledlenser",
+  factor: "E2",
+  posted_on: "2026-11-14",
+  lapses_on: "2027-02-12",
+  sent_thresholds: [],
+  ...over,
+});
+
+test("E2/E3: the newest item's lapse date gets the 30, 14 and 3 day reminders, once each", () => {
+  assert.deepEqual(dueLapseReminders([item()], "2027-01-13").map((d) => [d.daysLeft, d.threshold]), [[30, 30]]);
+  assert.deepEqual(dueLapseReminders([item({ sent_thresholds: [30] })], "2027-01-13"), []);
+  assert.deepEqual(dueLapseReminders([item({ sent_thresholds: [30] })], "2027-01-29").map((d) => d.threshold), [14]);
+  assert.deepEqual(dueLapseReminders([item({ sent_thresholds: [30, 14] })], "2027-02-09").map((d) => d.threshold), [3]);
+  assert.deepEqual(dueLapseReminders([item({ sent_thresholds: [30, 14, 3] })], "2027-02-10"), []);
+  // Too early, and after it stopped counting: nothing.
+  assert.deepEqual(dueLapseReminders([item()], "2027-01-12"), []);
+  assert.deepEqual(dueLapseReminders([item()], "2027-02-12"), []);
+});
+
+test("E2/E3: a newer item logged later moves the lapse date and starts a fresh cycle", () => {
+  // The old lapse date had all three sent; the newer item arrives with a later lapse date and none sent.
+  const newer = item({ posted_on: "2026-12-20", lapses_on: "2027-03-20", sent_thresholds: [] });
+  assert.deepEqual(dueLapseReminders([newer], "2027-02-10"), []);
+  assert.deepEqual(dueLapseReminders([newer], "2027-02-18").map((d) => [d.expiresOn, d.threshold]), [["2027-03-20", 30]]);
+});
+
+test("E2/E3: both factors and both clients, nearest first; unknown clients and P factors left out", () => {
+  const due = dueLapseReminders(
+    [
+      item({ client_key: "fmic", factor: "E3", lapses_on: "2026-11-30" }),
+      item({ client_key: "ledlenser", factor: "E2", lapses_on: "2026-11-19" }),
+      item({ client_key: "fmic", factor: "E2", lapses_on: "2026-12-16" }),
+      item({ client_key: "someone_else" }),
+      item({ factor: "P1" as never }),
+    ],
+    "2026-11-16",
+  );
+  assert.deepEqual(
+    due.map((d) => [d.clientKey, d.factor, d.daysLeft, d.threshold]),
+    [
+      ["ledlenser", "E2", 3, 3],
+      ["fmic", "E3", 14, 14],
+      ["fmic", "E2", 30, 30],
+    ],
+  );
+  // No E2/E3 candidate for a client: no reminder.
+  assert.deepEqual(dueLapseReminders([], "2026-11-16"), []);
+});
+
+test("E2/E3 message: client, factor, newest item, lapse date, days left, no owner", () => {
+  const [reminder] = dueLapseReminders([item({ sent_thresholds: [30] })], "2027-01-29");
+  const text = lapseReminderText(reminder);
+  assert.equal(
+    text,
+    "Ledlenser: Community Responses Posted. The newest logged response stops counting on 12 Feb (14 days). " +
+      "Log new responses to keep these points.\nhttps://ifai-dashboard.netlify.app/dashboard/actuation-records?client=ledlenser",
+  );
+  assert.doesNotMatch(text, /Owner/);
+  assert.deepEqual(lapseSlackPayload(reminder), { text });
+  const [e3] = dueLapseReminders([item({ client_key: "fmic", factor: "E3", lapses_on: "2026-11-17" })], "2026-11-16");
+  assert.match(
+    lapseReminderText(e3, "https://example.test"),
+    /^Fender: Placements Earned\. The newest logged placement stops counting on 17 Nov \(1 day\)\. Log new placements to keep these points\.\nhttps:\/\/example\.test\/dashboard\/actuation-records$/,
+  );
+  assert.doesNotMatch(text, /\b\w+'(t|s|re|ll|ve|d)\b|—|[\u{1F300}-\u{1FAFF}]/u);
+});
+
+test("E2/E3 claims use the shared sent-log keyed on the lapse date", () => {
+  const [reminder] = dueLapseReminders([item({ factor: "E3" })], "2027-01-13");
+  assert.equal(claimSql(reminder), "select public.actuation_expiry_reminder_claim('ledlenser', 'E3', date '2027-02-12', 30, 30);");
+  assert.equal(releaseSql(reminder), "select public.actuation_expiry_reminder_release('ledlenser', 'E3', date '2027-02-12', 30);");
 });

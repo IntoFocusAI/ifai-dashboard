@@ -1,6 +1,7 @@
 /**
  * SC-03 Actuation expiry reminders (decision 77). Once a day, for every in-place P1 or P2 program,
- * post one Slack message to #operations at 30, 14 and 3 days before its expiry. Run by
+ * post one Slack message to #operations at 30, 14 and 3 days before its expiry. For E2 and E3
+ * (decision 103), the same for the day each client's newest verified item stops counting. Run by
  * .github/workflows/actuation-reminders.yml; nobody runs it by hand.
  *
  *   node --experimental-strip-types --import ./scripts/register-alias.mjs \
@@ -16,9 +17,13 @@ import {
   CANDIDATES_SQL,
   claimSql,
   DEFAULT_DASHBOARD_URL,
+  dueLapseReminders,
   dueReminders,
+  LAPSE_CANDIDATES_SQL,
+  lapseSlackPayload,
   releaseSql,
   slackPayload,
+  type LapseCandidate,
   type ReminderCandidate,
 } from "../lib/fender-canvas/actuation-reminders.ts";
 import { isoDay } from "../lib/fender-canvas/actuation-score.ts";
@@ -50,21 +55,35 @@ function psql(sql: string): string {
 
 const asOf = isoDay(new Date());
 let candidates: ReminderCandidate[];
+let lapseCandidates: LapseCandidate[];
 try {
   candidates = JSON.parse(psql(CANDIDATES_SQL) || "[]") as ReminderCandidate[];
+  lapseCandidates = JSON.parse(psql(LAPSE_CANDIDATES_SQL) || "[]") as LapseCandidate[];
 } catch (error) {
   console.error(`The Actuation records could not be read: ${(error as Error).message}`);
   process.exit(1);
 }
 
-const due = dueReminders(candidates, asOf);
-console.log(`${asOf}: ${candidates.length} in-place programs, ${due.length} reminders due.`);
+const due = [
+  ...dueReminders(candidates, asOf).map((reminder) => ({
+    reminder,
+    label: `${reminder.brandName} ${reminder.factor}, expires ${reminder.expiresOn}, ${reminder.daysLeft} days left (${reminder.threshold}-day reminder)`,
+    payload: slackPayload(reminder, baseUrl),
+  })),
+  ...dueLapseReminders(lapseCandidates, asOf).map((reminder) => ({
+    reminder,
+    label: `${reminder.brandName} ${reminder.factor}, newest item stops counting ${reminder.expiresOn}, ${reminder.daysLeft} days left (${reminder.threshold}-day reminder)`,
+    payload: lapseSlackPayload(reminder, baseUrl),
+  })),
+];
+console.log(
+  `${asOf}: ${candidates.length} in-place programs, ${lapseCandidates.length} E2/E3 factors with a counting item, ${due.length} reminders due.`,
+);
 
 let failed = 0;
-for (const reminder of due) {
-  const label = `${reminder.brandName} ${reminder.factor}, expires ${reminder.expiresOn}, ${reminder.daysLeft} days left (${reminder.threshold}-day reminder)`;
+for (const { reminder, label, payload } of due) {
   if (dryRun) {
-    console.log(`Would send: ${label}\n${slackPayload(reminder, baseUrl).text}\n`);
+    console.log(`Would send: ${label}\n${payload.text}\n`);
     continue;
   }
   try {
@@ -83,7 +102,7 @@ for (const reminder of due) {
     const response = await fetch(webhook, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(slackPayload(reminder, baseUrl)),
+      body: JSON.stringify(payload),
     });
     posted = response.ok;
     reason = posted ? "" : `Slack answered ${response.status}`;

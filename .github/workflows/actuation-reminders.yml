@@ -1,7 +1,9 @@
 name: Actuation expiry reminders
 
 # Decision 77: post one Slack message to #operations for each in-place P1 or P2 Actuation program at
-# 30, 14 and 3 days before it expires (client, factor, owner, expiry date, days left). Each reminder
+# 30, 14 and 3 days before it expires (client, factor, owner, expiry date, days left). Decision 103:
+# the same for E2 and E3, at 30, 14 and 3 days before each client's newest verified item stops
+# counting (no named owner; #operations owns them). Each reminder
 # is logged in public.actuation_expiry_reminders_sent before it is posted, so a re-run or a late run
 # never posts it twice (scripts/send-actuation-reminders.ts). Staff only: clients never see this.
 #
