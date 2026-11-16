@@ -146,11 +146,10 @@ decisions goes to Brian as a question.
 
 ## Standing rules
 
-The map shows the published run plus its matching API run, except the
-Competitive Radar bubble, which reads the Category Battlecards rows for the
-date-pill window with the tab's lead rule (decision 40, FDD C-03). Do not
-"fix" that bubble back to the published run. The shared date
-pill is the only period label. Cited pages are associations. Dollar figures
+Every AI figure, the map included, follows the date-pill window (decision
+83, replacing decision 7; lands with PR 190). The Competitive Radar bubble
+keeps the tab's lead rule (decision 40, FDD C-03). The shared date pill is
+the only period label. No tooltips on main map bubbles (decision 87). Cited pages are associations. Dollar figures
 stay analyst estimates, and their formulas stay parked. The client portal
 says nothing about IntoFocus fees. Do not build delegation or paid tiers.
 Let the data speak: caveats go in tooltips. Call Brian Watson "Watson" and
@@ -170,26 +169,23 @@ the rest of the launch build is complete (decision 46).
 Replace this whole section on handoff. Keep it under 25 lines. The FDD wins
 if this block is stale.
 
-- PM25 is the last PM; the next is PM26. Workers 25.1 to 25.20 are merged
-  (PRs 164 to 178). Docs at 25.20. Launch rows CURRENT: 64 of 93.
-- Decisions 1 to 73 are in docs/pm23-decisions.md; 44 to 73 are PM25's.
-- Held by Brian: X-15, X-16, R-19 until the rest of launch; A-02, A-04,
-  A-06, A-07, R-06, R-11, N-07, LATER rows, dollar formulas (R-06 includes
-  "zero sales vs awaiting inputs", decision 70).
-- Waiting on Brian: D-05 required-spec rule that works for 20+ clients (no
-  "placeholder" at launch); R-19 vs the R-18 placeholder seller list; C-01
-  deck (outline draft: docs/c01-deck-outline.md, figures from 10 Nov).
-- Watson PR coming (11 Nov): Ledlenser API views + API switch for every
-  client (Ledlenser AI figures will change; review both clients after it
-  merges); catalog_checked_at and Keepa load time on views (then wire the
-  Splintered and Keepa asterisks, X-25 to CURRENT). Brian decides: retire
-  the empty "Other retailers" channel read (decision 73).
-- Also waiting on Watson: the Ledlenser set-aside form error; AI Search
-  read speed (HTTP 500s under load); PR 110 wording (metric-destinations).
-- After ~15 Nov: verify Watson's Findability pass; propose D-02, D-09.
-- Site-type classifier runs daily in Toolbelt (decision 55): check first
-  runs and needs-review; backlog ~974 Fender, ~591 Ledlenser at 100 a day.
-- Open REFINE work: X-25 (Splintered asterisk), X-10/X-33 CSV gaps (fix
-  list has no CSV), X-18/X-27/X-34 adoption, H-07 (needs SC-03).
-- Known: AI Search tables scroll inside panels at 1280; 3 TSX files over
-  400 lines. PM25 cost about $600 (estimate). Do not subscribe to worker PRs.
+- PM26 handed off 12 Nov 2026; next is PM27. Docs at 26.10. Launch CURRENT:
+  69 of 94 (A-11 added). Decisions 74 to 88 are PM26's.
+- Finish in order: 26.13 (fast window reads, draft PR into 190's branch; its
+  migration is approved: dry-run rolled back, apply, record on the PR); then
+  190 (window everywhere; merge only once AI figures load in about 5 s); 191
+  (score cards); a fix round on 189 (Sites to review, decisions 84, 85).
+- Queue: 26.15 Citation Ecosystem filters (decision 86); 26.6 map colors, red
+  "Amazon specs complete" (bands 98/95), radar "X leads Y", retire "Other
+  retailers" read (82), split CanvasShell/GraphPrimitives; 26.4 asterisks (PR
+  184 merged; review Ledlenser AI figures); weekly Amazon page scrape (74);
+  SC-03 spec (77, 78; Consensus weights become 40/40/20, scores shift).
+- Brian: review docs/d05-field-lists.md; R-15 after Watson; R-19; "Need help?"
+  routing; held rows (leadership doc claude.ai/artifact/TXZ217nzUhNQFiuJyJEAUm,
+  its comments reach PM26 only). Up to $3,000 next week if Marc approves;
+  report at $1,000 and $2,000.
+- Watson: PR 42; AI-Search slowness and Perplexity failures; cause of the 11
+  Nov outage (database upgraded 12 Nov); PR 110 wording; R-09; R-10; X-29;
+  X-15/X-16. Amazon SP-API via Apexti (Ryan) pending since 15 Oct.
+- Browser tests: at most 2 parallel browsers per worker. Workers confirm the
+  Netlify preview builds before handing back. Unsubscribe auto-subscribed PRs.

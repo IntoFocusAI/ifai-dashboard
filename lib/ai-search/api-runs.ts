@@ -5,6 +5,7 @@ import type { HistoryMode } from "@/lib/ai-search/history-mode";
 import {
   historyViewMissing,
   readRunPages,
+  withoutAnswerText,
   type HistoryReadClient,
   type HistoryReadOptions,
 } from "@/lib/ai-search/history-queries";
@@ -222,10 +223,13 @@ export async function loadApiRunSnapshot(
 ): Promise<ApiSnapshotResult> {
   const runId = run.audit_run_id;
   const read = { ...options, limit: options.limit ?? apiReadLimit };
+  const answers = options.withAnswers !== false;
+  const callColumns = answers ? API_CALL_COLUMNS : withoutAnswerText(API_CALL_COLUMNS);
+  const probeColumns = answers ? API_PROBE_COLUMNS : withoutAnswerText(API_PROBE_COLUMNS);
   try {
     const [calls, probes, citations] = await Promise.all([
-      readRunPages<AiCallRow>(client, API_CALL_VIEW, API_CALL_COLUMNS, runId, ["sim_id", "id"], read, API_REPEAT_FILTER),
-      readRunPages<AiProbeRow>(client, API_PROBE_VIEW, API_PROBE_COLUMNS, runId, ["sim_id"], read),
+      readRunPages<AiCallRow>(client, API_CALL_VIEW, callColumns, runId, ["sim_id", "id"], read, API_REPEAT_FILTER),
+      readRunPages<AiProbeRow>(client, API_PROBE_VIEW, probeColumns, runId, ["sim_id"], read),
       readRunPages<AiCitationRow>(client, API_CITATION_VIEW, API_CITATION_COLUMNS, runId, ["sim_id", "position"], read),
     ]);
     for (const result of [calls, probes, citations]) {

@@ -98,6 +98,8 @@ export type PlanItem = {
   evidence: EvidenceFocus | null;
   /** Stored category keys the item belongs to; empty when it is brand-wide (client focus). */
   categories: string[];
+  /** An AI row's tooltip: the latest run's count, "Latest run (Nov 12): X of Y" (roadmap-latest). */
+  tip?: string | null;
 };
 
 export const RECOMMENDED_LABEL = "Recommended";

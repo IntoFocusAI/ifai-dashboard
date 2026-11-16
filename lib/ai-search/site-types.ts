@@ -5,8 +5,8 @@
  * answers and classifySource falls back to the lists in code, so the dashboard works before the
  * migration is applied.
  *
- * Needs review is for staff. The FDD does not say where, or in what words, a client sees it, so no
- * screen shows it yet; `siteTypeNeedsReview` is the one hook for it.
+ * Needs review is for staff only: the staff Sites to review page (lib/ai-search/site-review.ts) lists
+ * those rows. No client screen shows it; `siteTypeNeedsReview` is the hook for the canvas.
  */
 
 import type { SourceClass } from "@/lib/ai-search/citations";
@@ -144,6 +144,11 @@ export function resetSiteTypeLoadsForTests() {
 /** Installs (or clears, with null) the stored types classifySource reads first. */
 export function setSiteTypes(index: SiteTypeIndex | null) {
   current = index;
+}
+
+/** The installed index itself, so a cache of classified rows can tell when the stored types changed. */
+export function installedSiteTypes(): SiteTypeIndex | null {
+  return current;
 }
 
 /** The stored source class for a domain, or null when nothing is stored (use the lists in code). */

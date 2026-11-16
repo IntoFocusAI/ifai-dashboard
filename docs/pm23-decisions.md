@@ -324,3 +324,41 @@ closeout of each view. Open items are marked OPEN and are not built.
     client schema. Accepted by Brian on 11 Nov 2026. Retiring "Other
     retailers" is left for PM26 to raise.
 
+74. D-05 required specs: interim rule is the top 10 fields by fill rate per
+    category (PR 180). Replaced by Amazon field lists per product type,
+    built from competitor listings (30% rule) and reviewed by Brian before
+    they count (PR 186). Identifiers are not required fields. A weekly
+    scrape of the clients' own listings (about $3.25 a month) is approved
+    so every field can be judged; brightness and max lumens count as one.
+75. C-01 deck outline approved (11 Nov); the deck merged 12 Nov (PR 187).
+76. Go-ahead for workers 26.1 to 26.4 (11 Nov).
+77. SC-03 Actuation: manual factors need an IntoFocus owner and a 90-day
+    expiry; Slack reminders at 30, 14 and 3 days; a staff due-soon list;
+    points drop at expiry. Plan factors at most 40%, measured execution at
+    least 60%; no double counting with Foundation or Commerce. "Owned
+    answers" (brand pages cited in unbranded discovery) is an execution
+    factor.
+78. Clients never see "Awaiting confirmation"; a lapsed factor looks like
+    one never in place.
+79. Action Items, prompt and Findability CSVs approved (PR 185).
+80. "N of M rows" shows on every table at all times.
+81. A-07: no model-column hover text.
+82. Retire the empty "Other retailers" screen read; keep its table until
+    the R-15 plan (Watson) decides. Not built yet.
+83. Every AI figure follows the date pill (default 30 days), the map
+    included. Replaces decision 7 and the standing rule that the map shows
+    the published run. Figures waiting on the window must still load
+    fast: a pre-computed read (worker 26.13) is approved.
+84. Separation: shared data holds only public facts; every per-client
+    list, count and export filters to that client (X-16 Acceptance).
+    Staff Sites to review list approved (A-11), with its two database
+    functions.
+85. Sites to review: client users never see the menu item; a forwarded
+    link shows "This page is for IntoFocus staff".
+86. Citation Ecosystem filters (worker 26.15): engine chips beside the
+    presets, presets set the chips, any mix reads "Custom", labels say
+    "(search)" or "(API)"; one question control "All shopping |
+    Unbranded shopping | Branded shopping | Product fact checks | All
+    answers". The owned-pages-in-unbranded figure stays where it is.
+87. No tooltips on main map bubbles (12 Nov).
+88. Old draft PRs 1, 26, 27, 35, 37, 39, 40, 44 closed (12 Nov).

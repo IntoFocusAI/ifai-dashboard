@@ -2,6 +2,10 @@ import { specFieldLabel } from "@/lib/fender-canvas/catalog-governance-findings"
 import { formatInt, formatPct } from "@/lib/fender-canvas/format";
 
 /**
+ * Fallback only. Amazon Specs now judges each listing against the staff field list for its Amazon
+ * product type (lib/findability/product-type-required-fields.ts). This rule serves the listings
+ * whose product type has no list, and every listing when the product types cannot be read.
+ *
  * Amazon Specs required fields (D-05, decided by Brian Magazu on 11 Nov 2026): each product
  * category's required list is its top 10 spec fields by fill rate across that category's
  * checked listings for the client. Nothing here is kept by hand: the candidate fields are every

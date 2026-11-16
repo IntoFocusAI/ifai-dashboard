@@ -61,33 +61,28 @@ type HeroFace = Pick<CanvasNode, "heroValue" | "tooltip" | "partialTip">;
 
 /**
  * X-25: a bubble whose figure is partial (stale past its check schedule, or covering part of
- * its population) carries the asterisk, and its hover box says what is missing. A bubble whose
- * read failed already reads Not available* and keeps its own box. `withTip: false` keeps the
- * asterisk without a hover box, for the AI Search Visibility and Competitive Radar bubbles,
- * which have none (PM24-1).
+ * its population) carries the asterisk. Map bubbles get no hover box for it (Brian Magazu,
+ * 12 Nov 2026; PM24-1): the asterisk stays, the bubble's panel explains it, and `partialTip`
+ * carries the words for Minimal. A bubble whose read failed already reads Not available* and
+ * keeps its own box.
  */
-function withPartialMark<T extends HeroFace>(face: T, partial: PartialFigure | null, withTip = true): T {
+function withPartialMark<T extends HeroFace>(face: T, partial: PartialFigure | null): T {
   const hero = face.heroValue;
   if (!partial || !hero || !/\d/.test(hero.value)) return face;
-  const desc = partialFigureTip(partial);
   return {
     ...face,
     heroValue: { ...hero, value: markPartial(hero.value, partial) },
-    tooltip: withTip ? { title: PARTIAL_TITLE[partial.reason], desc } : { ...EMPTY_TOOLTIP },
-    partialTip: desc,
+    partialTip: partialFigureTip(partial),
   };
 }
 
 /**
- * X-25 on a retail bubble: the per-row stale reading puts the asterisk on the hero and leads the
- * hover box. A hover box the bubble already had (such as the MAP approved exceptions) follows it.
+ * X-25 on a retail bubble: the per-row stale reading puts the asterisk on the hero, with no
+ * hover box for it. A hover box the bubble already had (such as the MAP approved exceptions)
+ * stays as it was.
  */
 function withRetailStale<T extends HeroFace>(face: T, partial: PartialFigure | null | undefined): T {
-  const marked = withPartialMark(face, partial ?? null);
-  const existing = face.tooltip?.desc;
-  if (marked === face || !partial || !existing) return marked;
-  const desc = `${partialFigureTip(partial)} ${existing}`;
-  return { ...marked, tooltip: { title: PARTIAL_TITLE[partial.reason], desc }, partialTip: desc };
+  return withPartialMark(face, partial ?? null);
 }
 
 /** Exact official product page share — same figure the Findability tab leads with. */
@@ -303,7 +298,7 @@ export function buildLiveNodes(
       ...withPartialMark(aiFaces.satLead, aiStale),
     },
     {
-      ...withPartialMark(aiFaces.spokeAeo, aiStale, false),
+      ...withPartialMark(aiFaces.spokeAeo, aiStale),
       spokeId: "aeo",
       ...primarySpoke("spoke-aeo"),
     },
@@ -320,13 +315,11 @@ export function buildLiveNodes(
       heroValue: readinessHero,
       spokeId: "specs",
       subTab: "Brand-Site Specs",
-      tooltip:
-        metricsTip ??
-        (pageStale ? { title: PARTIAL_TITLE[pageStale.reason], desc: partialFigureTip(pageStale) } : { title: "", desc: "" }),
+      tooltip: metricsTip ?? { title: "", desc: "" },
       partialTip: pageStale ? partialFigureTip(pageStale) : undefined,
     },
     {
-      ...withPartialMark(aiFaces.spokeCompetitors, aiStale, false),
+      ...withPartialMark(aiFaces.spokeCompetitors, aiStale),
       spokeId: "competitors",
       ...primarySpoke("spoke-competitors"),
     },

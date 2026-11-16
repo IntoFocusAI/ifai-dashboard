@@ -7,7 +7,6 @@ import { historyFixtureSnapshots } from "../lib/ai-search/history-fixtures.ts";
 import type { AiSearchRead } from "../lib/ai-search/types.ts";
 import type { CanvasNode } from "../lib/canvas-sdk/types.ts";
 import type { FindabilityRead } from "../lib/findability/copy.ts";
-import { PARTIAL_TITLE } from "../lib/fender-canvas/canvas-reads.ts";
 import { buildLiveMetrics } from "../lib/fender-canvas/metrics-from-live.ts";
 import { buildMinimalMetrics } from "../lib/fender-canvas/minimal-metrics.ts";
 import { buildLiveNodes } from "../lib/fender-canvas/nodes-from-live.ts";
@@ -91,18 +90,18 @@ test("a Findability check older than twice its weekly schedule marks the Findabi
   const { byId } = nodes({ find: findability(daysAgo(30)), ai: ai(daysAgo(1)) });
   const sat = node(byId, "sat-findability");
   assert.equal(sat.heroValue?.value, "50.0%*");
-  assert.equal(sat.tooltip.title, PARTIAL_TITLE.coverage);
-  assert.match(sat.tooltip.desc, /^2 of 2 listings have no official-page check in 14 days\./);
-  assert.doesNotMatch(sat.tooltip.desc, /canvas_/);
-  assert.ok(sat.tooltip.desc.split("\n").length <= 3, "a lead line, then at most two short lines");
-  assert.equal(sat.partialTip, sat.tooltip.desc);
+  // Brian Magazu, 12 Nov 2026: no hover box on a map bubble; the words stay for Minimal and the panel.
+  assert.equal(sat.tooltip.desc, "");
+  assert.match(sat.partialTip ?? "", /^2 of 2 listings have no official-page check in 14 days\./);
+  assert.doesNotMatch(sat.partialTip ?? "", /canvas_/);
+  assert.ok((sat.partialTip ?? "").split("\n").length <= 3, "a lead line, then at most two short lines");
 });
 
 test("a fresh newest check does not clear the asterisk while another listing is older than 14 days", () => {
   const { byId } = nodes({ find: findability(daysAgo(0), daysAgo(30)), ai: ai(daysAgo(1)) });
   const sat = node(byId, "sat-findability");
   assert.equal(sat.heroValue?.value, "50.0%*");
-  assert.match(sat.tooltip.desc, /^1 of 2 listings has no official-page check in 14 days\./);
+  assert.match(sat.partialTip ?? "", /^1 of 2 listings has no official-page check in 14 days\./);
 });
 
 test("a listing with no stored check time counts as not checked in the window", () => {
@@ -122,20 +121,20 @@ test("a checked listing past 14 days marks the AI Readiness bubble, counted per 
   const stale = nodes({ find: findability(daysAgo(1)), ai: ai(daysAgo(1)), specCheckAt: daysAgo(20) });
   const bubble = node(stale.byId, "spoke-specs");
   assert.match(bubble.heroValue?.value ?? "", /^\d+(\.\d)?%\*$/);
-  assert.equal(bubble.tooltip.title, PARTIAL_TITLE.coverage);
-  assert.match(bubble.tooltip.desc, /^1 of 1 listing has no .* product check in 14 days\./);
+  assert.equal(bubble.tooltip.desc, "", "no hover box on a map bubble");
+  assert.match(bubble.partialTip ?? "", /^1 of 1 listing has no .* product check in 14 days\./);
 
   // The newest listing is fresh, but the other one is not: the asterisk stays.
   const mixed = nodes({ find: findability(daysAgo(1)), ai: ai(daysAgo(1)), specCheckAt: daysAgo(20), specBoth: true });
   const mixedBubble = node(mixed.byId, "spoke-specs");
   assert.match(mixedBubble.heroValue?.value ?? "", /\*$/);
-  assert.match(mixedBubble.tooltip.desc, /^1 of 2 listings has no .* product check in 14 days\./);
+  assert.match(mixedBubble.partialTip ?? "", /^1 of 2 listings has no .* product check in 14 days\./);
 
   const current = nodes({ find: findability(daysAgo(1)), ai: ai(daysAgo(1)), specCheckAt: daysAgo(2) });
   assert.doesNotMatch(node(current.byId, "spoke-specs").heroValue?.value ?? "", /\*$/);
 });
 
-test("a stale AI Search run marks every AI figure; the two main bubbles get no hover box (PM24-1)", () => {
+test("a stale AI Search run marks every AI figure; no map bubble gets a hover box (PM24-1, 12 Nov 2026)", () => {
   const { byId } = nodes({ find: findability(daysAgo(1)), ai: ai(daysAgo(9)) });
   for (const id of ["spoke-aeo", "spoke-competitors"]) {
     const bubble = node(byId, id);
@@ -147,7 +146,8 @@ test("a stale AI Search run marks every AI figure; the two main bubbles get no h
     const sat = node(byId, id);
     if (!/\d/.test(sat.heroValue?.value ?? "")) continue;
     assert.match(sat.heroValue?.value ?? "", /\*$/, `${id} carries the asterisk`);
-    assert.equal(sat.tooltip.title, PARTIAL_TITLE.stale, `${id} explains it`);
+    assert.equal(sat.tooltip.desc, "", `${id} has no hover box`);
+    assert.match(sat.partialTip ?? "", /^No AI Search run has been published/, `${id} keeps the words for Minimal`);
   }
 });
 

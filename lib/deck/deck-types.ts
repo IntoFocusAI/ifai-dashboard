@@ -83,7 +83,6 @@ export type DeckModel = {
   brand: string;
   title: string;
   window: string;
-  runId: string | null;
   asOf: string | null;
   slides: DeckSlide[];
   omitted: DeckOmission[];
@@ -94,11 +93,14 @@ export type DeckInput = {
   brandSite: string;
   /** "Fender/Squier" for Fender, else the brand. */
   leadBrand: string;
-  /** What the AI Search and Competitive Radar tabs read: the date-pill window with its API runs. */
+  /**
+   * What every AI figure reads (Brian Magazu, 12 Nov 2026): the date-pill window with its API
+   * runs, narrowed by the engine switch, as the AI Search, Competitive Radar, Summary, and Action
+   * Items tabs read it.
+   */
   tabAi: AiSearchSnapshot | null;
-  /** What Summary and Action Items read: the published run with its matching API run. */
-  mapAi: AiSearchSnapshot | null;
-  mapAiStale?: PartialFigure | null;
+  /** X-25 for the window's AI rates: stale, or mixed across a question-set change. */
+  aiStale?: PartialFigure | null;
   retail: RetailCanvasRead;
   findability: FindabilityRead;
   specPages: SpecPageSummary | null;

@@ -122,14 +122,14 @@ export function categoryUnbrandedFigure(ctx: MinimalContext, category: string): 
   return aiFigure(ctx, () => {
     const all = categoryRows(ctx);
     const row = all.find((item) => item.key === category);
-    if (!row) return missingFigure(`The published run asked no ${name} questions.`);
+    if (!row) return missingFigure(`The selected period asked no ${name} questions.`);
     const tally = row.roles.unbranded_discovery;
     const figure = rateFigure(
       tally,
       UNBRANDED_RATE_BANDS,
       `resolved ${name} unbranded discovery answers`,
       null,
-      `The published run has no resolved ${name} unbranded discovery answers.`,
+      `The selected period has no resolved ${name} unbranded discovery answers.`,
     );
     const largest = Math.max(0, ...all.map((item) => item.roles.unbranded_discovery.resolved));
     if (!figure.ratio || !isSmallSample(tally.resolved, largest)) return figure;
@@ -147,7 +147,7 @@ function categoryUnbrandedEntry(category: string): MinimalEntry {
   };
 }
 
-/** Every battery category, then any other category the published run holds. */
+/** Every battery category, then any other category the selected period holds. */
 const CATEGORY_UNBRANDED: MinimalEntryFamily = {
   family: "battlecards-category-unbranded",
   entries: (ctx) => {

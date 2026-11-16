@@ -351,7 +351,7 @@ test("Category Battlecards offers one option per question category, each with it
   assert.equal(slotById(slots, "battlecards-basses-unbranded").reading.ratio, "1 of 4 resolved Basses unbranded discovery answers · Small sample");
   const squier = slotById(slots, "battlecards-squier-unbranded");
   assert.equal(squier.value, NOT_AVAILABLE, "a category with no resolved answers");
-  assert.equal(squier.reading.missing, "The published run has no resolved Squier unbranded discovery answers.");
+  assert.equal(squier.reading.missing, "The selected period has no resolved Squier unbranded discovery answers.");
 
   const ai = aiReady();
   assert.equal(ai.phase, "ready");
@@ -359,7 +359,7 @@ test("Category Battlecards offers one option per question category, each with it
   const withExtra = build(retailReady(), { phase: "ready", snapshot: moved }).slots;
   const amps = slotById(withExtra, "battlecards-amps-unbranded");
   assert.equal(amps.value, NOT_AVAILABLE, "a battery category the run did not ask stays offered");
-  assert.equal(amps.reading.missing, "The published run asked no Amps questions.");
+  assert.equal(amps.reading.missing, "The selected period asked no Amps questions.");
   const ukuleles = slotById(withExtra, "battlecards-ukuleles-unbranded");
   assert.equal(ukuleles.label, "Ukuleles: Fender leads in unbranded discovery");
   assert.equal(ukuleles.value, "100.0%");

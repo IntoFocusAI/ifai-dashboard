@@ -44,7 +44,7 @@ export function BriefingRetailHero({
   read: RetailCanvasRead;
 }) {
   const findability = useFindability();
-  // The map's population (decision 7): the Briefing and the map read one number.
+  // The date-pill window every AI figure reads: the Briefing, the tabs, and the map read one number.
   const ai = useSummaryAiRead();
   const aiStale = useSummaryAiStale(ai);
   const { findings, lostRevenue } = briefingFindingsLead(read, findability, ai, { aiStale });

@@ -114,7 +114,7 @@
 - **Evidence:** Approved by Brian Magazu on 29 Oct 2026. Pull request 81, commit b25aeb8. Published on main at 85e076b.
 - **Open decision:** None.
 
-**X-27 REFINE** · Launch
+**X-27 CURRENT** · Launch
 
 **Status source:** Addendum ADD-11 / meeting
 
@@ -122,7 +122,7 @@
 - **Desired:** Set one type scale and one font family across the dashboard.
 - **User value:** The brand feels intentional.
 - **Acceptance:** No mixed display stacks on client surfaces.
-- **Evidence:** Verified in source/CSS variance Oct 20. Approved by Brian Magazu on 9 Nov 2026. Worker 23.1, pull request 148 (main c8561cb): all dashboard text is Geist (400 body, 600 headings) with Geist Mono for labels and table numbers; Playfair and the system monospace are gone from shared CSS. REFINE until the view stylesheets that still use weights of 700 or more, and prompts-editor.css, follow. Worker 24.3 (PR 152, main ca22e8a) and worker 24.4 (PR 151, main f1df1f5): Catalog Health and AI Search follow the type rules; other views to follow.
+- **Evidence:** Verified in source/CSS variance Oct 20. Approved by Brian Magazu on 9 Nov 2026. Worker 23.1, pull request 148 (main c8561cb): all dashboard text is Geist (400 body, 600 headings) with Geist Mono for labels and table numbers; Playfair and the system monospace are gone from shared CSS. REFINE until the view stylesheets that still use weights of 700 or more, and prompts-editor.css, follow. Worker 24.3 (PR 152, main ca22e8a) and worker 24.4 (PR 151, main f1df1f5): Catalog Health and AI Search follow the type rules; other views to follow. PM26 close-out (12 Nov 2026): Workers 26.1, 26.2 and 26.3 (pull requests 180 to 182, merged 11 Nov 2026) found no font weight over 600 in any view stylesheet or the prompts editor.
 - **Open decision:** None. Decided by Brian Magazu on 9 Nov 2026, following the IntoFocus AI Brand Book V2 (docs/brand in the repo): Geist for all text, 400 for body and 600 for headlines and hero figures, never heavier than 600. Geist Mono only for eyebrows, labels, sources, and table numbers. Sizes stay on the X-31 dashboard scale.
 
 **X-31 CURRENT** · Launch
@@ -153,7 +153,7 @@ Approved by Brian Magazu on 29 Oct 2026. Pull request 88, commit 921c81e. Publis
 
 None.
 
-**X-33 REFINE** · Launch
+**X-33 CURRENT** · Launch
 
 **Status source:** Explicit (Brian Magazu, 9 Nov 2026)
 
@@ -175,7 +175,7 @@ Every client data table sorts on every column, searches or filters, and download
 
 **Evidence**
 
-Approved by Brian Magazu on 9 Nov 2026. Worker 23.1, pull request 148 (main c8561cb): every ResizableTable has Search this table, an N of M rows count, a no-match row, and Download CSV. REFINE until five tables with their own sort handler and the tables outside ResizableTable follow. Worker 24.3 (PR 152, main ca22e8a) and worker 24.4 (PR 151, main f1df1f5): the Catalog Health and AI Search views now follow the table rules; other views to follow.
+Approved by Brian Magazu on 9 Nov 2026. Worker 23.1, pull request 148 (main c8561cb): every ResizableTable has Search this table, an N of M rows count, a no-match row, and Download CSV. REFINE until five tables with their own sort handler and the tables outside ResizableTable follow. Worker 24.3 (PR 152, main ca22e8a) and worker 24.4 (PR 151, main f1df1f5): the Catalog Health and AI Search views now follow the table rules; other views to follow. PM26 close-out (12 Nov 2026): Workers 26.1 to 26.3 (pull requests 180 to 182) and 26.7 (pull request 185, merged 12 Nov 2026): every client table in every view sorts on every column, searches, and reads N of M rows at all times (decision 80).
 
 **Open decision**
 
@@ -255,7 +255,7 @@ None. Status words are Poor, Fair, and Good where a figure has no word of its ow
 - **Evidence:** Approved by Brian Magazu on 4 Nov 2026. Worker 21.6, pull request 120 (main 3828b41). Brian chose a rolling 30 days over a calendar month, anchored on the published run. Worker 24.4, pull request 151 (main f1df1f5): the Ledlenser AI Search window is fixed, and Ledlenser question roles follow ledlenser.ai_prompts.analytical_intent (Brian, 10 Nov 2026).
 - **Open decision:** None. Decided by Brian Magazu on 9 Nov 2026: Summary Briefing, the Roadmap, and Action Items use the map's population for AI figures (the published run plus its matching API run), so one figure shows one number. The AI Search and Competitive Radar tabs follow the date pill. Exception (decision 40, 10 Nov 2026): the Competitive Radar map bubble follows the Category Battlecards date-pill window and lead rule (C-03).
 
-**X-10 REFINE** · Launch
+**X-10 CURRENT** · Launch
 
 **Status source:** Explicit
 
@@ -263,7 +263,7 @@ None. Status words are Poor, Fair, and Good where a figure has no word of its ow
 - **Desired:** Server-side exports from the same published query as the screen.
 - **User value:** Operators take evidence to partners.
 - **Acceptance:** Export includes filters, sort, as-of, and population sentence.
-- **Evidence:** Approved by Brian Magazu on 9 Nov 2026. Worker 23.1, pull request 148 (main c8561cb): Download CSV is built on the server from the same query as the screen, keeps the on-screen order, and starts with Filter, Sort, As of, and the population sentence, for 9 tables: MAP listings, Out of Stock, Suppressed Listings, bundles, catalog spec gaps, spec readiness, page readability, page found, and A+ content. REFINE until the AI Search tables have server loaders that follow the date pill. Worker 24.3, pull request 152 (main ca22e8a) and worker 24.4, pull request 151 (main f1df1f5): Catalog Health and AI Search tables now follow the date pill with server loaders.
+- **Evidence:** Approved by Brian Magazu on 9 Nov 2026. Worker 23.1, pull request 148 (main c8561cb): Download CSV is built on the server from the same query as the screen, keeps the on-screen order, and starts with Filter, Sort, As of, and the population sentence, for 9 tables: MAP listings, Out of Stock, Suppressed Listings, bundles, catalog spec gaps, spec readiness, page readability, page found, and A+ content. REFINE until the AI Search tables have server loaders that follow the date pill. Worker 24.3, pull request 152 (main ca22e8a) and worker 24.4, pull request 151 (main f1df1f5): Catalog Health and AI Search tables now follow the date pill with server loaders. PM26 close-out (12 Nov 2026): Worker 26.7, pull request 185 (merged 12 Nov 2026): server CSV added for the Action Items fix list, the prompt list and Findability listings, completing the views audited by workers 26.1 to 26.3.
 - **Open decision:** None. Decided by Brian Magazu on 9 Nov 2026: CSV only for launch, built on the server from the same query as the screen, with the filter, sort, as-of time, and population sentence. Excel and a PDF of the view are LATER.
 
 **X-11 REFINE** · Launch
@@ -341,7 +341,7 @@ None. Status words are Poor, Fair, and Good where a figure has no word of its ow
 - **Current:** Single-brand pilot.
 - **Desired:** Tenant partition before the first real client.
 - **User value:** Client data stays isolated.
-- **Acceptance:** No cross-tenant rows in browser-selectable views.
+- **Acceptance:** No cross-tenant rows in browser-selectable views. Shared reference data (for example site-type labels) holds only facts about the public site, never anything drawn from another client's answers, listings or prompts. Every per-client list, count and export, staff screens included, filters to that client's own data. An automated test loads each client and checks that no other client's domains, ASINs or prompts appear (added by Brian Magazu, 12 Nov 2026, decision 84).
 - **Evidence:** Verified single brand. On 4 Nov 2026 Brian Magazu confirmed Fender and Ledlenser are beta dashboards on real catalogs, not clients yet, so separation waits for the first real client and the dashboards stay open without a login.
 - **Open decision:** None.
 

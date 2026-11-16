@@ -37,7 +37,7 @@ export function BriefingConsensusLead({
 }: {
   bundle: CanvasBundle;
   retail: RetailCanvasRead;
-  /** The map's AI read (decision 7), from useSummaryAiRead. */
+  /** The date-pill window every AI figure reads, from useSummaryAiRead. */
   ai: AiSearchRead;
 }) {
   const findability = useFindability();

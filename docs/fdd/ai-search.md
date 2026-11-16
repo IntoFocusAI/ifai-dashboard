@@ -88,7 +88,7 @@
 - **Evidence:** Approved by Brian Magazu on 3 Nov 2026. Worker 20.6, pull request 107, main a1080b4.
 - **Open decision:** None.
 
-**A-07 DECISION** · Launch
+**A-07 CURRENT** · Launch
 
 **Status source:** Inferred
 
@@ -96,8 +96,8 @@
 - **Desired:** Superseded in part by A-03 Run Details. Remaining: model-column hover copy.
 - **User value:** Clarity in Run Details.
 - **Acceptance:** Hover copy approved or omitted.
-- **Evidence:** Open.
-- **Open decision:** Model-column hover text?
+- **Evidence:** Omitted. Brian Magazu decided on 11 Nov 2026 to drop the model-column hover; the Run Details model column has none (checked 11 Nov 2026, PM26).
+- **Open decision:** None. Decided by Brian Magazu on 11 Nov 2026: no hover text (decision 81).
 
 **A-08 CURRENT** · Launch
 
@@ -109,3 +109,14 @@
 - **Acceptance:** Edits versioned; history compares like with like.
 - **Evidence:** Worker 24.4, pull request 151 (main f1df1f5): the Prompts screen shows each prompt's stored change history through the read-only function public.ai_prompt_edits_list (migration 20261109233000), applied to production on 10 Nov 2026 with Brian Magazu's approval and checked live that day.
 - **Open decision:** None. Decided by Brian Magazu on 9 Nov 2026: the Prompts screen shows each prompt's change history through one additive database read, applied after approval. Ledlenser's prompt list stays read-only.
+
+**A-11 TARGET** · Launch
+
+**Status source:** Explicit (Brian Magazu, 12 Nov 2026)
+
+- **Current:** The site-type classifier flags labels it is unsure of (confidence under 0.7), but no screen shows them.
+- **Desired:** A staff-only Sites to review list, linked from the user menu for IntoFocus staff only, lists the client's flagged domains that its own answers cite, with the classifier's type, confidence and reason, answers citing it in the date-pill window, and a control to confirm or change the type. A staff answer is saved as an override the classifier never changes. A client user never sees the menu item; a forwarded link shows "This page is for IntoFocus staff".
+- **User value:** Wrong site labels are corrected before they feed owned-versus-earned charts and scores.
+- **Acceptance:** Only staff can read or save; each client's list holds only domains its own answers cite; a saved type sticks.
+- **Evidence:** Worker 26.12, pull request 189 (draft). Database functions site_types_to_review and site_type_override applied to production 12 Nov 2026 by PM26 after Brian Magazu approved. Fix round pending: hide 0-citation domains, window count, staff message instead of 404.
+- **Open decision:** None.

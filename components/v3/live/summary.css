@@ -62,3 +62,36 @@
   border-bottom: 0;
   text-decoration: none;
 }
+
+/* Performance: four equal score cards share the row (H-07). Each card is a size container, so the
+   figure and disc grow with the card's width and stay at their compact size on a narrow panel. */
+.ifai-canvas .consensus-score-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  align-items: stretch;
+}
+
+.ifai-canvas .consensus-score-row > [data-consensus-pillar] {
+  container-type: inline-size;
+  min-width: 0;
+}
+
+.ifai-canvas .consensus-score-row .findability-lead-row {
+  flex-wrap: nowrap;
+  justify-content: space-between;
+}
+
+.ifai-canvas .consensus-score-row .ai-lead-figure {
+  font-size: clamp(var(--metric-value-size), 11cqi, 44px);
+}
+
+.ifai-canvas .consensus-score-row [data-consensus-hero] .ai-lead-figure {
+  font-size: clamp(34px, 15cqi, 60px);
+}
+
+.ifai-canvas .consensus-score-row .citation-pie-disc-retail {
+  flex: 0 0 auto;
+  width: clamp(56px, 27cqi, 104px);
+  height: clamp(56px, 27cqi, 104px);
+}

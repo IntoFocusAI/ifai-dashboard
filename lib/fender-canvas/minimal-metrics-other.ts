@@ -152,12 +152,12 @@ export const OTHER_ENTRIES: MinimalEntry[] = [
     tab: "Category Battlecards",
     label: "Beginner share-of-voice gap",
     definition:
-      `${leadBrand()} leads minus the top competitor's leads, in points of resolved Beginner unbranded discovery answers in the published AI run. Category Battlecards shows the Beginner row. ` +
+      `${leadBrand()} leads minus the top competitor's leads, in points of resolved Beginner unbranded discovery answers in the selected period. Category Battlecards shows the Beginner row. ` +
       NO_TAB,
     read: (ctx) =>
       aiFigure(ctx, (_summary, snapshot) => {
         const battle = categoryBattles(snapshot.calls).find((item) => item.category === "beginner");
-        if (!battle || battle.resolved <= 0) return missingFigure("The published run has no resolved Beginner unbranded discovery answers.");
+        if (!battle || battle.resolved <= 0) return missingFigure("The selected period has no resolved Beginner unbranded discovery answers.");
         const rival = battle.leaders[0];
         const gap = ((battle.fenderWins - (rival?.wins ?? 0)) * 100) / battle.resolved;
         const scope = `of ${formatInt(battle.resolved)} resolved Beginner unbranded discovery answers`;
@@ -182,12 +182,12 @@ export const OTHER_ENTRIES: MinimalEntry[] = [
       return best ? `Strongest category: ${categoryLabel(best.category)}` : "Strongest category";
     },
     definition:
-      `The question category where ${leadBrand()} leads the largest share of resolved unbranded discovery answers in the published AI run. Categories with too few answers to compare are skipped while others qualify. Category Battlecards shows every category. ` +
+      `The question category where ${leadBrand()} leads the largest share of resolved unbranded discovery answers in the selected period. Categories with too few answers to compare are skipped while others qualify. Category Battlecards shows every category. ` +
       NO_TAB,
     read: (ctx) =>
       aiFigure(ctx, () => {
         const best = strongest(ctx);
-        if (!best) return missingFigure("The published run has no resolved unbranded discovery answers.");
+        if (!best) return missingFigure("The selected period has no resolved unbranded discovery answers.");
         return categoryUnbrandedFigure(ctx, best.category);
       }),
   }),
@@ -197,11 +197,11 @@ export const OTHER_ENTRIES: MinimalEntry[] = [
     tab: "Run Summary",
     label: "Answered AI calls",
     definition:
-      "Calls that returned an answer, out of the calls the published AI run asked for. The AI Search Visibility header lists it as Answered. No tab shows it as a figure yet.",
+      "Calls that returned an answer, out of the calls the AI runs in the selected period asked for. The AI Search Visibility header lists it as Answered. No tab shows it as a figure yet.",
     read: (ctx) =>
       aiFigure(ctx, (summary) => {
         const { answered, expected, isPartial } = summary.completeness;
-        if (answered == null || expected == null) return missingFigure("The published run does not store its answered call count.");
+        if (answered == null || expected == null) return missingFigure("The selected period does not store its answered call count.");
         const count = `${formatInt(answered)} of ${formatInt(expected)}`;
         return { value: count, tone: isPartial ? "warning" : "success", ratio: `${count} calls answered`, pie: null, tip: null, missing: null };
       }),

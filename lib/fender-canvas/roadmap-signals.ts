@@ -34,6 +34,8 @@ export type SignalAction = {
   partial: PartialFigure | null;
   /** Stored category keys the signal belongs to; absent when it is brand-wide (client focus). */
   categories?: string[];
+  /** The rival a rival-led category signal names. */
+  rival?: string;
 };
 
 function outOfStock(stock: StockLossRead): SignalAction | null {
@@ -122,6 +124,7 @@ function rivalLedCategories(ai: AiSearchRead): SignalAction[] {
         open: { spokeId: "competitors", tab: "Category Battlecards" },
         partial: null,
         categories: [lead.key],
+        rival: rival.brand,
       },
     ];
   });

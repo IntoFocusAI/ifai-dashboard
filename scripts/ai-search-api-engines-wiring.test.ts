@@ -242,8 +242,9 @@ function fullBattery(id: string, day: string): AiSearchSnapshot {
   return { run: runOn(id, day), calls, probes: [], citations: [] };
 }
 
-test("a battery run's fixed questions leave out rotating fact checks and API engines", () => {
-  assert.equal(fixedQuestionCount(fullBattery("b", "2026-11-03")), 34);
+test("a battery run's fixed questions are its shopping questions, without fact checks or API engines", () => {
+  // Wave 1 is 29 shopping questions and 5 fact checks.
+  assert.equal(fixedQuestionCount(fullBattery("b", "2026-11-03")), 29);
   // OCT20: p01 and the rotating p35 on two engines. Only p01 is fixed.
   assert.equal(fixedQuestionCount(OCT20), 1);
   const withApi = { ...OCT20, calls: [...OCT20.calls, call("b-oct20", "openai_api", { prompt_key: "p02" })] };
@@ -259,7 +260,7 @@ test("an API run counts only when it asked the fixed questions of the battery ru
     apiSummary("8aa2eb28", "2026-11-03T14:26:18Z", { run_state: "partial", questions_asked: 34, questions_matched: 34, repeats: 20 }),
   ];
   const window = batteryQuestions([fullBattery("b-oct26", "2026-10-26"), fullBattery("b-oct28", "2026-10-28"), fullBattery("b-nov3", "2026-11-03")]);
-  assert.deepEqual(window.map((item) => item.fixedQuestions), [34, 34, 34]);
+  assert.deepEqual(window.map((item) => item.fixedQuestions), [29, 29, 29]);
   const counted = apiRunsCoveringBattery(runs, window);
   assert.deepEqual(counted.map((run) => run.audit_run_id), ["fe3ada9e", "8aa2eb28"]);
   assert.deepEqual(
@@ -276,6 +277,23 @@ test("an API run counts only when it asked the fixed questions of the battery ru
   assert.equal(apiRunsCoveringBattery(runs, [{ day: "2026-10-27", fixedQuestions: 1 }]).length, 4);
   assert.deepEqual(apiRunsCoveringBattery(runs, []), []);
   assert.deepEqual(apiRunsCoveringBattery([apiSummary("no-count", "2026-11-03T10:00:00Z")], window), []);
+});
+
+test("a Ledlenser API run that asked the 29 shopping questions and no fact checks counts", () => {
+  // Ledlenser's battery asks 29 shopping questions and 3 fact checks; its API job asks the 29 only.
+  const shopping = Array.from({ length: 29 }, (_, i) => `l${String(i + 1).padStart(2, "0")}`);
+  const factChecks = ["l30", "l31", "l32"];
+  const calls = [
+    ...shopping.map((key) => call("led-b", "chatgpt", { prompt_key: key, prompt_kind: "commercial" })),
+    ...factChecks.map((key) => call("led-b", "chatgpt", { prompt_key: key, prompt_kind: "probe" })),
+  ];
+  const battery = batteryQuestions([{ run: runOn("led-b", "2026-11-13"), calls, probes: [], citations: [] }]);
+  assert.deepEqual(battery, [{ day: "2026-11-13", fixedQuestions: 29 }]);
+  const runs = [
+    apiSummary("led-api", "2026-11-13T11:45:11Z", { questions_asked: 29, questions_matched: 29 }),
+    apiSummary("led-smoke", "2026-11-04T18:45:14Z", { run_state: "partial", questions_asked: 5, questions_matched: 5 }),
+  ];
+  assert.deepEqual(apiRunsCoveringBattery(runs, battery).map((run) => run.audit_run_id), ["led-api"]);
 });
 
 test("the API repeat cap keeps repeats 1 to 3 and the fact checks and citations of those calls", () => {
@@ -352,16 +370,16 @@ test("Run Summary, Citation Ecosystem, the trend, and the run detail read the sw
   assert.match(read("components/v3/live/ai-search/RunHistoryControl.tsx"), /<PairedApiRun runId=\{run.audit_run_id\} day=\{day\} \/>/);
 });
 
-test("the Competitive Radar bubble names the rival the Battlecards tab names, from the window rows when given", () => {
+test("every map bubble, the Competitive Radar bubble included, reads the date-pill window the tabs read", () => {
   const rivalCalls = (brand: string, n: number) =>
     Array.from({ length: n }, () => call("w", "chatgpt", { outcome: "competitor_win", primary_brand: brand }));
-  // The published run alone: Yamaha ahead. The window it sits in: Taylor ahead.
-  const published = { ...NOV3, calls: [...rivalCalls("Yamaha", 3), ...rivalCalls("Taylor", 2)] };
+  // The window: Taylor ahead. The bubble names the window's leader, as Category Battlecards does.
   const window = { ...NOV3, calls: [...rivalCalls("Yamaha", 3), ...rivalCalls("Taylor", 6)] };
   const hero = (read: Parameters<typeof aiNodeFaces>[0]) => aiNodeFaces(read).spokeCompetitors.heroValue;
-  assert.match(String(hero({ phase: "ready", snapshot: published })?.label), /^Yamaha leads/);
-  const both = hero({ phase: "ready", snapshot: published, radarSnapshot: window });
-  assert.match(String(both?.label), /^Taylor leads/);
+  assert.match(String(hero({ phase: "ready", snapshot: window })?.label), /^Taylor leads/);
   const wiring = readFileSync(new URL("../components/v3/live/ai-search/useApiEngineLoad.ts", import.meta.url), "utf8");
-  assert.match(wiring, /radarSnapshot: radar\.snapshot/);
+  // Brian Magazu, 12 Nov 2026 (replaces decision 7): the map reads the window, not the published run.
+  assert.match(wiring, /const displayed = useDisplayedAiSearch\(published\);/);
+  assert.match(wiring, /engineGroupRead\(displayed, windowApi, choice\)/);
+  assert.doesNotMatch(wiring, /pairedApiRuns/);
 });

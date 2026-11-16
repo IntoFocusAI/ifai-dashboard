@@ -5,7 +5,7 @@ import { useAiHistory } from "@/components/v3/live/ai-search/AiHistoryContext";
 import { useEngineGroupRead } from "@/components/v3/live/ai-search/EngineGroupScope";
 import { useFindability } from "@/components/v3/live/findability/FindabilityContext";
 import { useStockLossRead } from "@/components/v3/live/useMinimalMetricReads";
-import { useSummaryAiRead, useSummaryAiStale } from "@/components/v3/live/useSummaryAiRead";
+import { useSummaryAiStale } from "@/components/v3/live/useSummaryAiRead";
 import { brandName, brandSite, leadBrand } from "@/lib/brand-copy";
 import { buildDeck } from "@/lib/deck/deck-model";
 import type { DeckModel } from "@/lib/deck/deck-types";
@@ -35,28 +35,26 @@ function estimate(value: string): string | null {
 export type DeckLoad = { phase: "loading" } | { phase: "ready"; model: DeckModel };
 
 /**
- * The deck's reads: the AI Search and Radar tabs' window read (date pill plus API runs, engine
- * switch), Summary's published run with its API run, and the retail, findability, spec-page,
- * and out-of-stock reads the tabs show. Waits until each has settled.
+ * The deck's reads: the window every AI figure reads (date pill plus API runs, engine switch;
+ * Brian Magazu, 12 Nov 2026), and the retail, findability, spec-page, and out-of-stock reads the
+ * tabs show. Waits until each has settled.
  */
 export function useDeckModel(bundle: CanvasBundle, retail: RetailCanvasRead): DeckLoad {
   const history = useAiHistory();
   const { read: tabRead } = useEngineGroupRead();
-  const mapRead = useSummaryAiRead();
-  const mapStale = useSummaryAiStale(mapRead);
+  const aiStale = useSummaryAiStale(tabRead);
   const findability = useFindability();
   const stock = useStockLossRead();
 
   return useMemo<DeckLoad>(() => {
-    const pending = [tabRead.phase, mapRead.phase, retail.phase, findability.phase, stock.phase].includes("loading");
+    const pending = [tabRead.phase, retail.phase, findability.phase, stock.phase].includes("loading");
     if (pending) return { phase: "loading" };
     const model = buildDeck({
       brand: brandName(),
       brandSite: brandSite(),
       leadBrand: leadBrand(),
       tabAi: tabRead.phase === "ready" ? tabRead.snapshot : null,
-      mapAi: mapRead.phase === "ready" ? mapRead.snapshot : null,
-      mapAiStale: mapStale,
+      aiStale,
       retail,
       findability,
       specPages: bundle.specPages ?? null,
@@ -67,5 +65,5 @@ export function useDeckModel(bundle: CanvasBundle, retail: RetailCanvasRead): De
       enterprisePotential: estimate(ENTERPRISE_POTENTIAL_ESTIMATE),
     });
     return { phase: "ready", model };
-  }, [bundle, findability, history.controlLabel, mapRead, mapStale, retail, stock, tabRead]);
+  }, [aiStale, bundle, findability, history.controlLabel, retail, stock, tabRead]);
 }
