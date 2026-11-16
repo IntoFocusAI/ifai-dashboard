@@ -1,4 +1,5 @@
 import { activeClient, clientStorageKey } from "@/lib/client/active-client";
+import { DASHBOARD_PATH } from "@/lib/auth/dashboard-path";
 import { activeSetAsideClientKey } from "@/lib/set-aside/keys";
 import type { ReactNode } from "react";
 import { buildLiveSpokes } from "@/components/v3/build-live-spokes";
@@ -105,6 +106,7 @@ export function buildFenderCanvasSpec(
     appearance: "iom",
     commandCenter,
     promptsEditor: activeClient().promptsEditable ? (close) => <PromptsEditor onClose={close} /> : undefined,
+    promptBuilderHref: activeClient().promptsEditable ? `${DASHBOARD_PATH}/battery-builder` : undefined,
     glossary: fenderGlossary,
     hubSlots: buildHubSlots({
       suppressed: retail.phase === "ready" ? retail.snapshot.suppressedListings : retail.phase,
