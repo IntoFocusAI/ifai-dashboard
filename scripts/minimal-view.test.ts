@@ -380,7 +380,6 @@ const OTHER: Record<string, [spokeId: string, tab: string]> = {
   "beginner-sov-gap": ["competitors", "Category Battlecards"],
   "strongest-category-sov": ["competitors", "Category Battlecards"],
   "resolved-simulations": ["aeo", "Run Summary"],
-  "ai-actuation": ["hub", "Performance"],
 };
 
 function storedBundle(): CanvasBundle {
@@ -427,9 +426,22 @@ test("Other lists the figures no tab shows, last, each opening its closest tab w
   const answered = slotById(slots, "resolved-simulations");
   assert.match(answered.value, /^\d[\d,]* of \d[\d,]*$/);
   assert.equal(answered.reading.ratio, "calls answered", "the count is not repeated under the value");
+  // SC-03: AI Actuation is a Performance score now, not an Other figure (decision 97).
   const actuation = slotById(slots, "ai-actuation");
-  assert.equal(actuation.value, NOT_AVAILABLE, "AI Actuation has no records yet");
-  assert.equal(actuation.reading.missing, "No owner, evidence, or dated records yet.");
+  assert.equal(actuation.area, undefined);
+  assert.equal(actuation.definition, undefined);
+  assert.equal(actuation.value, NOT_AVAILABLE, "this bundle carries no Actuation basis, as when its read fails");
+  assert.equal(actuation.reading.missing, "The AI Actuation records did not load.");
+  const launch = build(retailReady(), aiReady(), findability, {
+    b: {
+      ...storedBundle(),
+      actuation: { programs: [], items: { E2: 0, E3: 0 } },
+    },
+  }).slots;
+  const scored = slotById(launch, "ai-actuation");
+  assert.notEqual(scored.value, NOT_AVAILABLE, "with the basis, Actuation counts from 0 at launch");
+  assert.equal(scored.subTab, "Performance");
+  assert.equal(scored.spokeId, "hub");
   const plan = slotById(slots, "day-90-buy-box-target");
   const roadmap = nodes.find((node) => node.id === "spoke-roadmap");
   assert.equal(plan.value, roadmap?.heroValue?.value, "reads the Roadmap bubble");

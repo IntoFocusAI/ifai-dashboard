@@ -11,6 +11,7 @@ import {
   scoreHistoryFailureTip,
   scoreHistoryModel,
   scoreHistoryTip,
+  scorePointTip,
   weekLabel,
   type ScoreHistoryClient,
   type ScoreHistoryModel,
@@ -90,6 +91,21 @@ function ChartBody({ model, hidden }: { model: ScoreHistoryModel; hidden: Readon
           strokeWidth="1.25"
           vectorEffect="non-scaling-stroke"
         />
+        {model.actuationAdded != null && index.has(model.actuationAdded) ? (
+          // The week scoring added AI Actuation (decision 97): a gray dashed rule, no status color.
+          <line
+            data-score-history-actuation-marker={model.actuationAdded}
+            x1={xFor(index.get(model.actuationAdded) ?? 0, count)}
+            x2={xFor(index.get(model.actuationAdded) ?? 0, count)}
+            y1={yFor(100)}
+            y2={yFor(0)}
+            stroke="var(--text-muted)"
+            strokeOpacity="0.7"
+            strokeDasharray="3 3"
+            strokeWidth="1"
+            vectorEffect="non-scaling-stroke"
+          />
+        ) : null}
         {visible.map((line) =>
           line.points.length < 2 ? null : (
             <polyline
@@ -124,7 +140,8 @@ function ChartBody({ model, hidden }: { model: ScoreHistoryModel; hidden: Readon
               data-score-history-point={line.key}
               style={{ left: `${xFor(index.get(point.week) ?? 0, count)}%`, top: `${yFor(point.score)}%`, color: SERIES_COLOR[line.key] }}
               data-ifai-tooltip-title={`${line.label} · ${weekLabel(point.week)}`}
-              data-ifai-tooltip-desc={count < 2 ? `${figure}. ${scoreHistoryTip(model)}` : `${figure}.`}
+              data-ifai-tooltip-desc={scorePointTip(model, point.week, figure)}
+              data-score-history-actuation-added={model.actuationAdded === point.week ? "" : undefined}
               tabIndex={0}
               role="img"
               aria-label={`${line.label}, ${weekLabel(point.week)}: ${figure}`}

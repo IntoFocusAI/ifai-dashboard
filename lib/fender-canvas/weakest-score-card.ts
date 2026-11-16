@@ -2,12 +2,12 @@ import { CONSENSUS_SCORE_TARGET } from "@/lib/fender-canvas/consensus-score-disp
 import type { ConsensusScore } from "@/lib/fender-canvas/consensus-scores";
 
 /** The Summary → Performance score cards that open a breakdown with their chevron. */
-export type ScoreCardId = "consensus" | "foundation" | "commerce";
+export type ScoreCardId = "consensus" | "foundation" | "commerce" | "actuation";
 
 /**
  * Decision 94: the weakest score card opens its breakdown by default. Weakest is the lowest score
- * against its target (every card's target is 70 today). A score that reads Not included or has no
- * figure does not count. A tie keeps the card order on screen. Null when no card has a score.
+ * against its target (every card's target is 70 today). A score left out (its inputs did not load)
+ * or with no figure does not count. A tie keeps the card order on screen. Null when no card has a score.
  */
 export function weakestScoreCard(
   consensus: ConsensusScore,
@@ -17,6 +17,7 @@ export function weakestScoreCard(
     { id: "consensus", score: consensus.score, included: true },
     { id: "foundation", score: consensus.foundation.score, included: consensus.foundation.included },
     { id: "commerce", score: consensus.commerce.score, included: consensus.commerce.included },
+    { id: "actuation", score: consensus.actuation.score, included: consensus.actuation.included },
   ];
   let weakest: { id: ScoreCardId; gap: number } | null = null;
   for (const card of cards) {

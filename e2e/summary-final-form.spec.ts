@@ -7,7 +7,7 @@ import { AI_READ_MS, expect, test } from "./fixtures";
 
 const SNAPSHOT_ROUTE = "**/rest/v1/canvas_score_snapshots*";
 
-function snapshotRow(clientKey: string, week: string, consensus: number, foundation: number, commerce: number) {
+function snapshotRow(clientKey: string, week: string, consensus: number, foundation: number, commerce: number, actuation: number | null = null) {
   return {
     client_key: clientKey,
     week_start: week,
@@ -15,7 +15,7 @@ function snapshotRow(clientKey: string, week: string, consensus: number, foundat
     consensus_score: consensus,
     foundation_score: foundation,
     commerce_score: commerce,
-    actuation_score: null,
+    actuation_score: actuation,
   };
 }
 
@@ -61,15 +61,16 @@ for (const client of ["fender", "ledlenser"]) {
     test("Performance reads each score against target 70 with its status word", async ({ page }) => {
       test.slow();
       await page.goto(`/dashboard?${query}spoke=hub&tab=performance`);
-      for (const pillar of ["consensus", "foundation", "commerce"]) {
-        const card = page.locator(`[data-consensus-pillar='${pillar}']`);
+      for (const pillar of ["consensus", "foundation", "commerce", "actuation"]) {
+        const card = page.locator(`[data-consensus-lead] [data-consensus-pillar='${pillar}']`);
         await expect(card.locator("[data-consensus-pillar-score]")).toHaveText(/^\d{1,3}\*?$/, { timeout: AI_READ_MS });
         await expect(card.locator("[data-consensus-target]")).toHaveText("vs target 70");
         await expect(card.locator("[data-status]")).toHaveText(/^(Poor|Fair|Good)$/);
       }
-      await expect(page.locator("[data-consensus-pillar='actuation']")).toContainText("Not included");
-      // AI Actuation is left out, so AI Consensus covers 2 of 3 pillars and carries the asterisk.
-      await expect(page.locator("[data-consensus-pillar='consensus'] [data-partial-figure='coverage']")).toHaveCount(1);
+      // SC-03: Actuation counts from 0 at launch (decision 97); it never reads Not included (decision 78).
+      await expect(page.locator("[data-consensus-scores]")).not.toContainText(/Not included|Awaiting confirmation/);
+      await expect(page.locator("[data-consensus-pillar='actuation'] [data-consensus-pillar-coverage]")).toHaveText("5 of 5 factors");
+      await expect(page.locator("[data-consensus-pillar='consensus'] [data-consensus-pillar-coverage]")).toHaveText("3 of 3 pillars");
       const briefing = page.locator("[data-consensus-pillar='consensus'] [data-consensus-pillar-score]");
       const score = await briefing.textContent();
       await page.locator(".drilldown-tab-btn", { hasText: "Briefing" }).click();
@@ -96,11 +97,11 @@ for (const client of ["fender", "ledlenser"]) {
       await page.locator("[data-consensus-pillar='consensus'] [data-score-card-tip]").hover();
       await expect(page.locator(".node-tooltip-definition")).toContainText("AI Consensus is IntoFocus");
 
-      await expect(page.locator("[data-consensus-pillar='actuation'] button.retail-explore")).toHaveCount(0);
       await page.locator("[data-consensus-pillar='consensus'] button.retail-explore").click();
       const weights = page.locator("[data-consensus-weights]");
-      await expect(weights.locator("[data-consensus-weight-row='actuation']")).toContainText("Not included");
-      await expect(weights.locator("[data-consensus-weight-row='actuation'] [data-consensus-weight]")).toHaveCount(0);
+      // Decisions 77, 78: 40% Foundation, 40% Commerce, 20% Actuation.
+      await expect(weights.locator("[data-consensus-weight]")).toHaveText(["Weight 40.0%", "Weight 40.0%", "Weight 20.0%"]);
+      await expect(weights.locator("[data-consensus-weight-total] [data-status]")).toHaveText(/^(Poor|Fair|Good)$/);
       const points = await weights
         .locator("[data-consensus-contribution]")
         .evaluateAll((nodes) => nodes.map((node) => Number.parseFloat(node.textContent ?? "")));
@@ -113,7 +114,7 @@ for (const client of ["fender", "ledlenser"]) {
       test.slow();
       await page.goto(`/dashboard?${query}spoke=hub&tab=performance`);
       const scores: Record<string, number> = {};
-      for (const pillar of ["consensus", "foundation", "commerce"]) {
+      for (const pillar of ["consensus", "foundation", "commerce", "actuation"]) {
         const figure = page.locator(`[data-consensus-pillar='${pillar}'] [data-consensus-pillar-score]`);
         await expect(figure).toHaveText(/^\d{1,3}\*?$/, { timeout: AI_READ_MS });
         scores[pillar] = Number.parseInt((await figure.textContent()) ?? "", 10);
@@ -127,6 +128,36 @@ for (const client of ["fender", "ledlenser"]) {
       await expect(page.locator(`[data-consensus-pillar='${weakest}'] button.retail-explore`)).toHaveAttribute("aria-expanded", "true");
       const detail = page.locator("#consensus-component-detail");
       await expect(detail).toBeVisible();
+    });
+
+    test("AI Actuation opens its factors with points and basis, E1 with its tooltip", async ({ page }) => {
+      test.slow();
+      await page.goto(`/dashboard?${query}spoke=hub&tab=performance`);
+      const card = page.locator("[data-consensus-pillar='actuation']");
+      await expect(card.locator("[data-consensus-pillar-score]")).toHaveText(/^\d{1,3}$/, { timeout: AI_READ_MS });
+      const toggle = card.locator("button.retail-explore");
+      if ((await toggle.getAttribute("aria-expanded")) !== "true") await toggle.click();
+      const factors = page.locator("[data-actuation-factors]");
+      await expect(factors.locator("[data-actuation-factor]")).toHaveCount(5);
+      await expect(factors.locator("[data-actuation-factor-points]")).toHaveText([
+        /^\d+(\.\d)? of 20 points$/,
+        /^\d+(\.\d)? of 20 points$/,
+        /^\d+(\.\d)? of 30 points$/,
+        /^\d+(\.\d)? of 15 points$/,
+        /^\d+(\.\d)? of 15 points$/,
+      ]);
+      await expect(factors.locator("[data-actuation-factor='P1'] [data-actuation-factor-basis]")).toHaveText(/^(Not in place\.|In place\. )/);
+      await expect(factors.locator("[data-actuation-factor='E1'] [data-actuation-factor-basis]")).toContainText("unbranded shopping");
+      await factors.locator("[data-actuation-factor-tip='E1']").hover();
+      await expect(page.locator(".node-tooltip-definition")).toContainText("Owned answers. The share of AI answers to shopping questions");
+      await expect(page.locator(".node-tooltip-definition")).toContainText("Target: 15%");
+      const sum = await factors
+        .locator("[data-actuation-factor-points]")
+        .evaluateAll((nodes) => nodes.reduce((total, node) => total + Number.parseFloat(node.textContent ?? "0"), 0));
+      const shown = Number.parseInt((await card.locator("[data-consensus-pillar-score]").textContent()) ?? "", 10);
+      expect(Math.abs(sum - shown)).toBeLessThanOrEqual(0.6);
+      await expect(factors).not.toContainText(/Awaiting|Not included/);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     });
 
     test("Scores over time shows nothing before the table exists", async ({ page, pageErrors }) => {
@@ -183,7 +214,7 @@ for (const client of ["fender", "ledlenser"]) {
           status: 200,
           contentType: "application/json",
           headers: { "access-control-allow-origin": "*" },
-          body: JSON.stringify([snapshotRow(key, "2026-11-09", 54, 33, 75), snapshotRow(key, "2026-11-16", 56, 35, 77)]),
+          body: JSON.stringify([snapshotRow(key, "2026-11-09", 54, 33, 75), snapshotRow(key, "2026-11-16", 56, 35, 77, 9)]),
         });
       });
       await page.goto(`/dashboard?${query}spoke=hub&tab=performance`);
@@ -199,11 +230,13 @@ for (const client of ["fender", "ledlenser"]) {
       });
       expect(order).toEqual([true, true]);
       const toggles = section.locator("[data-score-history-toggle]");
-      await expect(toggles).toHaveText(["AI Consensus", "AI Foundation", "AI Commerce"]);
+      await expect(toggles).toHaveText(["AI Consensus", "AI Foundation", "AI Commerce", "AI Actuation"]);
       await expect(section.locator("[data-score-history-line]")).toHaveCount(3);
       await expect(section.locator("[data-score-history-target]")).toHaveCount(1);
       await expect(section).toContainText("Target 70");
-      await expect(section.locator("[data-score-history-point]")).toHaveCount(6);
+      await expect(section.locator("[data-score-history-point]")).toHaveCount(7);
+      // Decision 97: the week scoring added AI Actuation is marked.
+      await expect(section.locator("[data-score-history-actuation-marker='2026-11-16']")).toHaveCount(1);
       const family = await section.locator(".score-history-xlabels span").first().evaluate((node) => getComputedStyle(node).fontFamily);
       expect(family.toLowerCase()).toContain("mono");
 
@@ -214,6 +247,7 @@ for (const client of ["fender", "ledlenser"]) {
       const point = section.locator("[data-score-history-point='consensus']").last();
       await point.hover();
       await expect(page.locator(".node-tooltip-definition")).toContainText("56 vs target 70");
+      await expect(page.locator(".node-tooltip-definition")).toContainText("Scoring now includes AI Actuation");
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     });
   });

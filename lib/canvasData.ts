@@ -8,6 +8,7 @@ import {
   type BundleReadKey,
   type CanvasReadResult,
 } from "@/lib/fender-canvas/canvas-reads";
+import { loadActuationBasis } from "@/lib/fender-canvas/actuation-basis-read";
 import { FEATURED_OFFER_COLUMNS } from "@/lib/fender-canvas/featured-offer";
 import { loadListingContent, type ListingContentClient } from "@/lib/fender-canvas/listing-content";
 import { loadSpecPages, type SpecPageClient } from "@/lib/fender-canvas/machine-readability";
@@ -27,6 +28,8 @@ export async function loadCanvas(
   const listingContent = Promise.allSettled([
     limit(loadListingContent(supabase as unknown as ListingContentClient)),
   ]);
+  // SC-03: the Actuation basis rides with the bundle so every Consensus figure reads the same one.
+  const actuation = limit(loadActuationBasis()).catch(() => null);
   const queries: Record<BundleReadKey, PromiseLike<CanvasReadResult>> = {
     m: supabase.from("canvas_metrics").select("*").single(),
     cats: supabase.from("canvas_ai_category").select("*").order("fender_win_pct"),
@@ -47,8 +50,11 @@ export async function loadCanvas(
   const reads = Object.fromEntries(
     BUNDLE_READ_KEYS.map((key, index) => [key, settled[index]]),
   ) as Record<BundleReadKey, PromiseSettledResult<CanvasReadResult>>;
-  const [[specPagesRead], [listingContentRead]] = await Promise.all([specPages, listingContent]);
-  return assembleCanvasBundle(reads, { specPages: specPagesRead, listingContent: listingContentRead });
+  const [[specPagesRead], [listingContentRead], actuationRead] = await Promise.all([specPages, listingContent, actuation]);
+  return {
+    ...assembleCanvasBundle(reads, { specPages: specPagesRead, listingContent: listingContentRead }),
+    actuation: actuationRead,
+  };
 }
 
 export function listingsQuery(

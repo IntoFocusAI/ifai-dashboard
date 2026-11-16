@@ -36,6 +36,7 @@ export function ConsensusScoresPanel({
     retail,
     ai,
     authorizedPartners,
+    actuation: bundle.actuation,
   });
 
   if (!consensus) {
