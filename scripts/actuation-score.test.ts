@@ -5,6 +5,7 @@ import test from "node:test";
 import {
   ACTUATION_WEIGHTS,
   E1_TARGET,
+  e1Tooltip,
   expiresOn,
   itemsInWindow,
   ownedAnswersFromEngines,
@@ -109,21 +110,38 @@ test("without its program, E2 or E3 has no target and earns nothing", () => {
   assert.equal(score.score, 0);
 });
 
-test("E1 is pending while E1_TARGET is unset: no points, 70 available", () => {
-  assert.equal(E1_TARGET, null);
-  const score = scoreActuation(inputs({ ownedAnswers: { withOwned: 30, resolved: 40 } }));
+test("E1 target is 15% and full points cap at 30 (decision 98)", () => {
+  assert.equal(E1_TARGET, 0.15);
+  // 6 of 100 = 6%: 30 x 6 / 15 = 12.
+  const partial = scoreActuation(inputs({ ownedAnswers: { withOwned: 6, resolved: 100 } }));
+  assert.equal(partial.factors.E1.status, "scored");
+  assert.equal(partial.factors.E1.points, 12);
+  assert.equal(partial.available, 100);
+  assert.deepEqual(partial.factors.E1.basis, { withOwned: 6, resolved: 100, target: 0.15 });
+  // Exactly at target, and far above it, both earn 30 and no more.
+  assert.equal(scoreActuation(inputs({ ownedAnswers: { withOwned: 15, resolved: 100 } })).factors.E1.points, 30);
+  assert.equal(scoreActuation(inputs({ ownedAnswers: { withOwned: 90, resolved: 100 } })).factors.E1.points, 30);
+  // 1 of 10 = 10%: 20 points.
+  assert.equal(scoreActuation(inputs({ ownedAnswers: { withOwned: 1, resolved: 10 } })).factors.E1.points, 20);
+  assert.equal(scoreActuation(inputs({ ownedAnswers: { withOwned: 0, resolved: 0 } })).factors.E1.status, "no_answers");
+  assert.equal(scoreActuation(inputs({ ownedAnswers: null })).factors.E1.points, 0);
+});
+
+test("a null E1 target would leave E1 pending with no points, 70 available", () => {
+  const score = scoreActuation(inputs({ ownedAnswers: { withOwned: 30, resolved: 40 }, e1Target: null }));
   assert.equal(score.factors.E1.status, "pending");
   assert.equal(score.factors.E1.points, 0);
   assert.equal(score.available, 70);
-  assert.deepEqual(score.factors.E1.basis, { withOwned: 30, resolved: 40, target: null });
 });
 
-test("E1 scales the owned-answer share to its target once one is set", () => {
-  const score = scoreActuation(inputs({ ownedAnswers: { withOwned: 3, resolved: 10 }, e1Target: 0.5 }));
-  assert.equal(score.factors.E1.points, 18);
-  assert.equal(score.available, 100);
-  assert.equal(scoreActuation(inputs({ ownedAnswers: { withOwned: 9, resolved: 10 }, e1Target: 0.5 })).factors.E1.points, 30);
-  assert.equal(scoreActuation(inputs({ ownedAnswers: { withOwned: 0, resolved: 0 }, e1Target: 0.5 })).factors.E1.status, "no_answers");
+test("the E1 tooltip reads in the client's brand name (decision 98)", () => {
+  for (const brand of ["Fender", "Ledlenser"]) {
+    assert.equal(
+      e1Tooltip(brand),
+      `Owned answers. The share of AI answers to shopping questions that do not name a brand which cite at least one page on ${brand}'s own sites. Each answer counts once, however many ${brand} pages it cites. Only AI engines that cite sources are counted. Target: 15%, about what the strongest competitor brands reach in their best product category.`,
+    );
+  }
+  assert.doesNotMatch(e1Tooltip("Fender"), /<Brand>|—/);
 });
 
 test("expiries due within 30, 14 and 3 days, soonest first; none for lapsed or later ones", () => {
@@ -316,8 +334,10 @@ test("E1 counts only engines that returned a citation in the window, decided fro
   assert.deepEqual(ownedAnswersFromEngines(joined), { withOwned: 12, resolved: 60 });
   assert.equal(ownedAnswersFromEngines([{ engine: "gemini", citations: 0, withOwned: 0, resolved: 9 }]), null);
   assert.equal(ownedAnswersFromEngines([]), null);
-  // E1_TARGET stays null, so E1 stays pending and the score still counts from 0.
+  // 10 of 40 = 25%, over the 15% target: E1 earns its full 30, and nothing else is in place.
   const score = scoreActuation(inputs({ ownedAnswers: ownedAnswersFromEngines(engines) }));
-  assert.equal(score.factors.E1.status, "pending");
-  assert.equal(score.score, 0);
+  assert.equal(score.factors.E1.points, 30);
+  assert.equal(score.score, 30);
+  // With no engine citing, E1 has no answers to score and Actuation counts from 0.
+  assert.equal(scoreActuation(inputs({ ownedAnswers: ownedAnswersFromEngines([]) })).score, 0);
 });

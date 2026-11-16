@@ -36,7 +36,7 @@ function basisLine(id: ActuationFactorId, score: ActuationScore): string {
     const result = factors.E1;
     const answers = result.basis
       ? `${formatInt(result.basis.withOwned)} of ${formatInt(result.basis.resolved)} unbranded discovery answers cite a brand page`
-      : "From Citation Ecosystem";
+      : "Not read on this page: E1 comes from Citation Ecosystem, so this preview leaves it out";
     return result.status === "pending" ? `Pending: the E1 target is not set yet · ${answers}` : answers;
   }
   const result = factors[id];

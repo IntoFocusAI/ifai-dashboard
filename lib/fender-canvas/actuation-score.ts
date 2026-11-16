@@ -38,10 +38,20 @@ export type ExpiryReminder = (typeof EXPIRY_REMINDER_DAYS)[number];
 
 /**
  * E1 target: the share (0 to 1) of unbranded discovery answers citing a brand page that earns full
- * E1 points. Set by Brian (pending a competitor benchmark, decision 97). While null, E1 earns no
- * points and reads as pending; Actuation still counts, from 0, at launch.
+ * E1 points (30, capped). 15%, about what the strongest competitor brands reach in their best
+ * product category (decision 98, Brian). A null target would make E1 read as pending with no points.
  */
-export const E1_TARGET: number | null = null;
+export const E1_TARGET: number | null = 0.15;
+
+/** E1's tooltip for phase 2 to show beside the figure (decision 98), in the client's brand name. */
+export function e1Tooltip(brand: string): string {
+  const target = E1_TARGET == null ? "" : ` Target: ${Math.round(E1_TARGET * 100)}%, about what the strongest competitor brands reach in their best product category.`;
+  return (
+    `Owned answers. The share of AI answers to shopping questions that do not name a brand which cite at least one page on ${brand}'s own sites. ` +
+    `Each answer counts once, however many ${brand} pages it cites. Only AI engines that cite sources are counted.` +
+    target
+  );
+}
 
 /** A P1 or P2 record as the score needs it. Staff records and the client basis both map to this. */
 export type ProgramBasis = {
