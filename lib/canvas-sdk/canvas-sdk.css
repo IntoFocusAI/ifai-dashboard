@@ -1350,6 +1350,23 @@
       white-space: pre-line;
     }
 
+    /* A list tooltip: one line per row; a bad row carries its x mark in Oxblood. */
+    .node-tooltip .node-tooltip-row {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      white-space: normal;
+    }
+
+    .node-tooltip .node-tooltip-row + .node-tooltip-row {
+      margin-top: 2px;
+    }
+
+    /* The map's status mark beside a bubble figure inherits its color from the inline token. */
+    .graph-node .node-hero-mark path {
+      stroke: currentColor;
+    }
+
     .node-tooltip.node-tooltip-column {
       max-width: 240px;
       transform: translate(0, -50%) scale(0.96);

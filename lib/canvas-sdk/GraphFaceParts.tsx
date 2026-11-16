@@ -1,13 +1,14 @@
 "use client";
 
 import { type ReactElement } from "react";
+import { HeroFigureText } from "@/lib/canvas-sdk/HeroFigureText";
 import { BUBBLE_TEXT_MIN, fitMainHero, heroStatus } from "@/lib/canvas-sdk/hero-fit";
 import { headerArcPath, pillMetrics, wrapText } from "@/lib/canvas-sdk/graph-text";
 import type { NodeStatus } from "@/lib/canvas-sdk/types";
 
 /**
  * One big number with a short label, in place of the stacked stat pills. The number carries
- * its status color; the status word lives on the tab. Sizing lives in `fitMainHero` so every
+ * its status color and mark; the status word lives on the tab. Sizing lives in `fitMainHero` so every
  * row clears the ring at this radius and renders at 11px or more at 1280x720.
  */
 export function HeroValue({
@@ -29,20 +30,19 @@ export function HeroValue({
   minText?: number;
 }) {
   const shown = heroStatus(status, value);
-  const fit = fitMainHero(value, label, radius, startY, minText, explainer);
+  const marked = !explainer && shown != null;
+  const fit = fitMainHero(value, label, radius, startY, minText, explainer, marked);
   const statusClass = shown ? ` status-${status}` : "";
 
   return (
     <g className="node-hero">
-      <text
+      <HeroFigureText
+        value={value}
+        status={marked ? shown : null}
         className={explainer ? "node-hero-label" : `node-hero-value${statusClass}`}
-        data-hero-status={shown ?? undefined}
         y={fit.valueY}
-        textAnchor="middle"
         fontSize={fit.valueSize}
-      >
-        {value}
-      </text>
+      />
       {fit.labelLines.length ? (
         <text className="node-hero-label" y={fit.labelY} textAnchor="middle" fontSize={fit.labelSize}>
           {fit.labelLines.map((line, index) => (
