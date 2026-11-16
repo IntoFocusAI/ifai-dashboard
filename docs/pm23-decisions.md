@@ -400,3 +400,10 @@ closeout of each view. Open items are marked OPEN and are not built.
     Walmart, Musician's Friend (where a client has it), Amazon specs and A+,
     SmartScout sales estimates, and the client's website pages. Each line
     dates from its own collector.
+96. SC-03 AI Actuation factors approved for launch (16 Nov; may be tuned
+    later): P1 community response program 20% and P2 publication and
+    reviewer outreach program 20% (planned); E1 owned answers 30%
+    (measured), E2 community responses posted 15% and E3 placements earned
+    15% (logged, staff-verified links and dates). E4 dropped: fact-check
+    accuracy is already in Foundation. Brian approved the additive table
+    for Actuation records. Build what does not need staff sign-in now.

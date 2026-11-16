@@ -121,7 +121,7 @@ These are approved design formulas. AI Foundation, AI Commerce, and AI Consensus
 **Status source:** Explicit meeting
 
 - **Current:** AI Actuation is on Summary → Performance as Not included. The reason on screen is that there is no owner, evidence, or dated record yet. It is not scored as zero, and its weight is left out of AI Consensus.
-- **Desired:** AI Actuation: Active response program for cited social/community sources 50%; active outreach to publications/influencers cited for the brand’s questions 50%. Points require owner, evidence, verification date, and unexpired date. IntoFocus sees record controls; client sees score and basis. Show on Citation Ecosystem and Summary → Performance.
+- **Desired:** AI Actuation (decisions 77, 78, 96). Planned work at most 40%: P1 community response program 20% (owner, target communities from Citation Ecosystem, cadence); P2 publication and reviewer outreach program 20% (owner, target list). Measured results at least 60%: E1 owned answers 30% (brand pages cited in unbranded discovery); E2 community responses posted 15% and E3 placements earned 15% (links and dates verified by IntoFocus staff, last 90 days). Points require owner, evidence, verification date, and an unexpired date (90 days); reminders at 30, 14 and 3 days; a lapsed factor looks like one never in place. No double counting with Foundation or Commerce. IntoFocus sees record controls; client sees score and basis. Show on Citation Ecosystem and Summary → Performance.
 - **User value:** Actuation is evidenced work, not vibes.
 - **Acceptance:** No points without owner + evidence + dates.
 - **Evidence:** Not live.
