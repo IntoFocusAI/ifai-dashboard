@@ -4,7 +4,7 @@ import {
   isCommercial,
   isError,
   isFailedResultEngine,
-  modelLabel,
+  distinctModelLabels,
   tallyCommercial,
   type OutcomeTally,
 } from "@/lib/ai-search/run-metrics";
@@ -122,7 +122,7 @@ function groupRoleTallies(rows: AiCallRow[], keyOf: (row: AiCallRow) => string):
     const answered = bucket.filter((row) => !isError(row));
     return {
       key,
-      models: [...new Set((answered.length ? answered : bucket).map((row) => modelLabel(row.model)))].sort(),
+      models: distinctModelLabels((answered.length ? answered : bucket).map((row) => row.model)),
       roles: rolesFor(bucket),
     };
   });

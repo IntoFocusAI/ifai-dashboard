@@ -27,12 +27,26 @@ const INVISIBLE_CHARS = /[\u00AD\u200B-\u200F\u202A-\u202E\u2060-\u2064\uFEFF]/g
 /** No-break and other Unicode spaces, which read as a plain space. */
 const UNICODE_SPACES = /[\u00A0\u1680\u2000-\u200A\u202F\u205F\u3000]/g;
 
+/** Unicode hyphens and dashes (U+2011 no-break hyphen among them), which read as "-". */
+const UNICODE_HYPHENS = /[\u2010-\u2015\u2212\ufe58\ufe63\uff0d]/g;
+
 /**
- * A stored model name without its invisible characters: "\u200e3.5\u00a0Flash-Lite" reads
- * "3.5 Flash-Lite". Visible characters are kept as stored. Empty when nothing visible is left.
+ * A stored model name without its invisible characters, with Unicode spaces and hyphens read
+ * as plain ones: "\u200e3.5\u00a0Flash\u2011Lite" reads "3.5 Flash-Lite". Empty when nothing
+ * visible is left. Display only: stored data is never changed.
  */
 export function cleanModelName(model: string | null | undefined): string {
-  return (model ?? "").replace(INVISIBLE_CHARS, "").replace(UNICODE_SPACES, " ").replace(/\s+/g, " ").trim();
+  return (model ?? "")
+    .replace(INVISIBLE_CHARS, "")
+    .replace(UNICODE_SPACES, " ")
+    .replace(UNICODE_HYPHENS, "-")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/** One key per model whatever its spelling: case, hyphens, underscores and spaces ignored. */
+export function modelKey(model: string | null | undefined): string {
+  return cleanModelName(model).toLowerCase().replace(/[\s_-]+/g, " ").trim();
 }
 
 /** A missing model: the "Not available*" convention. On screen its reason sits in a tooltip (ModelName). */
@@ -41,6 +55,35 @@ export const MODEL_NOT_RECORDED = "Not available*";
 export function modelLabel(model: string | null | undefined): string {
   const text = cleanModelName(model);
   return text ? text : MODEL_NOT_RECORDED;
+}
+
+/** Spelling shown for a model: hyphenated over spaced ("Flash-Lite" over "Flash Lite"), then the first in sort order. */
+function preferSpelling(a: string, b: string): number {
+  const hyphens = (text: string) => (text.match(/-/g) ?? []).length;
+  return hyphens(b) - hyphens(a) || (a < b ? -1 : a > b ? 1 : 0);
+}
+
+/**
+ * Labels models so every spelling of one model ("3.5 Flash Lite", "3.5 Flash-Lite",
+ * "3.5 Flash\u2011Lite") shows as the same name. The spelling depends only on which
+ * spellings the given rows hold, not on their order.
+ */
+export function modelNamer(models: Iterable<string | null | undefined>): (model: string | null | undefined) => string {
+  const best = new Map<string, string>();
+  for (const model of models) {
+    const text = cleanModelName(model);
+    if (!text) continue;
+    const key = modelKey(text);
+    const current = best.get(key);
+    if (current == null || preferSpelling(text, current) < 0) best.set(key, text);
+  }
+  return (model) => best.get(modelKey(model)) ?? modelLabel(model);
+}
+
+/** Each model once, in its shown spelling, sorted. A missing model reads Not available*. */
+export function distinctModelLabels(models: ReadonlyArray<string | null | undefined>): string[] {
+  const name = modelNamer(models);
+  return [...new Set(models.map(name))].sort();
 }
 
 export function categoryLabel(category: string | null | undefined): string {
@@ -168,7 +211,7 @@ function groupBy(rows: AiCallRow[], keyOf: (row: AiCallRow) => string): GroupTal
     const answered = bucket.filter((row) => !isError(row));
     return {
       key,
-      models: [...new Set((answered.length ? answered : bucket).map((row) => modelLabel(row.model)))].sort(),
+      models: distinctModelLabels((answered.length ? answered : bucket).map((row) => row.model)),
       ...tallyCommercial(bucket),
     };
   });
@@ -209,15 +252,15 @@ export type EngineModel = { engine: string; models: string[] };
 
 /** Every engine in the run, with each model it reported. Probes and errors included. */
 export function enginesAndModels(rows: AiCallRow[]): EngineModel[] {
-  const map = new Map<string, Set<string>>();
+  const map = new Map<string, string[]>();
   for (const row of rows) {
     const engine = (row.engine ?? "").toLowerCase();
-    const set = map.get(engine) ?? new Set<string>();
-    if (cleanModelName(row.model)) set.add(cleanModelName(row.model));
-    map.set(engine, set);
+    const list = map.get(engine) ?? [];
+    if (cleanModelName(row.model)) list.push(row.model as string);
+    map.set(engine, list);
   }
   return [...map.entries()]
-    .map(([engine, models]) => ({ engine, models: [...models].sort() }))
+    .map(([engine, models]) => ({ engine, models: distinctModelLabels(models) }))
     .sort((a, b) => a.engine.localeCompare(b.engine));
 }
 

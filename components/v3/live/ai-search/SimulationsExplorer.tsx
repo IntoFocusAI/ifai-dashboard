@@ -32,7 +32,9 @@ import {
   cleanPrompt,
   engineLabel,
   formatRunTime,
+  modelKey,
   modelLabel,
+  modelNamer,
   OUTCOME_LABELS,
   type CallOutcome,
 } from "@/lib/ai-search/run-metrics";
@@ -64,7 +66,7 @@ function simulationSortValue(row: AiCallRow, columnId: string, cited: number): S
       : OUTCOME_LABELS[outcome];
   }
   if (columnId === "engine") return engineLabel(row.engine);
-  if (columnId === "model") return modelLabel(row.model);
+  if (columnId === "model") return modelKey(row.model) || modelLabel(row.model);
   if (columnId === "category") {
     return row.prompt_kind === "probe" ? "Product fact check" : categoryLabel(row.category);
   }
@@ -121,6 +123,7 @@ function Explorer({ snapshot }: { snapshot: AiSearchSnapshot }) {
   }, [snapshot]);
 
   const drift = useMemo(() => driftRead(snapshot.calls, snapshot.probes), [snapshot]);
+  const nameModel = useMemo(() => modelNamer(snapshot.calls.map((call) => call.model)), [snapshot.calls]);
 
   const rows = useMemo(
     () => sortExplorerRows(applyExplorerFilter(snapshot.calls, filter)),
@@ -213,7 +216,7 @@ function Explorer({ snapshot }: { snapshot: AiSearchSnapshot }) {
                           <span className="ai-engine-group-tag">{ENGINE_GROUP_LABELS[engineGroup(row.engine)]}</span>
                         ) : null}
                       </td>
-                      <td><ModelName model={row.model} /></td>
+                      <td><ModelName model={row.model} name={nameModel} /></td>
                       <td>{row.prompt_kind === "probe" ? "Product fact check" : categoryLabel(row.category)}</td>
                       <td>{factCheckColumnLabel(row)}</td>
                       <td>{cited.length} cited links</td>

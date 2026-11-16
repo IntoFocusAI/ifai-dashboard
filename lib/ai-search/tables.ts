@@ -57,6 +57,7 @@ import {
   engineLabel,
   formatRunTime,
   modelLabel,
+  modelNamer,
 } from "@/lib/ai-search/run-metrics";
 import { formatObservedRate, roleRatePlainText } from "@/lib/ai-search/summary";
 import type { AiCallRow, AiSearchSnapshot } from "@/lib/ai-search/types";
@@ -161,12 +162,12 @@ export function simulationCategoryLabel(row: AiCallRow): string {
   return row.prompt_kind === "probe" ? "Product fact check" : categoryLabel(row.category);
 }
 
-export function simulationCells(row: AiCallRow, cited: number): string[] {
+export function simulationCells(row: AiCallRow, cited: number, nameModel = modelLabel): string[] {
   return [
     cleanPrompt(row.prompt),
     simulationOutcomeLabel(row),
     engineLabel(row.engine),
-    modelLabel(row.model),
+    nameModel(row.model),
     simulationCategoryLabel(row),
     factCheckColumnLabel(row),
     formatInt(cited),
@@ -232,9 +233,10 @@ export function parseExplorerFilter(value: unknown): ExplorerFilter {
 export function simulationTable(snapshot: AiSearchSnapshot, filter: ExplorerFilter): AiTableBuild {
   const cited = citedLinksByCall(snapshot);
   const rows = sortExplorerRows(applyExplorerFilter(snapshot.calls, filter));
+  const nameModel = modelNamer(snapshot.calls.map((call) => call.model));
   return {
     header: SIMULATION_HEADER,
-    rows: rows.map((row) => ({ key: row.id, cells: simulationCells(row, cited.get(row.id)?.length ?? 0) })),
+    rows: rows.map((row) => ({ key: row.id, cells: simulationCells(row, cited.get(row.id)?.length ?? 0, nameModel) })),
     sort: "Question, then search engines before API engines, then engine",
     filter: explorerFilterSentence(filter),
   };
