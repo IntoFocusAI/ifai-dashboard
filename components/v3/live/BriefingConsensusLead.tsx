@@ -54,6 +54,7 @@ export function BriefingConsensusLead({
         retail,
         ai,
         authorizedPartners,
+        actuation: bundle.actuation,
       });
   const sentence = loading ? null : briefingConsensusSentence(consensus);
   const score = consensus?.score ?? null;

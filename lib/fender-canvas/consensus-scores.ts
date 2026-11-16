@@ -1,11 +1,13 @@
 import { activeClient } from "@/lib/client/active-client";
 import { leadBrand } from "@/lib/brand-copy";
+import type { ActuationScore } from "@/lib/fender-canvas/actuation-score";
 
 /**
  * AI Foundation (SC-01), AI Commerce (SC-02), and AI Consensus (SC-04) scores.
  * Each component is a measured share from 0 to 100. A missing input drops that
  * component and rescales the remaining weights to 100. Missing is never scored as zero.
- * AI Actuation (SC-03) has no records in this pilot and stays omitted.
+ * AI Actuation (SC-03) is scored in actuation-score.ts and counts from 0 at launch (decision 97):
+ * a factor not in place scores 0 inside it. Only a failed Actuation read leaves the pillar out.
  */
 
 /** Minimal gap shape so this module does not import portfolio-retail (avoids a cycle). */
@@ -146,11 +148,15 @@ export type PillarScore = {
   /** Rescaled consensus weight. Null when omitted. */
   weight: number | null;
   included: boolean;
-  omittedLabel?: string;
   components: Array<ScoredComponent | DroppedComponent>;
+  /** AI Actuation only: the factor points and basis (P1, P2, E1, E2, E3). */
+  actuation?: ActuationScore;
   /** Included components of planned components. */
   coverage: ScoreCoverage | null;
 };
+
+/** SC-04 pillar weights in AI Consensus (decisions 77, 78): 40% Foundation, 40% Commerce, 20% Actuation. */
+export const CONSENSUS_PILLAR_WEIGHTS = { foundation: 40, commerce: 40, actuation: 20 } as const;
 
 export type ConsensusScore = {
   score: number | null;
@@ -532,7 +538,7 @@ function pillarFromComponents(
 
 /** AI Foundation (SC-01). Same weights for every seller type. */
 export function foundationScore(inputs: FoundationInputs): PillarScore {
-  return pillarFromComponents("foundation", "AI Foundation", 40, FOUNDATION_COMPONENT_SPECS, {
+  return pillarFromComponents("foundation", "AI Foundation", CONSENSUS_PILLAR_WEIGHTS.foundation, FOUNDATION_COMPONENT_SPECS, {
     exact_official_pages: inputs.exactOfficialPages,
     machine_readable_specs: inputs.machineReadableSpecs,
     required_marketplace_specs: inputs.requiredMarketplaceSpecs,
@@ -567,7 +573,7 @@ function commerceSpecs(authorizedPartners: readonly string[] | null): ScoreCompo
 /** AI Commerce (SC-02). Partner-led weights for Fender. Other seller-type weights are unchanged. */
 export function commerceScore(inputs: CommerceInputs, options?: CommerceScoreOptions): PillarScore {
   const authorizedPartners = options?.authorizedPartners ?? null;
-  return pillarFromComponents("commerce", "AI Commerce", 40, commerceSpecs(authorizedPartners), {
+  return pillarFromComponents("commerce", "AI Commerce", CONSENSUS_PILLAR_WEIGHTS.commerce, commerceSpecs(authorizedPartners), {
     controlled_buy_box: inputs.controlledBuyBox,
     not_suppressed: inputs.notSuppressed,
     active_products_available: inputs.activeProductsAvailable,
@@ -576,33 +582,64 @@ export function commerceScore(inputs: CommerceInputs, options?: CommerceScoreOpt
   });
 }
 
-/** AI Actuation (SC-03): no owner, evidence, or date records. Always omitted. */
-export function actuationScore(): PillarScore {
+/** Factors that can earn points today: all five, or four while E1 has no target. */
+function actuationCoverage(score: ActuationScore): ScoreCoverage {
+  const factors = Object.values(score.factors);
   return {
-    id: "actuation",
-    name: "AI Actuation",
-    nominalWeight: 20,
-    score: null,
-    weight: null,
-    included: false,
-    omittedLabel: "Not included",
-    components: [],
-    coverage: null,
+    numerator: factors.filter((factor) => !(factor.id === "E1" && factor.status === "pending")).length,
+    denominator: factors.length,
   };
 }
 
 /**
- * AI Consensus (SC-04): Foundation 40% + Commerce 40% + Actuation 20%.
- * With Actuation omitted, Foundation and Commerce each carry half of the remaining weight.
+ * AI Actuation (SC-03) as a Consensus pillar. Counts from 0 at launch (decision 97): a factor not in
+ * place, lapsed or never recorded, scores 0 and the pillar stays in. Null or undefined means the
+ * Actuation basis did not load, so the pillar is left out and the other weights rescale.
+ */
+export function actuationScore(score?: ActuationScore | null): PillarScore {
+  if (!score) {
+    return {
+      id: "actuation",
+      name: "AI Actuation",
+      nominalWeight: CONSENSUS_PILLAR_WEIGHTS.actuation,
+      score: null,
+      weight: null,
+      included: false,
+      components: [],
+      coverage: null,
+    };
+  }
+  return {
+    id: "actuation",
+    name: "AI Actuation",
+    nominalWeight: CONSENSUS_PILLAR_WEIGHTS.actuation,
+    score: score.score,
+    weight: null,
+    included: true,
+    components: [],
+    coverage: actuationCoverage(score),
+    actuation: score,
+  };
+}
+
+export type ConsensusScoreOptions = CommerceScoreOptions & {
+  /** The scored AI Actuation pillar; null when its basis did not load. */
+  actuation?: ActuationScore | null;
+};
+
+/**
+ * AI Consensus (SC-04): Foundation 40% + Commerce 40% + Actuation 20% (decisions 77, 78), weighted
+ * by coverage. A pillar left out (no score) rescales the others; it is never counted as zero.
+ * Every Consensus figure (Summary, Minimal view, the weekly save) comes from this one function.
  */
 export function consensusScore(
   foundationInputs: FoundationInputs,
   commerceInputs: CommerceInputs,
-  options?: CommerceScoreOptions,
+  options?: ConsensusScoreOptions,
 ): ConsensusScore {
   const foundation = foundationScore(foundationInputs);
   const commerce = commerceScore(commerceInputs, options);
-  const actuation = actuationScore();
+  const actuation = actuationScore(options?.actuation);
 
   const pillars = [foundation, commerce, actuation];
   const includedPillars = pillars.filter((pillar) => pillar.included && pillar.score != null);

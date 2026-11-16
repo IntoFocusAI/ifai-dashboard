@@ -11,12 +11,15 @@ import {
   controlledBuyBoxFromCensus,
   requiredMarketplaceSpecShare,
   type CommerceInputs,
-  type CommerceScoreOptions,
   type ConsensusScore,
+  type ConsensusScoreOptions,
   type FoundationInputs,
   type ShareInput,
 } from "@/lib/fender-canvas/consensus-scores";
 import { countFindability } from "@/lib/findability/outcomes";
+import { ownedAnswersFromAi } from "@/lib/fender-canvas/actuation-e1";
+import type { ClientBasis } from "@/lib/fender-canvas/actuation-records";
+import { isoDay, scoreActuation, type ActuationScore } from "@/lib/fender-canvas/actuation-score";
 import type { FindabilityRead } from "@/lib/findability/copy";
 import type { SpecPageSummary } from "@/lib/fender-canvas/machine-readability";
 import type { PortfolioRetailSnapshot } from "@/lib/fender-canvas/portfolio-retail";
@@ -126,17 +129,40 @@ export function commerceInputsFromLive(
   return commerceInputsFromSnapshot(retail.snapshot, authorizedPartners);
 }
 
+/**
+ * SC-03 AI Actuation from its basis (P1, P2, E2, E3 from public.actuation_basis) and E1 from the
+ * window's AI read (Citation Ecosystem data). Null when the basis did not load: the pillar is then
+ * left out rather than read as zero. With no records every factor but E1 scores 0 (decision 97).
+ */
+export function actuationFromLive(args: {
+  ai: AiSearchRead;
+  actuation: ClientBasis | null | undefined;
+  /** The day it scores for (UTC ISO date). Defaults to today. */
+  asOf?: string;
+}): ActuationScore | null {
+  if (!args.actuation) return null;
+  return scoreActuation({
+    asOf: args.asOf ?? isoDay(new Date()),
+    programs: args.actuation.programs,
+    items: args.actuation.items,
+    ownedAnswers: ownedAnswersFromAi(args.ai)?.basis ?? null,
+  });
+}
+
 export function consensusFromLive(args: {
   findability: FindabilityRead;
   specPages: SpecPageSummary | null | undefined;
   retail: RetailCanvasRead;
   ai: AiSearchRead;
   authorizedPartners?: readonly string[] | null;
+  /** The Actuation basis (bundle.actuation). Null or undefined when it did not load. */
+  actuation: ClientBasis | null | undefined;
+  asOf?: string;
 }): ConsensusScore | null {
   const authorizedPartners = args.authorizedPartners ?? null;
   const commerce = commerceInputsFromLive(args.retail, authorizedPartners);
   if (!commerce) return null;
-  const options: CommerceScoreOptions = { authorizedPartners };
+  const options: ConsensusScoreOptions = { authorizedPartners, actuation: actuationFromLive(args) };
   return consensusScore(foundationInputsFromLive(args), commerce, options);
 }
 

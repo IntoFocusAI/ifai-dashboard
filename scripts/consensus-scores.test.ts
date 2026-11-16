@@ -257,7 +257,7 @@ test("required-spec placeholder list is the guitar and instrument fields", () =>
   assert.equal(shareScore(share), 75);
 });
 
-test("consensus drops Actuation and splits Foundation and Commerce in half", () => {
+test("consensus leaves out an Actuation read that did not load and splits Foundation and Commerce in half", () => {
   const result = consensusScore(
     {
       exactOfficialPages: { numerator: 50, denominator: 100 },
@@ -275,8 +275,7 @@ test("consensus drops Actuation and splits Foundation and Commerce in half", () 
     },
   );
 
-  assert.equal(result.actuation.included, false);
-  assert.equal(result.actuation.omittedLabel, "Not included");
+  assert.equal(result.actuation.included, false, "no Actuation score was passed: its read did not load");
   assert.equal(result.foundation.weight, 50);
   assert.equal(result.commerce.weight, 50);
   assert.deepEqual(result.coverage, { numerator: 2, denominator: 3 });

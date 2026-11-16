@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { DOWNLOAD_FAILED, downloadCsv } from "@/components/v3/live/TableToolbar";
 import type { EditablePrompt } from "@/lib/ai-search/prompt-editor";
 import { PROMPTS_EXPORT_TABLE } from "@/lib/export/tables";
+import { promptDisplayText } from "@/lib/prompts/prompt-list";
 import { formatInt } from "@/lib/fender-canvas/format";
 
 /** Prompts whose key, wording, or category contain every word of the search. */
@@ -12,7 +13,7 @@ export function matchPrompts(prompts: readonly EditablePrompt[], query: string):
   const words = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
   if (!words.length) return [...prompts];
   return prompts.filter((p) => {
-    const text = `${p.prompt_key} ${p.prompt_text} ${p.category}`.toLowerCase();
+    const text = `${p.prompt_key} ${promptDisplayText(p.prompt_text)} ${p.category}`.toLowerCase();
     return words.every((word) => text.includes(word));
   });
 }

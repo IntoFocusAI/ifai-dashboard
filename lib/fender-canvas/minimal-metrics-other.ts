@@ -9,7 +9,6 @@ import { categoryBattles } from "@/lib/ai-search/competitors";
 import { categoryLabel } from "@/lib/ai-search/run-metrics";
 import type { NodeStatus } from "@/lib/canvas-sdk/types";
 import { failedReadTip } from "@/lib/fender-canvas/canvas-reads";
-import { ACTUATION_OMITTED_REASON } from "@/lib/fender-canvas/consensus-score-display";
 import { formatInt, formatPct } from "@/lib/fender-canvas/format";
 import { categoryUnbrandedFigure } from "@/lib/fender-canvas/minimal-metrics-ai";
 import { ROADMAP_BUBBLE_VALUE } from "@/lib/fender-canvas/roadmap-bubble";
@@ -205,14 +204,5 @@ export const OTHER_ENTRIES: MinimalEntry[] = [
         const count = `${formatInt(answered)} of ${formatInt(expected)}`;
         return { value: count, tone: isPartial ? "warning" : "success", ratio: `${count} calls answered`, pie: null, tip: null, missing: null };
       }),
-  }),
-  other({
-    id: "ai-actuation",
-    spokeId: "hub",
-    tab: "Performance",
-    label: "AI Actuation",
-    definition:
-      "The third AI Consensus input: actions with an owner, evidence, and a date. No records are stored yet, so Performance lists it as Not included. No tab shows a figure for it yet.",
-    read: () => missingFigure(ACTUATION_OMITTED_REASON),
   }),
 ];
