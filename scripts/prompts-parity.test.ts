@@ -9,11 +9,11 @@ import { promptRows } from "../lib/export/prompts-export.ts";
 const read = (path: string) => readFileSync(path, "utf8");
 const MIGRATION = "supabase/migrations/20261116230000_ledlenser_canvas_ai_prompts.sql";
 
-test("the header has a Prompts button for every client; Build prompts stays with the editable list", () => {
+test("the header has a Prompts button for every client; Build prompts is not tied to a client", () => {
   const spec = read("lib/fender-canvas/build-canvas-spec.tsx");
   assert.match(spec, /promptsEditor: \(close\) => <PromptsEditor onClose=\{close\} \/>,/);
   assert.doesNotMatch(spec, /promptsEditor: activeClient\(\)/);
-  assert.match(spec, /promptBuilderHref: activeClient\(\)\.promptsEditable \?/);
+  assert.doesNotMatch(spec, /promptBuilderHref: activeClient\(\)/);
 });
 
 test("a read-only client reads its own canvas_ai_prompts view; Fender keeps the editor functions", () => {
@@ -26,14 +26,12 @@ test("a read-only client reads its own canvas_ai_prompts view; Fender keeps the 
   assert.doesNotMatch(exporter, /no editable prompt list/);
 });
 
-test("the read-only list hides add, edit, remove, restore, history, and the Build prompts link", () => {
+test("the Prompts list is view-only for every client: no add, edit, remove, restore, history, or Build prompts link (decision 99)", () => {
   const editor = read("components/v3/prompts/PromptsEditor.tsx");
-  assert.match(editor, /const editable = activeClient\(\)\.promptsEditable;/);
-  assert.match(editor, /\{editable \? \(\s*<p className="pe-sub">\s*<Link/);
-  assert.match(editor, /\{editable \? \(\s*<>\s*<section className="pe-add">/);
-  assert.equal(editor.match(/className="pe-item-actions" hidden=\{!editable\}/g)?.length, 2);
-  assert.match(editor, /if \(editable\) \{\s*void loadPromptEditHistory\(\)/);
-  assert.match(read("components/v3/prompts/prompts-editor.css"), /\.pe-item-actions\[hidden\] \{\s*display: none;/);
+  assert.doesNotMatch(editor, /promptsEditable|savePrompt|setPromptActive|loadPromptEditHistory|PromptHistory|CategoryPicker/);
+  assert.doesNotMatch(editor, /<textarea|pe-add|pe-item-actions|aria-label=\{`(Edit|Remove)/);
+  assert.doesNotMatch(editor, /battery-builder|data-pe-builder-link/);
+  assert.match(editor, /<PromptSearchBar/);
   assert.ok(editor.split("\n").length <= 400, "PromptsEditor.tsx stays at or under 400 lines");
 });
 
@@ -94,6 +92,6 @@ test("rotating fact-check slots read in plain words in the list and the CSV, for
   ])[0];
   assert.equal(row.cells[3], plain("B"));
   const editor = read("components/v3/prompts/PromptsEditor.tsx");
-  assert.equal(editor.match(/<p className="pe-text">\{promptDisplayText\(p\.prompt_text\)\}<\/p>/g)?.length, 2);
+  assert.equal(editor.match(/<p className="pe-text">\{promptDisplayText\(p\.prompt_text\)\}<\/p>/g)?.length, 1);
   assert.match(read("components/v3/prompts/PromptSearch.tsx"), /promptDisplayText\(p\.prompt_text\)/);
 });

@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { afterEach, test } from "node:test";
 import { resetActiveClientForTests } from "../lib/client/active-client.ts";
-import { dataAsOf, dataSourceFreshness, dataSourceLine, sourceForJob } from "../lib/fender-canvas/data-source-freshness.ts";
+import { dataAsOf, dataSourceFreshness, dataSourceLine, newestApiRunAt, sourceForJob } from "../lib/fender-canvas/data-source-freshness.ts";
 import { parseTooltipRows, sameTooltipContent } from "../lib/canvas-sdk/tooltip-content.ts";
 
 const NOW = Date.parse("2026-11-16T15:00:00Z");
@@ -48,25 +48,58 @@ const LEDLENSER = [
 afterEach(() => resetActiveClientForTests(null));
 
 test("every live job maps to a source a client recognizes; unknown keys go to the closest one", () => {
-  const sources = new Set(["ai", "amazon_offers", "walmart", "musiciansfriend", "amazon_specs", "amazon_sales", "brand_site"]);
+  const sources = new Set([
+    "ai_search",
+    "ai_api",
+    "amazon_offers",
+    "keepa_history",
+    "walmart",
+    "musiciansfriend",
+    "amazon_specs",
+    "amazon_sales",
+    "brand_site",
+  ]);
   for (const row of [...FENDER, ...LEDLENSER]) assert.ok(sources.has(sourceForJob(row.job_key)), row.job_key);
-  assert.equal(sourceForJob("subchat_lock_fe3ada9e_claude_api"), "ai");
-  assert.equal(sourceForJob("mirror_drift_check"), "ai");
+  assert.equal(sourceForJob("subchat_lock_fe3ada9e_claude_api"), "ai_api");
+  assert.equal(sourceForJob("subchat_lock_170f2790_all"), "ai_search");
+  assert.equal(sourceForJob("mirror_drift_check"), "ai_search");
+  assert.equal(sourceForJob("keepa_history"), "keepa_history");
+  assert.equal(sourceForJob("featured_offer_keepa"), "amazon_offers");
+  assert.equal(sourceForJob("buybox_seller_harvester"), "amazon_offers");
+  assert.equal(sourceForJob("catalog_harvester"), "amazon_offers");
   assert.equal(sourceForJob("kpi_recompute"), "amazon_offers");
   assert.equal(sourceForJob("walmart_price_refresh"), "walmart");
   assert.equal(sourceForJob("aplus_content_check"), "amazon_specs");
   assert.equal(sourceForJob("something_new"), "amazon_offers");
 });
 
-test("Fender lists seven sources in plain words, with no raw key and only true staleness", () => {
+// The newest API run each client's API run tables list on 16 Nov 2026.
+const FENDER_API = "2026-11-12T08:30:51Z";
+const LEDLENSER_API = "2026-11-11T11:15:12Z";
+
+test("Fender lists nine sources in plain words, with no raw key and only true staleness", () => {
   resetActiveClientForTests("fender");
-  const sources = dataSourceFreshness(FENDER, NOW);
+  const sources = dataSourceFreshness(FENDER, NOW, { ai_api: FENDER_API });
   assert.deepEqual(
     sources.map((source) => source.label),
-    ["AI answers", "Amazon prices and Buy Box", "Walmart", "Musician's Friend", "Amazon specs and A+", "SmartScout sales estimates", "fender.com pages"],
+    [
+      "AI answers (search engines)",
+      "AI answers (API engines)",
+      "Amazon Buy Box and offers",
+      "Keepa sales history",
+      "Walmart",
+      "Musician's Friend",
+      "Amazon specs and A+",
+      "SmartScout sales estimates",
+      "fender.com pages",
+    ],
   );
-  // The October conflict rerun and the old API lock do not make AI answers out of date: the run is today.
-  assert.equal(sources.find((source) => source.id === "ai")!.lastCheck, "2026-11-16T12:04:30Z");
+  // The October conflict rerun does not make the search engines out of date: the run is today.
+  assert.equal(sources.find((source) => source.id === "ai_search")!.lastCheck, "2026-11-16T12:04:30Z");
+  // The old API lock does not hide the newer API run; the API run tables count beside it.
+  assert.equal(sources.find((source) => source.id === "ai_api")!.lastCheck, FENDER_API);
+  assert.equal(sources.find((source) => source.id === "keepa_history")!.lastCheck, "2026-11-16T10:41:10Z");
+  assert.equal(sources.find((source) => source.id === "amazon_offers")!.lastCheck, "2026-11-16T13:41:19Z");
   // SmartScout is weekly: 7 days old is inside twice its interval.
   assert.ok(sources.every((source) => !source.outOfDate));
   for (const line of sources.map(dataSourceLine)) {
@@ -78,11 +111,21 @@ test("Fender lists seven sources in plain words, with no raw key and only true s
 
 test("Ledlenser shows only the sources it has, and Walmart uses its two-day interval", () => {
   resetActiveClientForTests("ledlenser");
-  const sources = dataSourceFreshness(LEDLENSER, NOW);
+  const sources = dataSourceFreshness(LEDLENSER, NOW, { ai_api: LEDLENSER_API, brand_site: "2026-11-12T08:00:00Z" });
   assert.deepEqual(
     sources.map((source) => source.label),
-    ["AI answers", "Amazon prices and Buy Box", "Walmart", "Amazon specs and A+", "SmartScout sales estimates"],
+    [
+      "AI answers (search engines)",
+      "AI answers (API engines)",
+      "Amazon Buy Box and offers",
+      "Keepa sales history",
+      "Walmart",
+      "Amazon specs and A+",
+      "SmartScout sales estimates",
+      "ledlenser.com pages",
+    ],
   );
+  assert.equal(sources.find((source) => source.id === "ai_api")!.lastCheck, LEDLENSER_API);
   assert.equal(sources.find((source) => source.id === "walmart")!.intervalDays, 2);
   const late = dataSourceFreshness([{ job_key: "map_leakage_walmart", last_run_at: "2026-11-13T10:00:00Z" }], NOW)[0]!;
   assert.equal(late.outOfDate, false, "3 days is inside Ledlenser's 4-day window");
@@ -130,6 +173,29 @@ test("out of date is twice each source's own interval, not a flat 26 hours", () 
     assert.equal(source!.outOfDate, out, `${job} at ${days} days`);
     assert.equal(dataSourceLine(source!).endsWith(", out of date"), out);
   }
+});
+
+test("a stale part cannot hide behind a fresh one: each line is red on its own", () => {
+  resetActiveClientForTests("fender");
+  const at = (days: number) => new Date(NOW - days * 86_400_000).toISOString();
+  const sources = dataSourceFreshness(
+    [
+      { job_key: "ai_simulations", last_run_at: at(1) },
+      { job_key: "featured_offer_keepa", last_run_at: at(0.5) },
+      { job_key: "keepa_history", last_run_at: at(3) },
+    ],
+    NOW,
+    { ai_api: at(8) },
+  );
+  const out = Object.fromEntries(sources.map((source) => [source.id, source.outOfDate]));
+  assert.deepEqual(out, { ai_search: false, ai_api: true, amazon_offers: false, keepa_history: true });
+  assert.equal(newestApiRunAt([
+    { completed_at: "2026-11-11T11:15:12Z", answered_calls: 87 },
+    { completed_at: "2026-11-13T00:00:00Z", answered_calls: 0 },
+    { completed_at: null, started_at: "2026-11-04T18:45:14Z", answered_calls: 5 },
+  ]), "2026-11-11T11:15:12Z");
+  const bar = readFileSync("components/v3/live/DataFreshnessBar.tsx", "utf8");
+  assert.match(bar, /ai_api: apiChecked/);
 });
 
 test("a source's own collector sets its date; supporting jobs fill in only without one", () => {

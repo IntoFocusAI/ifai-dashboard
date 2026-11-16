@@ -1,4 +1,4 @@
-/* AI-Search prompts editor. Rendered inside .ifai-canvas so it follows the canvas theme variables. */
+/* AI-Search prompts list (view-only, decision 99). Rendered inside .ifai-canvas so it follows the canvas theme variables. */
 
 .pe-backdrop {
   position: fixed;
@@ -41,16 +41,11 @@
 }
 
 .pe-sub,
-.pe-hint,
 .pe-empty {
   margin: 0;
   font-size: 12.5px;
   line-height: 1.5;
   color: var(--text-muted, #aeb8c7);
-}
-
-.pe-hint {
-  margin: 4px 0 2px;
 }
 
 .pe-banner {
@@ -70,25 +65,15 @@
   margin-top: 2px;
 }
 
-/* Messages about the editor are not data: neutral box, the mark carries the status color (X-34). */
-.pe-banner-warn,
-.pe-banner-error,
-.pe-banner-ok {
+/* Messages about the list are not data: neutral box, the mark carries the status color (X-34). */
+.pe-banner-error {
   background: var(--bg-surface, #0b1220);
   border-color: var(--border-color, #64748b);
   color: var(--text-main, #f8fafc);
 }
 
-.pe-banner-warn svg {
-  color: var(--text-muted, #aeb8c7);
-}
-
 .pe-banner-error .data-status-glyph {
   color: var(--status-bad, #cc5b63);
-}
-
-.pe-banner-ok .data-status-glyph {
-  color: var(--status-good, #6ab792);
 }
 
 .pe-body {
@@ -96,60 +81,6 @@
   padding: 14px 20px 20px;
 }
 
-.pe-add {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 12px;
-  border: 1px dashed var(--border-dark, #64748b);
-  border-radius: 10px;
-}
-
-.pe-dialog textarea,
-.pe-dialog select,
-.pe-dialog input[type="text"] {
-  font: inherit;
-  font-size: 13px;
-  color: var(--text-main, #f8fafc);
-  background: var(--bg-card, #0b1220);
-  border: 1px solid var(--border-color, #64748b);
-  border-radius: 8px;
-  padding: 7px 10px;
-}
-
-.pe-dialog textarea {
-  width: 100%;
-  resize: vertical;
-  line-height: 1.45;
-}
-
-.pe-dialog textarea:focus,
-.pe-dialog select:focus,
-.pe-dialog input[type="text"]:focus {
-  outline: 2px solid var(--accent-cyan, #a7d8f0);
-  outline-offset: 0;
-}
-
-.pe-row-actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 8px;
-}
-
-.pe-category {
-  display: flex;
-  flex: 1 1 auto;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.pe-category input[type="text"] {
-  flex: 1 1 160px;
-}
-
-.pe-btn,
 .pe-icon-btn,
 .pe-link {
   display: inline-flex;
@@ -159,29 +90,6 @@
   font-size: 12.5px;
   color: var(--text-main, #f8fafc);
   cursor: pointer;
-}
-
-.pe-btn {
-  padding: 6px 12px;
-  border-radius: 999px;
-  background: transparent;
-  border: 1px solid var(--border-color, #64748b);
-}
-
-.pe-btn:hover:not(:disabled) {
-  background: var(--bg-surface-hover, #141e33);
-}
-
-.pe-btn-primary {
-  background: var(--accent-cyan, #a7d8f0);
-  border-color: var(--accent-cyan, #a7d8f0);
-  color: #070b14;
-  font-weight: 600;
-}
-
-.pe-btn-primary:hover:not(:disabled) {
-  background: var(--color-sky, #a7d8f0);
-  filter: brightness(1.08);
 }
 
 .pe-icon-btn {
@@ -196,17 +104,6 @@
 .pe-icon-btn:hover:not(:disabled) {
   background: var(--bg-surface-hover, #141e33);
   border-color: var(--border-color, #64748b);
-}
-
-/* Status colors mark data only, never a button (decision 27). */
-.pe-danger:hover:not(:disabled) {
-  color: var(--text-main);
-}
-
-.pe-btn:disabled,
-.pe-icon-btn:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
 }
 
 .pe-link {
@@ -264,66 +161,12 @@
   color: var(--text-main);
 }
 
-.pe-history-toggle {
-  margin-left: auto;
-  font-size: 12px;
-  cursor: pointer;
-}
-
-.pe-history {
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px solid var(--border-color);
-}
-
-.pe-history .pe-hint {
-  margin: 0 0 8px;
-}
-
-.pe-history-side {
-  white-space: pre-line;
-}
-
-.pe-item-main {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-}
-
 .pe-text {
   margin: 0;
   font-size: 13.5px;
   line-height: 1.5;
 }
 
-.pe-item-actions {
-  display: flex;
-  flex: none;
-  gap: 2px;
-}
-
-/* A read-only prompt list (every client but Fender) has no edit, remove, or restore buttons. */
-.pe-item-actions[hidden] {
-  display: none;
-}
-
-.pe-edit {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
 .pe-removed {
   margin-top: 16px;
-}
-
-@media (max-width: 560px) {
-  .pe-item-main {
-    flex-direction: column;
-  }
-
-  .pe-row-actions {
-    justify-content: stretch;
-  }
 }

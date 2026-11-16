@@ -88,6 +88,25 @@ for (const client of CLIENTS) {
       for (const line of lines.slice(5)) expect(line.split(",")[1]).toBe("Behind");
     });
 
+    test("a category of branded questions only has no card, pie, grid column, or CSV row (decision 93)", async ({ page }) => {
+      test.setTimeout(300_000);
+      const dropped = client === "fender" ? "squier" : "brand";
+      await page.goto(url(client, "spoke=competitors&tab=category-battlecards"));
+      const cards = page.locator(".ai-battlecards");
+      await expect(cards.locator("tbody tr[data-category]").first()).toBeVisible({ timeout: 120_000 });
+      await expect(cards.locator("[data-ai-on-track-category]").first()).toBeVisible();
+      await expect(cards.locator(`tbody tr[data-category='${dropped}']`)).toHaveCount(0);
+      await expect(cards.locator(`[data-ai-on-track-category='${dropped}']`)).toHaveCount(0);
+      await expect(cards.locator("[data-ai-battle-heroes]")).not.toContainText("Not available*");
+      const lines = await downloadLines(page, "category-battlecards");
+      expect(lines.slice(5).some((line) => line.toLowerCase().startsWith(`${dropped},`))).toBe(false);
+
+      await page.locator(".drilldown-tab-btn", { hasText: "Engine Comparison" }).click();
+      const head = page.locator('[data-table-id="engine-category"] thead');
+      await expect(head).toBeVisible({ timeout: 120_000 });
+      await expect(head).not.toContainText(new RegExp(`^${dropped}$|\\b${dropped}\\b`, "i"));
+    });
+
     if (client === "ledlenser") {
       test("no tab uses guitar words for a lighting brand", async ({ page }) => {
         test.setTimeout(240_000);

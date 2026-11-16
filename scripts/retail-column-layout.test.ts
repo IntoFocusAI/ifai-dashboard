@@ -148,3 +148,44 @@ test("ResizableTable applies the shared fit rule without a call-site fillColumnI
   assert.doesNotMatch(table, /fillColumnId && !manual \? filledColumnWidths/);
   assert.doesNotMatch(read("components/v3/live/ai-search/SimulationsExplorer.tsx"), /fillColumnId=/);
 });
+
+/* Worker 27.9: at a 1280 px window with a browser scrollbar, one-line cells made the Run Summary
+   engine table and the Category Battlecards table wider than their panel. A row too wide for the
+   panel now gives width back toward each column's word floor, so cells wrap instead of scrolling. */
+test("a row too wide for the panel shrinks to fit, no column below its floor", () => {
+  const battle = [
+    { id: "category", width: 160, minWidth: 110 },
+    { id: "unbranded", width: 196, minWidth: 150 },
+    { id: "branded", width: 196, minWidth: 150 },
+    { id: "top", width: 140, minWidth: 100 },
+    { id: "leads", width: 140, minWidth: 100 },
+    { id: "leader", width: 110, minWidth: 92 },
+    { id: "errors", width: 90, minWidth: 89 },
+  ];
+  const contentMins = { unbranded: 170, branded: 170, top: 135, leads: 148, leader: 102, errors: 89 };
+  const wordMins = { unbranded: 60, top: 120 };
+  const wide = fitResizableColumnWidths(battle, 1200, { contentMins, wordMins });
+  const sum = (w: Record<string, number>) => Object.values(w).reduce((a, b) => a + b, 0);
+  assert.equal(sum(wide), 1200, "a panel with room is filled, as before");
+  assert.equal(wide.unbranded, 170);
+
+  const widths = fitResizableColumnWidths(battle, 880, { contentMins, wordMins });
+  assert.equal(sum(widths), 880);
+  for (const column of battle) {
+    const floor = Math.max(column.minWidth, (wordMins as Record<string, number>)[column.id] ?? 0);
+    assert.ok(widths[column.id] >= floor, `${column.id} ${widths[column.id]} >= ${floor}`);
+  }
+  assert.equal(widths.errors, 89);
+  assert.ok(widths.top >= 120);
+
+  // Floors that cannot fit are kept: the table scrolls rather than break a word.
+  const tight = fitResizableColumnWidths(battle, 600, { contentMins, wordMins });
+  assert.equal(tight.category, 110);
+  assert.equal(tight.top, 120);
+});
+
+test("a saved width is never shrunk", () => {
+  const stored = { prompt: 400, outcome: 400, engine: 400 };
+  const widths = fitResizableColumnWidths(runDetailColumns, 600, { stored });
+  assert.equal(widths.outcome, 400);
+});

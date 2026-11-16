@@ -86,19 +86,25 @@ test("every Fender preset question, one detail at a time, lands in a dashboard r
   assert.deepEqual(FENDER_PRESETS.map((p) => p.category), ["electrics", "acoustics", "amps", "basses"]);
 });
 
-test("the page saves through the editor's save, one prompt at a time, and the editor links to it", () => {
+test("the page saves through the editor's save, one prompt at a time; the client Prompts list has no link to it", () => {
   const page = readFileSync("components/v3/battery-builder/BatteryBuilder.tsx", "utf8");
   assert.match(page, /savePrompt\(null, q\.text, preset\.category\)/);
   assert.match(page, /disabled=\{saving \|\| locked \|\| chosen\.length === 0 \|\| overLimit \|\| !status\}/);
   assert.match(page, /client\.promptsEditable/);
   const editor = readFileSync("components/v3/prompts/PromptsEditor.tsx", "utf8");
-  assert.match(editor, /\$\{DASHBOARD_PATH\}\/battery-builder/);
+  assert.doesNotMatch(editor, /battery-builder|Build prompts from shopper details/);
 });
 
-test("the dashboard header has a Build prompts button, only for clients edited from the dashboard", () => {
+test("Build prompts is for IntoFocus staff only: the header asks the staff check, the page checks the session (decision 99)", () => {
   const spec = readFileSync("lib/fender-canvas/build-canvas-spec.tsx", "utf8");
-  assert.match(spec, /promptBuilderHref: activeClient\(\)\.promptsEditable \? `\$\{DASHBOARD_PATH\}\/battery-builder` : undefined/);
+  assert.match(spec, /promptBuilderHref: `\$\{DASHBOARD_PATH\}\/battery-builder`,/);
   const shell = readFileSync("lib/canvas-sdk/CanvasShellHeader.tsx", "utf8");
-  assert.match(shell, /spec\.promptBuilderHref \?/);
+  assert.match(shell, /import \{ isStaffViewer \} from "@\/components\/staff\/staff-check";/);
+  assert.match(shell, /\{spec\.promptBuilderHref && staff \?/);
   assert.match(shell, /<span>Build prompts<\/span>/);
+  const route = readFileSync("app/(canvas)/dashboard/battery-builder/page.tsx", "utf8");
+  assert.match(route, /if \(!session\?\.isIntoFocusAdmin\) \{/);
+  assert.match(route, /<StaffOnlyNotice client=\{client\} light=\{params\.theme === "light"\} title="Build prompts" \/>/);
+  assert.ok(route.indexOf("StaffOnlyNotice client") < route.indexOf("<BatteryBuilder />"), "the builder renders only after the check");
+  assert.match(readFileSync("components/staff/StaffOnlyNotice.tsx", "utf8"), /This page is for IntoFocus staff\./);
 });

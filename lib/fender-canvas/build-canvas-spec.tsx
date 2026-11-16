@@ -1,4 +1,4 @@
-import { activeClient, clientStorageKey } from "@/lib/client/active-client";
+import { clientStorageKey } from "@/lib/client/active-client";
 import { DASHBOARD_PATH } from "@/lib/auth/dashboard-path";
 import { activeSetAsideClientKey } from "@/lib/set-aside/keys";
 import type { ReactNode } from "react";
@@ -105,9 +105,10 @@ export function buildFenderCanvasSpec(
   const spec = defineCanvas({
     appearance: "iom",
     commandCenter,
-    // Every client has the Prompts screen (decision 89); only an editable list adds Build prompts.
+    // Every client has the same view-only Prompts list. Build prompts shows for IntoFocus staff only
+    // (decision 99): the header checks staff before it shows the button, and the page checks again.
     promptsEditor: (close) => <PromptsEditor onClose={close} />,
-    promptBuilderHref: activeClient().promptsEditable ? `${DASHBOARD_PATH}/battery-builder` : undefined,
+    promptBuilderHref: `${DASHBOARD_PATH}/battery-builder`,
     glossary: fenderGlossary,
     hubSlots: buildHubSlots({
       suppressed: retail.phase === "ready" ? retail.snapshot.suppressedListings : retail.phase,

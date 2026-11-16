@@ -11,7 +11,7 @@ import { AI_TABS } from "@/lib/ai-search/canvas-surfaces";
 import { scopeEvidence } from "@/lib/ai-search/evidence-focus";
 import { ROLE_LABELS, type HeadlineRole, type RoleGroupTally, type RoleTally } from "@/lib/ai-search/question-role";
 import {
-  commercialCategories,
+  battlecardCategories,
   engineCategoryCell,
   engineCategoryLargest,
   providerErrorsLine,
@@ -98,7 +98,7 @@ export function EngineCategoryGrid({
   engines: readonly RoleGroupTally[];
   showSmallSample: boolean;
 }) {
-  const categories = commercialCategories(snapshot.calls);
+  const categories = battlecardCategories(snapshot.calls);
   const width = Math.max(96, Math.floor(CATEGORY_GRID_WIDTH / Math.max(1, categories.length)));
   const columns: RetailColumn[] = [
     clientColumn("engine", "Engine", "text", 120, 96),

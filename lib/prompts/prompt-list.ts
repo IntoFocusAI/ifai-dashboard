@@ -3,19 +3,18 @@ import { activeClient } from "@/lib/client/active-client";
 import { getCanvasSupabase } from "@/lib/supabase/canvas-client";
 
 /**
- * The prompt list for the brand on screen (decision 89: every client has the Prompts screen).
+ * The prompt list for the brand on screen. Every client sees the same view-only list (decisions 89
+ * and 99).
  *
- * A client whose prompt list is edited from the dashboard (Fender) reads it through the editor
- * functions, which also return the run lock and the calls per prompt. Every other client reads its
- * own battery, read-only, from `<schema>.canvas_ai_prompts`
+ * Fender's list, which staff write from Build prompts, is read through its editor functions, which
+ * also return the calls per prompt. Every other client reads its own battery from
+ * `<schema>.canvas_ai_prompts`
  * (supabase/migrations/20261116230000_ledlenser_canvas_ai_prompts.sql for Ledlenser).
  */
 export type PromptList = {
   prompts: EditablePrompt[];
-  /** Run lock and calls per prompt. Null for a read-only list. */
+  /** Calls per prompt (and the run lock). Null where the list is read from a canvas view. */
   status: PromptEditorStatus | null;
-  /** Add, edit, remove, restore, change history, and Build prompts. */
-  editable: boolean;
 };
 
 /** Columns of canvas_ai_prompts the screen reads, the same as public.ai_prompts_list() returns. */
@@ -54,7 +53,7 @@ export function promptFromRow(row: Row): EditablePrompt | null {
 export async function loadPromptList(): Promise<PromptList> {
   if (activeClient().promptsEditable) {
     const { prompts, status } = await loadPrompts();
-    return { prompts, status, editable: true };
+    return { prompts, status };
   }
   const { data, error } = await getCanvasSupabase()
     .from("canvas_ai_prompts")
@@ -62,5 +61,5 @@ export async function loadPromptList(): Promise<PromptList> {
     .order("prompt_key", { ascending: true });
   if (error) throw new Error(PROMPT_LIST_UNREADABLE);
   const prompts = ((data ?? []) as Row[]).map(promptFromRow).filter((p): p is EditablePrompt => p !== null);
-  return { prompts, status: null, editable: false };
+  return { prompts, status: null };
 }

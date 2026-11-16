@@ -13,6 +13,8 @@ import {
   engineComparisonTable,
   parseBattlecardFilter,
 } from "../lib/ai-search/radar-tables.ts";
+import { discoveryCategories, roleTally } from "../lib/ai-search/question-role.ts";
+import { radarBubbleLead } from "../lib/ai-search/radar-bubble.ts";
 import { runWithClient } from "../lib/client/server-client.ts";
 import { whyNotFender } from "../lib/ai-search/why-not-fender.ts";
 import type { AiCallRow, AiSearchSnapshot } from "../lib/ai-search/types.ts";
@@ -132,4 +134,38 @@ test("a Ledlenser answer that names Ledlenser reads as mentioned, and Fender is 
   );
   assert.equal(fender.fenderMentioned, false);
   assert.equal(whyNotFender({ answerText: "A Squier is a fine start.", winner: "Yamaha", pages: [] }).fenderMentioned, true);
+});
+
+test("a category whose questions are all branded is no battlecard, for every client (decision 93)", async () => {
+  // Fender: "squier" asks branded questions only. Its answers still count in branded consideration.
+  const squierPrompt = "Squier Classic Vibe vs Yamaha Pacifica comparison";
+  const squier = [
+    ...times(3, { category: "squier", prompt: squierPrompt }),
+    ...times(1, { category: "squier", prompt: squierPrompt, outcome: "competitor_win", primary_brand: "Yamaha" }),
+  ];
+  const fender = snap([...rows, ...squier]);
+  assert.deepEqual(battlecardTable(fender, { engine: "", lead: "all" }, false).rows.map((row) => row.key), ["acoustics", "electrics"]);
+  assert.deepEqual(engineCategoryTable(fender, false).header, ["Engine", "Acoustics", "Electrics"]);
+  assert.deepEqual(discoveryCategories(fender.calls), ["acoustics", "electrics"]);
+  assert.equal(roleTally(fender.calls, "branded_consideration").resolved, 4, "the Squier answers still count in branded consideration");
+  assert.equal(radarBubbleLead(fender.calls)?.key, "acoustics");
+
+  // Ledlenser: "brand" holds stored branded consideration and brand-associated questions, no unbranded discovery.
+  const led = await runWithClient("ledlenser", async () => {
+    const calls = [
+      ...times(4, { category: "headlamps", prompt: "Best rechargeable headlamp for backpacking and hiking", primary_brand: "Ledlenser" }),
+      ...times(3, { category: "brand", prompt: "Is Ledlenser a good flashlight brand?", primary_brand: "Ledlenser" }),
+      ...times(2, { category: "brand", prompt: "Best German-engineered flashlight brand", primary_brand: "Ledlenser" }),
+    ];
+    return {
+      cards: battlecardTable(snap(calls), { engine: "", lead: "all" }, false).rows.map((row) => row.key),
+      grid: engineCategoryTable(snap(calls), false).header,
+      categories: discoveryCategories(calls),
+      branded: roleTally(calls, "branded_consideration").resolved,
+    };
+  });
+  assert.deepEqual(led.cards, ["headlamps"]);
+  assert.deepEqual(led.grid, ["Engine", "Headlamps"]);
+  assert.deepEqual(led.categories, ["headlamps"]);
+  assert.equal(led.branded, 3, "the Brand answers still count in branded consideration");
 });

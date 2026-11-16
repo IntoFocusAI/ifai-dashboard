@@ -4,16 +4,19 @@ import { useMemo } from "react";
 import { figureTipAttrs } from "@/components/v3/live/FigureTip";
 import { useAiHistoryOptional } from "@/components/v3/live/ai-search/AiHistoryContext";
 import { utcDay } from "@/lib/ai-search/history-eligibility";
-import { windowQuestionSetChange } from "@/lib/ai-search/history-trends";
+import { windowQuestionSetChange, type QuestionSetKind } from "@/lib/ai-search/history-trends";
 import { aiSearchStale, aiWindowPartial, questionSetMixed, selectionEndsOnPublishedRun } from "@/lib/ai-search/stale";
 import { PARTIAL_MARK, PARTIAL_TITLE, partialFigureTip, type PartialFigure } from "@/lib/fender-canvas/canvas-reads";
 
 /**
  * The asterisk reading for the AI rates on screen (X-25): stale when the published run is older
  * than its check schedule allows and the selection ends on it; mixed when the date-pill window
- * holds runs from before and after a question-set change. Null for the labeled sample copy.
+ * holds runs from before and after a question-set change. `questions` names the questions the
+ * figure counts: a shopping rate (the default) is not marked for a fact-check swap, and a
+ * fact-check figure is marked only for its own question changes. `null` is a count, not a rate,
+ * such as catalog products checked: only a stale run marks it. Null for the labeled sample copy.
  */
-export function useAiStale(): PartialFigure | null {
+export function useAiStale(questions: QuestionSetKind | null = "commercial"): PartialFigure | null {
   const history = useAiHistoryOptional();
   const current = history?.current ?? null;
   const run = current?.phase === "ready" ? current.snapshot.run : null;
@@ -22,8 +25,8 @@ export function useAiStale(): PartialFigure | null {
   const trend = history?.trend ?? null;
   const windowed = mode != null && mode.kind !== "run" && mode.kind !== "legacy";
   const changedOn = useMemo(
-    () => (windowed && trend?.phase === "ready" ? windowQuestionSetChange(trend.snapshots) : null),
-    [trend, windowed],
+    () => (windowed && questions && trend?.phase === "ready" ? windowQuestionSetChange(trend.snapshots, questions) : null),
+    [questions, trend, windowed],
   );
   return useMemo(() => {
     if (!run || !mode || source !== "live") return null;
@@ -34,8 +37,8 @@ export function useAiStale(): PartialFigure | null {
 }
 
 /** The asterisk beside a lead figure that is stale or mixes question sets. */
-export function AiStaleMark() {
-  const stale = useAiStale();
+export function AiStaleMark({ questions = "commercial" }: { questions?: QuestionSetKind | null } = {}) {
+  const stale = useAiStale(questions);
   if (!stale) return null;
   return (
     <span
