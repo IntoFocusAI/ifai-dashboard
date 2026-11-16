@@ -85,7 +85,7 @@
 - **Desired:** Lead with the few sources that matter most; filter by category.
 - **User value:** Effort goes where it pays.
 - **Acceptance:** Top sources first; category filter works.
-- **Evidence:** Approved by Brian Magazu on 3 Nov 2026. Worker 20.6, pull request 107, main a1080b4.
+- **Evidence:** Approved by Brian Magazu on 3 Nov 2026. Worker 20.6, pull request 107, main a1080b4. Workers 26.15, 27.4, 27.7 and 27.9, PR 195 (main 9f13a05), approved 16 Nov 2026: Citation Ecosystem engine chips with presets and Custom, (search)/(API) labels, one question control (decision 86); Ledlenser API engines counted (decision 89); shopping-only asterisk and trend breaks (decision 90); Battlecards drop categories with no unbranded discovery questions (decision 93); tables fit at 1264 px with scrollbars.
 - **Open decision:** None.
 
 **A-07 CURRENT** · Launch
