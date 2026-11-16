@@ -170,8 +170,8 @@ Replace this whole section on handoff. Keep it under 25 lines. The FDD wins.
 
 - PM27 handed off 16 Nov 2026; next is PM28. Docs 27.14. Launch CURRENT 73 of
   95 once Brian merges the 27.14 docs PR (H-07). Decisions 89 to 101 are PM27's.
-- Main unit tests red after PRs 206+207 (21 fail); Worker 27.15 fixing on a draft
-  PR. Then run score-snapshots.yml by hand (Watson's login, PR 205, is in).
+- PR 207 merged with a red Unit tests check; PR 210 fixed it (merged 16 Nov).
+  Check main is green, then run score-snapshots.yml by hand (Watson's PR 205).
 - PR 208 (27.13): X-34 marks on every tab, X-18 renames. Waits on Brian: title
   case for canonical names, and the headings table in its body. Merge main first.
 - Queue: #operations expiry reminders (daily job on actuation_basis; secret
