@@ -184,7 +184,7 @@ test.describe("Prompts change history (A-08)", () => {
       route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(EDITS) }),
     );
     await page.goto("/dashboard");
-    await page.locator(".hdr-btn", { hasText: "Prompts" }).click();
+    await page.locator(".hdr-btn", { hasText: /^Prompts$/ }).click();
     const toggle = page.locator("[data-prompt-history-toggle='p01']");
     await expect(toggle).toHaveText("Show history · 2 changes", { timeout: 60_000 });
     await expect(page.locator("[data-prompt-history-toggle='p02']")).toHaveText("Show history · No changes");
@@ -216,7 +216,7 @@ test.describe("Prompts change history (A-08)", () => {
       }),
     );
     await page.goto("/dashboard");
-    await page.locator(".hdr-btn", { hasText: "Prompts" }).click();
+    await page.locator(".hdr-btn", { hasText: /^Prompts$/ }).click();
     const notice = page.locator("[data-prompt-history-status='missing']");
     await expect(notice).toHaveText("Change history: Not available*", { timeout: 60_000 });
     await expect(notice.locator(".ifai-term")).toHaveAttribute("data-ifai-tooltip-desc", /not applied to the database yet/);

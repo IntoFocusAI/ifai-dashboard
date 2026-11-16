@@ -123,7 +123,7 @@ test("the prompt list downloads the prompts on screen (fender)", async ({ page }
   test.setTimeout(120_000);
   await page.context().addCookies([{ name: "ifai_guest_fender", value: "1", domain: "localhost", path: "/" }]);
   await page.goto("/dashboard");
-  await page.locator(".hdr-btn", { hasText: "Prompts" }).click();
+  await page.locator(".hdr-btn", { hasText: /^Prompts$/ }).click();
   const count = page.locator("[data-prompt-search-count]");
   await expect(page.locator(".pe-item").first()).toBeVisible({ timeout: 60_000 });
   await expect(count).toHaveText(/^[\d,]+ of [\d,]+ prompts$/);
