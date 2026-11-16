@@ -24,6 +24,7 @@
     "react-dom": "19.2.8"
   },
   "devDependencies": {
+    "@anthropic-ai/sdk": "^1.8.0",
     "@netlify/plugin-nextjs": "^5.15.13",
     "@playwright/test": "^1.63.0",
     "@tailwindcss/postcss": "^4",

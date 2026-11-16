@@ -1,5 +1,5 @@
 import { defaultWindowRuns, runDay } from "@/lib/ai-search/default-window";
-import { API_REPEAT_CAP, capApiRepeats, fixedQuestionCount } from "@/lib/ai-search/engine-group";
+import { API_REPEAT_CAP, capApiRepeats, shoppingQuestionCount } from "@/lib/ai-search/engine-group";
 import { compareRuns, utcDay, type HistoryRunSummary } from "@/lib/ai-search/history-eligibility";
 import type { HistoryMode } from "@/lib/ai-search/history-mode";
 import {
@@ -10,7 +10,6 @@ import {
   type HistoryReadOptions,
 } from "@/lib/ai-search/history-queries";
 import { PROBE_CATALOG_COLUMNS } from "@/lib/ai-search/probe-catalog";
-import { PROMPT_BATTERY } from "@/lib/ai-search/prompt-battery";
 import { apiReadLimit } from "@/lib/ai-search/read-limit";
 import type { AiCallRow, AiCitationRow, AiProbeRow, AiSearchSnapshot } from "@/lib/ai-search/types";
 
@@ -143,13 +142,13 @@ export function nearestApiRun(runs: readonly ApiRunSummary[], day: string | null
   return best?.run ?? null;
 }
 
-/** A battery run's day and its fixed-question count, the floor an API run beside it must meet. */
-export type BatteryQuestions = { day: string; fixedQuestions: number };
+/** A battery run's day and its shopping-question count, the floor an API run beside it must meet. */
+export type BatteryQuestions = { day: string; shoppingQuestions: number };
 
 export function batteryQuestions(battery: readonly Pick<AiSearchSnapshot, "run" | "calls" | "probes">[]): BatteryQuestions[] {
   return battery.flatMap((snapshot) => {
     const day = runDay(snapshot.run);
-    return day ? [{ day, fixedQuestions: fixedQuestionCount(snapshot) }] : [];
+    return day ? [{ day, shoppingQuestions: shoppingQuestionCount(snapshot) }] : [];
   });
 }
 
@@ -163,30 +162,26 @@ export function nearestBatteryDay<T extends { day: string }>(battery: readonly T
 }
 
 /**
- * The floor for a battery run whose calls are not read yet: the nearest read run's fixed questions,
- * else the wave 1 shopping questions every client asks (29 for Fender and Ledlenser), which still
- * leaves out a short test run. The full Fender list (59 with wave 2) would leave out every
- * Ledlenser API run and every Fender API run from before wave 2.
+ * The floor for a battery run whose calls are not read yet: the shopping questions of the nearest
+ * read run, from the client's own data. Null until a run is read (no other client's list stands in).
  */
-export function unreadBatteryFloor(read: readonly BatteryQuestions[], day: string): number {
-  const nearest = nearestBatteryDay(read, day);
-  if (nearest) return nearest.fixedQuestions;
-  return PROMPT_BATTERY.filter((prompt) => prompt.kind === "commercial" && prompt.wave === undefined).length;
+export function unreadBatteryFloor(read: readonly BatteryQuestions[], day: string): number | null {
+  return nearestBatteryDay(read, day)?.shoppingQuestions ?? null;
 }
 
 /**
- * The API runs that asked the battery's fixed questions: each run's questions_matched covers the
- * fixed questions of the battery run nearest its day. A one-question smoke test is left out.
+ * The API runs that asked the battery's shopping questions: each run's questions_matched covers the
+ * shopping questions of the battery run nearest its day. A one-question smoke test is left out.
  */
 export function apiRunsCoveringBattery(runs: readonly ApiRunSummary[], battery: readonly BatteryQuestions[]): ApiRunSummary[] {
   return runs.filter((run) => {
     const day = apiRunDay(run);
     const paired = day ? nearestBatteryDay(battery, day) : null;
-    return paired != null && (run.questions_matched ?? 0) >= Math.max(1, paired.fixedQuestions);
+    return paired != null && (run.questions_matched ?? 0) >= Math.max(1, paired.shoppingQuestions);
   });
 }
 
-/** The map's API run (decision 7): the counted run nearest the published run that asked its fixed questions. */
+/** The map's API run (decision 7): the counted run nearest the published run that asked its shopping questions. */
 export function pairedApiRuns(
   runs: readonly ApiRunSummary[],
   snapshot: Pick<AiSearchSnapshot, "run" | "calls" | "probes"> | null,

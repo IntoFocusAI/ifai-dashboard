@@ -76,6 +76,14 @@ test("ResizableTable floors fit, saved widths, and the drag minimum at the heade
   const measure = read("lib/fender-canvas/table-column-measure.ts");
   assert.match(measure, /const root = beside \? \(table\.parentElement \?\? canvas\) : canvas;/);
   assert.match(measure, /withProbeHost\(table, true, \(host\) => \{\s+Array\.from\(header\.cells\)/, "headers use the panel's header font");
-  assert.match(measure, /withProbeHost\(table, false, \(host\) => \{\s+let bodySeen/, "body floors keep the canvas font");
+  assert.match(measure, /withProbeHost\(table, options\.beside, \(host\) => \{\s+let bodySeen/);
+  assert.match(measure, /options: \{ beside: boolean; bodyOnly: boolean \} = \{ beside: false, bodyOnly: false \}/);
+  assert.match(
+    measure,
+    /return measureBodyColumns\(table, columnIds, skipColumnId, measureCellOneLineWidth\);/,
+    "one-line body floors keep the canvas font",
+  );
+  // Word floors bound a shrink, so they read the panel's own cell font (Worker 27.9).
+  assert.match(measure, /measureCellWordWidth, \{ beside: true, bodyOnly: true \}\);/);
   assert.match(measure, /width:1px/);
 });

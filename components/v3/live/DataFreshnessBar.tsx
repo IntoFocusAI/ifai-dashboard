@@ -1,9 +1,10 @@
 "use client";
 
+import { useApiRunCatalog } from "@/components/v3/live/ai-search/useApiEngineLoad";
 import { useFindability } from "@/components/v3/live/findability/FindabilityContext";
 import { StatusGlyph } from "@/components/v3/live/StatusMark";
 import { TOOLTIP_ROWS_ATTR } from "@/lib/canvas-sdk/tooltip-content";
-import { dataAsOf, dataSourceFreshness, dataSourceLine } from "@/lib/fender-canvas/data-source-freshness";
+import { dataAsOf, dataSourceFreshness, dataSourceLine, newestApiRunAt } from "@/lib/fender-canvas/data-source-freshness";
 import type { CanvasFreshnessRow } from "@/lib/fender-canvas/types";
 import { newestCheckedAttemptAt } from "@/lib/findability/last-checked";
 
@@ -22,7 +23,10 @@ export function DataFreshnessBar({
   // Brand-site pages fall back to the newest Findability row check when no job row exists.
   const findability = useFindability();
   const brandSiteChecked = findability.phase === "ready" ? newestCheckedAttemptAt(findability.rows) : null;
-  const sources = dataSourceFreshness(fresh, Date.now(), { brand_site: brandSiteChecked });
+  // API engines: the newest run in the client's API run tables, beside the API run locks.
+  const apiCatalog = useApiRunCatalog();
+  const apiChecked = apiCatalog.phase === "ready" ? newestApiRunAt(apiCatalog.runs) : null;
+  const sources = dataSourceFreshness(fresh, Date.now(), { brand_site: brandSiteChecked, ai_api: apiChecked });
   const asOfIso = dataAsOf(sources);
   const asOfLabel = asOfIso
     ? new Date(asOfIso).toLocaleString(undefined, {

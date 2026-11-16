@@ -66,14 +66,12 @@ function withProbeHost<T>(table: HTMLTableElement, beside: boolean, measure: (ho
   }
 }
 
-/**
- * Minimum pixel width per column so typical cells stay on one line.
- * Skip the fill column and any wrap columns: those may wrap into leftover width.
- */
-export function measureColumnOneLineMins(
+function measureBodyColumns(
   table: HTMLTableElement,
   columnIds: readonly string[],
-  skipColumnId?: string | readonly string[],
+  skipColumnId: string | readonly string[] | undefined,
+  measureCell: (cell: HTMLElement, host: HTMLElement, tableClass: string) => number,
+  options: { beside: boolean; bodyOnly: boolean } = { beside: false, bodyOnly: false },
 ): Record<string, number> {
   const mins: Record<string, number> = {};
   for (const id of columnIds) mins[id] = 0;
@@ -86,10 +84,11 @@ export function measureColumnOneLineMins(
       : (skipColumnId ?? []),
   );
 
-  withProbeHost(table, false, (host) => {
+  withProbeHost(table, options.beside, (host) => {
     let bodySeen = 0;
     for (const row of Array.from(table.rows)) {
       const inBody = row.parentElement?.tagName === "TBODY";
+      if (!inBody && options.bodyOnly) continue;
       if (inBody) {
         if (bodySeen >= MEASURE_MAX_BODY_ROWS) continue;
         bodySeen += 1;
@@ -100,11 +99,32 @@ export function measureColumnOneLineMins(
         if (!id || skip.has(id)) continue;
         const cell = cells[index];
         if (!cell || cell.colSpan !== 1) continue;
-        mins[id] = Math.max(mins[id], measureCellOneLineWidth(cell, host, table.className));
+        mins[id] = Math.max(mins[id], measureCell(cell, host, table.className));
       }
     }
   });
   return mins;
+}
+
+/**
+ * Minimum pixel width per column so typical cells stay on one line.
+ * Skip the fill column and any wrap columns: those may wrap into leftover width.
+ */
+export function measureColumnOneLineMins(
+  table: HTMLTableElement,
+  columnIds: readonly string[],
+  skipColumnId?: string | readonly string[],
+): Record<string, number> {
+  return measureBodyColumns(table, columnIds, skipColumnId, measureCellOneLineWidth);
+}
+
+/**
+ * Per column, the narrowest width at which its body cells still break only between words,
+ * measured beside the table in the panel's own cell font. A table too wide for its panel
+ * gives width back down to this floor (headers have their own floor).
+ */
+export function measureColumnWordMins(table: HTMLTableElement, columnIds: readonly string[]): Record<string, number> {
+  return measureBodyColumns(table, columnIds, undefined, measureCellWordWidth, { beside: true, bodyOnly: true });
 }
 
 /**

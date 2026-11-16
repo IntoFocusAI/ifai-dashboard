@@ -11,7 +11,7 @@ import {
   type CitationWindow,
 } from "@/lib/ai-search/citation-aggregate";
 import type { CitationFailedRead } from "@/lib/ai-search/citation-read-failure";
-import { citationPopulation } from "@/lib/ai-search/engine-group";
+import { citationPopulation, type EngineGroupChoice } from "@/lib/ai-search/engine-group";
 import { NO_WINDOW_RUN_HEADING } from "@/lib/ai-search/default-window";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
 
@@ -49,11 +49,12 @@ function finish(
   };
 }
 
-export function useCitationAggregate(): CitationAggregate {
+/** `readChoice` is the engine group the tab reads before its engine chips narrow it. */
+export function useCitationAggregate(readChoice?: EngineGroupChoice): CitationAggregate {
   const history = useAiHistoryOptional();
   const read = useAiSearch();
   const mode = history?.mode;
-  const { trend } = useEngineGroupWindow("citations");
+  const { trend } = useEngineGroupWindow("citations", readChoice);
   const current = history?.current;
   const windowFrom = history?.mode.kind === "month" ? history.bounds.from : null;
   const windowTo = history?.mode.kind === "month" ? history.bounds.to : null;

@@ -1,5 +1,5 @@
 import { categoryLeads, type CategoryLead } from "@/lib/ai-search/category-on-track";
-import { categoryRoleTallies } from "@/lib/ai-search/question-role";
+import { discoveryCategoryRoleTallies } from "@/lib/ai-search/question-role";
 import type { AiCallRow } from "@/lib/ai-search/types";
 
 /**
@@ -9,5 +9,5 @@ import type { AiCallRow } from "@/lib/ai-search/types";
  */
 export function radarBubbleLead(calls: readonly AiCallRow[]): CategoryLead | null {
   const rows = [...calls];
-  return categoryLeads(categoryRoleTallies(rows), rows).find((lead) => lead.status === "behind" && lead.topRival) ?? null;
+  return categoryLeads(discoveryCategoryRoleTallies(rows), rows).find((lead) => lead.status === "behind" && lead.topRival) ?? null;
 }

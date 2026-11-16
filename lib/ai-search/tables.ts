@@ -1,3 +1,14 @@
+import {
+  citationQuestionLabel,
+  engineKindLabel,
+  isCitationQuestion,
+  parseEngineList,
+  questionForScope,
+  questionScope,
+  snapshotForEngines,
+  snapshotForQuestion,
+  type CitationQuestion,
+} from "@/lib/ai-search/citation-filters";
 import { citationCategoryLabel, snapshotInCategory } from "@/lib/ai-search/citation-top-sources";
 import {
   SOURCE_CLASS_LABELS,
@@ -46,6 +57,7 @@ import {
   engineLabel,
   formatRunTime,
   modelLabel,
+  modelNamer,
 } from "@/lib/ai-search/run-metrics";
 import { formatObservedRate, roleRatePlainText } from "@/lib/ai-search/summary";
 import type { AiCallRow, AiSearchSnapshot } from "@/lib/ai-search/types";
@@ -150,12 +162,12 @@ export function simulationCategoryLabel(row: AiCallRow): string {
   return row.prompt_kind === "probe" ? "Product fact check" : categoryLabel(row.category);
 }
 
-export function simulationCells(row: AiCallRow, cited: number): string[] {
+export function simulationCells(row: AiCallRow, cited: number, nameModel = modelLabel): string[] {
   return [
     cleanPrompt(row.prompt),
     simulationOutcomeLabel(row),
     engineLabel(row.engine),
-    modelLabel(row.model),
+    nameModel(row.model),
     simulationCategoryLabel(row),
     factCheckColumnLabel(row),
     formatInt(cited),
@@ -221,9 +233,10 @@ export function parseExplorerFilter(value: unknown): ExplorerFilter {
 export function simulationTable(snapshot: AiSearchSnapshot, filter: ExplorerFilter): AiTableBuild {
   const cited = citedLinksByCall(snapshot);
   const rows = sortExplorerRows(applyExplorerFilter(snapshot.calls, filter));
+  const nameModel = modelNamer(snapshot.calls.map((call) => call.model));
   return {
     header: SIMULATION_HEADER,
-    rows: rows.map((row) => ({ key: row.id, cells: simulationCells(row, cited.get(row.id)?.length ?? 0) })),
+    rows: rows.map((row) => ({ key: row.id, cells: simulationCells(row, cited.get(row.id)?.length ?? 0, nameModel) })),
     sort: "Question, then search engines before API engines, then engine",
     filter: explorerFilterSentence(filter),
   };
@@ -375,25 +388,29 @@ export function trendPointTable(
 
 /**
  * The Citation Ecosystem controls a download reads again. A picked site, class, or answer group
- * narrows the cited links on screen by row, so the request's row keys carry it.
+ * narrows the cited links on screen by row, so the request's row keys carry it. `scope` is the
+ * prompt kind the question choice counts; `engines` is the chip set when it is not a preset.
  */
-export type CitationTableParams = { scope: CitationScope; category: string | null };
-
-const CITATION_SCOPE_WORDS: Record<CitationScope, string> = {
-  commercial: "Shopping answers",
-  probe: "Fact-check answers",
-  all: "Every answer",
+export type CitationTableParams = {
+  scope: CitationScope;
+  category: string | null;
+  question: CitationQuestion;
+  engines: string[] | null;
 };
 
 export function citationFilterSentence(params: CitationTableParams): string {
-  const parts = [CITATION_SCOPE_WORDS[params.scope]];
+  const parts = [citationQuestionLabel(params.question)];
+  if (params.engines != null) parts.push(`Engines: ${params.engines.map(engineKindLabel).join(", ")}`);
   if (params.category != null) parts.push(`Category: ${citationCategoryLabel(params.category)}`);
   return parts.join(". ");
 }
 
-/** The cited links the tab is showing for its scope and category, before a pick narrows them. */
+/** The cited links the tab is showing for its engines, question, and category, before a pick narrows them. */
 export function citationView(snapshot: AiSearchSnapshot, params: CitationTableParams) {
-  const view = snapshotInCategory(snapshot, params.category);
+  const view = snapshotInCategory(
+    snapshotForQuestion(snapshotForEngines(snapshot, params.engines), params.question),
+    params.category,
+  );
   const read = citationEvidence(view.calls, view.citations, params.scope);
   return { view, read };
 }
@@ -436,7 +453,7 @@ export function citationEngineTable(snapshot: AiSearchSnapshot, params: Citation
     "Engine",
     (call) => (call.engine ?? "").toLowerCase(),
     (row) => row.engine,
-    (key) => engineLabel(key),
+    (key) => engineKindLabel(key),
   );
 }
 
@@ -457,7 +474,7 @@ export function citationEvidenceCells(row: CitationEvidence): string[] {
   return [
     row.prompt,
     String(row.simId),
-    engineLabel(row.engine),
+    engineKindLabel(row.engine),
     modelLabel(row.model),
     row.title ?? row.canonicalUrl,
     row.rawUrl,
@@ -481,7 +498,8 @@ const CITATION_SCOPES = new Set(["commercial", "probe", "all"]);
 /** Reads the Citation Ecosystem controls out of a download request. */
 export function parseCitationParams(value: unknown): CitationTableParams {
   const input = value && typeof value === "object" ? (value as Record<string, unknown>) : {};
-  const scope = typeof input.scope === "string" && CITATION_SCOPES.has(input.scope) ? (input.scope as CitationScope) : "commercial";
+  const legacy = typeof input.scope === "string" && CITATION_SCOPES.has(input.scope) ? (input.scope as CitationScope) : "commercial";
+  const question = isCitationQuestion(input.question) ? input.question : questionForScope(legacy);
   const category = typeof input.category === "string" ? input.category.slice(0, 200) : null;
-  return { scope, category };
+  return { scope: questionScope(question), category, question, engines: parseEngineList(input.engines) };
 }

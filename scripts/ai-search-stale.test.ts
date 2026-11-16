@@ -57,10 +57,15 @@ test("only a selection that ends on the published run is marked", () => {
 
 test("each tab's lead figure carries the mark, with the shared custom tooltip", () => {
   const dir = "components/v3/live/ai-search";
-  for (const file of ["RunSummaryPanel.tsx", "RunDetailsLead.tsx", "FactCheckLead.tsx", "CitationChain.tsx"]) {
+  for (const file of ["RunSummaryPanel.tsx", "RunDetailsLead.tsx"]) {
     assert.match(read(`${dir}/${file}`), /<AiStaleMark \/>/, file);
   }
-  assert.equal(read(`${dir}/FactCheckLead.tsx`).match(/<AiStaleMark \/>/g)?.length, 2, "catalog lead and Accuracy");
+  // Shopping rates take the default (shopping questions only, agreed 12 Nov 2026). Accuracy marks its own
+  // fact-check question changes; the catalog count is not a rate, so only a stale run marks it.
+  const factCheck = read(`${dir}/FactCheckLead.tsx`);
+  assert.equal(factCheck.match(/<AiStaleMark questions=\{null\} \/>/g)?.length, 1, "catalog lead");
+  assert.equal(factCheck.match(/<AiStaleMark questions="probe" \/>/g)?.length, 1, "Accuracy");
+  assert.match(read(`${dir}/CitationChain.tsx`), /<AiStaleMark questions=\{questions\} \/>/);
   const mark = read(`${dir}/AiStaleMark.tsx`);
   assert.match(mark, /figureTipAttrs\(PARTIAL_TITLE\[stale\.reason\], partialFigureTip\(stale\), "ai-stale"\)/);
   assert.match(mark, /if \(!run \|\| !mode \|\| source !== "live"\) return null;/, "the labeled sample copy is not marked");

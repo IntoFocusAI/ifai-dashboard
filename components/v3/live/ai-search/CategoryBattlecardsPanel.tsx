@@ -28,7 +28,7 @@ import {
   type BattlecardFilter,
 } from "@/lib/ai-search/category-on-track";
 import {
-  categoryRoleTallies,
+  discoveryCategoryRoleTallies,
   headlineAside,
   headlineCompetitorWins,
   type RoleGroupTally,
@@ -87,7 +87,7 @@ function Battlecards({ snapshot }: { snapshot: AiSearchSnapshot }) {
   const engineScope = filter.engine ? { engine: filter.engine } : undefined;
   const calls = callsForEngine(snapshot.calls, filter.engine);
   const scoped = { ...snapshot, calls };
-  const groups = categoryRoleTallies(calls);
+  const groups = discoveryCategoryRoleTallies(calls);
   const leads = categoryLeads(groups, calls);
   const leadByKey = new Map(leads.map((lead) => [lead.key, lead]));
   const shownLeads = leads.filter((lead) => leadMatches(lead.status, filter.lead));

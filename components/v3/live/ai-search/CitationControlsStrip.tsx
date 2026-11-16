@@ -1,31 +1,29 @@
 "use client";
 
-import type { CitationScope } from "@/lib/ai-search/citations";
+import { CITATION_QUESTIONS, type CitationQuestion } from "@/lib/ai-search/citation-filters";
 
-const SCOPES: Array<[CitationScope, string]> = [
-  ["commercial", "Shopping answers"],
-  ["probe", "Product fact checks"],
-  ["all", "All answers"],
-];
-
-/** Scope buttons. They lead the control row; the counts they change sit in the figure tiles. */
+/**
+ * The one question control (decision 86). It leads the control row; the counts it changes sit in
+ * the figure tiles and the tables.
+ */
 export function CitationControlsStrip({
-  scope,
-  onScope,
+  question,
+  onQuestion,
 }: {
-  scope: CitationScope;
-  onScope: (scope: CitationScope) => void;
+  question: CitationQuestion;
+  onQuestion: (question: CitationQuestion) => void;
 }) {
   return (
     <div className="citation-controls citation-controls-scopes" data-citation-controls>
-      <div role="group" aria-label="Citation scope" className="citation-scope-group">
-        {SCOPES.map(([value, label]) => (
+      <div role="group" aria-label="Questions" className="citation-scope-group" data-citation-question={question}>
+        {CITATION_QUESTIONS.map(([value, label]) => (
           <button
             key={value}
             type="button"
-            className={`segmented-btn${scope === value ? " active" : ""}`}
-            aria-pressed={scope === value}
-            onClick={() => onScope(value)}
+            className={`segmented-btn${question === value ? " active" : ""}`}
+            aria-pressed={question === value}
+            data-citation-question-choice={value}
+            onClick={() => onQuestion(value)}
           >
             {label}
           </button>

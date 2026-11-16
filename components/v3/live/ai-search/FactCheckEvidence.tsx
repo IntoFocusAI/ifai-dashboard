@@ -1,5 +1,6 @@
 "use client";
 
+import { ModelName } from "@/components/v3/live/ai-search/ModelName";
 import { mutedText } from "@/components/v3/live/ai-search/AiReadGate";
 import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
 import { CopyTip } from "@/components/v3/live/ai-search/CopyTip";
@@ -14,7 +15,7 @@ import {
   factCheckPickTip,
 } from "@/lib/ai-search/fact-check-copy";
 import { specFieldLabel } from "@/lib/ai-search/probe-catalog";
-import { cleanPrompt, engineLabel, formatRunTime, modelLabel } from "@/lib/ai-search/run-metrics";
+import { cleanPrompt, engineLabel, formatRunTime } from "@/lib/ai-search/run-metrics";
 import type { AiCallRow } from "@/lib/ai-search/types";
 import { formatInt } from "@/lib/fender-canvas/format";
 import { amazonHref } from "@/lib/fender-canvas/stock-loss";
@@ -123,7 +124,7 @@ export function FactCheckEvidence({
         <table className="table-sm" style={{ marginTop: 6 }}>
           <tbody>
             <tr><td>Engine</td><td>{engineLabel(row.engine)}</td></tr>
-            <tr><td>Model</td><td>{modelLabel(row.model)}</td></tr>
+            <tr><td>Model</td><td><ModelName model={row.model} /></td></tr>
             <tr><td>Question ID</td><td>{row.prompt_key ?? "Not recorded"}</td></tr>
             {catalog ? (
               <>

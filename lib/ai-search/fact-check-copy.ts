@@ -136,9 +136,7 @@ export function catalogProductsTip(
   rotation: RotationSummary,
   windowed = false,
 ): string {
-  const covers = lead.shownEngines.length
-    ? `This figure covers ${joinBrands(lead.shownEngines.map((engine) => engineLabel(engine)))}.`
-    : `No engine in this engine choice asks the rotating catalog questions, so this figure reads 0.`;
+  const covers = `This figure covers ${joinBrands(lead.shownEngines.map((engine) => engineLabel(engine)))}.`;
   const counted = `A product counts once an engine was asked about it, counted by ${brandSite()} spec page, then SKU.`;
   const compared =
     lead.checked > 0
@@ -148,6 +146,23 @@ export function catalogProductsTip(
   return [covers, rotatingEnginesSentence(lead.askingEngines), counted, compared, scope, rotation.tip]
     .filter(Boolean)
     .join(" ");
+}
+
+/**
+ * Tooltip on Not available* when the engines in this choice were asked no catalog question in
+ * this selection (decision 90). Read from the fact checks, so an engine that starts asking them
+ * shows its real count.
+ */
+export function catalogProductsNotAskedTip(
+  lead: Extract<CatalogProductsLead, { phase: "not-asked" }>,
+  windowed = false,
+): string {
+  const scope = `${formatInt(lead.inScope)} catalog products are in scope in ${windowed ? "the newest run of this selection" : "this run"}.`;
+  return [
+    "No engine in this engine choice was asked a catalog question in this selection, so there is no count to show.",
+    rotatingEnginesSentence(lead.askingEngines),
+    scope,
+  ].join(" ");
 }
 
 /** Tooltip when the catalog coverage read failed, so M is unknown. */

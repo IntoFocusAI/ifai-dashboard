@@ -1,5 +1,6 @@
 "use client";
 
+import { ModelName } from "@/components/v3/live/ai-search/ModelName";
 import { useState } from "react";
 import { clientColumn, ResizableTable } from "@/components/v3/live/ResizableTable";
 import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
@@ -8,7 +9,7 @@ import { EvidenceLink } from "@/components/v3/live/ai-search/EvidenceLink";
 import { ExternalLink } from "@/components/v3/live/ai-search/ExternalLink";
 import { AI_TABS } from "@/lib/ai-search/canvas-surfaces";
 import { SOURCE_CLASS_LABELS, type CitationEvidence } from "@/lib/ai-search/citations";
-import { engineLabel, modelLabel } from "@/lib/ai-search/run-metrics";
+import { engineLabel } from "@/lib/ai-search/run-metrics";
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
 
 const PAGE = 25;
@@ -88,7 +89,7 @@ export function CitationEvidenceTable({
                   </EvidenceLink>
                   <div style={mutedText}>Answer {row.simId}</div>
                 </td>
-                <td style={{ overflowWrap: "anywhere" }}>{engineLabel(row.engine)}<div style={mutedText}>{modelLabel(row.model)}</div></td>
+                <td style={{ overflowWrap: "anywhere" }}>{engineLabel(row.engine)}<div style={mutedText}><ModelName model={row.model} /></div></td>
                 <td style={{ wordBreak: "break-all" }}>
                   <ExternalLink href={row.rawUrl}>{row.title ?? row.canonicalUrl}</ExternalLink>
                   <div style={mutedText}>Raw: {row.rawUrl}</div>

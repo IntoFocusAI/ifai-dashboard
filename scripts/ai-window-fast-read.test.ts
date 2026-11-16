@@ -10,7 +10,7 @@ import {
   RUN_ROWS_FUNCTION,
   type HistoryReadClient,
 } from "../lib/ai-search/history-queries.ts";
-import { windowQuestionSetChange } from "../lib/ai-search/history-trends.ts";
+import { buildHistoryTrend, windowQuestionSetChange } from "../lib/ai-search/history-trends.ts";
 import { createReadLimit } from "../lib/ai-search/read-limit.ts";
 import { setSiteTypes, siteTypeIndex } from "../lib/ai-search/site-types.ts";
 import { STORED_RUN_COPY_DATA } from "../lib/ai-search/stored-run-copy-data.ts";
@@ -320,5 +320,60 @@ test("rotating fact-check wording is not a question-set change; new fact-check k
     ["p17", "Fender Player II Stratocaster neck radius and fret size"],
     ["p18", "What body wood does the Fender American Professional II Telecaster use?"],
   ]);
-  assert.equal(windowQuestionSetChange([fixed, ...rotation]), "2026-11-05", "retiring and adding fact-check keys is a change");
+  assert.equal(
+    windowQuestionSetChange([fixed, ...rotation], "probe"),
+    "2026-11-05",
+    "retiring and adding fact-check keys is a change for a fact-check figure",
+  );
+  assert.equal(windowQuestionSetChange([fixed, ...rotation], "all"), "2026-11-05", "and for a figure over every answer");
+  // Agreed 12 Nov 2026: a shopping rate (the default) counts only shopping-question changes.
+  assert.equal(windowQuestionSetChange([fixed, ...rotation]), null, "a fact-check swap does not mark a shopping rate");
+  assert.equal(windowQuestionSetChange([fixed, ...rotation], "commercial"), null);
+});
+
+test("a shopping-question change marks shopping rates and leaves fact-check figures alone", () => {
+  const checks: Array<[string, string]> = [["p17", "Fender Player II Stratocaster neck radius and fret size"]];
+  const before = snapshot("a", "2026-11-05", checks);
+  const after = snapshot("b", "2026-11-08", checks);
+  const reworded: AiSearchSnapshot = {
+    ...after,
+    calls: after.calls.map((call) => (call.prompt_key === "q1" ? { ...call, prompt: "Best electric guitar under $500" } : call)),
+  };
+  assert.equal(windowQuestionSetChange([before, after]), null);
+  assert.equal(windowQuestionSetChange([before, reworded]), "2026-11-08");
+  assert.equal(windowQuestionSetChange([before, reworded], "probe"), null);
+  assert.equal(windowQuestionSetChange([before, reworded], "all"), "2026-11-08");
+});
+
+test("the trend breaks only where the shopping questions changed, for both clients (Brian Magazu, 13 Nov 2026)", () => {
+  const trendOf = (snapshots: AiSearchSnapshot[]) =>
+    buildHistoryTrend({ snapshots, metric: "unbranded_discovery", breakdown: "overall", fromDay: null, toDay: null, query: { kind: "all" } });
+  // Fender: fixed fact check p18 retired on Nov 5 and the rotating p35 added, as on the live runs.
+  const fender = [
+    snapshot("f1", "2026-11-03", [["p17", "Fender Player II Stratocaster neck radius and fret size"], ["p18", "What body wood?"]]),
+    snapshot("f2", "2026-11-05", [["p17", "Fender Player II Stratocaster neck radius and fret size"], ["p35", "How many frets?"]]),
+    snapshot("f3", "2026-11-08", [["p17", "Fender Player II Stratocaster neck radius and fret size"], ["p35", "How many frets?"]]),
+  ];
+  // Ledlenser: fixed fact check l32 swapped for l33.
+  const ledlenser = [
+    snapshot("l1", "2026-11-04", [["l30", "Ledlenser MH10 lumens"], ["l32", "Ledlenser P7R runtime"]]),
+    snapshot("l2", "2026-11-07", [["l30", "Ledlenser MH10 lumens"], ["l33", "Ledlenser H7R battery"]]),
+  ];
+  for (const runs of [fender, ledlenser]) {
+    const model = trendOf(runs);
+    assert.equal(model.status, "ready");
+    assert.deepEqual(model.boundaries, [], "a fact-check swap draws no boundary and no break");
+  }
+  // A shopping-question change still breaks the line, and its lists show the shopping questions only.
+  const base = snapshot("f4", "2026-11-10", [["p17", "Fender Player II Stratocaster neck radius and fret size"]]);
+  const changed: AiSearchSnapshot = {
+    ...base,
+    calls: base.calls.map((call) => (call.prompt_key === "q2" ? { ...call, prompt_key: "q3", prompt: "Best amp for metal" } : call)),
+  };
+  const model = trendOf([...fender, changed]);
+  assert.equal(model.boundaries.length, 1);
+  const [boundary] = model.boundaries;
+  assert.equal(boundary.promptSetChanged, true);
+  assert.equal(boundary.afterRunId, "f3");
+  assert.ok([...boundary.beforeQuestions, ...boundary.afterQuestions].every((question) => question.promptKind === "commercial"));
 });
