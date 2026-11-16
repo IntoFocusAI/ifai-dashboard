@@ -7,6 +7,7 @@ import {
   E1_TARGET,
   expiresOn,
   itemsInWindow,
+  ownedAnswersFromEngines,
   programInPlace,
   scoreActuation,
   type ActuationInputs,
@@ -285,4 +286,23 @@ test("the page shows the staff message, not data, to anyone but staff (decision 
   const actions = readFileSync(new URL("../components/staff/actuation-actions.ts", import.meta.url), "utf8");
   assert.match(actions, /session\?\.isIntoFocusAdmin \? createClient\(\) : null/);
   assert.equal((actions.match(/await staffClient\(\);\n\s+if \(!supabase\) return \{ ok: false, message: STAFF_ONLY \};/g) ?? []).length, 3);
+});
+
+test("E1 counts only engines that returned a citation in the window, decided from the data (decision 97)", () => {
+  const engines = [
+    { engine: "chatgpt_search", citations: 120, withOwned: 6, resolved: 20 },
+    { engine: "perplexity", citations: 80, withOwned: 4, resolved: 20 },
+    // An API engine with no citations yet is left out, answers and all.
+    { engine: "openai_api", citations: 0, withOwned: 0, resolved: 20 },
+  ];
+  assert.deepEqual(ownedAnswersFromEngines(engines), { withOwned: 10, resolved: 40 });
+  // The same API engine joins on its own once it returns citations.
+  const joined = engines.map((row) => (row.engine === "openai_api" ? { ...row, citations: 5, withOwned: 2 } : row));
+  assert.deepEqual(ownedAnswersFromEngines(joined), { withOwned: 12, resolved: 60 });
+  assert.equal(ownedAnswersFromEngines([{ engine: "gemini", citations: 0, withOwned: 0, resolved: 9 }]), null);
+  assert.equal(ownedAnswersFromEngines([]), null);
+  // E1_TARGET stays null, so E1 stays pending and the score still counts from 0.
+  const score = scoreActuation(inputs({ ownedAnswers: ownedAnswersFromEngines(engines) }));
+  assert.equal(score.factors.E1.status, "pending");
+  assert.equal(score.score, 0);
 });

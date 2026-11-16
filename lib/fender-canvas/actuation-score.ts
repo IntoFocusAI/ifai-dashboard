@@ -38,7 +38,8 @@ export type ExpiryReminder = (typeof EXPIRY_REMINDER_DAYS)[number];
 
 /**
  * E1 target: the share (0 to 1) of unbranded discovery answers citing a brand page that earns full
- * E1 points. Set by Brian. While null, E1 earns no points and reads as pending.
+ * E1 points. Set by Brian (pending a competitor benchmark, decision 97). While null, E1 earns no
+ * points and reads as pending; Actuation still counts, from 0, at launch.
  */
 export const E1_TARGET: number | null = null;
 
@@ -58,6 +59,29 @@ export type ProgramBasis = {
 
 /** E1 inputs from the Citation Ecosystem read: unbranded discovery answers citing a brand page. */
 export type OwnedAnswersBasis = { withOwned: number; resolved: number };
+
+/** One engine's unbranded discovery answers in the window, from the Citation Ecosystem read. */
+export type EngineOwnedAnswers = {
+  engine: string;
+  /** Links this engine's answers cited in the window (any site, any question). */
+  citations: number;
+  withOwned: number;
+  resolved: number;
+};
+
+/**
+ * E1 counts only engines that returned at least one citation in the window (decision 97). Decided
+ * from the data, not the engine type, so an API engine joins once it returns citations. Null when
+ * no engine qualifies.
+ */
+export function ownedAnswersFromEngines(engines: readonly EngineOwnedAnswers[]): OwnedAnswersBasis | null {
+  const counted = engines.filter((engine) => engine.citations > 0);
+  if (counted.length === 0) return null;
+  return counted.reduce(
+    (sum, engine) => ({ withOwned: sum.withOwned + engine.withOwned, resolved: sum.resolved + engine.resolved }),
+    { withOwned: 0, resolved: 0 },
+  );
+}
 
 export type ActuationInputs = {
   asOf: string;
