@@ -35,8 +35,11 @@ const skipped: string[] = [];
 
 for (const key of CLIENT_KEYS) {
   const client = CLIENTS[key];
-  const reads = await runWithClient(key, () => loadScoreSnapshotReads());
-  const snapshot = scoreSnapshotFromReads(client, weekStart, reads, { commit });
+  // Read and score inside the client's scope: the brand name and the required spec fields the
+  // formula uses come from the active client, as on that client's dashboard.
+  const snapshot = await runWithClient(key, async () =>
+    scoreSnapshotFromReads(client, weekStart, await loadScoreSnapshotReads(), { commit }),
+  );
   if (!snapshot) {
     skipped.push(`${client.brandName}: the retail read did not load, so there is no score to save.`);
     continue;

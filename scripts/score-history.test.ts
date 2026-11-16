@@ -197,7 +197,8 @@ test("the script keeps no second copy of the formula and saves every client", ()
     assert.doesNotMatch(source, /consensusScore\(|foundationScore\(|commerceScore\(|nominalWeight/);
   }
   assert.match(script, /for \(const key of CLIENT_KEYS\)/);
-  assert.match(script, /runWithClient\(key/);
+  // Scored inside the client's scope: the brand name and required spec fields follow the client.
+  assert.match(script, /runWithClient\(key, async \(\) =>\s*scoreSnapshotFromReads\(client, weekStart, await loadScoreSnapshotReads\(\)/);
   assert.match(script, /SCORE_SNAPSHOT_DB_URL is not set/);
 });
 
