@@ -19,3 +19,22 @@ tr[data-findability-landed] > td {
     background-color: color-mix(in srgb, var(--accent-cyan) 18%, transparent);
   }
 }
+
+/* A stacked cell's second line: category under the listing, variant SKU under the page. */
+.findability-cell-sub {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--text-muted);
+}
+
+/* Titles and page addresses wrap inside their column so the table fits the panel. */
+.findability-listing-title {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.findability-official-link {
+  overflow-wrap: anywhere;
+}

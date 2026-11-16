@@ -6,7 +6,7 @@ import {
   joinBrands,
   type CategoryBattle,
 } from "@/lib/ai-search/competitors";
-import { competitorWinsFigure } from "@/lib/ai-search/competitor-wins-lead";
+import { competitorWinsFigure, competitorWinsStatus } from "@/lib/ai-search/competitor-wins-lead";
 import {
   factCheckHeadline,
   factCheckShortLine,
@@ -23,8 +23,8 @@ import {
   summarizeRun,
   UNBRANDED_RATE_BANDS,
 } from "@/lib/ai-search/summary";
-import { API_QUESTION_RULE, API_REPEAT_RULE, hasApiRows, isApiEngine } from "@/lib/ai-search/engine-group";
-import type { AiSearchRead, AiSearchSnapshot } from "@/lib/ai-search/types";
+import type { AiSearchRead } from "@/lib/ai-search/types";
+import { radarBubbleLead } from "@/lib/ai-search/radar-bubble";
 import { selectionLine } from "@/lib/ai-search/displayed-read";
 import { isWindowHistoryKind } from "@/lib/ai-search/window-display";
 import { brandName, leadBrand } from "@/lib/brand-copy";
@@ -74,13 +74,17 @@ const EMPTY_TOOLTIP = { title: "", desc: "" } as const;
  */
 function stateFace(read: AiSearchRead, title: string, subTab: string, hoverless = false): NodeFace | null {
   if (read.phase === "ready") return null;
-  const copy = {
-    loading: ["Loading run", "Reading the published AI run."],
-    error: ["Read failed", `The published AI run did not load. ${read.phase === "error" ? read.message : ""}`],
-    "no-run": ["No published run", "No AI run has been published yet, so no AI Search figure is shown."],
-  }[read.phase];
+  // A date-pill period with no stored run is not a failed read.
+  const empty = read.phase === "error" && read.selection === "empty";
+  const copy = empty
+    ? ["No run in period", "No published run in the selected period has answered calls."]
+    : {
+        loading: ["Loading run", "Reading the AI runs in the selected period."],
+        error: ["Read failed", `The AI runs in the selected period did not load. ${read.phase === "error" ? read.message : ""}`],
+        "no-run": ["No published run", "No AI run has been published yet, so no AI Search figure is shown."],
+      }[read.phase];
   return {
-    status: read.phase === "error" ? "danger" : "neutral",
+    status: read.phase === "error" && !empty ? "danger" : "neutral",
     title,
     stats: [copy[0]],
     // Main spokes render heroValue; a worded value stays at label size (never a fake 0%).
@@ -132,18 +136,6 @@ function heroPctFace(rate: number | null, formatted: string, label: string, redB
   return { status, heroValue: { value: formatted, label } };
 }
 
-/** The main AI bubbles' hover when the map's read carries the API run beside the published run. */
-function withApiEnginesTooltip(snapshot: AiSearchSnapshot): NodeFace["tooltip"] | null {
-  if (!hasApiRows(snapshot)) return null;
-  const answered = (api: boolean) =>
-    snapshot.calls.filter((row) => isApiEngine(row.engine) === api && row.call_status === "answered").length;
-  const engines = [...new Set(snapshot.calls.filter((row) => isApiEngine(row.engine)).map((row) => engineLabel(row.engine)))];
-  return {
-    title: "Includes API engines",
-    desc: `The published run's ${answered(false)} search-engine answers plus ${answered(true)} answers from the API run nearest its day (${engines.join(", ")}), as AI Search shows them on All. ${API_QUESTION_RULE} ${API_REPEAT_RULE}`,
-  };
-}
-
 export type AiNodeFaces = Record<
   "spokeAeo" | "satPrompts" | "satCitations" | "satDrift" | "spokeCompetitors" | "satGap" | "satLead",
   NodeFace
@@ -159,7 +151,7 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
       satCitations: satelliteStateFace(read, "Citations", AI_TABS.citations, `${brandName()}-Owned Links`),
       satDrift: satelliteStateFace(read, "Fact Checks", AI_TABS.drift, "Accuracy"),
       spokeCompetitors: pending("Competitive Radar", RADAR_TABS.battlecards, true),
-      satGap: satelliteStateFace(read, "Competitor Wins", RADAR_TABS.wins, "competitors led"),
+      satGap: satelliteStateFace(read, "Competitor Wins", RADAR_TABS.wins, ""),
       satLead: satelliteStateFace(read, "Engine Comparison", RADAR_TABS.engines, "Unbranded discovery"),
     };
   }
@@ -167,9 +159,7 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
   const s = summarizeRun(read.snapshot);
   const { completeness: run, drift, citations } = s;
   const state = runStateLabel(run.state);
-  const gap = s.largestGap;
   const weakestEngine = unbrandedEnginesWeakestFirst(engineResultRoleTallies(read.snapshot.calls))[0] ?? null;
-  const apiTooltip = withApiEnginesTooltip(read.snapshot);
 
   // The main bubble and its three satellites each lead with one scored headline value.
   // Bands are a first draft per metric; a later pass may let intelligence choose the
@@ -215,7 +205,7 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
       meta: `${state} run · ${run.answered ?? "?"} of ${run.expected ?? "?"} answered`,
       subTab: AI_TABS.summary,
       // The hero value above is the whole explanation. Open Run Summary for the engine and run detail.
-      tooltip: apiTooltip ?? { title: "", desc: "" },
+      tooltip: { ...EMPTY_TOOLTIP },
     },
     satPrompts: {
       status: brandedHero.status,
@@ -257,11 +247,12 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
       title: "Competitive Radar",
       stats: [],
       heroValue: (() => {
-        const rival = gap?.leaders[0];
-        if (gap && rival != null && gap.resolved > 0) {
+        // Same rows (the date-pill window) and same category-lead rule as the Category Battlecards tab.
+        const lead = radarBubbleLead(read.snapshot.calls);
+        if (lead?.topRival && lead.resolved > 0) {
           return {
-            value: pct(rival.wins, gap.resolved),
-            label: rivalLeadsLabel(rival.brand, gap.category),
+            value: pct(lead.topRival.wins, lead.resolved),
+            label: rivalLeadsLabel(lead.topRival.brand, lead.key),
           };
         }
         if (s.topCompetitor) {
@@ -274,10 +265,15 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
       })(),
       meta: `${s.competitorWins} competitor wins · unbranded discovery`,
       subTab: RADAR_TABS.battlecards,
-      tooltip: apiTooltip ?? { title: "", desc: "" },
+      tooltip: { ...EMPTY_TOOLTIP },
     },
     satGap: {
-      status: s.competitorWins > 0 ? "warning" : "success",
+      // Status is the shared Competitor Wins rule (red above 70%, green below 35%). The hero is the competitor-led share of
+      // resolved unbranded answers (84 of 214 reads 39.3%); the title is its label.
+      status: (() => {
+        const tone = competitorWinsStatus(s.competitorWins, s.roles.unbranded.resolved);
+        return tone === "bad" ? "danger" : tone === "good" ? "success" : tone === "okay" ? "warning" : "neutral";
+      })(),
       title: "Competitor Wins",
       stats:
         s.roles.unbranded.resolved > 0
@@ -285,11 +281,8 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
           : ["No resolved answers"],
       heroValue:
         s.roles.unbranded.resolved > 0
-          ? {
-              value: `${s.competitorWins} of ${s.roles.unbranded.resolved}`,
-              label: "competitors led",
-            }
-          : { value: "No resolved answers", label: "competitors led" },
+          ? { value: pct(s.competitorWins, s.roles.unbranded.resolved), label: "" }
+          : { value: "No resolved answers", label: "" },
       meta: "Unbranded discovery",
       subTab: RADAR_TABS.wins,
       tooltip: { ...EMPTY_TOOLTIP },
@@ -300,7 +293,7 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
         const engineHero = heroPctFace(
           ratePct(tally.fenderWins, tally.resolved),
           pct(tally.fenderWins, tally.resolved),
-          `${engineLabel(weakestEngine.key)} unbranded`,
+          engineLabel(weakestEngine.key),
           UNBRANDED_RATE_BANDS.redBelow,
           UNBRANDED_RATE_BANDS.greenAbove,
         );
@@ -514,9 +507,9 @@ export function aiActionCardHtml(read: AiSearchRead, firstNumber = 4): string {
 
 const pendingMetric = (read: AiSearchRead) =>
   read.phase === "loading"
-    ? { value: "Loading", detail: "Reading the published AI run" }
+    ? { value: "Loading", detail: "Reading the AI runs in the selected period" }
     : read.phase === "error"
-      ? { value: "Unavailable", detail: "The published AI run did not load" }
+      ? { value: "Unavailable", detail: "The AI runs in the selected period did not load" }
       : { value: "No run", detail: "No AI run has been published" };
 
 export type AiMetricKey =

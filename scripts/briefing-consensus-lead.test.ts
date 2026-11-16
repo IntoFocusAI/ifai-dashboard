@@ -175,7 +175,8 @@ test("Briefing keeps the consensus sentence on the title tooltip inside the find
   assert.doesNotMatch(hero, /metric-card-sub/);
 
   assert.match(performanceCard, /id="consensus"[\s\S]*?dominant/);
-  assert.doesNotMatch(performanceCard, /briefingConsensusSentence|data-ifai-tooltip-desc/);
+  // Performance titles carry their own score explainers (worker 26.14), never the Briefing sentence.
+  assert.doesNotMatch(performanceCard, /briefingConsensusSentence|data-ifai-tooltip-desc=\{sentence\}/);
   assert.doesNotMatch(read("components/v3/live/RoadmapFindingsPanel.tsx"), /BriefingConsensusLead/);
   assert.doesNotMatch(read("lib/fender-canvas/briefing-consensus-sentence.ts"), /CONSENSUS_EXPLAINER_BODY/);
 });

@@ -58,63 +58,63 @@ export function FactCheckLead({
 
   return (
     <div className="content-box ai-drift-summary">
-      {catalog ? (
-        <div className="ai-fact-catalog-lead" data-ai-catalog-lead={catalog.phase}>
-          <div className="ai-fact-figure-row">
-            <span className="ai-lead-figure" data-ai-catalog-figure>
-              {catalog.phase === "ready" ? (
-                <CopyTip label={CATALOG_PRODUCTS_TITLE} description={catalogProductsTip(catalog, rotation, windowed)}>
-                  {catalogProductsFigure(catalog)}
-                </CopyTip>
-              ) : (
-                <CopyTip label={CATALOG_PRODUCTS_TITLE} description={catalogProductsUnavailableTip(catalog.askingEngines)}>
-                  Not available*
-                </CopyTip>
-              )}
-            </span>
-            <AiStaleMark />
-            <span className="ai-fact-figure-unit">{CATALOG_PRODUCTS_UNIT}</span>
-            {catalogPie && catalog.phase === "ready" ? (
-              <CitationPieDisc
-                pie={catalogPie}
-                sizeClass="citation-pie-disc citation-pie-disc-accuracy"
-                tip={catalogProductsTip(catalog, rotation, windowed)}
-              />
-            ) : null}
-          </div>
-          <p className="ai-fact-lead-sub" data-ai-catalog-sub>
-            {catalogProductsSubline(coverage, rotation)}
-          </p>
-        </div>
-      ) : null}
-
-      <div className="ai-fact-accuracy-row" data-ai-accuracy-row>
-        {accuracy.rate && pie ? (
-          <div className="ai-fact-accuracy-col" data-ai-accuracy-figure-col>
+      <div className="ai-fact-figures" data-ai-fact-figures>
+        {catalog ? (
+          <div className="ai-fact-catalog-lead" data-ai-catalog-lead={catalog.phase}>
             <div className="ai-fact-figure-row">
-              <span
-                className="ai-lead-figure"
-                data-ai-accuracy-figure
-                style={status ? { color: dataStatusColor(status) } : undefined}
-              >
-                <CopyTip
-                  label={FACT_CHECK_ACCURACY_TITLE}
-                  description={factCheckAccuracyTip(coverage, windowed, askingEngines)}
-                >
-                  {accuracy.rate} Accuracy
-                </CopyTip>
+              <span className="ai-lead-figure" data-ai-catalog-figure>
+                {catalog.phase === "ready" ? (
+                  <CopyTip label={CATALOG_PRODUCTS_TITLE} description={catalogProductsTip(catalog, rotation, windowed)}>
+                    {catalogProductsFigure(catalog)}
+                  </CopyTip>
+                ) : (
+                  <CopyTip label={CATALOG_PRODUCTS_TITLE} description={catalogProductsUnavailableTip(catalog.askingEngines)}>
+                    Not available*
+                  </CopyTip>
+                )}
               </span>
               <AiStaleMark />
-              <CitationPieDisc
-                pie={pie}
-                sizeClass="citation-pie-disc citation-pie-disc-accuracy"
-                tip={factCheckAccuracyPieTip(coverage, askingEngines)}
-              />
+              <span className="ai-fact-figure-unit">{CATALOG_PRODUCTS_UNIT}</span>
+              {catalogPie && catalog.phase === "ready" ? (
+                <CitationPieDisc
+                  pie={catalogPie}
+                  sizeClass="citation-pie-disc citation-pie-disc-accuracy"
+                  tip={catalogProductsTip(catalog, rotation, windowed)}
+                />
+              ) : null}
             </div>
-            {status ? <StatusMark status={status} /> : null}
+            <p className="ai-fact-lead-sub" data-ai-catalog-sub>
+              {catalogProductsSubline(coverage, rotation)}
+            </p>
           </div>
         ) : null}
-        <div className="ai-lead-explainer ai-fact-explainer" data-ai-accuracy-lead>
+
+          {accuracy.rate && pie ? (
+            <div className="ai-fact-accuracy-col" data-ai-accuracy-figure-col>
+              <div className="ai-fact-figure-row">
+                <span
+                  className="ai-lead-figure"
+                  data-ai-accuracy-figure
+                  style={status ? { color: dataStatusColor(status) } : undefined}
+                >
+                  <CopyTip
+                    label={FACT_CHECK_ACCURACY_TITLE}
+                    description={factCheckAccuracyTip(coverage, windowed, askingEngines)}
+                  >
+                    {accuracy.rate} Accuracy
+                  </CopyTip>
+                </span>
+                <AiStaleMark />
+                <CitationPieDisc
+                  pie={pie}
+                  sizeClass="citation-pie-disc citation-pie-disc-accuracy"
+                  tip={factCheckAccuracyPieTip(coverage, askingEngines)}
+                />
+              </div>
+              {status ? <StatusMark status={status} /> : null}
+            </div>
+          ) : null}
+        <div className="ai-lead-explainer ai-fact-explainer" data-ai-accuracy-row data-ai-accuracy-lead>
           <div className="content-box-title">
             <span>
               Do AI answers match {brandName()}&apos;s published <AiTerm term="product fact check">product facts</AiTerm>?

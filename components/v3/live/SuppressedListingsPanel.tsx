@@ -38,6 +38,7 @@ import {
   withheldListings,
   type FeaturedOfferRow,
 } from "@/lib/fender-canvas/featured-offer";
+import { PartialFigureMark } from "@/components/v3/live/FigureTip";
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
 import {
   confirmedSuppressionSentence,
@@ -185,7 +186,9 @@ function SuppressedListingsLead({ read }: { read: RetailCanvasRead }) {
             data-suppressed-listings-lead-numerator={hero.numerator ?? ""}
             data-suppressed-listings-lead-denominator={hero.denominator ?? ""}
           >
-            {hero.percent}
+            <PartialFigureMark partial={hero.partial} testId="suppressed-lead-stale">
+              {hero.percent}
+            </PartialFigureMark>
           </span>
           {hero.ratio ? (
             <span

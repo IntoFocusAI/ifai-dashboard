@@ -1,4 +1,3 @@
-import { activeClient } from "@/lib/client/active-client";
 import { defaultWindowRuns, runDay } from "@/lib/ai-search/default-window";
 import { API_REPEAT_CAP, capApiRepeats, fixedQuestionCount } from "@/lib/ai-search/engine-group";
 import { compareRuns, utcDay, type HistoryRunSummary } from "@/lib/ai-search/history-eligibility";
@@ -6,6 +5,7 @@ import type { HistoryMode } from "@/lib/ai-search/history-mode";
 import {
   historyViewMissing,
   readRunPages,
+  withoutAnswerText,
   type HistoryReadClient,
   type HistoryReadOptions,
 } from "@/lib/ai-search/history-queries";
@@ -30,8 +30,8 @@ export function apiEngineViewsEnabled(
 ): boolean {
   const forced = (scope as { __IFAI_AI_API_VIEWS__?: unknown } | undefined)?.__IFAI_AI_API_VIEWS__;
   if (typeof forced === "boolean") return forced;
-  // The API-engine views exist for Fender only; other brands' AI runs come from their own schema.
-  if (activeClient().key !== "fender") return false;
+  // Every client has the API-engine views in its own schema (Ledlenser: 20261111222737), and the
+  // canvas client reads that schema, so the switch works the same for every brand.
   return flag !== "0";
 }
 
@@ -173,6 +173,17 @@ export function apiRunsCoveringBattery(runs: readonly ApiRunSummary[], battery: 
   });
 }
 
+/** The map's API run (decision 7): the counted run nearest the published run that asked its fixed questions. */
+export function pairedApiRuns(
+  runs: readonly ApiRunSummary[],
+  snapshot: Pick<AiSearchSnapshot, "run" | "calls" | "probes"> | null,
+): ApiRunSummary[] {
+  if (!snapshot) return [];
+  const battery = batteryQuestions([snapshot]);
+  const run = nearestApiRun(apiRunsCoveringBattery(runs, battery), battery[0]?.day ?? null);
+  return run ? [run] : [];
+}
+
 export type ApiCatalogResult =
   | { phase: "ready"; runs: ApiRunSummary[] }
   | { phase: "missing" }
@@ -212,10 +223,13 @@ export async function loadApiRunSnapshot(
 ): Promise<ApiSnapshotResult> {
   const runId = run.audit_run_id;
   const read = { ...options, limit: options.limit ?? apiReadLimit };
+  const answers = options.withAnswers !== false;
+  const callColumns = answers ? API_CALL_COLUMNS : withoutAnswerText(API_CALL_COLUMNS);
+  const probeColumns = answers ? API_PROBE_COLUMNS : withoutAnswerText(API_PROBE_COLUMNS);
   try {
     const [calls, probes, citations] = await Promise.all([
-      readRunPages<AiCallRow>(client, API_CALL_VIEW, API_CALL_COLUMNS, runId, ["sim_id", "id"], read, API_REPEAT_FILTER),
-      readRunPages<AiProbeRow>(client, API_PROBE_VIEW, API_PROBE_COLUMNS, runId, ["sim_id"], read),
+      readRunPages<AiCallRow>(client, API_CALL_VIEW, callColumns, runId, ["sim_id", "id"], read, API_REPEAT_FILTER),
+      readRunPages<AiProbeRow>(client, API_PROBE_VIEW, probeColumns, runId, ["sim_id"], read),
       readRunPages<AiCitationRow>(client, API_CITATION_VIEW, API_CITATION_COLUMNS, runId, ["sim_id", "position"], read),
     ]);
     for (const result of [calls, probes, citations]) {

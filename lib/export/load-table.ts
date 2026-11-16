@@ -1,7 +1,10 @@
+import { loadActionItemsSource } from "@/lib/export/action-items-export";
 import { loadAiTableSource, type AiExportTableId } from "@/lib/export/ai-export";
+import { loadDivisionsSource } from "@/lib/export/divisions-export";
 import { loadExploreListingsSource } from "@/lib/export/explore-listings-export";
 import { loadMapSource } from "@/lib/export/map-export";
 import { loadPromptHistorySource } from "@/lib/export/prompt-history-export";
+import { loadPromptsSource } from "@/lib/export/prompts-export";
 import {
   loadBrandSitePagesSource,
   loadCatalogBundlesSource,
@@ -15,6 +18,8 @@ import { loadStockEpisodesSource } from "@/lib/export/stock-episodes-export";
 import { loadSuppressedSource } from "@/lib/export/suppressed-export";
 import { stockEpisodesAsin, type ExportTableId, type FixedExportTableId } from "@/lib/export/tables";
 import type { SourceRead } from "@/lib/export/types";
+import { loadSitesToReviewSource } from "@/lib/export/sites-to-review-export";
+import { loadFindabilitySource } from "@/lib/findability/findability-export";
 
 type Loader = (scope: Record<string, unknown> | null) => Promise<SourceRead>;
 
@@ -33,6 +38,7 @@ const LOADERS: Record<FixedExportTableId, Loader> = {
   "brand-site-page-found": loadPageFoundSource,
   "aplus-matrix-listings": loadListingContentSource,
   "suppressed-listings": loadSuppressedSource,
+  "catalog-divisions": loadDivisionsSource,
   "explore-listings": loadExploreListingsSource,
   "ai-run-engines": ai("ai-run-engines"),
   "ai-run-categories": ai("ai-run-categories"),
@@ -44,7 +50,15 @@ const LOADERS: Record<FixedExportTableId, Loader> = {
   "citation-engines": ai("citation-engines"),
   "citation-categories": ai("citation-categories"),
   "citation-evidence": ai("citation-evidence"),
+  "category-battlecards": ai("category-battlecards"),
+  "competitor-wins": ai("competitor-wins"),
+  "engine-comparison": ai("engine-comparison"),
+  "engine-category": ai("engine-category"),
   "prompt-history": loadPromptHistorySource,
+  "findability-listings": loadFindabilitySource,
+  "action-items-fixes": loadActionItemsSource,
+  "prompts": loadPromptsSource,
+  "sites-to-review": loadSitesToReviewSource,
 };
 
 /** Every row the table can show, read with the table's own query and the view's scope. */

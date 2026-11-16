@@ -36,7 +36,7 @@ test("spec tables live on one surface each", async ({ page }) => {
 
   await canvas.openTab("Brand-Site Specs");
   const missingHero = page.locator("[data-machine-hero='missing_specs']");
-  await expect(missingHero.locator("[data-hero-percent]")).toHaveText("50.0%");
+  await expect(missingHero.locator("[data-hero-percent]")).toHaveText(/^50\.0%\*?$/);
   await expect(missingHero).toContainText("1 of 2");
   await expect(
     page.locator("[data-machine-hero='product_basics'] [data-hero-percent]"),

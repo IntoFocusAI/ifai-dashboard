@@ -696,6 +696,7 @@ export function CanvasShell({ spec, children }: Props) {
       { title, desc, hasMoreInfo: false, anchor: "definition" },
       rect.left + rect.width / 2,
       rect.top,
+      { left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom },
     );
   }, []);
 
@@ -1019,7 +1020,6 @@ export function CanvasShell({ spec, children }: Props) {
               type="button"
               className="brand-home-btn"
               onClick={resetMainView}
-              title="Back to map overview"
               aria-label="Back to map overview"
             >
               <img
@@ -1100,7 +1100,6 @@ export function CanvasShell({ spec, children }: Props) {
               <button
                 className={`hdr-btn${promptsOpen ? " hdr-btn-active" : ""}`}
                 onClick={() => setPromptsOpen(true)}
-                title="View and edit the AI-Search prompts"
               >
                 <MessageSquareText size={12} />
                 <span>Prompts</span>
@@ -1127,7 +1126,6 @@ export function CanvasShell({ spec, children }: Props) {
               <button
                 className={`hdr-btn hdr-btn-priorities${showingCommand ? " hdr-btn-active" : ""}`}
                 onClick={openCommandCenter}
-                title="What do I need to worry about?"
               >
                 <ListChecks size={12} />
                 <span>Priorities</span>
@@ -1181,7 +1179,7 @@ export function CanvasShell({ spec, children }: Props) {
               <button
                 className="hdr-btn"
                 onClick={() => setLightTheme((value) => !value)}
-                title="Toggle Light / Dark"
+                aria-label="Toggle Light / Dark"
               >
                 {lightTheme ? <Sun size={13} /> : <Moon size={13} />}
               </button>
@@ -1269,7 +1267,6 @@ export function CanvasShell({ spec, children }: Props) {
             type="button"
             className="drilldown-panel-toggle panel-toggle"
             onClick={showPanel}
-            title="Show sidebar"
             aria-label="Show sidebar"
           >
             <ChevronLeft size={18} strokeWidth={2} />
@@ -1310,7 +1307,6 @@ export function CanvasShell({ spec, children }: Props) {
                 <button
                   className="drilldown-resume-btn"
                   onClick={closeDrilldown}
-                  title="Back to the guided tour"
                 >
                   <Compass size={13} />
                   Resume tour · {tourStep + 1}/{tourSteps.length}
@@ -1322,7 +1318,7 @@ export function CanvasShell({ spec, children }: Props) {
                   onClick={() =>
                     setPanelLayout((value) => (value === "wide" ? "narrow" : "wide"))
                   }
-                  title={panelLayout === "wide" ? "Use narrow sidebar" : "Use wide sidebar"}
+                  aria-label={panelLayout === "wide" ? "Use narrow sidebar" : "Use wide sidebar"}
                   aria-pressed={panelLayout === "wide"}
                 >
                   {panelLayout === "wide" ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
@@ -1331,7 +1327,6 @@ export function CanvasShell({ spec, children }: Props) {
               <button
                 className="drilldown-hide-btn"
                 onClick={hidePanel}
-                title={iom ? "Show full map" : "Hide sidebar"}
                 aria-label={iom ? "Show full map" : "Hide sidebar"}
               >
                 <X size={15} strokeWidth={3} aria-hidden="true" />
@@ -1341,7 +1336,7 @@ export function CanvasShell({ spec, children }: Props) {
                 <button
                   className="drilldown-close-btn"
                   onClick={closeDrilldown}
-                  title="Close panel"
+                  aria-label="Close panel"
                 >
                   <X size={18} />
                 </button>

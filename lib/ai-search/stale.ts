@@ -1,4 +1,3 @@
-import { formatDay, utcDay } from "@/lib/ai-search/history-eligibility";
 import type { HistoryMode } from "@/lib/ai-search/history-mode";
 import type { AiCurrentRun } from "@/lib/ai-search/types";
 import { isPastCheckSchedule, type PartialFigure } from "@/lib/fender-canvas/canvas-reads";
@@ -24,16 +23,40 @@ export function aiSearchStale(run: RunTimes | null | undefined, now: number = Da
   const at = run?.published_at ?? run?.completed_at ?? null;
   // isPastCheckSchedule is true past twice the schedule, so the schedule is half the limit.
   if (!isPastCheckSchedule(at, (AI_SEARCH_STALE_AFTER_DAYS * DAY_MS) / 2, now)) return null;
-  const day = utcDay(at);
-  const since = day ? formatDay(day) : "the last published run";
   return {
     reason: "stale",
-    missing: `No AI Search run has been published in the last ${AI_SEARCH_STALE_AFTER_DAYS} days, so the answers assistants gave after ${since} are missing`,
-    coverage: `the runs published through ${since}`,
+    missing: `No AI Search run has been published in ${AI_SEARCH_STALE_AFTER_DAYS} days`,
+    coverage: null,
     source: "canvas_ai_current_run",
     lastCheck: at,
-    effect: "The figure shows the last published run and may differ from what assistants answer today",
   };
+}
+
+const SHORT_DAY = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+
+/** "Nov 12" for a run's UTC day ("2026-11-12"). */
+export function shortRunDay(day: string): string {
+  const date = new Date(`${day}T00:00:00Z`);
+  return Number.isNaN(date.getTime()) ? day : SHORT_DAY.format(date);
+}
+
+/**
+ * X-25 for an AI rate whose window mixes runs from before and after a question-set change
+ * (`day` is the first run on the new set, from windowQuestionSetChange). Null when no change.
+ */
+export function questionSetMixed(day: string | null | undefined): PartialFigure | null {
+  if (!day) return null;
+  return {
+    reason: "mixed",
+    missing: `This window mixes runs before and after the question set changed on ${shortRunDay(day)}; rates are not fully comparable across that date.`,
+    source: "canvas_ai_runs",
+  };
+}
+
+/** One asterisk for both readings: stale names its title, and the tooltip carries both sentences. */
+export function aiWindowPartial(stale: PartialFigure | null, mixed: PartialFigure | null): PartialFigure | null {
+  if (!stale || !mixed) return stale ?? mixed;
+  return { ...stale, missing: `${stale.missing}\n${mixed.missing}` };
 }
 
 /**

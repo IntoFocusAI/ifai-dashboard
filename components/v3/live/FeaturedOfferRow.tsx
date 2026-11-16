@@ -5,7 +5,7 @@ import "@/components/v3/live/catalog-health.css";
 import { figureTipAttrs } from "@/components/v3/live/FigureTip";
 import type { RetailColumn } from "@/components/v3/live/ResizableTable";
 import { ListingName } from "@/components/v3/live/RetailOverviewFigure";
-import { StatusGlyph } from "@/components/v3/live/StatusMark";
+import { StatusMark } from "@/components/v3/live/StatusMark";
 import { formatUsd } from "@/lib/fender-canvas/format";
 import {
   aboveBenchmarkDollars,
@@ -114,10 +114,7 @@ export function FeaturedOfferTableRow({
       </td>
       <td className="money">
         {gap != null ? (
-          <span className="fo-gap data-status data-status-bad" data-status="bad">
-            <StatusGlyph status="bad" />
-            <span className="data-status-word">{formatUsd(gap, { signed: true })} above</span>
-          </span>
+          <StatusMark status="bad" word={`${formatUsd(gap, { signed: true })} above`} className="fo-gap" />
         ) : (
           <span
             {...figureTipAttrs(NO_COMPARABLE_PAIR_LABEL, NO_COMPARABLE_PAIR_TIP, "no-comparable-pair")}

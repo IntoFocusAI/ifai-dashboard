@@ -14,6 +14,10 @@ export type MapSourceRow = {
   wmt_url: string | null;
   mf_price: number | null;
   mf_leakage: number | null;
+  /** Per-row check times (X-25). The Amazon price check is the Featured Offer read. */
+  featured_offer_checked_at?: string | null;
+  wmt_checked_at?: string | null;
+  mf_checked_at?: string | null;
 };
 
 /** One channel's stored price and the gap that price produced. */

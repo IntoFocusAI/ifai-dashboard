@@ -12,6 +12,8 @@ export const EXPORT_TABLE_IDS = [
   "brand-site-page-found",
   "aplus-matrix-listings",
   "suppressed-listings",
+  // Summary Performance: the catalog division table (read on the server like the screen).
+  "catalog-divisions",
   // AI Search Visibility: read on the server for the date pill and engine switch the screen shows.
   "ai-run-engines",
   "ai-run-categories",
@@ -23,8 +25,21 @@ export const EXPORT_TABLE_IDS = [
   "citation-engines",
   "citation-categories",
   "citation-evidence",
+  // Competitive Radar: the same selection as the AI Search tables.
+  "category-battlecards",
+  "competitor-wins",
+  "engine-comparison",
+  "engine-category",
   "prompt-history",
   "explore-listings",
+  // Catalog Health: the Findability listings of the outcome on screen.
+  "findability-listings",
+  // Action Items: the fix list, rebuilt on the server from the same seven reads as the screen.
+  "action-items-fixes",
+  // The prompt list in the prompts editor.
+  "prompts",
+  // Staff only: Sites to review (flagged site types). The loader checks staff.
+  "sites-to-review",
 ] as const;
 
 export type FixedExportTableId = (typeof EXPORT_TABLE_IDS)[number];
@@ -58,3 +73,6 @@ export function exportHref(tableId: string, clientKey: string): string {
 export function exportFileName(tableId: string, now = new Date()): string {
   return `${tableId}-${now.toISOString().slice(0, 10)}.csv`;
 }
+
+/** The prompt list in the prompts editor, which is not a ResizableTable. */
+export const PROMPTS_EXPORT_TABLE = "prompts" satisfies FixedExportTableId;

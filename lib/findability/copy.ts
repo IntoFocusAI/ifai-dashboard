@@ -43,8 +43,11 @@ const HEADLINE_NOUN: Record<FindabilityOutcome, [string, string]> = {
 export const MACHINE_READABILITY_POINTER =
   `Schema.org product data on each ${brandSite()} page is on Brand-Site Specs.`;
 
+/** Dealer bundle header tooltip. The caveat lives here, not on screen (let the data speak). */
 export const DEALER_BUNDLE_NOTE =
   "Dealer bundle status comes from the retail read. It can line up with an official-page outcome. That is a correlation, not a proven cause.";
+
+export const DEALER_BUNDLE_NOT_LOADED = "Dealer bundle status did not load with this read.";
 
 export const FAMILY_IS_NOT_EXACT = "A family page is not an exact product page.";
 

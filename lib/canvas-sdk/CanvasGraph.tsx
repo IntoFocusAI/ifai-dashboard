@@ -279,7 +279,7 @@ export const CanvasGraph = memo(function CanvasGraph({
             height={badge.height}
             rx={badge.height / 2}
           />
-          <text className="correlation-badge-text" x="0" y="4" textAnchor="middle" fontSize="10.5">
+          <text className="correlation-badge-text" x="0" y="4" textAnchor="middle" fontSize="11">
             {badge.text}
           </text>
         </g>

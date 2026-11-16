@@ -12,7 +12,7 @@ import {
 import { DATA_STATUS_WORD, dataStatusFromNode } from "../lib/canvas-sdk/data-status.ts";
 import { heroStatus } from "../lib/canvas-sdk/hero-fit.ts";
 
-test("a partial figure's tooltip names what is missing, coverage, source, last check, and effect", () => {
+test("a partial figure's tooltip is a lead line, the coverage, and the last check day", () => {
   const tip = partialFigureTip({
     reason: "coverage",
     missing: "Walmart prices are missing for 12 listings",
@@ -23,7 +23,7 @@ test("a partial figure's tooltip names what is missing, coverage, source, last c
   });
   assert.equal(
     tip,
-    "Walmart prices are missing for 12 listings. Covers 121 of 633 listings. Source: canvas_retail_map. Last check: Nov 8, 2026, 2:05 PM UTC. The share can only rise when they arrive.",
+    "Walmart prices are missing for 12 listings.\nCovers 121 of 633 listings.\nLast check: Nov 8, 2026.",
   );
   assert.match(partialFigureTip({ reason: "stale", missing: "x", source: "s", lastCheck: null }), /Last check: not recorded\./);
 });
@@ -38,7 +38,7 @@ test("the asterisk goes on once, and only on a partial figure", () => {
 
 test("a failed read is a partial figure that names the read once", () => {
   const tip = partialFigureTip(readFailedPartial(readFailure("m", "timeout")));
-  assert.equal(tip, "The catalog metrics read (canvas_metrics) did not load: timeout. The figure is left out rather than shown as zero.");
+  assert.equal(tip, "The catalog metrics read (canvas_metrics) did not load: timeout.\nThe figure is left out rather than shown as zero.");
 });
 
 test("data is stale only past twice its check schedule", () => {

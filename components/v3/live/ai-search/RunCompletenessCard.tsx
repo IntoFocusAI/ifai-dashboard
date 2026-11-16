@@ -60,7 +60,7 @@ function SingleRunCard({ snapshot }: { snapshot: AiSearchSnapshot }) {
         </tbody>
       </table>
       {rowsShort ? (
-        <p style={{ ...mutedText, marginTop: 8, color: "var(--warning-text)" }}>
+        <p style={{ ...mutedText, marginTop: 8 }}>
           The read returned {formatInt(s.completeness.rowsRead)} call rows for {formatInt(s.completeness.expected)} expected calls.
         </p>
       ) : null}

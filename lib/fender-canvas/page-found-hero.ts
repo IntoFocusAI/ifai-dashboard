@@ -11,7 +11,8 @@ import {
   pageFoundDefinition,
   pageFoundHero,
 } from "@/lib/fender-canvas/ai-readiness-lead";
-import { metricsRowFailure, readFailureTip } from "@/lib/fender-canvas/canvas-reads";
+import { metricsRowFailure, readFailureTip, type PartialFigure } from "@/lib/fender-canvas/canvas-reads";
+import { weeklyCheckStale } from "@/lib/findability/last-checked";
 import { formatInt } from "@/lib/fender-canvas/format";
 import type { CanvasMetricsRow } from "@/lib/fender-canvas/types";
 import { brandSite } from "@/lib/brand-copy";
@@ -39,6 +40,8 @@ export type PageFoundHeroModel = {
   numerator: number | null;
   denominator: number | null;
   figureTip: string | null;
+  /** Stale figure (X-25) when the product check is past its weekly schedule. */
+  partial?: PartialFigure | null;
 };
 
 function pageFoundPie(found: number, checked: number): PieDiscData {
@@ -71,10 +74,21 @@ function unavailableHero(definition: string = PAGE_FOUND_DEFINITION): PageFoundH
   };
 }
 
+/** The stale reading (X-25) for the page-found figures; the map's AI Readiness bubble reads it too. */
+export function pageFoundStale(checkedAt: string | null | undefined, now: number = Date.now()): PartialFigure | null {
+  return weeklyCheckStale(
+    checkedAt,
+    { check: `${brandSite()} product check`, source: "canvas_metrics", figure: "page-found figures" },
+    now,
+  );
+}
+
 /** `checkedAt` is when the fender.com product check last ran, for the definition tooltip. */
 export function brandSitePageFoundHero(
   m: CanvasMetricsRow | null | undefined,
   checkedAt: string | null = null,
+  /** The per-row stale reading (X-25). Left out, the figure falls back to the newest check time. */
+  rowsStale?: PartialFigure | null,
 ): PageFoundHeroModel {
   const definition = pageFoundDefinition(checkedAt);
   if (!m) return unavailableHero(definition);
@@ -110,5 +124,6 @@ export function brandSitePageFoundHero(
     numerator: found,
     denominator: checked,
     figureTip: null,
+    partial: rowsStale !== undefined ? rowsStale : pageFoundStale(checkedAt),
   };
 }

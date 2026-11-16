@@ -22,10 +22,13 @@ export function StatusGlyph({ status }: { status: DataStatus }) {
   );
 }
 
-/** Mark and word: "x Poor", "dash Fair", "check Good". The word defaults to the book's. */
-export function StatusMark({ status, word }: { status: DataStatus; word?: string }) {
+/**
+ * Mark and word: "x Poor", "dash Fair", "check Good". The word defaults to the book's.
+ * `className` adds a placement class (e.g. a price gap under its price) without a second span.
+ */
+export function StatusMark({ status, word, className }: { status: DataStatus; word?: string; className?: string }) {
   return (
-    <span className={`data-status data-status-${status}`} data-status={status}>
+    <span className={`data-status data-status-${status}${className ? ` ${className}` : ""}`} data-status={status}>
       <StatusGlyph status={status} />
       <span className="data-status-word">{word ?? DATA_STATUS_WORD[status]}</span>
     </span>

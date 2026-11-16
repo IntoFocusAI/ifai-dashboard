@@ -5,6 +5,7 @@ import { setActiveOrganization } from "@/app/auth/organization-actions";
 import { SECURITY_PATH } from "@/app/(canvas)/dashboard/security/security-copy";
 import type { CanvasUserMenu } from "@/lib/canvas-sdk/types";
 import { ProfileSettingsModal } from "@/components/auth/ProfileSettingsModal";
+import { SitesToReviewMenuLink } from "@/components/staff/SitesToReviewMenuLink";
 import { Building2, Check, ChevronDown, LogOut, Moon, Settings, Shield, Sun, User } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
@@ -105,7 +106,6 @@ export function UserMenuDropdown({
         aria-expanded={open}
         aria-haspopup="menu"
         aria-controls={menuId}
-        title={email}
         onClick={() => setOpen(!open)}
       >
         {avatarUrl ? (
@@ -120,7 +120,7 @@ export function UserMenuDropdown({
 
       {open ? (
         <div className="user-menu-panel" id={menuId} role="menu">
-          <div className="user-menu-email" title={email}>
+          <div className="user-menu-email">
             <span>{email}</span>
             {organizationName ? (
               <span className="user-menu-org">
@@ -178,6 +178,8 @@ export function UserMenuDropdown({
             <Shield size={14} aria-hidden />
             <span>Security</span>
           </Link>
+
+          <SitesToReviewMenuLink lightTheme={lightTheme} />
 
           {showThemeToggle && onThemeToggle ? (
             <button

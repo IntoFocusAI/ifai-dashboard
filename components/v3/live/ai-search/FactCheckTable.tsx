@@ -29,12 +29,15 @@ const STATE_TONE: Record<ProbeState, string> = {
  * Fact absorbs leftover width on a wider panel until someone drags a column.
  * Cells wrap inside the column when a drag makes it narrower than one line.
  */
+/* Questions, results, and facts wrap inside their columns, so the table fits a 1280 px panel. */
+const WRAP_COLUMNS = ["question", "result", "checked"] as const;
+
 const COLUMNS = [
-  clientColumn("question", "Question checked", "text", 390, 240),
-  clientColumn("engine", "Engine", "text", 130, 100),
-  clientColumn("result", "Result", "text", 340, 240),
-  clientColumn("fact", `Verified ${brandName()} fact`, "text", 700, 280),
-  clientColumn("checked", "Checked", "date", 200, 160),
+  clientColumn("question", "Question checked", "text", 220, 160),
+  clientColumn("engine", "Engine", "text", 100, 90),
+  clientColumn("result", "Result", "text", 180, 150),
+  clientColumn("fact", `Verified ${brandName()} fact`, "text", 320, 200),
+  clientColumn("checked", "Checked", "date", 120, 110),
 ];
 
 const probeKey = (row: ProbeEvidence) => row.key;
@@ -60,6 +63,7 @@ export function FactCheckTable({ rows, windowed = false }: { rows: ProbeEvidence
           tableId="product-fact-checks"
           columns={COLUMNS}
           fillColumnId="fact"
+          wrapColumnIds={WRAP_COLUMNS}
           freezeHeader
           maxHeight={520}
           sort={sorted.sort}

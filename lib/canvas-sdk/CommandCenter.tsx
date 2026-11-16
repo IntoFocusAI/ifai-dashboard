@@ -5,6 +5,7 @@ import type {
   PriorityItem,
   PriorityOwner,
 } from "@/lib/canvas-sdk/types";
+import type { DataStatus } from "@/lib/canvas-sdk/data-status";
 import { useLocalStore } from "@/lib/canvas-sdk/local-store";
 import { SET_ASIDE_CHECKS } from "@/lib/set-aside/keys";
 import { DoneForm, ReopenForm, SetAsideForm } from "@/lib/set-aside/SetAsideForm";
@@ -15,6 +16,14 @@ import {
 } from "@/lib/set-aside/set-aside";
 import { ArrowRight, Building2, Check, PauseCircle, Sparkles, Undo2 } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
+import { StatusGlyph, StatusMark } from "@/components/v3/live/StatusMark";
+
+/** Severity in the brand status colors, each with its mark and word (X-34). Moderate stays plain. */
+const SEVERITY_STATUS: Record<PriorityItem["severity"], DataStatus | null> = {
+  critical: "bad",
+  high: "okay",
+  moderate: null,
+};
 
 type ItemState = {
   owner: PriorityOwner;
@@ -141,7 +150,9 @@ export function CommandCenter({ spec, onOpenItem }: Props) {
       <div className="cc-quadrants">
         <div className="cc-quadrant cc-quadrant-critical">
           <span className="cc-quadrant-val">{counts.critical}</span>
-          <span className="cc-quadrant-label">Critical open</span>
+          <span className="cc-quadrant-label">
+            <StatusGlyph status="bad" /> Critical open
+          </span>
         </div>
         <div className="cc-quadrant">
           <span className="cc-quadrant-val">{open.length}</span>
@@ -185,13 +196,17 @@ export function CommandCenter({ spec, onOpenItem }: Props) {
               <div className="cc-item-title-wrap">
                 <h4 className="cc-item-title">{item.title}</h4>
                 <span className={`cc-sev-badge cc-sev-badge-${item.severity}`}>
-                  {item.severity}
+                  {SEVERITY_STATUS[item.severity] ? (
+                    <StatusMark status={SEVERITY_STATUS[item.severity]!} word={item.severity} />
+                  ) : (
+                    item.severity
+                  )}
                 </span>
               </div>
             </header>
 
             <div className="cc-why">
-              <span className="cc-why-label">Why it&apos;s top of the list</span>
+              <span className="cc-why-label">Why it is at the top of the list</span>
               <p>{item.why}</p>
             </div>
 

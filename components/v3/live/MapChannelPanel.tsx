@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { DefinedCopy } from "@/components/v3/live/DefinedTerm";
-import { FigureTip } from "@/components/v3/live/FigureTip";
+import { FigureTip, PartialFigureMark } from "@/components/v3/live/FigureTip";
 import { MapExposureCard, type MapExposureState } from "@/components/v3/live/MapExposureCard";
 import { MapListingsTable } from "@/components/v3/live/MapListingsTable";
 import { RetailShareDisc, RetailStatusMark } from "@/components/v3/live/RetailOverviewFigure";
@@ -20,6 +20,8 @@ import {
 import {
   channelReadingNote,
   channelSummaryText,
+  mapChannelStale,
+  type ChannelStale,
 } from "@/lib/fender-canvas/map-reading-status";
 import {
   approvedExceptionAsins,
@@ -140,7 +142,9 @@ function MapLeakageLead({ read }: { read: RetailCanvasRead }) {
             data-map-lead-numerator={hero.numerator ?? ""}
             data-map-lead-denominator={hero.denominator ?? ""}
           >
-            {hero.percent}
+            <PartialFigureMark partial={hero.partial} testId="map-lead-stale">
+              {hero.percent}
+            </PartialFigureMark>
           </span>
           {hero.ratio ? (
             <span className="findability-lead-ratio" data-map-lead-ratio="">
@@ -177,12 +181,12 @@ function MapNotes({
   read,
   channels,
   walmartMissing,
-  musiciansFriendLastRunAt,
+  channelStale,
 }: {
   read: RetailCanvasRead;
   channels: MapChannelLine[];
   walmartMissing: number | null;
-  musiciansFriendLastRunAt?: string | null;
+  channelStale: ChannelStale;
 }) {
   if (read.phase === "loading") {
     return <p className="retail-missing">Loading the retail reading…</p>;
@@ -203,7 +207,7 @@ function MapNotes({
   return (
     <ul className="tour-card-list" style={{ margin: 0 }} data-map-notes-channels="">
       {channels.map((channel) => {
-        const note = channelReadingNote(channel.name, { walmartMissing, musiciansFriendLastRunAt });
+        const note = channelReadingNote(channel.name, { walmartMissing, channelStale });
         return (
           <li key={channel.key} data-map-channel={channel.name}>
             <strong>{channel.name}</strong>
@@ -222,14 +226,14 @@ function MapTopRow({
   read,
   channels,
   walmartMissing,
-  musiciansFriendLastRunAt,
+  channelStale,
   exposure,
   exceptionsSentence,
 }: {
   read: RetailCanvasRead;
   channels: MapChannelLine[];
   walmartMissing: number | null;
-  musiciansFriendLastRunAt?: string | null;
+  channelStale: ChannelStale;
   /** Null hides the exposure card: MAP prices are not stored, or the rows did not load. */
   exposure: MapExposureState | null;
   exceptionsSentence: string | null;
@@ -253,7 +257,7 @@ function MapTopRow({
             read={read}
             channels={channels}
             walmartMissing={walmartMissing}
-            musiciansFriendLastRunAt={musiciansFriendLastRunAt}
+            channelStale={channelStale}
           />
         </div>
       </div>
@@ -263,7 +267,6 @@ function MapTopRow({
 
 export function MapChannelPanel({
   read,
-  musiciansFriendFreshness = null,
 }: {
   read: RetailCanvasRead;
   musiciansFriendFreshness?: CanvasFreshnessRow | null;
@@ -276,7 +279,6 @@ export function MapChannelPanel({
   const [units, setUnits] = useState<MapUnitsLookup | null | undefined>(undefined);
 
   const pricesNotStored = mapPricesNotStored(read);
-  const musiciansFriendLastRunAt = musiciansFriendFreshness?.last_run_at;
   const mapSetAsides = useSetAsides(activeSetAsideClientKey(), SET_ASIDE_CHECKS.mapPricing);
   const exceptions = useMemo(() => approvedExceptionAsins(mapSetAsides.rows), [mapSetAsides.rows]);
 
@@ -316,6 +318,7 @@ export function MapChannelPanel({
         : units === null
           ? { phase: "failed" }
           : { phase: "ready", summary: mapExposureSummary(countedRows, units) };
+  const channelStale = useMemo(() => mapChannelStale(countedRows), [countedRows]);
   const excluded = rows ? rows.length - countedRows.length : 0;
   const exceptionsSentence =
     excluded > 0 || mapSetAsides.error ? approvedExceptionsSentence(excluded, Boolean(mapSetAsides.error)) : null;
@@ -349,7 +352,7 @@ export function MapChannelPanel({
         read={read}
         channels={summaryChannels}
         walmartMissing={walmartMissing}
-        musiciansFriendLastRunAt={musiciansFriendLastRunAt}
+        channelStale={channelStale}
         exposure={failed ? null : exposure}
         exceptionsSentence={exceptionsSentence}
       />

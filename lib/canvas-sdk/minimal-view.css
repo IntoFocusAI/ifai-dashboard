@@ -275,6 +275,12 @@
   font-size: 22px;
 }
 
+/* The Roadmap tile's "30-60-90" explains the title: smaller, in the label grey. */
+.large-metric-value[data-explainer] {
+  color: var(--text-muted);
+  font-size: 20px;
+}
+
 .large-metric-value.tone-danger { color: var(--danger-text); }
 .large-metric-value.tone-warning { color: var(--warning-text); }
 .large-metric-value.tone-success { color: var(--success-text); }
@@ -300,7 +306,7 @@
   margin-top: auto;
   padding-top: 6px;
   color: var(--accent-cyan);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;

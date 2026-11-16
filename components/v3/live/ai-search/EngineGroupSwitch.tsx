@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { CopyTip } from "@/components/v3/live/ai-search/CopyTip";
 import { API_ENGINES, API_ENGINE_LABELS, API_QUESTION_RULE, API_REPEAT_RULE, ENGINE_GROUP_CHOICES, type EngineGroupChoice } from "@/lib/ai-search/engine-group";
 import { API_NOT_AVAILABLE_TIPS, type EngineSwitchState } from "@/lib/ai-search/engine-group-read";
@@ -16,11 +17,14 @@ export function EngineGroupSwitch({
   state,
   onChoose,
   pairedDay = null,
+  trailing = null,
 }: {
   state: EngineSwitchState;
   onChoose: (choice: EngineGroupChoice) => void;
   /** In a single run, the day of the API run shown beside it. */
   pairedDay?: string | null;
+  /** A compact figure at the right end of the row, vertically centered with the pills. */
+  trailing?: ReactNode;
 }) {
   const ready = state.kind === "ready";
   const active: EngineGroupChoice = ready ? state.choice : "all";
@@ -64,6 +68,7 @@ export function EngineGroupSwitch({
         </span>
       ) : null}
       {state.kind === "loading" ? <span className="ai-engine-switch-na">Loading API engines</span> : null}
+      {trailing ? <div className="ai-engine-switch-trailing">{trailing}</div> : null}
     </div>
   );
 }

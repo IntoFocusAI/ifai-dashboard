@@ -26,6 +26,7 @@ import { callOutcome } from "../lib/ai-search/run-metrics.ts";
 import {
   boundaryBreaks,
   boundaryLabel,
+  boundaryReason,
   buildHistoryTrend,
   callsBehindPoint,
   callsForRun,
@@ -563,4 +564,29 @@ test("errors stay outside the plotted denominator", () => {
   const kept = callsBehindPoint(polluted, point, "unbranded_discovery", { kind: "all" });
   assert.ok(kept.inRate.every((call) => call.audit_run_id === EARLIER_OCTOBER_12_RUN_ID));
   assert.ok(kept.outside.every((call) => call.audit_run_id === EARLIER_OCTOBER_12_RUN_ID));
+});
+
+test("a trend boundary explains what changed between which dates", () => {
+  const base = {
+    afterRunId: "a",
+    beforeRunId: "b",
+    afterDay: "2026-11-03",
+    beforeDay: "2026-11-05",
+    promptSetChanged: false,
+    queryVersionChanged: false,
+    scoringMethodChanged: false,
+    gap: false,
+    beforeQuestions: [],
+    afterQuestions: [],
+  };
+  const tail = "Runs on either side are not directly comparable.";
+  assert.equal(boundaryReason({ ...base, promptSetChanged: true }), `The question set changed between Nov 3 and Nov 5. ${tail}`);
+  assert.equal(boundaryReason({ ...base, queryVersionChanged: true }), `A question's wording changed between Nov 3 and Nov 5. ${tail}`);
+  assert.equal(boundaryReason({ ...base, scoringMethodChanged: true }), `The scoring method changed between Nov 3 and Nov 5. ${tail}`);
+  assert.equal(boundaryReason({ ...base, gap: true }), `There is a gap in the stored runs between Nov 3 and Nov 5. ${tail}`);
+  const several = boundaryReason({ ...base, promptSetChanged: true, scoringMethodChanged: true, gap: true });
+  assert.match(several, /question set changed/);
+  assert.match(several, /scoring method changed/);
+  assert.match(several, /gap in the stored runs/);
+  assert.match(boundaryReason({ ...base, afterDay: "2026-12-30", beforeDay: "2027-01-02", gap: true }), /Dec 30, 2026 and Jan 2, 2027/);
 });

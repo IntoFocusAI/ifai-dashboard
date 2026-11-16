@@ -43,7 +43,9 @@ export function modelLabel(model: string | null | undefined): string {
 export function categoryLabel(category: string | null | undefined): string {
   const text = category?.trim();
   if (!text) return "Uncategorized";
-  return text.charAt(0).toUpperCase() + text.slice(1);
+  if (!text.includes("_")) return text.charAt(0).toUpperCase() + text.slice(1);
+  const spaced = text.replace(/_+/g, " ").replace(/\s+/g, " ").trim().toLowerCase();
+  return spaced ? spaced.charAt(0).toUpperCase() + spaced.slice(1) : "Uncategorized";
 }
 
 const ENGINE_NAMES = Object.keys(ENGINE_LABELS).join("|");

@@ -54,13 +54,6 @@ export function AplusMatrixPanel({ summary }: { summary: ListingContentSummary |
             />
           ))}
         </div>
-        <p
-          className="metric-card-sub"
-          data-aplus-sales-not-estimated=""
-          style={{ margin: 0, maxWidth: 640 }}
-        >
-          The sales effect of missing A+ content is not estimated yet.
-        </p>
         <AplusNotes />
       </div>
 

@@ -41,7 +41,10 @@ export function DataFreshnessBar({
 }) {
   const asOf = maxRunAt(fresh);
   const asOfLabel = asOf
-    ? asOf.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })
+    ? asOf.toLocaleString(undefined, {
+        dateStyle: "medium",
+        timeStyle: "short",
+      })
     : "n/a";
 
   return (
@@ -53,21 +56,29 @@ export function DataFreshnessBar({
         fontSize: 11,
         color: "var(--text-muted)",
       }}
-      title={fresh
-        .map(
-          (r) =>
-            `${JOB_LABELS[r.job_key] ?? r.job_key}: ${relativeTime(r.last_run_at)}${
-              r.last_run_at &&
-              Date.now() - new Date(r.last_run_at).getTime() > 26 * 3600 * 1000
-                ? " (stale)"
-                : ""
-            }`,
-        )
-        .join("\n")}
     >
-      <span>Data as of {asOfLabel}</span>
+      <span
+        className="ifai-term"
+        data-ifai-tooltip-title="Data freshness"
+        data-ifai-tooltip-desc={fresh
+          .map(
+            (r) =>
+              `${JOB_LABELS[r.job_key] ?? r.job_key}: ${relativeTime(r.last_run_at)}${
+                r.last_run_at &&
+                Date.now() - new Date(r.last_run_at).getTime() >
+                  26 * 3600 * 1000
+                  ? " (stale)"
+                  : ""
+              }`,
+          )
+          .join("; ")}
+        tabIndex={0}
+        aria-label={`Data as of ${asOfLabel}`}
+      >
+        Data as of {asOfLabel}
+      </span>
       {stale ? (
-        <span className="tag-badge tag-warning" style={{ fontSize: 10 }}>
+        <span className="tag-badge tag-warning" style={{ fontSize: 11 }}>
           Stale
         </span>
       ) : null}

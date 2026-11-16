@@ -1,11 +1,11 @@
 // node --experimental-strip-types --import ./scripts/register-alias.mjs --import ./scripts/register-ts-extensions.mjs --test scripts/action-items-fix-list.test.ts
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import {
   FIX_ESTIMATE_LABEL,
   FIX_LIST_PRIORITY_RULE,
   FIX_LIST_TITLE,
-  fixListHtml,
   rankFixList,
   type FixListInput,
 } from "../lib/fender-canvas/action-items-fix-list.ts";
@@ -32,6 +32,8 @@ function finding(
     explainer: "",
     numerator,
     denominator,
+    partial: null,
+    loading: false,
   };
 }
 
@@ -82,37 +84,26 @@ test("on track comes after at risk, and a finding with no reading goes last", ()
   );
 });
 
-test("rows show N of M with the share and a status word, and link to the evidence tab", () => {
-  const html = fixListHtml(rankFixList(LIVE.map(input)));
-  assert.equal((html.match(/<tr class="ifai-row-link"/g) ?? []).length, 5);
-  assert.match(html, /data-fix-percent="">7\.9%<\/strong> <span class="findability-lead-ratio" data-fix-ratio="">82 of 1041<\/span>/);
-  assert.match(html, /tag-badge tag-danger" data-fix-status-label="">Critical</);
-  assert.match(html, /tag-badge tag-warning" data-fix-status-label="">At risk</);
-  assert.match(html, /<button type="button" class="ifai-open-hint"[^>]*data-ifai-open="specs" data-ifai-tab="Findability"[^>]*>Open Findability →<\/button>/);
-  const rows = [...html.matchAll(/data-fix-row="([a-z_]+)"/g)].map((m) => m[1]);
-  assert.deepEqual(rows, ["exact_official_product", "map_leakage", "splintered_bundles", "buy_box", "unbranded_discovery"]);
-  for (const row of html.split("<tr class=\"ifai-row-link\"").slice(1)) {
-    assert.ok(row.indexOf("data-fix-rank") < row.indexOf("data-fix-action"), "rank, then what to fix");
-    assert.ok(row.indexOf("data-fix-action") < row.indexOf("data-fix-finding"), "what to fix, then the finding");
-    assert.ok(row.indexOf("data-fix-finding") < row.indexOf("data-fix-open"), "the finding, then the evidence link");
-  }
-});
-
-test("the priority rule sits in the custom tooltip on the list title, never a native title", () => {
-  const html = fixListHtml(rankFixList(LIVE.map(input)));
-  assert.match(html, new RegExp(`class="ifai-term" data-ifai-tooltip-title="${FIX_LIST_TITLE}"`));
-  assert.ok(html.includes(`data-ifai-tooltip-desc="${FIX_LIST_PRIORITY_RULE}"`));
+test("the priority rule names the order, including the decision 21 actions after the findings", () => {
+  assert.equal(FIX_LIST_TITLE, "Fixes in priority order");
   assert.match(FIX_LIST_PRIORITY_RULE, /Critical findings come first, then at risk, then on track/);
-  assert.match(html, /tabindex="0"/);
-  assert.doesNotMatch(html, /\stitle="/);
-  assert.doesNotMatch(html, /\u2014/);
+  assert.match(FIX_LIST_PRIORITY_RULE, /out-of-stock listings and missing Amazon spec fields, then the brand.s own pages and listings when one of their factors is below Good, then the source, competitor, and fact-check actions/);
+  assert.match(FIX_LIST_PRIORITY_RULE, /weakest engine and the weakest unbranded discovery questions that trail the best by 10 points or more, and the cited sites whose share moved by 10% or more/);
+  assert.match(FIX_LIST_PRIORITY_RULE, /counted over the last 30 days with at least 30 answers behind the figure\. Wording the brand.s pages to match shopper questions comes next\. Watch lines come last/);
+  assert.doesNotMatch(FIX_LIST_PRIORITY_RULE, /\u2014/);
 });
 
-test("no dollar appears unless an existing estimate is passed, and then it is labeled analyst estimate", () => {
-  const plain = fixListHtml(rankFixList(LIVE.map(input)));
-  assert.doesNotMatch(plain, /\$|data-fix-estimate|analyst estimate/);
+test("an estimate passed to the ranking is kept for its row", () => {
+  const rows = rankFixList(LIVE.map(input), { map_leakage: "+$1K est." });
+  assert.equal(rows.find((row) => row.finding.id === "map_leakage")?.estimate, "+$1K est.");
+  assert.equal(rows.filter((row) => row.estimate).length, 1);
+  assert.equal(FIX_ESTIMATE_LABEL, "analyst estimate");
+});
 
-  const withEstimate = fixListHtml(rankFixList(LIVE.map(input), { map_leakage: "+$1K est." }));
-  assert.equal((withEstimate.match(/data-fix-estimate=/g) ?? []).length, 1);
-  assert.match(withEstimate, new RegExp(`<strong>\\+\\$1K est\\.</strong> ${FIX_ESTIMATE_LABEL}`));
+test("the fix list module renders no HTML and no weight over 600", () => {
+  const source = readFileSync(new URL("../lib/fender-canvas/action-items-fix-list.ts", import.meta.url), "utf8");
+  assert.doesNotMatch(source, /<table|<tr|font-weight:\s*7\d\d/);
+  const table = readFileSync(new URL("../components/v3/live/ActionItemsFixTable.tsx", import.meta.url), "utf8");
+  assert.match(table, /<ResizableTable/);
+  assert.doesNotMatch(table, /fontWeight:\s*[789]00|font-weight:\s*[789]00/);
 });

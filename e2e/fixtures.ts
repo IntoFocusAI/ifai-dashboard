@@ -1,6 +1,11 @@
 import { expect, test as base, type Locator, type Page } from "@playwright/test";
 import { mockSetAsides, type SetAsideMock } from "./set-aside-mock";
 
+/** The AI Search tabs read every call in the date window from the live database. On live data that
+ *  takes 20 to 40 seconds, so the first assertion that needs the read waits this long, and the test
+ *  calls `test.slow()` to lift its own limit. */
+export const AI_READ_MS = 90_000;
+
 /** Must outlast the hover rest before the map slides (`DWELL_MS` in useHoverFraming). */
 const MAP_SETTLE_MS = 500;
 
@@ -162,7 +167,7 @@ export class Canvas {
   async openSimulations() {
     await this.openSpokeFromMap("AI Search Visibility");
     await this.openTab("Run Details");
-    await expect(this.simulations.first()).toBeVisible();
+    await expect(this.simulations.first()).toBeVisible({ timeout: AI_READ_MS });
   }
 }
 
@@ -172,6 +177,8 @@ type Fixtures = {
   pageErrors: string[];
   /** In-memory set-aside endpoints; specs never write the live audit log. */
   setAsides: SetAsideMock;
+  /** The run-rows function reads as absent, so each spec's mocked history views serve its runs. */
+  runRowsFunction: void;
 };
 
 /* Both fixtures are `auto` so every test starts on a loaded /v3 with the error
@@ -203,10 +210,21 @@ export const test = base.extend<Fixtures>({
     { auto: true },
   ],
 
+  runRowsFunction: [
+    async ({ page }, use) => {
+      await page.route("**/rest/v1/rpc/canvas_ai_history_run_rows", (route) =>
+        route.fulfill({ status: 200, contentType: "application/json", body: "null" }),
+      );
+      await use();
+    },
+    { auto: true },
+  ],
+
   canvas: [
-    async ({ page, pageErrors, setAsides }, use) => {
+    async ({ page, pageErrors, setAsides, runRowsFunction }, use) => {
       void pageErrors; // ordering: attach the listener before the first navigation
       void setAsides; // and the set-aside routes, so live rows never shift the queue
+      void runRowsFunction; // and the history runs come from each spec's views, never the live function
       const canvas = new Canvas(page);
       await canvas.open();
       await use(canvas);

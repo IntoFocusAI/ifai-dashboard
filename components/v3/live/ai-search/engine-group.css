@@ -31,6 +31,36 @@
 
 .ai-engine-group-tag {
   display: block;
-  font-size: 10.5px;
+  font-size: 11px;
   color: var(--text-muted);
+}
+
+.ai-engine-switch-trailing {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.ai-competitor-hero-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ai-competitor-hero-figures {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.ai-competitor-hero .ai-lead-figure {
+  font-size: clamp(20px, 2vw, 26px);
+  line-height: 1.05;
+}
+
+.ai-competitor-hero-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }

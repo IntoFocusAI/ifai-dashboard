@@ -1,5 +1,5 @@
 import { classifySource, isValidCitationUrl, type SourceClass } from "@/lib/ai-search/citations";
-import { brandName, leadBrand } from "@/lib/brand-copy";
+import { brandName, isFenderClient, leadBrand } from "@/lib/brand-copy";
 
 export type WhyNotPage = { href: string; label: string; owner: string };
 
@@ -12,7 +12,12 @@ export type WhyNotFenderView = {
   pages: WhyNotPage[];
 };
 
-const FENDER_NAME = /\b(fender|squier)\b/i;
+/** The names that count as the client brand in an answer: Fender and Squier, or the brand's own name. */
+function brandMention(): RegExp {
+  if (isFenderClient()) return /\b(fender|squier)\b/i;
+  const name = brandName().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`\\b${name}\\b`, "i");
+}
 
 /**
  * Pooled evidence ids are `${audit_run_id}:${call.id}`.
@@ -88,6 +93,6 @@ export function whyNotFender(input: {
     const domain = hostOf(href);
     pages.push({ href, label: page.label?.trim() || href, owner: ownerLabel(classifySource(domain), domain, winner) });
   }
-  const fenderMentioned = answer === null ? null : FENDER_NAME.test(answer);
+  const fenderMentioned = answer === null ? null : brandMention().test(answer);
   return { fenderMentioned, summary: summarize(winner, fenderMentioned, pages), answer, pages };
 }

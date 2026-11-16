@@ -1,4 +1,5 @@
 import type { PieDiscData } from "@/lib/ai-search/citation-pies";
+import type { NodeStatus } from "@/lib/canvas-sdk/types";
 import { bucketLabel, OUTCOME_LABEL } from "@/lib/findability/copy";
 import { formatInt, formatPct, formatRatio } from "@/lib/fender-canvas/format";
 import {
@@ -69,6 +70,23 @@ export function outcomeShareColor(counts: OutcomeCounts, bucket: FindabilityBuck
   if (bucket === "ambiguous_candidate") return "var(--warning-amber)";
   if (bucket === "not_checked") return "var(--warning-amber)";
   return "var(--warning-amber)";
+}
+
+/**
+ * Status (X-34) for one Findability outcome hero on the tab. Only the exact-page share is
+ * graded, on EXACT_PAGE_SHARE_BANDS, so only it carries a status color, mark, and word. The
+ * other outcomes are counts of a kind of result, not grades, and show in the plain figure color.
+ */
+export function outcomeShareTone(
+  counts: OutcomeCounts,
+  bucket: FindabilityBucket,
+): Exclude<NodeStatus, "neutral"> | null {
+  if (bucket !== "exact_official_product") return null;
+  const pct = outcomeSharePct(counts, bucket);
+  if (pct == null) return null;
+  if (pct < EXACT_PAGE_SHARE_BANDS.redBelow) return "danger";
+  if (pct > EXACT_PAGE_SHARE_BANDS.greenAbove) return "success";
+  return "warning";
 }
 
 /** Pie slice key for this outcome so the disc uses an existing chart color. */

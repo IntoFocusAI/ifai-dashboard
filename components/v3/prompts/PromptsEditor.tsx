@@ -2,6 +2,7 @@
 
 import { StatusGlyph } from "@/components/v3/live/StatusMark";
 import { PromptHistory, PromptHistoryNotice, PromptHistoryToggle } from "@/components/v3/prompts/PromptHistory";
+import { PromptSearchBar, usePromptSearch } from "@/components/v3/prompts/PromptSearch";
 import "@/components/v3/prompts/prompts-editor.css";
 import { loadPromptEditHistory, promptEditsFor, type PromptEditHistory } from "@/lib/ai-search/prompt-edit-history";
 import {
@@ -133,6 +134,7 @@ export function PromptsEditor({ onClose }: Props) {
 
   const active = useMemo(() => prompts.filter((p) => p.active), [prompts]);
   const removed = useMemo(() => prompts.filter((p) => !p.active), [prompts]);
+  const search = usePromptSearch(active, removed);
   const categories = status?.categories ?? [];
   const locked = Boolean(status?.locked);
   const disabled = locked || busy || loading;
@@ -284,8 +286,19 @@ export function PromptsEditor({ onClose }: Props) {
 
           {loading ? <p className="pe-empty">Loading prompts…</p> : null}
 
+          <PromptSearchBar
+            query={search.query}
+            onQuery={search.setQuery}
+            shown={search.shownActive.length}
+            total={active.length}
+            shownKeys={search.shownKeys}
+          />
+          {!loading && active.length > 0 && search.shownActive.length === 0 ? (
+            <p className="pe-empty">No prompt matches this search.</p>
+          ) : null}
+
           <ul className="pe-list">
-            {active.map((p) => (
+            {search.shownActive.map((p) => (
               <li key={p.prompt_key} className="pe-item">
                 <div className="pe-item-meta">
                   <span className="pe-key">{p.prompt_key}</span>
@@ -326,10 +339,10 @@ export function PromptsEditor({ onClose }: Props) {
                   <div className="pe-item-main">
                     <p className="pe-text">{p.prompt_text}</p>
                     <div className="pe-item-actions">
-                      <button className="pe-icon-btn" disabled={disabled} onClick={() => startEdit(p)} aria-label={`Edit ${p.prompt_key}`} title="Edit">
+                      <button className="pe-icon-btn" disabled={disabled} onClick={() => startEdit(p)} aria-label={`Edit ${p.prompt_key}`}>
                         <Pencil size={14} />
                       </button>
-                      <button className="pe-icon-btn pe-danger" disabled={disabled} onClick={() => remove(p)} aria-label={`Remove ${p.prompt_key}`} title="Remove">
+                      <button className="pe-icon-btn pe-danger" disabled={disabled} onClick={() => remove(p)} aria-label={`Remove ${p.prompt_key}`}>
                         <Trash2 size={14} />
                       </button>
                     </div>
@@ -343,11 +356,11 @@ export function PromptsEditor({ onClose }: Props) {
           {removed.length ? (
             <section className="pe-removed">
               <button className="pe-link" onClick={() => setShowRemoved((v) => !v)}>
-                {showRemoved ? "Hide" : "Show"} removed prompts ({removed.length})
+                {showRemoved ? "Hide" : "Show"} removed prompts ({search.shownRemoved.length} of {removed.length})
               </button>
               {showRemoved ? (
                 <ul className="pe-list">
-                  {removed.map((p) => (
+                  {search.shownRemoved.map((p) => (
                     <li key={p.prompt_key} className="pe-item pe-item-removed">
                       <div className="pe-item-meta">
                         <span className="pe-key">{p.prompt_key}</span>

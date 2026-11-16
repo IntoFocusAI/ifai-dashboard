@@ -1,10 +1,14 @@
 // node --experimental-strip-types --import ./scripts/register-alias.mjs --import ./scripts/register-ts-extensions.mjs --test scripts/set-aside.test.ts
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { resetActiveClientForTests } from "../lib/client/active-client.ts";
+import { activeSetAsideClientKey, SET_ASIDE_CHECKS } from "../lib/set-aside/keys.ts";
 import {
+  errorText,
   outcomeLabel,
   reasonsForCheck,
   validateDone,
+  UNKNOWN_CLIENT_MESSAGE,
   validateSetAside,
   type SetAsideReason,
 } from "../lib/set-aside/set-aside.ts";
@@ -62,4 +66,41 @@ test("done needs only a name; its label never shows a reason", () => {
     outcomeLabel({ outcome: "set_aside", reason_label: "Come back to review" }),
     "Set aside · Come back to review",
   );
+});
+
+// Worker 25.15: the shared tables and views are client-keyed, so each brand runs the same checks under its own key.
+for (const [client, key] of [
+  ["fender", "fmic"],
+  ["ledlenser", "ledlenser"],
+] as const) {
+  test(`${client}: set-asides are keyed by ${key}, and the same checks and reasons apply`, () => {
+    try {
+      resetActiveClientForTests(client);
+      assert.equal(activeSetAsideClientKey(), key);
+      assert.equal(SET_ASIDE_CHECKS.mapPricing, "map_pricing");
+      const reasons = [
+        reason({ reason_code: "other", sort_order: 90 }),
+        reason({ reason_code: "approved_exception", check_keys: ["map_pricing"], sort_order: 30 }),
+      ];
+      assert.deepEqual(
+        reasonsForCheck(reasons, SET_ASIDE_CHECKS.mapPricing).map((r) => r.reason_code),
+        ["approved_exception", "other"],
+      );
+      assert.deepEqual(
+        reasonsForCheck(reasons, SET_ASIDE_CHECKS.amazonSpecs).map((r) => r.reason_code),
+        ["other"],
+      );
+    } finally {
+      resetActiveClientForTests(null);
+    }
+  });
+}
+
+test("an Unknown client. error from the database reads as a plain sentence, never blank", () => {
+  assert.equal(errorText({ message: "Unknown client." }), UNKNOWN_CLIENT_MESSAGE);
+  assert.equal(errorText({ message: "unknown client" }), UNKNOWN_CLIENT_MESSAGE);
+  assert.match(UNKNOWN_CLIENT_MESSAGE, /nothing was saved/);
+  assert.equal(errorText({ message: "Unknown check." }), "Unknown check.");
+  assert.equal(errorText({}), "The set-aside could not be saved. Try again.");
+  assert.equal(errorText(null), "The set-aside could not be saved. Try again.");
 });

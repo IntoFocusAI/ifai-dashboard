@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { answerTextQuery } from "@/lib/ai-search/queries";
+import { answerTextQuery } from "@/lib/ai-search/answer-text";
 import { getCanvasSupabase } from "@/lib/supabase/canvas-client";
 
 export type AnswerRead =

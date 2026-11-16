@@ -2,12 +2,36 @@ import { callOutcome, cleanPrompt, type CallOutcome } from "@/lib/ai-search/run-
 import type { AiCallRow, AiCitationRow } from "@/lib/ai-search/types";
 import { activeClient } from "@/lib/client/active-client";
 import { brandOwned, isFenderClient } from "@/lib/brand-copy";
+import { storedSourceClass } from "@/lib/ai-search/site-types";
+import { memoByRead } from "@/lib/ai-search/read-memo";
 
 const EMPTY_VALUES = new Set(["", "null", "undefined", "none", "nan", "n/a"]);
 
 /** A stored URL the dashboard can link to: http(s), a real host, not a literal null. */
 export function isValidCitationUrl(url: string | null | undefined): boolean {
-  const text = (url ?? "").trim();
+  const key = url ?? "";
+  const known = validUrls.get(key);
+  if (known !== undefined) return known;
+  const valid = parsesAsLink(key);
+  remember(validUrls, key, valid);
+  return valid;
+}
+
+/**
+ * A window holds tens of thousands of citations and every figure reads them, so each URL is
+ * parsed once. The caches are cleared when they grow past this many entries.
+ */
+const URL_CACHE_LIMIT = 50_000;
+const validUrls = new Map<string, boolean>();
+const canonicalUrls = new Map<string, string>();
+
+function remember<T>(cache: Map<string, T>, key: string, value: T): void {
+  if (cache.size >= URL_CACHE_LIMIT) cache.clear();
+  cache.set(key, value);
+}
+
+function parsesAsLink(url: string): boolean {
+  const text = url.trim();
   if (EMPTY_VALUES.has(text.toLowerCase())) return false;
   try {
     const parsed = new URL(text);
@@ -21,6 +45,14 @@ const TRACKING_PARAM = /^(utm_|gclid$|fbclid$|msclkid$|mc_|ref$|ref_src$|srsltid
 
 /** Same page, one spelling: lowercase host without www, no fragment, no tracking parameters. */
 export function canonicalUrl(url: string): string {
+  const known = canonicalUrls.get(url);
+  if (known !== undefined) return known;
+  const canonical = parseCanonical(url);
+  remember(canonicalUrls, url, canonical);
+  return canonical;
+}
+
+function parseCanonical(url: string): string {
   const parsed = new URL(url.trim());
   parsed.hash = "";
   parsed.hostname = parsed.hostname.toLowerCase().replace(/^www\./, "");
@@ -74,7 +106,7 @@ export const SOURCE_CLASS_ORDER: SourceClass[] = [
 ];
 
 /** FMIC's brand sites. Other clients use their own brand-site domains. */
-const FMIC_OWNED_DOMAINS = ["fender.com", "fmicassets.com", "squier.com", "gretschguitars.com", "jacksonguitars.com", "charvel.com", "evhgear.com"];
+export const FMIC_OWNED_DOMAINS = ["fender.com", "fmicassets.com", "squier.com", "gretschguitars.com", "jacksonguitars.com", "charvel.com", "evhgear.com"];
 
 /** Brand-owned domains for the active client. The class keeps its fender_owned key. */
 export function ownedDomains(): string[] {
@@ -93,7 +125,7 @@ export function isOwnedDomain(domain: string): boolean {
   return stems.some((stem) => new RegExp(`(^|\\.)${stem}\\.[a-z]{2,3}(\\.[a-z]{2})?$`).test(d));
 }
 
-const FENDER_CLASS_DOMAINS: Array<[SourceClass, string[]]> = [
+export const FENDER_CLASS_DOMAINS: Array<[SourceClass, string[]]> = [
   [
     "retailer",
     [
@@ -158,7 +190,7 @@ export const LIGHTING_BRAND_SITES: Array<[string, string]> = [
   ["dewalt.com", "DeWalt"],
 ];
 
-const LIGHTING_CLASS_DOMAINS: Array<[SourceClass, string[]]> = [
+export const LIGHTING_CLASS_DOMAINS: Array<[SourceClass, string[]]> = [
   [
     "retailer",
     [
@@ -202,9 +234,15 @@ function matchesDomain(domain: string, root: string) {
   return domain === root || domain.endsWith(`.${root}`);
 }
 
-/** IntoFocus's source class for a cited domain. Not a field stored by the collector. */
+/**
+ * IntoFocus's source class for a cited domain. The stored site type (staff override, else AI or
+ * seed; public.canvas_site_types) answers first. A domain with no stored type, or any domain
+ * while the view is not there, uses the lists in code.
+ */
 export function classifySource(domain: string): SourceClass {
   const d = domain.toLowerCase();
+  const stored = storedSourceClass(d);
+  if (stored) return stored;
   if (isOwnedDomain(d)) return "fender_owned";
   for (const [kind, roots] of classDomains()) {
     if (roots.some((root) => matchesDomain(d, root))) return kind;
@@ -245,8 +283,26 @@ export type CitationRead = {
   answersWithCitation: number;
 };
 
+/** Each read's citation evidence by scope, computed once per pair of call and citation lists. */
+const evidenceReads = memoByRead<AiCallRow[], (citations: AiCitationRow[]) => Map<CitationScope, CitationRead>>(() =>
+  memoByRead<AiCitationRow[], Map<CitationScope, CitationRead>>(() => new Map()),
+);
+
 /** Valid, de-duplicated citations on answered calls in scope, joined to their prompt. */
 export function citationEvidence(
+  calls: AiCallRow[],
+  citations: AiCitationRow[],
+  scope: CitationScope,
+): CitationRead {
+  const byScope = evidenceReads(calls)(citations);
+  const known = byScope.get(scope);
+  if (known) return known;
+  const read = readCitationEvidence(calls, citations, scope);
+  byScope.set(scope, read);
+  return read;
+}
+
+function readCitationEvidence(
   calls: AiCallRow[],
   citations: AiCitationRow[],
   scope: CitationScope,

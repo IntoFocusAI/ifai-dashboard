@@ -22,6 +22,7 @@ import {
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
 import { formatInt } from "@/lib/fender-canvas/format";
 import { leadBrand } from "@/lib/brand-copy";
+import { memoByRead } from "@/lib/ai-search/read-memo";
 
 /** Everything the map, widgets, tour, and command center say about the published run. */
 export type AiRunSummary = {
@@ -62,7 +63,10 @@ export type AiRunSummary = {
   largestGap: CategoryBattle | null;
 };
 
-export function summarizeRun(snapshot: AiSearchSnapshot): AiRunSummary {
+/** One run's summary, computed once per snapshot: the map, Summary, Minimal and the tour all read it. */
+export const summarizeRun: (snapshot: AiSearchSnapshot) => AiRunSummary = memoByRead(computeRunSummary);
+
+function computeRunSummary(snapshot: AiSearchSnapshot): AiRunSummary {
   const { run, calls, probes, citations } = snapshot;
   // Failed engines (all errors / all empty) stay off result lists; errorEngines keeps the count.
   const engines = engineResultTallies(calls);
@@ -122,7 +126,7 @@ export const UNBRANDED_RATE_BANDS = { redBelow: 30, greenAbove: 65 } as const;
 export const BRANDED_RATE_BANDS = { redBelow: 70, greenAbove: 90 } as const;
 
 /** The theme's status colors, by the names the panels already use. */
-const STATUS_COLOR: Record<DataStatus, string> = {
+export const STATUS_COLOR: Record<DataStatus, string> = {
   bad: "var(--danger-red)",
   okay: "var(--warning-amber)",
   good: "var(--success-green)",

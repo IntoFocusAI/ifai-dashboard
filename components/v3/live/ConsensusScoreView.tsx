@@ -1,20 +1,52 @@
 "use client";
 
+import "@/components/v3/live/summary.css";
 import { useState } from "react";
 import { CitationPieDisc } from "@/components/v3/live/ai-search/CitationPieDisc";
 import { ConsensusComponentBars } from "@/components/v3/live/ConsensusComponentBars";
+import { ConsensusWeightBreakdown } from "@/components/v3/live/ConsensusWeightBreakdown";
+import { PartialFigureMark } from "@/components/v3/live/FigureTip";
+import { StatusMark } from "@/components/v3/live/StatusMark";
+import { SCORE_CARD_TIPS, SCORE_CARD_TITLES } from "@/components/v3/live/score-card-tips";
+import type { PartialFigure } from "@/lib/fender-canvas/canvas-reads";
 import {
   ACTUATION_OMITTED_REASON,
-  CONSENSUS_EXPLAINER_BODY,
-  CONSENSUS_EXPLAINER_TITLE,
+  consensusPartial,
+  pillarPartial,
   scoreAgainst100Pie,
+  scoreAgainstTarget,
+  scoreFigure,
+  scoreStatus,
+  scoreTargetLabel,
   scoreToneColor,
 } from "@/lib/fender-canvas/consensus-score-display";
-import { formatPct, formatRatio } from "@/lib/fender-canvas/format";
+import { formatRatio } from "@/lib/fender-canvas/format";
 import type { ConsensusScore, PillarScore } from "@/lib/fender-canvas/consensus-scores";
 
 const PIE_SIZE = "citation-pie-disc citation-pie-disc-retail";
 const COMPONENTS_ID = "consensus-component-detail";
+
+/** Card title. With a tip it is a custom tooltip term (custom-tooltips rule), never a native title. */
+function ScoreCardTitle({ label, tip }: { label: string; tip?: string }) {
+  return (
+    <div className="metric-card-label" data-consensus-pillar-name="">
+      {tip ? (
+        <span
+          className="ifai-term"
+          data-ifai-tooltip-title={label}
+          data-ifai-tooltip-desc={tip}
+          data-score-card-tip=""
+          tabIndex={0}
+          aria-label={`${label}: ${tip}`}
+        >
+          {label}
+        </span>
+      ) : (
+        label
+      )}
+    </div>
+  );
+}
 
 function ExploreChevron() {
   return (
@@ -37,7 +69,11 @@ function ExploreChevron() {
   );
 }
 
-/** Fit-content score hero: label, colored figure, N of M, pie disc, optional chevron. */
+/**
+ * Fit-content score hero: label, the score in its status color against target 70 (H-07),
+ * N of M, the status mark and word, pie disc, optional chevron. A score that leaves out some
+ * of its inputs carries the asterisk and its tooltip (X-25).
+ */
 export function ScoreHeroCard({
   id,
   label,
@@ -48,6 +84,10 @@ export function ScoreHeroCard({
   controls,
   dominant,
   dataAttr,
+  partial = null,
+  coverageNoun,
+  titleTip,
+  wide,
 }: {
   id: string;
   label: string;
@@ -58,13 +98,22 @@ export function ScoreHeroCard({
   controls?: string;
   dominant?: boolean;
   dataAttr?: string;
+  partial?: PartialFigure | null;
+  /** What the coverage counts: "pillars" or "components". */
+  coverageNoun?: string;
+  /** Custom tooltip on the title. */
+  titleTip?: string;
+  /** Fill its cell in the Summary → Performance score row instead of fitting its content. */
+  wide?: boolean;
 }) {
   const color = scoreToneColor(score);
+  const status = scoreStatus(score);
   const pie = scoreAgainst100Pie(`score-${id}`, label, score);
-  const percent = score == null ? "Not available" : formatPct(score, 0);
+  const figure = scoreFigure(score);
+  const target = scoreAgainstTarget(score);
   const tip =
-    score != null && coverage
-      ? `${label}: ${formatPct(score)} · ${formatRatio(coverage.numerator, coverage.denominator)} of inputs in.`
+    target && coverage
+      ? `${label}: ${target} · ${formatRatio(coverage.numerator, coverage.denominator)} ${coverageNoun ?? "inputs"} in.`
       : undefined;
 
   return (
@@ -75,7 +124,7 @@ export function ScoreHeroCard({
       {...(dataAttr ? { [dataAttr]: id } : {})}
       style={{
         flex: "0 0 auto",
-        width: "fit-content",
+        width: wide ? "auto" : "fit-content",
         maxWidth: "100%",
         margin: 0,
         display: "flex",
@@ -83,9 +132,7 @@ export function ScoreHeroCard({
         gap: 6,
       }}
     >
-      <div className="metric-card-label" data-consensus-pillar-name="">
-        {label}
-      </div>
+      <ScoreCardTitle label={label} tip={titleTip} />
       <div className="findability-lead-row">
         <div className="findability-lead-figures">
           <span
@@ -95,21 +142,30 @@ export function ScoreHeroCard({
             data-consensus-pillar-included="true"
             style={{
               color,
-              fontSize: dominant ? "clamp(34px, 4vw, 48px)" : undefined,
+              fontSize: dominant && !wide ? "clamp(34px, 4vw, 48px)" : undefined,
               lineHeight: 1.05,
             }}
           >
-            {percent}
+            <PartialFigureMark partial={partial} testId={`consensus-${id}`}>
+              {figure}
+            </PartialFigureMark>
           </span>
-          {coverage ? (
+          {target ? (
+            <span className="findability-lead-ratio" data-consensus-target="">
+              {scoreTargetLabel()}
+            </span>
+          ) : null}
+          {coverage && score != null ? (
             <span
               className="findability-lead-ratio"
               data-consensus-pillar-coverage=""
               data-consensus-coverage={dominant ? "" : undefined}
             >
               {formatRatio(coverage.numerator, coverage.denominator)}
+              {coverageNoun ? ` ${coverageNoun}` : ""}
             </span>
           ) : null}
+          {status ? <StatusMark status={status} /> : null}
         </div>
         {pie ? <CitationPieDisc pie={pie} sizeClass={PIE_SIZE} tip={tip} /> : null}
       </div>
@@ -131,24 +187,25 @@ export function ScoreHeroCard({
 }
 
 /** Compact Actuation card: not a wide empty box. */
-export function ActuationHeroCard({ pillar }: { pillar: PillarScore }) {
+export function ActuationHeroCard({ pillar, wide }: { pillar: PillarScore; wide?: boolean }) {
   return (
     <div
       className="content-box findability-lead-card"
       data-consensus-pillar="actuation"
       style={{
         flex: "0 0 auto",
-        width: "fit-content",
-        maxWidth: 220,
+        width: wide ? "auto" : "fit-content",
+        maxWidth: wide ? "100%" : 220,
         margin: 0,
         display: "flex",
         flexDirection: "column",
         gap: 4,
       }}
     >
-      <div className="metric-card-label" data-consensus-pillar-name="">
-        {pillar.name}
-      </div>
+      <ScoreCardTitle
+        label={wide ? SCORE_CARD_TITLES.actuation : pillar.name}
+        tip={wide ? SCORE_CARD_TIPS.actuation : undefined}
+      />
       <div
         className="metric-card-val"
         data-consensus-pillar-score=""
@@ -164,31 +221,17 @@ export function ActuationHeroCard({ pillar }: { pillar: PillarScore }) {
   );
 }
 
-function ConsensusExplainer() {
-  return (
-    <div
-      className="content-box"
-      data-consensus-explainer=""
-      style={{ flex: "1 1 240px", minWidth: 200, display: "flex", flexDirection: "column", gap: 10 }}
-    >
-      <div className="ceo-callout" style={{ margin: 0 }}>
-        <div className="ceo-callout-header">
-          <span>{CONSENSUS_EXPLAINER_TITLE}</span>
-        </div>
-        <div className="ceo-callout-body">{CONSENSUS_EXPLAINER_BODY}</div>
-      </div>
-    </div>
-  );
-}
+type OpenCard = "consensus" | "foundation" | "commerce";
 
 /**
- * Summary → Performance top band: Consensus lead, pillar heroes, Actuation compact card,
- * and explainer. Component bars open full-width below the band.
+ * Summary → Performance top band: four equal score cards in one row (AI Consensus, AI Foundation,
+ * AI Commerce, AI Actuation). Each title carries its tooltip. A chevron opens the Consensus
+ * weights or a pillar's components full-width below the row.
  */
 export function ConsensusLeadBand({ consensus }: { consensus: ConsensusScore }) {
-  const [open, setOpen] = useState<"foundation" | "commerce" | null>(null);
+  const [open, setOpen] = useState<OpenCard | null>(null);
 
-  function toggle(id: "foundation" | "commerce") {
+  function toggle(id: OpenCard) {
     setOpen((current) => (current === id ? null : id));
   }
 
@@ -201,41 +244,51 @@ export function ConsensusLeadBand({ consensus }: { consensus: ConsensusScore }) 
 
   return (
     <div data-consensus-scores="" style={{ marginBottom: 16 }}>
-      <div
-        data-consensus-lead=""
-        style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "flex-start" }}
-      >
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "stretch" }}>
-          <ScoreHeroCard
-            id="consensus"
-            label="AI Consensus"
-            score={consensus.score}
-            coverage={consensus.coverage}
-            dominant
-          />
-          <ScoreHeroCard
-            id="foundation"
-            label={consensus.foundation.name}
-            score={consensus.foundation.score}
-            coverage={consensus.foundation.coverage}
-            open={open === "foundation"}
-            onToggle={() => toggle("foundation")}
-            controls={COMPONENTS_ID}
-          />
-          <ScoreHeroCard
-            id="commerce"
-            label={consensus.commerce.name}
-            score={consensus.commerce.score}
-            coverage={consensus.commerce.coverage}
-            open={open === "commerce"}
-            onToggle={() => toggle("commerce")}
-            controls={COMPONENTS_ID}
-          />
-          <ActuationHeroCard pillar={consensus.actuation} />
-        </div>
-        <ConsensusExplainer />
+      <div data-consensus-lead="" className="consensus-score-row">
+        <ScoreHeroCard
+          id="consensus"
+          label={SCORE_CARD_TITLES.consensus}
+          titleTip={SCORE_CARD_TIPS.consensus}
+          score={consensus.score}
+          coverage={consensus.coverage}
+          coverageNoun="pillars"
+          partial={consensusPartial(consensus)}
+          open={open === "consensus"}
+          onToggle={() => toggle("consensus")}
+          controls={COMPONENTS_ID}
+          dominant
+          wide
+        />
+        <ScoreHeroCard
+          id="foundation"
+          label={SCORE_CARD_TITLES.foundation}
+          titleTip={SCORE_CARD_TIPS.foundation}
+          score={consensus.foundation.score}
+          coverage={consensus.foundation.coverage}
+          coverageNoun="components"
+          partial={pillarPartial(consensus.foundation)}
+          open={open === "foundation"}
+          onToggle={() => toggle("foundation")}
+          controls={COMPONENTS_ID}
+          wide
+        />
+        <ScoreHeroCard
+          id="commerce"
+          label={SCORE_CARD_TITLES.commerce}
+          titleTip={SCORE_CARD_TIPS.commerce}
+          score={consensus.commerce.score}
+          coverage={consensus.commerce.coverage}
+          coverageNoun="components"
+          partial={pillarPartial(consensus.commerce)}
+          open={open === "commerce"}
+          onToggle={() => toggle("commerce")}
+          controls={COMPONENTS_ID}
+          wide
+        />
+        <ActuationHeroCard pillar={consensus.actuation} wide />
       </div>
 
+      {open === "consensus" ? <ConsensusWeightBreakdown consensus={consensus} id={COMPONENTS_ID} /> : null}
       {openPillar ? <ConsensusComponentBars pillar={openPillar} id={COMPONENTS_ID} /> : null}
     </div>
   );

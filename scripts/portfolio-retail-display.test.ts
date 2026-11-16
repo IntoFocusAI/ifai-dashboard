@@ -224,7 +224,7 @@ test("MAP shows the violation count and the price gap, and catalog does not repe
   const map = mapBubble(source.mapLeakage);
   assert.match(map.stats[0] ?? "", /1 below MAP/);
   assert.match(map.stats.join(" "), /-\$12\.50 gap/);
-  assert.equal(map.heroValue?.label, "MAP leakage");
+  assert.equal(map.heroValue?.label, "", "the title names the figure");
   assert.match(map.heroValue?.value ?? "", /%/);
   assert.equal(map.tooltip.desc, "");
   assert.equal(map.subTab, "MAP Leakage");

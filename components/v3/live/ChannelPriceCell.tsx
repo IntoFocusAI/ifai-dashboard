@@ -1,7 +1,7 @@
 "use client";
 
 import "@/components/v3/live/catalog-health.css";
-import { StatusGlyph } from "@/components/v3/live/StatusMark";
+import { StatusMark } from "@/components/v3/live/StatusMark";
 import { formatUsd } from "@/lib/fender-canvas/format";
 import {
   MISSING_CHECKED_PAGE_DESC,
@@ -50,10 +50,7 @@ export function ChannelPriceCell({
       ) : null}
       {price != null && !href ? <span>{price}</span> : null}
       {gap != null && below ? (
-        <span className="channel-gap data-status data-status-bad" data-status="bad">
-          <StatusGlyph status="bad" />
-          <span className="data-status-word">{formatUsd(gap, { signed: true })} below</span>
-        </span>
+        <StatusMark status="bad" word={`${formatUsd(gap, { signed: true })} below`} className="channel-gap" />
       ) : null}
       {gap != null && !below ? <span className="channel-gap">{formatUsd(gap, { signed: true })}</span> : null}
       {missingSource ? (

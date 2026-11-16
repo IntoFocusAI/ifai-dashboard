@@ -52,6 +52,8 @@ export type TrendBoundary = {
   queryVersionChanged: boolean;
   /** Visible marker. The line may still connect the two scoring methods. */
   scoringMethodChanged: boolean;
+  /** A run that fits this view sits between the two runs, so they are not adjacent. */
+  gap: boolean;
   beforeQuestions: QuestionVersion[];
   afterQuestions: QuestionVersion[];
 };
@@ -311,6 +313,7 @@ export function buildHistoryTrend(input: {
       promptSetChanged: change.promptSetChanged,
       queryVersionChanged: change.queryVersionChanged,
       scoringMethodChanged,
+      gap: change.gap,
       beforeQuestions: questionsInRun(before.calls),
       afterQuestions: questionsInRun(after.calls),
     });
@@ -418,4 +421,50 @@ export function boundaryLabel(boundary: TrendBoundary): string {
   if (boundary.queryVersionChanged) return "Question wording changed";
   if (boundary.promptSetChanged) return "Question set changed";
   return "No run with this exact question between these dates";
+}
+
+function shortDay(day: string, withYear: boolean): string {
+  const [year, month, date] = day.split("-").map(Number);
+  if (!year || !month || !date) return day;
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    ...(withYear ? { year: "numeric" } : {}),
+    timeZone: "UTC",
+  }).format(new Date(Date.UTC(year, month - 1, date)));
+}
+
+/**
+ * Plain words for a dashed line on the trend chart: what changed, between which two dates.
+ * afterDay is the earlier run and beforeDay the later one (the field names read the other way).
+ */
+export function boundaryReason(boundary: TrendBoundary): string {
+  const withYear = boundary.afterDay.slice(0, 4) !== boundary.beforeDay.slice(0, 4);
+  const between = `between ${shortDay(boundary.afterDay, withYear)} and ${shortDay(boundary.beforeDay, withYear)}`;
+  const reasons: string[] = [];
+  if (boundary.promptSetChanged) reasons.push(`The question set changed ${between}.`);
+  if (boundary.queryVersionChanged) reasons.push(`A question's wording changed ${between}.`);
+  if (boundary.scoringMethodChanged) reasons.push(`The scoring method changed ${between}.`);
+  if (boundary.gap) reasons.push(`There is a gap in the stored runs ${between}.`);
+  if (reasons.length === 0) reasons.push(`The runs ${between} differ.`);
+  return `${reasons.join(" ")} Runs on either side are not directly comparable.`;
+}
+
+/**
+ * The day the question set changed inside a window of review runs (the later run's day), or null
+ * when one question set covers the whole window. The trend's boundary rule decides it, so a
+ * headline rate and the trend line break on the same run. The latest change wins.
+ */
+export function windowQuestionSetChange(snapshots: readonly AiSearchSnapshot[]): string | null {
+  const runs = snapshots
+    .filter((snapshot) => isReviewHistoryRun(snapshot.run as HistoryRunSummary))
+    .sort((a, b) => compareRuns(a.run as HistoryRunSummary, b.run as HistoryRunSummary));
+  const ids = runs.map((snapshot) => snapshot.run.audit_run_id);
+  let changed: string | null = null;
+  for (let index = 1; index < runs.length; index += 1) {
+    if (adjacentBreak(runs[index - 1], runs[index], ids, { kind: "all" }).promptSetChanged) {
+      changed = dayOf(runs[index]) ?? changed;
+    }
+  }
+  return changed;
 }

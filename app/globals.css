@@ -367,7 +367,7 @@ a:hover {
 
 .profile-settings-section h2 {
   margin: 0 0 10px;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.1em;
@@ -389,7 +389,7 @@ a:hover {
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  font-size: 10px;
+  font-size: 11px;
   color: var(--profile-muted);
   flex-shrink: 0;
 }
@@ -667,7 +667,7 @@ a:hover {
 .user-menu-org-picker-label {
   margin: 0;
   padding: 4px 14px 6px;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;

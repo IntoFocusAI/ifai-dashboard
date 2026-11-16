@@ -150,4 +150,8 @@ export type AiSearchRead =
       selection?: "failed" | "empty";
     }
   | { phase: "no-run" }
-  | { phase: "ready"; snapshot: AiSearchSnapshot; stale?: boolean };
+  | {
+      phase: "ready";
+      snapshot: AiSearchSnapshot;
+      stale?: boolean;
+    };

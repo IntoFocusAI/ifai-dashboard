@@ -9,6 +9,7 @@ import { usePageFoundEvidence } from "@/components/v3/live/usePageFoundEvidence"
 import { useSpecCheckRunAt } from "@/components/v3/live/useSpecCheckRunAt";
 import {
   machineReadabilityHeroes,
+  pageFoundRowsStale,
   sharedGapSentence,
   type MachineHeroId,
   type SpecPageSummary,
@@ -64,7 +65,7 @@ export function MachineReadabilityPanel({
     openedFromPageFoundBubble() ? PAGE_FOUND_HERO_ID : "missing_specs",
   );
   const heroes = machineReadabilityHeroes(summary);
-  const pageFound = brandSitePageFoundHero(metrics, useSpecCheckRunAt());
+  const pageFound = brandSitePageFoundHero(metrics, useSpecCheckRunAt(), pageFoundRowsStale(summary));
   const pageFoundRead = usePageFoundEvidence(openTable === PAGE_FOUND_HERO_ID);
   useLandOnPageFoundHero(PAGE_FOUND_ANCHOR, () => setOpenTable(PAGE_FOUND_HERO_ID));
 

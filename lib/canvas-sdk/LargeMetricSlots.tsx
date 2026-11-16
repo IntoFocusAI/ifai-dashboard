@@ -3,6 +3,8 @@
 import { Plus, Wrench } from "lucide-react";
 import { useMemo, useRef } from "react";
 import { CitationPieDisc } from "@/components/v3/live/ai-search/CitationPieDisc";
+import { StatusMark } from "@/components/v3/live/StatusMark";
+import { dataStatusFromNode } from "@/lib/canvas-sdk/data-status";
 import { MetricPicker } from "@/lib/canvas-sdk/MetricPicker";
 import { EMPTY_METRIC_SLOTS, useMetricSlots } from "@/lib/canvas-sdk/metric-slots";
 import { metricTermAttrs } from "@/lib/canvas-sdk/metric-term";
@@ -29,6 +31,9 @@ function LargeMetricBody({
   const tab = metric.subTab ?? spokeLabel;
   const length = metric.value.length > 14 ? " is-longer" : metric.value.length > 7 ? " is-long" : "";
   const notes = [definition, reading.missing].filter(Boolean).join(" ");
+  // A status color always carries its mark and word (X-34); Not available* stays plain.
+  const status = reading.missing ? null : dataStatusFromNode(metric.tone);
+  const tone = status ? metric.tone : "neutral";
   return (
     <button
       type="button"
@@ -46,12 +51,14 @@ function LargeMetricBody({
       <span className="large-metric-row">
         <span className="large-metric-figures">
           <strong
-            className={`large-metric-value tone-${metric.tone ?? "neutral"}${length}${reading.missing ? " ifai-term" : ""}`}
+            className={`large-metric-value tone-${tone}${length}${reading.missing ? " ifai-term" : ""}`}
             data-large-metric-value=""
+            data-explainer={metric.id === "day-90-buy-box-target" ? "" : undefined}
             {...metricTermAttrs(metric.value, reading.missing)}
           >
             {metric.value}
           </strong>
+          {status ? <StatusMark status={status} /> : null}
           {reading.ratio ? (
             <span className="large-metric-ratio" data-large-metric-ratio="">
               {reading.ratio}
@@ -126,7 +133,6 @@ export function LargeMetricSlots({ metrics, storageKey, spokes, onOpenMetric }: 
               onClick={() => togglePicker(slotIndex)}
               aria-label={`Configure ${slotName}`}
               aria-expanded={pickerOpen}
-              title="Choose metric"
             >
               <Wrench aria-hidden="true" size={13} strokeWidth={1.8} />
             </button>

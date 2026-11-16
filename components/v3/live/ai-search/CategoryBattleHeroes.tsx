@@ -63,9 +63,10 @@ function OnTrackHero({ summary, engineName }: { summary: CategoryLeadSummary; en
   );
 }
 
+/** "Taylor leads Acoustics." for each Behind category, worded as the map bubble words it. */
 function onTrackCaption(summary: CategoryLeadSummary): string {
   if (summary.measured <= 0) return "";
-  const behind = summary.behind.length ? `Behind in ${joinBrands(summary.behind)}.` : "Behind in none.";
+  const behind = summary.rivalsLead.length ? summary.rivalsLead.map((line) => `${line}.`).join(" ") : "Behind in none.";
   return summary.tied.length ? `${behind} Tied in ${joinBrands(summary.tied)}.` : behind;
 }
 

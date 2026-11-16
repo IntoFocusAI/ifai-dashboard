@@ -19,6 +19,13 @@ import {
   type TrendTableParams,
 } from "@/lib/ai-search/tables";
 import { windowBounds } from "@/lib/ai-search/history-mode";
+import {
+  battlecardTable,
+  competitorWinsTable,
+  engineCategoryTable,
+  engineComparisonTable,
+  parseBattlecardFilter,
+} from "@/lib/ai-search/radar-tables";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
 import type { SourceRead } from "@/lib/export/types";
 import { READ_NOT_AVAILABLE } from "@/lib/fender-canvas/canvas-reads";
@@ -38,6 +45,10 @@ export const AI_EXPORT_TABLE_IDS = [
   "citation-engines",
   "citation-categories",
   "citation-evidence",
+  "category-battlecards",
+  "competitor-wins",
+  "engine-comparison",
+  "engine-category",
 ] as const;
 
 export type AiExportTableId = (typeof AI_EXPORT_TABLE_IDS)[number];
@@ -104,6 +115,10 @@ function build(table: AiExportTableId, selection: AiSelection, scope: Record<str
   if (table === "ai-run-categories") return runCategoryTable(snapshot, single);
   if (table === "ai-simulations") return simulationTable(snapshot, parseExplorerFilter(scope.filter));
   if (table === "product-fact-checks") return factCheckTable(snapshot);
+  if (table === "category-battlecards") return battlecardTable(snapshot, parseBattlecardFilter(scope.battlecards), single);
+  if (table === "competitor-wins") return competitorWinsTable(snapshot);
+  if (table === "engine-comparison") return engineComparisonTable(snapshot, single);
+  if (table === "engine-category") return engineCategoryTable(snapshot, single);
   return catalogCoverageTable(snapshot, !single);
 }
 

@@ -39,7 +39,7 @@ export function CanvasHudZoomControls({
           type="button"
           className="hud-btn"
           onClick={onZoomIn}
-          title="Zoom In (+)"
+          aria-label="Zoom in"
           tabIndex={onScreen ? 0 : -1}
         >
           <Plus size={16} />
@@ -48,7 +48,7 @@ export function CanvasHudZoomControls({
           type="button"
           className="hud-btn"
           onClick={onZoomOut}
-          title="Zoom Out (-)"
+          aria-label="Zoom out"
           tabIndex={onScreen ? 0 : -1}
         >
           <Minus size={16} />
@@ -57,7 +57,7 @@ export function CanvasHudZoomControls({
           type="button"
           className="hud-btn"
           onClick={onResetView}
-          title="Center & Overview"
+          aria-label="Center and overview"
           tabIndex={onScreen ? 0 : -1}
         >
           <Compass size={16} />

@@ -2,17 +2,17 @@
 
 import { PartialFigureMark } from "@/components/v3/live/FigureTip";
 import { RetailShareDisc } from "@/components/v3/live/RetailOverviewFigure";
-import type { PartialFigure } from "@/lib/fender-canvas/canvas-reads";
 import { isFenderClient } from "@/lib/brand-copy";
 import { formatInt, formatUsd } from "@/lib/fender-canvas/format";
 import {
-  awaitingInputsBreakdown,
+  lostSalesPartial,
   lostSalesPopulationPie,
   REVENUE_SOURCE_LABELS,
   sumLostSales,
   type LostSalesSum,
   type RevenueSource,
   type StockLossRow,
+  noSalesEstimateSentence,
 } from "@/lib/fender-canvas/stock-loss";
 
 function estimateTooltipDesc(sum: LostSalesSum, populationCount: number | null): string {
@@ -22,7 +22,7 @@ function estimateTooltipDesc(sum: LostSalesSum, populationCount: number | null):
       : `${formatInt(sum.affectedCount)} listings were out of stock at least one day in the last 12 months, including listings with no active offer.`;
   return (
     `${population} ${formatInt(sum.estimatedCount)} have a sales source and are in the totals. ` +
-    `${formatInt(sum.awaitingCount)} are awaiting inputs and are not counted as $0. ` +
+    `${noSalesEstimateSentence(sum.awaitingCount, sum.affectedCount)} ` +
     `Each listing's sales per in-stock day is its source's revenue divided by Keepa in-stock days, ` +
     `times its out-of-stock days in each window. ` +
     `The rate uses 12-month revenue when at least 30 of those days were in stock, ` +
@@ -37,19 +37,6 @@ function estimateTooltipDesc(sum: LostSalesSum, populationCount: number | null):
 }
 
 const ANALYST_ESTIMATE = "analyst estimate";
-
-/** The X-25 asterisk on the 12-month total: the listings it leaves out, and what that does to it. */
-function coveragePartial(rows: readonly StockLossRow[], sum: LostSalesSum): PartialFigure | null {
-  const missing = awaitingInputsBreakdown(rows, sum.window);
-  if (!missing) return null;
-  return {
-    reason: "coverage",
-    missing,
-    coverage: `${formatInt(sum.estimatedCount)} of ${formatInt(sum.affectedCount)} listings out of stock at least one day in the last 12 months`,
-    source: "SmartScout sales and Keepa stock history",
-    effect: "The total covers only the estimated listings, so it is lower than the full figure.",
-  };
-}
 
 function sourceTotal(sum: LostSalesSum, source: RevenueSource): number | null {
   return sum.bySource.find((entry) => entry.source === source)?.total ?? null;
@@ -72,10 +59,10 @@ export function StockLossHero({
   const pie = lostSalesPopulationPie(year);
   const tip =
     year.affectedCount > 0
-      ? `${formatInt(year.estimatedCount)} estimated, ${formatInt(year.awaitingCount)} awaiting inputs, of ${formatInt(year.affectedCount)} out-of-stock listings.`
+      ? `${formatInt(year.estimatedCount)} of ${formatInt(year.affectedCount)} out-of-stock listings have a sales estimate. ${noSalesEstimateSentence(year.awaitingCount, year.affectedCount)}`
       : undefined;
   const estimateDesc = estimateTooltipDesc(year, populationCount);
-  const partial = coveragePartial(rows, year);
+  const partial = lostSalesPartial(rows, year);
   const sources = year.bySource.map((entry) => entry.source);
 
   return (
@@ -123,7 +110,7 @@ export function StockLossHero({
             <span className="findability-lead-ratio" data-stock-loss-hero-ratio="">
               Covers {formatInt(year.estimatedCount)} of {formatInt(year.affectedCount)} out-of-stock listings.
               {year.awaitingCount > 0
-                ? ` ${formatInt(year.awaitingCount)} ${year.awaitingCount === 1 ? "is" : "are"} awaiting inputs.`
+                ? ` ${formatInt(year.awaitingCount)} ${year.awaitingCount === 1 ? "has" : "have"} no sales estimate yet.`
                 : ""}
             </span>
           ) : null}

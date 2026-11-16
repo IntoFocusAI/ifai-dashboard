@@ -144,7 +144,7 @@ test("the retail snapshot carries the division census from the catalog read", as
 
 test("divisions table drops headline counts and constant columns and keeps rows unclickable", () => {
   const table = read("components/v3/live/FenderDivisionsTable.tsx");
-  assert.match(table, /className="table-sm table-no-row-hover"/);
+  assert.match(table, /tableClassName="table-no-row-hover"/);
   assert.doesNotMatch(table, /onClick/);
   assert.doesNotMatch(table, /tag-badge|divisions\.length|\}\s*divisions/);
   assert.doesNotMatch(table, /Schema Sync|Primary Threat|"n\/a"|Performance Matrix/);

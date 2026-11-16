@@ -1,21 +1,27 @@
 "use client";
 
 import { CitationPieDisc } from "@/components/v3/live/ai-search/CitationPieDisc";
+import { PartialFigureMark } from "@/components/v3/live/FigureTip";
+import { RetailStatusMark } from "@/components/v3/live/RetailOverviewFigure";
+import type { PartialFigure } from "@/lib/fender-canvas/canvas-reads";
 import {
   findabilityLeadBuckets,
   outcomeLeadPie,
   outcomeLeadTip,
   outcomeRatioFigure,
-  outcomeShareColor,
   outcomeShareFigure,
+  outcomeShareTone,
 } from "@/lib/findability/lead";
 import {
   findabilityLastCheckedSentence,
+  findabilityLastCheckedTip,
+  findabilityStale,
   LAST_CHECKED_UNAVAILABLE_DESC,
   LAST_CHECKED_UNAVAILABLE_LABEL,
   LAST_CHECKED_UNAVAILABLE_TITLE,
   newestCheckedAttemptAt,
 } from "@/lib/findability/last-checked";
+import { toneColor } from "@/lib/fender-canvas/ai-readiness-lead";
 import { OUTCOME_DEFINITION, OUTCOME_LABEL, bucketLabel } from "@/lib/findability/copy";
 import type {
   FindabilityBucket,
@@ -29,13 +35,23 @@ const FINDABILITY_PIE_SIZE = "citation-pie-disc citation-pie-disc-findability";
 function LastCheckedLine({ rows }: { rows: readonly FindabilityRow[] }) {
   const iso = newestCheckedAttemptAt(rows);
   const sentence = findabilityLastCheckedSentence(iso);
+  const tip = findabilityLastCheckedTip(rows);
   return (
     <p
       className="findability-last-checked"
       data-findability-last-checked={iso ?? ""}
     >
       {sentence ? (
-        sentence
+        <span
+          className="ifai-term"
+          data-ifai-tooltip-title={LAST_CHECKED_UNAVAILABLE_TITLE}
+          data-ifai-tooltip-desc={tip}
+          data-findability-last-checked-tip=""
+          tabIndex={0}
+          aria-label={`${sentence} ${tip}`}
+        >
+          {sentence}
+        </span>
       ) : (
         <>
           Last checked{" "}
@@ -69,16 +85,18 @@ function outcomeDefinition(bucket: FindabilityBucket): string | null {
 function OutcomeHero({
   counts,
   bucket,
+  stale,
 }: {
   counts: OutcomeCounts;
   bucket: FindabilityBucket;
+  stale: PartialFigure | null;
 }) {
   const label = outcomeLabel(bucket);
   const definition = outcomeDefinition(bucket);
   const pct = outcomeShareFigure(counts, bucket);
   const ratio = outcomeRatioFigure(counts, bucket);
   const pie = outcomeLeadPie(counts, bucket);
-  const color = outcomeShareColor(counts, bucket);
+  const tone = outcomeShareTone(counts, bucket);
 
   return (
     <div
@@ -107,7 +125,7 @@ function OutcomeHero({
         <div className="findability-lead-figures">
           <span
             className="ai-lead-figure"
-            style={color ? { color } : undefined}
+            style={tone ? { color: toneColor(tone) ?? undefined } : undefined}
             data-findability-lead-figure=""
             data-findability-lead-pct=""
             data-findability-lead-count={counts[bucket]}
@@ -116,11 +134,14 @@ function OutcomeHero({
               ? { "data-findability-exact": counts.exact_official_product }
               : {})}
           >
-            {pct}
+            <PartialFigureMark partial={stale} testId="findability-stale">
+              {pct}
+            </PartialFigureMark>
           </span>
           <span className="findability-lead-ratio" data-findability-lead-ratio="">
             {ratio}
           </span>
+          <RetailStatusMark tone={tone} />
         </div>
         {pie ? (
           <CitationPieDisc
@@ -164,12 +185,13 @@ export function FindabilityLead({
   }
 
   const buckets = findabilityLeadBuckets(counts);
+  const stale = findabilityStale(rows);
 
   return (
     <div data-findability-lead="">
       <div className="findability-leads">
         {buckets.map((bucket) => (
-          <OutcomeHero key={bucket} counts={counts} bucket={bucket} />
+          <OutcomeHero key={bucket} counts={counts} bucket={bucket} stale={stale} />
         ))}
       </div>
       <LastCheckedLine rows={rows} />

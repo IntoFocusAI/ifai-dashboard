@@ -26,6 +26,13 @@ import {
   type FindabilityRow,
 } from "../lib/findability/outcomes.ts";
 import { FINDABILITY_COLUMNS, loadFindabilityRead } from "../lib/findability/queries.ts";
+import {
+  findabilityTableValue,
+  httpStatusLine,
+  listingContextLine,
+  matchMethodLine,
+  variantSkuLine,
+} from "../lib/findability/table-columns.ts";
 
 function row(partial: Partial<FindabilityRow> & Pick<FindabilityRow, "asin" | "latest_state">): FindabilityRow {
   return {
@@ -488,24 +495,23 @@ test("unchecked reason uses the first matching flag, then the stored explanation
 
   const root = new URL("..", import.meta.url);
   const table = readFileSync(new URL("components/v3/live/findability/FindabilityTable.tsx", root), "utf8");
-  const shared = table.slice(table.indexOf("const COLUMNS"), table.indexOf("const UNCHECKED_COLUMNS"));
-  const unchecked = table.slice(table.indexOf("const UNCHECKED_COLUMNS"), table.indexOf("function columnsFor"));
-  assert.match(shared, /Official page/);
-  assert.match(shared, /HTTP status/);
+  const shared = table.slice(table.indexOf("function outcomeColumns"), table.indexOf("function uncheckedColumns"));
+  const unchecked = table.slice(table.indexOf("function uncheckedColumns"), table.indexOf("function columnsFor"));
+  // Outcome tables stack facts so seven columns fit 1280 px: the outcome is the table title.
+  assert.match(shared, /"Official page"/);
   assert.match(shared, /"Checked"/);
-  assert.match(shared, /"Outcome"/);
-  assert.match(shared, /VARIANT_SKU_COLUMN/);
   assert.match(shared, /"Confidence"/);
-  assert.match(shared, /How it was matched/);
-  assert.doesNotMatch(shared, /"Reason"/);
+  assert.match(shared, /"Explanation"/);
+  assert.match(shared, /bundleColumn\(bundleLoaded\)/);
+  assert.doesNotMatch(shared, /"Reason"|"Outcome"|"HTTP status"|"How it was matched"/);
   assert.match(unchecked, /"Reason"/);
   assert.match(unchecked, /"Category"/);
   assert.match(unchecked, /Product kind/);
   assert.match(unchecked, /"Explanation"/);
-  assert.match(unchecked, /Dealer bundle/);
+  assert.match(unchecked, /bundleColumn\(bundleLoaded\)/);
   assert.doesNotMatch(unchecked, /Official page|HTTP status|"Checked"|"Outcome"/);
   assert.doesNotMatch(unchecked, /Variant SKU|"Confidence"|How it was matched/);
-  assert.match(table, /outcome === "not_checked" \? UNCHECKED_COLUMNS : COLUMNS/);
+  assert.match(table, /outcome === "not_checked" \? uncheckedColumns\(bundleLoaded\) : outcomeColumns\(bundleLoaded\)/);
 });
 
 test("a 10-character ASIN links to its Amazon page and every other value stays text", () => {
@@ -537,9 +543,12 @@ test("a 10-character ASIN links to its Amazon page and every other value stays t
   assert.match(asinCell, /<span className="asin-chip">\{row\.asin\}<\/span>/);
   assert.equal(asinCell.match(/<span className="asin-chip">\{row\.asin\}<\/span>/g)?.length, 2);
 
-  const skuCell = table.slice(table.indexOf('case "sku"'), table.indexOf('case "confidence"'));
-  assert.match(skuCell, /latest_variant_sku/);
-  assert.doesNotMatch(skuCell, /amazonHref|<a |amazon\.com/);
+  // The variant SKU sits under the official page as text, never as an Amazon link.
+  const pageCell = table.slice(table.indexOf('case "page"'), table.indexOf('case "confidence"'));
+  assert.match(pageCell, /variantSkuLine\(row\)/);
+  assert.doesNotMatch(pageCell, /amazonHref|amazon\.com/);
+  assert.equal(variantSkuLine(row({ asin: "B00ZEBRA", latest_state: "exact_official_product", latest_variant_sku: " 0140000001 " })), "Variant SKU 0140000001");
+  assert.equal(variantSkuLine(row({ asin: "B00ZEBRA", latest_state: "exact_official_product", latest_variant_sku: null })), "");
   assert.equal(table.match(/case "asin"/g)?.length, 1);
 });
 
@@ -649,4 +658,31 @@ test("the findability query reads the stored view and keeps an unchecked blank a
   assert.match(FINDABILITY_COLUMNS, /counts_as_confirmed/);
   assert.match(FINDABILITY_COLUMNS, /counts_as_unchecked/);
   assert.doesNotMatch(seen.join(" "), /canvas_spec_readiness/);
+});
+
+test("stacked Findability cells keep every stored fact and search both lines", () => {
+  const exact = row({
+    asin: "B0STACK001",
+    title: "Player Stratocaster",
+    category: "Solid Body",
+    product_kind: "instrument",
+    latest_state: "exact_official_product",
+    counts_as_confirmed: true,
+    latest_canonical_url: "https://www.brand.example/products/player-stratocaster",
+    latest_variant_sku: "0144502500",
+    confidence: "sku",
+    source_method: "derived_handle",
+    http_status: 200,
+  });
+  assert.equal(listingContextLine(exact), "Solid Body · Instrument");
+  assert.equal(matchMethodLine(exact), "Derived handle");
+  assert.equal(httpStatusLine(exact, "exact_official_product"), "HTTP 200");
+  assert.equal(httpStatusLine({ ...exact, http_status: null }, "exact_official_product"), "");
+  assert.equal(httpStatusLine(exact, "not_checked"), "");
+  assert.equal(listingContextLine({ ...exact, category: null, product_kind: null }), "");
+  // Sort reads the first line first; search finds the second line too.
+  assert.match(String(findabilityTableValue(exact, "title")), /^Player Stratocaster Solid Body/);
+  assert.match(String(findabilityTableValue(exact, "page")), /^https:\/\/www\.brand\.example\/products\/player-stratocaster .*0144502500$/);
+  assert.equal(findabilityTableValue(exact, "confidence"), "SKU match Derived handle");
+  assert.equal(findabilityTableValue(exact, "checked"), findabilitySortValue(exact, "checked"));
 });

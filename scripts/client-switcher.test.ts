@@ -169,7 +169,8 @@ test("set-asides, site copy, and API-engine reads follow the brand on screen", a
     assert.match(leadRateTip({ fenderWins: 1, resolved: 2 }), /named Fender\/Squier most/);
     resetActiveClientForTests("ledlenser");
     assert.equal(activeSetAsideClientKey(), "ledlenser");
-    assert.equal(apiEngineViewsEnabled(undefined, {}), false);
+    assert.equal(apiEngineViewsEnabled(undefined, {}), true);
+    assert.equal(apiEngineViewsEnabled("0", {}), false);
     assert.equal(pagesCheckedNote({ pagesChecked: 2, pagesCut: false }), "2 ledlenser.com pages checked.");
     assert.match(leadRateTip({ fenderWins: 1, resolved: 2 }), /named Ledlenser most/);
   } finally {

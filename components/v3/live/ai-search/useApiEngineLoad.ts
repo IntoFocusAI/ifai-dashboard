@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
-import { useAiHistoryOptional } from "@/components/v3/live/ai-search/AiHistoryContext";
+import { useAiHistoryOptional, useDisplayedAiSearch } from "@/components/v3/live/ai-search/AiHistoryContext";
 import {
   apiEngineViewsEnabled,
   apiRunsCoveringBattery,
@@ -9,15 +9,16 @@ import {
   batteryQuestions,
   loadApiRunCatalog,
   loadApiRunSnapshot,
-  nearestApiRun,
   type ApiCatalogResult,
   type ApiRunSummary,
   type ApiSnapshotResult,
 } from "@/lib/ai-search/api-runs";
+import { useEngineGroupChoice } from "@/components/v3/live/ai-search/engine-group-store";
 import { engineGroupRead, type ApiEngineLoad } from "@/lib/ai-search/engine-group-read";
 import { runDay } from "@/lib/ai-search/default-window";
 import type { HistoryMode } from "@/lib/ai-search/history-mode";
 import type { AiSearchRead, AiSearchSnapshot } from "@/lib/ai-search/types";
+
 import { getCanvasSupabase } from "@/lib/supabase/canvas-client";
 
 /** Every tab shares one catalog read and one read per API run. A failed read is tried again next time. */
@@ -37,7 +38,8 @@ function readCatalog(): Promise<ApiCatalogResult> {
 function readRun(run: ApiRunSummary): Promise<ApiSnapshotResult> {
   const cached = runReads.get(run.audit_run_id);
   if (cached) return cached;
-  const read = loadApiRunSnapshot(getCanvasSupabase() as never, run).then((result) => {
+  // No answer text: the map and every tab read many API runs, and a drawer reads its answer on demand.
+  const read = loadApiRunSnapshot(getCanvasSupabase() as never, run, { withAnswers: false }).then((result) => {
     if (result.phase === "error") runReads.delete(run.audit_run_id);
     return result;
   });
@@ -176,19 +178,14 @@ export function useApiEngineLoad(): ApiEngineLoad {
 }
 
 /**
- * The map's AI Search read: the published run with the counted API run nearest its day, on All,
- * as the AI Search tabs show that run. The published run alone when no API run counts beside it.
+ * The map's AI Search read (Brian Magazu, 12 Nov 2026; replaces decision 7): the date-pill window
+ * with the API runs in it, narrowed by the engine switch, exactly as the AI Search and Competitive
+ * Radar tabs read it. Every map bubble, Minimal, Summary, the Roadmap, Action Items and the deck
+ * read this one population. `published` is the published run the window ends on.
  */
 export function useMapAiSearch(published: AiSearchRead): AiSearchRead {
-  const catalog = useApiRunCatalog();
-  const snapshot = published.phase === "ready" ? published.snapshot : null;
-  const paired = useMemo(() => {
-    if (catalog.phase !== "ready" || !snapshot) return [];
-    const battery = batteryQuestions([snapshot]);
-    const run = nearestApiRun(apiRunsCoveringBattery(catalog.runs, battery), battery[0]?.day ?? null);
-    return run ? [run] : [];
-  }, [catalog, snapshot]);
-  const load = useApiSnapshots(paired);
-  const pending = useMemo(() => catalogLoadState(catalog), [catalog]);
-  return useMemo(() => engineGroupRead(published, pending ?? load, "all"), [published, pending, load]);
+  const displayed = useDisplayedAiSearch(published);
+  const windowApi = useApiEngineLoad();
+  const [choice] = useEngineGroupChoice();
+  return useMemo(() => engineGroupRead(displayed, windowApi, choice), [displayed, windowApi, choice]);
 }
