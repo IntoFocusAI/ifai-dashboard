@@ -270,15 +270,15 @@ test.describe("Prompts for every client (decisions 89 and 99)", () => {
     expect(fenderListRead).toBe(false);
   });
 
-  test("until Ledlenser's view is applied its Prompts screen says the list could not be read (live)", async ({ page }) => {
+  test("when Ledlenser's view cannot be read its Prompts screen says so", async ({ page }) => {
     test.setTimeout(120_000);
-    const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-    test.skip(!base || !key, "No Supabase URL or key in this environment.");
-    const probe = await page.request.get(`${base}/rest/v1/canvas_ai_prompts?select=prompt_key&limit=1`, {
-      headers: { apikey: key!, Authorization: `Bearer ${key}`, "Accept-Profile": "ledlenser" },
-    });
-    test.skip(probe.ok(), "ledlenser.canvas_ai_prompts is applied; the live CSV test covers it.");
+    await page.route("**/rest/v1/canvas_ai_prompts*", (route) =>
+      route.fulfill({
+        status: 404,
+        contentType: "application/json",
+        body: JSON.stringify({ code: "42P01", message: 'relation "ledlenser.canvas_ai_prompts" does not exist' }),
+      }),
+    );
     await page.goto(url("ledlenser", ""));
     await page.locator(".hdr-btn", { hasText: PROMPTS_BUTTON }).click();
     await expect(page.locator(".pe-banner-error")).toHaveText("The prompt list could not be read.", { timeout: 60_000 });
