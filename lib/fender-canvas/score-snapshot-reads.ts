@@ -5,6 +5,7 @@ import { loadAiSelection } from "@/lib/ai-search/selection-load";
 import { ensureSiteTypes } from "@/lib/ai-search/site-types";
 import { DEFAULT_ENGINE_GROUP_CHOICE } from "@/lib/ai-search/engine-group";
 import { loadExceptions } from "@/lib/export/map-export";
+import { loadActuationBasis } from "@/lib/fender-canvas/actuation-basis-read";
 import { loadSpecPages } from "@/lib/fender-canvas/machine-readability";
 import { withMapApprovedExceptions } from "@/lib/fender-canvas/map-approved-exceptions";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
@@ -35,10 +36,11 @@ async function aiRead(): Promise<Pick<ScoreSnapshotReads, "ai" | "aiWindow">> {
   const client = getCanvasSupabase();
   await ensureSiteTypes(client);
   const history = client as unknown as HistoryReadClient & AiReadClient;
-  let loaded = await loadAiSelection(history, DEFAULT_SCOPE, { citations: false });
+  // Citations on: AI Actuation's E1 counts brand pages cited in unbranded answers (decision 97).
+  let loaded = await loadAiSelection(history, DEFAULT_SCOPE, { citations: true });
   // The screen's engine switch reads Not available* when the API runs are missing or failed, and its
   // figures are then the search engines'. Read the same way.
-  if (!loaded.ok) loaded = await loadAiSelection(history, { ...DEFAULT_SCOPE, enginesReady: false }, { citations: false });
+  if (!loaded.ok) loaded = await loadAiSelection(history, { ...DEFAULT_SCOPE, enginesReady: false }, { citations: true });
   if (!loaded.ok) return { ai: { phase: "error", message: loaded.message }, aiWindow: null };
   const { selection } = loaded;
   return {
@@ -57,7 +59,7 @@ async function aiRead(): Promise<Pick<ScoreSnapshotReads, "ai" | "aiWindow">> {
  * client (wrap in runWithClient). A failed read stays failed; its components drop as on screen.
  */
 export async function loadScoreSnapshotReads(): Promise<ScoreSnapshotReads> {
-  const [findability, specPages, retail, ai] = await Promise.all([
+  const [findability, specPages, retail, ai, actuation] = await Promise.all([
     loadFindabilityRead(getCanvasSupabase() as unknown as FindabilityClient).catch(
       (error: unknown): FindabilityRead => ({ phase: "error", message: error instanceof Error ? error.message : String(error) }),
     ),
@@ -67,6 +69,7 @@ export async function loadScoreSnapshotReads(): Promise<ScoreSnapshotReads> {
       ai: { phase: "error" as const, message: error instanceof Error ? error.message : String(error) },
       aiWindow: null,
     })),
+    loadActuationBasis().catch(() => null),
   ]);
-  return { findability, specPages, retail, ...ai };
+  return { findability, specPages, retail, actuation, ...ai };
 }

@@ -13,8 +13,22 @@ import {
   scoreToneColor,
 } from "@/lib/fender-canvas/consensus-score-display";
 import type { PartialFigure } from "@/lib/fender-canvas/canvas-reads";
-import type { ConsensusScore } from "@/lib/fender-canvas/consensus-scores";
+import type { ConsensusScore, PillarScore } from "@/lib/fender-canvas/consensus-scores";
+import { actuationPartial } from "@/lib/fender-canvas/actuation-display";
 import { formatPct, formatRatio } from "@/lib/fender-canvas/format";
+
+/** X-25: a pillar left out of AI Consensus reads Not available* with the reason in its tooltip. */
+function leftOutPartial(pillar: PillarScore): PartialFigure | null {
+  if (pillar.included && pillar.score != null) return null;
+  return (
+    actuationPartial(pillar) ?? {
+      reason: "read-failed",
+      missing: `No input for ${pillar.name} loaded`,
+      source: "the reads behind this score",
+      effect: "AI Consensus leaves it out, and the other weights rescale",
+    }
+  );
+}
 
 function points(value: number): string {
   return `${value.toFixed(1)} points`;
@@ -26,7 +40,11 @@ function PillarRow({ row, partial }: { row: ConsensusWeightRow; partial: Partial
       <div className="consensus-component-row" data-consensus-weight-row={row.id} data-consensus-included="false">
         <div className="consensus-component-name">{row.title}</div>
         <div className="consensus-component-bar-wrap">
-          <span className="metric-card-sub">Not included</span>
+          <span className="metric-card-sub">
+            <PartialFigureMark partial={partial} testId={`consensus-weights-${row.id}`}>
+              Not available
+            </PartialFigureMark>
+          </span>
         </div>
         <div className="consensus-component-meta" />
       </div>
@@ -80,7 +98,7 @@ export function ConsensusWeightBreakdown({ consensus, id }: { consensus: Consens
         <span>{SCORE_CARD_TITLES.consensus} weights</span>
       </div>
       {rows.map((row) => (
-        <PillarRow key={row.id} row={row} partial={pillarPartial(consensus[row.id])} />
+        <PillarRow key={row.id} row={row} partial={pillarPartial(consensus[row.id]) ?? leftOutPartial(consensus[row.id])} />
       ))}
       {consensus.score != null ? (
         <div className="consensus-component-row consensus-weight-total" data-consensus-weight-total="">
@@ -91,6 +109,7 @@ export function ConsensusWeightBreakdown({ consensus, id }: { consensus: Consens
                 {scoreFigure(consensus.score)}
               </PartialFigureMark>
             </span>
+            {scoreStatus(consensus.score) ? <StatusMark status={scoreStatus(consensus.score)!} /> : null}
           </div>
           <div className="consensus-component-meta">
             <span>

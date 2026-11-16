@@ -3,14 +3,15 @@
 import "@/components/v3/live/summary.css";
 import { useState, type ReactNode } from "react";
 import { CitationPieDisc } from "@/components/v3/live/ai-search/CitationPieDisc";
+import { ActuationFactorBars } from "@/components/v3/live/ActuationFactorBars";
 import { ConsensusComponentBars } from "@/components/v3/live/ConsensusComponentBars";
 import { ConsensusWeightBreakdown } from "@/components/v3/live/ConsensusWeightBreakdown";
 import { PartialFigureMark } from "@/components/v3/live/FigureTip";
 import { StatusMark } from "@/components/v3/live/StatusMark";
 import { SCORE_CARD_TIPS, SCORE_CARD_TITLES } from "@/components/v3/live/score-card-tips";
 import type { PartialFigure } from "@/lib/fender-canvas/canvas-reads";
+import { actuationPartial } from "@/lib/fender-canvas/actuation-display";
 import {
-  ACTUATION_OMITTED_REASON,
   consensusPartial,
   pillarPartial,
   scoreAgainst100Pie,
@@ -140,7 +141,7 @@ export function ScoreHeroCard({
             className="ai-lead-figure"
             data-consensus-pillar-score=""
             data-consensus-score={dominant ? "" : undefined}
-            data-consensus-pillar-included="true"
+            data-consensus-pillar-included={score != null ? "true" : "false"}
             style={{
               color,
               fontSize: dominant && !wide ? "clamp(34px, 4vw, 48px)" : undefined,
@@ -187,48 +188,13 @@ export function ScoreHeroCard({
   );
 }
 
-/** Compact Actuation card: not a wide empty box. */
-export function ActuationHeroCard({ pillar, wide }: { pillar: PillarScore; wide?: boolean }) {
-  return (
-    <div
-      className="content-box findability-lead-card"
-      data-consensus-pillar="actuation"
-      style={{
-        flex: "0 0 auto",
-        width: wide ? "auto" : "fit-content",
-        maxWidth: wide ? "100%" : 220,
-        margin: 0,
-        display: "flex",
-        flexDirection: "column",
-        gap: 4,
-      }}
-    >
-      <ScoreCardTitle
-        label={wide ? SCORE_CARD_TITLES.actuation : pillar.name}
-        tip={wide ? SCORE_CARD_TIPS.actuation : undefined}
-      />
-      <div
-        className="metric-card-val"
-        data-consensus-pillar-score=""
-        data-consensus-pillar-included="false"
-        style={{ fontSize: 16, color: "var(--text-muted)" }}
-      >
-        {pillar.omittedLabel ?? "Not included"}
-      </div>
-      <span className="metric-card-sub" data-consensus-actuation-reason="">
-        {ACTUATION_OMITTED_REASON}
-      </span>
-    </div>
-  );
-}
-
 type OpenCard = ScoreCardId;
 
 /**
  * Summary → Performance top band: four equal score cards in one row (AI Consensus, AI Foundation,
- * AI Commerce, AI Actuation). Each title carries its tooltip. A chevron opens the Consensus
- * weights or a pillar's components full-width below the row. The weakest card opens by default
- * (decision 94).
+ * AI Commerce, AI Actuation), each against target 70. Each title carries its tooltip. A chevron
+ * opens the Consensus weights, a pillar's components, or the Actuation factors and their basis
+ * full-width below the row. The weakest card opens by default (decision 94).
  */
 export function ConsensusLeadBand({
   consensus,
@@ -295,12 +261,27 @@ export function ConsensusLeadBand({
           controls={COMPONENTS_ID}
           wide
         />
-        <ActuationHeroCard pillar={consensus.actuation} wide />
+        <ScoreHeroCard
+          id="actuation"
+          label={SCORE_CARD_TITLES.actuation}
+          titleTip={SCORE_CARD_TIPS.actuation}
+          score={consensus.actuation.score}
+          coverage={consensus.actuation.coverage}
+          coverageNoun="factors"
+          partial={actuationPartial(consensus.actuation)}
+          open={open === "actuation"}
+          onToggle={consensus.actuation.actuation ? () => toggle("actuation") : undefined}
+          controls={COMPONENTS_ID}
+          wide
+        />
       </div>
 
       {belowCards}
       {open === "consensus" ? <ConsensusWeightBreakdown consensus={consensus} id={COMPONENTS_ID} /> : null}
       {openPillar ? <ConsensusComponentBars pillar={openPillar} id={COMPONENTS_ID} /> : null}
+      {open === "actuation" && consensus.actuation.actuation ? (
+        <ActuationFactorBars score={consensus.actuation.actuation} id={COMPONENTS_ID} />
+      ) : null}
     </div>
   );
 }

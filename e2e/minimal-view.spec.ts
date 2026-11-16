@@ -1,4 +1,4 @@
-import { expect, test } from "./fixtures";
+import { AI_READ_MS, expect, test } from "./fixtures";
 
 const heroText = (texts: string[]) => texts.map((text) => text.trim()).join(" ").trim();
 
@@ -47,6 +47,7 @@ test.describe("Minimal / Balanced view switch", () => {
   });
 
   test("each question category and each Other figure is an option that opens its tab", async ({ canvas, page }) => {
+    test.slow();
     await page.locator("[data-view-mode='minimal']").click();
     await page.getByRole("button", { name: "Add metric to large slot 1" }).click();
     let dialog = page.getByRole("dialog", { name: "Choose metric for large slot 1" });
@@ -58,14 +59,14 @@ test.describe("Minimal / Balanced view switch", () => {
     const other = dialog.locator(".metric-widget-group").last();
     await expect(other.locator("h3")).toHaveText("Other");
     // The 90-day plan left Other: the Roadmap's 30-60-90 Days tab leads with it.
-    await expect(other.locator("[data-metric-option]")).toHaveCount(7);
-    const actuation = other.locator("[data-metric-option='ai-actuation']");
-    await expect(actuation.locator("small.ifai-term")).toHaveText("Not available*");
-    await expect(actuation.locator("strong .ifai-term")).toHaveAttribute("data-ifai-tooltip-desc", /No tab shows/);
+    await expect(other.locator("[data-metric-option]")).toHaveCount(6);
+    // SC-03: AI Actuation is a Summary score now, counted from 0 at launch (decision 97).
+    await expect(other.locator("[data-metric-option='ai-actuation']")).toHaveCount(0);
+    const actuation = dialog.locator("[data-metric-option='ai-actuation']");
+    await expect(actuation).toHaveCount(1);
     await actuation.click();
     const slot = page.locator(".large-metric-body[data-metric-id='ai-actuation']");
-    await expect(slot.locator(".metric-widget-category")).toHaveText("Other");
-    await expect(slot.locator("[data-large-metric-value]")).toHaveText("Not available*");
+    await expect(slot.locator("[data-large-metric-value]")).toHaveText(/^\d+%$/, { timeout: AI_READ_MS });
     await slot.click();
     await expect(canvas.activeTab).toContainText("Performance");
     await page.locator(".drilldown-hide-btn").click();

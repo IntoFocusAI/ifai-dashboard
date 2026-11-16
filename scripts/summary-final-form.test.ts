@@ -74,7 +74,7 @@ test("X-25: AI Consensus and a pillar that leave out inputs carry the partial re
 
   const overall = consensusPartial(consensus);
   assert.ok(overall);
-  assert.match(overall.missing, /AI Actuation is left out of AI Consensus: it has no owner, evidence, or dated records yet/);
+  assert.match(overall.missing, /AI Actuation is left out of AI Consensus: its records did not load/);
   assert.equal(overall.coverage, "2 of 3 pillars");
   assert.doesNotMatch(partialFigureTip(overall), /—|n't/);
 });

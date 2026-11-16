@@ -20,13 +20,13 @@ export const CONSENSUS_SCORE_BANDS = { redBelow: 40, greenAbove: 70 } as const;
  */
 export const CONSENSUS_SCORE_TARGET = 70;
 
-export const ACTUATION_OMITTED_REASON =
-  "No owner, evidence, or dated records yet.";
+/** Why AI Actuation sits out of AI Consensus: only when its records did not load (decision 97). */
+export const ACTUATION_OMITTED_REASON = "The AI Actuation records did not load.";
 
 export const CONSENSUS_EXPLAINER_TITLE = "What is the AI Consensus score?";
 
 export const CONSENSUS_EXPLAINER_BODY =
-  "AI Consensus is IntoFocus's 0 to 100 read of how the brand is doing from AI search and ecommerce together. It combines AI Foundation and AI Commerce. AI Actuation is not included yet. Coverage shows how many of those three inputs are in the number.";
+  "AI Consensus is IntoFocus's 0 to 100 read of how the brand is doing from AI search and ecommerce together. It weights AI Foundation 40%, AI Commerce 40%, and AI Actuation 20%. Coverage shows how many of those three inputs are in the number.";
 
 export type ScoreTone = "danger" | "warning" | "success";
 
@@ -127,8 +127,8 @@ export function pillarPartial(pillar: PillarScore): PartialFigure | null {
 }
 
 /**
- * X-25: AI Consensus covers part of its population while a pillar is left out (AI Actuation
- * until SC-03 exists). Null when all three pillars are in, or when there is no score.
+ * X-25: AI Consensus covers part of its population while a pillar is left out (a pillar whose
+ * inputs did not load). Null when all three pillars are in, or when there is no score.
  */
 export function consensusPartial(consensus: ConsensusScore): PartialFigure | null {
   if (consensus.score == null) return null;
@@ -139,13 +139,13 @@ export function consensusPartial(consensus: ConsensusScore): PartialFigure | nul
   const names = omitted.map((pillar) => pillar.name);
   const why =
     omitted.length === 1 && omitted[0].id === "actuation"
-      ? `${ACTUATION_OMITTED_REASON.replace(/\.$/, "").toLowerCase().replace(/^no /, "it has no ")}`
+      ? "its records did not load"
       : "its inputs are not stored or did not load";
   return {
     reason: "coverage",
     missing: `${namesSentence(names)} ${names.length === 1 ? "is" : "are"} left out of AI Consensus: ${why}`,
     coverage: `${numerator} of ${denominator} pillars`,
-    source: "the AI Foundation and AI Commerce scores on this tab",
+    source: "the AI Foundation, AI Commerce, and AI Actuation scores on this tab",
     effect: "The remaining pillar weights rescale. A missing pillar is never counted as zero",
   };
 }

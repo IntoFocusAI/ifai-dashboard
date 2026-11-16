@@ -6,6 +6,7 @@ import {
   foundationInputsFromLive,
 } from "@/lib/fender-canvas/consensus-scores-from-live";
 import type { ConsensusScore } from "@/lib/fender-canvas/consensus-scores";
+import type { ClientBasis } from "@/lib/fender-canvas/actuation-records";
 import type { SpecPageSummary } from "@/lib/fender-canvas/machine-readability";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
 import type { FindabilityRead } from "@/lib/findability/copy";
@@ -22,6 +23,8 @@ export type ScoreSnapshotReads = {
   retail: RetailCanvasRead;
   /** The AI read for the default date pill (last 30 days, engines All), as Summary shows it. */
   ai: AiSearchRead;
+  /** SC-03 Actuation basis (public.actuation_basis). Null when that read failed. */
+  actuation: ClientBasis | null;
   /** What that AI read covered, kept with the inputs. */
   aiWindow: { pillLabel: string; runCount: number; enginesReady: boolean; newestRunAt: string | null } | null;
 };
@@ -81,6 +84,7 @@ export function scoreSnapshotFromReads(
     retail: reads.retail,
     ai: reads.ai,
     authorizedPartners: null,
+    actuation: reads.actuation,
   });
   if (!consensus) return null;
   return {
@@ -94,6 +98,7 @@ export function scoreSnapshotFromReads(
       client: client.key,
       foundationInputs: foundationInputsFromLive(reads),
       commerceInputs: commerceInputsFromLive(reads.retail, null),
+      actuationFactors: consensus.actuation.actuation?.factors ?? null,
       coverage: consensus.coverage,
       pillars: {
         foundation: pillarRecord(consensus.foundation),
@@ -105,6 +110,7 @@ export function scoreSnapshotFromReads(
         specPages: reads.specPages ? "ready" : "failed",
         retail: reads.retail.phase,
         ai: reads.ai.phase,
+        actuation: reads.actuation ? "ready" : "failed",
       },
       aiWindow: reads.aiWindow,
       commit: savedFrom.commit,

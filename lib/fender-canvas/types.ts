@@ -1,5 +1,6 @@
 import type { ListingContentSummary } from "@/lib/fender-canvas/listing-content";
 import type { SpecPageSummary } from "@/lib/fender-canvas/machine-readability";
+import type { ClientBasis } from "@/lib/fender-canvas/actuation-records";
 
 export type CanvasMetricsRow = {
   kpi?: Record<string, unknown> | null;
@@ -210,4 +211,6 @@ export type CanvasBundle = {
   listingContent?: ListingContentSummary | null;
   /** Reads that failed on this load. A failed list piece is empty and its figures read Not available*. */
   unavailable?: Partial<Record<CanvasReadKey, CanvasReadFailure>>;
+  /** SC-03 Actuation basis (public.actuation_basis). Null when that read failed; absent before it is read. */
+  actuation?: ClientBasis | null;
 };
