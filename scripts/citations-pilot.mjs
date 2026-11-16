@@ -59,6 +59,7 @@ function parseArgs(argv) {
     else if (a === "--out") args.out = next();
     else if (a === "--env") args.env = next();
     else if (a === "--dry-run") args.dryRun = true;
+    else if (a === "--questions") args.questions = next().split(",");
     else throw new Error(`Unknown option ${a}`);
   }
   return args;
@@ -219,7 +220,14 @@ function summarizeGrok(res) {
     for (const part of item.content ?? []) {
       if (part.type !== "output_text") continue;
       answer += part.text ?? "";
-      for (const a of part.annotations ?? []) if (a.url) cited.push({ url: a.url, title: a.title });
+      // xAI attaches every consulted source as a url_citation. Only annotations with a real
+      // position in the text ([[N]](url) markers, end_index > start_index) are cited in the answer;
+      // the rest (start_index = end_index = 0) are consulted only.
+      for (const a of part.annotations ?? []) {
+        if (!a.url) continue;
+        if ((a.end_index ?? 0) > (a.start_index ?? 0)) cited.push({ url: a.url, title: a.title });
+        else consulted.push({ url: a.url, title: a.title });
+      }
     }
   }
   return {
@@ -342,7 +350,7 @@ function toMarkdown(meta, agg, rows) {
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   const envLoaded = loadEnv(args.env);
-  const prompts = loadPrompts(args.n);
+  const prompts = loadPrompts(args.n).filter((p) => !args.questions || args.questions.includes(p.key ?? p.prompt_key ?? p.id));
   const stamp = new Date().toISOString().replace(/[:.]/g, "-");
   const outDir = path.resolve(ROOT, args.out ?? `.tmp/citations-pilot/${stamp}`);
 
