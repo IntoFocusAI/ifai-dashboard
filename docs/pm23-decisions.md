@@ -407,3 +407,9 @@ closeout of each view. Open items are marked OPEN and are not built.
     15% (logged, staff-verified links and dates). E4 dropped: fact-check
     accuracy is already in Foundation. Brian approved the additive table
     for Actuation records. Build what does not need staff sign-in now.
+97. SC-03 launch (16 Nov): Actuation counts 0 at launch; the scores-over-
+    time chart marks the day scoring added Actuation ("Scoring now includes
+    AI Actuation"). E1 counts only engines that returned at least one
+    citation in the window, decided from the data, so API engines join
+    when web search returns citations. E1 target waits on a check of the
+    best competitors' own-site citation rates.
