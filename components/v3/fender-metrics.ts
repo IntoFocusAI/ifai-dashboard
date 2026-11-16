@@ -80,9 +80,9 @@ export const FENDER_METRICS = {
   overallAiWinRate: {
     id: "overall-ai-win-rate",
     spokeId: "aeo",
-    label: "Unbranded discovery",
+    label: "Unbranded Discovery",
     value: "Loading",
-    detail: "Branded consideration loads with the published run",
+    detail: "Branded Consideration loads with the published run",
     tone: "neutral",
     subTab: "Run Summary",
     provenance: "live",
@@ -150,7 +150,7 @@ export const FENDER_METRICS = {
   beginnerSovGap: {
     id: "beginner-sov-gap",
     spokeId: "competitors",
-    label: "Beginner Category SOV Gap",
+    label: "Beginner category: gap to top rival",
     value: "Loading",
     detail: "Reading the published AI run",
     tone: "neutral",
@@ -160,7 +160,7 @@ export const FENDER_METRICS = {
   strongestCategorySov: {
     id: "strongest-category-sov",
     spokeId: "competitors",
-    label: "Strongest Category SOV",
+    label: "Strongest category for Fender",
     value: "Loading",
     detail: "Reading the published AI run",
     tone: "neutral",

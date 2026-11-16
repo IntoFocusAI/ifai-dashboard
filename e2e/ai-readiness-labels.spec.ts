@@ -164,7 +164,7 @@ test("Amazon Specs shows Amazon completeness only, with no fender.com page-found
     "data-ifai-tooltip-desc",
     /averaged across the Amazon listings of the 4 checked SKUs/i,
   );
-  // 48.8% is under 95%: Poor, the Specs complete bands (X-03).
+  // 48.8% is under 95%: Poor, the Specs Complete bands (X-03).
   await expect(amazon.locator('.data-status[data-status="bad"]')).toContainText("Poor");
   await expect(definition).toHaveAttribute(
     "data-ifai-tooltip-desc",

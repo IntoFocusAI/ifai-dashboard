@@ -30,7 +30,7 @@ for (const client of ["fender", "ledlenser"]) {
       ]);
     });
 
-    test("the Briefing unbranded discovery figure matches the map bubble", async ({ page }) => {
+    test("the Briefing Unbranded Discovery figure matches the map bubble", async ({ page }) => {
       test.slow();
       await page.goto(`/dashboard?${query}spoke=hub`);
       const bubble = page.locator(".graph-node").filter({ hasText: /AI\s*Search\s*Visibility/i });

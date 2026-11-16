@@ -251,7 +251,7 @@ export function headlineBubble(findings: PortfolioRetailFindings): RetailBubbleF
 }
 
 /**
- * Suppressed Listings satellite. Catalog Health already leads with Buy Box withheld
+ * Suppressed Listings satellite. Catalog Health already leads with Buy Box Withheld
  * (withheld / current), so this face uses the next-best tab figure: confirmed
  * high-price share of current readings. Missing data stays worded — never a fake 0%.
  */
@@ -300,7 +300,7 @@ export function mapBubble(reading: RetailReading<MapLeakageDetail | null>): Reta
     [...(count ? [`${count}${mark}`] : []), ...(gap ? [gap] : []), ...(coverage ? [coverage] : [])],
     RETAIL_FINDING_LABELS.map_leakage,
   );
-  if (exceptions > 0) face.tooltip = { title: "MAP leakage", desc: approvedExceptionsSentence(exceptions) };
+  if (exceptions > 0) face.tooltip = { title: "MAP Leakage", desc: approvedExceptionsSentence(exceptions) };
   return face;
 }
 
@@ -351,7 +351,7 @@ function waitingFace(
 const RETAIL_READ_FAILED = "The retail read did not load. The figure is left out rather than shown as zero.";
 
 /**
- * Catalog Health main spoke: Buy Box withheld share of current readings (same figure as the
+ * Catalog Health main spoke: Buy Box Withheld share of current readings (same figure as the
  * Retail Overview lead pie). Status follows that share's tone bands. Never invents a 0%.
  */
 export function catalogHealthMainFace(read: RetailCanvasRead): RetailBubbleFace {
@@ -359,7 +359,7 @@ export function catalogHealthMainFace(read: RetailCanvasRead): RetailBubbleFace 
     return {
       title: "Catalog Health",
       stats: [],
-      heroValue: { value: "Loading", label: "Buy Box withheld" },
+      heroValue: { value: "Loading", label: "Buy Box Withheld" },
       status: "neutral",
       subTab: RETAIL_OVERVIEW_TAB,
       tooltip: { title: "", desc: "" },
@@ -369,7 +369,7 @@ export function catalogHealthMainFace(read: RetailCanvasRead): RetailBubbleFace 
     return {
       title: "Catalog Health",
       stats: [],
-      heroValue: { value: READ_NOT_AVAILABLE, label: "Buy Box withheld" },
+      heroValue: { value: READ_NOT_AVAILABLE, label: "Buy Box Withheld" },
       status: "neutral",
       subTab: RETAIL_OVERVIEW_TAB,
       tooltip: { title: PARTIAL_TITLE["read-failed"], desc: RETAIL_READ_FAILED },
@@ -383,7 +383,7 @@ export function catalogHealthMainFace(read: RetailCanvasRead): RetailBubbleFace 
     stats: [],
     heroValue: {
       value: ready ? hero.percent : "Not available",
-      label: "Buy Box withheld",
+      label: "Buy Box Withheld",
     },
     status: hero.tone,
     subTab: RETAIL_OVERVIEW_TAB,

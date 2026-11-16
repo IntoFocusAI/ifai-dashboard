@@ -237,7 +237,7 @@ function aiPair(ai: AiSearchRead): [HubSlot, HubSlot] {
         spokeId: "aeo",
         subTab: "Run Summary",
       });
-    return [make("gap", `Unbranded answers ${brandName()} did not lead`), make("opportunity", "Branded consideration")];
+    return [make("gap", `Unbranded answers ${brandName()} did not lead`), make("opportunity", "Branded Consideration")];
   }
   const summary = summarizeRun(ai.snapshot);
   const note = `Published run · ${summary.completedAt}`;
@@ -253,7 +253,7 @@ function aiPair(ai: AiSearchRead): [HubSlot, HubSlot] {
     ),
     rateSlot(
       "opportunity",
-      "Branded consideration",
+      "Branded Consideration",
       summary.roles.branded.fenderWins,
       summary.roles.branded.resolved,
       note,
@@ -332,7 +332,7 @@ function competitorPair(ai: AiSearchRead): [HubSlot, HubSlot] {
     ];
   }
   const summary = summarizeRun(ai.snapshot);
-  const note = `Published run · ${summary.completedAt}. Unbranded discovery only.`;
+  const note = `Published run · ${summary.completedAt}. Unbranded Discovery only.`;
   const battles = categoryBattles(ai.snapshot.calls);
   const gapBattle = summary.largestGap;
   const lead = strongestCategory(battles);
@@ -488,7 +488,7 @@ export function buildHubSlots(input: HubSlotInput): Record<string, HubSlotFeed> 
     spokeId: "competitors",
     subTab: "Category Battlecards",
     label: "Open Category Battlecards",
-    detail: "Unbranded discovery only.",
+    detail: "Unbranded Discovery only.",
   });
   const queueAction = actionSlot(input.commandItems[0], "Open", openAction);
   const secondAction = actionSlot(input.commandItems[1], "Next", queueAction);

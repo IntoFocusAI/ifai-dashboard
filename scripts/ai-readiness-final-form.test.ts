@@ -177,11 +177,11 @@ test("only the graded exact-page share carries a status; a figure without a popu
   assert.equal(shareFigureTone("var(--text-main)", 1, 10), null);
 });
 
-test("the Dealer bundle caveat lives in the header tooltip, not on screen", () => {
+test("the Sold as a dealer bundle caveat lives in the header tooltip, not on screen", () => {
   const panel = read("components/v3/live/findability/FindabilityPanel.tsx");
   assert.doesNotMatch(panel, /DEALER_BUNDLE_NOTE|correlation/);
   const table = read("components/v3/live/findability/FindabilityTable.tsx");
-  assert.match(table, /headerTooltip: \{\s*title: "Dealer bundle",\s*description: bundleLoaded \? DEALER_BUNDLE_NOTE : DEALER_BUNDLE_NOT_LOADED/);
+  assert.match(table, /headerTooltip: \{\s*title: "Sold as a dealer bundle",\s*description: bundleLoaded \? DEALER_BUNDLE_NOTE : DEALER_BUNDLE_NOT_LOADED/);
 });
 
 test("the three AI Readiness tables with their own sort handler pass the toolbar controls (X-33)", () => {

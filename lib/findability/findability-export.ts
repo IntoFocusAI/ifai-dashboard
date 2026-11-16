@@ -41,7 +41,7 @@ const OUTCOME_COLUMNS = [
   ["confidence", "Confidence"],
   ["checked", "Checked"],
   ["explanation", "Explanation"],
-  ["bundle", "Dealer bundle"],
+  ["bundle", "Sold as a dealer bundle"],
 ] as const;
 
 const UNCHECKED_COLUMNS = [
@@ -51,7 +51,7 @@ const UNCHECKED_COLUMNS = [
   ["category", "Category"],
   ["kind", "Product kind"],
   ["explanation", "Explanation"],
-  ["bundle", "Dealer bundle"],
+  ["bundle", "Sold as a dealer bundle"],
 ] as const;
 
 export function findabilityExportColumns(outcome: FindabilityBucket) {

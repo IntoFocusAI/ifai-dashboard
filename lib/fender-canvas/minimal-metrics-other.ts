@@ -149,17 +149,17 @@ export const OTHER_ENTRIES: MinimalEntry[] = [
     id: "beginner-sov-gap",
     spokeId: "competitors",
     tab: "Category Battlecards",
-    label: "Beginner share-of-voice gap",
+    label: "Beginner category: gap to top rival",
     definition:
-      `${leadBrand()} leads minus the top competitor's leads, in points of resolved Beginner unbranded discovery answers in the selected period. Category Battlecards shows the Beginner row. ` +
+      `${leadBrand()} leads minus the top competitor's leads, in points of resolved Beginner Unbranded Discovery answers in the selected period. Category Battlecards shows the Beginner row. ` +
       NO_TAB,
     read: (ctx) =>
       aiFigure(ctx, (_summary, snapshot) => {
         const battle = categoryBattles(snapshot.calls).find((item) => item.category === "beginner");
-        if (!battle || battle.resolved <= 0) return missingFigure("The selected period has no resolved Beginner unbranded discovery answers.");
+        if (!battle || battle.resolved <= 0) return missingFigure("The selected period has no resolved Beginner Unbranded Discovery answers.");
         const rival = battle.leaders[0];
         const gap = ((battle.fenderWins - (rival?.wins ?? 0)) * 100) / battle.resolved;
-        const scope = `of ${formatInt(battle.resolved)} resolved Beginner unbranded discovery answers`;
+        const scope = `of ${formatInt(battle.resolved)} resolved Beginner Unbranded Discovery answers`;
         return {
           value: `${gap > 0 ? "+" : ""}${gap.toFixed(1)} pts`,
           tone: gap < 0 ? "danger" : gap > 0 ? "success" : "warning",
@@ -181,12 +181,12 @@ export const OTHER_ENTRIES: MinimalEntry[] = [
       return best ? `Strongest category: ${categoryLabel(best.category)}` : "Strongest category";
     },
     definition:
-      `The question category where ${leadBrand()} leads the largest share of resolved unbranded discovery answers in the selected period. Categories with too few answers to compare are skipped while others qualify. Category Battlecards shows every category. ` +
+      `The question category where ${leadBrand()} leads the largest share of resolved Unbranded Discovery answers in the selected period. Categories with too few answers to compare are skipped while others qualify. Category Battlecards shows every category. ` +
       NO_TAB,
     read: (ctx) =>
       aiFigure(ctx, () => {
         const best = strongest(ctx);
-        if (!best) return missingFigure("The selected period has no resolved unbranded discovery answers.");
+        if (!best) return missingFigure("The selected period has no resolved Unbranded Discovery answers.");
         return categoryUnbrandedFigure(ctx, best.category);
       }),
   }),

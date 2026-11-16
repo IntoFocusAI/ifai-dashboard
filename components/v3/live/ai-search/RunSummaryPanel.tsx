@@ -94,7 +94,7 @@ function RoleRate({
   mixed,
 }: {
   tally: RoleTally;
-  term: "unbranded discovery" | "branded consideration";
+  term: "Unbranded Discovery" | "Branded Consideration";
   label: string;
   bands: { redBelow: number; greenAbove: number };
   unit: "run" | "selection";
@@ -154,7 +154,7 @@ function SummaryLead({ snapshot, unit, mixed }: { snapshot: AiSearchSnapshot; un
       <div className="metric-grid-2" data-ai-run-summary-lead="">
         <RoleRate
           tally={roles.unbranded}
-          term="unbranded discovery"
+          term="Unbranded Discovery"
           label="Unbranded Discovery"
           bands={UNBRANDED_RATE_BANDS}
           unit={unit}
@@ -162,7 +162,7 @@ function SummaryLead({ snapshot, unit, mixed }: { snapshot: AiSearchSnapshot; un
         />
         <RoleRate
           tally={roles.branded}
-          term="branded consideration"
+          term="Branded Consideration"
           label="Branded Consideration"
           bands={BRANDED_RATE_BANDS}
           unit={unit}

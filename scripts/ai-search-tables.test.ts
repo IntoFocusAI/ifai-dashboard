@@ -91,7 +91,7 @@ test("the server reads the same runs the pill names", () => {
 test("Run Summary rows are one engine or category each, in the cells the screen shows", () => {
   const engines = runEngineTable(snapshot, true);
   assert.deepEqual(engines.header, RUN_ENGINE_HEADER);
-  assert.deepEqual(engines.header, ["Engine", "Model", "Unbranded discovery", "Branded consideration", "No leader", "Errors"]);
+  assert.deepEqual(engines.header, ["Engine", "Model", "Unbranded Discovery", "Branded Consideration", "No leader", "Errors"]);
   assert.ok(engines.rows.length > 0);
   for (const row of engines.rows) {
     assert.equal(row.cells.length, engines.header.length);
@@ -121,7 +121,7 @@ test("Run Details rows follow the tab's filter, and the filter is named in plain
   assert.ok(shopping.rows.every((row) => row.cells[5] === "n/a"), "a shopping row is not a fact check");
   assert.equal(
     explorerFilterSentence({ ...DEFAULT_FILTER, engine: "gemini", outcome: "resolved", role: "unbranded_discovery" }),
-    "Shopping prompts. Unbranded discovery. Engine: Gemini. Outcome: A clear leader",
+    "Shopping prompts. Unbranded Discovery. Engine: Gemini. Outcome: A clear leader",
   );
   assert.deepEqual(parseExplorerFilter({ scope: "probe", engine: "chatgpt", role: "nonsense", simId: "7" }), {
     ...DEFAULT_FILTER,

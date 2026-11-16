@@ -258,11 +258,11 @@ test("the five outcome counts stay distinct and open the listings behind them", 
   await expect(table.locator("thead th[data-col-id='page']")).toContainText("Official page");
   await expect(table.locator("thead th[data-col-id='checked']")).toContainText("Checked");
   await expect(table.locator("thead th[data-col-id='confidence']")).toContainText("Confidence");
-  await expect(table.locator("thead th[data-col-id='bundle']")).toContainText("Dealer bundle");
+  await expect(table.locator("thead th[data-col-id='bundle']")).toContainText("Sold as a dealer bundle");
   await expect(table.locator("thead th[data-col-id='reason']")).toHaveCount(0);
   // The dealer-bundle caveat is in the header tooltip, not on screen.
   await expect(page.locator(".findability-panel")).not.toContainText("correlation");
-  await expect(table.locator("thead .ifai-term[data-ifai-tooltip-title='Dealer bundle']")).toHaveAttribute(
+  await expect(table.locator("thead .ifai-term[data-ifai-tooltip-title='Sold as a dealer bundle']")).toHaveAttribute(
     "data-ifai-tooltip-desc",
     /correlation, not a proven cause/,
   );
@@ -336,7 +336,7 @@ test("the five outcome counts stay distinct and open the listings behind them", 
   await expect(table.locator("thead th[data-col-id='category']")).toContainText("Category");
   await expect(table.locator("thead th[data-col-id='kind']")).toContainText("Product kind");
   await expect(table.locator("thead th[data-col-id='explanation']")).toContainText("Explanation");
-  await expect(table.locator("thead th[data-col-id='bundle']")).toContainText("Dealer bundle");
+  await expect(table.locator("thead th[data-col-id='bundle']")).toContainText("Sold as a dealer bundle");
   await expect(table.locator("[data-findability-address='unchecked']")).toHaveCount(0);
   await expect(table.locator("[data-findability-reason]")).toHaveText("Reason not recorded");
   await expect(table.locator("[data-findability-row='not_checked']")).not.toContainText("unsuccessful");

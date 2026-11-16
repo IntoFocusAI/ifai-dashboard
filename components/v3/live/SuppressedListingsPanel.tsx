@@ -138,7 +138,7 @@ function ReadingNotes({
 }
 
 /**
- * Same Buy Box withheld share as Retail Overview: percentage, N of M, and disc.
+ * Same Buy Box Withheld share as Retail Overview: percentage, N of M, and disc.
  * Static in-tab lead (not a navigation control). Card width follows the figure.
  */
 function SuppressedListingsLead({ read }: { read: RetailCanvasRead }) {

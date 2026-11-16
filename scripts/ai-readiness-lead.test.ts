@@ -144,12 +144,12 @@ test("Amazon Specs keeps Amazon completeness and does not invent listings at 100
   const filled = amazon.pie.slices.find((slice) => slice.key === "matched");
   assert.ok(filled);
   assert.equal(filled.count, 91.6);
-  // 91.6% is under 95%: Poor under the shared Specs complete bands (X-03).
+  // 91.6% is under 95%: Poor under the shared Specs Complete bands (X-03).
   assert.equal(amazon.tone, "danger");
   assert.equal(amazon.color, "var(--danger-red)");
 });
 
-test("Amazon attribute completeness takes the Catalog Governance Specs complete bands", () => {
+test("Amazon attribute completeness takes the Catalog Governance Specs Complete bands", () => {
   assert.deepEqual(AMAZON_SPEC_BANDS, { goodAtOrAbove: 98, fairAtOrAbove: 95 });
   for (const [pct, tone] of [[90.2, "danger"], [94.99, "danger"], [95, "warning"], [97.99, "warning"], [98, "success"], [100, "success"]] as const) {
     assert.equal(amazonSpecTone(pct), tone, `${pct}`);

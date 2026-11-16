@@ -2,7 +2,7 @@
  * Roadmap and Action Items: always a focus (decision 21 d, Brian, 11 Nov 2026).
  *
  * Even when every finding is on track, the plan names where the brand is weakest in AI answers:
- * the weakest engine, the five weakest unbranded discovery questions, and the cited sites whose
+ * the weakest engine, the five weakest Unbranded Discovery questions, and the cited sites whose
  * share moved most. Every figure counts the answers in the last 30 days ending on the published
  * run, the window the AI Search tabs open on, read as the map reads a run (decision 7), never one
  * run. An engine or question needs at least `MIN_ANSWERS` resolved answers in the window. When it
@@ -34,7 +34,7 @@ import {
 export const GAP_POINTS = 10;
 /** Answers in the window behind a figure; fewer and the item is held. */
 export const MIN_ANSWERS = 30;
-/** Weakest unbranded discovery questions named. */
+/** Weakest Unbranded Discovery questions named. */
 export const WEAK_QUESTION_LIMIT = 5;
 /** Sites named each way, rising and falling. */
 export const MOVING_SITE_LIMIT = 3;
@@ -137,7 +137,7 @@ export function focusOptions(snapshot: AiSearchSnapshot | null): Array<{ key: st
     .sort((a, b) => b.answers - a.answers || a.key.localeCompare(b.key));
 }
 
-/** Resolved unbranded discovery answers per engine, lowest rate first, as Engine Comparison orders them. */
+/** Resolved Unbranded Discovery answers per engine, lowest rate first, as Engine Comparison orders them. */
 export function engineCounts(snapshot: AiSearchSnapshot): Array<{ key: string; tally: OutcomeTally }> {
   return engineResultRoleTallies(snapshot.calls)
     .map((engine) => ({ key: engine.key, tally: engine.roles.unbranded_discovery }))
@@ -145,7 +145,7 @@ export function engineCounts(snapshot: AiSearchSnapshot): Array<{ key: string; t
     .sort((a, b) => rate(a.tally) - rate(b.tally) || a.key.localeCompare(b.key));
 }
 
-/** Resolved answers per unbranded discovery question. */
+/** Resolved answers per Unbranded Discovery question. */
 export function questionCounts(snapshot: AiSearchSnapshot): Array<{ question: string; category: string; tally: OutcomeTally }> {
   const groups = new Map<string, { calls: typeof snapshot.calls; category: string }>();
   for (const call of snapshot.calls) {
@@ -162,7 +162,7 @@ export function questionCounts(snapshot: AiSearchSnapshot): Array<{ question: st
 }
 
 /**
- * The weakest engine on unbranded discovery, among the engines with `MIN_ANSWERS` resolved
+ * The weakest engine on Unbranded Discovery, among the engines with `MIN_ANSWERS` resolved
  * answers in the window. A priority action when it trails the best of them by `GAP_POINTS` or
  * more, else a watch line. Engines under the floor are held.
  */
@@ -197,7 +197,7 @@ export function weakestEngine(snapshot: AiSearchSnapshot): FocusRead {
     label,
     numerator: weakest.tally.fenderWins,
     denominator: weakest.tally.resolved,
-    fact: `${leadBrand()} is named most in ${formatRatio(weakest.tally.fenderWins, weakest.tally.resolved)} resolved unbranded discovery answers on ${engine}, the lowest of the engines checked.`,
+    fact: `${leadBrand()} is named most in ${formatRatio(weakest.tally.fenderWins, weakest.tally.resolved)} resolved Unbranded Discovery answers on ${engine}, the lowest of the engines checked.`,
     action: tier === "priority" ? `Review the ${engine} answers that name another brand most, and the sources they cite.` : `Watch ${engine}.`,
     open: RUN_DETAILS,
     evidence: { field: "role", value: "unbranded_discovery/resolved", engine: weakest.key },
@@ -212,7 +212,7 @@ export function weakestEngine(snapshot: AiSearchSnapshot): FocusRead {
 }
 
 /**
- * The five weakest unbranded discovery questions with `MIN_ANSWERS` resolved answers in the
+ * The five weakest Unbranded Discovery questions with `MIN_ANSWERS` resolved answers in the
  * window. Each is a priority action when it trails the best such question by `GAP_POINTS` or
  * more, else a watch line. Questions under the floor are held.
  */

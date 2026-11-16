@@ -202,7 +202,7 @@ export type MachineHeroModel = {
   partial?: PartialFigure | null;
 };
 
-/** Same bands as Specs complete on Catalog Governance (higher share is better). */
+/** Same bands as Specs Complete on Catalog Governance (higher share is better). */
 function shareColor(pct: number): string {
   if (pct >= 98) return "var(--success-green)";
   if (pct >= 95) return "var(--warning-amber)";

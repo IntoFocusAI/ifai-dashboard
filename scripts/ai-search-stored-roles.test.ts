@@ -8,7 +8,7 @@ import { resetActiveClientForTests } from "../lib/client/active-client.ts";
 
 /* Ledlenser's prompt battery stores each prompt's role (analytical_intent). The text rules were
    written for Fender's brands, so they read every Ledlenser branded question as unclassified
-   and two brand-associated questions as unbranded discovery. The stored role wins. */
+   and two brand-associated questions as Unbranded Discovery. The stored role wins. */
 
 afterEach(() => resetActiveClientForTests(null));
 
@@ -34,7 +34,7 @@ test("every commercial prompt in Ledlenser's battery reads the role the battery 
   assert.equal(count("brand_associated_discovery"), 2);
 });
 
-test("Ledlenser's branded questions are branded consideration, and brand-associated ones leave unbranded discovery", () => {
+test("Ledlenser's branded questions are Branded Consideration, and brand-associated ones leave Unbranded Discovery", () => {
   resetActiveClientForTests("ledlenser");
   assert.equal(questionRole(commercial("Ledlenser H7R vs Petzl Swift RL headlamp")), "branded_consideration");
   assert.equal(questionRole(commercial("Is the Ledlenser P5R worth it?")), "branded_consideration");

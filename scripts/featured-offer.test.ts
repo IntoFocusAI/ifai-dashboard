@@ -136,7 +136,7 @@ test("each stored state reads back as itself, and an unwritten state is not chec
   assert.equal(featuredOfferState(row({ featured_offer_state: "something_else" })), "not_checked");
 
   assert.equal(FEATURED_OFFER_STATE_LABELS.present, "Buy Box present");
-  assert.equal(FEATURED_OFFER_STATE_LABELS.withheld, "Buy Box withheld");
+  assert.equal(FEATURED_OFFER_STATE_LABELS.withheld, "Buy Box Withheld");
   assert.equal(FEATURED_OFFER_STATE_LABELS.no_active_offer, "No active offer");
   assert.equal(FEATURED_OFFER_STATE_LABELS.check_failed, "Check failed");
   assert.equal(FEATURED_OFFER_STATE_LABELS.not_checked, "Not checked");
@@ -327,7 +327,7 @@ test("coverage keeps failures and unchecked rows in the denominator", () => {
   assert.match(confirmed, /withheld without a confirmed price cause/);
 
   // A withheld listing with no benchmark is present, so the plain label leads.
-  assert.equal(featuredOfferHeadlineLabel(counts), "Buy Box withheld");
+  assert.equal(featuredOfferHeadlineLabel(counts), "Buy Box Withheld");
   assert.equal(featuredOfferHeadlineCount(counts), 2);
   assert.equal(firstPassIncomplete(counts), true);
 });
@@ -336,7 +336,7 @@ test("the stronger label applies only when every withheld listing has a benchmar
   const counts = countFeaturedOffer([B0D8G43XJP, B07N28P3W9], NOW);
   assert.equal(counts.withheldWithoutBenchmark, 0);
   assert.equal(counts.confirmedHighPrice, 1);
-  assert.equal(featuredOfferHeadlineLabel(counts), "Buy Box withheld above Amazon's outside price");
+  assert.equal(featuredOfferHeadlineLabel(counts), "Buy Box Withheld above Amazon's outside price");
   assert.equal(featuredOfferHeadlineCount(counts), 1);
   assert.equal(firstPassIncomplete(counts), false);
 });

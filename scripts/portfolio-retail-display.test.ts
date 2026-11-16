@@ -158,10 +158,10 @@ test("the headline bubble shows the finding and the issue count only", () => {
   assert.doesNotMatch(visible(face), FORBIDDEN);
 
   const satellite = suppressedBubble(source.suppressedListings);
-  // Next-best hero: confirmed high-price share (Catalog Health already leads with Buy Box withheld).
+  // Next-best hero: confirmed high-price share (Catalog Health already leads with Buy Box Withheld).
   assert.equal(satellite.heroValue?.label, "confirmed high-price");
   assert.match(satellite.heroValue?.value ?? "", /%/);
-  assert.notEqual(satellite.heroValue?.label, face.heroValue?.label ?? "Buy Box withheld");
+  assert.notEqual(satellite.heroValue?.label, face.heroValue?.label ?? "Buy Box Withheld");
   assert.equal(satellite.tooltip.desc, "");
   assert.equal(satellite.stats[0], "1 listing");
   assert.ok((satellite.stats.length ?? 0) > 1);
@@ -273,7 +273,7 @@ test("a higher unfinished reading is not replaced by a later count", () => {
 test("the shared headline keeps the count, the missing message, and the command-center tab", () => {
   const source = findings();
   const surface = headlineSurface({ phase: "ready", snapshot: { ...source, headline: null } });
-  assert.equal(surface.label, "Buy Box withheld above Amazon's outside price");
+  assert.equal(surface.label, "Buy Box Withheld above Amazon's outside price");
   assert.equal(surface.countLabel, "1 listing");
   assert.equal(surface.missingMessage, source.suppressedListings.missingMessage);
   assert.equal(surface.tab, "Suppressed Listings");
@@ -297,7 +297,7 @@ test("the shared headline keeps the count, the missing message, and the command-
   assert.equal(mapHeadline.tab, "MAP Leakage");
 });
 
-test("Catalog Health main spoke leads with Buy Box withheld share", () => {
+test("Catalog Health main spoke leads with Buy Box Withheld share", () => {
   const reading = suppressedListingsFinding([
     {
       ...suppressed(),
@@ -315,13 +315,13 @@ test("Catalog Health main spoke leads with Buy Box withheld share", () => {
   assert.equal(reading.detail?.counts.current, 3);
   assert.deepEqual(face.heroValue, {
     value: formatPct(100 / 3),
-    label: "Buy Box withheld",
+    label: "Buy Box Withheld",
   });
   assert.deepEqual(face.stats, []);
   assert.equal(face.status, "danger");
   assert.equal(face.subTab, "Retail Overview");
   const snap = { ...findings({ suppressedListings: reading }), headline: null };
-  assert.equal(retailBubbleFaces({ phase: "ready", snapshot: snap }).main.heroValue?.label, "Buy Box withheld");
+  assert.equal(retailBubbleFaces({ phase: "ready", snapshot: snap }).main.heroValue?.label, "Buy Box Withheld");
 });
 
 test("loading and error faces do not invent a count", () => {
@@ -333,10 +333,10 @@ test("loading and error faces do not invent a count", () => {
   }
   assert.deepEqual(retailBubbleFaces({ phase: "loading" }).main.heroValue, {
     value: "Loading",
-    label: "Buy Box withheld",
+    label: "Buy Box Withheld",
   });
   const failed = retailBubbleFaces({ phase: "error" });
-  assert.deepEqual(failed.main.heroValue, { value: "Not available*", label: "Buy Box withheld" });
+  assert.deepEqual(failed.main.heroValue, { value: "Not available*", label: "Buy Box Withheld" });
   for (const face of [failed.main, failed.suppressed, failed.map, failed.catalog]) {
     assert.equal(face.status, "neutral", `${face.title} carries no status color`);
     assert.match(face.tooltip.desc, /retail read did not load/);

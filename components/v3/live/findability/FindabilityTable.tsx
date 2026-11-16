@@ -51,9 +51,9 @@ const CHECKED_TOOLTIP = {
 
 function bundleColumn(bundleLoaded: boolean): RetailColumn {
   return {
-    ...clientColumn("bundle", "Dealer bundle", "text", 96, 84),
+    ...clientColumn("bundle", "Sold as a dealer bundle", "text", 96, 84),
     headerTooltip: {
-      title: "Dealer bundle",
+      title: "Sold as a dealer bundle",
       description: bundleLoaded ? DEALER_BUNDLE_NOTE : DEALER_BUNDLE_NOT_LOADED,
     },
   };

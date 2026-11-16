@@ -4,7 +4,7 @@ import { AI_READ_MS, expect, test } from "./fixtures";
    These cover the run summary, evidence drill-downs, citations, and old links. */
 
 test.describe("AI Search Visibility", () => {
-  test("the bubble leads with the published unbranded discovery rate in its status color", async ({ page }) => {
+  test("the bubble leads with the published Unbranded Discovery rate in its status color", async ({ page }) => {
     const bubble = page.locator(".graph-node").filter({ hasText: /AI\s*Search\s*Visibility/i });
     await expect(bubble).toContainText(/\d+\.\d%/, { timeout: AI_READ_MS });
     await expect(bubble).toContainText(/Unbranded\s*Discovery/);
@@ -30,7 +30,7 @@ test.describe("AI Search Visibility", () => {
     await expect(page.locator("[data-ai-role='branded_consideration']")).toContainText(/\d+ Fender\/Squier leads/);
     await expect(page.locator("[data-ai-role='branded_consideration']")).toContainText(/of \d+/);
     // What a figure is not lives in its term's tooltip, never as a line on screen.
-    await expect(body).not.toContainText("not inside unbranded discovery");
+    await expect(body).not.toContainText("not inside Unbranded Discovery");
     await expect(body).not.toContainText("Not in either rate above");
     await expect(body).not.toContainText("51 of 63");
     await expect(page.locator(".ai-engine-table tbody tr")).not.toHaveCount(0);
@@ -44,10 +44,10 @@ test.describe("AI Search Visibility", () => {
     test.slow();
     await canvas.openCommandCenter();
     await expect(canvas.commandCenter).toContainText(
-      /Unbranded discovery: [^.]*? in [\d,]+ of [\d,]+ resolved answers \(\d+\.\d%\)/,
+      /Unbranded Discovery: [^.]*? in [\d,]+ of [\d,]+ resolved answers \(\d+\.\d%\)/,
       { timeout: AI_READ_MS },
     );
-    await expect(canvas.commandCenter).toContainText(/Branded consideration: [\d,]+ of [\d,]+ resolved answers \(\d+\.\d%\)/);
+    await expect(canvas.commandCenter).toContainText(/Branded Consideration: [\d,]+ of [\d,]+ resolved answers \(\d+\.\d%\)/);
     await expect(canvas.commandCenter).not.toContainText("51 of 63");
     await page.locator(".drilldown-hide-btn").click();
     await expect(page.locator(".ifai-canvas.panel-hidden")).toHaveCount(1);
@@ -118,7 +118,7 @@ test.describe("AI Search Visibility", () => {
     expect(ownedAnswers).toBeGreaterThanOrEqual(0);
     expect(answered).toBeGreaterThan(0);
     await expect(page.locator("[data-citation-hero-ratio]")).toContainText(
-      /unbranded discovery answers cited a Fender-owned page/,
+      /Unbranded Discovery answers cited a Fender-owned page/,
     );
     await expect(page.getByText(/Figures add \d+ runs?/)).toHaveCount(0);
     await expect(page.locator("[data-citation-hero-pct]")).toContainText(/%/);
@@ -281,7 +281,7 @@ test.describe("AI Search Visibility", () => {
       await expect(page.locator("tr[data-engine]")).toHaveCount(labels.length - 1);
       await page.locator("[data-citation-question-choice='unbranded']").click();
       await expect(page.locator("[data-citation-chain]")).toContainText(/unbranded shopping answers/i);
-      await expect(page.locator("[data-citation-hero-ratio]")).toContainText(/unbranded discovery answers cited/);
+      await expect(page.locator("[data-citation-hero-ratio]")).toContainText(/Unbranded Discovery answers cited/);
       await expect(page.getByText(/^\d+ of \d+ rows$/).first()).toBeVisible();
       // All brings every chip back.
       await page.locator("[data-ai-engine-choice='all']").click();
@@ -488,8 +488,8 @@ test.describe("Competitive Radar", () => {
     await expect(heroes).toHaveAttribute("data-ai-battle-heroes", "");
     const desc = page.locator(".drilldown-desc");
     await expect(desc).toBeHidden();
-    await expect(desc).toHaveText(/Competitors led [\d,]+ of [\d,]+ resolved unbranded discovery answers/, { timeout: AI_READ_MS });
-    const sentence = (await desc.textContent())?.match(/Competitors led ([\d,]+) of ([\d,]+) resolved unbranded discovery answers/);
+    await expect(desc).toHaveText(/Competitors led [\d,]+ of [\d,]+ resolved Unbranded Discovery answers/, { timeout: AI_READ_MS });
+    const sentence = (await desc.textContent())?.match(/Competitors led ([\d,]+) of ([\d,]+) resolved Unbranded Discovery answers/);
     expect(sentence).not.toBeNull();
     await expect(heroes.locator("[data-ai-battle-competitor-led]")).toHaveText(
       `Competitors led ${sentence?.[1]} of ${sentence?.[2]}`,
@@ -508,12 +508,12 @@ test.describe("Competitive Radar", () => {
     );
     const tab = page.locator("[data-ai-battlecards-tab]");
     for (const gone of [
-      "not inside unbranded discovery",
+      "not inside Unbranded Discovery",
       "Not in either rate above",
       "stay out of both denominators",
       "No filter is on",
       "count inside",
-      "unbranded discovery only",
+      "Unbranded Discovery only",
     ]) {
       await expect(tab).not.toContainText(gone);
     }
@@ -569,7 +569,7 @@ test.describe("Competitive Radar", () => {
 
     await page.locator(".drilldown-tab-btn", { hasText: "Competitor Wins" }).click();
     await expect(desc).toBeVisible();
-    await expect(desc).toContainText(/Competitors led [\d,]+ of [\d,]+ resolved unbranded discovery answers/);
+    await expect(desc).toContainText(/Competitors led [\d,]+ of [\d,]+ resolved Unbranded Discovery answers/);
   });
 
   test("a battlecard engine chip carries into each evidence link and marks the figures it narrows", async ({ page }) => {

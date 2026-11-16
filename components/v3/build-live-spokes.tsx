@@ -136,7 +136,7 @@ function wrapSpoke(
     ...(id === "ecommerce"
       ? {
           title: "Catalog Health",
-          desc: "Suppressed Buy Boxes, MAP leakage, Splintered Listings, and out-of-stock days, and how those catalog and retail issues change what AI search can recommend.",
+          desc: "Suppressed Buy Boxes, MAP Leakage, Splintered Listings, and out-of-stock days, and how those catalog and retail issues change what AI search can recommend.",
           tabs: [...RETAIL_PANEL_TABS],
           newTabs: [STOCK_LOSS_TAB],
         }

@@ -23,16 +23,16 @@ import {
 } from "@/lib/deck/deck-types";
 
 const OMIT_REASON: Record<string, string> = {
-  s1: "No resolved unbranded discovery answer in this window.",
-  s2: "No resolved unbranded discovery answer in this window.",
-  s3: "No rival led an unbranded discovery answer in this window.",
+  s1: "No resolved Unbranded Discovery answer in this window.",
+  s2: "No resolved Unbranded Discovery answer in this window.",
+  s3: "No rival led an Unbranded Discovery answer in this window.",
   s4: "None of the four listing gaps has a stored reading.",
   s5: "No stored Buy Box reading.",
   s6: "No stored MAP comparison.",
   s7: "No stored bundle reading.",
   s8: "No stored official-page reading.",
   s9: "No finding has a stored reading.",
-  b1: "No rival led an unbranded discovery answer in this window.",
+  b1: "No rival led an Unbranded Discovery answer in this window.",
   b2: "No stored Buy Box reading.",
   b3: "No out-of-stock listing has a sales estimate.",
   b4: "No analyst estimate is stored for this client.",
@@ -46,7 +46,7 @@ function fixAction(id: BriefingFindingId, input: DeckInput): string {
     map_leakage: "Raise offers below MAP back to the floor",
     splintered_bundles: "Nest each bundle under the official parent listing",
     buy_box: "Correct each offer so the Buy Box returns",
-    unbranded_discovery: "Track unbranded discovery as the result",
+    unbranded_discovery: "Track Unbranded Discovery as the result",
   }[id];
 }
 

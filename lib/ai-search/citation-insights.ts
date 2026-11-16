@@ -54,7 +54,7 @@ export type RoleOwnedPresence = {
 
 export type OwnedByQuestionType = {
   roles: RoleOwnedPresence[];
-  /** Executive lead: unbranded discovery owned-citation share of resolved. */
+  /** Executive lead: Unbranded Discovery owned-citation share of resolved. */
   insight: {
     role: HeadlineRole;
     roleLabel: string;
@@ -151,8 +151,8 @@ export function ownedPie(read: CitationRead): OwnedPie | null {
 }
 
 /**
- * B. Fender-owned page presence by headline question role (unbranded discovery and
- * branded consideration). Denominators are resolved answers, matching summarizeRun().roles.
+ * B. Fender-owned page presence by headline question role (Unbranded Discovery and
+ * Branded Consideration). Denominators are resolved answers, matching summarizeRun().roles.
  * Lead rates inside each owned / not-owned group use callOutcome fender_win / resolved.
  */
 export function ownedByQuestionType(
@@ -248,7 +248,7 @@ export function citationRangeLabel(snapshot: AiSearchSnapshot): string {
 
 /**
  * C. Shopping categories ranked by competitor-led answers with no Fender-owned citation.
- * Restricted to unbranded discovery and branded consideration so gaps match the
+ * Restricted to Unbranded Discovery and Branded Consideration so gaps match the
  * dashboard's two headline rates (product-fact and shopping-guidance stay out).
  */
 export function citationGaps(
@@ -364,7 +364,7 @@ function brandFromDomain(domain: string): string | null {
 }
 
 /**
- * Brand websites cited in unbranded discovery answers. Retail, editorial, and
+ * Brand websites cited in Unbranded Discovery answers. Retail, editorial, and
  * community links stay in the source mix. Slices are link counts and sum to the total.
  */
 export function unbrandedBrandSites(

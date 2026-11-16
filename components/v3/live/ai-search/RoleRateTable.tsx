@@ -30,8 +30,8 @@ import { leadBrand } from "@/lib/brand-copy";
 const SIM = AI_TABS.simulations;
 
 const ROLE_TERMS: Record<HeadlineRole, AiTermKey> = {
-  unbranded_discovery: "unbranded discovery",
-  branded_consideration: "branded consideration",
+  unbranded_discovery: "Unbranded Discovery",
+  branded_consideration: "Branded Consideration",
 };
 
 export function roleColumn(role: HeadlineRole, width = 196): RetailColumn {
@@ -198,7 +198,7 @@ export function KeptOutNote({
         <EvidenceLink focus={{ field: "role", value: "brand_associated_discovery/resolved" }} tab={SIM}>
           {keptOut(s.roles.associated)}
         </EvidenceLink>
-        {caveat("Counted on its own, not inside unbranded discovery.")}
+        {caveat("Counted on its own, not inside Unbranded Discovery.")}
       </li>
       <li>
         <AiTerm term="shopping guidance">Shopping guidance</AiTerm>:{" "}

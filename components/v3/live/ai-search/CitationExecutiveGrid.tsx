@@ -20,9 +20,9 @@ const count = (n: number) => n.toLocaleString("en-US");
 /** Caveat on the question-type counts. Shown in their tooltips. */
 export const ROLE_ASSOCIATION_CAVEAT = "An association, not proof of cause.";
 
-const ROLE_TERMS: Partial<Record<HeadlineRole, "unbranded discovery" | "branded consideration">> = {
-  unbranded_discovery: "unbranded discovery",
-  branded_consideration: "branded consideration",
+const ROLE_TERMS: Partial<Record<HeadlineRole, "Unbranded Discovery" | "Branded Consideration">> = {
+  unbranded_discovery: "Unbranded Discovery",
+  branded_consideration: "Branded Consideration",
 };
 
 function RoleName({ role, label }: { role: HeadlineRole; label: string }) {
@@ -34,16 +34,16 @@ function BrandSites({ pie }: { pie: CitationPie | null }) {
   return (
     <div className="citation-tile-follow" data-citation-brands>
       <h4 className="citation-card-kicker">
-        Brand sites in <AiTerm term="unbranded discovery">unbranded discovery</AiTerm>
+        Brand sites in <AiTerm term="Unbranded Discovery">Unbranded Discovery</AiTerm>
       </h4>
       {pie == null ? (
         <p data-citation-reconcile>The brand chart is hidden because its slices do not match the brand-site link total.</p>
       ) : pie.total === 0 ? (
-        <p className="citation-card-note">No brand website was cited in unbranded discovery answers.</p>
+        <p className="citation-card-note">No brand website was cited in Unbranded Discovery answers.</p>
       ) : (
         <BrandStackBar
           pie={pie}
-          tip={`${count(pie.total)} brand-website links in unbranded discovery. ${pie.slices.map((slice) => `${slice.label} ${slice.count}`).join(". ")}. Retail and editorial sites are in the source mix.`}
+          tip={`${count(pie.total)} brand-website links in Unbranded Discovery. ${pie.slices.map((slice) => `${slice.label} ${slice.count}`).join(". ")}. Retail and editorial sites are in the source mix.`}
         />
       )}
     </div>
@@ -85,7 +85,7 @@ function PresenceCard({
             <span data-citation-hero-value>{ratio}</span>{" "}
             {unbranded ? (
               <>
-                <AiTerm term="unbranded discovery">unbranded discovery</AiTerm> answers cited a {brandOwned()} page
+                <AiTerm term="Unbranded Discovery">Unbranded Discovery</AiTerm> answers cited a {brandOwned()} page
               </>
             ) : (
               `${scopeNoun} cited at least one ${brandOwned()} page`
@@ -99,7 +99,7 @@ function PresenceCard({
           owned={unbranded.withOwned}
           total={unbrandedPie.total}
           name={unbrandedPie.title}
-          tip={`Same ${ratio} answers. ${unbrandedPie.slices.map((slice) => `${slice.count} ${slice.label}`).join(". ")}. Total ${unbrandedPie.total} unbranded discovery answers.`}
+          tip={`Same ${ratio} answers. ${unbrandedPie.slices.map((slice) => `${slice.count} ${slice.label}`).join(". ")}. Total ${unbrandedPie.total} Unbranded Discovery answers.`}
         />
       ) : !unbranded && presence.answered > 0 ? (
         <OwnedShareBar
@@ -120,7 +120,7 @@ function SourceMixCard({ pie, onPickClass }: { pie: CitationPie | null; onPickCl
     <section className="citation-card citation-tile" data-citation-mix>
       <h3 className="citation-card-kicker citation-kicker-row">
         <span>
-          Links by <AiTerm term="source class">source class</AiTerm>
+          Cited links by <AiTerm term="source class">type of site</AiTerm>
         </span>
         {pie && pie.total > 0 ? <span className="citation-kicker-total">{count(pie.total)} links</span> : null}
       </h3>

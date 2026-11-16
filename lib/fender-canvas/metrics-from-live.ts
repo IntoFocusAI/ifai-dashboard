@@ -17,6 +17,7 @@ import {
 import { specPageCounts } from "@/lib/fender-canvas/machine-readability";
 import { findabilityWidgetCopy, type FindabilityRead } from "@/lib/findability/copy";
 import { brandSite } from "@/lib/brand-copy";
+import { brandName } from "@/lib/client/active-client";
 
 function toneFromPct(pct: number | null, dangerBelow: number, warnBelow: number) {
   if (pct == null) return "neutral" as const;
@@ -169,7 +170,7 @@ export function buildLiveMetrics(
   bundle: CanvasBundle,
   retail: RetailCanvasRead = { phase: "loading" },
   findability: FindabilityRead = { phase: "loading" },
-  /** The map's AI read. The Roadmap figure counts the unbranded discovery finding from it. */
+  /** The map's AI read. The Roadmap figure counts the Unbranded Discovery finding from it. */
   ai: AiSearchRead = { phase: "loading" },
 ): Record<string, CanvasMetric> {
   return withFailedReads(bundle, liveMetrics(bundle, retail, findability, ai));
@@ -319,7 +320,7 @@ function liveMetrics(
     beginnerSovGap: {
       id: "beginner-sov-gap",
       spokeId: "competitors",
-      label: "Beginner Category SOV Gap",
+      label: "Beginner category: gap to top rival",
       value: `${formatInt(m.weakest_sov_gap_pts)} pts`,
       detail:
         beginnerSovLine(bundle.sov) ??
@@ -331,7 +332,7 @@ function liveMetrics(
     strongestCategorySov: {
       id: "strongest-category-sov",
       spokeId: "competitors",
-      label: "Strongest Category SOV",
+      label: `Strongest category for ${brandName()}`,
       value: formatPct(m.strongest_win_pct),
       detail: `${m.strongest_category ?? pendingLabel()} · ${formatRatio(m.strongest_wins, m.strongest_resolved)}`,
       tone: "success",

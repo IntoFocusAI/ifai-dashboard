@@ -130,5 +130,5 @@ test("Urgent Interventions lists findings via urgent_interventions, not example 
   assert.match(readFileSync(new URL("lib/fender-canvas/roadmap-plan-read.ts", root), "utf8"), /briefingFindingsLead/);
   const parts = readFileSync(new URL("components/v3/live/RoadmapPlanParts.tsx", root), "utf8");
   assert.match(parts, /data-ifai-open/);
-  assert.match(readFileSync(new URL("lib/fender-canvas/briefing-retail-lead.ts", root), "utf8"), /Buy Box withheld/);
+  assert.match(readFileSync(new URL("lib/fender-canvas/briefing-retail-lead.ts", root), "utf8"), /Buy Box Withheld/);
 });

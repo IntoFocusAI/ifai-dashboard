@@ -97,7 +97,7 @@ test("MAP tab lead strings match mapHero for a ready snapshot", () => {
   assert.equal(hero.ratio, formatRatio(1, 3));
   assert.equal(hero.percent, mapHero(snap).percent);
   assert.equal(hero.ratio, mapHero(snap).ratio);
-  assert.equal(hero.label, "MAP leakage");
+  assert.equal(hero.label, "MAP Leakage");
   assert.notEqual(hero.percent, "0%");
   assert.ok(hero.pie);
 });
