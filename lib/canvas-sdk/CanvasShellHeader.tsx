@@ -15,7 +15,9 @@ import {
   Sparkles,
   Sun,
   TrendingUp,
+  Wand2,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 function tickerIcon(kind?: TickerIcon) {
   if (kind === "sparkles") return <Sparkles size={12} />;
@@ -55,6 +57,7 @@ export function CanvasShellHeader({
   const { headerRef, lightTheme, setLightTheme, promptsOpen, setPromptsOpen } = s;
   const { userMenuOpen, setUserMenuOpen, profileOpen, setProfileOpen } = s;
   const commandCenter = spec.commandCenter;
+  const router = useRouter();
 
   function handleFilterChange(value: string) {
     const option = spec.filters?.find((item) => item.value === value);
@@ -165,6 +168,22 @@ export function CanvasShellHeader({
                 <MessageSquareText size={12} />
                 <span>Prompts</span>
               </button>
+            ) : null}
+
+            {spec.promptBuilderHref ? (
+              <a
+                className="hdr-btn"
+                href={spec.promptBuilderHref}
+                onClick={(e) => {
+                  // Keep the client and theme from the current URL.
+                  e.preventDefault();
+                  router.push(`${spec.promptBuilderHref}${window.location.search}`);
+                }}
+                title="Build new AI-Search prompts from shopper details"
+              >
+                <Wand2 size={12} />
+                <span>Build prompts</span>
+              </a>
             ) : null}
 
             {commandCenter ? (

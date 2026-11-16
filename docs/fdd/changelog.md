@@ -105,3 +105,4 @@
 | 2026-11-12 | 26.5 C-01 generated deck from the live run and window. C-01 TARGET to CURRENT. | Brian Magazu approved PR 187. | PR 187 |
 | 2026-11-12 | 26.7 Server CSV for Action Items, prompts and Findability; N of M rows always. X-10, X-33 REFINE to CURRENT; X-27 REFINE to CURRENT on the 26.1 to 26.3 audit. | Brian Magazu approved PR 185. | PR 185 |
 | 2026-11-12 | A-07 DECISION to CURRENT (hover omitted). X-16 Acceptance adds separation rules for shared data and staff screens. New row A-11 Sites to review (TARGET). | Brian Magazu decisions 81 and 84. | PM26 close-out |
+| 2026-11-12 | R-15 and R-10 plans written for review; Evidence points to them. No status change. | Brian Magazu asked for the R-15 plan; R-10 rows also give R-09 its MAP history. | docs/r15-price-match-plan.md; docs/r10-retailer-rows-plan.md |

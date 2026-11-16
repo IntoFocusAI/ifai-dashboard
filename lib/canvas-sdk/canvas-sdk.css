@@ -529,6 +529,10 @@
       white-space: nowrap;
     }
 
+    a.hdr-btn {
+      text-decoration: none;
+    }
+
     .ifai-canvas.light-theme .hdr-btn {
       border-color: #0b12202e;
       color: var(--color-midnight);
