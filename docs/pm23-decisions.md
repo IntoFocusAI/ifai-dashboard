@@ -388,3 +388,10 @@ closeout of each view. Open items are marked OPEN and are not built.
     data for every client. "Brand" (Ledlenser) and "Squier" (Fender) drop
     off; their questions still count in branded consideration. The "Data
     as of" tooltip shows out-of-date sources in red with the x mark.
+94. Summary -> Performance (16 Nov): the division table and its CSV are
+    removed for every client (Splintered Listings by division is dropped,
+    not moved). The weakest score card opens its breakdown by default.
+    Scores by product category: not now. A collapsible line chart of the
+    scores over time sits just below the score cards, with a toggle per
+    score and the target of 70; scores are saved weekly per client.
+    Brian approved the additive table and function for the weekly save.
