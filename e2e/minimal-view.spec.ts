@@ -50,9 +50,11 @@ test.describe("Minimal / Balanced view switch", () => {
     await page.locator("[data-view-mode='minimal']").click();
     await page.getByRole("button", { name: "Add metric to large slot 1" }).click();
     let dialog = page.getByRole("dialog", { name: "Choose metric for large slot 1" });
-    for (const category of ["electrics", "acoustics", "amps", "basses", "squier", "beginner"]) {
+    for (const category of ["electrics", "acoustics", "amps", "basses", "beginner"]) {
       await expect(dialog.locator(`[data-metric-option='battlecards-${category}-unbranded']`)).toBeVisible();
     }
+    // Squier asks branded questions only, so it is no battlecard category (decision 93).
+    await expect(dialog.locator("[data-metric-option='battlecards-squier-unbranded']")).toHaveCount(0);
     const other = dialog.locator(".metric-widget-group").last();
     await expect(other.locator("h3")).toHaveText("Other");
     // The 90-day plan left Other: the Roadmap's 30-60-90 Days tab leads with it.

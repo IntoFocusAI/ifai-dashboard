@@ -3,12 +3,13 @@
 import { competitorLeadPie } from "@/lib/ai-search/competitor-wins-lead";
 import { factCheckAccuracyPie, factCheckAccuracyPieTip } from "@/lib/ai-search/fact-check-copy";
 import {
-  categoryRoleTallies,
+  discoveryCategoryRoleTallies,
   engineResultRoleTallies,
+  questionRole,
   sumRoleTallies,
   type HeadlineRole,
 } from "@/lib/ai-search/question-role";
-import { PROMPT_BATTERY } from "@/lib/ai-search/prompt-battery";
+import { clientBattery } from "@/lib/ai-search/prompt-battery";
 import { categoryLabel, engineLabel, isSmallSample } from "@/lib/ai-search/run-metrics";
 import { BRANDED_RATE_BANDS, SMALL_SAMPLE_LABEL, UNBRANDED_RATE_BANDS, type AiRunSummary } from "@/lib/ai-search/summary";
 import { formatInt } from "@/lib/fender-canvas/format";
@@ -29,7 +30,7 @@ import {
   type MinimalFigure,
   type MinimalListItem,
 } from "@/lib/fender-canvas/minimal-metric-kit";
-import { brandName, isFenderClient, leadBrand } from "@/lib/brand-copy";
+import { brandName, leadBrand } from "@/lib/brand-copy";
 
 const ROLE = {
   unbranded_discovery: {
@@ -104,11 +105,20 @@ function rivalLead(summary: AiRunSummary | null) {
   return null;
 }
 
-/** The battery's question categories, in the order it asks them. */
-const BATTERY_CATEGORIES = [...new Set(PROMPT_BATTERY.filter((prompt) => prompt.kind === "commercial").map((prompt) => prompt.category))];
+/**
+ * The client's battery categories that hold unbranded discovery questions (decision 93), in the
+ * order it asks them. Each question's role is read the same way as in the run's answers.
+ */
+function batteryCategories(): string[] {
+  const discovery = clientBattery().filter(
+    (prompt) => prompt.kind === "commercial" && questionRole({ prompt_kind: prompt.kind, prompt: prompt.text }) === "unbranded_discovery",
+  );
+  return [...new Set(discovery.map((prompt) => prompt.category))];
+}
 
+/** Battlecard categories in the selected period: only those with unbranded discovery questions (decision 93). */
 function categoryRows(ctx: MinimalContext) {
-  return cached(ctx, "category-role-tallies", () => (ctx.ai.phase === "ready" ? categoryRoleTallies(ctx.ai.snapshot.calls) : []));
+  return cached(ctx, "category-role-tallies", () => (ctx.ai.phase === "ready" ? discoveryCategoryRoleTallies(ctx.ai.snapshot.calls) : []));
 }
 
 function categoryId(category: string): string {
@@ -147,12 +157,11 @@ function categoryUnbrandedEntry(category: string): MinimalEntry {
   };
 }
 
-/** Every battery category, then any other category the selected period holds. */
+/** Every battery category of the client, then any other battlecard category the selected period holds. */
 const CATEGORY_UNBRANDED: MinimalEntryFamily = {
   family: "battlecards-category-unbranded",
   entries: (ctx) => {
-    // The stored battery is Fender's (p01..p37). Other clients list the categories their run stored.
-    const battery = isFenderClient() ? BATTERY_CATEGORIES : [];
+    const battery = batteryCategories();
     const extra = categoryRows(ctx)
       .map((row) => row.key)
       .filter((key) => !battery.includes(key));

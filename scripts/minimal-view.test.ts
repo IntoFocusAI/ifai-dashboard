@@ -332,7 +332,8 @@ test("both Suppressed Listings figures and both Run Summary and Run Details rate
   assert.match(beginner.reading.ratio ?? "", /^2 of 2 resolved Beginner unbranded discovery answers · Small sample$/);
 });
 
-const BATTERY_CATEGORIES = ["electrics", "acoustics", "amps", "basses", "squier", "beginner"];
+// Squier holds branded questions only, so it is no battlecard category (decision 93).
+const BATTERY_CATEGORIES = ["electrics", "acoustics", "amps", "basses", "beginner"];
 
 test("Category Battlecards offers one option per question category, each with its row's rate", () => {
   const { slots } = build(retailReady(), aiReady());
@@ -350,9 +351,11 @@ test("Category Battlecards offers one option per question category, each with it
   assert.equal(electrics.value, "66.7%");
   assert.equal(electrics.reading.ratio, "6 of 9 resolved Electrics unbranded discovery answers · Small sample");
   assert.equal(slotById(slots, "battlecards-basses-unbranded").reading.ratio, "1 of 4 resolved Basses unbranded discovery answers · Small sample");
-  const squier = slotById(slots, "battlecards-squier-unbranded");
-  assert.equal(squier.value, NOT_AVAILABLE, "a category with no resolved answers");
-  assert.equal(squier.reading.missing, "The selected period has no resolved Squier unbranded discovery answers.");
+  assert.equal(
+    slots.some((slot) => slot.id === "battlecards-squier-unbranded"),
+    false,
+    "a category with no unbranded discovery questions is not offered (decision 93)",
+  );
 
   const ai = aiReady();
   assert.equal(ai.phase, "ready");

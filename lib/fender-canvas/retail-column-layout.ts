@@ -127,6 +127,8 @@ export function fitResizableColumnWidths(
     fillColumnId?: string;
     stored?: unknown;
     contentMins?: Record<string, number>;
+    /** Per column, the narrowest width that still breaks body cells only between words. */
+    wordMins?: Record<string, number>;
   },
 ): Record<string, number> {
   const fillId = pickFillColumnId(columns, options?.fillColumnId);
@@ -145,8 +147,55 @@ export function fitResizableColumnWidths(
     0,
   );
   const room = Math.floor(containerWidth) - others;
-  return {
-    ...fitted,
-    [fillId]: Math.max(fill.minWidth ?? 72, room),
-  };
+  return shrinkToPanel(
+    columns,
+    { ...fitted, [fillId]: Math.max(fill.minWidth ?? 72, room) },
+    containerWidth,
+    options?.wordMins,
+  );
+}
+
+/**
+ * When one-line cells make the row wider than the panel (a narrower window, a browser
+ * scrollbar, wider system fonts), every column gives width back toward its floor, in
+ * proportion to what it has above it, so cells wrap between words instead of the table
+ * scrolling sideways. The floor is the column's minimum (header word floor included) or
+ * its widest body word, whichever is larger. A row that already fits is returned unchanged.
+ */
+export function shrinkToPanel(
+  columns: readonly ColumnWidthSpec[],
+  widths: Record<string, number>,
+  containerWidth: number,
+  wordMins?: Record<string, number>,
+): Record<string, number> {
+  const target = Math.floor(containerWidth);
+  const widthOf = (column: ColumnWidthSpec) => widths[column.id] ?? column.width;
+  const total = columns.reduce((sum, column) => sum + widthOf(column), 0);
+  if (target <= 0 || total <= target) return widths;
+  const give: Record<string, number> = {};
+  let slack = 0;
+  for (const column of columns) {
+    const word = wordMins?.[column.id];
+    const wordFloor = typeof word === "number" && Number.isFinite(word) ? Math.ceil(word) : 0;
+    give[column.id] = Math.max(0, widthOf(column) - Math.max(column.minWidth ?? 72, wordFloor));
+    slack += give[column.id];
+  }
+  if (slack <= 0) return widths;
+  const take = Math.min(total - target, slack);
+  const next = { ...widths };
+  let taken = 0;
+  for (const column of columns) {
+    const share = Math.floor((take * give[column.id]) / slack);
+    next[column.id] = widthOf(column) - share;
+    give[column.id] -= share;
+    taken += share;
+  }
+  // Rounding leaves fewer pixels than there are giving columns: one more each, in order.
+  for (const column of columns) {
+    if (taken >= take) break;
+    if (give[column.id] <= 0) continue;
+    next[column.id] -= 1;
+    taken += 1;
+  }
+  return next;
 }

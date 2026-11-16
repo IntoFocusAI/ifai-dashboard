@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { useAiHistoryOptional } from "@/components/v3/live/ai-search/AiHistoryContext";
 import { useEngineGroupChoice } from "@/components/v3/live/ai-search/engine-group-store";
 import { useApiEngineLoad } from "@/components/v3/live/ai-search/useApiEngineLoad";
+import type { EngineGroupChoice } from "@/lib/ai-search/engine-group";
 import { engineSwitchState } from "@/lib/ai-search/engine-group-read";
 import type { AiSelectionScope } from "@/lib/ai-search/selection";
 
@@ -11,10 +12,15 @@ import type { AiSelectionScope } from "@/lib/ai-search/selection";
  * What an AI Search table sends with Download CSV: the date pill's selection and the engine
  * switch, plus the tab's own controls. The server reads the same runs with it (X-10).
  * Null hides the download: the labeled sample copy and a legacy run have no server read.
+ * `readChoice` is the engine group a tab reads when it narrows further itself (engine chips).
  */
-export function useAiExportScope(extra?: Record<string, unknown>): Record<string, unknown> | null {
+export function useAiExportScope(
+  extra?: Record<string, unknown>,
+  readChoice?: EngineGroupChoice,
+): Record<string, unknown> | null {
   const history = useAiHistoryOptional();
-  const [engines] = useEngineGroupChoice();
+  const [switchChoice] = useEngineGroupChoice();
+  const engines = readChoice ?? switchChoice;
   const enginesReady = engineSwitchState(useApiEngineLoad(), engines).kind === "ready";
   const mode = history?.mode ?? null;
   const source = history?.source ?? null;
