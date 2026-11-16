@@ -6,11 +6,18 @@ import { READ_ERROR_TITLE } from "@/components/v3/live/ai-search/AiReadGate";
 import { CopyTip } from "@/components/v3/live/ai-search/CopyTip";
 import { RunHistoryCalendar } from "@/components/v3/live/ai-search/RunHistoryCalendar";
 import { useApiRunCatalog } from "@/components/v3/live/ai-search/useApiEngineLoad";
-import { apiRunDay, apiRunsCoveringBattery, daysApart, nearestApiRun } from "@/lib/ai-search/api-runs";
+import {
+  apiRunDay,
+  apiRunsCoveringBattery,
+  batteryQuestions,
+  daysApart,
+  nearestApiRun,
+  unreadBatteryFloor,
+} from "@/lib/ai-search/api-runs";
 import { API_QUESTION_RULE, API_REPEAT_RULE, fixedQuestionCount } from "@/lib/ai-search/engine-group";
 import { formatDay, utcDay, type HistoryRunSummary } from "@/lib/ai-search/history-eligibility";
 import { LAST_30_DAYS_LABEL } from "@/lib/ai-search/default-window";
-import { batteryGaps, PROMPT_BATTERY } from "@/lib/ai-search/prompt-battery";
+import { batteryGaps } from "@/lib/ai-search/prompt-battery";
 import {
   citationStorageCaution,
   hasPartialCoverage,
@@ -55,10 +62,9 @@ function PairedApiRun({ runId, day }: { runId: string; day: string | null }) {
       </CopyTip>
     );
   } else {
-    // A run outside the loaded selection has no calls read yet, so its floor is the battery's shopping questions.
-    const fixedQuestions = loaded
-      ? fixedQuestionCount(loaded)
-      : PROMPT_BATTERY.filter((prompt) => prompt.kind === "commercial").length;
+    // A run outside the loaded selection has no calls read yet, so its floor comes from the nearest read run.
+    const read = batteryQuestions(history.trend.phase === "ready" ? history.trend.snapshots : []);
+    const fixedQuestions = loaded ? fixedQuestionCount(loaded) : unreadBatteryFloor(read, day);
     const covering = apiRunsCoveringBattery(catalog.runs, [{ day, fixedQuestions }]);
     const paired = nearestApiRun(covering, day);
     const pairedDay = paired ? apiRunDay(paired) : null;
