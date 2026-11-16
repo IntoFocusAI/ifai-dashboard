@@ -17,7 +17,9 @@
 --
 --   Both tables have RLS on with no policies, and no grant to anon or authenticated: nobody reads
 --   or writes them directly. Every read and write goes through these functions, which run as
---   their owner (SECURITY DEFINER, fixed search_path) and filter to the one client asked for:
+--   their owner (SECURITY DEFINER, fixed search_path) and filter to the one client asked for.
+--   EXECUTE on each is first revoked from public, anon and authenticated (Postgres grants new
+--   functions to PUBLIC by default), then granted only to the roles named below:
 --
 --   public.actuation_basis(p_client_key text)                                 anon, authenticated
 --     Client read. Four rows (P1, P2, E2, E3) for one client: whether the factor is in place
@@ -385,12 +387,12 @@ begin
 end;
 $$;
 
-revoke all on function public.actuation_basis(text) from public;
-revoke all on function public.actuation_programs_for_staff(text) from public, anon;
-revoke all on function public.actuation_items_for_staff(text) from public, anon;
-revoke all on function public.actuation_program_save(text, text, text, text[], integer, integer, text, date, text) from public, anon;
-revoke all on function public.actuation_item_save(text, text, text, date, date, text) from public, anon;
-revoke all on function public.actuation_item_remove(uuid) from public, anon;
+revoke execute on function public.actuation_basis(text) from public, anon, authenticated;
+revoke execute on function public.actuation_programs_for_staff(text) from public, anon, authenticated;
+revoke execute on function public.actuation_items_for_staff(text) from public, anon, authenticated;
+revoke execute on function public.actuation_program_save(text, text, text, text[], integer, integer, text, date, text) from public, anon, authenticated;
+revoke execute on function public.actuation_item_save(text, text, text, date, date, text) from public, anon, authenticated;
+revoke execute on function public.actuation_item_remove(uuid) from public, anon, authenticated;
 
 grant execute on function public.actuation_basis(text) to anon, authenticated;
 grant execute on function public.actuation_programs_for_staff(text) to authenticated;

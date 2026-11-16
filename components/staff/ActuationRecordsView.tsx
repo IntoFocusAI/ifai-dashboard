@@ -20,7 +20,7 @@ import {
 } from "@/lib/fender-canvas/actuation-records";
 import { scoreActuation, type ProgramFactorId } from "@/lib/fender-canvas/actuation-score";
 
-export const ACTUATION_MIGRATION = "supabase/migrations/20261116200000_actuation_records.sql";
+export const ACTUATION_MIGRATION = "supabase/migrations/20261116220000_actuation_records.sql";
 
 function withTheme(href: string, light: boolean): string {
   if (!light) return href;

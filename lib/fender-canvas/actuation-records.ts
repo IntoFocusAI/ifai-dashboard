@@ -1,7 +1,7 @@
 /**
  * SC-03 Actuation records: the shapes the database functions return, the payloads the staff
  * page sends, and the client basis read. No Next.js or Supabase imports, so the unit tests load it.
- * Migration: supabase/migrations/20261116200000_actuation_records.sql.
+ * Migration: supabase/migrations/20261116220000_actuation_records.sql.
  */
 
 import { CLIENTS, type ClientKey } from "@/lib/client/active-client";

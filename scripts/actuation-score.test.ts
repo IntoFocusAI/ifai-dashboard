@@ -190,7 +190,7 @@ test("the client read asks the database for that client only (decision 84)", asy
 });
 
 const MIGRATION = readFileSync(
-  new URL("../supabase/migrations/20261116200000_actuation_records.sql", import.meta.url),
+  new URL("../supabase/migrations/20261116220000_actuation_records.sql", import.meta.url),
   "utf8",
 );
 
@@ -218,7 +218,22 @@ test("migration: every read filters to the client asked for; staff reads and wri
     assert.match(body, /if not command\.is_intofocus_admin\(\) then\s+raise exception [^;]+errcode = '42501'/);
     assert.match(body, /security definer\s+set search_path/);
   }
-  assert.match(MIGRATION, /grant execute on function public\.actuation_basis\(text\) to anon, authenticated;/);
+  // Every function: EXECUTE revoked from PUBLIC (the Postgres default) and the API roles first, then granted.
+  const grants: Record<string, string> = {
+    "actuation_basis(text)": "anon, authenticated",
+    "actuation_programs_for_staff(text)": "authenticated",
+    "actuation_items_for_staff(text)": "authenticated",
+    "actuation_program_save(text, text, text, text[], integer, integer, text, date, text)": "authenticated",
+    "actuation_item_save(text, text, text, date, date, text)": "authenticated",
+    "actuation_item_remove(uuid)": "authenticated",
+  };
+  assert.equal((MIGRATION.match(/^create or replace function public\.actuation_/gm) ?? []).length, Object.keys(grants).length);
+  for (const [signature, roles] of Object.entries(grants)) {
+    const revoke = MIGRATION.indexOf(`revoke execute on function public.${signature} from public, anon, authenticated;`);
+    const grant = MIGRATION.indexOf(`grant execute on function public.${signature} to ${roles};`);
+    assert.ok(revoke > 0 && grant > revoke, signature);
+  }
+  assert.equal((MIGRATION.match(/^grant /gm) ?? []).length, Object.keys(grants).length);
   assert.doesNotMatch(MIGRATION, /grant [^;]*(_for_staff|_save|_remove)[^;]* to anon/);
   assert.match(MIGRATION, /revoke all on table public\.actuation_programs from public, anon, authenticated;/);
   assert.match(MIGRATION, /revoke all on table public\.actuation_items from public, anon, authenticated;/);
