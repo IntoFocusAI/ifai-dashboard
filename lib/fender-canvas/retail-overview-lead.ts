@@ -7,6 +7,7 @@
 import type { PieDiscData } from "@/lib/ai-search/citation-pies";
 import type { NodeStatus } from "@/lib/canvas-sdk/types";
 import type { PartialFigure } from "@/lib/fender-canvas/canvas-reads";
+import { amazonSpecTone } from "@/lib/fender-canvas/amazon-spec-bands";
 import { formatInt, formatPct, formatRatio } from "@/lib/fender-canvas/format";
 import {
   bundlePopulationTip,
@@ -82,9 +83,7 @@ function toneForShare(
  * Not toneForShare: any missing field would paint red there; Brand Registry lift is the complete share.
  */
 function toneForSpecComplete(completePct: number): Exclude<NodeStatus, "neutral"> {
-  if (completePct >= 98) return "success";
-  if (completePct >= 95) return "warning";
-  return "danger";
+  return amazonSpecTone(completePct);
 }
 
 function sharePie(

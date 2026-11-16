@@ -10,6 +10,7 @@ import {
   type HistoryReadOptions,
 } from "@/lib/ai-search/history-queries";
 import { PROBE_CATALOG_COLUMNS } from "@/lib/ai-search/probe-catalog";
+import { PROMPT_BATTERY } from "@/lib/ai-search/prompt-battery";
 import { apiReadLimit } from "@/lib/ai-search/read-limit";
 import type { AiCallRow, AiCitationRow, AiProbeRow, AiSearchSnapshot } from "@/lib/ai-search/types";
 
@@ -159,6 +160,18 @@ export function nearestBatteryDay<T extends { day: string }>(battery: readonly T
     if (!best || daysApart(item.day, day) <= daysApart(best.day, day)) best = item;
   }
   return best;
+}
+
+/**
+ * The floor for a battery run whose calls are not read yet: the nearest read run's fixed questions,
+ * else the wave 1 shopping questions every client asks (29 for Fender and Ledlenser), which still
+ * leaves out a short test run. The full Fender list (59 with wave 2) would leave out every
+ * Ledlenser API run and every Fender API run from before wave 2.
+ */
+export function unreadBatteryFloor(read: readonly BatteryQuestions[], day: string): number {
+  const nearest = nearestBatteryDay(read, day);
+  if (nearest) return nearest.fixedQuestions;
+  return PROMPT_BATTERY.filter((prompt) => prompt.kind === "commercial" && prompt.wave === undefined).length;
 }
 
 /**

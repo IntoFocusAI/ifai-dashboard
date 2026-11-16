@@ -158,11 +158,15 @@ test("Amazon Specs shows Amazon completeness only, with no fender.com page-found
   await expect(amazon.locator("[data-ai-readiness-hero-percent]")).toHaveText(/^48\.8%\*?$/);
   await expect(amazon.locator("[data-ai-readiness-hero-ratio]")).toHaveText("26 of 52 (48.8%)");
   await expect(amazon.locator("[data-ai-readiness-hero-ratio]")).not.toContainText(/Across/i);
-  await expect(amazon.locator("span.ifai-term")).toHaveAttribute(
+  // The label's definition, not the stale asterisk's tooltip beside the figure.
+  const definition = amazon.locator("span.ifai-term:not(.partial-figure-mark)");
+  await expect(definition).toHaveAttribute(
     "data-ifai-tooltip-desc",
     /averaged across the Amazon listings of the 4 checked SKUs/i,
   );
-  await expect(amazon.locator("span.ifai-term")).toHaveAttribute(
+  // 48.8% is under 95%: Poor, the Specs complete bands (X-03).
+  await expect(amazon.locator('.data-status[data-status="bad"]')).toContainText("Poor");
+  await expect(definition).toHaveAttribute(
     "data-ifai-tooltip-desc",
     /average per listing, not the share of listings with every field filled/i,
   );

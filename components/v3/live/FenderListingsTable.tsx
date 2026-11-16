@@ -5,27 +5,22 @@ import { ChannelPriceCell } from "@/components/v3/live/ChannelPriceCell";
 import { ResizableTable, type RetailColumn } from "@/components/v3/live/ResizableTable";
 import { ListingName, RETAIL_FIT_TABLE, wrapColumnIdsAfterFirst } from "@/components/v3/live/RetailOverviewFigure";
 import { useFullPopulationSort } from "@/components/v3/live/useFullPopulationSort";
-import { listingChannelPricesQuery, listingsQuery } from "@/lib/canvasData";
+import { listingsQuery } from "@/lib/canvasData";
 import { CLIENT_TABLE_PAGE_SIZE, loadFilteredPages } from "@/lib/fender-canvas/full-result-sort";
 import { featuredOfferState } from "@/lib/fender-canvas/featured-offer";
 import { formatInt, formatUsd, pendingLabel } from "@/lib/fender-canvas/format";
 import { anyListingReviewCount, listingReviewLabel } from "@/lib/fender-canvas/listing-reviews";
 import {
-  channelPriceLookup,
   exploreChannelColumns,
   listingChannelFacts,
   mapSourceRow as asMapRow,
-  musiciansFriendCheckedPageUrl,
   storedHttpUrl,
-  type ChannelPriceRow,
   type ExploreChannelColumn,
   type PricedChannelCell,
 } from "@/lib/fender-canvas/map-channels";
 import { exploreListingSortValue } from "@/lib/fender-canvas/listing-table-sort";
 import { MAP_LISTING_COLUMN_WIDTH } from "@/lib/fender-canvas/retail-column-layout";
 import type { CanvasRetailListingRow } from "@/lib/fender-canvas/types";
-
-const PRICE_PAGE = 1000;
 
 /** The filter in plain words, written into the download. Null with no filter. */
 function filterLabel(filter: Filter): string | null {
@@ -78,25 +73,11 @@ function lastSeenNote(row: CanvasRetailListingRow): string | null {
   return featuredOfferState(row) === "no_active_offer" ? "Last seen, no active offer" : null;
 }
 
-async function loadChannelPrices(): Promise<ChannelPriceRow[]> {
-  try {
-    const rows: ChannelPriceRow[] = [];
-    for (let page = 0; page < 20; page += 1) {
-      const { data, error } = await listingChannelPricesQuery(page, PRICE_PAGE);
-      if (error) return page === 0 ? [] : rows;
-      const batch = (data ?? []) as ChannelPriceRow[];
-      rows.push(...batch);
-      if (batch.length < PRICE_PAGE) return rows;
-    }
-    return rows;
-  } catch {
-    return [];
-  }
-}
+/** Decision 82: the empty other-retailer price table is no longer read, so only stored channels show. */
+const NO_OTHER_RETAILER_PRICES = new Map<string, Map<string, PricedChannelCell>>();
 
 export function FenderListingsTable() {
   const [rows, setRows] = useState<CanvasRetailListingRow[]>([]);
-  const [channelPrices, setChannelPrices] = useState<ChannelPriceRow[]>([]);
   const [total, setTotal] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -124,29 +105,18 @@ export function FenderListingsTable() {
     void load();
   }, [load]);
 
-  useEffect(() => {
-    let cancelled = false;
-    loadChannelPrices().then((next) => {
-      if (!cancelled) setChannelPrices(next);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const prices = useMemo(() => channelPriceLookup(channelPrices), [channelPrices]);
   // A retailer column appears only when this client stores a price for it.
-  const channels = useMemo(() => exploreChannelColumns(rows, prices), [rows, prices]);
+  const channels = useMemo(() => exploreChannelColumns(rows, NO_OTHER_RETAILER_PRICES), [rows]);
   // No job writes review counts yet. The column appears once a listing stores one.
   const showReviews = useMemo(() => anyListingReviewCount(rows), [rows]);
   const columns = useMemo(() => exploreColumns(channels, showReviews), [channels, showReviews]);
   const sortValue = useCallback(
     (row: CanvasRetailListingRow, columnId: string) =>
       exploreListingSortValue(row, columnId, (id) => {
-        const facts = listingChannelFacts(asMapRow(row), prices.get(row.asin.trim()));
+        const facts = listingChannelFacts(asMapRow(row));
         return facts.find((fact) => fact.key === id)?.price;
       }),
-    [prices],
+    [],
   );
   const population = useFullPopulationSort(
     rows,
@@ -233,10 +203,9 @@ export function FenderListingsTable() {
             const label = row.model_name?.trim() || row.title?.trim() || "Listing";
             const partner = row.bundle_name ?? row.buybox_seller_name ?? "n/a";
             const facts = new Map(
-              listingChannelFacts(asMapRow(row), prices.get(row.asin.trim())).map((fact) => [fact.key, fact]),
+              listingChannelFacts(asMapRow(row)).map((fact) => [fact.key, fact]),
             );
             const walmartUrl = storedHttpUrl(row.wmt_url);
-            const musiciansFriendUrl = musiciansFriendCheckedPageUrl(prices, row.asin);
             const exploreHref = storedHttpUrl(row.product_url) ?? amazonHref(row.asin);
             return (
               <tr key={row.asin}>
@@ -263,15 +232,8 @@ export function FenderListingsTable() {
                   if (channel.key === "amazon") {
                     return <ChannelPriceCell key={channel.key} fact={facts.get("amazon")} note={lastSeenNote(row)} />;
                   }
-                  const cell: PricedChannelCell | undefined = prices.get(row.asin.trim())?.get(channel.key);
-                  const href =
-                    channel.key === "walmart"
-                      ? walmartUrl
-                      : channel.key === "musicians-friend"
-                        ? musiciansFriendUrl
-                        : cell
-                          ? storedHttpUrl(cell.url)
-                          : null;
+                  // Only Walmart stores a checked page; a Musician's Friend price keeps its Not available* mark.
+                  const href = channel.key === "walmart" ? walmartUrl : null;
                   return (
                     <ChannelPriceCell key={channel.key} fact={facts.get(channel.key)} href={href} requireCheckedPage />
                   );

@@ -20,15 +20,11 @@ import { SET_ASIDE_CHECKS } from "@/lib/set-aside/keys";
 import { formatInt, formatUsd, pendingLabel } from "@/lib/fender-canvas/format";
 import { mapListingSortValue } from "@/lib/fender-canvas/listing-table-sort";
 import {
-  channelPriceLookup,
   listingChannelFacts,
   listingLabel,
-  musiciansFriendCheckedPageUrl,
   storedHttpUrl,
-  type ChannelPriceRow,
   type MapSourceRow,
   type MapTabModel,
-  type PricedChannelCell,
 } from "@/lib/fender-canvas/map-channels";
 import {
   ANALYST_ESTIMATE_LABEL,
@@ -111,7 +107,6 @@ function mapColumns(model: MapTabModel, withExposure: boolean): RetailColumn[] {
   }
   if (model.showWalmart) columns.push(money("walmart", "Walmart"));
   if (model.showMusiciansFriend) columns.push(money("musicians-friend", "Musician's Friend"));
-  for (const channel of model.extraChannels) columns.push(money(channel.channel, channel.name));
   columns.push({ ...SET_ASIDE_SORT_COLUMN, width: 92, minWidth: 84 });
   return columns;
 }
@@ -139,18 +134,15 @@ function ExposureCells({ exposure }: { exposure: MapExposure }) {
 export function MapListingsTable({
   rows,
   model,
-  channelPrices,
   pricesNotStored,
   units,
 }: {
   rows: MapSourceRow[];
   model: MapTabModel;
-  channelPrices: ChannelPriceRow[];
   pricesNotStored: boolean;
   /** SmartScout unit estimates by ASIN. Undefined while loading, null when the read failed. */
   units?: MapUnitsLookup | null;
 }) {
-  const prices = channelPriceLookup(channelPrices);
   // The two exposure columns appear once the unit read answers. A failed read adds no column.
   const lookup = !pricesNotStored && units ? units : null;
   const columns = mapColumns(model, lookup != null);
@@ -164,7 +156,7 @@ export function MapListingsTable({
       return exposure.status === "estimated" ? exposure.value : null;
     }
     return mapListingSortValue(row, columnId, (id) => {
-      const facts = listingChannelFacts(row, prices.get(row.asin.trim()));
+      const facts = listingChannelFacts(row);
       return facts.find((fact) => fact.key === id)?.price;
     });
   });
@@ -194,10 +186,11 @@ export function MapListingsTable({
           sorted.rows.map((row) => {
             const href = amazonHref(row.asin);
             const facts = new Map(
-              listingChannelFacts(row, prices.get(row.asin.trim())).map((fact) => [fact.key, fact]),
+              listingChannelFacts(row).map((fact) => [fact.key, fact]),
             );
             const walmartUrl = storedHttpUrl(row.wmt_url);
-            const musiciansFriendUrl = musiciansFriendCheckedPageUrl(prices, row.asin);
+            // No Musician's Friend page URL is stored, so a shown price keeps its Not available* mark.
+            const musiciansFriendUrl = null;
             return (
               <Fragment key={row.asin}>
               <tr>
@@ -226,17 +219,6 @@ export function MapListingsTable({
                     requireCheckedPage
                   />
                 ) : null}
-                {model.extraChannels.map((channel) => {
-                  const cell: PricedChannelCell | undefined = prices.get(row.asin.trim())?.get(channel.channel);
-                  return (
-                    <ChannelPriceCell
-                      key={channel.channel}
-                      fact={facts.get(channel.channel)}
-                      href={cell ? storedHttpUrl(cell.url) : null}
-                      requireCheckedPage
-                    />
-                  );
-                })}
                 <SetAsideCell ctl={setAsides} entityKey={row.asin} canSetAside={Boolean(href)} />
               </tr>
               <SetAsideFormRow

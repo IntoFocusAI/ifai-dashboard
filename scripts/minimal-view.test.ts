@@ -94,6 +94,7 @@ function retailReady(): RetailCanvasRead {
         is_bundle: true,
         featured_offer_state: "present",
         featured_offer_checked_at: CHECKED_AT,
+        catalog_checked_at: CHECKED_AT,
       },
     ]),
     amazonSpecGaps: {
@@ -622,8 +623,8 @@ test("the switch offers only Minimal and Balanced and the shell wiring stays min
   assert.doesNotMatch(picker, /\stitle=\{/, "no native title tooltips in the picker");
 
   const shell = read("lib/canvas-sdk/CanvasShell.tsx");
-  assert.match(shell, /<ViewModeSwitch views=\{views\} \/>\s*\{spec\.headerSlot\}/);
+  assert.match(read("lib/canvas-sdk/CanvasShellHeader.tsx"), /<ViewModeSwitch views=\{views\} \/>\s*\{spec\.headerSlot\}/);
   assert.match(shell, /<MinimalView views=\{views\} spokes=\{spec\.spokes\} onOpenMetric=\{focusNode\} \/>/);
   assert.match(shell, /<HubSlots feeds=\{spec\.hubSlots\} bubbleId=\{inspectedBubbleId\} onOpen=\{focusNode\} \/>/);
-  assert.ok(shell.split("\n").length <= 1595, "CanvasShell does not grow past the bubble landing's import and call");
+  assert.ok(shell.split("\n").length <= 400, "CanvasShell stays at or under 400 lines");
 });

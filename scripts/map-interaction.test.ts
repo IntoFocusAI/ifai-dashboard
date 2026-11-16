@@ -108,5 +108,5 @@ test("the panel opens with a short slide and never animates its width", () => {
   const panel = rule(iom, ".ifai-canvas.theme-iom .drilldown-panel");
   assert.match(panel, /transition: transform calc\(0\.45s \* var\(--iom-motion-scale\)\)/);
   assert.doesNotMatch(panel, /width calc/);
-  assert.match(read("lib/canvas-sdk/CanvasShell.tsx"), /if \(columnLayout && windowWidth > 0\) \{/, "the column width applies before the slide");
+  assert.match(read("lib/canvas-sdk/useIomColumnLayout.ts"), /if \(columnLayout && windowWidth > 0\) \{/, "the column width applies before the slide");
 });

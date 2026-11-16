@@ -54,7 +54,7 @@ Former name: Portfolio Retail / Retail Portfolio. Approved rename: Catalog Healt
 - **Desired:** Suppressed-listing assistant searches the product at the benchmark price and links likely external pages, labeled as price matches rather than Amazon-confirmed sources.
 - **User value:** Operators get a starting point for the outside price.
 - **Acceptance:** Links labeled price matches, not confirmed causes.
-- **Evidence:** Not live.
+- **Evidence:** Not live. Plan for review: [r15-price-match-plan.md](../r15-price-match-plan.md) (12 Nov 2026). Live 12 Nov: 49 of 58 withheld Fender listings and 4 of 11 Ledlenser have a benchmark to search.
 - **Open decision:** None.
 
 **R-05 CURRENT** · Launch
@@ -109,7 +109,7 @@ Former name: Portfolio Retail / Retail Portfolio. Approved rename: Catalog Healt
 - **Desired:** Retailer observation rows; client retailer list.
 - **User value:** New retailers do not require schema forks.
 - **Acceptance:** No new wmt\_\*/mf\_\* prefixes.
-- **Evidence:** Verified hard-coded today.
+- **Evidence:** Verified hard-coded today. Plan for review: [r10-retailer-rows-plan.md](../r10-retailer-rows-plan.md) (12 Nov 2026), which also gives R-09 its MAP history.
 - **Open decision:** None.
 
 **R-11 REFINE** · Launch
