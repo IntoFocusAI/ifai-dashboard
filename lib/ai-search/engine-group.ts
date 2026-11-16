@@ -61,22 +61,22 @@ export function isRotatingFactCheck(
 }
 
 /**
- * The battery run's fixed questions: the question keys its search engines were asked, rotating
+ * The battery run's fixed shopping questions: the question keys its search engines were asked,
  * fact checks left out. An API run counts beside that run only when it matched at least as many.
+ * Fact checks are left out because a client's API job may not ask them (Ledlenser asks the 29
+ * shopping questions only), and the floor is there to leave out a short test run.
  */
 export function fixedQuestionCount(snapshot: Pick<AiSearchSnapshot, "calls" | "probes">): number {
-  const rotating = new Set(snapshot.probes.filter(isRotatingFactCheck).map(callKey));
   const keys = new Set<string>();
   for (const row of snapshot.calls) {
-    if (isApiEngine(row.engine) || !row.prompt_key) continue;
-    if (row.prompt_kind === "probe" && (rotating.has(callKey(row)) || isRotatingFactCheck(row))) continue;
+    if (isApiEngine(row.engine) || !row.prompt_key || row.prompt_kind === "probe") continue;
     keys.add(row.prompt_key.trim().toLowerCase());
   }
   return keys.size;
 }
 
 export const API_QUESTION_RULE =
-  "An API run counts only when it asked at least as many questions as the search run's fixed questions, so a short test run is left out.";
+  "An API run counts only when it asked at least as many shopping questions as the search run, so a short test run is left out.";
 
 /** Repeats of each API question per engine that count: the question set × 3 repeats (Brian Magazu). */
 export const API_REPEAT_CAP = 3;
