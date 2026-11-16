@@ -14,7 +14,16 @@ import type { CanvasFreshnessRow } from "@/lib/fender-canvas/types";
 
 const DAY_MS = 86_400_000;
 
-export type DataSourceId = "ai" | "amazon_offers" | "walmart" | "musiciansfriend" | "amazon_specs" | "amazon_sales" | "brand_site";
+export type DataSourceId =
+  | "ai_search"
+  | "ai_api"
+  | "amazon_offers"
+  | "keepa_history"
+  | "walmart"
+  | "musiciansfriend"
+  | "amazon_specs"
+  | "amazon_sales"
+  | "brand_site";
 
 type SourceRule = {
   id: DataSourceId;
@@ -23,26 +32,51 @@ type SourceRule = {
   intervalDays: () => number;
   /** The collectors that read this source. Their latest run is the source's last check. */
   collectors: readonly string[];
+  /** Collector jobs named by pattern, such as one lock per API run. */
+  collectorPattern?: RegExp;
+  /** The stored check time is a collector too (the API run tables), not only a fallback. */
+  storedIsCollector?: boolean;
   /** Supporting jobs (locks, schedules, recomputes) that belong here but do not read the source. */
   support: RegExp;
 };
 
-/** Display order: AI first, then Amazon, then the other retailers, then the brand site. */
+/**
+ * Display order: AI first, then Amazon, then the other retailers, then the brand site. Search and
+ * API engines, and Buy Box and Keepa history, are separate lines so a stale part cannot hide behind
+ * a fresh one (Brian Magazu, 16 Nov).
+ */
 const SOURCES: readonly SourceRule[] = [
   {
-    id: "ai",
-    label: () => "AI answers",
+    id: "ai_search",
+    label: () => "AI answers (search engines)",
     // AI Search runs every 2 to 3 days (decision 4); the asterisk rule uses 3.
     intervalDays: () => AI_SEARCH_STALE_AFTER_DAYS / 2,
     collectors: ["ai_simulations"],
     support: /^(ai_|subchat_|schedule_probe|claude_drift|mirror_drift|sandbox_drift)|probe|drift|battery|simulation/,
   },
   {
+    id: "ai_api",
+    label: () => "AI answers (API engines)",
+    // The API job runs on the same 2 to 3 day rhythm as the search runs.
+    intervalDays: () => AI_SEARCH_STALE_AFTER_DAYS / 2,
+    collectors: [],
+    collectorPattern: /^subchat_lock_.+_api$/,
+    storedIsCollector: true,
+    support: /_api$|api_run/,
+  },
+  {
     id: "amazon_offers",
-    label: () => "Amazon prices and Buy Box",
+    label: () => "Amazon Buy Box and offers",
     intervalDays: () => RECHECK_DAYS.buyBox,
-    collectors: ["featured_offer_keepa", "buybox_seller_harvester", "keepa_history", "catalog_harvester"],
-    support: /^kpi_|keepa|buybox|buy_box|catalog|offer|amazon_price/,
+    collectors: ["featured_offer_keepa", "buybox_seller_harvester", "catalog_harvester"],
+    support: /^kpi_|buybox|buy_box|catalog|offer|amazon_price|keepa/,
+  },
+  {
+    id: "keepa_history",
+    label: () => "Keepa sales history",
+    intervalDays: () => RECHECK_DAYS.keepa,
+    collectors: ["keepa_history"],
+    support: /keepa_hist|sales_history/,
   },
   {
     id: "walmart",
@@ -82,10 +116,14 @@ const SOURCES: readonly SourceRule[] = [
   },
 ];
 
-/** The source a collector job belongs to. A job no rule names goes to Amazon prices and Buy Box. */
+function isCollector(source: SourceRule, key: string): boolean {
+  return source.collectors.includes(key) || (source.collectorPattern?.test(key) ?? false);
+}
+
+/** The source a collector job belongs to. A job no rule names goes to Amazon Buy Box and offers. */
 export function sourceForJob(jobKey: string): DataSourceId {
   const key = jobKey.toLowerCase();
-  const named = SOURCES.find((source) => source.collectors.includes(key));
+  const named = SOURCES.find((source) => isCollector(source, key));
   if (named) return named.id;
   const near = SOURCES.find((source) => source.support.test(key));
   return near?.id ?? "amazon_offers";
@@ -115,6 +153,8 @@ function latest(times: (string | null)[]): string | null {
  * One entry per source the client has, in display order. A source's last check is its
  * collectors' latest run. Without a collector row, the source's own stored check time
  * (`stored`, such as the newest Findability row check) stands in, then supporting jobs.
+ * For API engines the stored time (the newest API run in the API run tables) counts beside
+ * the run locks.
  */
 export function dataSourceFreshness(
   rows: readonly CanvasFreshnessRow[],
@@ -126,12 +166,13 @@ export function dataSourceFreshness(
     const id = sourceForJob(row.job_key);
     const rule = SOURCES.find((source) => source.id === id)!;
     const entry = grouped.get(id) ?? { collector: [], other: [] };
-    (rule.collectors.includes(row.job_key.toLowerCase()) ? entry.collector : entry.other).push(row.last_run_at);
+    (isCollector(rule, row.job_key.toLowerCase()) ? entry.collector : entry.other).push(row.last_run_at);
     grouped.set(id, entry);
   }
   return SOURCES.filter((source) => grouped.has(source.id) || stored[source.id]).map((source) => {
     const entry = grouped.get(source.id) ?? { collector: [], other: [] };
-    const lastCheck = entry.collector.length ? latest(entry.collector) : (stored[source.id] ?? latest(entry.other));
+    const collector = source.storedIsCollector ? [...entry.collector, stored[source.id] ?? null] : entry.collector;
+    const lastCheck = latest(collector) ?? stored[source.id] ?? latest(entry.other);
     const intervalDays = source.intervalDays();
     return {
       id: source.id,
@@ -145,10 +186,17 @@ export function dataSourceFreshness(
 
 const CHECK_DAY = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" });
 
-/** "AI answers: last checked Nov 16, 2026" or "Walmart: last checked Nov 12, 2026, out of date". */
+/** "AI answers (search engines): last checked Nov 16, 2026" or "Walmart: last checked Nov 12, 2026, out of date". */
 export function dataSourceLine(source: DataSourceFreshness): string {
   const when = source.lastCheck ? `last checked ${CHECK_DAY.format(new Date(source.lastCheck))}` : "not checked yet";
   return `${source.label}: ${when}${source.outOfDate ? ", out of date" : ""}`;
+}
+
+/** The newest API run that answered, from the client's API run tables: the API engines' last check. */
+export function newestApiRunAt(
+  runs: readonly { completed_at: string | null; started_at?: string | null; answered_calls: number | null }[],
+): string | null {
+  return latest(runs.filter((run) => (run.answered_calls ?? 0) > 0).map((run) => run.completed_at ?? run.started_at ?? null));
 }
 
 /** The newest check across the client's sources, for the visible "Data as of" label. */

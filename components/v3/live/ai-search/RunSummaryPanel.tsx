@@ -248,6 +248,8 @@ function EngineTable({ snapshot, showSmallSample }: { snapshot: AiSearchSnapshot
       <ResizableTable
         tableId="ai-run-engines"
         columns={ENGINE_COLUMNS}
+        // A long model list takes the leftover width and wraps, so the rates keep one line at 1280.
+        fillColumnId="model"
         freezeHeader
         maxHeight={520}
         sort={sorted.sort}
