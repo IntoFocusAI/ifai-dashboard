@@ -1,0 +1,185 @@
+/* Staff Actuation records page (SC-03). Page, card and header come from sites-to-review.css. */
+.actuation-page h2 {
+  margin: 0 0 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.actuation-page h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.actuation-section {
+  margin-top: 20px;
+  min-width: 0;
+}
+
+.actuation-muted,
+.actuation-absent {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.actuation-absent {
+  margin-top: 16px;
+  font-size: 13px;
+  color: var(--text-main);
+  overflow-wrap: anywhere;
+}
+
+.actuation-overview {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: 0 32px;
+}
+
+.actuation-score {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0 0 8px;
+}
+
+.actuation-score-value {
+  font-size: 32px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.actuation-score-of {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.actuation-factors,
+.actuation-due {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.actuation-factors li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2px 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.actuation-factor-name {
+  color: var(--text-main);
+  font-weight: 500;
+}
+
+.actuation-factor-points {
+  font-family: var(--font-mono);
+  color: var(--text-main);
+  text-align: right;
+}
+
+.actuation-factor-basis {
+  grid-column: 1 / -1;
+  overflow-wrap: anywhere;
+}
+
+.actuation-due li {
+  display: grid;
+  gap: 2px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.actuation-programs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.actuation-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 4px;
+  min-width: 0;
+  padding: 14px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+}
+
+.actuation-card-header {
+  margin-bottom: 6px;
+}
+
+.actuation-card label,
+.actuation-log label > span {
+  margin-top: 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-subtle);
+}
+
+.actuation-card input,
+.actuation-card textarea,
+.actuation-log input,
+.actuation-log select {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 6px 8px;
+  border: 1px solid var(--border-dark);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-main);
+  font: inherit;
+  font-size: 13px;
+}
+
+.actuation-card textarea {
+  resize: vertical;
+}
+
+.actuation-card-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.actuation-log {
+  display: grid;
+  grid-template-columns: minmax(150px, 1.2fr) minmax(180px, 2fr) minmax(130px, 1fr) minmax(130px, 1fr) minmax(140px, 1.4fr) auto;
+  align-items: end;
+  gap: 8px 12px;
+  margin: 12px 0;
+}
+
+.actuation-log label {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.actuation-log > p {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 1100px) {
+  .actuation-overview,
+  .actuation-programs {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .actuation-log {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

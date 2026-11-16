@@ -5,6 +5,7 @@ import { setActiveOrganization } from "@/app/auth/organization-actions";
 import { SECURITY_PATH } from "@/app/(canvas)/dashboard/security/security-copy";
 import type { CanvasUserMenu } from "@/lib/canvas-sdk/types";
 import { ProfileSettingsModal } from "@/components/auth/ProfileSettingsModal";
+import { ActuationRecordsMenuLink } from "@/components/staff/ActuationRecordsMenuLink";
 import { SitesToReviewMenuLink } from "@/components/staff/SitesToReviewMenuLink";
 import { Building2, Check, ChevronDown, LogOut, Moon, Settings, Shield, Sun, User } from "lucide-react";
 import Link from "next/link";
@@ -180,6 +181,7 @@ export function UserMenuDropdown({
           </Link>
 
           <SitesToReviewMenuLink lightTheme={lightTheme} />
+          <ActuationRecordsMenuLink lightTheme={lightTheme} />
 
           {showThemeToggle && onThemeToggle ? (
             <button
