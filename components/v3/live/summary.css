@@ -169,3 +169,21 @@
   background: currentcolor;
   box-shadow: 0 0 0 2px var(--bg-card);
 }
+
+/* SC-03: AI Actuation factors, each with its points and its basis sentence. */
+.ifai-canvas .actuation-factor-row {
+  grid-template-columns: minmax(150px, 1fr) minmax(150px, 1.1fr) minmax(200px, 1.9fr);
+}
+
+.ifai-canvas .actuation-factor-basis {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-muted);
+  min-width: 0;
+}
+
+@media (max-width: 720px) {
+  .ifai-canvas .actuation-factor-row {
+    grid-template-columns: 1fr;
+  }
+}

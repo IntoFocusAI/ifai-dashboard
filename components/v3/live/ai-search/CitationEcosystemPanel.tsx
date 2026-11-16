@@ -10,6 +10,7 @@ import { useAiExportScope } from "@/components/v3/live/ai-search/useAiExport";
 import { CountTable, PickButton } from "@/components/v3/live/ai-search/CitationCountTable";
 import { CitationEvidenceTable } from "@/components/v3/live/ai-search/CitationEvidenceTable";
 import { CITED_LINK_COUNT_CAVEAT, CitationRoleNote } from "@/components/v3/live/ai-search/CitationRoleNote";
+import { CitationActuationBasis } from "@/components/v3/live/ai-search/CitationActuationBasis";
 import { CitationHero } from "@/components/v3/live/ai-search/CitationHero";
 import { CitationNotAvailable } from "@/components/v3/live/ai-search/CitationNotAvailable";
 import { CitationReadFailed } from "@/components/v3/live/ai-search/CitationReadFailed";
@@ -364,6 +365,7 @@ export function CitationEcosystemPanel() {
       <EngineGroupScope showSwitch={false} readChoice={filters.readChoice}>
         <CitationEcosystemBody filters={ecosystem} />
       </EngineGroupScope>
+      <CitationActuationBasis />
     </>
   );
 }

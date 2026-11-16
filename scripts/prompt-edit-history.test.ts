@@ -152,35 +152,15 @@ test("the migration adds one read function, grants execute only on it, and says 
   assert.doesNotMatch(statements, /ai_prompt_save|ai_prompt_set_active|FUNCTION public\.ai_prompts_list/);
 });
 
-test("the Prompts screen shows the history from the log only, with custom tooltips and brand voice", () => {
+test("the Prompts screen is view-only for every client and never reads the change log (decision 99)", () => {
   const editor = read("components/v3/prompts/PromptsEditor.tsx");
-  const history = read("components/v3/prompts/PromptHistory.tsx");
-  const lib = read("lib/ai-search/prompt-edit-history.ts");
-  assert.match(editor, /<PromptHistoryNotice history=\{history\} \/>/);
-  assert.match(editor, /setHistory\(await loadPromptEditHistory\(\)\)/);
-  assert.match(editor, /edits && historyKey === key \? <PromptHistory promptKey=\{key\} rows=\{promptEditsFor\(edits, key\)\} \/> : null/);
-  // The toggle exists only once the log was read, so no prompt shows a Not available* row of its own.
-  assert.match(editor, /const edits = history\?\.status === "ready" \? history\.rows : null;/);
-  assert.match(history, /tableId="prompt-history"/);
-  assert.match(history, /exportScope=\{\{ promptKey \}\}/);
-  assert.match(history, /className="ifai-term"/);
-  assert.match(history, /data-ifai-tooltip-desc=\{tip\}/);
-  assert.doesNotMatch(history, /\stitle=/);
-  assert.match(lib, /rpc\("ai_prompt_edits_list", \{ p_prompt_key: promptKey \}\)/);
+  assert.doesNotMatch(editor, /loadPromptEditHistory|PromptHistory|prompt-edit-history/);
+  assert.match(read("lib/ai-search/prompt-edit-history.ts"), /rpc\("ai_prompt_edits_list", \{ p_prompt_key: promptKey \}\)/);
   assert.equal(PROMPT_HISTORY_NOTE, "A run keeps the questions it asked. A later edit does not change that run.");
-  for (const file of [
-    "components/v3/prompts/PromptsEditor.tsx",
-    "components/v3/prompts/PromptHistory.tsx",
-    "components/v3/prompts/prompts-editor.css",
-    "lib/ai-search/prompt-edit-history.ts",
-    "lib/export/prompt-history-export.ts",
-  ]) {
+  for (const file of ["components/v3/prompts/PromptsEditor.tsx", "components/v3/prompts/prompts-editor.css", "lib/ai-search/prompt-edit-history.ts"]) {
     const source = read(file);
     assert.doesNotMatch(source, /—/, `em dash in ${file}`);
     assert.doesNotMatch(source, /font-weight:\s*[7-9]00/, `weight above 600 in ${file}`);
     assert.doesNotMatch(source, /ui-monospace|SFMono/, `system monospace in ${file}`);
   }
-  // Ledlenser's prompt list stays read-only: its profile has no editor, so no history read runs.
-  assert.match(read("lib/client/active-client.ts"), /ledlenser: \{[\s\S]*?promptsEditable: false/);
-  assert.match(read("lib/export/prompt-history-export.ts"), /if \(!activeClient\(\)\.promptsEditable\)/);
 });

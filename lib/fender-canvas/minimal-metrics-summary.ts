@@ -1,6 +1,7 @@
 /** Minimal view entries for Summary and Action Items. */
 
 import { failedReadTip } from "@/lib/fender-canvas/canvas-reads";
+import { ACTUATION_OMITTED_REASON } from "@/lib/fender-canvas/consensus-score-display";
 import { consensusFromLive } from "@/lib/fender-canvas/consensus-scores-from-live";
 import type { ConsensusScore } from "@/lib/fender-canvas/consensus-scores";
 import { formatInt, formatPct } from "@/lib/fender-canvas/format";
@@ -30,6 +31,7 @@ function consensus(ctx: MinimalContext): ConsensusScore | null | "loading" {
       retail: ctx.retail,
       ai: ctx.ai,
       authorizedPartners: ctx.authorizedPartners,
+      actuation: ctx.bundle.actuation,
     });
   });
 }
@@ -39,6 +41,7 @@ function scoreEntry(
   label: string,
   pieId: string,
   pick: (score: ConsensusScore) => Pick<ConsensusScore["foundation"], "score" | "coverage">,
+  noScore = "Not enough inputs are stored for this score yet.",
 ): MinimalEntry {
   return {
     id,
@@ -49,7 +52,7 @@ function scoreEntry(
       const score = consensus(ctx);
       if (score === "loading") return loadingFigure("The AI Consensus inputs are still loading.");
       if (!score) return missingFigure(NO_SCORE);
-      return scoreFigure(pieId, label, pick(score), "Not enough inputs are stored for this score yet.");
+      return scoreFigure(pieId, label, pick(score), noScore);
     },
   };
 }
@@ -79,6 +82,8 @@ export const SUMMARY_ENTRIES: MinimalEntry[] = [
   scoreEntry("summary-ai-consensus", "AI Consensus", "score-consensus", (score) => score),
   scoreEntry("summary-ai-foundation", "AI Foundation", "score-foundation", (score) => score.foundation),
   scoreEntry("summary-ai-commerce", "AI Commerce", "score-commerce", (score) => score.commerce),
+  // The id predates the score (it was an Other figure), so viewers' saved slots keep it.
+  scoreEntry("ai-actuation", "AI Actuation", "score-actuation", (score) => score.actuation, ACTUATION_OMITTED_REASON),
 ];
 
 export const ACTION_ITEM_ENTRIES: MinimalEntry[] = [

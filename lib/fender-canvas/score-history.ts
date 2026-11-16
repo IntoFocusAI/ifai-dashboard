@@ -77,7 +77,12 @@ export type ScoreHistoryModel = {
   series: ScoreHistorySeries[];
   /** The first saved week. */
   savingStarted: string;
+  /** The first saved week whose scoring included AI Actuation (decision 97), or null before one. */
+  actuationAdded: string | null;
 };
+
+/** The note on the chart point where scoring added AI Actuation (decision 97). */
+export const ACTUATION_ADDED_NOTE = "Scoring now includes AI Actuation.";
 
 const SERIES: Array<{ key: ScoreSeriesKey; label: string; column: keyof ScoreSnapshotRow }> = [
   { key: "consensus", label: "AI Consensus", column: "consensus_score" },
@@ -105,7 +110,8 @@ export function scoreHistoryModel(rows: readonly ScoreSnapshotRow[]): ScoreHisto
       return score == null ? [] : [{ week: row.week_start.slice(0, 10), score }];
     }),
   })).filter((line) => line.points.length > 0);
-  return { weeks, series, savingStarted: weeks[0] };
+  const actuationAdded = sorted.find((row) => scoreValue(row.actuation_score) != null)?.week_start.slice(0, 10) ?? null;
+  return { weeks, series, savingStarted: weeks[0], actuationAdded };
 }
 
 /** X-25: the tooltip on Not available* when the saved scores could not be read (not when the table is absent). */
@@ -114,6 +120,14 @@ export function scoreHistoryFailureTip(message: string): string {
   const text = message.trim();
   if (!text) return `${read}.`;
   return sanitizeUiText(`${read}: ${text}${/[.!?]$/.test(text) ? "" : "."}`);
+}
+
+/** A point's tooltip: the score against target, the scoring note on the week Actuation was added. */
+export function scorePointTip(model: ScoreHistoryModel, week: string, figure: string): string {
+  const lines = [`${figure}.`];
+  if (model.actuationAdded === week) lines.push(ACTUATION_ADDED_NOTE);
+  if (model.weeks.length < 2) lines.push(scoreHistoryTip(model));
+  return lines.join(" ");
 }
 
 /** "Week of Nov 16, 2026". */

@@ -203,7 +203,6 @@ test("every AI Search table on screen has a server download", () => {
     "citation-engines",
     "citation-categories",
     "citation-evidence",
-    "prompt-history",
   ];
   for (const id of ids) {
     assert.ok(isExportTable(id), id);

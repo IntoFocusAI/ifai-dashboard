@@ -290,6 +290,35 @@ test.describe("AI Search Visibility", () => {
     }
   });
 
+  test("Citation Ecosystem shows the AI Actuation score and basis below the tab, matching Summary (SC-03)", async ({ page }) => {
+    test.slow();
+    for (const client of ["fender", "ledlenser"]) {
+      const query = client === "ledlenser" ? "client=ledlenser&" : "";
+      await page.goto(`/dashboard?${query}spoke=aeo&tab=citation-ecosystem`);
+      await expect(page.locator("[data-citation-chain]")).toBeVisible({ timeout: AI_READ_MS });
+      const section = page.locator("[data-citation-actuation]");
+      const score = section.locator("[data-consensus-pillar-score]");
+      await expect(score).toHaveText(/^\d{1,3}$/, { timeout: AI_READ_MS });
+      await expect(section.locator("[data-consensus-target]")).toHaveText("vs target 70");
+      await expect(section.locator("[data-status]").first()).toHaveText(/^(Poor|Fair|Good)$/);
+      await expect(section.locator("[data-actuation-factor]")).toHaveCount(5);
+      await expect(section.locator("[data-actuation-factor='E1'] [data-actuation-factor-basis]")).toContainText("unbranded shopping answers");
+      await expect(section).not.toContainText(/Awaiting|Not included/);
+      // Below the hero and its owned-pages-in-unbranded figure (decision 86).
+      const order = await page.evaluate(() => {
+        const hero = document.querySelector("[data-citation-hero]");
+        const basis = document.querySelector("[data-citation-actuation]");
+        return !!hero && !!basis && hero.compareDocumentPosition(basis) === Node.DOCUMENT_POSITION_FOLLOWING;
+      });
+      expect(order).toBe(true);
+      const shown = await score.textContent();
+      await page.goto(`/dashboard?${query}spoke=hub&tab=performance`);
+      await expect(page.locator("[data-consensus-lead] [data-consensus-pillar='actuation'] [data-consensus-pillar-score]")).toHaveText(shown ?? "", {
+        timeout: AI_READ_MS,
+      });
+    }
+  });
+
   test("AI definitions use the custom tooltip", async ({ canvas, page }) => {
     test.slow();
     await canvas.openSpokeFromMap("AI Search Visibility");

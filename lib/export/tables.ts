@@ -28,7 +28,6 @@ export const EXPORT_TABLE_IDS = [
   "competitor-wins",
   "engine-comparison",
   "engine-category",
-  "prompt-history",
   "explore-listings",
   // Catalog Health: the Findability listings of the outcome on screen.
   "findability-listings",

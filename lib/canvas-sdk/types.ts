@@ -255,7 +255,7 @@ export type CanvasSpec = {
   commandCenter?: CommandCenterSpec;
   /** Renders a "Prompts" header button (left of Priorities) that opens this content in a dialog. */
   promptsEditor?: (close: () => void) => ReactNode;
-  /** Page for building new prompts from shopper details. Renders a "Build prompts" header button next to Prompts. */
+  /** Page for building new prompts from shopper details. Renders a "Build prompts" header button next to Prompts, for IntoFocus staff only. */
   promptBuilderHref?: string;
   /** Jargon -> plain-language definition, shown on hover in the panel copy. */
   glossary?: Record<string, string>;
