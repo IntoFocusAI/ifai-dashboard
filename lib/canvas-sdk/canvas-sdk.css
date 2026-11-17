@@ -889,6 +889,13 @@
       pointer-events: auto;
     }
 
+    /* The rule above re-enables every node, which also woke the faded-out (opacity 0) satellites
+       of the clusters that are not open. Lifted over the hub slots, those hidden bubbles took the
+       clicks meant for the slots. Hidden satellites never take the pointer. */
+    .ifai-canvas:not(.column-layout):not(.panel-open):has(.satellite-group.visible) .viewport-container .satellite-group:not(.visible) .graph-node {
+      pointer-events: none;
+    }
+
     .ifai-canvas:not(.column-layout):not(.panel-open):has(.satellite-group.visible) .canvas-metric-widgets {
       z-index: 44;
     }
