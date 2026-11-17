@@ -28,7 +28,7 @@ like before its data is loaded.
 | Layout differences, Fender and Ledlenser only | 23 | hub 11, Action Items 6, Catalog Health 2, AI Search 1, deck 3 |
 | Layout differences, all three clients | 120 | the 23 plus 97 more where the fishing client differs: by bubble, AI Search 40, deck 34, Competitive Radar 19, Summary 12, Action Items 6, Catalog Health 4, minimal view 2, map 2, AI Readiness 1 |
 | Foreign-content hits | 0 | no other client's brand, domain, product-type or vertical word on any screen, for all three clients. See "Foreign content" |
-| Lint hits (`lint:clients`) | 30 in 22 files | by area below |
+| Lint hits (`lint:clients`) | 19 in 14 files | by area below (C6, worker 28.21, removed the 11 Catalog Health and AI Readiness hits) |
 
 Layout lines are written with the client's own brand, numbers and question categories normalized away
 (decision 106: category columns and battlecard figures come from the client's questions, so they count by
@@ -113,7 +113,7 @@ that would leak (the music lists for Fender and the lighting lists for every oth
 data is present. Those leaks are in the lint list below. The scan will start reporting them when a third
 client has data.
 
-## Lint hits: 30 in 22 files (`npm run lint:clients`)
+## Lint hits: 19 in 14 files (`npm run lint:clients`)
 
 Each is code that branches on the client name. Move the difference into `data/clients/<key>.json` and read it
 through `lib/client`.
@@ -121,14 +121,12 @@ through `lib/client`.
 | Area | file:line | Audit |
 |---|---|---|
 | Summary | `lib/fender-canvas/analyst-estimates.ts:9`, `lib/fender-canvas/spoke-narrative.ts:74` | P-05, P-02 |
-| Catalog Health | `lib/fender-canvas/command-center-from-live.ts:19`, `:24`, `:85`; `components/v3/live/StockLossHero.tsx:33`; `lib/fender-canvas/data-source-freshness.ts:84`; `lib/fender-canvas/map-reading-status.ts:89`; `lib/fender-canvas/portfolio-retail.ts:752` | P-13, P-15, P-14 |
 | AI Search | `lib/brand-copy.ts:7` (the `isFenderClient` helper); `lib/ai-search/citations.ts:113`, `:123`, `:230`; `lib/ai-search/citation-insights.ts:359`, `:360`; `lib/ai-search/definitions.ts:10`, `:12`, `:30`; `lib/ai-search/why-not-fender.ts:17`; `lib/ai-search/probe-catalog.ts:220`; `components/v3/live/ai-search/CitationEcosystemPanel.tsx:60` | P-18 to P-22, P-25 |
 | Competitive Radar | `components/v3/live/ai-search/CategoryBattlecardsPanel.tsx:213`; `lib/ai-search/category-on-track.ts:244`; `lib/ai-search/radar-tables.ts:227` (the lead filter value is the string "fender"; rename it to the lead brand) | P-32, P-07 |
-| AI Readiness | `lib/fender-canvas/consensus-scores.ts:85`, `:89`; `components/v3/live/FenderSpecNarratives.tsx:6`; `lib/findability/queries.ts:103` | P-29, P-30, P-31 |
 | Exports | `lib/export/tables.ts:66` | P-40 |
 | Data layer | `lib/supabase/canvas-client.ts:41` (column naming "fender") | P-42 |
 
-The audit's P-16 (short bundle labels), P-23 and P-24 (question roles and lists typed into code), P-26 and
+The audit's P-23 and P-24 (question roles and lists typed into code), P-26 and
 P-27 (history filter and fast read) do not compare a client to a literal, so the lint does not see them. Round
 3 chunk C4 removes them with the question data move.
 
