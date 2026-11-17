@@ -502,3 +502,10 @@ closeout of each view. Open items are marked OPEN and are not built.
     layout rule for every tab at small laptop size (X-36, the layout pass,
     every tab with a gap). Brian wants Enterprise Potential and Opportunity
     on real inputs soon; the dollar-formula hold stays until he lifts it.
+111. Dollar formulas unparked (17 Nov): a best-effort brand revenue estimate
+    for as much recommended activity as possible. Be bold, not qualified:
+    estimate from the most credible data where data is missing, cite
+    sources, use ranges and say so. Catalog revenue beyond Amazon can be
+    gathered at onboarding. Each formula opens to its inputs and is
+    approved by Brian before it ships; weak ones can be cut later. D-12 is
+    a launch item. Roadmap set-aside works like Action Items' (N-08).
