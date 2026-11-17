@@ -2,7 +2,8 @@
 //
 // Decision 112: upside covers the whole catalog. A listing with no SmartScout or brand-reported
 // sales is estimated from Keepa's bought-in-past-month figure, else from its sales rank. Every
-// figure reports N of M listings measured, K estimated, the rest Not available*.
+// figure reports N of M listings measured, K estimated, the rest Not available*. Decision 113: a
+// listing SmartScout tracks with no sales is measured, no sales, covered at $0.
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { estimateOutOfStock } from "../lib/estimates/availability.ts";
@@ -83,13 +84,30 @@ test("sales rank: the band's units x price, for listings SmartScout does not tra
   assert.equal(resolveListingSales({ ...base, salesRank: 5000, rankCategory: null }, ctx).annual, null);
 });
 
-test("a listing SmartScout tracks and reports no sales for is not priced from its rank", () => {
+test("a listing SmartScout tracks and reports no sales for is measured, no sales: covered at $0 (decision 113)", () => {
   const r = resolveListingSales({ ...base, smartscoutHasRecord: true, smartscoutTtmRevenue: 0, salesRank: 5000 }, ctx);
-  assert.equal(r.annual, null);
+  // Not priced from its rank: it is already in the curve as a zero.
+  assert.deepEqual(r.annual, { source: "smartscout", range: { low: 0, mid: 0, high: 0 } });
+  assert.deepEqual(r.perInStockDay?.range, { low: 0, mid: 0, high: 0 });
+  assert.deepEqual(r.monthlyUnits?.range, { low: 0, mid: 0, high: 0 });
   assert.equal(r.reportedNoSales, true);
-  const c = buildCoverage([{ source: "none", reportedNoSales: true }, { source: "none" }, { source: "smartscout" }, { source: "sales_rank_curve" }]);
-  assert.equal(c.notAvailable, 2);
-  assert.equal(c.reportedNoSales, 1);
+  // Measured only: the same.
+  assert.equal(resolveListingSales({ ...base, smartscoutHasRecord: true }, { ...ctx, salesSources: "measured_only" }).annual?.range.mid, 0);
+  // Not tracked: still Not available*.
+  assert.equal(resolveListingSales({ ...base, smartscoutHasRecord: false }, ctx).reportedNoSales, false);
+  const c = buildCoverage([{ source: "smartscout", reportedNoSales: true }, { source: "none" }, { source: "smartscout" }, { source: "sales_rank_curve" }]);
+  assert.deepEqual([c.measured, c.estimated, c.notAvailable, c.reportedNoSales], [2, 1, 1, 1]);
+  assert.equal(c.sentence, "2 of 4 listings measured (1 with no sales), 1 estimated, 1 Not available*");
+  assert.equal(c.tooltip, "Based on 3 of 4 listings (2 measured, 1 estimated)");
+
+  // In a line: covered, contributes $0, never Not available*.
+  const zero = { ...base, asin: "Z", smartscoutHasRecord: true, smartscoutTtmRevenue: 0, oosDays365: 40 };
+  const only = estimateOutOfStock([zero], ctx);
+  assert.equal(only.status, "estimated");
+  assert.deepEqual(only.range, { low: 0, mid: 0, high: 0 });
+  assert.equal(only.asterisk, false);
+  assert.equal(only.trail.listings[0].salesBasis, "measured");
+  assert.ok(only.trail.notes.some((n) => n.includes("tracked by SmartScout with no sales reported")));
 });
 
 test("measured_only stops after brand-reported and SmartScout sales", () => {
@@ -126,14 +144,14 @@ test("coverage: N of M measured, K estimated, the rest Not available*, asterisk 
   ];
   const r = estimateOutOfStock(listings, ctx);
   const c = r.trail.coverage;
-  assert.deepEqual([c.total, c.measured, c.estimated, c.notAvailable, c.reportedNoSales], [7, 2, 3, 2, 1]);
-  assert.equal(c.sentence, "2 of 7 listings measured, 3 estimated, 2 Not available*");
-  assert.equal(c.tooltip, "Based on 5 of 7 listings (2 measured, 3 estimated)");
+  assert.deepEqual([c.total, c.measured, c.estimated, c.notAvailable, c.reportedNoSales], [7, 3, 3, 1, 1]);
+  assert.equal(c.sentence, "3 of 7 listings measured (1 with no sales), 3 estimated, 1 Not available*");
+  assert.equal(c.tooltip, "Based on 6 of 7 listings (3 measured, 3 estimated)");
   assert.equal(r.asterisk, true);
-  assert.equal(r.trail.salesSources.smartscout.listings, 2);
+  assert.equal(r.trail.salesSources.smartscout.listings, 3);
   assert.equal(r.trail.salesSources.keepa_monthly_sold.listings, 1);
   assert.equal(r.trail.salesSources.sales_rank_curve.listings, 2);
-  assert.equal(r.trail.salesSources.none.listings, 2);
+  assert.equal(r.trail.salesSources.none.listings, 1);
   // The trail names the estimate and cites the method.
   assert.ok(r.trail.notes.some((n) => n.includes("3 listings have no SmartScout or brand-reported sales")));
   assert.ok(r.trail.sources.some((s) => s.id === "intofocusCalibration"));
@@ -238,9 +256,12 @@ test("Ledlenser: sales coverage before and after", () => {
   const listings = loadEstimatesFixture("ledlenser").listings;
   assert.equal(listings.length, 214);
   const c = catalogSalesCoverage(listings);
-  assert.equal(c.before.sentence, "24 of 214 listings measured, 190 Not available*");
-  assert.equal(c.after.sentence, "24 of 214 listings measured, 68 estimated, 122 Not available*");
-  assert.equal(c.after.tooltip, "Based on 92 of 214 listings (24 measured, 68 estimated)");
+  // Decision 113: the 36 listings SmartScout tracks with no sales are measured, no sales. Before it the
+  // after line read "24 of 214 listings measured, 68 estimated, 122 Not available*" (92 of 214 covered).
+  // Before Keepa and the rank curve, 38 are tracked with no sales (2 then take Keepa's figure).
+  assert.equal(c.before.sentence, "62 of 214 listings measured (38 with no sales), 152 Not available*");
+  assert.equal(c.after.sentence, "60 of 214 listings measured (36 with no sales), 68 estimated, 86 Not available*");
+  assert.equal(c.after.tooltip, "Based on 128 of 214 listings (60 measured, 68 estimated)");
   assert.equal(c.after.reportedNoSales, 36);
   assert.equal(c.salesSources.keepa_monthly_sold.listings, 2);
   assert.equal(c.salesSources.sales_rank_curve.listings, 66);
@@ -252,13 +273,15 @@ test("Ledlenser: sales coverage before and after", () => {
     const x = r.trail.coverage;
     return [x.measured, x.estimated, x.notAvailable, x.total];
   };
-  assert.deepEqual(cov(e.outOfStock), [21, 52, 93, 166]);
-  assert.deepEqual(cov(e.buyBox), [14, 47, 61, 122]);
-  assert.deepEqual(cov(e.mapLeakage), [9, 12, 12, 33]);
-  assert.deepEqual(cov(e.missingSpecs), [21, 60, 105, 186]);
-  assert.deepEqual(cov(e.aplus), [9, 34, 76, 119]);
+  assert.deepEqual(cov(e.outOfStock), [53, 52, 61, 166]);
+  assert.deepEqual(cov(e.buyBox), [34, 47, 41, 122]);
+  assert.deepEqual(cov(e.mapLeakage), [21, 12, 0, 33]);
+  assert.deepEqual(cov(e.missingSpecs), [53, 60, 73, 186]);
+  assert.deepEqual(cov(e.aplus), [16, 34, 69, 119]);
+  // Measured, no sales adds listings at $0: the dollars do not move.
   assert.deepEqual(e.phase1.range, { low: 23110, mid: 55248, high: 120458 });
   assert.equal(e.phase1.asterisk, true);
+  assert.equal(e.mapLeakage.asterisk, false);
   // Measured listings are untouched: the measured part of each line is the proposal's figure.
   near(e.outOfStock.trail.salesSources.smartscout.estimate, 11866, 1, "measured part of out of stock");
 });
@@ -268,9 +291,11 @@ test("Fender: sales coverage before and after", () => {
   const listings = loadEstimatesFixture("fender").listings.filter((l) => l.inSalesView);
   assert.equal(listings.length, 1169);
   const c = catalogSalesCoverage(listings);
-  assert.equal(c.before.sentence, "403 of 1,169 listings measured, 766 Not available*");
-  assert.equal(c.after.sentence, "403 of 1,169 listings measured, 322 estimated, 444 Not available*");
-  assert.equal(c.after.tooltip, "Based on 725 of 1,169 listings (403 measured, 322 estimated)");
+  // Decision 113: the 262 listings SmartScout tracks with no sales are measured, no sales. Before it the
+  // after line read "403 of 1,169 listings measured, 322 estimated, 444 Not available*" (725 covered).
+  assert.equal(c.before.sentence, "665 of 1,169 listings measured (262 with no sales), 504 Not available*");
+  assert.equal(c.after.sentence, "665 of 1,169 listings measured (262 with no sales), 322 estimated, 182 Not available*");
+  assert.equal(c.after.tooltip, "Based on 987 of 1,169 listings (665 measured, 322 estimated)");
   assert.equal(c.after.reportedNoSales, 262);
   assert.equal(c.salesSources.keepa_monthly_sold.listings, 0);
   assert.equal(c.salesSources.sales_rank_curve.listings, 322);
@@ -279,6 +304,6 @@ test("Fender: sales coverage before and after", () => {
 
   const e = estimateListingLines(loadEstimatesFixture("fender").listings);
   assert.deepEqual(e.phase1.range, { low: 668826, mid: 1218490, high: 2071162 });
-  assert.equal(e.outOfStock.trail.coverage.sentence, "247 of 609 listings measured, 144 estimated, 218 Not available*");
+  assert.equal(e.outOfStock.trail.coverage.sentence, "383 of 609 listings measured (136 with no sales), 144 estimated, 82 Not available*");
   assert.equal(e.outOfStock.trail.confidence, "high");
 });

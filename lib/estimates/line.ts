@@ -120,6 +120,11 @@ export function assembleLine(spec: LineSpec, pieces: LinePiece[], extraSources: 
       `${coverage.estimated} listings have no SmartScout or brand-reported sales. Their sales are estimated from Amazon's bought-in-past-month figure, or from tracked listings with a similar sales rank.`,
     );
   }
+  if ((coverage.reportedNoSales ?? 0) > 0) {
+    notes.push(
+      `${coverage.reportedNoSales} listings are tracked by SmartScout with no sales reported. They count as measured and add $0.`,
+    );
+  }
   if (mostlyEstimated) notes.push("More than half of this figure rests on estimated sales, so its confidence is one grade lower.");
 
   return {

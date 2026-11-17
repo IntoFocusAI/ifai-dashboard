@@ -48,12 +48,15 @@ const ledlenser = estimateListingLines(loadEstimatesFixture("ledlenser").listing
 test("line 1, out of stock, reproduces the proposal", () => {
   rangeIs(fender.outOfStock, [367760, 490347, 674227]);
   near(touched(fender.outOfStock), 1225867, 1, "Fender listing-level missed sales");
-  assert.equal(fender.outOfStock.trail.coverage.measured, 247);
+  // The proposal priced 247; 136 more are tracked by SmartScout with no sales: measured at $0 (decision 113).
+  assert.equal(fender.outOfStock.trail.coverage.measured, 383);
+  assert.equal(fender.outOfStock.trail.coverage.reportedNoSales, 136);
   assert.equal(fender.outOfStock.trail.coverage.total, 609);
 
   rangeIs(ledlenser.outOfStock, [8899, 11866, 16316]);
   near(touched(ledlenser.outOfStock), 29665, 1, "Ledlenser listing-level missed sales");
-  assert.equal(ledlenser.outOfStock.trail.coverage.measured, 21);
+  assert.equal(ledlenser.outOfStock.trail.coverage.measured, 55);
+  assert.equal(ledlenser.outOfStock.trail.coverage.reportedNoSales, 34);
   assert.equal(ledlenser.outOfStock.trail.coverage.total, 166);
   assert.equal(fender.outOfStock.trail.confidence, "high");
 });
@@ -61,27 +64,28 @@ test("line 1, out of stock, reproduces the proposal", () => {
 test("line 2, Buy Box, reproduces the proposal", () => {
   rangeIs(fender.buyBox, [52093, 111131, 181457]);
   near(touched(fender.buyBox), 347285, 1, "Fender sales on no-Buy-Box days");
-  assert.equal(fender.buyBox.trail.coverage.measured, 273);
+  assert.equal(fender.buyBox.trail.coverage.measured, 462);
   assert.equal(fender.buyBox.trail.coverage.total, 745);
-  assert.equal(fender.buyBox.trail.inputs.find((i) => i.key === "no_buy_box_days")?.value, 3138);
+  // Days on every covered listing: 3,138 on listings with sales plus days on measured, no-sales listings (decision 113).
+  assert.equal(fender.buyBox.trail.inputs.find((i) => i.key === "no_buy_box_days")?.value, 11043);
 
   rangeIs(ledlenser.buyBox, [443, 945, 1543]);
   near(touched(ledlenser.buyBox), 2952, 1, "Ledlenser sales on no-Buy-Box days");
-  assert.equal(ledlenser.buyBox.trail.coverage.measured, 14);
+  assert.equal(ledlenser.buyBox.trail.coverage.measured, 36);
   assert.equal(ledlenser.buyBox.trail.coverage.total, 122);
-  assert.equal(ledlenser.buyBox.trail.inputs.find((i) => i.key === "no_buy_box_days")?.value, 327);
+  assert.equal(ledlenser.buyBox.trail.inputs.find((i) => i.key === "no_buy_box_days")?.value, 843);
   assert.equal(fender.buyBox.trail.confidence, "medium");
 });
 
 test("line 3, MAP leakage, reproduces the proposal and stays outside the total", () => {
   rangeIs(fender.mapLeakage, [25816, 38724, 51632]);
   near(fender.mapLeakage.trail.inputs.find((i) => i.key === "monthly_value")?.value as number, 4303, 1, "Fender monthly value");
-  assert.equal(fender.mapLeakage.trail.coverage.measured, 30);
+  assert.equal(fender.mapLeakage.trail.coverage.measured, 87);
   assert.equal(fender.mapLeakage.trail.coverage.total, 157);
 
   rangeIs(ledlenser.mapLeakage, [23494, 35241, 46988]);
   near(ledlenser.mapLeakage.trail.inputs.find((i) => i.key === "monthly_value")?.value as number, 3916, 1, "Ledlenser monthly value");
-  assert.equal(ledlenser.mapLeakage.trail.coverage.measured, 9);
+  assert.equal(ledlenser.mapLeakage.trail.coverage.measured, 23);
   assert.equal(ledlenser.mapLeakage.trail.coverage.total, 33);
 
   assert.equal(fender.mapLeakage.countsInTotal, false);
@@ -91,7 +95,7 @@ test("line 3, MAP leakage, reproduces the proposal and stays outside the total",
 test("line 4, splintered listings, reproduces the proposal", () => {
   rangeIs(fender.splintered, [18134, 55301, 89920]);
   near(touched(fender.splintered), 359679, 1, "Fender splintered sales");
-  assert.equal(fender.splintered.trail.coverage.measured, 1);
+  assert.equal(fender.splintered.trail.coverage.measured, 17);
   assert.equal(fender.splintered.trail.coverage.total, 84);
 
   // Ledlenser: one splintered listing with no recorded sales. Not estimated, never $0.
@@ -331,7 +335,7 @@ test("every result carries a full trail", () => {
     for (const i of r.trail.inputs) if (i.kind !== "assumption") assert.ok(i.asOf, `${r.lineId} input ${i.key} has an as-of date`);
     assert.ok(!/—/.test(JSON.stringify(r.trail)), `${r.lineId} has no em dash`);
   }
-  assert.equal(fender.outOfStock.trail.coverage.tooltip, "Based on 247 of 609 listings (247 measured, 0 estimated)");
+  assert.equal(fender.outOfStock.trail.coverage.tooltip, "Based on 383 of 609 listings (383 measured, 0 estimated)");
   assert.equal(fender.outOfStock.trail.inputs.find((i) => i.key === "oos_days")?.asOf, "2026-11-17");
   assert.equal(fender.outOfStock.trail.inputs.find((i) => i.key === "brand_loss_share")?.asOf, "2018, reported Mar 2019");
   assert.equal(fender.outOfStock.trail.listings.length, 609);

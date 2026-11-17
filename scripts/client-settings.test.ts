@@ -75,25 +75,19 @@ test("C1: settings values equal the constants the screens still read (no behavio
   // C2 moved owned domains, brand words and site lists into settings and data/reference/; the
   // competitor sites in settings still name the same brand the vertical reference list does.
   const { referenceBrandSites } = await import("@/lib/ai-search/reference-sites");
-  const { RECHECK_DAYS } = await import("@/lib/fender-canvas/row-stale");
   const { CATALOG_ROTATION_RULE } = await import("@/lib/ai-search/probe-catalog");
   const { TRUSTED_COLLECTOR_VERSION } = await import("@/lib/ai-search/history-eligibility");
-  const { AUTHORIZED_BUY_BOX_PARTNERS } = await import("@/lib/fender-canvas/consensus-scores");
   const { catalogBundleLineLabel } = await import("@/lib/fender-canvas/portfolio-retail");
   const f = getClientSettings("fender");
   const l = getClientSettings("ledlenser");
-  assert.deepEqual(f.default_authorized_partners, [...AUTHORIZED_BUY_BOX_PARTNERS]);
+  assert.deepEqual(f.default_authorized_partners, ["Austin Bazaar", "GearTree"]);
   for (const client of [f, l]) {
     const listed = new Map<string, string>(referenceBrandSites(client.vertical));
     for (const c of client.competitors) for (const d of c.domains) assert.equal(listed.get(d), c.name, d);
   }
   assert.deepEqual(
-    Object.fromEntries([...f.retailers, ...l.retailers].map((r) => [`${r.key}:${r.recheck_days}`, true])),
-    {
-      [`walmart:${RECHECK_DAYS.walmartFender}`]: true,
-      [`musiciansfriend:${RECHECK_DAYS.musiciansFriend}`]: true,
-      [`walmart:${RECHECK_DAYS.walmartLedlenser}`]: true,
-    },
+    [...f.retailers, ...l.retailers].map((r) => `${r.key}:${r.recheck_days}`),
+    ["walmart:1", "musiciansfriend:3", "walmart:2"],
   );
   assert.equal(f.catalog_rotation_rule, CATALOG_ROTATION_RULE);
   assert.equal(f.collector_version_pin, TRUSTED_COLLECTOR_VERSION);

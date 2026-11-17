@@ -6,9 +6,11 @@ import {
   clientUrl,
   findForeign,
   foreignTerms,
+  DECLARED_DIFFERENCES,
   layoutGaps,
   normalizeLine,
   parityClients,
+  withDeclaredDifferences,
   type ClientCapture,
   type ParitySettings,
   type Surface,
@@ -22,7 +24,8 @@ import {
       section headings and table column headers (structure, not values) and the screen text.
    2. "@parity-compare": fail where the clients' structure differs, and fail where a client's
       screens show another client's brand names, owned domains, product-type words or vertical
-      words.
+      words. A difference a client's settings declare (seller model, retailers, data sources, logo;
+      DECLARED_DIFFERENCES in client-parity-lib.ts, decision 113) is not a gap.
    These checks are EXPECTED to fail until the parity rounds land (docs/client-parity-gaps.md).
    The fixture client needs a build made with NEXT_PUBLIC_TEST_CLIENT_FILES="$(node scripts/test-client-files.mjs)". */
 
@@ -196,17 +199,22 @@ const group = (id: string) => (id === "map" ? "map" : id.startsWith("deck") ? "d
 
 test.describe("client parity: compare", () => {
   function compare(label: string, keys: string[], file: string) {
-    const all = captures().filter((c) => keys.includes(c.client_key));
+    const raw = captures().filter((c) => keys.includes(c.client_key));
+    const all = withDeclaredDifferences(raw, clients);
     const names = new Set(all.flatMap((c) => c.surfaces.map((s) => group(s.id))));
     const failures: string[] = [];
     const report: unknown[] = [];
+    let before = 0;
     for (const g of names) {
+      before += layoutGaps(raw, (id) => group(id) === g).length;
       for (const gap of layoutGaps(all, (id) => group(id) === g)) {
         report.push({ group: g, ...gap });
         failures.push(`[${g}] ${gap.line}  (has: ${gap.has.join(", ") || "none"}; lacks: ${gap.lacks.join(", ")})`);
       }
     }
     writeFileSync(`${PARITY_DIR}/${file}`, JSON.stringify(report, null, 1));
+    const declared = { rules: DECLARED_DIFFERENCES.map((r) => ({ id: r.id, field: r.field })), gapsBeforeDeclared: before, gaps: report.length };
+    writeFileSync(`${PARITY_DIR}/declared-${file}`, JSON.stringify(declared, null, 1));
     expect(failures, `${label}:\n${failures.join("\n")}`).toEqual([]);
   }
 

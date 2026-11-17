@@ -2,8 +2,6 @@
 
 import { useMemo } from "react";
 import { CitationPieDisc } from "@/components/v3/live/ai-search/CitationPieDisc";
-import { AmazonSpecsLastChecked } from "@/components/v3/live/AmazonSpecsLastChecked";
-import { AmazonSpecsRequiredFields } from "@/components/v3/live/AmazonSpecsRequiredFields";
 import { PartialFigureMark } from "@/components/v3/live/FigureTip";
 import { RetailStatusMark } from "@/components/v3/live/RetailOverviewFigure";
 import type { AmazonSpecRowsRead } from "@/components/v3/live/FenderSpecPanel";
@@ -68,7 +66,8 @@ function ReadinessHero({ hero, stale }: { hero: AiReadinessHeroModel; stale: Par
 }
 
 /**
- * Amazon Specs lead: Amazon attribute completeness only, with Last checked under it.
+ * Amazon Specs lead: Amazon attribute completeness only. Last checked and the required-field lines
+ * sit beside it in the tab's hero band (CatalogReadinessSpec, X-36).
  * Page-found and brand-site figures live on the bubble / Brand-Site Specs.
  * Field totals come from the metrics row when stored; otherwise from the listing rows.
  * The hero's definition names the same check time as Last checked.
@@ -96,8 +95,6 @@ export function AiReadinessLead({ bundle, specRows }: { bundle: CanvasBundle; sp
           <ReadinessHero key={hero.id} hero={hero} stale={stale} />
         ))}
       </div>
-      <AmazonSpecsLastChecked read={specRows} />
-      <AmazonSpecsRequiredFields read={specRows} />
     </div>
   );
 }
