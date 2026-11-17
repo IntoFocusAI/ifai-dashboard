@@ -1,0 +1,71 @@
+name: Actuation expiry reminders
+
+# Decision 77: post one Slack message to #operations for each in-place P1 or P2 Actuation program at
+# 30, 14 and 3 days before it expires (client, factor, owner, expiry date, days left). Decision 103:
+# the same for E2 and E3, at 30, 14 and 3 days before each client's newest verified item stops
+# counting (no named owner; #operations owns them). Each reminder
+# is logged in public.actuation_expiry_reminders_sent before it is posted, so a re-run or a late run
+# never posts it twice (scripts/send-actuation-reminders.ts). Staff only: clients never see this.
+#
+# Daily at 19:41 UTC: 11:41 Pacific in standard time, 12:41 in daylight time.
+# Run it now from the Actions tab with "Run workflow".
+#
+# Secrets: SLACK_OPERATIONS_WEBHOOK_URL (the #operations incoming webhook) and SCORE_SNAPSHOT_DB_URL
+# (the score_snapshot_writer login, granted the reminder functions in
+# supabase/migrations/20261116234000_actuation_reminder_grants.sql). Without either, the run skips
+# with a notice.
+
+on:
+  schedule:
+    - cron: "41 19 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: actuation-reminders
+  cancel-in-progress: false
+
+jobs:
+  remind:
+    name: Send due Actuation reminders
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SLACK_OPERATIONS_WEBHOOK_URL: ${{ secrets.SLACK_OPERATIONS_WEBHOOK_URL }}
+      ACTUATION_REMINDER_DB_URL: ${{ secrets.SCORE_SNAPSHOT_DB_URL }}
+    steps:
+      - name: Check the secrets
+        id: secret
+        run: |
+          if [ -z "$SLACK_OPERATIONS_WEBHOOK_URL" ]; then
+            echo "SLACK_OPERATIONS_WEBHOOK_URL is not set, so no Actuation reminders were sent. Add the repository secret to turn the reminders on."
+            echo "::notice title=Actuation reminders skipped::SLACK_OPERATIONS_WEBHOOK_URL is not set. No reminders were sent."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          elif [ -z "$ACTUATION_REMINDER_DB_URL" ]; then
+            echo "SCORE_SNAPSHOT_DB_URL is not set, so the Actuation records could not be read. No reminders were sent."
+            echo "::notice title=Actuation reminders skipped::SCORE_SNAPSHOT_DB_URL is not set. No reminders were sent."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v4
+        if: steps.secret.outputs.ready == 'true'
+      - uses: actions/setup-node@v4
+        if: steps.secret.outputs.ready == 'true'
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Install psql
+        if: steps.secret.outputs.ready == 'true'
+        run: command -v psql >/dev/null || (sudo apt-get update -q && sudo apt-get install -y -q postgresql-client)
+      - run: npm ci
+        if: steps.secret.outputs.ready == 'true'
+      - name: Send the reminders that are due
+        if: steps.secret.outputs.ready == 'true'
+        run: >-
+          node --experimental-strip-types
+          --import ./scripts/register-alias.mjs
+          --import ./scripts/register-ts-extensions.mjs
+          scripts/send-actuation-reminders.ts
