@@ -1,5 +1,5 @@
 import { enterprisePotentialEstimate, NO_ANALYST_ESTIMATE, phaseOneLiftEstimate } from "@/lib/fender-canvas/analyst-estimates";
-import type { CanvasAiCategoryRow, CanvasBundle, CanvasMetricsRow } from "@/lib/fender-canvas/types";
+import type { CanvasBundle, CanvasMetricsRow } from "@/lib/fender-canvas/types";
 import {
   formatEstimate,
   formatInt,
@@ -10,10 +10,6 @@ import {
   sanitizeUiText,
   titleCaseCategory,
 } from "@/lib/fender-canvas/format";
-
-function catRow(cats: CanvasAiCategoryRow[], slug: string) {
-  return cats.find((c) => c.category === slug);
-}
 
 function estimateOrNone(figure: string): string {
   return figure === NO_ANALYST_ESTIMATE ? figure : formatEstimate(figure);
@@ -27,7 +23,6 @@ function kpiString(m: CanvasMetricsRow, key: string, fallback: string): string {
 
 export function buildTemplateVars(bundle: CanvasBundle): Record<string, string> {
   const { m, cats } = bundle;
-  const beginner = catRow(cats, "beginner");
   const weakestLabel = m.weakest_category ? titleCaseCategory(m.weakest_category) : pendingLabel();
 
   const noOfferPct =
@@ -74,9 +69,6 @@ export function buildTemplateVars(bundle: CanvasBundle): Record<string, string> 
     sim_errors: formatInt(m.sim_errors),
     sim_hallucinations: formatInt(m.sim_hallucinations),
     sim_hallucination_risk: formatInt(m.sim_hallucination_risk),
-    beginner_win_pct: formatPct(beginner?.fender_win_pct ?? null),
-    beginner_top_competitor: beginner?.top_competitor ?? pendingLabel(),
-    beginner_top_competitor_pct: formatPct(beginner?.top_competitor_pct ?? null),
     weakest_category: weakestLabel,
     weakest_win_pct: formatPct(m.weakest_win_pct),
     weakest_top_competitor: m.weakest_top_competitor ?? pendingLabel(),

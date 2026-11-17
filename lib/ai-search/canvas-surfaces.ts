@@ -27,6 +27,16 @@ import type { AiSearchRead } from "@/lib/ai-search/types";
 import { radarBubbleLead } from "@/lib/ai-search/radar-bubble";
 import { selectionLine } from "@/lib/ai-search/displayed-read";
 import { isWindowHistoryKind } from "@/lib/ai-search/window-display";
+import {
+  formatGapPts,
+  periodCategoryLeads,
+  standingCounts,
+  standingHeadline,
+  strongestCategoryStanding,
+  weakestCategoryStanding,
+  type CategoryStandingResult,
+} from "@/lib/ai-search/category-standing";
+import { READ_NOT_AVAILABLE } from "@/lib/fender-canvas/canvas-reads";
 import { brandName, leadBrand } from "@/lib/brand-copy";
 
 /** Engines with resolved unbranded answers, weakest Fender-lead share first (same order as Engine Comparison). */
@@ -514,35 +524,68 @@ const pendingMetric = (read: AiSearchRead) =>
 
 export type AiMetricKey =
   | "overallAiWinRate"
-  | "beginnerAiWinRate"
   | "resolvedSimulations"
   | "confirmedHallucinations"
-  | "beginnerSovGap"
+  | "weakestCategoryGap"
   | "strongestCategorySov";
+
+type CategoryMetricKey = "weakestCategoryGap" | "strongestCategorySov";
+
+function categoryMetricBase(key: CategoryMetricKey) {
+  return key === "weakestCategoryGap"
+    ? { id: "weakest-category-gap", spokeId: "competitors", label: "Weakest category: gap to top rival", subTab: RADAR_TABS.battlecards }
+    : { id: "strongest-category-sov", spokeId: "competitors", label: `Strongest category for ${brandName()}`, subTab: RADAR_TABS.battlecards };
+}
+
+function standingMetric(key: CategoryMetricKey, result: CategoryStandingResult, tone: NodeStatus): CanvasMetric {
+  const base = { ...categoryMetricBase(key), provenance: "live" as const };
+  if (!result.standing) return { ...base, value: READ_NOT_AVAILABLE, detail: result.missing, tone: "warning" };
+  const { standing } = result;
+  return {
+    ...base,
+    value: `${standing.margin >= 0 ? "+" : "-"}${formatGapPts(standing.marginPts)}`,
+    detail: `${standingHeadline(standing)}. ${standingCounts(standing)}.`,
+    tone,
+  };
+}
+
+/**
+ * The strongest and weakest question category in the date-pill read (decisions 83 and 106). The
+ * categories are the client's own, so a client without a category never shows a figure for it.
+ */
+export function categoryStandingMetrics(read: AiSearchRead): Record<CategoryMetricKey, CanvasMetric> {
+  if (read.phase !== "ready") {
+    const pending = { ...pendingMetric(read), tone: "neutral" as const, provenance: "live" as const };
+    return {
+      weakestCategoryGap: { ...categoryMetricBase("weakestCategoryGap"), ...pending },
+      strongestCategorySov: { ...categoryMetricBase("strongestCategorySov"), ...pending },
+    };
+  }
+  const leads = periodCategoryLeads(read.snapshot.calls);
+  return {
+    weakestCategoryGap: standingMetric("weakestCategoryGap", weakestCategoryStanding(leads), "danger"),
+    strongestCategorySov: standingMetric("strongestCategorySov", strongestCategoryStanding(leads), "success"),
+  };
+}
 
 /** AI Search widget values. Ids stay stable so saved widget choices survive. */
 export function aiMetrics(read: AiSearchRead): Record<AiMetricKey, CanvasMetric> {
   const base = {
     overallAiWinRate: { id: "overall-ai-win-rate", spokeId: "aeo", label: "Unbranded Discovery", subTab: AI_TABS.summary },
-    beginnerAiWinRate: { id: "beginner-ai-win-rate", spokeId: "aeo", label: "Beginner AI Win Rate", subTab: AI_TABS.simulations },
     resolvedSimulations: { id: "resolved-simulations", spokeId: "aeo", label: "Answered AI Calls", subTab: AI_TABS.summary },
     confirmedHallucinations: { id: "confirmed-hallucinations", spokeId: "aeo", label: "Product Fact Checks", subTab: AI_TABS.drift },
-    beginnerSovGap: { id: "beginner-sov-gap", spokeId: "competitors", label: "Beginner category: gap to top rival", subTab: RADAR_TABS.battlecards },
-    strongestCategorySov: { id: "strongest-category-sov", spokeId: "competitors", label: `Strongest category for ${brandName()}`, subTab: RADAR_TABS.battlecards },
   } as const;
+  const categories = categoryStandingMetrics(read);
 
   if (read.phase !== "ready") {
     const p = pendingMetric(read);
-    return Object.fromEntries(
+    const pending = Object.fromEntries(
       Object.entries(base).map(([key, m]) => [key, { ...m, ...p, tone: "neutral", provenance: "live" }]),
-    ) as Record<AiMetricKey, CanvasMetric>;
+    ) as Record<keyof typeof base, CanvasMetric>;
+    return { ...pending, ...categories };
   }
 
   const s = summarizeRun(read.snapshot);
-  const beginner = s.categories.find((row) => row.key === "beginner");
-  const beginnerBattle = categoryBattles(read.snapshot.calls).find((b) => b.category === "beginner");
-  const rival = beginnerBattle?.leaders[0];
-  const strongest = strongestCategory(categoryBattles(read.snapshot.calls));
   const live = { provenance: "live" as const };
 
   return {
@@ -551,12 +594,6 @@ export function aiMetrics(read: AiSearchRead): Record<AiMetricKey, CanvasMetric>
       value: s.roles.unbranded.resolved > 0 ? pct(s.roles.unbranded.fenderWins, s.roles.unbranded.resolved) : "No resolved answers",
       detail: `Unbranded ${resolvedPhrase(s.roles.unbranded)}. Branded Consideration ${resolvedPhrase(s.roles.branded)}.`,
       tone: s.roles.unbranded.resolved ? (s.roles.unbranded.fenderWins / s.roles.unbranded.resolved >= 0.75 ? "success" : "warning") : "neutral",
-    },
-    beginnerAiWinRate: {
-      ...base.beginnerAiWinRate, ...live,
-      value: beginner ? pct(beginner.fenderWins, beginner.resolved) : "No beginner prompts",
-      detail: beginner ? `${beginner.fenderWins} of ${beginner.resolved} resolved beginner answers` : "Not in this run",
-      tone: "neutral",
     },
     resolvedSimulations: {
       ...base.resolvedSimulations, ...live,
@@ -570,22 +607,7 @@ export function aiMetrics(read: AiSearchRead): Record<AiMetricKey, CanvasMetric>
       detail: factCheckShortLine(s.drift.coverage),
       tone: s.drift.totalConfirmed > 0 ? "danger" : "success",
     },
-    beginnerSovGap: {
-      ...base.beginnerSovGap, ...live,
-      value: beginnerBattle && beginnerBattle.resolved
-        ? `${(((beginnerBattle.fenderWins - (rival?.wins ?? 0)) * 100) / beginnerBattle.resolved).toFixed(1)} pts`
-        : "No beginner prompts",
-      detail: beginnerBattle
-        ? `${leadBrand()} ${beginnerBattle.fenderWins} vs ${rival ? `${rival.brand} ${rival.wins}` : "no rival"} of ${beginnerBattle.resolved} resolved`
-        : "Not in this run",
-      tone: "neutral",
-    },
-    strongestCategorySov: {
-      ...base.strongestCategorySov, ...live,
-      value: strongest ? pct(strongest.fenderWins, strongest.resolved) : "No resolved answers",
-      detail: strongest ? `${categoryLabel(strongest.category)} · ${strongest.fenderWins} of ${strongest.resolved} resolved` : "Not in this run",
-      tone: "success",
-    },
+    ...categories,
   };
 }
 

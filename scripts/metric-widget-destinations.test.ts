@@ -32,13 +32,12 @@ const EXPECTED_SUBTAB: Record<string, string> = {
   "stranded-reviews": "Catalog Governance",
   "amazon-map-drift": "MAP Leakage",
   "overall-ai-win-rate": "Run Summary",
-  "beginner-ai-win-rate": "Run Details",
   "resolved-simulations": "Run Summary",
   "confirmed-hallucinations": "Product Fact Checks",
   "fender-findability": "Findability",
   "machine-readable-specs": "Brand-Site Specs",
   "missing-schema-fields": "Brand-Site Specs",
-  "beginner-sov-gap": "Category Battlecards",
+  "weakest-category-gap": "Category Battlecards",
   "strongest-category-sov": "Category Battlecards",
   "prioritized-fixes": "Urgent Interventions",
   "phase-one-lift": "Revenue Estimates",
@@ -185,7 +184,6 @@ test("the picker list, including live overrides, opens the named tab", () => {
   const live = buildLiveMetrics(bundle(), { phase: "loading" }, findability);
   assert.equal(live.overallAiWinRate.value, "72.4%");
   assert.equal(live.overallAiWinRate.detail, "80 resolved answers");
-  assert.equal(live.beginnerAiWinRate.value, "41.2%");
   assert.equal(live.flaggedAsins.label, "MAP violations");
   assert.equal(live.flaggedAsins.value, "Loading");
   assert.equal(live.phaseOneLift.value, "+$680K est.");

@@ -377,7 +377,7 @@ const OTHER: Record<string, [spokeId: string, tab: string]> = {
   "buy-box-retention": ["ecommerce", "Retail Overview"],
   "seller-data-coverage": ["ecommerce", "Retail Overview"],
   "stranded-reviews": ["ecommerce", "Catalog Governance"],
-  "beginner-sov-gap": ["competitors", "Category Battlecards"],
+  "weakest-category-gap": ["competitors", "Category Battlecards"],
   "strongest-category-sov": ["competitors", "Category Battlecards"],
   "resolved-simulations": ["aeo", "Run Summary"],
 };
@@ -416,13 +416,14 @@ test("Other lists the figures no tab shows, last, each opening its closest tab w
   assert.equal(reviews.value, NOT_AVAILABLE);
   assert.equal(reviews.reading.missing, "The catalog metrics row does not store a stranded review count.");
 
-  const gap = slotById(slots, "beginner-sov-gap");
-  assert.equal(gap.value, "+100.0 pts");
-  assert.equal(gap.reading.ratio, "Fender/Squier 2 of 2 resolved Beginner Unbranded Discovery answers. No competitor led one.");
-  const best = slotById(slots, "strongest-category-sov");
-  assert.equal(best.label, "Strongest category: Amps");
-  assert.equal(best.value, slotById(slots, "battlecards-amps-unbranded").value, "reads the category's own option");
-  assert.equal(best.reading.ratio, slotById(slots, "battlecards-amps-unbranded").reading.ratio);
+  // The fixture run has no category with 10 resolved Unbranded Discovery answers (decision 106).
+  for (const id of ["weakest-category-gap", "strongest-category-sov"]) {
+    const figure = slotById(slots, id);
+    assert.equal(figure.value, NOT_AVAILABLE, id);
+    assert.match(figure.reading.missing ?? "", /^No category has 10 or more resolved Unbranded Discovery answers/, id);
+  }
+  assert.equal(slotById(slots, "strongest-category-sov").label, "Strongest category for Fender");
+  assert.equal(slotById(slots, "weakest-category-gap").label, "Weakest category: gap to top rival");
   const answered = slotById(slots, "resolved-simulations");
   assert.match(answered.value, /^\d[\d,]* of \d[\d,]*$/);
   assert.equal(answered.reading.ratio, "calls answered", "the count is not repeated under the value");
@@ -449,12 +450,12 @@ test("Other lists the figures no tab shows, last, each opening its closest tab w
   assert.equal(plan.area, undefined, "the 30-60-90 Days tab shows it, so it is not an Other figure");
 
   const unstored = build(retailReady(), { phase: "error", message: "down" }).slots;
-  for (const id of ["buy-box-retention", "seller-data-coverage", "beginner-sov-gap", "strongest-category-sov", "resolved-simulations"]) {
+  for (const id of ["buy-box-retention", "seller-data-coverage", "weakest-category-gap", "strongest-category-sov", "resolved-simulations"]) {
     const slot = slotById(unstored, id);
     assert.equal(slot.value, NOT_AVAILABLE, `${id} without its input`);
     assert.ok(slot.reading.missing, `${id} explains the missing input`);
   }
-  assert.equal(slotById(unstored, "strongest-category-sov").label, "Strongest category");
+  assert.equal(slotById(unstored, "strongest-category-sov").label, "Strongest category for Fender");
 
   const picker = read("lib/canvas-sdk/MetricPicker.tsx");
   assert.match(picker, /\.\.\.areas, \.\.\.extra/, "Other follows the map areas");
@@ -515,7 +516,7 @@ test("each live figure says N of M and the larger slots carry the tab's disc", (
     "battlecards-branded", "battlecards-electrics-unbranded", "battlecards-acoustics-unbranded",
     "battlecards-amps-unbranded", "battlecards-basses-unbranded", "battlecards-beginner-unbranded", "sat-taylor", "sat-amps", "engines-unbranded",
     "engines-branded", "summary-ai-consensus", "summary-ai-foundation", "summary-ai-commerce",
-    "beginner-sov-gap", "strongest-category-sov", "resolved-simulations",
+    "resolved-simulations",
   ];
   const averages = ["map-average-gap"];
   for (const slot of slots) {

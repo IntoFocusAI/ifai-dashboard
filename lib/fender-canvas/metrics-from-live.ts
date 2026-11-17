@@ -1,7 +1,7 @@
+import { categoryStandingMetrics } from "@/lib/ai-search/canvas-surfaces";
 import type { AiSearchRead } from "@/lib/ai-search/types";
 import type { CanvasMetric } from "@/lib/canvas-sdk/types";
 import { enterprisePotentialEstimate, phaseOneLiftEstimate } from "@/lib/fender-canvas/analyst-estimates";
-import { beginnerSovLine } from "@/lib/fender-canvas/beginner-sov";
 import { failedReadTip, READ_NOT_AVAILABLE } from "@/lib/fender-canvas/canvas-reads";
 import { mapPricesNotStored } from "@/lib/fender-canvas/portfolio-retail";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
@@ -10,14 +10,12 @@ import type { CanvasBundle } from "@/lib/fender-canvas/types";
 import {
   formatInt,
   formatPct,
-  formatRatio,
   formatUsd,
   pendingLabel,
 } from "@/lib/fender-canvas/format";
 import { specPageCounts } from "@/lib/fender-canvas/machine-readability";
 import { findabilityWidgetCopy, type FindabilityRead } from "@/lib/findability/copy";
 import { brandSite } from "@/lib/brand-copy";
-import { brandName } from "@/lib/client/active-client";
 
 function toneFromPct(pct: number | null, dangerBelow: number, warnBelow: number) {
   if (pct == null) return "neutral" as const;
@@ -145,8 +143,6 @@ const METRICS_ROW_KEYS = [
   "overallAiWinRate",
   "resolvedSimulations",
   "confirmedHallucinations",
-  "beginnerSovGap",
-  "strongestCategorySov",
 ] as const;
 
 function notAvailable(metric: CanvasMetric, tip: string): CanvasMetric {
@@ -161,8 +157,6 @@ function withFailedReads(bundle: CanvasBundle, metrics: Record<string, CanvasMet
     for (const key of METRICS_ROW_KEYS) out[key] = notAvailable(out[key], metricsTip);
     if (out.amazonMapDrift.detail !== mapPricesNotStored()) out.amazonMapDrift = notAvailable(out.amazonMapDrift, metricsTip);
   }
-  const categoryTip = failedReadTip(bundle, "cats");
-  if (categoryTip) out.beginnerAiWinRate = notAvailable(out.beginnerAiWinRate, categoryTip);
   return out;
 }
 
@@ -182,9 +176,8 @@ function liveMetrics(
   findability: FindabilityRead,
   ai: AiSearchRead,
 ): Record<string, CanvasMetric> {
-  const { m, cats } = bundle;
+  const { m } = bundle;
   const schemaPages = specPageCounts(bundle.specPages);
-  const beginner = cats.find((c) => c.category === "beginner");
 
   const strandedReviews =
     m.bundle_reviews == null ? pendingLabel() : formatInt(m.bundle_reviews);
@@ -264,16 +257,6 @@ function liveMetrics(
       subTab: "Run Summary",
       provenance: "live",
     },
-    beginnerAiWinRate: {
-      id: "beginner-ai-win-rate",
-      spokeId: "aeo",
-      label: "Beginner AI Win Rate",
-      value: formatPct(beginner?.fender_win_pct ?? null),
-      detail: `${beginner?.top_competitor ?? pendingLabel()} ${formatPct(beginner?.top_competitor_pct ?? null)}`,
-      tone: toneFromPct(beginner?.fender_win_pct ?? null, 50, 70),
-      subTab: "Run Details",
-      provenance: "live",
-    },
     resolvedSimulations: {
       id: "resolved-simulations",
       spokeId: "aeo",
@@ -317,28 +300,8 @@ function liveMetrics(
       subTab: "Brand-Site Specs",
       provenance: "live",
     },
-    beginnerSovGap: {
-      id: "beginner-sov-gap",
-      spokeId: "competitors",
-      label: "Beginner category: gap to top rival",
-      value: `${formatInt(m.weakest_sov_gap_pts)} pts`,
-      detail:
-        beginnerSovLine(bundle.sov) ??
-        `vs ${m.weakest_top_competitor ?? pendingLabel()} in ${m.weakest_category ?? pendingLabel()}`,
-      tone: "danger",
-      subTab: "Category Battlecards",
-      provenance: "live",
-    },
-    strongestCategorySov: {
-      id: "strongest-category-sov",
-      spokeId: "competitors",
-      label: `Strongest category for ${brandName()}`,
-      value: formatPct(m.strongest_win_pct),
-      detail: `${m.strongest_category ?? pendingLabel()} · ${formatRatio(m.strongest_wins, m.strongest_resolved)}`,
-      tone: "success",
-      subTab: "Category Battlecards",
-      provenance: "live",
-    },
+    // Strongest and weakest question category: the date-pill read, the client's own categories (decision 106).
+    ...categoryStandingMetrics(ai),
     prioritizedFixes: {
       id: "prioritized-fixes",
       spokeId: "suggestions",

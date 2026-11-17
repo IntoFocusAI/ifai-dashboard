@@ -4,13 +4,20 @@
  * figure comes from.
  */
 
-import { strongestCategory } from "@/lib/ai-search/canvas-surfaces";
-import { categoryBattles } from "@/lib/ai-search/competitors";
-import { categoryLabel } from "@/lib/ai-search/run-metrics";
+import {
+  formatGapPts,
+  periodCategoryLeads,
+  standingCounts,
+  standingHeadline,
+  STRONGEST_CATEGORY_DEFINITION,
+  strongestCategoryStanding,
+  WEAKEST_CATEGORY_DEFINITION,
+  weakestCategoryStanding,
+  type CategoryStandingResult,
+} from "@/lib/ai-search/category-standing";
 import type { NodeStatus } from "@/lib/canvas-sdk/types";
 import { failedReadTip } from "@/lib/fender-canvas/canvas-reads";
 import { formatInt, formatPct } from "@/lib/fender-canvas/format";
-import { categoryUnbrandedFigure } from "@/lib/fender-canvas/minimal-metrics-ai";
 import { ROADMAP_BUBBLE_VALUE } from "@/lib/fender-canvas/roadmap-bubble";
 import {
   aiFigure,
@@ -20,7 +27,7 @@ import {
   type MinimalEntry,
   type MinimalFigure,
 } from "@/lib/fender-canvas/minimal-metric-kit";
-import { brandName, leadBrand } from "@/lib/brand-copy";
+import { brandName } from "@/lib/brand-copy";
 
 const NO_TAB = "No tab shows this figure yet.";
 
@@ -55,10 +62,23 @@ function storedShare(
   };
 }
 
-function strongest(ctx: MinimalContext) {
-  return cached(ctx, "strongest-category", () =>
-    ctx.ai.phase === "ready" ? strongestCategory(categoryBattles(ctx.ai.snapshot.calls)) : null,
-  );
+/** Battlecard leads in the selected period, read once for both category figures. */
+function periodLeads(ctx: MinimalContext) {
+  return cached(ctx, "period-category-leads", () => (ctx.ai.phase === "ready" ? periodCategoryLeads(ctx.ai.snapshot.calls) : []));
+}
+
+/** "+18 pts" with "Fender/Squier leads Electrics by 18 pts" and the counts under it, or the reason it is missing. */
+function standingFigure(result: CategoryStandingResult, tone: NodeStatus): MinimalFigure {
+  if (!result.standing) return missingFigure(result.missing);
+  const { standing } = result;
+  return {
+    value: `${standing.margin >= 0 ? "+" : "-"}${formatGapPts(standing.marginPts)}`,
+    tone,
+    ratio: `${standingHeadline(standing)}. ${standingCounts(standing)}`,
+    pie: null,
+    tip: null,
+    missing: null,
+  };
 }
 
 function other(entry: Omit<MinimalEntry, "area">): MinimalEntry {
@@ -146,49 +166,20 @@ export const OTHER_ENTRIES: MinimalEntry[] = [
     },
   }),
   other({
-    id: "beginner-sov-gap",
+    id: "weakest-category-gap",
     spokeId: "competitors",
     tab: "Category Battlecards",
-    label: "Beginner category: gap to top rival",
-    definition:
-      `${leadBrand()} leads minus the top competitor's leads, in points of resolved Beginner Unbranded Discovery answers in the selected period. Category Battlecards shows the Beginner row. ` +
-      NO_TAB,
-    read: (ctx) =>
-      aiFigure(ctx, (_summary, snapshot) => {
-        const battle = categoryBattles(snapshot.calls).find((item) => item.category === "beginner");
-        if (!battle || battle.resolved <= 0) return missingFigure("The selected period has no resolved Beginner Unbranded Discovery answers.");
-        const rival = battle.leaders[0];
-        const gap = ((battle.fenderWins - (rival?.wins ?? 0)) * 100) / battle.resolved;
-        const scope = `of ${formatInt(battle.resolved)} resolved Beginner Unbranded Discovery answers`;
-        return {
-          value: `${gap > 0 ? "+" : ""}${gap.toFixed(1)} pts`,
-          tone: gap < 0 ? "danger" : gap > 0 ? "success" : "warning",
-          ratio: rival
-            ? `${leadBrand()} ${formatInt(battle.fenderWins)} vs ${rival.brand} ${formatInt(rival.wins)} ${scope}`
-            : `${leadBrand()} ${formatInt(battle.fenderWins)} ${scope}. No competitor led one.`,
-          pie: null,
-          tip: null,
-          missing: null,
-        };
-      }),
+    label: "Weakest category: gap to top rival",
+    definition: `${WEAKEST_CATEGORY_DEFINITION} ${NO_TAB}`,
+    read: (ctx) => aiFigure(ctx, () => standingFigure(weakestCategoryStanding(periodLeads(ctx)), "danger")),
   }),
   other({
     id: "strongest-category-sov",
     spokeId: "competitors",
     tab: "Category Battlecards",
-    label: (ctx) => {
-      const best = strongest(ctx);
-      return best ? `Strongest category: ${categoryLabel(best.category)}` : "Strongest category";
-    },
-    definition:
-      `The question category where ${leadBrand()} leads the largest share of resolved Unbranded Discovery answers in the selected period. Categories with too few answers to compare are skipped while others qualify. Category Battlecards shows every category. ` +
-      NO_TAB,
-    read: (ctx) =>
-      aiFigure(ctx, () => {
-        const best = strongest(ctx);
-        if (!best) return missingFigure("The selected period has no resolved Unbranded Discovery answers.");
-        return categoryUnbrandedFigure(ctx, best.category);
-      }),
+    label: () => `Strongest category for ${brandName()}`,
+    definition: `${STRONGEST_CATEGORY_DEFINITION} ${NO_TAB}`,
+    read: (ctx) => aiFigure(ctx, () => standingFigure(strongestCategoryStanding(periodLeads(ctx)), "success")),
   }),
   other({
     id: "resolved-simulations",
