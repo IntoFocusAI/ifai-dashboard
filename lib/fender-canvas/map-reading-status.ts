@@ -1,8 +1,7 @@
 import { isPastCheckSchedule, partialFigureTip, type PartialFigure } from "@/lib/fender-canvas/canvas-reads";
 import { formatInt } from "@/lib/fender-canvas/format";
 import type { MapSourceRow } from "@/lib/fender-canvas/map-channels";
-import { RECHECK_DAYS, rowsStale } from "@/lib/fender-canvas/row-stale";
-import { isFenderClient } from "@/lib/brand-copy";
+import { RECHECK_DAYS, retailerRecheckDays, rowsStale } from "@/lib/fender-canvas/row-stale";
 
 /** Same job the freshness bar labels MF MAP. */
 export const MUSICIANS_FRIEND_FRESHNESS_JOB = "map_parity_musiciansfriend";
@@ -66,8 +65,9 @@ export type ChannelStale = Partial<Record<string, PartialFigure | null>>;
 
 /**
  * Each channel's own listings against its recheck interval (Watson, 11 Nov): Amazon prices carry
- * featured_offer_checked_at (1 day), Walmart wmt_checked_at (1 day Fender, 2 days Ledlenser),
- * Musician's Friend mf_checked_at (3 days, Fender only). A channel counts the listings with a stored price.
+ * featured_offer_checked_at (1 day); Walmart wmt_checked_at and Musician's Friend mf_checked_at at the
+ * recheck days in the client's retailers setting. A retailer the client does not check reads no
+ * stale line. A channel counts the listings with a stored price.
  */
 export function mapChannelStale(rows: readonly MapSourceRow[], now: number = Date.now()): ChannelStale {
   const rule = (check: string, intervalDays: number) => ({
@@ -76,6 +76,15 @@ export function mapChannelStale(rows: readonly MapSourceRow[], now: number = Dat
     source: "canvas_retail_listings",
     figure: "channel counts",
   });
+  const retailer = (
+    key: string,
+    check: string,
+    priced: (row: MapSourceRow) => boolean,
+    at: (row: MapSourceRow) => string | null | undefined,
+  ): PartialFigure | null => {
+    const days = retailerRecheckDays(key);
+    return days == null ? null : rowsStale(rows.filter(priced), at, rule(check, days), now);
+  };
   return {
     Amazon: rowsStale(
       rows.filter((row) => row.offer_price != null),
@@ -83,17 +92,12 @@ export function mapChannelStale(rows: readonly MapSourceRow[], now: number = Dat
       rule("Amazon", RECHECK_DAYS.buyBox),
       now,
     ),
-    Walmart: rowsStale(
-      rows.filter((row) => (row.wmt_price ?? 0) > 0),
-      (row) => row.wmt_checked_at,
-      rule("Walmart", isFenderClient() ? RECHECK_DAYS.walmartFender : RECHECK_DAYS.walmartLedlenser),
-      now,
-    ),
-    "Musician's Friend": rowsStale(
-      rows.filter((row) => (row.mf_price ?? 0) > 0),
+    Walmart: retailer("walmart", "Walmart", (row) => (row.wmt_price ?? 0) > 0, (row) => row.wmt_checked_at),
+    "Musician's Friend": retailer(
+      "musiciansfriend",
+      "Musician's Friend",
+      (row) => (row.mf_price ?? 0) > 0,
       (row) => row.mf_checked_at,
-      rule("Musician's Friend", RECHECK_DAYS.musiciansFriend),
-      now,
     ),
   };
 }

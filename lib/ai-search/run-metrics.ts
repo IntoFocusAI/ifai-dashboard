@@ -10,8 +10,6 @@ const ENGINE_LABELS: Record<string, string> = {
   copilot: "Copilot",
 };
 
-export const FENDER_BRAND = "Fender/Squier";
-
 /** Below this many resolved answers, an engine or category is not compared with the others. */
 export const MIN_COMPARABLE_RESOLVED = 10;
 

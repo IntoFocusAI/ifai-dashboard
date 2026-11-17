@@ -27,8 +27,8 @@ test("a row is stale after twice its recheck interval, not at it", () => {
   assert.ok(read(2.1, 1));
   assert.equal(read(4, 2), null);
   assert.ok(read(4.1, 2));
-  assert.equal(read(6, RECHECK_DAYS.musiciansFriend), null);
-  assert.ok(read(34, RECHECK_DAYS.musiciansFriend));
+  assert.equal(read(6, 3), null);
+  assert.ok(read(34, 3));
   assert.equal(read(14, RECHECK_DAYS.weekly), null);
   assert.ok(read(15, RECHECK_DAYS.weekly));
 });

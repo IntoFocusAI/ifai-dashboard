@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { HeroBand } from "@/components/v3/live/HeroBand";
 import { MachineReadabilityPageTable } from "@/components/v3/live/MachineReadabilityPageTable";
 import { PageFoundTable } from "@/components/v3/live/PageFoundTable";
 import { ShareHeroCard } from "@/components/v3/live/ShareHeroCard";
@@ -34,7 +35,7 @@ function BrandSiteSpecsNotes({ summary }: { summary: SpecPageSummary | null }) {
       className="content-box"
       data-machine-readability-notes=""
       data-brand-site-specs-notes=""
-      style={{ flex: "1 1 240px", minWidth: 200, display: "flex", flexDirection: "column", gap: 10 }}
+      style={{ display: "flex", flexDirection: "column", gap: 10 }}
     >
       <div className="ceo-callout" style={{ margin: 0 }}>
         <div className="ceo-callout-header">
@@ -75,33 +76,32 @@ export function MachineReadabilityPanel({
 
   return (
     <div className="readiness-surface" data-machine-readability="" data-brand-site-specs="">
-      <div
-        data-machine-readability-lead=""
-        data-brand-site-specs-lead=""
-        style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "flex-start" }}
-      >
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "stretch" }}>
-          <ShareHeroCard
-            hero={pageFound}
-            dataAttr="data-machine-hero"
-            open={openTable === PAGE_FOUND_HERO_ID}
-            onToggle={() => toggle(PAGE_FOUND_HERO_ID)}
-            controls={PAGE_FOUND_TABLE_ID}
-            anchorId={PAGE_FOUND_ANCHOR}
-          />
-          {heroes.map((hero) => (
+      <HeroBand
+        bandAttrs={{ "data-machine-readability-lead": "", "data-brand-site-specs-lead": "" }}
+        heroes={
+          <>
             <ShareHeroCard
-              key={hero.id}
-              hero={hero}
+              hero={pageFound}
               dataAttr="data-machine-hero"
-              open={openTable === hero.id}
-              onToggle={() => toggle(hero.id)}
-              controls={PAGES_TABLE_ID}
+              open={openTable === PAGE_FOUND_HERO_ID}
+              onToggle={() => toggle(PAGE_FOUND_HERO_ID)}
+              controls={PAGE_FOUND_TABLE_ID}
+              anchorId={PAGE_FOUND_ANCHOR}
             />
-          ))}
-        </div>
-        <BrandSiteSpecsNotes summary={summary} />
-      </div>
+            {heroes.map((hero) => (
+              <ShareHeroCard
+                key={hero.id}
+                hero={hero}
+                dataAttr="data-machine-hero"
+                open={openTable === hero.id}
+                onToggle={() => toggle(hero.id)}
+                controls={PAGES_TABLE_ID}
+              />
+            ))}
+          </>
+        }
+        notes={<BrandSiteSpecsNotes summary={summary} />}
+      />
 
       {openTable === PAGE_FOUND_HERO_ID ? (
         <PageFoundTable read={pageFoundRead} hero={pageFound} tableId={PAGE_FOUND_TABLE_ID} />

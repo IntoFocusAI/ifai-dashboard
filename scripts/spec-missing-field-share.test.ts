@@ -79,10 +79,13 @@ test("Amazon Specs puts Top missing fields beside the completeness hero", () => 
   const brandSite = read("components/v3/live/MachineReadabilityPanel.tsx");
   const css = read("lib/canvas-sdk/canvas-sdk.css");
 
-  assert.match(catalog, /data-amazon-specs-band/);
-  assert.match(catalog, /display:\s*"flex"/);
-  assert.match(catalog, /flexWrap:\s*"wrap"/);
-  assert.match(catalog, /alignItems:\s*"flex-start"/);
+  // X-36: the shared hero band (HeroBand.tsx, .hero-band in canvas-sdk.css), not per-tab styles.
+  const band = read("components/v3/live/HeroBand.tsx");
+  assert.match(catalog, /<HeroBand/);
+  assert.match(catalog, /"data-amazon-specs-band": ""/);
+  assert.match(band, /className=\{notes \? "hero-band"/);
+  assert.match(css, /\.hero-band \{[^}]*display:\s*flex;[^}]*flex-wrap:\s*wrap;[^}]*align-items:\s*flex-start/);
+  assert.match(css, /\.hero-band-notes \{[^}]*flex:\s*1 1 280px/);
   assert.match(catalog, /MissingFieldList/);
   assert.match(catalog, /AiReadinessLead/);
   assert.match(panel, /export function MissingFieldList/);
@@ -92,12 +95,11 @@ test("Amazon Specs puts Top missing fields beside the completeness hero", () => 
     panel,
     /className="content-box spec-missing-fields-box"[\s\S]*?style=\{\{\s*flex:\s*"1 1 240px",\s*minWidth:\s*200\s*\}\}/,
   );
-  // Same horizontal-band idea as Brand-Site Specs (hero/explainer row, table below).
-  assert.match(brandSite, /alignItems:\s*"flex-start"/);
-  assert.match(brandSite, /flex:\s*"1 1 240px"/);
+  // Same hero band as Brand-Site Specs and Amazon A+ Matrix (heroes and notes, table below).
+  assert.match(brandSite, /<HeroBand/);
+  assert.match(read("components/v3/live/AplusMatrixPanel.tsx"), /<HeroBand/);
   assert.match(catalog, /data-amazon-specs-hero-col/);
-  assert.match(catalog, /flex:\s*"0 0 auto"/);
-  assert.match(catalog, /width:\s*"max-content"/);
+  assert.match(css, /\.hero-band-heroes \{[^}]*flex:\s*0 1 auto/);
   assert.match(css, /\[data-amazon-specs-band\]\s*\.findability-lead-card/);
   assert.match(css, /width:\s*max-content/);
   assert.match(css, /\[data-amazon-specs-hero\]\s*\.findability-lead-row\s*\{[^}]*flex-wrap:\s*nowrap/);

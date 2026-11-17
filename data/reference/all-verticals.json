@@ -1,0 +1,33 @@
+{
+  "vertical": null,
+  "about": "Sites every vertical shares. Facts about the public site only, never drawn from a client's answers, listings or prompts.",
+  "site_classes": {
+    "retailer": [
+      "amazon.com",
+      "amazon.co.uk",
+      "amazon.ca",
+      "walmart.com",
+      "bestbuy.com"
+    ],
+    "editorial": [
+      "nytimes.com",
+      "wirecutter.com"
+    ],
+    "community": [
+      "reddit.com",
+      "quora.com"
+    ],
+    "video": [
+      "youtube.com",
+      "youtu.be",
+      "vimeo.com",
+      "tiktok.com"
+    ],
+    "reference": [
+      "wikipedia.org",
+      "manualslib.com",
+      "manuals.plus"
+    ]
+  },
+  "brand_sites": {}
+}

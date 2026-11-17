@@ -4,7 +4,7 @@ import { mutedText } from "@/components/v3/live/ai-search/AiReadGate";
 import { ExternalLink } from "@/components/v3/live/ai-search/ExternalLink";
 import { answerCopy, useAnswerText } from "@/components/v3/live/ai-search/useAnswerText";
 import type { CitationEvidence } from "@/lib/ai-search/citations";
-import { answerLookupId, whyNotFender } from "@/lib/ai-search/why-not-fender";
+import { answerLookupId, whyNotBrand } from "@/lib/ai-search/why-not-brand";
 import type { AiCallRow } from "@/lib/ai-search/types";
 
 /** One plain sentence about a competitor-led answer, then its cited pages and the stored answer on demand. */
@@ -12,7 +12,7 @@ export function WhyNotFender({ row, pages }: { row: AiCallRow; pages: CitationEv
   const lookup = answerLookupId(row.id);
   const stored = lookup === null || row.answer_text !== undefined ? (row.answer_text ?? null) : undefined;
   const answer = useAnswerText(lookup ?? row.id, stored);
-  const view = whyNotFender({
+  const view = whyNotBrand({
     answerText: answer.status === "ready" ? answer.text : null,
     winner: row.primary_brand,
     pages: pages.map((page) => ({ href: page.rawUrl, label: page.title || page.domain })),

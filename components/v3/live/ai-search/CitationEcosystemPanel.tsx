@@ -43,38 +43,46 @@ import { citationEvidence, citedAnswers, groupCitations, type CitationScope } fr
 import { citationPopulation } from "@/lib/ai-search/engine-group";
 import { citationStorageCaution } from "@/lib/ai-search/review-runs";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
-import { brandName, brandOwned, isFenderClient } from "@/lib/brand-copy";
+import { brandName, brandOwned } from "@/lib/brand-copy";
+import { ownedSitesOwner } from "@/lib/ai-search/brand-words";
 
-const LINK_COLUMNS = [
-  {
-    ...clientColumn("links", "Links", "number", 90, 72),
-    headerTooltip: {
-      title: "Links",
-      description: `Explicit links the engines returned with these answers. ${CITED_LINK_COUNT_CAVEAT}`,
+/* Columns are built per render, so the brand words read the client on screen, never the one at import. */
+function linkColumns() {
+  return [
+    {
+      ...clientColumn("links", "Links", "number", 90, 72),
+      headerTooltip: {
+        title: "Links",
+        description: `Explicit links the engines returned with these answers. ${CITED_LINK_COUNT_CAVEAT}`,
+      },
     },
-  },
-  {
-    ...clientColumn("owned", brandOwned(), "number", 130, 100),
-    headerTooltip: {
-      title: `${brandOwned()} links`,
-      description: `Links to sites controlled by ${isFenderClient() ? "Fender or another FMIC brand" : brandName()}. ${CITED_LINK_COUNT_CAVEAT}`,
+    {
+      ...clientColumn("owned", brandOwned(), "number", 130, 100),
+      headerTooltip: {
+        title: `${brandOwned()} links`,
+        description: `Links to sites controlled by ${ownedSitesOwner()}. ${CITED_LINK_COUNT_CAVEAT}`,
+      },
     },
-  },
-];
+  ];
+}
 
 const groupKey = (group: { key: string }) => group.key;
 
-const ENGINE_COLUMNS = [
-  clientColumn("engine", "Engine", "text", 140, 100),
-  clientColumn("cited", "Cited answers", "number", 140, 110),
-  ...LINK_COLUMNS,
-];
+function engineColumns() {
+  return [
+    clientColumn("engine", "Engine", "text", 140, 100),
+    clientColumn("cited", "Cited answers", "number", 140, 110),
+    ...linkColumns(),
+  ];
+}
 
-const CATEGORY_COLUMNS = [
-  clientColumn("category", "Category", "text", 180, 120),
-  clientColumn("cited", "Cited answers", "number", 140, 110),
-  ...LINK_COLUMNS,
-];
+function categoryColumns() {
+  return [
+    clientColumn("category", "Category", "text", 180, 120),
+    clientColumn("cited", "Cited answers", "number", 140, 110),
+    ...linkColumns(),
+  ];
+}
 
 function Ecosystem({
   snapshot,
@@ -88,6 +96,7 @@ function Ecosystem({
   filters: EcosystemFilters;
 }) {
   const focus = useEvidenceFocus();
+  const columns = useMemo(() => ({ engine: engineColumns(), category: categoryColumns() }), []);
   const { question, narrowTo } = filters;
   const scope: CitationScope = questionScope(question);
   const [pick, setPick] = useState<CitationPick>(() =>
@@ -214,7 +223,7 @@ function Ecosystem({
             </div>
             <CountTable
               tableId="citation-engines"
-              columns={ENGINE_COLUMNS}
+              columns={columns.engine}
               rows={byEngine}
               keyOf={groupKey}
               exportScope={exportScope}
@@ -247,7 +256,7 @@ function Ecosystem({
               </div>
               <CountTable
                 tableId="citation-categories"
-                columns={CATEGORY_COLUMNS}
+                columns={columns.category}
                 rows={byCategory}
                 keyOf={groupKey}
                 exportScope={exportScope}

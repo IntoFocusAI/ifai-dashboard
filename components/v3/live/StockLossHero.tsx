@@ -2,7 +2,8 @@
 
 import { PartialFigureMark } from "@/components/v3/live/FigureTip";
 import { RetailShareDisc } from "@/components/v3/live/RetailOverviewFigure";
-import { isFenderClient } from "@/lib/brand-copy";
+import { brandName } from "@/lib/brand-copy";
+import { activeClientSettings } from "@/lib/client/active-client";
 import { formatInt, formatUsd } from "@/lib/fender-canvas/format";
 import {
   lostSalesPartial,
@@ -30,8 +31,9 @@ function estimateTooltipDesc(sum: LostSalesSum, populationCount: number | null):
     `Each window is also what the next period of the same length would miss if the sales rate and the out-of-stock pattern hold. ` +
     `Totals from different sales sources are never added together. ` +
     `It is an analyst estimate, not reported sales. ` +
-    (isFenderClient()
-      ? "Fender sells through dealers, so the data shows that a listing ran out but not whether Fender or the dealer did."
+    // Keyed on the seller type in the client settings (P-15): a partner-led brand sells through dealers.
+    (activeClientSettings().seller_type === "partner_led"
+      ? `${brandName()} sells through dealers, so the data shows that a listing ran out but not whether ${brandName()} or the dealer did.`
       : "The data shows that a listing ran out, not which seller ran out.")
   );
 }
