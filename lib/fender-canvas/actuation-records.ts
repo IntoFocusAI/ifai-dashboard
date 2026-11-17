@@ -4,7 +4,7 @@
  * Migration: supabase/migrations/20261116220000_actuation_records.sql.
  */
 
-import { CLIENTS, type ClientKey } from "@/lib/client/active-client";
+import { clientProfile, isClientKey, type ClientKey } from "@/lib/client/active-client";
 import {
   itemsInWindow,
   type ItemFactorId,
@@ -119,7 +119,7 @@ type RpcClient = {
 
 /** The set-aside client key (public.set_aside_clients): "fmic" for Fender, "ledlenser". */
 export function actuationClientKey(client: ClientKey): string {
-  return CLIENTS[client].setAsideKey;
+  return clientProfile(client).setAsideKey;
 }
 
 /**
@@ -186,7 +186,7 @@ function positiveInt(value: string): number | null {
 
 export function programPayload(input: ProgramInput, today: string): Checked<Record<string, unknown>> {
   if (input.factor !== "P1" && input.factor !== "P2") return { ok: false, message: "Unknown factor." };
-  if (!Object.hasOwn(CLIENTS, input.client)) return { ok: false, message: "Unknown client." };
+  if (!isClientKey(input.client)) return { ok: false, message: "Unknown client." };
   const amount = positiveInt(input.amount);
   if (amount == null) {
     return {
@@ -234,7 +234,7 @@ export type ItemInput = {
 
 export function itemPayload(input: ItemInput, today: string): Checked<Record<string, unknown>> {
   if (input.factor !== "E2" && input.factor !== "E3") return { ok: false, message: "Unknown factor." };
-  if (!Object.hasOwn(CLIENTS, input.client)) return { ok: false, message: "Unknown client." };
+  if (!isClientKey(input.client)) return { ok: false, message: "Unknown client." };
   const url = input.url.trim();
   if (!HTTP_URL.test(url) || url.length > 2000 || !normalizeDomain(url)) {
     return { ok: false, message: "The link must start with http:// or https://." };

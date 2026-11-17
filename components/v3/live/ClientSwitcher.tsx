@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { activeClientKey, CLIENTS, CLIENT_KEYS, clientHref, isClientKey } from "@/lib/client/active-client";
+import { activeClientKey, clientHref, isClientKey, listClients } from "@/lib/client/active-client";
 
 /**
  * Testing switcher between client brands until login ships. Each brand reads
@@ -34,9 +34,9 @@ export function ClientSwitcher() {
           color: "var(--text-primary, inherit)",
         }}
       >
-        {CLIENT_KEYS.map((key) => (
-          <option key={key} value={key}>
-            {CLIENTS[key].brandName}
+        {listClients().map((client) => (
+          <option key={client.client_key} value={client.client_key}>
+            {client.display_name}
           </option>
         ))}
       </select>

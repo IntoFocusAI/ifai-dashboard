@@ -18,7 +18,7 @@ import {
   episodeEndLabel,
   episodeKey,
 } from "../lib/fender-canvas/stock-loss.ts";
-import { CLIENTS } from "../lib/client/active-client.ts";
+import { clientProfile, listClientKeys } from "../lib/client/active-client.ts";
 
 const read = (path: string) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 
@@ -41,7 +41,7 @@ function listing(asin: string, overrides: Partial<ChannelSourceRow> = {}): Chann
 }
 
 test("R-02: each seller type has a neutral definition and its Controlled Buy Box rule", () => {
-  for (const client of Object.values(CLIENTS)) {
+  for (const client of listClientKeys().map(clientProfile)) {
     const definition = sellerTypeDefinition(client.sellerModel);
     assert.ok(definition, `${client.sellerModel} has a definition`);
     assert.match(definition, /counts as controlled/);

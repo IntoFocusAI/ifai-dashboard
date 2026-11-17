@@ -421,5 +421,7 @@ test("client focus is staff-set per client in configuration; the default is the 
   assert.equal(staffFocus(), BRAND_FOCUS, "both clients default to the whole brand");
   assert.deepEqual(staffFocus("acoustics"), { kind: "category", key: "acoustics" });
   assert.equal(staffFocus("acoustics"), staffFocus("acoustics"), "one object per category");
-  assert.match(read("lib/client/active-client.ts"), /roadmapFocusCategory: null,[\s\S]*roadmapFocusCategory: null,/);
+  for (const client of ["fender", "ledlenser"]) {
+    assert.match(read(`data/clients/${client}.json`), /"roadmap_focus_category": null,/, client);
+  }
 });

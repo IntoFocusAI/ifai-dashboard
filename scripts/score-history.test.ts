@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
-import { CLIENTS } from "../lib/client/active-client.ts";
+import { clientProfile } from "../lib/client/active-client.ts";
 import { consensusFromLive } from "../lib/fender-canvas/consensus-scores-from-live.ts";
 import { consensusScore, type CommerceInputs, type FoundationInputs } from "../lib/fender-canvas/consensus-scores.ts";
 import type { PortfolioRetailSnapshot } from "../lib/fender-canvas/portfolio-retail.ts";
@@ -189,7 +189,7 @@ test("the save scores with consensusFromLive, the cards' own function", () => {
   const input = reads();
   const expected = consensusFromLive({ ...input, authorizedPartners: null });
   assert.ok(expected?.score != null);
-  const snapshot = scoreSnapshotFromReads(CLIENTS.fender, "2026-11-16", input);
+  const snapshot = scoreSnapshotFromReads(clientProfile("fender"), "2026-11-16", input);
   assert.ok(snapshot);
   assert.equal(snapshot.clientKey, "fmic");
   assert.equal(snapshot.consensus, Math.round(expected.score * 100) / 100);
@@ -197,9 +197,9 @@ test("the save scores with consensusFromLive, the cards' own function", () => {
   assert.equal(snapshot.commerce, Math.round((expected.commerce.score as number) * 100) / 100);
   assert.equal(snapshot.actuation, null);
   assert.deepEqual((snapshot.inputs.foundationInputs as FoundationInputs).machineReadableSpecs, share(1, 4));
-  assert.equal(scoreSnapshotFromReads(CLIENTS.ledlenser, "2026-11-16", input)?.clientKey, "ledlenser");
+  assert.equal(scoreSnapshotFromReads(clientProfile("ledlenser"), "2026-11-16", input)?.clientKey, "ledlenser");
   // No retail read: the cards say not available, and nothing is saved.
-  assert.equal(scoreSnapshotFromReads(CLIENTS.fender, "2026-11-16", reads({ phase: "error" })), null);
+  assert.equal(scoreSnapshotFromReads(clientProfile("fender"), "2026-11-16", reads({ phase: "error" })), null);
 });
 
 test("the script keeps no second copy of the formula and saves every client", () => {
@@ -209,14 +209,14 @@ test("the script keeps no second copy of the formula and saves every client", ()
   for (const source of [script, compute, read("lib/fender-canvas/score-snapshot-reads.ts")]) {
     assert.doesNotMatch(source, /consensusScore\(|foundationScore\(|commerceScore\(|nominalWeight/);
   }
-  assert.match(script, /for \(const key of CLIENT_KEYS\)/);
+  assert.match(script, /for \(const key of listClientKeys\(\)\)/);
   // Scored inside the client's scope: the brand name and required spec fields follow the client.
   assert.match(script, /runWithClient\(key, async \(\) =>\s*scoreSnapshotFromReads\(client, weekStart, await loadScoreSnapshotReads\(\)/);
   assert.match(script, /SCORE_SNAPSHOT_DB_URL is not set/);
 });
 
 test("the save SQL is one function call per client with the inputs dollar-quoted", () => {
-  const snapshot = scoreSnapshotFromReads(CLIENTS.fender, "2026-11-16", reads());
+  const snapshot = scoreSnapshotFromReads(clientProfile("fender"), "2026-11-16", reads());
   assert.ok(snapshot);
   const sql = snapshotSaveSql({ ...snapshot, inputs: { note: "it's $scores$ here" } });
   assert.match(sql, /^select public\.canvas_score_snapshot_save\('fmic', date '2026-11-16', [\d.]+, [\d.]+, [\d.]+, null, \$scores1\$/);
