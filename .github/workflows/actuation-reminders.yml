@@ -8,7 +8,7 @@ name: Actuation expiry reminders
 # never posts it twice (scripts/send-actuation-reminders.ts). Staff only: clients never see this.
 #
 # Daily at 19:41 UTC: 11:41 Pacific in standard time, 12:41 in daylight time.
-# Run it now from the Actions tab with "Run workflow".
+# Run it now from the Actions tab with "Run workflow" (Actions > Actuation expiry reminders).
 #
 # Secrets: SLACK_OPERATIONS_WEBHOOK_URL (the #operations incoming webhook) and SCORE_SNAPSHOT_DB_URL
 # (the score_snapshot_writer login, granted the reminder functions in
