@@ -83,7 +83,11 @@ export function useTourCard({
   framePoint,
   cameraMs = 600,
 }: Options) {
+  /** When a held card shows regardless. Set on the first frame after the hold, not when the
+      hold starts: a busy main thread can delay that frame, and the camera move with it, past the
+      whole camera time, which used to show the card over a lit area that had not moved yet. */
   const holdUntil = useRef(0);
+  const holdMs = useRef(0);
   const targetX = target?.x;
   const targetY = target?.y;
   const targetRadius = target?.radius;
@@ -92,6 +96,7 @@ export function useTourCard({
     const card = cardRef.current;
     if (!active) {
       holdUntil.current = 0;
+      holdMs.current = 0;
       if (card) delete card.dataset.held;
       return;
     }
@@ -133,9 +138,11 @@ export function useTourCard({
     }
     if (plan.clearance < 0) {
       card.dataset.held = "true";
-      holdUntil.current = performance.now() + cameraMs;
+      holdUntil.current = 0;
+      holdMs.current = cameraMs;
     } else {
       holdUntil.current = 0;
+      holdMs.current = 0;
       release(card);
     }
     framePoint(targetX, targetY, TOUR_FRAME_SCALE, framingInset(plan.side, vw, zone));
@@ -171,10 +178,13 @@ export function useTourCard({
         overlay.style.setProperty("--tour-hole-y", `${hole.y - host.top}px`);
         overlay.style.setProperty("--tour-hole-r", `${Math.round(hole.r)}px`);
         const card = cardRef.current;
-        if (card && holdUntil.current) {
+        if (card && holdMs.current) {
+          const now = performance.now();
+          if (!holdUntil.current) holdUntil.current = now + holdMs.current;
           const clear = circleBoxClearance(hole, cardBox(card, overlay)) >= 0;
-          if (clear || performance.now() >= holdUntil.current) {
+          if (clear || now >= holdUntil.current) {
             holdUntil.current = 0;
+            holdMs.current = 0;
             release(card);
           }
         }

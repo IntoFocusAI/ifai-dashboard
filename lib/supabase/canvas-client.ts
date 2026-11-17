@@ -3,7 +3,8 @@ import { activeClient } from "@/lib/client/active-client";
 import { aliasingFetch } from "@/lib/client/column-aliases";
 
 let publicClient: SupabaseClient | null = null;
-let brandClient: SupabaseClient | null = null;
+/** One client per brand schema, so a server process serving two brands never reuses another's. */
+const brandClients = new Map<string, SupabaseClient>();
 
 function env() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -38,12 +39,14 @@ export function getPublicCanvasSupabase(): SupabaseClient {
 export function getCanvasSupabase(): SupabaseClient {
   const client = activeClient();
   if (client.schema === "public") return getPublicCanvasSupabase();
-  if (brandClient) return brandClient;
+  const cached = brandClients.get(client.schema);
+  if (cached) return cached;
   const { url, key } = env();
-  brandClient = createClient(url, key, {
+  const brandClient = createClient(url, key, {
     auth: { persistSession: false },
     db: { schema: client.schema },
     global: { fetch: aliasingFetch() },
   }) as unknown as SupabaseClient;
+  brandClients.set(client.schema, brandClient);
   return brandClient;
 }

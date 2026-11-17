@@ -456,7 +456,7 @@ function exampleGap(): HubSlot {
     tone: "neutral",
     chart: null,
     spokeId: "roadmap",
-    subTab: "30-60-90 Day Milestones",
+    subTab: "30-60-90 Days",
   });
 }
 
@@ -495,7 +495,7 @@ export function buildHubSlots(input: HubSlotInput): Record<string, HubSlotFeed> 
   const roadmapAction = actionSlot(undefined, "Open", {
     ...openAction,
     spokeId: "roadmap",
-    subTab: "30-60-90 Day Milestones",
+    subTab: "30-60-90 Days",
     label: "30-60-90 Day Milestones",
     detail: "The phases are a plan, not a measured result.",
     note: "Not a live reading.",
@@ -527,7 +527,7 @@ export function buildHubSlots(input: HubSlotInput): Record<string, HubSlotFeed> 
         tone: "neutral",
         chart: null,
         spokeId: "roadmap",
-        subTab: "30-60-90 Day Milestones",
+        subTab: "30-60-90 Days",
       }),
       { ...roadmapAction, role: "action" },
     ]),
