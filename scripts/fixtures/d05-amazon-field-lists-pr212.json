@@ -1,0 +1,223 @@
+{
+  "source": "lib/findability/amazon-field-lists.ts on origin/worker/28.3-d05-lists (PR 212, commit a0277096), copied 17 Nov 2026",
+  "lists": [
+    {
+      "productType": "GUITARS",
+      "label": "guitars",
+      "sampled": 15,
+      "sourceDate": "2026-11-11",
+      "fields": [
+        {
+          "field": "back_material_type",
+          "label": "Back material",
+          "filled": 15
+        },
+        {
+          "field": "body_material_type",
+          "label": "Body",
+          "filled": 15
+        },
+        {
+          "field": "color",
+          "label": "Color",
+          "filled": 15
+        },
+        {
+          "field": "guitar_bridge_system",
+          "label": "Bridge",
+          "filled": 15
+        },
+        {
+          "field": "guitar_pickup_configuration",
+          "label": "Pickups",
+          "filled": 15
+        },
+        {
+          "field": "hand_orientation",
+          "label": "Handedness",
+          "filled": 15
+        },
+        {
+          "field": "instrument",
+          "label": "Instrument",
+          "filled": 15
+        },
+        {
+          "field": "neck_material_type",
+          "label": "Neck",
+          "filled": 15
+        },
+        {
+          "field": "top_material_type",
+          "label": "Top material",
+          "filled": 15
+        },
+        {
+          "field": "fretboard_material_type",
+          "label": "Fretboard",
+          "filled": 14
+        },
+        {
+          "field": "number_of_strings",
+          "label": "Strings",
+          "filled": 14
+        },
+        {
+          "field": "string_material_type",
+          "label": "String material",
+          "filled": 13
+        },
+        {
+          "field": "included_components",
+          "label": "Included components",
+          "filled": 9
+        },
+        {
+          "field": "instrument_size",
+          "label": "Instrument size",
+          "filled": 8
+        },
+        {
+          "field": "scale_length",
+          "label": "Scale length",
+          "filled": 8
+        },
+        {
+          "field": "connector_type",
+          "label": "Connector type",
+          "filled": 6
+        },
+        {
+          "field": "material_type",
+          "label": "Material",
+          "filled": 5
+        }
+      ]
+    },
+    {
+      "productType": "FLASHLIGHT",
+      "label": "flashlights",
+      "sampled": 17,
+      "sourceDate": "2026-11-11",
+      "fields": [
+        {
+          "field": "additional_features",
+          "label": "Additional features",
+          "filled": 17
+        },
+        {
+          "field": "color",
+          "label": "Color",
+          "filled": 17
+        },
+        {
+          "field": "light_source_type",
+          "label": "Light source",
+          "filled": 17
+        },
+        {
+          "field": "number_of_light_sources",
+          "label": "Number of light sources",
+          "filled": 17
+        },
+        {
+          "field": "power_source",
+          "label": "Power source",
+          "filled": 17
+        },
+        {
+          "field": "light_source_special_features",
+          "label": "Light special features",
+          "filled": 16
+        },
+        {
+          "field": "water_resistance_level",
+          "label": "Water resistance",
+          "filled": 16
+        },
+        {
+          "field": "white_brightness",
+          "label": "Brightness",
+          "filled": 16,
+          "alsoCounts": [
+            "light_output_maximum"
+          ]
+        },
+        {
+          "field": "battery_type",
+          "label": "Battery type",
+          "filled": 15
+        },
+        {
+          "field": "included_components",
+          "label": "Included components",
+          "filled": 15
+        },
+        {
+          "field": "material_type",
+          "label": "Material",
+          "filled": 15
+        },
+        {
+          "field": "mounting_type",
+          "label": "Mounting type",
+          "filled": 15
+        },
+        {
+          "field": "number_of_batteries",
+          "label": "Number of batteries",
+          "filled": 15
+        },
+        {
+          "field": "item_shape",
+          "label": "Shape",
+          "filled": 14
+        },
+        {
+          "field": "recommended_uses_for_product",
+          "label": "Recommended uses",
+          "filled": 14
+        },
+        {
+          "field": "runtime",
+          "label": "Runtime",
+          "filled": 13
+        },
+        {
+          "field": "battery_description",
+          "label": "Battery description",
+          "filled": 12
+        },
+        {
+          "field": "finish_types",
+          "label": "Finish",
+          "filled": 12
+        },
+        {
+          "field": "voltage",
+          "label": "Voltage",
+          "filled": 9
+        },
+        {
+          "field": "battery_life",
+          "label": "Battery life",
+          "filled": 7
+        },
+        {
+          "field": "light_source_wattage",
+          "label": "Light wattage",
+          "filled": 7
+        },
+        {
+          "field": "wattage",
+          "label": "Wattage",
+          "filled": 6
+        }
+      ]
+    }
+  ],
+  "noListProductTypes": {
+    "ELECTRIC_LIGHT": "work and utility lights",
+    "ELECTRIC_LANTERN": "lanterns"
+  }
+}
