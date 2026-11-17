@@ -29,25 +29,40 @@ export type StoredNotFoundReason = {
 
 export const STORED_REASONS: Record<StoredReasonCode, { label: string; definition: string }> = {
   no_matching_model: {
-    label: `No matching ${brandSite()} product page`,
-    definition: `${brandSite()} search returned product pages, but none was for this model.`,
+    get label() {
+      return `No matching ${brandSite()} product page`;
+    },
+    get definition() {
+      return `${brandSite()} search returned product pages, but none was for this model.`;
+    },
   },
   candidate_page_missing: {
-    label: `Matching ${brandSite()} page is missing`,
-    definition: `${brandSite()} search pointed to a page for this model, but that page does not exist on ${brandSite()}.`,
+    get label() {
+      return `Matching ${brandSite()} page is missing`;
+    },
+    get definition() {
+      return `${brandSite()} search pointed to a page for this model, but that page does not exist on ${brandSite()}.`;
+    },
   },
   lacks_this_sku: {
     label: "Matching page has no variant for this SKU",
-    definition: `${brandSite()} has a page for this model, but none of its variants matches this listing's SKU.`,
+    get definition() {
+      return `${brandSite()} has a page for this model, but none of its variants matches this listing's SKU.`;
+    },
   },
   lacks_part_number: {
     label: "Matching page does not list this part number",
-    definition: `${brandSite()} has a page for this model, but this listing's part number is not on it.`,
+    get definition() {
+      return `${brandSite()} has a page for this model, but this listing's part number is not on it.`;
+    },
   },
   page_not_read: {
-    label: `${brandSite()} page did not load`,
-    definition:
-      `The ${brandSite()} page the Findability tab found did not load during the ${brandSite()} product check, and no ${brandSite()} search result matched this model.`,
+    get label() {
+      return `${brandSite()} page did not load`;
+    },
+    get definition() {
+      return `The ${brandSite()} page the Findability tab found did not load during the ${brandSite()} product check, and no ${brandSite()} search result matched this model.`;
+    },
   },
 };
 

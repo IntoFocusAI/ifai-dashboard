@@ -30,11 +30,15 @@ export const LEAD_STATUS_LABELS: Record<CategoryLeadStatus, string> = {
 };
 
 const LEAD_STATUS_DEFINITIONS: Record<Exclude<CategoryLeadStatus, "not_available">, string> = {
-  on_track:
-    `${leadBrandOr()} was named most in more of this category's resolved unbranded discovery answers than any single other brand.`,
-  tied: `${leadBrand()} and the top other brand were each named most in the same number of this category's resolved unbranded discovery answers.`,
-  behind:
-    `One other brand was named most in more of this category's resolved unbranded discovery answers than ${leadBrandOr()}.`,
+  get on_track() {
+    return `${leadBrandOr()} was named most in more of this category's resolved unbranded discovery answers than any single other brand.`;
+  },
+  get tied() {
+    return `${leadBrand()} and the top other brand were each named most in the same number of this category's resolved unbranded discovery answers.`;
+  },
+  get behind() {
+    return `One other brand was named most in more of this category's resolved unbranded discovery answers than ${leadBrandOr()}.`;
+  },
 };
 
 export function leadStatusDefinition(lead: Pick<CategoryLead, "status" | "asked">): string {
@@ -87,8 +91,9 @@ export function categoryLeads(groups: readonly RoleGroupTally[], calls: readonly
     );
 }
 
-export const ON_TRACK_DEFINITION =
-  `A category is on track when ${leadBrandOr()} is named most in more of its resolved unbranded discovery answers than any single other brand. Level with the top other brand reads Tied. Branded consideration is not part of this test. The pie counts every category, including any the Who leads chip hides.`;
+export function onTrackDefinition(): string {
+  return `A category is on track when ${leadBrandOr()} is named most in more of its resolved unbranded discovery answers than any single other brand. Level with the top other brand reads Tied. Branded consideration is not part of this test. The pie counts every category, including any the Who leads chip hides.`;
+}
 
 /** The two hero rates ignore the Who leads chip, like the on-track pie. */
 export const HERO_RATES_NOTE = "These count every category, including any the Who leads chip hides.";
@@ -99,10 +104,12 @@ export const BATTLE_COLUMN_NOTES = {
     "The other brand named most in the most of this category's resolved unbranded discovery answers, and how many it led. Branded consideration and the questions listed under the table are not counted.",
   leads:
     "Resolved unbranded discovery answers in this category where another brand was named most. Branded consideration and the questions listed under the table are not counted.",
-  leader:
-    `Unbranded discovery and branded consideration answers in this category where no brand was named most. They stay out of both ${brandName()}-lead rates.`,
-  errors:
-    `Unbranded discovery and branded consideration calls in this category where the AI engine returned no answer. They stay out of both ${brandName()}-lead rates.`,
+  get leader() {
+    return `Unbranded discovery and branded consideration answers in this category where no brand was named most. They stay out of both ${brandName()}-lead rates.`;
+  },
+  get errors() {
+    return `Unbranded discovery and branded consideration calls in this category where the AI engine returned no answer. They stay out of both ${brandName()}-lead rates.`;
+  },
 } as const;
 
 export type CategoryLeadSummary = {
@@ -209,7 +216,9 @@ export const NO_BATTLECARD_FILTER: BattlecardFilter = { engine: "", lead: "all" 
 
 export const LEAD_FILTER_LABELS: Record<LeadFilter, string> = {
   all: "All categories",
-  fender: `${leadBrand()} leads`,
+  get fender() {
+    return `${leadBrand()} leads`;
+  },
   other: "Another brand leads",
 };
 

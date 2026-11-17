@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import { ENTERPRISE_POTENTIAL_ESTIMATE, PHASE_ONE_LIFT_ESTIMATE } from "../lib/fender-canvas/analyst-estimates.ts";
+import { enterprisePotentialEstimate, phaseOneLiftEstimate } from "../lib/fender-canvas/analyst-estimates.ts";
 import { bindCopy } from "../lib/fender-canvas/template-vars.ts";
 
 const root = new URL("..", import.meta.url);
@@ -33,8 +33,8 @@ function method(template: string): string {
 
 function bound(template: string): string {
   return bindCopy(template, {
-    phase_one_lift: PHASE_ONE_LIFT_ESTIMATE,
-    enterprise_potential: ENTERPRISE_POTENTIAL_ESTIMATE,
+    phase_one_lift: phaseOneLiftEstimate(),
+    enterprise_potential: enterprisePotentialEstimate(),
   });
 }
 

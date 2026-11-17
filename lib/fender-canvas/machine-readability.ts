@@ -293,8 +293,9 @@ function hero(
 export const SPEC_BLOCK_DEFINITION =
   "Schema.org additionalProperty on the page's product data. It carries specs such as nut width, fingerboard radius, and pickups as facts an AI engine can read.";
 
-export const MISSING_MACHINE_SPECS_DEFINITION =
-  `Share of found ${brandSite()} pages whose Schema.org product data is missing the spec block (additionalProperty) AI engines read as product facts.`;
+export function missingMachineSpecsDefinition(): string {
+  return `Share of found ${brandSite()} pages whose Schema.org product data is missing the spec block (additionalProperty) AI engines read as product facts.`;
+}
 
 export const PRODUCT_BASICS_DEFINITION =
   "Name, SKU, brand, UPC, description, image, and price in the page's Schema.org product data.";
@@ -314,7 +315,7 @@ function missingSpecsHero(summary: SpecPageSummary | null): MachineHeroModel {
   return {
     id: "missing_specs",
     label: "Found pages missing machine-readable specs",
-    definition: MISSING_MACHINE_SPECS_DEFINITION,
+    definition: missingMachineSpecsDefinition(),
     percent: pct != null ? formatPct(pct) : "Not available*",
     ratio: ready ? formatRatio(missing, total) : null,
     color: pct != null ? missingShareColor(pct) : "var(--warning-amber)",

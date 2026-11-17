@@ -11,7 +11,7 @@ import {
   type RetailCanvasRead,
 } from "../lib/fender-canvas/portfolio-retail-display.ts";
 import {
-  MAP_PRICES_NOT_STORED,
+  mapPricesNotStored,
   RETAIL_FINDING_LABELS,
   mapLeakageFinding,
   suppressedListingsFinding,
@@ -199,9 +199,9 @@ test("the suppressed tab keeps its slug so old deep links still resolve", () => 
 });
 
 test("MAP wording and MAP fields are untouched by the Featured Offer reading", () => {
-  assert.equal(MAP_PRICES_NOT_STORED, "Fender MAP prices have not been stored.");
+  assert.equal(mapPricesNotStored(), "Fender MAP prices have not been stored.");
   const mapReading = snapshot().mapLeakage;
-  assert.equal(mapReading.missingMessage, MAP_PRICES_NOT_STORED);
+  assert.equal(mapReading.missingMessage, mapPricesNotStored());
 
   const featuredOffer = readFileSync("lib/fender-canvas/featured-offer.ts", "utf8");
   const featuredOfferCopy = readFileSync("lib/fender-canvas/featured-offer-copy.ts", "utf8");

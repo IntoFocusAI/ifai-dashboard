@@ -68,7 +68,9 @@ function groupSortValue(
 const SIM = AI_TABS.simulations;
 
 /** Why a lead with a confirmed contradiction sits outside the wins. Lives in the count's tooltip. */
-const DISQUALIFIED_TIP = `These answers named ${leadBrand()} most and contradicted a fact IntoFocus verified on a ${brandName()} page, so they are not counted as wins.`;
+function disqualifiedTip(): string {
+  return `These answers named ${leadBrand()} most and contradicted a fact IntoFocus verified on a ${brandName()} page, so they are not counted as wins.`;
+}
 
 const groupKey = (row: RoleGroupTally) => row.key;
 
@@ -217,7 +219,7 @@ function WinCard({ snapshot }: { snapshot: AiSearchSnapshot }) {
         </li>
         {s.commercial.disqualified > 0 ? (
           <li>
-            <CopyTip label="Confirmed contradiction" description={DISQUALIFIED_TIP}>
+            <CopyTip label="Confirmed contradiction" description={disqualifiedTip()}>
               {formatInt(s.commercial.disqualified)} {brandName()} leads
             </CopyTip>{" "}
             with a <AiTerm term="confirmed contradiction" />

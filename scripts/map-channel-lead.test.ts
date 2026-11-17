@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { test } from "node:test";
 import { formatPct, formatRatio } from "../lib/fender-canvas/format.ts";
 import {
-  MAP_PRICES_NOT_STORED,
+  mapPricesNotStored,
   mapLeakageFinding,
   selectRetailHeadline,
   suppressedListingsFinding,
@@ -107,7 +107,7 @@ test("MAP lead shows Not available* when MAP prices are not stored", () => {
     mapRow({ map_price: null, amz_leakage: null, offer_price: 90 }),
     mapRow({ map_price: null, amz_leakage: null, offer_price: 110 }),
   ]);
-  assert.equal(reading.missingMessage, MAP_PRICES_NOT_STORED);
+  assert.equal(reading.missingMessage, mapPricesNotStored());
   assert.equal(reading.issueCount, null);
 
   const hero = mapHero(snapshot({ mapLeakage: reading }));
@@ -137,7 +137,7 @@ test("MAP panel places notes beside the share and listings under the row", () =>
   assert.match(panel, /Average price gap/);
   assert.match(panel, /data-map-lead-gap/);
   assert.match(panel, /Not stored/);
-  assert.match(panel, /MAP_PRICES_NOT_STORED/);
+  assert.match(panel, /\{mapPricesNotStored\(\)\}/);
   assert.match(panel, /width:\s*["']fit-content["']/);
   assert.match(panel, /alignSelf:\s*["']flex-start["']/);
   assert.doesNotMatch(panel, /Price gap, not revenue/);

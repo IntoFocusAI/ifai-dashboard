@@ -438,11 +438,15 @@ export const FOUNDATION_COMPONENT_SPECS: ScoreComponentSpec[] = [
     weight: 20,
     placeholder: true,
     placeholderTitle: "Required marketplace specs",
-    placeholderTooltip: requiredSpecsPlaceholderTooltip(),
+    get placeholderTooltip() {
+      return requiredSpecsPlaceholderTooltip();
+    },
   },
   {
     id: "unbranded_named_most",
-    name: `Resolved unbranded answers where ${leadBrand()} is named most`,
+    get name() {
+      return `Resolved unbranded answers where ${leadBrand()} is named most`;
+    },
     weight: 20,
   },
   {
