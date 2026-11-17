@@ -277,8 +277,12 @@ export function useAiHistoryOptional(): AiHistoryValue | null {
   return useContext(AiHistoryContext);
 }
 
-/** Panels read this. The map keeps the live published run passed beside the provider. */
+/**
+ * Panels read this. The map keeps the live published run passed beside the provider.
+ * Memoized: a window pools its runs into a fresh snapshot, and a fresh read on every render
+ * rebuilt the whole map spec each time the dashboard re-rendered (each tour step, about a second).
+ */
 export function useDisplayedAiSearch(current: AiSearchRead): AiSearchRead {
-  const history = useAiHistory();
-  return displayedAiRead(history.mode, history.selected, history.trend, current);
+  const { mode, selected, trend } = useAiHistory();
+  return useMemo(() => displayedAiRead(mode, selected, trend, current), [mode, selected, trend, current]);
 }
