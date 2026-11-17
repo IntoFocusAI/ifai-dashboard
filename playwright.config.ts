@@ -45,6 +45,21 @@ export default defineConfig({
   projects: [
     {
       name: "chrome",
+      grepInvert: /@parity-/,
+      use: { ...devices["Desktop Chrome"], channel, viewport: { width: 1280, height: 720 } },
+    },
+    /* Client parity (parity chunk C8): collect every client's screens, then compare them. Run with
+       `--project=parity-compare`, which runs the collect project first. Expected to fail until the
+       parity rounds land; see docs/client-parity-gaps.md. */
+    {
+      name: "parity-collect",
+      grep: /@parity-collect/,
+      use: { ...devices["Desktop Chrome"], channel, viewport: { width: 1280, height: 720 } },
+    },
+    {
+      name: "parity-compare",
+      grep: /@parity-compare/,
+      dependencies: ["parity-collect"],
       use: { ...devices["Desktop Chrome"], channel, viewport: { width: 1280, height: 720 } },
     },
     {

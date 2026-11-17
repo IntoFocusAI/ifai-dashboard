@@ -15,6 +15,19 @@ const FILES: ReadonlyArray<{ source: string; raw: unknown }> = [
   { source: "data/clients/ledlenser.json", raw: ledlenser },
 ];
 
+/** Settings files from the NEXT_PUBLIC_TEST_CLIENT_FILES build variable: a JSON list of {source, raw}. */
+export function testClientFilesFrom(json: string | undefined): Array<{ source: string; raw: unknown }> {
+  if (!json) return [];
+  const files: unknown = JSON.parse(json);
+  if (!Array.isArray(files)) throw new Error("NEXT_PUBLIC_TEST_CLIENT_FILES must be a JSON list of {source, raw}");
+  return files as Array<{ source: string; raw: unknown }>;
+}
+
+/* Made-up clients for tests (parity chunk C8). Only a test build sets the variable, from
+   `node scripts/test-client-files.mjs`. A normal build inlines it as undefined, so the fixture
+   client is in no file a user loads and never reaches the switcher. */
+const testFiles = () => testClientFilesFrom(process.env.NEXT_PUBLIC_TEST_CLIENT_FILES);
+
 /** Checks a set of settings files together: each file, then keys unique and exactly one default. */
 export function buildClientRegistry(files: ReadonlyArray<{ source: string; raw: unknown }>): ClientSettings[] {
   const clients = files.map(({ source, raw }) => {
@@ -46,7 +59,7 @@ let registry: ClientSettings[] | null = null;
 
 /** Every client's settings, checked once, in switcher order. */
 export function clientRegistry(): readonly ClientSettings[] {
-  registry ??= buildClientRegistry(FILES);
+  registry ??= buildClientRegistry([...FILES, ...testFiles()]);
   return registry;
 }
 

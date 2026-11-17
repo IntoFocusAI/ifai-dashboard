@@ -213,7 +213,6 @@ test("C1: a made-up third client loads from a settings record alone", () => {
     product_types: ["FISHING_ROD"],
     vertical: "fishing",
     competitors: [{ name: "Ugly Stik", terms: ["ugly stik"], domains: ["uglystik.com"] }],
-    spotlight_category: null,
   };
   const clients = buildClientRegistry([
     { source: "data/clients/fender.json", raw: fender() },
