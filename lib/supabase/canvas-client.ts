@@ -3,7 +3,7 @@ import { activeClientSettings } from "@/lib/client/active-client";
 import { aliasingFetch } from "@/lib/client/column-aliases";
 
 let publicClient: SupabaseClient | null = null;
-/** One client per brand schema, so a server export for one brand never reuses another's. */
+/** One client per brand schema, so a server process serving two brands never reuses another's. */
 const brandClients = new Map<string, SupabaseClient>();
 
 function env() {
