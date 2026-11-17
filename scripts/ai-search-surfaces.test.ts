@@ -224,8 +224,8 @@ test("citation copy separates answers from links and avoids causal claims", () =
     const tooltip = new RegExp(`headerTooltip: \\{ title: ${title}, description: \`[^\`]*\\$\\{CITED_LINK_COUNT_CAVEAT\\}\``);
     assert.match(panel, tooltip, `the low-count caveat sits in the ${title} column tooltip`);
   }
-  assert.match(panel, /columns=\{ENGINE_COLUMNS\}/);
-  assert.match(panel, /const ENGINE_COLUMNS = \[ [^\]]*\.\.\.LINK_COLUMNS, \]/);
+  assert.match(panel, /columns=\{columns.engine\}/);
+  assert.match(panel, /function engineColumns\(\) \{ return \[ [^\]]*\.\.\.linkColumns\(\), \]/);
 });
 
 test("the old authored citation percentages stay retired", () => {

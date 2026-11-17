@@ -2,7 +2,6 @@ import {
   citationEvidence,
   groupCitations,
   isOwnedDomain,
-  LIGHTING_BRAND_SITES,
   SOURCE_CLASS_LABELS,
   SOURCE_CLASS_ORDER,
   type CitationEvidence,
@@ -21,7 +20,10 @@ import {
 } from "@/lib/ai-search/question-role";
 import { callOutcome, categoryLabel, isSmallSample } from "@/lib/ai-search/run-metrics";
 import type { AiCallRow, AiSearchSnapshot } from "@/lib/ai-search/types";
-import { brandName, brandOwned, isFenderClient } from "@/lib/brand-copy";
+import { brandName, brandOwned } from "@/lib/brand-copy";
+import { isOwnBrandName } from "@/lib/ai-search/brand-words";
+import { matchesDomain, referenceBrandSites } from "@/lib/ai-search/reference-sites";
+import { activeClientSettings } from "@/lib/client/active-client";
 
 export type OwnedPresence = {
   /** Shopping (or scoped) answers that cited at least one Fender-owned page. */
@@ -334,33 +336,23 @@ export function topDomainBars(read: CitationRead, limit = 10): DomainBar[] {
     });
 }
 
-const BRAND_SITE_NAMES: Array<[string, string]> = [
-  ["fender.com", "Fender"],
-  ["squier.com", "Fender"],
-  ["yamaha.com", "Yamaha"],
-  ["gibson.com", "Gibson"],
-  ["epiphone.com", "Epiphone"],
-  ["taylorguitars.com", "Taylor"],
-  ["prsguitars.com", "PRS"],
-  ["ibanez.com", "Ibanez"],
-  ["sire-usa.com", "Sire"],
-  ["boss.info", "Boss"],
-  ["positivegrid.com", "Positive Grid"],
-  ["martinguitar.com", "Martin"],
-  ["schecterguitars.com", "Schecter"],
-  ["gretschguitars.com", "Gretsch"],
-  ["jacksonguitars.com", "Jackson"],
-  ["charvel.com", "Charvel"],
-  ["evhgear.com", "EVH"],
-];
+function siteBrand(host: string, sites: ReadonlyArray<readonly [string, string]>): string | null {
+  return sites.find(([root]) => matchesDomain(host, root))?.[1] ?? null;
+}
 
+/**
+ * The brand a brand website belongs to. A brand-owned site reads as the brand it is listed under
+ * in the vertical's reference list (gretschguitars.com reads Gretsch), or as the client brand
+ * when that name is the client's own (squier.com reads Fender) or the site is not listed. Other
+ * sites read as the client's competitor that lists the domain, else the reference list's brand.
+ */
 function brandFromDomain(domain: string): string | null {
   const host = domain.toLowerCase();
-  if (!isFenderClient() && isOwnedDomain(host)) return brandName();
-  for (const [root, brand] of isFenderClient() ? BRAND_SITE_NAMES : LIGHTING_BRAND_SITES) {
-    if (host === root || host.endsWith(`.${root}`)) return brand;
-  }
-  return null;
+  const settings = activeClientSettings();
+  const listed = siteBrand(host, referenceBrandSites(settings.vertical));
+  if (isOwnedDomain(host)) return listed && !isOwnBrandName(listed) ? listed : brandName();
+  const competitors = settings.competitors.flatMap((c) => c.domains.map((d): [string, string] => [d, c.name]));
+  return siteBrand(host, competitors) ?? listed;
 }
 
 /**
