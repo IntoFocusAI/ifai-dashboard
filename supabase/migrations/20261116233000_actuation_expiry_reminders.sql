@@ -53,8 +53,8 @@
 --
 -- Requires: 20261116220000_actuation_records (public.actuation_programs, public.actuation_items).
 --
--- Status: NOT APPLIED. Additive; waits for Brian Magazu's approval, then the PM applies it, and the
--- pull request records when and by whom.
+-- Status: APPLIED to production 17 Nov 2026 13:53 UTC by PM28 (Brian Magazu approved), version
+-- 20261117135328.
 
 create table if not exists public.actuation_expiry_reminders_sent (
   client_key text not null references public.set_aside_clients(client_key),

@@ -33,7 +33,7 @@
 --
 -- Production only: the copies (sandbox, mirror, claude) do not run the reminder job.
 --
--- Status: NOT APPLIED. Permissions change; waits for Brian Watson.
+-- Status: APPLIED to production 17 Nov 2026 14:08 UTC by Brian Watson, version 20261117140850.
 
 DO $$
 BEGIN
