@@ -181,7 +181,7 @@ Approved by Brian Magazu on 9 Nov 2026. Worker 23.1, pull request 148 (main c856
 
 None.
 
-**X-34 REFINE** · Launch
+**X-34 CURRENT** · Launch
 
 **Status source:** Explicit (Brian Magazu, 9 Nov 2026), IntoFocus AI Brand Book V2
 
@@ -203,11 +203,22 @@ Client surfaces use only brand book colors. Every status color carries a mark an
 
 **Evidence**
 
-Approved by Brian Magazu on 9 Nov 2026. Worker 23.1, pull request 148 (main c8561cb): the brand palette in dark and light themes, one ice-blue accent, Oxblood, Champagne, and Pine with a mark and a word (StatusMark), status colors off buttons, links, tabs, the version badge, and channel chips, and a flat map. REFINE until view pies and charts use the chart tokens and every status figure uses StatusMark. Worker 24.3 (PR 152, main ca22e8a) and worker 24.4 (PR 151, main f1df1f5): Catalog Health and AI Search follow the chart and status rules; other views to follow.
+Approved by Brian Magazu on 9 Nov 2026. Worker 23.1, pull request 148 (main c8561cb): the brand palette in dark and light themes, one ice-blue accent, Oxblood, Champagne, and Pine with a mark and a word (StatusMark), status colors off buttons, links, tabs, the version badge, and channel chips, and a flat map. REFINE until view pies and charts use the chart tokens and every status figure uses StatusMark. Worker 24.3 (PR 152, main ca22e8a) and worker 24.4 (PR 151, main f1df1f5): Catalog Health and AI Search follow the chart and status rules; other views to follow. Worker 27.13 (PR 208, main 97e006e), approved 17 Nov 2026: every status figure on every tab, the minimal view and the deck carries a mark and a word for Fender and Ledlenser; `npm run lint:status` and `e2e/status-marks.spec.ts` enforce brand colors and marks.
 
 **Open decision**
 
 None. Status words are Poor, Fair, and Good where a figure has no word of its own; the FDD's own words stay where they exist.
+
+**X-35 TARGET** · Launch
+
+**Status source:** Explicit (Brian Magazu, 17 Nov 2026, decisions 105 and 106)
+
+- **Current:** Fender and Ledlenser views differ in 42 places (docs/client-parity-audit.md): hand-written per-client content, code that branches on the client name with Ledlenser as the fallback, and data only one client has. The client list is fixed in code.
+- **Desired:** Every client gets the same views from one template. Client differences come only from a client settings record (repo file now, database table with X-16) and the client's own data. No client inherits another client's sites, fields, wording or categories. A missing input shows the same layout with Not available*.
+- **User value:** A new client's dashboard is ready in hours, and every client sees the same product.
+- **Acceptance:** Adding a client takes a settings record and a logo, with no code change. An automated test loads a made-up third client (for example a fishing-rod brand) and fails if any guitar or flashlight wording, site or data appears, or if any view's layout differs from the other clients'.
+- **Evidence:** Audit by worker 28.8 (PR 217, main 5cb722d).
+- **Open decision:** None.
 
 **X-07 CURRENT** · Launch
 
@@ -342,7 +353,7 @@ None. Status words are Poor, Fair, and Good where a figure has no word of its ow
 - **Desired:** Tenant partition before the first real client.
 - **User value:** Client data stays isolated.
 - **Acceptance:** No cross-tenant rows in browser-selectable views. Shared reference data (for example site-type labels) holds only facts about the public site, never anything drawn from another client's answers, listings or prompts. Every per-client list, count and export, staff screens included, filters to that client's own data. An automated test loads each client and checks that no other client's domains, ASINs or prompts appear (added by Brian Magazu, 12 Nov 2026, decision 84).
-- **Evidence:** Verified single brand. On 4 Nov 2026 Brian Magazu confirmed Fender and Ledlenser are beta dashboards on real catalogs, not clients yet, so separation waits for the first real client and the dashboards stay open without a login.
+- **Evidence:** Verified single brand. On 4 Nov 2026 Brian Magazu confirmed Fender and Ledlenser are beta dashboards on real catalogs, not clients yet, so separation waits for the first real client and the dashboards stay open without a login. Hold lifted by Brian Magazu on 17 Nov 2026 (decision 105); Watson is building logins and separation, with shared tables and a client column.
 - **Open decision:** None.
 
 **X-17 CURRENT** · Launch
@@ -356,7 +367,7 @@ None. Status words are Poor, Fair, and Good where a figure has no word of its ow
 - **Evidence:** Verified absent on opened tabs Oct 20.
 - **Open decision:** None.
 
-**X-18 REFINE** · Launch
+**X-18 CURRENT** · Launch
 
 **Status source:** Explicit
 
@@ -364,7 +375,7 @@ None. Status words are Poor, Fair, and Good where a figure has no word of its ow
 - **Desired:** Canonical phrases designated by Brian are not paraphrased by assistants.
 - **User value:** The room hears one name.
 - **Acceptance:** Rename pass follows Brian’s confirmed list; unclear headings get self-explanatory names.
-- **Evidence:** Approved by Brian Magazu on 9 Nov 2026. Worker 23.1, pull request 148 (main c8561cb): the map reads Splintered Listings, the Roadmap bubble and breadcrumb read Roadmap, and its tab reads 30-60-90 Days. REFINE until each view's panels use the decided names. Worker 24.3 (PR 152, main ca22e8a) and worker 24.4 (PR 151, main f1df1f5): Catalog Health and AI Search panel names follow the decided list; other views to follow.
+- **Evidence:** Approved by Brian Magazu on 9 Nov 2026. Worker 23.1, pull request 148 (main c8561cb): the map reads Splintered Listings, the Roadmap bubble and breadcrumb read Roadmap, and its tab reads 30-60-90 Days. REFINE until each view's panels use the decided names. Worker 24.3 (PR 152, main ca22e8a) and worker 24.4 (PR 151, main f1df1f5): Catalog Health and AI Search panel names follow the decided list; other views to follow. Workers 27.13, 28.4, 28.7 (PR 208, main 97e006e), approved 17 Nov 2026 (decisions 102, 104): canonical figure names in exact title case on every tile, table and CSV header, tooltip and the deck, for Fender and Ledlenser; unclear headings renamed.
 - **Open decision:** None. Decided by Brian Magazu on 9 Nov 2026: Unbranded SOV becomes Unbranded Discovery; Splintered bundles becomes Splintered Listings everywhere, since splintering may apply to more than bundles for other clients; the MAP tab becomes MAP Leakage; Brand Consideration becomes Branded Consideration; the roadmap is Roadmap and its tab is 30-60-90 Days; a radar label reads like Yamaha leads Acoustics. Nothing else is renamed. Client copy follows the brand book voice: no contractions, emojis, or em dashes; buttons are a verb plus an object.
 
 **X-19 CURRENT** · Launch

@@ -438,3 +438,48 @@ closeout of each view. Open items are marked OPEN and are not built.
 101. SC-03 launch details (16 Nov): Actuation counts E1 (measured) from day
     one; P1, P2, E2 and E3 count 0 until staff record them. Expiry
     reminders at 30, 14 and 3 days post to Slack #operations (private).
+102. X-18 casing and headings (16 Nov): the canonical figure names
+    (Unbranded Discovery, Branded Consideration, MAP Leakage, Splintered
+    Listings, Specs Complete, Buy Box Withheld) use exact title case
+    everywhere: tiles, tables, CSV headers, tooltips, deck. Other text is
+    sentence case. Headings: Portfolio at a glance; "What is changing what
+    AI assistants recommend for <Brand>?"; Enterprise estimate: main
+    drivers; Beginner category: gap to top rival; Strongest category for
+    <Brand>; Cited links by type of site; Site and type. Catalog Governance
+    keeps its name.
+103. SC-03 reminders (16 to 17 Nov): E2 and E3 get lapse reminders when the
+    newest verified item is 30, 14 and 3 days from leaving the score. They
+    post to Slack #operations with no named owner; Brian and Watson own them
+    for now. P1 and P2 reminders name the recorded IntoFocus owner. The job
+    reuses the score_snapshot_writer login. Brian approved the additive
+    sent-log migration (applied 17 Nov by PM28).
+104. Copy fixes (17 Nov): the trend table drops its series column under
+    Overall and calls it "AI engine" under By engine; Findability "Bundle"
+    column with a plain tooltip; Confidence values are short (Same SKU, Same
+    barcode, Same options, No ID match), and longer text lives only in
+    tooltips, never in a table cell; a one-line Findability explanation sits
+    under the tab pills. How-found meanings confirmed by Watson.
+105. Client parity (17 Nov): every client gets the same views from one
+    template; client differences come only from a settings record and the
+    client's data, and a missing input reads Not available*, never another
+    client's answer. Settings live in a repo file now and move to a database
+    table with data separation. The decision 46 hold on X-15 and X-16 is
+    lifted (Watson is building logins). Briefing, Opportunity and Revenue
+    Estimates are generated from settings and data, with an optional short
+    client note. Estimates not yet prepared read Not available* with
+    "Analyst estimate not prepared yet for <Brand>" (an exception to the
+    no-all-Not-available rule, for estimates only). Seller types are built
+    when a signed client needs one. Database: shared tables with a client
+    column (Watson and Brian agree).
+106. Radar categories (17 Nov): category figures come from the categories
+    of each client's own loaded questions (ideally tagged by Watson's
+    question builder), not a fixed "beginner" category. A brand with no
+    beginner questions shows no beginner figure.
+107. D-05 headline (17 Nov): the approved field lists move into one database
+    table shared by all clients (entries may name alternate Amazon field
+    ids); the spec check records every field on each list; the headline
+    Specs Complete and Amazon attribute completeness count against the
+    lists, and product types without a list read Not available*. Watson owns
+    it; D-05 stays REFINE until it lands.
+108. Wording ownership (17 Nov): Brian owns all on-screen wording, including
+    the PR 110 hover panels; Watson does not decide wording.
