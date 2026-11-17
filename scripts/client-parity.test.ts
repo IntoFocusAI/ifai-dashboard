@@ -190,7 +190,8 @@ test("decision 113: seller-model copy and the logo follow seller_type and logo_s
   assert.deepEqual(applyDeclared(["retail > heading: Authorized partners", "retail > heading: Buy Box"], partner), ["retail > heading: Buy Box"]);
   assert.deepEqual(applyDeclared(["retail > heading: Authorized partners"], brand), ["retail > heading: Authorized partners"], "the other model's copy reports");
   assert.deepEqual(applyDeclared(["retail > heading: {brand}'s own seller account"], brand), []);
-  const logo = applyDeclared(["map > bubble hub: "], byKey("fender"));
-  assert.deepEqual(applyDeclared(["map > bubble hub: {brand}"], byKey("fishingrods")), logo);
+  const logo = applyDeclared(["map > bubble hub: Summary"], byKey("fender"));
+  assert.deepEqual(applyDeclared(["map > bubble hub: {brand} Summary"], byKey("fishingrods")), logo);
+  assert.deepEqual(applyDeclared(["map > bubble hub: {brand}"], byKey("fishingrods")), applyDeclared(["map > bubble hub: "], byKey("fender")));
   assert.deepEqual(applyDeclared(["map > bubble hub: Something else"], byKey("fishingrods")), ["map > bubble hub: Something else"]);
 });

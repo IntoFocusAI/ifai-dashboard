@@ -213,12 +213,14 @@ export const DECLARED_DIFFERENCES: DeclaredDifference[] = [
   {
     id: "logo",
     field: "logo_src",
-    why: "The Summary bubble shows the logo when `logo_src` is set and the brand name as text when it is null.",
+    why: "The Summary bubble shows the logo when `logo_src` is set and the brand name as text when it is null (\"{brand} Summary\" in place of the logo and \"Summary\").",
     apply(line, client) {
       const m = /^(map > bubble hub: )(.*)$/.exec(line);
       if (!m) return line;
-      if (client.logo_src == null && m[2] !== "{brand}") return line;
-      return `${m[1]}<logo, or the brand name when logo_src is null>`;
+      const LOGO = "<logo, or the brand name when logo_src is null>";
+      if (client.logo_src != null) return `${m[1]}${LOGO} ${m[2]}`.trimEnd();
+      const named = /^\{brand\}(?: (.*))?$/.exec(m[2]);
+      return named ? `${m[1]}${LOGO} ${named[1] ?? ""}`.trimEnd() : line;
     },
   },
 ];
