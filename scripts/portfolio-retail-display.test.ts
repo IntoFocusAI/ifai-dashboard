@@ -16,7 +16,7 @@ import {
 } from "../lib/fender-canvas/portfolio-retail-display.ts";
 import { formatPct } from "../lib/fender-canvas/format.ts";
 import {
-  MAP_PRICES_NOT_STORED,
+  mapPricesNotStored,
   mapLeakageFinding,
   RETAIL_FINDING_LABELS,
   selectRetailHeadline,
@@ -245,9 +245,9 @@ test("MAP satellite names missing prices and does not count or average a gap", (
   ]);
   const map = mapBubble(reading);
   const text = visible(map);
-  assert.equal(reading.missingMessage, MAP_PRICES_NOT_STORED);
+  assert.equal(reading.missingMessage, mapPricesNotStored());
   assert.match(text, /Fender MAP prices have not been stored/);
-  assert.equal(map.heroValue?.value, shortCoverageLine(MAP_PRICES_NOT_STORED));
+  assert.equal(map.heroValue?.value, shortCoverageLine(mapPricesNotStored()));
   assert.equal(map.tooltip.desc, "");
   assert.equal(map.subTab, "MAP Leakage");
   assert.doesNotMatch(text, /below MAP|gap|\$|\d/);

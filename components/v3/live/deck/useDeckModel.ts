@@ -10,9 +10,9 @@ import { brandName, brandSite, leadBrand } from "@/lib/brand-copy";
 import { buildDeck } from "@/lib/deck/deck-model";
 import type { DeckModel } from "@/lib/deck/deck-types";
 import {
-  ENTERPRISE_POTENTIAL_ESTIMATE,
+  enterprisePotentialEstimate,
   NO_ANALYST_ESTIMATE,
-  PHASE_ONE_LIFT_ESTIMATE,
+  phaseOneLiftEstimate,
 } from "@/lib/fender-canvas/analyst-estimates";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
 import type { CanvasBundle, CanvasFreshnessRow } from "@/lib/fender-canvas/types";
@@ -61,8 +61,8 @@ export function useDeckModel(bundle: CanvasBundle, retail: RetailCanvasRead): De
       stockLoss: stock.phase === "ready" ? { rows: stock.rows, populationCount: stock.populationCount } : null,
       windowLabel: history.controlLabel,
       asOf: asOfLabel(bundle.fresh),
-      phaseOneLift: estimate(PHASE_ONE_LIFT_ESTIMATE),
-      enterprisePotential: estimate(ENTERPRISE_POTENTIAL_ESTIMATE),
+      phaseOneLift: estimate(phaseOneLiftEstimate()),
+      enterprisePotential: estimate(enterprisePotentialEstimate()),
     });
     return { phase: "ready", model };
   }, [aiStale, bundle, findability, history.controlLabel, retail, stock, tabRead]);

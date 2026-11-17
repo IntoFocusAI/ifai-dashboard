@@ -6,7 +6,7 @@ import { EMPTY_METRICS_ROW, failedMetricsRow, readFailure } from "../lib/fender-
 import {
   brandSitePageFoundHero,
   PAGE_FOUND_UNAVAILABLE,
-  PAGE_FOUND_UNAVAILABLE_TIP,
+  pageFoundUnavailableTip,
 } from "../lib/fender-canvas/page-found-hero.ts";
 
 const root = new URL("..", import.meta.url);
@@ -32,8 +32,8 @@ test("a failed canvas_metrics read names that read on the Brand-Site Specs page-
 test("an unreported count is not a failed read", () => {
   const hero = brandSitePageFoundHero({ ...EMPTY_METRICS_ROW });
   assert.equal(hero.percent, PAGE_FOUND_UNAVAILABLE);
-  assert.equal(hero.figureTip, PAGE_FOUND_UNAVAILABLE_TIP);
-  assert.equal(brandSitePageFoundHero(null).figureTip, PAGE_FOUND_UNAVAILABLE_TIP);
+  assert.equal(hero.figureTip, pageFoundUnavailableTip());
+  assert.equal(brandSitePageFoundHero(null).figureTip, pageFoundUnavailableTip());
 });
 
 test("Top missing Amazon fields stays on a failed read and names it; shares name a failed metrics read", () => {

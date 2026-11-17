@@ -7,7 +7,7 @@ import { RunDetailsLead } from "@/components/v3/live/ai-search/RunDetailsLead";
 import { AI_TABS } from "@/lib/ai-search/canvas-surfaces";
 import {
   HERO_RATES_NOTE,
-  ON_TRACK_DEFINITION,
+  onTrackDefinition,
   onTrackPie,
   type CategoryLeadSummary,
 } from "@/lib/ai-search/category-on-track";
@@ -37,7 +37,7 @@ function OnTrackHero({ summary, engineName }: { summary: CategoryLeadSummary; en
   return (
     <div data-ai-on-track-hero="">
       <div>
-        <Term name="Categories on track" desc={ON_TRACK_DEFINITION}>
+        <Term name="Categories on track" desc={onTrackDefinition()}>
           Categories on track
         </Term>
       </div>

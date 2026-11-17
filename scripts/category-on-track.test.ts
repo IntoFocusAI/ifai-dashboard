@@ -21,7 +21,7 @@ import {
   leadSentence,
   leadStatusDefinition,
   NO_BATTLECARD_FILTER,
-  ON_TRACK_DEFINITION,
+  onTrackDefinition,
   onTrackPie,
   restLeads,
 } from "../lib/ai-search/category-on-track.ts";
@@ -100,7 +100,7 @@ test("on track means Fender/Squier leads more resolved answers than any single o
   assert.match(leadStatusDefinition(tied), /same number/);
   const [behind] = leadsOf([...times(5, {}), ...times(6, yamaha)]);
   assert.equal(behind.status, "behind");
-  assert.match(ON_TRACK_DEFINITION, /than any single other brand/);
+  assert.match(onTrackDefinition(), /than any single other brand/);
   for (const path of ["components/v3/live/ai-search/CategoryBattlecardsPanel.tsx", "lib/ai-search/category-on-track.ts"]) {
     assert.doesNotMatch(read(path), /than every other brand together/, path);
   }
@@ -261,7 +261,7 @@ test("each category pie splits resolved answers into Fender/Squier, the top riva
 });
 
 test("caveats on this tab sit in tooltips, and the screen shows no line saying what a figure is not", () => {
-  assert.match(ON_TRACK_DEFINITION, /The pie counts every category, including any the Who leads chip hides\.$/);
+  assert.match(onTrackDefinition(), /The pie counts every category, including any the Who leads chip hides\.$/);
   assert.match(HERO_RATES_NOTE, /every category, including any the Who leads chip hides/);
   assert.match(AI_DEFINITIONS.resolved, /no clear leader and provider errors are not in the denominator/);
   assert.match(AI_DEFINITIONS["brand-associated discovery"], /not inside unbranded discovery/);
@@ -302,7 +302,7 @@ test("caveats on this tab sit in tooltips, and the screen shows no line saying w
   const summary = read("components/v3/live/ai-search/RunSummaryPanel.tsx");
   assert.match(summary, /<KeptOutNote snapshot=\{snapshot\} inlineCaveats=\{false\} \/>/);
   for (const gone of [/not inside unbranded discovery/, /Not in either rate above/, /, not counted as wins/]) {
-    assert.doesNotMatch(summary.replace(/const DISQUALIFIED_TIP = .*/, ""), gone);
+    assert.doesNotMatch(summary.replace(/return `These answers named .*/, ""), gone);
   }
 });
 

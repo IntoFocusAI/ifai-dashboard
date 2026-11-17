@@ -12,7 +12,7 @@ import {
 import { countFindability, type FindabilityBucket, type OutcomeCounts } from "@/lib/findability/outcomes";
 import {
   amazonCompletenessHero,
-  PAGE_FOUND_LABEL,
+  pageFoundLabel,
   presentAmazonCompletenessFieldShare,
   resolveAmazonFieldTotals,
 } from "@/lib/fender-canvas/ai-readiness-lead";
@@ -132,7 +132,7 @@ export const READINESS_ENTRIES: MinimalEntry[] = [
   bubbleEntry({
     id: "spoke-specs",
     spokeId: "specs",
-    label: PAGE_FOUND_LABEL,
+    label: pageFoundLabel(),
     tab: "Brand-Site Specs",
     read: (ctx) => {
       const failed = failedReadTip(ctx.bundle, "m");

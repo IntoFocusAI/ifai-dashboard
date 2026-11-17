@@ -7,7 +7,7 @@ import { pct, runStateLabel, summarizeRun } from "@/lib/ai-search/summary";
 import type { AiSearchRead } from "@/lib/ai-search/types";
 import type { FindabilityRead } from "@/lib/findability/copy";
 import { countFindability } from "@/lib/findability/outcomes";
-import { ENTERPRISE_POTENTIAL_ESTIMATE, PHASE_ONE_LIFT_ESTIMATE } from "@/lib/fender-canvas/analyst-estimates";
+import { enterprisePotentialEstimate, phaseOneLiftEstimate } from "@/lib/fender-canvas/analyst-estimates";
 import { READ_NOT_AVAILABLE } from "@/lib/fender-canvas/canvas-reads";
 import { formatInt } from "@/lib/fender-canvas/format";
 import { specPageCounts } from "@/lib/fender-canvas/machine-readability";
@@ -191,8 +191,8 @@ export function buildLiveTourSteps(
       category: "OPPORTUNITY",
       displays: [
         "Revenue figures on this spoke are estimates",
-        `Phase 1: ${PHASE_ONE_LIFT_ESTIMATE}`,
-        `Enterprise: ${ENTERPRISE_POTENTIAL_ESTIMATE}`,
+        `Phase 1: ${phaseOneLiftEstimate()}`,
+        `Enterprise: ${enterprisePotentialEstimate()}`,
       ],
       value: "See what each Action Item is worth, so you know where to start.",
     },
