@@ -24,7 +24,7 @@ Former name: Brand Portfolio. Approved rename: Summary.
 - **Evidence:** Desktop-verified 21 Oct 2026 on local production build commit 1fdbfc0 (PR 43). Published GitHub Pages still serves main cfd45de until that branch deploys. No client-visible Brand Portfolio on that build.
 - **Open decision:** None.
 
-**H-07 REFINE** · Launch
+**H-07 CURRENT** · Launch
 
 **Status source:** Explicit meeting
 
@@ -32,7 +32,7 @@ Former name: Brand Portfolio. Approved rename: Summary.
 - **Desired:** Summary tabs: Briefing, Performance, Opportunity. Briefing = why it matters + AI Consensus Score + one sentence. Performance = actual vs target with AI Foundation, AI Commerce, AI Actuation side by side. Opportunity = value achieved, near-term upside, full potential with drill-downs to inputs/assumptions/formulas.
 - **User value:** Executives get story, scores, and upside without hunting.
 - **Acceptance:** Three tabs only under Summary; Commercial Sizing label gone.
-- **Evidence:** Score layout approved by Brian Magazu on 29 Oct 2026. Pull request 92, commits 7bf55cf and b5c6ce2. Published on main at 65e2c79. Tab labels were desktop-verified on 21 Oct 2026, commit 1fdbfc0. A target comparison and AI Actuation remain open, so this stays REFINE. Worker 27.6, PR 203 (main 4c6c0a6), approved 16 Nov 2026: division table removed, weakest score card opens by default, Scores over time chart under the cards with weekly saves (table applied 16 Nov by PM27). Stays REFINE until AI Actuation (SC-03) is on the cards.
+- **Evidence:** Score layout approved by Brian Magazu on 29 Oct 2026. Pull request 92, commits 7bf55cf and b5c6ce2. Published on main at 65e2c79. Tab labels were desktop-verified on 21 Oct 2026, commit 1fdbfc0. A target comparison and AI Actuation remain open, so this stays REFINE. Worker 27.6, PR 203 (main 4c6c0a6), approved 16 Nov 2026: division table removed, weakest score card opens by default, Scores over time chart under the cards with weekly saves (table applied 16 Nov by PM27). Stays REFINE until AI Actuation (SC-03) is on the cards. Worker 27.14, PR 207 (main cd202ab), approved 16 Nov 2026: AI Foundation, AI Commerce and AI Actuation sit side by side against target 70.
 - **Open decision:** None. Decided by Brian Magazu on 9 Nov 2026: each score is shown against a target of 70, for example 41 vs target 70. H-07 stays REFINE until AI Actuation (SC-03) exists.
 
 **H-05 CURRENT** · Launch
@@ -124,14 +124,14 @@ These are approved design formulas. AI Foundation, AI Commerce, and AI Consensus
 - **Desired:** AI Actuation (decisions 77, 78, 96). Planned work at most 40%: P1 community response program 20% (owner, target communities from Citation Ecosystem, cadence); P2 publication and reviewer outreach program 20% (owner, target list). Measured results at least 60%: E1 owned answers 30% (brand pages cited in unbranded discovery); E2 community responses posted 15% and E3 placements earned 15% (links and dates verified by IntoFocus staff, last 90 days). Points require owner, evidence, verification date, and an unexpired date (90 days); reminders at 30, 14 and 3 days; a lapsed factor looks like one never in place. No double counting with Foundation or Commerce. IntoFocus sees record controls; client sees score and basis. Show on Citation Ecosystem and Summary → Performance.
 - **User value:** Actuation is evidenced work, not vibes.
 - **Acceptance:** No points without owner + evidence + dates.
-- **Evidence:** Not live.
+- **Evidence:** Phase 1 PR 204 (main dffe0b4): records tables and functions applied 16 Nov by PM27, staff Actuation records page. Phase 2 PR 207 (main cd202ab): Actuation card, 40/40/20 weights, E1 from day one at a 15% target, basis on Citation Ecosystem, chart marker. Remaining: staff sign-in (Watson) and Slack reminders to #operations (webhook secret from Marc).
 - **Open decision:** None.
 
 **SC-04 CURRENT** · Launch
 
 **Status source:** Explicit meeting
 
-- **Current:** AI Consensus is the lead figure on Summary → Performance. It combines AI Foundation and AI Commerce. AI Actuation is not included, and the remaining weights rescale. Coverage shows how many of the three pillars are in the number. A score under 40 is red, 40 through 70 is amber, and above 70 is green.
+- **Current:** AI Consensus is the lead figure on Summary → Performance: 40% AI Foundation, 40% AI Commerce, 20% AI Actuation (decisions 77, 78; PR 207). Coverage shows how many of the three pillars are in the number; a failed pillar read leaves it out and the weights rescale. A score under 40 is red, 40 through 70 is amber, and above 70 is green.
 - **Desired:** AI Consensus = Foundation 40% + Commerce 40% + Actuation 20%, weighted by coverage. With no managed Amazon presence, split Commerce’s weight evenly between the other two. Bubble hover may include its relevant score.
 - **User value:** One Consensus Truth number for the room.
 - **Acceptance:** Coverage displayed; seller-type weight split respected.
