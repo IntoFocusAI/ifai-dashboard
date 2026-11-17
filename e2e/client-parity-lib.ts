@@ -21,6 +21,10 @@ export type ParitySettings = {
   vertical: string;
   data_schema: string;
   competitors: { name: string; terms: string[]; domains: string[] }[];
+  logo_src?: string | null;
+  seller_type?: string;
+  retailers?: { key: string; name: string }[];
+  data_sources?: Record<string, boolean>;
   /** True for a made-up client from e2e/fixtures/clients/, which has no data in the database. */
   fixture?: boolean;
 };
@@ -145,6 +149,93 @@ export function findForeign(client: ParitySettings, surface: Surface, terms: For
     hits.push({ client: client.client_key, surface: surface.id, term: t.term, from: t.from, kind: t.kind, context });
   }
   return hits;
+}
+
+/* Declared differences (decision 113). The only allowed difference between clients is additive and
+   comes from a client's settings: its seller model, its retailers, its data sources, its logo. Each
+   rule below is keyed to one settings field, never to a client name. Before two clients' lines are
+   compared, each rule rewrites the lines that client's OWN settings declare, so a declared difference
+   compares equal and an undeclared one still reports. For example, Fender's settings list Musician's
+   Friend, so its MAP table's "Musician's Friend" column is set aside; a client whose settings do not
+   list it and still shows the column is reported.
+   One limit: a rule sets aside what a client declares, so a declared column that is missing is not
+   reported by this check. Add a rule here, with its settings field and reason, rather than a client
+   name anywhere in the test. */
+
+export type DeclaredDifference = {
+  id: string;
+  /** The settings field the difference is keyed to. */
+  field: keyof ParitySettings;
+  /** Why it is allowed, in plain words (listed in docs/client-parity-gaps.md). */
+  why: string;
+  /** Rewrites one line of `client`'s capture. Returns the line unchanged when the rule does not apply, "" to set it aside. */
+  apply: (line: string, client: ParitySettings) => string;
+};
+
+const fold = (s: string) => s.replace(/[‘’]/g, "'").replace(/\s+/g, " ").trim().toLowerCase();
+
+/** Channel columns a client's settings declare: Amazon when its offers are read, each retailer whose data source is on. */
+export function declaredChannelColumns(c: ParitySettings): string[] {
+  const on = (key: string) => c.data_sources?.[key] !== false;
+  const names = (c.retailers ?? []).filter((r) => on(r.key)).map((r) => r.name);
+  if (c.data_sources?.amazon_offers) names.push("Amazon");
+  return names;
+}
+
+/** Copy that belongs to one seller model (docs/client-seller-models.md), by `seller_type`. */
+export const SELLER_MODEL_PHRASES: Record<string, RegExp[]> = {
+  partner_led: [/\bpartner-led\b/i, /\bauthori[sz]ed (partner|seller)s?\b/i],
+  brand_led: [/\bbrand-led\b/i, /\bown seller accounts?\b/i],
+};
+
+export const DECLARED_DIFFERENCES: DeclaredDifference[] = [
+  {
+    id: "retailer-columns",
+    field: "retailers",
+    why: "A channel column (Amazon, Walmart, Musician's Friend and so on) shows for a client whose `retailers` list names that retailer and whose `data_sources` has it on (Amazon: `data_sources.amazon_offers`).",
+    apply(line, client) {
+      const m = /^(.* > columns: )(.*)$/.exec(line);
+      if (!m) return line;
+      const declared = new Set(declaredChannelColumns(client).map(fold));
+      const kept = m[2].split(" | ").filter((cell) => !declared.has(fold(cell)));
+      return `${m[1]}${kept.join(" | ")}`;
+    },
+  },
+  {
+    id: "seller-model",
+    field: "seller_type",
+    why: "Brand-led and partner-led clients read different copy and sections about who sells on Amazon (`seller_type`). A line with the client's own seller-model wording is set aside; the other model's wording still reports.",
+    apply(line, client) {
+      const own = SELLER_MODEL_PHRASES[client.seller_type ?? ""] ?? [];
+      return own.some((re) => re.test(line)) ? "" : line;
+    },
+  },
+  {
+    id: "logo",
+    field: "logo_src",
+    why: "The Summary bubble shows the logo when `logo_src` is set and the brand name as text when it is null.",
+    apply(line, client) {
+      const m = /^(map > bubble hub: )(.*)$/.exec(line);
+      if (!m) return line;
+      if (client.logo_src == null && m[2] !== "{brand}") return line;
+      return `${m[1]}<logo, or the brand name when logo_src is null>`;
+    },
+  },
+];
+
+/** A client's lines with its declared differences set aside. */
+export function applyDeclared(lines: string[], client: ParitySettings, rules: DeclaredDifference[] = DECLARED_DIFFERENCES): string[] {
+  const out = lines.map((line) => rules.reduce((l, rule) => (l ? rule.apply(l, client) : l), line)).filter(Boolean);
+  return [...new Set(out)];
+}
+
+/** Every capture with each client's declared differences set aside (clients missing from `settings` are left as they are). */
+export function withDeclaredDifferences(captures: ClientCapture[], settings: ParitySettings[], rules = DECLARED_DIFFERENCES): ClientCapture[] {
+  return captures.map((cap) => {
+    const client = settings.find((s) => s.client_key === cap.client_key);
+    if (!client) return cap;
+    return { ...cap, surfaces: cap.surfaces.map((s) => ({ ...s, lines: applyDeclared(s.lines, client, rules) })) };
+  });
 }
 
 export type LayoutGap = { line: string; has: string[]; lacks: string[] };

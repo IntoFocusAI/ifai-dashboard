@@ -6,12 +6,16 @@ import { buildClientRegistry, listClientKeys, validateClientSettings } from "@/l
 import { testClientFilesFrom } from "@/lib/client/registry";
 import { lintRepo, lintSource } from "./lint-client-branches.mjs";
 import {
+  applyDeclared,
+  DECLARED_DIFFERENCES,
+  declaredChannelColumns,
   findForeign,
   foreignTerms,
   layoutGaps,
   normalizeLine,
   parityClients,
   type ParitySettings,
+  withDeclaredDifferences,
 } from "../e2e/client-parity-lib.ts";
 
 /* Parity chunk C8 (X-35): the lint that flags client branches, and the helpers the
@@ -45,6 +49,18 @@ test("C8 lint: leaves comments, other literals and non-comparisons alone", () =>
   assert.equal(lint(`const brand = "fender";`).length, 0);
   assert.equal(lint(`const url = "https://fender.com"; // client === "fender"`).length, 0);
   assert.equal(lint(`if (name === "Fenders and more") a();`).length, 0);
+});
+
+test("lint:clients says what to use instead: a settings field or a brand helper", () => {
+  const fix = (source: string, file = "lib/x.ts") => lint(source, file)[0].fix as string;
+  assert.match(fix(`x = isFenderClient() ? RECHECK_DAYS.walmartFender : 2;`), /recheck_days/);
+  assert.match(fix(`return isFenderClient() ? FMIC_OWNED_DOMAINS : d;`), /owned_domains/);
+  assert.match(fix("const s = `names ${isFenderClient() ? \"Fender, Squier,\" : brandName()}`;"), /leadBrandOr\(\)/);
+  assert.match(fix(`if (lead === "fender") return true;`), /leadBrand\(\)/);
+  assert.match(fix(`function hasFenderEstimates() {\n  return activeClient().key === "fender";\n}`), /analyst_estimates/);
+  assert.match(fix(`export function isFenderClient(): boolean {\n  return activeClient().key === "fender";\n}`), /remove this helper/);
+  assert.match(fix(`if (key === "fender") go();`), /brandName\(\)/, "anything else gets the general advice");
+  for (const finding of lintRepo()) assert.ok(finding.fix && finding.fix.length > 20, `${finding.file}:${finding.line} has a fix`);
 });
 
 test("C8 lint: reports each line once with file and line", () => {
@@ -137,4 +153,44 @@ test("C8 helpers: layout gaps list the lines not every client has", () => {
   ]);
   assert.deepEqual(layoutGaps([cap("one", ["a"]), cap("two", ["a"])], () => true), []);
   assert.deepEqual(layoutGaps([cap("one", ["a"]), cap("two", ["a"])], () => false), []);
+});
+
+test("decision 113: declared differences are keyed to settings fields, never to a client name", () => {
+  const keys = clients.map((c) => c.client_key.toLowerCase());
+  for (const rule of DECLARED_DIFFERENCES) {
+    assert.ok(rule.why.length > 20, `${rule.id} says why`);
+    assert.ok(Object.keys(byKey("fender")).includes(rule.field as string), `${rule.id} is keyed to a real settings field`);
+    const src = rule.apply.toString().toLowerCase();
+    for (const key of keys) assert.ok(!src.includes(`"${key}"`), `${rule.id} names client ${key}`);
+  }
+  const lib = readFileSync("e2e/client-parity-lib.ts", "utf8");
+  assert.ok(!/client_key\s*===?\s*["']/.test(lib), "no client key compared to a literal");
+});
+
+test("decision 113: a retailer column is allowed only where the client's settings list that retailer", () => {
+  const fender = byKey("fender");
+  assert.deepEqual(declaredChannelColumns(fender), ["Walmart", "Musician's Friend", "Amazon"]);
+  assert.deepEqual(declaredChannelColumns(byKey("ledlenser")), ["Walmart", "Amazon"]);
+  assert.deepEqual(declaredChannelColumns(byKey("fishingrods")), [], "data sources off: no channel column declared");
+  const mapLine = (cols: string) => `catalog/MAP Leakage > columns: LISTING | ASIN | MAP | ${cols}`;
+  const cap = (client_key: string, lines: string[]) => ({ client_key, surfaces: [{ id: "catalog/MAP Leakage", lines, text: "" }] });
+  const raw = [cap("fender", [mapLine("AMAZON | WALMART | MUSICIAN’S FRIEND")]), cap("ledlenser", [mapLine("AMAZON | WALMART")])];
+  assert.equal(layoutGaps(raw, () => true).length, 2, "without the rule the column reports");
+  assert.deepEqual(layoutGaps(withDeclaredDifferences(raw, clients), () => true), []);
+  // A client that shows a retailer column its settings do not list still reports.
+  const undeclared = [cap("fender", [mapLine("AMAZON | WALMART")]), cap("ledlenser", [mapLine("AMAZON | WALMART | MUSICIAN'S FRIEND")])];
+  assert.equal(layoutGaps(withDeclaredDifferences(undeclared, clients), () => true).length, 2);
+  // Other columns are untouched.
+  assert.deepEqual(applyDeclared(["x > columns: ASIN | Amazon completeness"], fender), ["x > columns: ASIN | Amazon completeness"]);
+});
+
+test("decision 113: seller-model copy and the logo follow seller_type and logo_src", () => {
+  const partner = { ...byKey("fender"), seller_type: "partner_led" };
+  const brand = { ...byKey("ledlenser"), seller_type: "brand_led" };
+  assert.deepEqual(applyDeclared(["retail > heading: Authorized partners", "retail > heading: Buy Box"], partner), ["retail > heading: Buy Box"]);
+  assert.deepEqual(applyDeclared(["retail > heading: Authorized partners"], brand), ["retail > heading: Authorized partners"], "the other model's copy reports");
+  assert.deepEqual(applyDeclared(["retail > heading: {brand}'s own seller account"], brand), []);
+  const logo = applyDeclared(["map > bubble hub: "], byKey("fender"));
+  assert.deepEqual(applyDeclared(["map > bubble hub: {brand}"], byKey("fishingrods")), logo);
+  assert.deepEqual(applyDeclared(["map > bubble hub: Something else"], byKey("fishingrods")), ["map > bubble hub: Something else"]);
 });
