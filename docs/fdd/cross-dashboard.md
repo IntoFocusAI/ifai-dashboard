@@ -32,7 +32,7 @@
 - **Desired:** On Balanced, remove those widgets. Hover/focus a main bubble fills three slots: largest performance gap, largest defensible opportunity, highest-priority action — large figure, short label, target, compact chart. Red never alone.
 - **User value:** The hub answers without opening every bubble.
 - **Acceptance:** Slots use live data, denominator, freshness, and evidence trail.
-- **Evidence:** Live on production main d9911c9, approved 26 Oct 2026 (workers 9.4 and 10.3). Status stays TARGET until the slots are confirmed as the largest gap, the largest opportunity, and the highest-priority action. Worker 20.3 (pull request 110) added a target, N of M, a last-checked date, an evidence link, and a one-line rule to each slot. Brian Magazu did not approve the picks on 3 Nov 2026; the pull request stays open for rework.
+- **Evidence:** Live on production main d9911c9, approved 26 Oct 2026 (workers 9.4 and 10.3). Status stays TARGET until the slots are confirmed as the largest gap, the largest opportunity, and the highest-priority action. Worker 20.3 (pull request 110) added a target, N of M, a last-checked date, an evidence link, and a one-line rule to each slot. Brian Magazu did not approve the picks on 3 Nov 2026. PR 110 closed 17 Nov 2026; the panels are rebuilt after the parity build (X-35) to decision 109: a status mark beside the figure instead of a word line, no repeated numbers, no "Opens" line, run time in a panel tooltip, and no vertical scroll on a small laptop screen.
 - **Open decision:** None.
 
 **X-23 CURRENT** · Launch
