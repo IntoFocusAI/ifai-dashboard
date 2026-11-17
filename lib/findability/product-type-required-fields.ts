@@ -3,6 +3,7 @@ import { formatLastCheckDay, type PartialFigure } from "@/lib/fender-canvas/canv
 import {
   amazonFieldList,
   competitorFillPct,
+  noListProductTypeLabel,
   type AmazonFieldList,
   type AmazonRequiredField,
 } from "@/lib/findability/amazon-field-lists";
@@ -12,8 +13,12 @@ import type { RequiredSpecSourceRow } from "@/lib/findability/required-spec-fiel
  * Amazon Specs required fields by Amazon product type (D-05). The required list is the staff list
  * for the listing's product type (lib/findability/amazon-field-lists.ts). The Amazon spec check
  * records a fixed set of fields per client, so a required field it does not record is named as
- * not checked, never as missing. Listings whose product type has no list keep the interim rule
- * (top 10 by fill rate in their category).
+ * not checked, never as missing. A field with `alsoCounts` (brightness and max lumens) is one field:
+ * filled when any of its ids is filled, missing when none is filled and the check flagged one.
+ * Listings of a product type with no approved list yet (ELECTRIC_LIGHT, ELECTRIC_LANTERN) are
+ * returned in `noList` and read Not available*; they never fall back and never count as complete.
+ * Listings of any other type without a list keep the interim rule (top 10 by fill rate in their
+ * category).
  */
 
 export type ProductTypeSourceRow = RequiredSpecSourceRow & { asin: string };
@@ -35,11 +40,24 @@ export type ProductTypeCoverage = {
   listingsMissing: number;
 };
 
+export type NoListGroup = {
+  productType: string;
+  /** Plain name, lower case ("lanterns"). */
+  label: string;
+  listings: number;
+};
+
 export type ProductTypeSplit<Row extends ProductTypeSourceRow> = {
   coverage: ProductTypeCoverage[];
+  /** Checked listings whose product type has no approved list yet, by product type. */
+  noList: NoListGroup[];
   /** Checked listings whose product type has no list, or no product type at all. */
   unlisted: Row[];
 };
+
+function fieldIds(field: AmazonRequiredField): string[] {
+  return [field.field, ...(field.alsoCounts ?? [])];
+}
 
 function missingFields(row: RequiredSpecSourceRow): string[] {
   return (row.amazon_missing_fields ?? "")
@@ -71,8 +89,18 @@ export function requiredFieldsByProductType<Row extends ProductTypeSourceRow>(
   const recorded = recordedSpecFields(checkedRows);
   const byType = new Map<string, { list: AmazonFieldList; rows: Row[] }>();
   const unlisted: Row[] = [];
+  const noListCounts = new Map<string, NoListGroup>();
   for (const row of checkedRows) {
-    const list = amazonFieldList(productTypes.get(row.asin.trim()));
+    const productType = productTypes.get(row.asin.trim());
+    const noListLabel = noListProductTypeLabel(productType);
+    if (productType && noListLabel) {
+      const key = productType.trim().toUpperCase();
+      const group = noListCounts.get(key) ?? { productType: key, label: noListLabel, listings: 0 };
+      group.listings += 1;
+      noListCounts.set(key, group);
+      continue;
+    }
+    const list = amazonFieldList(productType);
     if (!list) {
       unlisted.push(row);
       continue;
@@ -83,15 +111,21 @@ export function requiredFieldsByProductType<Row extends ProductTypeSourceRow>(
   }
 
   const coverage = [...byType.values()].map(({ list, rows: typeRows }) => {
-    const checkedFields = list.fields.filter((field) => recorded.has(field.field));
-    const checkedIds = new Set(checkedFields.map((field) => field.field));
+    const checkedFields = list.fields.filter((field) => fieldIds(field).some((id) => recorded.has(id)));
     const missingCount = new Map<string, number>();
     let listingsMissing = 0;
     for (const row of typeRows) {
-      const missing = missingFields(row).filter((field) => checkedIds.has(field));
+      const rowMissing = new Set(missingFields(row));
+      // Either id filled means the field is filled; otherwise it is missing when the check flagged an id.
+      const filledIds = row.amazon_spec_values ?? {};
+      const missing = checkedFields.filter((field) => {
+        const ids = fieldIds(field);
+        return !ids.some((id) => id in filledIds) && ids.some((id) => rowMissing.has(id));
+      });
       if (missing.length > 0) listingsMissing += 1;
-      for (const field of new Set(missing)) missingCount.set(field, (missingCount.get(field) ?? 0) + 1);
+      for (const field of missing) missingCount.set(field.field, (missingCount.get(field.field) ?? 0) + 1);
     }
+    const checkedIds = new Set(checkedFields.map((field) => field.field));
     return {
       list,
       listings: typeRows.length,
@@ -101,7 +135,8 @@ export function requiredFieldsByProductType<Row extends ProductTypeSourceRow>(
     };
   });
   coverage.sort((a, b) => b.listings - a.listings || a.list.productType.localeCompare(b.list.productType));
-  return { coverage, unlisted };
+  const noList = [...noListCounts.values()].sort((a, b) => b.listings - a.listings || a.label.localeCompare(b.label));
+  return { coverage, noList, unlisted };
 }
 
 function listingNoun(count: number): string {
@@ -116,6 +151,12 @@ export function productTypeListingLabel(coverage: ProductTypeCoverage): string {
 /** "Checks 9 of 17 required fields". */
 export function productTypeCoverageLabel(coverage: ProductTypeCoverage): string {
   return `checks ${formatInt(coverage.checked.length)} of ${formatInt(coverage.list.fields.length)} required fields`;
+}
+
+/** Tooltip on the Not available* mark for listings of a product type with no approved list. */
+export function noListTooltip(groups: readonly NoListGroup[]): string {
+  const names = groups.map((group) => group.label).join(" and ");
+  return `There is no approved required field list for ${names} yet, so specs complete is not judged for these listings. They are not counted as complete and do not use another list.`;
 }
 
 function sourceLine(list: AmazonFieldList): string {
