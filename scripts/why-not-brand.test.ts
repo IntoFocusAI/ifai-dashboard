@@ -1,8 +1,8 @@
-// node --experimental-strip-types --import ./scripts/register-alias.mjs --import ./scripts/register-ts-extensions.mjs --test scripts/why-not-fender.test.ts
+// node --experimental-strip-types --import ./scripts/register-alias.mjs --import ./scripts/register-ts-extensions.mjs --test scripts/why-not-brand.test.ts
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { competitorsSpokeDesc, competitorsSpokeLead } from "../lib/ai-search/canvas-surfaces.ts";
-import { answerLookupId, whyNotFender } from "../lib/ai-search/why-not-fender.ts";
+import { answerLookupId, whyNotBrand } from "../lib/ai-search/why-not-brand.ts";
 import type { AiSearchRead } from "../lib/ai-search/types.ts";
 
 test("a namespaced evidence id is not looked up on the current-run view", () => {
@@ -11,7 +11,7 @@ test("a namespaced evidence id is not looked up on the current-run view", () => 
 });
 
 test("why not Fender states what the stored answer did, in one plain sentence", () => {
-  const view = whyNotFender({
+  const view = whyNotBrand({
     answerText: "  Players often start with a Yamaha Pacifica.  ",
     winner: "Yamaha",
     pages: [
@@ -23,7 +23,7 @@ test("why not Fender states what the stored answer did, in one plain sentence", 
     ],
   });
   assert.equal(view.answer, "Players often start with a Yamaha Pacifica.");
-  assert.equal(view.fenderMentioned, false);
+  assert.equal(view.brandMentioned, false);
   assert.deepEqual(
     view.pages.map((page) => [page.label, page.owner]),
     [
@@ -40,19 +40,19 @@ test("why not Fender states what the stored answer did, in one plain sentence", 
 });
 
 test("a Fender mention and a Fender page are counted, not hidden", () => {
-  const view = whyNotFender({
+  const view = whyNotBrand({
     answerText: "The Squier Classic Vibe is fine, but the Taylor GS Mini is the pick.",
     winner: "Taylor",
     pages: [{ href: "https://www.fender.com/en-US/acoustic", label: "Fender acoustics" }],
   });
-  assert.equal(view.fenderMentioned, true);
+  assert.equal(view.brandMentioned, true);
   assert.equal(view.summary, "Taylor was named most. Fender/Squier was mentioned, but named less often. Its one cited page is a Fender page.");
 });
 
 test("a missing answer and a missing page stay missing", () => {
-  const view = whyNotFender({ answerText: "  ", winner: "PRS", pages: [] });
+  const view = whyNotBrand({ answerText: "  ", winner: "PRS", pages: [] });
   assert.equal(view.answer, null);
-  assert.equal(view.fenderMentioned, null);
+  assert.equal(view.brandMentioned, null);
   assert.deepEqual(view.pages, []);
   assert.equal(view.summary, "PRS was named most. No cited page was stored.");
 });

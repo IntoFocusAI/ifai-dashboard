@@ -340,7 +340,7 @@ test.describe("AI Search Visibility", () => {
       ["No sources", "without showing a web page"],
       ["Links", "One answer can list several"],
       ["To Fender-owned sites", "fender.com and other Fender-owned sites"],
-      ["Fender-owned", "controlled by Fender or another FMIC brand"],
+      ["Fender-owned", "controlled by Fender or a brand it owns \\(Squier, Jackson, EVH, Gretsch\\)"],
       ["Source class", "brand-owned, retailer, editorial, community, video, or other"],
     ]) {
       const term = page.locator(`.ifai-term[data-ifai-tooltip-title="${label}"]`).first();
