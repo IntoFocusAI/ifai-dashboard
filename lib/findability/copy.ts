@@ -210,16 +210,16 @@ const CONFIDENCE: Record<string, string> = {
 };
 
 const SOURCE_METHOD: Record<string, string> = {
-  derived_handle: "Guessed from product name",
+  derived_handle: "Built from product name",
   model_number_search: "Site search by model number",
-  search_meta: "Site search data",
+  search_meta: "Site search by product name",
 };
 
 /** Plain meaning of how the page was found, for the Confidence cell tooltip. */
 const SOURCE_METHOD_MEANING: Record<string, string> = {
-  derived_handle: "We guessed the page address from the product name.",
+  derived_handle: "We built the page address from the product name.",
   model_number_search: "We found the page by searching your site for the model number.",
-  search_meta: "We found the page in your site's search data.",
+  search_meta: "We found the page by searching your site for the product name.",
 };
 
 export function sourceMethodMeaning(value: string | null): string {

@@ -269,10 +269,10 @@ test("the five outcome counts stay distinct and open the listings behind them", 
   // Decision 104: the Confidence value is short; how the page was found is in a cell tooltip only.
   const zebraCell = table.locator("tbody tr").filter({ hasText: "B00ZEBRA" }).locator("td").filter({ hasText: /^Same SKU$/ });
   await expect(zebraCell).toBeVisible();
-  await expect(table.locator("tbody")).not.toContainText("Guessed from product name");
+  await expect(table.locator("tbody")).not.toContainText("Built from product name");
   await expect(zebraCell.locator(".ifai-term")).toHaveAttribute(
     "data-ifai-tooltip-desc",
-    "We guessed the page address from the product name.",
+    "We built the page address from the product name.",
   );
   const alphaCell = table.locator("tbody tr").filter({ hasText: "Alpha Exact" }).locator("td").filter({ hasText: /^Same barcode$/ });
   await expect(alphaCell.locator(".ifai-term")).toHaveAttribute(

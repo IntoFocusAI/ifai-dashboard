@@ -677,8 +677,8 @@ test("stacked Findability cells keep every stored fact and search both lines", (
     http_status: 200,
   });
   assert.equal(listingContextLine(exact), "Solid Body · Instrument");
-  assert.equal(matchMethodLine(exact), "Guessed from product name");
-  assert.equal(sourceMethodMeaning("derived_handle"), "We guessed the page address from the product name.");
+  assert.equal(matchMethodLine(exact), "Built from product name");
+  assert.equal(sourceMethodMeaning("derived_handle"), "We built the page address from the product name.");
   assert.equal(confidenceLabel("sku"), "Same SKU");
   assert.equal(confidenceLabel("gtin"), "Same barcode");
   assert.equal(confidenceLabel("variant_options"), "Same options");
