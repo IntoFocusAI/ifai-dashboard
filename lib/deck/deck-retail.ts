@@ -75,7 +75,7 @@ function buyBoxSlide(input: DeckInput, snapshot: PortfolioRetailSnapshot): DeckS
   if (!ready(hero)) return null;
   const counts = snapshot.suppressedListings.detail?.counts ?? null;
   const stock = stockLossFigure(input);
-  const figures: DeckFigure[] = [{ ...heroFigure("buy-box", "Buy Box withheld", hero, SOURCES.suppressed), accent: true }];
+  const figures: DeckFigure[] = [{ ...heroFigure("buy-box", "Buy Box Withheld", hero, SOURCES.suppressed), accent: true }];
   if (counts && counts.withheld > 0) {
     figures.push({
       id: "above-outside",
@@ -108,7 +108,7 @@ function mapSlide(input: DeckInput, snapshot: PortfolioRetailSnapshot): DeckSlid
   const detail = snapshot.mapLeakage.detail;
   const gap = detail?.averageLeakage ?? null;
   const gapMark = (detail?.approvedExceptions ?? 0) > 0 ? "*" : "";
-  const figures: DeckFigure[] = [{ ...heroFigure("map", "MAP leakage", hero, SOURCES.map), accent: true }];
+  const figures: DeckFigure[] = [{ ...heroFigure("map", "MAP Leakage", hero, SOURCES.map), accent: true }];
   if (gap != null) {
     figures.push({
       id: "map-gap",
@@ -139,7 +139,7 @@ function bundleSlide(input: DeckInput, snapshot: PortfolioRetailSnapshot): DeckS
   if (!ready(hero)) return null;
   const spec = specHero(snapshot);
   const figures: DeckFigure[] = [{ ...heroFigure("splintered", SPLINTERED_LISTINGS_LABEL, hero, SOURCES.governance), accent: true }];
-  if (ready(spec)) figures.push(heroFigure("specs-complete", "Amazon specs complete", spec, SOURCES.governance));
+  if (ready(spec)) figures.push(heroFigure("specs-complete", "Amazon Specs Complete", spec, SOURCES.governance));
   return {
     id: "s7",
     kind: "stats",
@@ -238,7 +238,7 @@ export function buyBoxDetailSlide(input: DeckInput): DeckSlide | null {
       rows: [
         row("Current readings of monitored listings", counts.current, counts.population),
         row("Buy Box present", counts.present, counts.current),
-        row("Buy Box withheld", counts.withheld, counts.current),
+        row("Buy Box Withheld", counts.withheld, counts.current),
         row("Withheld and priced above the outside price", counts.confirmedHighPrice, counts.withheld),
         row("Withheld with no outside price to compare", counts.withheldWithoutBenchmark, counts.withheld),
         row("No active offer", counts.noActiveOffer, counts.current),

@@ -166,7 +166,7 @@ function retailFindings(read: RetailCanvasRead): BriefingFinding[] {
         "buy_box",
         "ecommerce",
         RETAIL_FINDING_LABELS.suppressed_listings,
-        "Buy Box withheld",
+        "Buy Box Withheld",
         why("Buy Box reading not stored."),
         loading,
       ),
@@ -174,7 +174,7 @@ function retailFindings(read: RetailCanvasRead): BriefingFinding[] {
         "map_leakage",
         "ecommerce",
         RETAIL_FINDING_LABELS.map_leakage,
-        "MAP leakage",
+        "MAP Leakage",
         why("MAP reading not stored."),
         loading,
       ),
@@ -198,7 +198,7 @@ function retailFindings(read: RetailCanvasRead): BriefingFinding[] {
     fromRetailHero(
       "buy_box",
       buyBox,
-      "Buy Box withheld",
+      "Buy Box Withheld",
       buyBox.numerator != null && buyBox.denominator != null
         ? "The Buy Box is withheld, so there is no one-click offer."
         : buyBox.explainer,
@@ -206,7 +206,7 @@ function retailFindings(read: RetailCanvasRead): BriefingFinding[] {
     fromRetailHero(
       "map_leakage",
       map,
-      "MAP leakage",
+      "MAP Leakage",
       map.numerator != null && map.denominator != null ? "Priced below MAP." : map.explainer,
     ),
     fromRetailHero(
@@ -274,7 +274,7 @@ function unbrandedPie(fenderWins: number, resolved: number): PieDiscData | null 
     id: "briefing-unbranded",
     title: "Unbranded Discovery",
     total: resolved,
-    totalLabel: "resolved unbranded discovery answers",
+    totalLabel: "resolved Unbranded Discovery answers",
     slices: [
       { key: "fender", label: `${leadBrand()} leads`, count: fenderWins },
       { key: "rest", label: "Rest of resolved answers", count: rest },
@@ -320,11 +320,11 @@ function unbrandedFinding(read: AiSearchRead, options: BriefingAiOptions): Brief
     tone,
     pie: ready ? unbrandedPie(tally.fenderWins, tally.resolved) : null,
     tip: ready
-      ? `${formatInt(tally.fenderWins)} of ${formatInt(tally.resolved)} resolved unbranded discovery answers.`
+      ? `${formatInt(tally.fenderWins)} of ${formatInt(tally.resolved)} resolved Unbranded Discovery answers.`
       : null,
     explainer: ready
       ? `${leadBrand()} named most on unbranded shopping questions.`
-      : "No resolved unbranded discovery answers in this window.",
+      : "No resolved Unbranded Discovery answers in this window.",
     numerator: ready ? tally.fenderWins : null,
     denominator: ready ? tally.resolved : null,
     partial: ready ? (options.aiStale ?? null) : null,

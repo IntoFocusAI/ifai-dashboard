@@ -7,7 +7,7 @@ import { RunDetailsLead } from "@/components/v3/live/ai-search/RunDetailsLead";
 import { AI_TABS } from "@/lib/ai-search/canvas-surfaces";
 import {
   HERO_RATES_NOTE,
-  ON_TRACK_DEFINITION,
+  onTrackDefinition,
   onTrackPie,
   type CategoryLeadSummary,
 } from "@/lib/ai-search/category-on-track";
@@ -21,13 +21,13 @@ import { formatInt } from "@/lib/fender-canvas/format";
 import { leadBrand } from "@/lib/brand-copy";
 
 const NO_LEADS_DESC =
-  "No unbranded discovery answer had a clear leader in this selection, so no category can be marked on track, tied, or behind.";
+  "No Unbranded Discovery answer had a clear leader in this selection, so no category can be marked on track, tied, or behind.";
 
 const RESOLVED_DESC = `${AI_DEFINITIONS.resolved} ${HERO_RATES_NOTE}`;
 
 const ROLE_NAMES = {
-  unbranded_discovery: "Unbranded discovery",
-  branded_consideration: "Branded consideration",
+  unbranded_discovery: "Unbranded Discovery",
+  branded_consideration: "Branded Consideration",
 } as const;
 
 type EngineView = { engineScope?: EvidenceScope; engineName: string | null };
@@ -37,7 +37,7 @@ function OnTrackHero({ summary, engineName }: { summary: CategoryLeadSummary; en
   return (
     <div data-ai-on-track-hero="">
       <div>
-        <Term name="Categories on track" desc={ON_TRACK_DEFINITION}>
+        <Term name="Categories on track" desc={onTrackDefinition()}>
           Categories on track
         </Term>
       </div>
@@ -49,7 +49,7 @@ function OnTrackHero({ summary, engineName }: { summary: CategoryLeadSummary; en
           </span>
           <CitationPieDisc
             pie={pie}
-            tip={`${formatInt(summary.onTrack)} on track. ${formatInt(summary.tied.length)} tied. ${formatInt(summary.behind.length)} behind. Total ${formatInt(summary.measured)} categories with resolved unbranded discovery answers.`}
+            tip={`${formatInt(summary.onTrack)} on track. ${formatInt(summary.tied.length)} tied. ${formatInt(summary.behind.length)} behind. Total ${formatInt(summary.measured)} categories with resolved Unbranded Discovery answers.`}
           />
         </div>
       ) : (

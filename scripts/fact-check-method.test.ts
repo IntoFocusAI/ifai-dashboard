@@ -12,7 +12,7 @@ import { AI_DEFINITIONS } from "../lib/ai-search/definitions.ts";
 import {
   FACT_CHECK_ACCURACY_TITLE,
   FACT_CHECK_SCOPE_LINE,
-  UNVERIFIED_FLAG_TIP,
+  unverifiedFlagTip,
   contradictionCount,
   factCheckAccuracyLead,
   factCheckAccuracyPieTip,
@@ -204,8 +204,8 @@ test("fact-check 'not' qualifiers sit in tooltips, never as on-screen sentences"
   );
   assert.match(factCheckScopeTip(), /do not prove every statement in each answer is accurate\. This run checked selected product facts, not every factual claim/);
   assert.match(factCheckScopeTip(true), /This selection checked selected product facts/);
-  assert.match(panel, /<CopyTip label="Unverified flag" description=\{UNVERIFIED_FLAG_TIP\}> unverified flag <\/CopyTip>/);
-  assert.match(UNVERIFIED_FLAG_TIP, /never verified against a Fender page, so it is not reported as a contradiction/);
+  assert.match(panel, /<CopyTip label="Unverified flag" description=\{unverifiedFlagTip\(\)\}> unverified flag <\/CopyTip>/);
+  assert.match(unverifiedFlagTip(), /never verified against a Fender page, so it is not reported as a contradiction/);
   assert.match(panel, /<AiTerm term="product fact check">product facts<\/AiTerm>\?/);
   assert.match(AI_DEFINITIONS["product fact check"], /never count toward win rates or competitor share/);
   assert.match(drawer, /<AiTerm term="no contradiction found">\{result\}<\/AiTerm>/);
@@ -216,7 +216,7 @@ test("fact-check 'not' qualifiers sit in tooltips, never as on-screen sentences"
     "Each fact-check question names one Fender product. How these 5 products were picked, and what part of Fender's catalog they stand for, is not recorded.",
   );
   assert.match(factCheckPickTip(1), /^This fact-check question names one Fender product\. How it was picked/);
-  for (const tip of [factCheckScopeTip(), factCheckAccuracyTip(shape), UNVERIFIED_FLAG_TIP, factCheckPickTip(5)]) {
+  for (const tip of [factCheckScopeTip(), factCheckAccuracyTip(shape), unverifiedFlagTip(), factCheckPickTip(5)]) {
     assert.doesNotMatch(tip, /\u2014|representative|random/i);
   }
 });

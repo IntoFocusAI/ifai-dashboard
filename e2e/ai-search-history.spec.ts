@@ -75,7 +75,7 @@ test.describe("AI Search history on the live run", () => {
     await expect(page.locator("[data-ai-window-completeness]")).toBeVisible({ timeout: AI_READ_MS });
     await page.locator("[data-ai-history-trigger]").click();
     await page.getByRole("button", { name: "All time" }).click();
-    await expect(page.locator(".drilldown-desc")).toContainText("How AI assistants name and cite Fender.");
+    await expect(page.locator(".drilldown-desc")).toContainText("How AI assistants name and cite Fender.", { timeout: AI_READ_MS });
     await expect(page.locator(".drilldown-desc")).not.toContainText("Trends use the stored review runs");
     await expect(page.locator(".drilldown-desc")).not.toContainText("Copy of the stored runs");
     await expect(page.locator("[data-ai-history-banner]")).toHaveCount(0);
@@ -181,7 +181,7 @@ test.describe("AI Search stored-run copy", () => {
     await expect(rows.nth(2)).toContainText("56.5% (13 of 23 resolved)");
     await expect(page.locator("[data-ai-history-gap='p15:perplexity']")).toContainText("total beginner");
     await expect(page.locator("[data-ai-history-gap='p24:chatgpt']")).toContainText("5-string bass");
-    await page.locator("[data-ai-history-trends]").getByRole("button", { name: "Branded consideration", exact: true }).click();
+    await page.locator("[data-ai-history-trends]").getByRole("button", { name: "Branded Consideration", exact: true }).click();
     await expect(page.locator(`[data-ai-trend-row='${EARLIER}:overall']`)).toContainText("100.0% (18 of 18 resolved)");
     await expect(page.locator(`[data-ai-trend-row='${PUBLISHED}:overall']`)).toContainText("95.7% (22 of 23 resolved)");
     await page.getByRole("button", { name: "By engine" }).click();

@@ -84,7 +84,7 @@ export function specGapFieldsCell(missingFields: readonly string[]): string {
 }
 
 /**
- * Whether a gap listing matches the Specs complete filters.
+ * Whether a gap listing matches the Specs Complete filters.
  * Selected fields are AND. How close is one exclusive choice (or none).
  */
 export function listingMatchesSpecFilters(

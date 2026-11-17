@@ -11,7 +11,7 @@ import {
   headlineSurface,
   type RetailCanvasRead,
 } from "@/lib/fender-canvas/portfolio-retail-display";
-import { MAP_PRICES_NOT_STORED } from "@/lib/fender-canvas/portfolio-retail";
+import { mapPricesNotStored } from "@/lib/fender-canvas/portfolio-retail";
 import { mapReadLine } from "@/lib/fender-canvas/retail-copy";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
 import { brandName, brandSite, isFenderClient } from "@/lib/brand-copy";
@@ -32,8 +32,8 @@ function mapMissingSentence(retail: RetailCanvasRead): string | null {
 }
 
 function mapPriority(retail: RetailCanvasRead): { title: string; why: string } {
-  if (retail.phase === "ready" && retail.snapshot.mapLeakage.missingMessage === MAP_PRICES_NOT_STORED) {
-    return { title: MAP_PRICES_NOT_STORED, why: MAP_PRICES_NOT_STORED_WHY };
+  if (retail.phase === "ready" && retail.snapshot.mapLeakage.missingMessage === mapPricesNotStored()) {
+    return { title: mapPricesNotStored(), why: MAP_PRICES_NOT_STORED_WHY };
   }
   const title = mapReadLine(retail).replace(/\.$/, "");
   return { title, why: mapMissingSentence(retail) ?? MAP_CHANNEL_WHY };

@@ -56,9 +56,9 @@ export type AiRunSummary = {
     invalid: number;
     duplicates: number;
   };
-  /** Competitor wins on unbranded discovery only (counts, not an average of rates). */
+  /** Competitor wins on Unbranded Discovery only (counts, not an average of rates). */
   competitorWins: number;
-  /** Top competitor by unbranded discovery wins; `resolved` is the unbranded discovery denominator. */
+  /** Top competitor by Unbranded Discovery wins; `resolved` is the Unbranded Discovery denominator. */
   topCompetitor: { brand: string; wins: number; resolved: number } | null;
   largestGap: CategoryBattle | null;
 };
@@ -222,5 +222,5 @@ export function resolvedPhrase(tally: OutcomeTally): string {
 
 /** The two rates that lead AI Search. Shopping guidance and product-fact questions are not in either one. */
 export function headlineLine(summary: AiRunSummary): string {
-  return `Unbranded discovery: ${leadBrand()} named most in ${resolvedPhrase(summary.roles.unbranded)}. Branded consideration: ${resolvedPhrase(summary.roles.branded)}.`;
+  return `Unbranded Discovery: ${leadBrand()} named most in ${resolvedPhrase(summary.roles.unbranded)}. Branded Consideration: ${resolvedPhrase(summary.roles.branded)}.`;
 }

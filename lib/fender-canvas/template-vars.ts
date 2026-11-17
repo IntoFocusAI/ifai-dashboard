@@ -1,4 +1,4 @@
-import { ENTERPRISE_POTENTIAL_ESTIMATE, NO_ANALYST_ESTIMATE, PHASE_ONE_LIFT_ESTIMATE } from "@/lib/fender-canvas/analyst-estimates";
+import { enterprisePotentialEstimate, NO_ANALYST_ESTIMATE, phaseOneLiftEstimate } from "@/lib/fender-canvas/analyst-estimates";
 import type { CanvasAiCategoryRow, CanvasBundle, CanvasMetricsRow } from "@/lib/fender-canvas/types";
 import {
   formatEstimate,
@@ -90,8 +90,8 @@ export function buildTemplateVars(bundle: CanvasBundle): Record<string, string> 
     bb_1p_detail: `${formatInt(m.bb_1p)} 1P vs ${formatInt(m.bb_3p)} 3P`,
     sim_resolved_detail: `${formatInt(m.sim_resolved)} resolved (${formatInt(m.sim_unclear)} unclear, ${formatInt(m.sim_errors)} errors)`,
     fender_found_ratio: formatRatio(m.spec_fender_found, m.spec_checked),
-    phase_one_lift: estimateOrNone(kpiString(m, "phase1_lift", PHASE_ONE_LIFT_ESTIMATE)),
-    enterprise_potential: estimateOrNone(kpiString(m, "enterprise_potential", ENTERPRISE_POTENTIAL_ESTIMATE)),
+    phase_one_lift: estimateOrNone(kpiString(m, "phase1_lift", phaseOneLiftEstimate())),
+    enterprise_potential: estimateOrNone(kpiString(m, "enterprise_potential", enterprisePotentialEstimate())),
   };
 
   for (const row of cats) {

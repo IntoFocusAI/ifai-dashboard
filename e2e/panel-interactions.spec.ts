@@ -46,7 +46,7 @@ test.describe("simulation filters", () => {
 
 test.describe("collapsible explanations", () => {
   test("an explanation can be hidden and stays hidden", async ({ canvas, page }) => {
-    await canvas.openPriority("Buy Box withheld");
+    await canvas.openPriority("Buy Box Withheld");
 
     const toggle = page.locator(".ceo-callout-toggle").first();
     const body = page.locator(".ceo-callout-body").first();
@@ -58,7 +58,7 @@ test.describe("collapsible explanations", () => {
     await expect(page.locator(".ceo-callout-header").first()).toBeVisible();
 
     await canvas.reload();
-    await canvas.openPriority("Buy Box withheld");
+    await canvas.openPriority("Buy Box Withheld");
     await expect(page.locator(".ceo-callout-body").first()).toBeHidden();
 
     await page.locator(".ceo-callout-toggle").first().click();
@@ -71,7 +71,7 @@ test.describe("drill-downs", () => {
     canvas,
     page,
   }) => {
-    await canvas.openPriority("Buy Box withheld");
+    await canvas.openPriority("Buy Box Withheld");
     await expect(page.locator(".drilldown-tab-btn")).toHaveText([
       "Retail Overview",
       "Suppressed Listings",
@@ -109,7 +109,7 @@ test.describe("drill-downs", () => {
 
   test("out of stock shows sourced estimates that open to their inputs", async ({ canvas, page }) => {
     test.slow();
-    await canvas.openPriority("Buy Box withheld");
+    await canvas.openPriority("Buy Box Withheld");
     await expect(page.locator(".drilldown-tab-btn[data-new-tab]")).toHaveText(["Out of Stock"]);
     await canvas.openTab("Out of Stock");
     const panel = page.locator(".stock-loss");
@@ -151,7 +151,7 @@ test.describe("drill-downs", () => {
 
   test("suppressed listings follow the retail reading", async ({ canvas, page }) => {
     test.slow();
-    await canvas.openPriority("Buy Box withheld");
+    await canvas.openPriority("Buy Box Withheld");
     await canvas.openTab("Suppressed Listings");
     const body = page.locator(".drilldown-body");
     const list = page.locator(".suppressed-listings");
@@ -182,13 +182,13 @@ test.describe("drill-downs", () => {
     canvas,
     page,
   }) => {
-    await canvas.openPriority("Buy Box withheld");
+    await canvas.openPriority("Buy Box Withheld");
     await expect(canvas.activeTab).toHaveText("Retail Overview");
     const readings = page.locator(".fo-readings");
     await expect(readings).toBeVisible();
     for (const label of [
       "Buy Box present",
-      "Buy Box withheld",
+      "Buy Box Withheld",
       "No active offer",
       "Coverage exceptions",
       "Competitive External Price available",
@@ -285,12 +285,12 @@ test.describe("drill-downs", () => {
     await expect(page.locator(".ai-battlecards")).toBeVisible({ timeout: AI_READ_MS });
 
     const headers = await page.locator(".ai-battlecards th").allInnerTexts();
-    expect(headers.some((h) => /unbranded discovery/i.test(h))).toBe(true);
+    expect(headers.some((h) => /Unbranded Discovery/i.test(h))).toBe(true);
     expect(headers.some((h) => /top competitor/i.test(h))).toBe(true);
     expect(headers.some((h) => /competitor leads/i.test(h))).toBe(true);
 
     await expect(page.locator(".drilldown-desc")).toHaveText(
-      /Competitors led [\d,]+ of [\d,]+ resolved unbranded discovery answers/,
+      /Competitors led [\d,]+ of [\d,]+ resolved Unbranded Discovery answers/,
     );
     await expect(page.locator("[data-ai-run-details-lead] [data-ai-win-rate='unbranded_discovery']")).toBeVisible();
     await expect(page.locator("[data-ai-battle-lead-graph]")).toBeVisible();
@@ -307,7 +307,7 @@ test.describe("drill-downs", () => {
 
 test.describe("glossary", () => {
   test("jargon is marked with a plain-language definition", async ({ canvas, page }) => {
-    await canvas.openPriority("Buy Box withheld");
+    await canvas.openPriority("Buy Box Withheld");
 
     const terms = page.locator(".ifai-term");
     expect(await terms.count()).toBeGreaterThan(0);
@@ -336,7 +336,7 @@ test.describe("glossary", () => {
   });
 
   test("marking does not corrupt the surrounding copy", async ({ canvas, page }) => {
-    await canvas.openPriority("Buy Box withheld");
+    await canvas.openPriority("Buy Box Withheld");
     const html = await page.locator(".drilldown-body").innerHTML();
     expect(html).toContain('<span class="ifai-term"');
     expect(html).not.toContain("&lt;span");
@@ -344,7 +344,7 @@ test.describe("glossary", () => {
   });
 
   test("terms are re-marked after switching tabs", async ({ canvas, page }) => {
-    await canvas.openPriority("Buy Box withheld");
+    await canvas.openPriority("Buy Box Withheld");
     const before = await page.locator(".ifai-term").count();
 
     await canvas.openTab("MAP");

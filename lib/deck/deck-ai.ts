@@ -28,7 +28,7 @@ function clip(text: string, max = 160): string {
   return trimmed.length > max ? `${trimmed.slice(0, max - 3).trimEnd()}...` : trimmed;
 }
 
-/** Unbranded discovery, branded consideration, and fact accuracy, as Run Summary and Product Fact Checks show them. */
+/** Unbranded Discovery, Branded Consideration, and fact accuracy, as Run Summary and Product Fact Checks show them. */
 export function aiFigures(snapshot: AiSearchSnapshot, leadBrand: string) {
   const roles = summarizeRun(snapshot).roles;
   const unbranded = roleRateLead(roles.unbranded, UNBRANDED_RATE_BANDS);
@@ -38,23 +38,23 @@ export function aiFigures(snapshot: AiSearchSnapshot, leadBrand: string) {
     unbranded: unbranded.rate
       ? {
           id: "unbranded",
-          label: "Unbranded discovery",
+          label: "Unbranded Discovery",
           value: unbranded.rate,
           ratio: `${formatRatio(roles.unbranded.fenderWins, roles.unbranded.resolved)} resolved answers`,
           status: unbranded.status,
           source: SOURCES.runSummary,
-          tip: `${formatInt(roles.unbranded.fenderWins)} of ${formatInt(roles.unbranded.resolved)} resolved unbranded discovery answers named ${leadBrand} most.`,
+          tip: `${formatInt(roles.unbranded.fenderWins)} of ${formatInt(roles.unbranded.resolved)} resolved Unbranded Discovery answers named ${leadBrand} most.`,
         }
       : null,
     branded: branded.rate
       ? {
           id: "branded",
-          label: "Branded consideration",
+          label: "Branded Consideration",
           value: branded.rate,
           ratio: `${formatRatio(roles.branded.fenderWins, roles.branded.resolved)} resolved answers`,
           status: branded.status,
           source: SOURCES.runSummary,
-          tip: `${formatInt(roles.branded.fenderWins)} of ${formatInt(roles.branded.resolved)} resolved branded consideration answers named ${leadBrand} most.`,
+          tip: `${formatInt(roles.branded.fenderWins)} of ${formatInt(roles.branded.resolved)} resolved Branded Consideration answers named ${leadBrand} most.`,
         }
       : null,
     accuracy: accuracy.rate
@@ -72,7 +72,7 @@ export function aiFigures(snapshot: AiSearchSnapshot, leadBrand: string) {
   return { roles, figures };
 }
 
-/** s1 and s2. Left out when the window has no resolved unbranded discovery answer. */
+/** s1 and s2. Left out when the window has no resolved Unbranded Discovery answer. */
 export function openingSlides(input: DeckInput, snapshot: AiSearchSnapshot | null): DeckSlide[] {
   if (!snapshot) return [];
   const { roles, figures } = aiFigures(snapshot, input.leadBrand);
@@ -156,7 +156,7 @@ export function rivalSlide(input: DeckInput, snapshot: AiSearchSnapshot | null):
         ratio: `${formatRatio(total, resolved)} resolved unbranded answers`,
         status: null,
         source: SOURCES.competitorWins,
-        tip: `Answers led by each rival, of ${formatInt(resolved)} resolved unbranded discovery answers.`,
+        tip: `Answers led by each rival, of ${formatInt(resolved)} resolved Unbranded Discovery answers.`,
       },
     ],
     bars,
@@ -194,7 +194,7 @@ export function rivalTableSlide(input: DeckInput, snapshot: AiSearchSnapshot | n
       caption: `${formatInt(shown.length)} of ${formatInt(tallies.length)} rivals, most answers led first. Top two categories and engines each.`,
     },
     sources: [SOURCES.competitorWins],
-    note: `Each count is of resolved unbranded discovery answers in the window the date pill names.`,
+    note: `Each count is of resolved Unbranded Discovery answers in the window the date pill names.`,
   };
 }
 

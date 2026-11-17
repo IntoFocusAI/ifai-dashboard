@@ -27,7 +27,7 @@ import {
   mapUnitsLookup,
   type MapUnitsLookup,
 } from "@/lib/fender-canvas/map-exposure";
-import { MAP_PRICES_NOT_STORED } from "@/lib/fender-canvas/portfolio-retail";
+import { mapPricesNotStored } from "@/lib/fender-canvas/portfolio-retail";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
 import { averageGapTip, heroFigureColor, heroFigureTone, mapHero } from "@/lib/fender-canvas/retail-overview-lead";
 import type { CanvasFreshnessRow } from "@/lib/fender-canvas/types";
@@ -76,8 +76,8 @@ function RetailSurface({ children }: { children: ReactNode }) {
   return <div className="retail-health retail-surface">{children}</div>;
 }
 
-function mapPricesNotStored(read: RetailCanvasRead): boolean {
-  return read.phase === "ready" && read.snapshot.mapLeakage.missingMessage === MAP_PRICES_NOT_STORED;
+function mapPricesMissing(read: RetailCanvasRead): boolean {
+  return read.phase === "ready" && read.snapshot.mapLeakage.missingMessage === mapPricesNotStored();
 }
 
 /**
@@ -170,10 +170,10 @@ function MapNotes({
   if (read.phase === "error") {
     return <p className="retail-missing">The retail read could not be loaded.</p>;
   }
-  if (mapPricesNotStored(read)) {
+  if (mapPricesMissing(read)) {
     return (
       <p className="retail-missing" data-map-notes-not-stored="">
-        {MAP_PRICES_NOT_STORED}
+        {mapPricesNotStored()}
       </p>
     );
   }
@@ -253,7 +253,7 @@ export function MapChannelPanel({
   /** Undefined while loading, null when the unit read failed. */
   const [units, setUnits] = useState<MapUnitsLookup | null | undefined>(undefined);
 
-  const pricesNotStored = mapPricesNotStored(read);
+  const pricesNotStored = mapPricesMissing(read);
   const mapSetAsides = useSetAsides(activeSetAsideClientKey(), SET_ASIDE_CHECKS.mapPricing);
   const exceptions = useMemo(() => approvedExceptionAsins(mapSetAsides.rows), [mapSetAsides.rows]);
 

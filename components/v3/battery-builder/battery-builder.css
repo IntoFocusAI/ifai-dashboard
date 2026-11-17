@@ -1,10 +1,10 @@
 /* Build prompts page. Colors come from the profile modal theme variables in globals.css. */
 .bb-page {
-  --bb-page-bg: #070d18;
-  --bb-accent: #38bdf8;
-  --bb-accent-text: #04111d;
+  --bb-page-bg: #070b14;
+  --bb-accent: #a7d8f0;
+  --bb-accent-text: #070b14;
   --bb-accent-soft: color-mix(in srgb, var(--bb-accent) 16%, transparent);
-  --bb-warn: #fbbf24;
+  --bb-warn: #d4b66f;
   min-height: 100%;
   padding: 32px 16px;
   background: var(--bb-page-bg);
@@ -13,10 +13,10 @@
 }
 
 .bb-page.is-light {
-  --bb-page-bg: #f4f5f7;
-  --bb-accent: #0369a1;
+  --bb-page-bg: #f9fafb;
+  --bb-accent: #194257;
   --bb-accent-text: #ffffff;
-  --bb-warn: #b45309;
+  --bb-warn: #6e5617;
 }
 
 .bb-card {

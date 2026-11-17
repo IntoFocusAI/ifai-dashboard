@@ -187,7 +187,7 @@ test("a finished reading with a confirmed suppression is available", () => {
   assert.equal(reading.missingMessage, null);
   assert.equal(reading.detail?.audited, reading.detail?.population);
   // Every withheld listing has a benchmark here, so the stronger label applies.
-  assert.equal(reading.headlineLabel, "Buy Box withheld above Amazon's outside price");
+  assert.equal(reading.headlineLabel, "Buy Box Withheld above Amazon's outside price");
 });
 
 test("a withheld listing with no benchmark keeps the plain withheld headline", () => {
@@ -195,7 +195,7 @@ test("a withheld listing with no benchmark keeps the plain withheld headline", (
     suppression({ featured_offer_observed_price_cents: 10000, competitive_price_threshold_cents: 9000 }),
     suppression({ competitive_external_price_state: "unavailable", competitive_price_threshold_cents: null }),
   ]);
-  assert.equal(reading.headlineLabel, "Buy Box withheld");
+  assert.equal(reading.headlineLabel, "Buy Box Withheld");
   // The headline is the confirmed withheld count, not the comparable subset.
   assert.equal(reading.issueCount, 2);
   assert.equal(reading.detail?.counts.confirmedHighPrice, 1);

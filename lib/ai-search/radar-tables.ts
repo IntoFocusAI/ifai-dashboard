@@ -81,7 +81,7 @@ function engineCalls(calls: AiCallRow[], engine: string): AiCallRow[] {
   return calls.filter((row) => (row.engine ?? "").toLowerCase() === engine);
 }
 
-/** Each other brand an engine named most on unbranded discovery, with its count, most first. */
+/** Each other brand an engine named most on Unbranded Discovery, with its count, most first. */
 export function engineCompetitorLeads(calls: AiCallRow[], engine: string): Array<{ brand: string; wins: number }> {
   return headlineCompetitorWins(engineCalls(calls, engine));
 }
@@ -119,7 +119,7 @@ export function engineComparisonTable(snapshot: AiSearchSnapshot, single: boolea
 
 // ---- Engine Comparison: brand leads by engine and category (one row per engine)
 
-/** Battlecard categories in the selection (decision 93: only those with unbranded discovery questions), A to Z by key. */
+/** Battlecard categories in the selection (decision 93: only those with Unbranded Discovery questions), A to Z by key. */
 export function battlecardCategories(calls: AiCallRow[]): string[] {
   return discoveryCategories(calls);
 }

@@ -31,9 +31,9 @@ export const QUESTION_ROLES = [
 export type QuestionRole = (typeof QUESTION_ROLES)[number];
 
 export const ROLE_LABELS: Record<QuestionRole, string> = {
-  unbranded_discovery: "Unbranded discovery",
+  unbranded_discovery: "Unbranded Discovery",
   brand_associated_discovery: "Brand-associated discovery",
-  branded_consideration: "Branded consideration",
+  branded_consideration: "Branded Consideration",
   shopping_guidance: "Shopping guidance",
   product_fact: "Product-fact question",
   probe: "Product fact check",
@@ -168,7 +168,7 @@ export function categoryRoleTallies(rows: AiCallRow[]): RoleGroupTally[] {
  * Decision 93: a category is a battlecard category only when its question group holds unbranded
  * discovery questions. Read from the calls for every client, never from a list of names: a group
  * of branded questions only (Ledlenser "Brand", Fender "Squier") has no category race to show.
- * Its questions still count in branded consideration and in the run's category table.
+ * Its questions still count in Branded Consideration and in the run's category table.
  */
 export function discoveryCategoryRoleTallies(rows: AiCallRow[]): RoleGroupTally[] {
   return categoryRoleTallies(rows).filter((group) => group.roles.unbranded_discovery.calls > 0);
@@ -211,7 +211,7 @@ export function sumRoleTallies(groups: readonly RoleGroupTally[], role: Question
 /**
  * Aside counts for Category Battlecards.
  * Unresolved and errors stay on the two Fender-lead rates.
- * Competitor wins use unbranded discovery only.
+ * Competitor wins use Unbranded Discovery only.
  */
 export function headlineAside(group: RoleGroupTally): { unresolved: number; errors: number; competitorWins: number } {
   const parts = HEADLINE_ROLES.map((role) => group.roles[role]);
@@ -222,7 +222,7 @@ export function headlineAside(group: RoleGroupTally): { unresolved: number; erro
   };
 }
 
-/** Competitor wins on unbranded discovery only. Branded consideration is not in this count. */
+/** Competitor wins on Unbranded Discovery only. Branded Consideration is not in this count. */
 export function headlineCompetitorWins(rows: AiCallRow[]): Array<{ brand: string; wins: number }> {
   const brands = new Map<string, number>();
   for (const row of rows) {

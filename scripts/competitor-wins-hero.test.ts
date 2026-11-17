@@ -71,7 +71,7 @@ test("hero figure matches the Competitive Radar spoke sentence", () => {
   const summary = summarizeRun(snap);
   const figure = competitorWinsFigure(summary.competitorWins, summary.roles.unbranded.resolved);
   assert.equal(figure, competitorsSpokeLead({ phase: "ready", snapshot: snap }).figure);
-  assert.equal(figure, "Competitors led 2 of 3 resolved unbranded discovery answers.");
+  assert.equal(figure, "Competitors led 2 of 3 resolved Unbranded Discovery answers.");
   assert.equal(summary.competitorWins, competitorTallies(snap.calls).reduce((n, t) => n + t.wins, 0));
 });
 

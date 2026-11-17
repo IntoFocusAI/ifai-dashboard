@@ -1,7 +1,7 @@
 /**
  * AI Readiness tab heroes: share figures already on the old Metric/Result summary.
  * SKUs checked is the shared denominator, not its own pie.
- * Amazon completeness takes the Catalog Governance Specs complete bands (amazon-spec-bands).
+ * Amazon completeness takes the Catalog Governance Specs Complete bands (amazon-spec-bands).
  */
 
 import type { PieDiscData } from "@/lib/ai-search/citation-pies";
@@ -247,25 +247,29 @@ function failedReadHero(hero: AiReadinessHeroModel, m: CanvasMetricsRow): AiRead
   };
 }
 
-export const PAGE_FOUND_LABEL = `${brandSite()} page found`;
+/* Brand copy below is built per call, never at import: a server export sets the client per request. */
+export function pageFoundLabel(): string {
+  return `${brandSite()} page found`;
+}
 
 /** Said once wherever the fender.com product check and Findability can disagree. */
-export const FENDER_CHECK_DIFFERS =
-  `This is the ${brandSite()} product check; the Findability tab runs its own official-page check, so the two can differ.`;
+export function brandCheckDiffers(): string {
+  return `This is the ${brandSite()} product check; the Findability tab runs its own official-page check, so the two can differ.`;
+}
 
 /** The definition with "Last checked …" after it, when the check time is known. */
 function checkedDefinition(what: string, checkedAt: string | null | undefined, after?: string): string {
   return [what, lastCheckedSentence(checkedAt ?? null), after].filter(Boolean).join(" ");
 }
 
-const PAGE_FOUND_WHAT =
-  `Checked SKUs with a matching ${brandSite()} product page, out of every SKU the ${brandSite()} product check covered.`;
-
-export function pageFoundDefinition(checkedAt?: string | null): string {
-  return checkedDefinition(PAGE_FOUND_WHAT, checkedAt, FENDER_CHECK_DIFFERS);
+function pageFoundWhat(): string {
+  return `Checked SKUs with a matching ${brandSite()} product page, out of every SKU the ${brandSite()} product check covered.`;
 }
 
-export const PAGE_FOUND_DEFINITION = pageFoundDefinition(null);
+/** With no check time, this is the plain definition (no "Last checked"). */
+export function pageFoundDefinition(checkedAt?: string | null): string {
+  return checkedDefinition(pageFoundWhat(), checkedAt, brandCheckDiffers());
+}
 
 export function pageFoundHero(m: CanvasMetricsRow, checkedAt: string | null = null): AiReadinessHeroModel {
   const checked = m.spec_checked;
@@ -274,7 +278,7 @@ export function pageFoundHero(m: CanvasMetricsRow, checkedAt: string | null = nu
   const ready = checked != null && checked > 0 && found != null && pct != null;
   return failedReadHero({
     id: "page_found",
-    label: PAGE_FOUND_LABEL,
+    label: pageFoundLabel(),
     definition: pageFoundDefinition(checkedAt),
     percent: ready ? formatPct(pct) : pendingLabel(),
     ratio: ready ? formatRatio(found, checked) : null,

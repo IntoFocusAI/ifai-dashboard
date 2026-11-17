@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import {
-  PAGE_FOUND_DEFINITION,
+  pageFoundDefinition,
   pageFoundHero,
 } from "../lib/fender-canvas/ai-readiness-lead.ts";
 import {
@@ -70,7 +70,7 @@ test("the page-found hero keeps the bubble's bands: under 85 red, 85 through 95 
 
 test("the fender.com product check and Findability caveat stays in the tooltip, not on screen", () => {
   const hero = brandSitePageFoundHero(metrics({}));
-  assert.equal(hero.definition, PAGE_FOUND_DEFINITION);
+  assert.equal(hero.definition, pageFoundDefinition());
   assert.match(hero.definition, /fender\.com product check; the Findability tab runs its own official-page check, so the two can differ\./);
   assert.match(hero.definition, /Findability/);
   for (const visible of [hero.label, hero.percent, hero.ratio ?? "", hero.explainer]) {

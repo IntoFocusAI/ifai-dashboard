@@ -98,7 +98,7 @@ export function RunDetailsLead({ snapshot }: { snapshot: AiSearchSnapshot }) {
     <div className="metric-grid-2" data-ai-run-details-lead="">
       <RateSide
         role="unbranded_discovery"
-        term="unbranded discovery"
+        term="Unbranded Discovery"
         label="Unbranded Discovery"
         tally={roles.unbranded}
         bands={UNBRANDED_RATE_BANDS}
@@ -107,7 +107,7 @@ export function RunDetailsLead({ snapshot }: { snapshot: AiSearchSnapshot }) {
       />
       <RateSide
         role="branded_consideration"
-        term="branded consideration"
+        term="Branded Consideration"
         label="Branded Consideration"
         tally={roles.branded}
         bands={BRANDED_RATE_BANDS}

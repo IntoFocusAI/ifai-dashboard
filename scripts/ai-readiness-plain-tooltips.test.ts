@@ -4,14 +4,14 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import {
   amazonCompletenessHero,
-  FENDER_CHECK_DIFFERS,
+  brandCheckDiffers,
   fenderCompletenessHero,
   missingAdditionalPropertyHero,
-  PAGE_FOUND_DEFINITION,
+  pageFoundDefinition,
   pageFoundHero,
 } from "../lib/fender-canvas/ai-readiness-lead.ts";
 import { loadSpecCheckRunAt, SPEC_CHECK_JOB, type SpecCheckClient } from "../lib/fender-canvas/page-found-checked-at.ts";
-import { brandSitePageFoundHero, PAGE_FOUND_UNAVAILABLE_TIP } from "../lib/fender-canvas/page-found-hero.ts";
+import { brandSitePageFoundHero, pageFoundUnavailableTip } from "../lib/fender-canvas/page-found-hero.ts";
 import { REASON_COLUMN_TOOLTIP } from "../lib/fender-canvas/page-found-reasons.ts";
 import { STORED_REASONS } from "../lib/fender-canvas/page-found-stored-reason.ts";
 import type { CanvasMetricsRow } from "../lib/fender-canvas/types.ts";
@@ -50,7 +50,7 @@ test("AI Readiness hero and page-found tooltips use plain words, no internal rea
   const all = [
     ...tooltips(null),
     ...tooltips(AT),
-    PAGE_FOUND_UNAVAILABLE_TIP,
+    pageFoundUnavailableTip(),
     REASON_COLUMN_TOOLTIP.description,
     AMAZON_SPECS_LAST_CHECKED_UNAVAILABLE_DESC,
     AMAZON_SPECS_LAST_CHECKED_FAILED_DESC,
@@ -68,11 +68,11 @@ test("AI Readiness hero and page-found tooltips use plain words, no internal rea
 test("each hero says what was counted, out of what, and when it was checked", () => {
   assert.equal(
     pageFoundHero(M, AT).definition,
-    `Checked SKUs with a matching fender.com product page, out of every SKU the fender.com product check covered. ${WHEN} ${FENDER_CHECK_DIFFERS}`,
+    `Checked SKUs with a matching fender.com product page, out of every SKU the fender.com product check covered. ${WHEN} ${brandCheckDiffers()}`,
   );
   assert.equal(brandSitePageFoundHero(M, AT).definition, pageFoundHero(M, AT).definition);
-  assert.equal(PAGE_FOUND_DEFINITION, pageFoundHero(M).definition);
-  assert.doesNotMatch(PAGE_FOUND_DEFINITION, /Last checked/);
+  assert.equal(pageFoundDefinition(), pageFoundHero(M).definition);
+  assert.doesNotMatch(pageFoundDefinition(), /Last checked/);
   for (const text of tooltips(AT)) {
     assert.ok(text.includes(WHEN), text);
     assert.match(text, /out of|averaged across/, text);
@@ -81,12 +81,12 @@ test("each hero says what was counted, out of what, and when it was checked", ()
 });
 
 test("the two checks can differ is said once, on the page-found figures only", () => {
-  const count = (text: string) => text.split(FENDER_CHECK_DIFFERS).length - 1;
+  const count = (text: string) => text.split(brandCheckDiffers()).length - 1;
   assert.equal(count(pageFoundHero(M, AT).definition!), 1);
   assert.equal(count(REASON_COLUMN_TOOLTIP.description), 1);
   assert.equal(count(amazonCompletenessHero(M, null, AT).definition!), 0);
   assert.equal(
-    FENDER_CHECK_DIFFERS,
+    brandCheckDiffers(),
     "This is the fender.com product check; the Findability tab runs its own official-page check, so the two can differ.",
   );
 });

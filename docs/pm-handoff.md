@@ -166,26 +166,25 @@ the rest of the launch build is complete (decision 46).
 
 ## State
 
-Replace this whole section on handoff. Keep it under 25 lines. The FDD wins
-if this block is stale.
+Replace this whole section on handoff. Keep it under 25 lines. The FDD wins.
 
-- PM26 handed off 12 Nov 2026; next is PM27. Docs at 26.10. Launch CURRENT:
-  69 of 94 (A-11 added). Decisions 74 to 88 are PM26's.
-- Finish in order: 26.13 (fast window reads, draft PR into 190's branch; its
-  migration is approved: dry-run rolled back, apply, record on the PR); then
-  190 (window everywhere; merge only once AI figures load in about 5 s); 191
-  (score cards); a fix round on 189 (Sites to review, decisions 84, 85).
-- Queue: 26.15 Citation Ecosystem filters (decision 86); 26.6 map colors, red
-  "Amazon specs complete" (bands 98/95), radar "X leads Y", retire "Other
-  retailers" read (82), split CanvasShell/GraphPrimitives; 26.4 asterisks (PR
-  184 merged; review Ledlenser AI figures); weekly Amazon page scrape (74);
-  SC-03 spec (77, 78; Consensus weights become 40/40/20, scores shift).
-- Brian: review docs/d05-field-lists.md; R-15 after Watson; R-19; "Need help?"
-  routing; held rows (leadership doc claude.ai/artifact/TXZ217nzUhNQFiuJyJEAUm,
-  its comments reach PM26 only). Up to $3,000 next week if Marc approves;
-  report at $1,000 and $2,000.
-- Watson: PR 42; AI-Search slowness and Perplexity failures; cause of the 11
-  Nov outage (database upgraded 12 Nov); PR 110 wording; R-09; R-10; X-29;
-  X-15/X-16. Amazon SP-API via Apexti (Ryan) pending since 15 Oct.
-- Browser tests: at most 2 parallel browsers per worker. Workers confirm the
-  Netlify preview builds before handing back. Unsubscribe auto-subscribed PRs.
+- PM27 handed off 16 Nov 2026; next is PM28. Docs 27.14. Launch CURRENT 73 of
+  95 once Brian merges the 27.14 docs PR (H-07). Decisions 89 to 101 are PM27's.
+- PR 207 merged with a red Unit tests check; PR 210 fixed it (merged 16 Nov).
+  Check main is green, then run score-snapshots.yml by hand (Watson's PR 205).
+- PR 208 (27.13): X-34 marks on every tab, X-18 renames. Waits on Brian: title
+  case for canonical names, and the headings table in its body. Merge main first.
+- Queue: #operations expiry reminders (daily job on actuation_basis; secret
+  SLACK_OPERATIONS_WEBHOOK_URL from Marc, skip if missing); test cleanup from the
+  e2e baseline (Ledlenser deck slide b1, tour card at 1440, stale tests, slow AI
+  reads); D-05 per decision 100; fix "NOT APPLIED" headers on applied migrations.
+- PM27 applied (additive, approved): canvas_score_snapshots, actuation_records,
+  ledlenser.canvas_ai_prompts. Worker migrations need unique version numbers.
+- Watson (list sent 16 Nov): preview sign-in with test accounts, API citations,
+  rotating API fact checks (92), AI Search slowness, R-09/R-10/R-15, X-22, weekly
+  Amazon scrape, Ledlenser findability row, X-29 with Ryan, then X-15/X-16.
+- Brian: X-18 answers; R-19 held. Spend about $690 of $3,000; report at $1,000.
+- Leadership doc "Dashboard launch: held decisions"
+  (claude.ai/artifact/TXZ217nzUhNQFiuJyJEAUm), owner: current PM. PM28 must
+  start its own ArtifactComments watch; PM27's watch ends with its session.
+- At most 2 browsers per worker e2e run. Unsubscribe auto-subscribed PRs.

@@ -75,7 +75,7 @@ function WindowCard({ snapshot }: { snapshot: AiSearchSnapshot }) {
   return (
     <div className="content-box ai-run-card" data-ai-window-completeness>
       <div className="content-box-title">
-        <span>Calls</span>
+        <span>Questions sent</span>
         <span className="tag-badge tag-neutral">
           {runIds.length} {runIds.length === 1 ? "run" : "runs"}
         </span>

@@ -258,13 +258,29 @@ test("the five outcome counts stay distinct and open the listings behind them", 
   await expect(table.locator("thead th[data-col-id='page']")).toContainText("Official page");
   await expect(table.locator("thead th[data-col-id='checked']")).toContainText("Checked");
   await expect(table.locator("thead th[data-col-id='confidence']")).toContainText("Confidence");
-  await expect(table.locator("thead th[data-col-id='bundle']")).toContainText("Dealer bundle");
+  await expect(table.locator("thead th[data-col-id='bundle']")).toContainText("Bundle");
   await expect(table.locator("thead th[data-col-id='reason']")).toHaveCount(0);
-  // The dealer-bundle caveat is in the header tooltip, not on screen.
-  await expect(page.locator(".findability-panel")).not.toContainText("correlation");
-  await expect(table.locator("thead .ifai-term[data-ifai-tooltip-title='Dealer bundle']")).toHaveAttribute(
+  // The Bundle explanation is in the header tooltip, not on screen.
+  await expect(page.locator(".findability-panel")).not.toContainText("dealer bundle: the product sold together");
+  await expect(table.locator("thead .ifai-term[data-ifai-tooltip-title='Bundle']")).toHaveAttribute(
     "data-ifai-tooltip-desc",
-    /correlation, not a proven cause/,
+    /^Yes when this Amazon listing is a dealer bundle: the product sold together with extras such as a strap, cable or case\./,
+  );
+  // Decision 104: the Confidence value is short; how the page was found is in a cell tooltip only.
+  const zebraCell = table.locator("tbody tr").filter({ hasText: "B00ZEBRA" }).locator("td").filter({ hasText: /^Same SKU$/ });
+  await expect(zebraCell).toBeVisible();
+  await expect(table.locator("tbody")).not.toContainText("Built from product name");
+  await expect(zebraCell.locator(".ifai-term")).toHaveAttribute(
+    "data-ifai-tooltip-desc",
+    "Your page lists the same SKU as this Amazon listing. We found the page by building its address from the product name.",
+  );
+  const alphaCell = table.locator("tbody tr").filter({ hasText: "Alpha Exact" }).locator("td").filter({ hasText: /^Same barcode$/ });
+  await expect(alphaCell.locator(".ifai-term")).toHaveAttribute(
+    "data-ifai-tooltip-desc",
+    "Your page lists the same barcode (UPC or EAN) as this Amazon listing. We found the page by searching your site for the model number.",
+  );
+  await expect(page.locator("[data-findability-intro]").first()).toHaveText(
+    "Findability: for each product you sell on Amazon, can AI assistants find the matching page on your own website? When they can, they cite you. When the page is missing or doesn't match, they cite retailers or competitors instead.",
   );
 
   const link = table.locator("[data-findability-official-url]").first();
@@ -336,7 +352,7 @@ test("the five outcome counts stay distinct and open the listings behind them", 
   await expect(table.locator("thead th[data-col-id='category']")).toContainText("Category");
   await expect(table.locator("thead th[data-col-id='kind']")).toContainText("Product kind");
   await expect(table.locator("thead th[data-col-id='explanation']")).toContainText("Explanation");
-  await expect(table.locator("thead th[data-col-id='bundle']")).toContainText("Dealer bundle");
+  await expect(table.locator("thead th[data-col-id='bundle']")).toContainText("Bundle");
   await expect(table.locator("[data-findability-address='unchecked']")).toHaveCount(0);
   await expect(table.locator("[data-findability-reason]")).toHaveText("Reason not recorded");
   await expect(table.locator("[data-findability-row='not_checked']")).not.toContainText("unsuccessful");

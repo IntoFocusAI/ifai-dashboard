@@ -49,7 +49,7 @@ function positionsLine(plan: readonly PlanItem[]): string | null {
   const unbranded = plan.find((item) => item.id === "finding:unbranded_discovery");
   const rivals = plan.filter((item) => item.id.startsWith("signal:rival:")).map((item) => item.label);
   const parts: string[] = [];
-  if (unbranded?.ratio) parts.push(`unbranded discovery, now ${unbranded.percent} (${unbranded.ratio})`);
+  if (unbranded?.ratio) parts.push(`Unbranded Discovery, now ${unbranded.percent} (${unbranded.ratio})`);
   if (rivals.length) parts.push(`the categories another brand leads: ${joinList(rivals)}`);
   return parts.length ? `Positions this plan works to win: ${parts.join("; ")}.` : null;
 }

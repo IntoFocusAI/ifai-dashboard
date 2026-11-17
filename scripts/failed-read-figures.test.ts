@@ -22,7 +22,7 @@ import { buildLiveCommandCenter } from "../lib/fender-canvas/command-center-from
 import { buildLiveMetrics } from "../lib/fender-canvas/metrics-from-live.ts";
 import { buildMinimalMetrics } from "../lib/fender-canvas/minimal-metrics.ts";
 import { buildLiveNodes } from "../lib/fender-canvas/nodes-from-live.ts";
-import { MAP_PRICES_NOT_STORED } from "../lib/fender-canvas/portfolio-retail.ts";
+import { mapPricesNotStored } from "../lib/fender-canvas/portfolio-retail.ts";
 import type { RetailCanvasRead } from "../lib/fender-canvas/portfolio-retail-display.ts";
 import { buildLiveTourSteps } from "../lib/fender-canvas/tour-from-live.ts";
 import type { CanvasBundle, CanvasReadKey } from "../lib/fender-canvas/types.ts";
@@ -135,14 +135,14 @@ test("Not stored MAP prices keep their own reading when the metrics read also fa
     snapshot: {
       headline: null,
       suppressedListings: { status: "unavailable", issueCount: null, missingMessage: null, detail: null },
-      mapLeakage: { status: "unavailable", issueCount: null, missingMessage: MAP_PRICES_NOT_STORED, detail: null },
+      mapLeakage: { status: "unavailable", issueCount: null, missingMessage: mapPricesNotStored(), detail: null },
       unnestedBundles: { status: "unavailable", issueCount: null, missingMessage: null, detail: null },
       amazonSpecGaps: { status: "unavailable", issueCount: null, missingMessage: null, detail: null },
     },
   };
   const drift = buildLiveMetrics(bundle(["m"]), retail).amazonMapDrift;
   assert.equal(drift.value, "Not stored");
-  assert.equal(drift.detail, MAP_PRICES_NOT_STORED);
+  assert.equal(drift.detail, mapPricesNotStored());
 });
 
 test("a failed category read turns the beginner AI win rate into Not available* naming canvas_ai_category", () => {

@@ -10,11 +10,11 @@ const flat = (path: string) => readFileSync(path, "utf8").replace(/\s+/g, " ");
 
 test("Competitor Wins reads 1,064 of 1,788, and the hero still splits the count out for its tooltip", () => {
   const figure = competitorWinsFigure(1064, 1788);
-  assert.equal(figure, "Competitors led 1,064 of 1,788 resolved unbranded discovery answers.");
+  assert.equal(figure, "Competitors led 1,064 of 1,788 resolved Unbranded Discovery answers.");
   const count = competitorWinsCount(1064, 1788);
   assert.equal(count, "1,064 of 1,788");
   assert.equal(figure.indexOf(count), "Competitors led ".length);
-  assert.equal(competitorWinsFigure(175, 438), "Competitors led 175 of 438 resolved unbranded discovery answers.");
+  assert.equal(competitorWinsFigure(175, 438), "Competitors led 175 of 438 resolved Unbranded Discovery answers.");
 
   const hero = flat("components/v3/live/ai-search/CompetitorWinsHero.tsx");
   assert.match(hero, /\{competitorWinsCount\(competitorWins, resolved\)\}/);

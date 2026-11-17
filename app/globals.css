@@ -54,12 +54,12 @@ textarea {
 }
 
 a {
-  color: #4b45c6;
+  color: #307191;
   text-decoration: none;
 }
 
 a:hover {
-  color: #3a35a8;
+  color: #194257;
   text-decoration: underline;
 }
 
@@ -187,7 +187,7 @@ a:hover {
 }
 
 .user-menu-portal .user-menu-item-danger {
-  color: #b3372c;
+  color: inherit;
 }
 
 .user-menu-avatar {
@@ -531,13 +531,13 @@ a:hover {
 }
 
 .auth-form-banner-error {
-  background: #fdeceb;
-  color: #b3372c;
+  background: #f9f1f2;
+  color: #8c232f;
 }
 
 .auth-form-banner-notice {
-  background: #eef8f1;
-  color: #1f7a3a;
+  background: #f9fafb;
+  color: #0b1220;
 }
 
 .auth-form-fields {
@@ -566,14 +566,14 @@ a:hover {
 }
 
 .auth-form-input:focus {
-  border-color: #4b45c6;
+  border-color: #307191;
 }
 
 .auth-form-submit {
   margin-top: 0.5rem;
   border: 0;
   border-radius: 8px;
-  background: #4b45c6;
+  background: #194257;
   padding: 0.5rem 0.75rem;
   font-size: 0.875rem;
   font-weight: 600;
@@ -592,15 +592,15 @@ a:hover {
 
 .auth-form-skip {
   width: 100%;
-  border: 1px solid rgba(220, 38, 38, 0.45);
+  border: 1px solid #c9d4df;
   border-radius: 8px;
-  background: #dc2626;
+  background: transparent;
   padding: 0.5rem 0.75rem;
   font-size: 0.875rem;
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: #fff;
+  color: #0b1220;
   cursor: pointer;
   transition:
     background 0.2s ease,
@@ -609,8 +609,8 @@ a:hover {
 }
 
 .auth-form-skip:hover {
-  background: #b91c1c;
-  border-color: #ef4444;
+  background: #e4e9ee;
+  border-color: #307191;
   transform: translateY(-1px);
 }
 
@@ -622,7 +622,7 @@ a:hover {
 
 .auth-form-footer a {
   font-weight: 500;
-  color: #4b45c6;
+  color: #307191;
 }
 
 .dashboard-org-shell .canvas-body,
