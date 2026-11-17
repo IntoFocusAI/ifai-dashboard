@@ -31,9 +31,23 @@ function frames(page: Page) {
   return page.evaluate(() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))));
 }
 
+/** A point over no bubble at this viewport, where the pointer waits between bubbles. */
+async function parkingSpot(page: Page) {
+  return page.evaluate(() => {
+    const { innerWidth: w, innerHeight: h } = window;
+    const candidates = [[640, 700], [w * 0.5, h - 12], [12, h - 12], [w - 12, h - 12], [12, 12], [w * 0.5, 12]];
+    for (const [x, y] of candidates) {
+      const hit = document.elementFromPoint(x, y);
+      if (hit && !hit.closest("[data-graph-node-id]")) return { x, y };
+    }
+    throw new Error("no point on the map is clear of bubbles");
+  });
+}
+
 test.describe("map hover", () => {
   test("pointing at a bubble opens its signal slots in the same frame", { tag: "@1440" }, async ({ canvas, page }) => {
-    await page.mouse.move(640, 700);
+    const park = await parkingSpot(page);
+    await page.mouse.move(park.x, park.y);
     // In the frame the pointer enters a bubble, record which slots are already on screen.
     await page.evaluate(() => {
       const w = window as unknown as { __arrivals: { id: string; source: string | null }[] };
@@ -55,7 +69,7 @@ test.describe("map hover", () => {
     for (const id of MAIN_BUBBLES) {
       const at = await center(canvas, id);
       await page.mouse.move(at.x, at.y);
-      await page.mouse.move(640, 700);
+      await page.mouse.move(park.x, park.y);
       await page.waitForTimeout(450); // past the hover rest, so the next bubble is where it was measured
     }
     const arrivals = await page.evaluate(() => (window as unknown as { __arrivals: { id: string; source: string | null }[] }).__arrivals);

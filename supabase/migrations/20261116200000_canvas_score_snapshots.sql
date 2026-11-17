@@ -32,8 +32,7 @@
 --   Dropping the table deletes every saved week. The dashboard then reads the history as absent
 --   and the chart section shows nothing; the score cards are unchanged.
 --
--- Status: NOT APPLIED. Additive; Brian Magazu approved the table and function (decision 94,
--- 16 Nov 2026). The pull request records when it is applied and by whom.
+-- Status: APPLIED to production 16 Nov 2026 by PM27 (Brian Magazu approved).
 
 create table if not exists public.canvas_score_snapshots (
   id uuid primary key default gen_random_uuid(),

@@ -56,7 +56,13 @@ for (const client of ["fender", "ledlenser"]) {
       // Wait for the source runs and the 30-day windows, so the screen holds every row.
       await expect(page.locator("[data-fix-sources-loading]")).toHaveCount(0, { timeout: 90_000 });
       const count = page.locator('[data-table-toolbar="action-items-fixes"] [data-table-search-count]');
-      const total = await rows.count();
+      // Tables show 25 rows with Show more (decision 20.4); the toolbar counts every row. Show all
+      // puts the full set on screen, so the rows and the download can be compared one for one.
+      await expect(count).toHaveText(/^[\d,]+ of [\d,]+ rows$/);
+      const total = Number(await count.getAttribute("data-table-search-count"));
+      const showAll = page.locator("[data-table-show-all]");
+      if (total > 25) await showAll.click();
+      await expect(rows).toHaveCount(total);
       await expect(count).toHaveText(`${total} of ${total} rows`);
 
       const [download] = await Promise.all([

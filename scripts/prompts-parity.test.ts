@@ -71,7 +71,7 @@ test("the Ledlenser view migration is additive, read-only, granted like the othe
   assert.match(statements, /GRANT SELECT ON TABLE ledlenser\.canvas_ai_prompts TO anon, authenticated;/);
   assert.doesNotMatch(statements, /CREATE OR REPLACE|ALTER |DROP |INSERT |UPDATE |DELETE |FUNCTION/i);
   assert.match(sql, /-- How to undo\n--   DROP VIEW IF EXISTS ledlenser\.canvas_ai_prompts;/);
-  assert.match(sql, /Status: NOT APPLIED/);
+  assert.match(sql, /Status: APPLIED to production 16 Nov 2026 by PM27 \(Brian Magazu approved\)/);
 });
 
 test("rotating fact-check slots read in plain words in the list and the CSV, for both clients", () => {

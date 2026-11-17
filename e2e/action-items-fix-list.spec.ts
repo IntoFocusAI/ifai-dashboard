@@ -53,7 +53,7 @@ test.describe("Action Items opens on the prioritized fix list", () => {
       const percent = row.locator("[data-fix-percent]");
       const ratio = row.locator("[data-fix-ratio]");
       if ((await ratio.count()) > 0) {
-        await expect(percent).toHaveText(/^\d+\.\d%$/);
+        await expect(percent).toHaveText(/^\d+\.\d%\*?$/);
         await expect(ratio).toHaveText(/^[\d,]+ of [\d,]+\b/);
       } else {
         await expect(percent).toHaveText("Not available*");
