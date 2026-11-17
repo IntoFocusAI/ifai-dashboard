@@ -75,7 +75,7 @@ test.describe("AI Search history on the live run", () => {
     await expect(page.locator("[data-ai-window-completeness]")).toBeVisible({ timeout: AI_READ_MS });
     await page.locator("[data-ai-history-trigger]").click();
     await page.getByRole("button", { name: "All time" }).click();
-    await expect(page.locator(".drilldown-desc")).toContainText("How AI assistants name and cite Fender.");
+    await expect(page.locator(".drilldown-desc")).toContainText("How AI assistants name and cite Fender.", { timeout: AI_READ_MS });
     await expect(page.locator(".drilldown-desc")).not.toContainText("Trends use the stored review runs");
     await expect(page.locator(".drilldown-desc")).not.toContainText("Copy of the stored runs");
     await expect(page.locator("[data-ai-history-banner]")).toHaveCount(0);

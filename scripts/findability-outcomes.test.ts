@@ -4,6 +4,8 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import {
   dealerBundleLabel,
+  sourceMethodMeaning,
+  confidenceLabel,
   findabilityHeadline,
   findabilitySortValue,
   findabilityWidgetCopy,
@@ -675,7 +677,12 @@ test("stacked Findability cells keep every stored fact and search both lines", (
     http_status: 200,
   });
   assert.equal(listingContextLine(exact), "Solid Body · Instrument");
-  assert.equal(matchMethodLine(exact), "Derived handle");
+  assert.equal(matchMethodLine(exact), "Guessed from product name");
+  assert.equal(sourceMethodMeaning("derived_handle"), "We guessed the page address from the product name.");
+  assert.equal(confidenceLabel("sku"), "Same SKU");
+  assert.equal(confidenceLabel("gtin"), "Same barcode");
+  assert.equal(confidenceLabel("variant_options"), "Same options");
+  assert.equal(confidenceLabel("none"), "No ID match");
   assert.equal(httpStatusLine(exact, "exact_official_product"), "HTTP 200");
   assert.equal(httpStatusLine({ ...exact, http_status: null }, "exact_official_product"), "");
   assert.equal(httpStatusLine(exact, "not_checked"), "");
@@ -683,6 +690,6 @@ test("stacked Findability cells keep every stored fact and search both lines", (
   // Sort reads the first line first; search finds the second line too.
   assert.match(String(findabilityTableValue(exact, "title")), /^Player Stratocaster Solid Body/);
   assert.match(String(findabilityTableValue(exact, "page")), /^https:\/\/www\.brand\.example\/products\/player-stratocaster .*0144502500$/);
-  assert.equal(findabilityTableValue(exact, "confidence"), "SKU match Derived handle");
+  assert.equal(findabilityTableValue(exact, "confidence"), "Same SKU");
   assert.equal(findabilityTableValue(exact, "checked"), findabilitySortValue(exact, "checked"));
 });

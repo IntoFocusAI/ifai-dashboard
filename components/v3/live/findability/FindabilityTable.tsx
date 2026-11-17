@@ -2,18 +2,22 @@
 
 import { useMemo } from "react";
 import { clientColumn, ResizableTable, type RetailColumn } from "@/components/v3/live/ResizableTable";
+import { FigureTip } from "@/components/v3/live/FigureTip";
 import { useLandOnFindabilityRow } from "@/components/v3/live/findability/useFindabilityRowLanding";
 import { useFullPopulationSort } from "@/components/v3/live/useFullPopulationSort";
 import "@/components/v3/live/findability/findability-landing.css";
 import {
   attemptLabel,
   confidenceLabel,
+  BUNDLE_HEADER,
+  CONFIDENCE_HEADER_NOTE,
   DEALER_BUNDLE_NOT_LOADED,
   DEALER_BUNDLE_NOTE,
   dealerBundleLabel,
   listingTitle,
   presentExplanation,
   productKindLabel,
+  sourceMethodMeaning,
   uncheckedReason,
 } from "@/lib/findability/copy";
 import {
@@ -21,7 +25,6 @@ import {
   findabilityTableValue,
   httpStatusLine,
   listingContextLine,
-  matchMethodLine,
   variantSkuLine,
 } from "@/lib/findability/table-columns";
 import { CLIENT_TABLE_PAGE_SIZE } from "@/lib/fender-canvas/full-result-sort";
@@ -41,7 +44,7 @@ const VARIANT_SKU_TOOLTIP = {
 
 const CONFIDENCE_TOOLTIP = {
   title: "Confidence",
-  description: "The identifier that matched the listing to the page, then how the page was found.",
+  description: CONFIDENCE_HEADER_NOTE,
 } as const;
 
 const CHECKED_TOOLTIP = {
@@ -51,9 +54,9 @@ const CHECKED_TOOLTIP = {
 
 function bundleColumn(bundleLoaded: boolean): RetailColumn {
   return {
-    ...clientColumn("bundle", "Sold as a dealer bundle", "text", 96, 84),
+    ...clientColumn("bundle", BUNDLE_HEADER, "text", 96, 84),
     headerTooltip: {
-      title: "Sold as a dealer bundle",
+      title: BUNDLE_HEADER,
       description: bundleLoaded ? DEALER_BUNDLE_NOTE : DEALER_BUNDLE_NOT_LOADED,
     },
   };
@@ -167,8 +170,9 @@ function ListingCell({
     case "confidence":
       return (
         <td>
-          {confidenceLabel(row.confidence)}
-          <SubLine text={matchMethodLine(row)} />
+          <FigureTip title={confidenceLabel(row.confidence)} desc={sourceMethodMeaning(row.source_method) || null}>
+            {confidenceLabel(row.confidence)}
+          </FigureTip>
         </td>
       );
     case "checked":

@@ -10,6 +10,7 @@ import {
   presentExplanation,
   productKindLabel,
   uncheckedReason,
+  sourceMethodLabel,
 } from "@/lib/findability/copy";
 import {
   FINDABILITY_OUTCOMES,
@@ -23,7 +24,6 @@ import { loadFindabilityRead, type FindabilityClient } from "@/lib/findability/q
 import {
   httpStatusLine,
   listingContextLine,
-  matchMethodLine,
   variantSkuLine,
 } from "@/lib/findability/table-columns";
 import { getCanvasSupabase } from "@/lib/supabase/canvas-client";
@@ -39,9 +39,10 @@ const OUTCOME_COLUMNS = [
   ["title", "Listing"],
   ["page", "Official page"],
   ["confidence", "Confidence"],
+  ["howFound", "How found"],
   ["checked", "Checked"],
   ["explanation", "Explanation"],
-  ["bundle", "Sold as a dealer bundle"],
+  ["bundle", "Bundle"],
 ] as const;
 
 const UNCHECKED_COLUMNS = [
@@ -51,7 +52,7 @@ const UNCHECKED_COLUMNS = [
   ["category", "Category"],
   ["kind", "Product kind"],
   ["explanation", "Explanation"],
-  ["bundle", "Sold as a dealer bundle"],
+  ["bundle", "Bundle"],
 ] as const;
 
 export function findabilityExportColumns(outcome: FindabilityBucket) {
@@ -81,7 +82,9 @@ export function findabilityExportCell(row: FindabilityRow, columnId: string): st
       return lines(address.kind === "link" ? address.href : address.text, variantSkuLine(row));
     }
     case "confidence":
-      return lines(confidenceLabel(row.confidence), matchMethodLine(row));
+      return confidenceLabel(row.confidence);
+    case "howFound":
+      return row.source_method?.trim() ? sourceMethodLabel(row.source_method) : "";
     case "checked":
       return lines(attemptLabel(row.latest_attempt_at, bucket), httpStatusLine(row, bucket));
     case "explanation":

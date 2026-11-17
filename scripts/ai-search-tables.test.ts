@@ -24,6 +24,7 @@ import {
   runCategoryTable,
   runEngineTable,
   simulationTable,
+  trendHeader,
 } from "../lib/ai-search/tables.ts";
 import { DEFAULT_FILTER } from "../lib/ai-search/explorer-filter.ts";
 import { EXPORT_TABLE_IDS, isExportTable } from "../lib/export/tables.ts";
@@ -259,4 +260,10 @@ test("pies use the chart tokens: one ice-blue measured slice, one second blue at
   for (const status of ["--danger-red", "--warning-amber", "--success-green", "--status-"]) {
     assert.ok(!read("lib/ai-search/pie-tones.ts").includes(status), `a chart slice never uses ${status}`);
   }
+});
+
+test("the trend table drops the question-kind column for Overall and names the AI engine by engine (decision 104)", () => {
+  assert.deepEqual(trendHeader("overall"), ["Run", "Rate", "Not counted in the rate"]);
+  assert.deepEqual(trendHeader("engine"), ["Run", "AI engine", "Rate", "Not counted in the rate"]);
+  assert.doesNotMatch(read("components/v3/live/ai-search/HistoryTrendTable.tsx"), /Question kind/);
 });

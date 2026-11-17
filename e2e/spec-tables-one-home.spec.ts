@@ -40,7 +40,7 @@ test("spec tables live on one surface each", async ({ page }) => {
   await expect(missingHero).toContainText("1 of 2");
   await expect(
     page.locator("[data-machine-hero='product_basics'] [data-hero-percent]"),
-  ).toHaveText("100.0%");
+  ).toHaveText("100.0%*");
   const pages = page.locator("#machine-readability-pages");
   await expect(pages).toBeVisible();
   await expect(pages.locator("[data-machine-page-count]")).toHaveAttribute("data-machine-page-count", "1");
