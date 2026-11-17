@@ -207,5 +207,5 @@ Replace this whole section on handoff. Keep it under 40 lines. The FDD wins.
   (PR 229 body), worth raising with the client. Spend well under limits (his view).
 - Slack: DM Watson from Brian's account when an action is needed, italics, signed
   "sent by Claude for Brian" (U0BUPGZ3ADN). #operations reminders run daily.
-- Leadership doc claude.ai/artifact/TXZ217nzUhNQFiuJyJEAUm: a Claude Doc (edit via its connector).
+- Leadership doc claude.ai/artifact/TXZ217nzUhNQFiuJyJEAUm: Claude Doc, PM-owned; watch it, edit via Docs.
 - At most 2 browsers per worker e2e run. Unsubscribe auto-subscribed worker PRs.
