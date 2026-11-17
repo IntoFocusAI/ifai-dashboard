@@ -112,8 +112,6 @@ const METRICS_ROW_FIGURES = [
   "overallAiWinRate",
   "resolvedSimulations",
   "confirmedHallucinations",
-  "beginnerSovGap",
-  "strongestCategorySov",
 ];
 
 test("a failed metrics read turns every metrics-row figure into Not available* naming canvas_metrics", () => {
@@ -125,7 +123,6 @@ test("a failed metrics read turns every metrics-row figure into Not available* n
     assert.match(failed[key].detail, METRICS_TIP, key);
     assert.doesNotMatch(`${failed[key].value} ${failed[key].detail}`, /Pending data/, key);
   }
-  assert.equal(failed.beginnerAiWinRate.value, loaded.beginnerAiWinRate.value, "the category read still loaded");
   assert.equal(failed.phaseOneLift.value, loaded.phaseOneLift.value, "analyst estimates do not come from the row");
 });
 
@@ -145,19 +142,14 @@ test("Not stored MAP prices keep their own reading when the metrics read also fa
   assert.equal(drift.detail, mapPricesNotStored());
 });
 
-test("a failed category read turns the beginner AI win rate into Not available* naming canvas_ai_category", () => {
-  const metrics = buildLiveMetrics(bundle(["cats"]));
-  assert.equal(metrics.beginnerAiWinRate.value, READ_NOT_AVAILABLE);
-  assert.match(metrics.beginnerAiWinRate.detail, /\(canvas_ai_category\) did not load: forced cats failure\.$/);
-  assert.equal(metrics.overallAiWinRate.value, "82.6%", "the metrics row still loaded");
-});
-
-test("a failed share-of-voice read leaves the beginner gap on the stored metrics row", () => {
-  const loaded = buildLiveMetrics(bundle()).beginnerSovGap;
-  const failed = buildLiveMetrics(bundle(["sov"])).beginnerSovGap;
-  assert.equal(failed.value, loaded.value);
-  assert.equal(failed.detail, "vs Yamaha in beginner");
-  assert.doesNotMatch(failed.detail, /Pending data/);
+test("the category figures follow the date-pill AI read, not the stored metrics row (decisions 83 and 106)", () => {
+  const failed = buildLiveMetrics(bundle(["m", "cats", "sov"]));
+  for (const key of ["weakestCategoryGap", "strongestCategorySov"]) {
+    assert.equal(failed[key].value, "Loading", `${key} waits for the AI read`);
+    assert.doesNotMatch(failed[key].detail, /canvas_metrics|canvas_ai_category|Pending data/, key);
+  }
+  assert.equal(failed.beginnerAiWinRate, undefined, "no fixed beginner figure");
+  assert.equal(failed.beginnerSovGap, undefined, "no fixed beginner figure");
 });
 
 test("the AI Readiness bubble reads Not available* with canvas_metrics in its hover tooltip", () => {

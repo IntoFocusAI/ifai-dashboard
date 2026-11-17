@@ -1,6 +1,5 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { beginnerSovLine } from "../lib/fender-canvas/beginner-sov.ts";
 import { buildLiveCommandCenter } from "../lib/fender-canvas/command-center-from-live.ts";
 import { buildLiveNodes } from "../lib/fender-canvas/nodes-from-live.ts";
 import { groupHallucinationCauses } from "../lib/fender-canvas/hallucination-causes.ts";
@@ -96,11 +95,6 @@ function bundle(): CanvasBundle {
     fresh: [],
   };
 }
-
-test("beginner share of voice uses the stored competitor percents", () => {
-  const line = beginnerSovLine(bundle().sov);
-  assert.equal(line, "Yamaha 66.7% vs Fender/Squier 33.3%");
-});
 
 function retailReady(): RetailCanvasRead {
   return {
