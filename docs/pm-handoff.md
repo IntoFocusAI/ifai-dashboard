@@ -161,8 +161,11 @@ The brand book, `docs/brand/IntoFocus_AI_Brand_Book_V2.pdf`, is a standard
 below the FDD. Where the two conflict, ask Brian.
 
 Held, until he says otherwise: A-06, A-02, R-06, R-11, A-04, A-07, N-07,
-LATER rows, and the dollar formulas. X-15, X-16, and R-19 are held until
-the rest of the launch build is complete (decision 46).
+LATER rows, and the dollar formulas. R-19 is held until the rest of the
+launch build is complete (decision 46). X-15 and X-16 are released
+(decision 105; Watson is building them). Brian owns all on-screen wording
+(decision 108). Every client gets the same views from one template; no
+code may branch on a client name (X-35, decision 105).
 
 ## State
 
