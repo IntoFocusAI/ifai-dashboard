@@ -220,6 +220,17 @@ None. Status words are Poor, Fair, and Good where a figure has no word of its ow
 - **Evidence:** Audit by worker 28.8 (PR 217, main 5cb722d).
 - **Open decision:** None.
 
+**X-36 TARGET** · Launch
+
+**Status source:** Explicit (Brian Magazu, 17 Nov 2026, decision 110)
+
+- **Current:** Several tabs (Amazon Specs and Amazon A+ Matrix at least) put one or two hero cards on a row with empty space beside them and push notes and tables below, so a small laptop screen needs a long scroll to reach the content.
+- **Desired:** One layout rule for every tab: hero cards line up from the top left, notes fill the space beside them, and the main table starts within the first screen at 1280 by 720.
+- **User value:** People see what they came for without scrolling past blank space.
+- **Acceptance:** At 1280 by 720, on every tab for every client, no hero row leaves more than a third of its width empty, and each tab's main table or chart starts above the fold. Screenshots of every tab for Fender and Ledlenser in the pull request.
+- **Evidence:** Brian Magazu's screenshots of Amazon Specs and Amazon A+ Matrix, 17 Nov 2026.
+- **Open decision:** None.
+
 **X-07 CURRENT** · Launch
 
 **Status source:** Explicit

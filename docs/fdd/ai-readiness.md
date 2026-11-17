@@ -120,3 +120,14 @@
 - **Acceptance:** The first view of Findability includes the Exact official product page listings.
 - **Evidence:** Live. Brian Magazu approved worker 19.3 on 3 Nov 2026. Pull request 103, commit 2f163be, main 32f8a47.
 - **Open decision:** None.
+
+**D-12 TARGET** · Launch
+
+**Status source:** Explicit (Brian Magazu, 17 Nov 2026, decision 110)
+
+- **Current:** No check for listings filed under the wrong Amazon product type or category. An accessory filed as an electric guitar is judged against the guitar field list and shows many missing fields that do not apply.
+- **Desired:** Flag listings whose Amazon product type or category does not match what the product is (from its title, its brand-site page, and the client's own catalog), as a finding with evidence. A flagged listing is judged against the right field list, or reads Not available* until it is refiled.
+- **User value:** Wrong filing hides products from the right AI and shopping searches; fixing it is a cheap win, and specs figures stop blaming the brand for fields that do not apply.
+- **Acceptance:** Each flagged listing shows its current type, the likely right type, and why. Specs Complete leaves flagged listings out of the wrong list.
+- **Evidence:** Brian Magazu saw an accessory listed in the electric guitar category, missing guitar fields.
+- **Open decision:** None.
