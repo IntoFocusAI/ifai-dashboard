@@ -4392,6 +4392,52 @@
       align-items: stretch;
     }
 
+    /*
+     * X-36 (decision 110): one hero band rule for every tab and every client (HeroBand.tsx).
+     * Hero cards line up from the top left at their own width; the notes fill the space beside
+     * them. When less than 280px is left, the notes wrap below at full width. The notes column is
+     * a grid, so a note's own flex size does not stretch it. With no notes, the cards fill the row.
+     */
+    .hero-band {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: flex-start;
+      min-width: 0;
+    }
+
+    .hero-band-heroes {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: stretch;
+      flex: 0 1 auto;
+      min-width: 0;
+      max-width: 100%;
+    }
+
+    .hero-band-no-notes > .hero-band-heroes {
+      flex: 1 1 100%;
+    }
+
+    .hero-band-no-notes > .hero-band-heroes > * {
+      flex: 1 1 0;
+    }
+
+    .hero-band-notes {
+      flex: 1 1 280px;
+      min-width: min(280px, 100%);
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      align-content: start;
+      gap: 10px;
+    }
+
+    .hero-band > .hero-band-notes > * {
+      margin: 0;
+      min-width: 0;
+    }
+
     /* Official-page read freshness under the hero band (X-12). */
     .findability-last-checked {
       font-size: 13px;
