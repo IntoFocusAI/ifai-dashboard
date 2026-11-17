@@ -66,11 +66,15 @@ test("Amazon Specs shows Last checked beside its heroes, from checked listings o
   await openAmazonSpecs(page, canvas);
 
   const lead = page.locator("[data-amazon-specs-lead]");
-  const line = lead.locator("[data-amazon-specs-last-checked]");
+  // X-36: Last checked sits in the hero band's notes, beside the completeness hero.
+  const line = page.locator("[data-amazon-specs-band] [data-hero-band-notes] [data-amazon-specs-last-checked]");
   await expect(line).toHaveText("Last checked Oct 13, 2026, 6:04 PM UTC.");
   await expect(line).toHaveAttribute("data-amazon-specs-last-checked", "2026-10-13T18:04:08.000Z");
   await expect(line).toBeInViewport();
-  await expect(page.locator("[data-amazon-specs-hero-col]")).toContainText("Last checked");
+  const heroBox = await lead.locator("[data-amazon-specs-hero]").first().boundingBox();
+  const lineBox = await line.boundingBox();
+  expect(lineBox!.x).toBeGreaterThanOrEqual(heroBox!.x + heroBox!.width - 2);
+  expect(lineBox!.y).toBeLessThan(heroBox!.y + heroBox!.height);
   const term = lead.locator("[data-amazon-specs-hero='amazon_completeness'] .ifai-term").first();
   await expect(term).toHaveAttribute("data-ifai-tooltip-desc", /averaged across the Amazon listings of the 4 checked SKUs\./);
   await expect(term).toHaveAttribute("data-ifai-tooltip-desc", /Last checked Oct 13, 2026, 6:04 PM UTC\./);

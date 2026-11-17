@@ -7,9 +7,8 @@
 
 import { AI_SEARCH_STALE_AFTER_DAYS } from "@/lib/ai-search/stale";
 import { brandSite } from "@/lib/brand-copy";
-import { activeClient } from "@/lib/client/active-client";
 import { isPastCheckSchedule } from "@/lib/fender-canvas/canvas-reads";
-import { RECHECK_DAYS } from "@/lib/fender-canvas/row-stale";
+import { RECHECK_DAYS, retailerRecheckDays } from "@/lib/fender-canvas/row-stale";
 import type { CanvasFreshnessRow } from "@/lib/fender-canvas/types";
 
 const DAY_MS = 86_400_000;
@@ -28,8 +27,11 @@ export type DataSourceId =
 type SourceRule = {
   id: DataSourceId;
   label: () => string;
-  /** Normal check interval in days. Out of date after twice this. */
-  intervalDays: () => number;
+  /**
+   * Normal check interval in days. Out of date after twice this. Null for a retailer the client
+   * does not check (no recheck days in its retailers setting): that source is left off.
+   */
+  intervalDays: () => number | null;
   /** The collectors that read this source. Their latest run is the source's last check. */
   collectors: readonly string[];
   /** Collector jobs named by pattern, such as one lock per API run. */
@@ -81,14 +83,14 @@ const SOURCES: readonly SourceRule[] = [
   {
     id: "walmart",
     label: () => "Walmart",
-    intervalDays: () => (activeClient().key === "ledlenser" ? RECHECK_DAYS.walmartLedlenser : RECHECK_DAYS.walmartFender),
+    intervalDays: () => retailerRecheckDays("walmart"),
     collectors: ["map_leakage_walmart"],
     support: /walmart|wmt/,
   },
   {
     id: "musiciansfriend",
     label: () => "Musician's Friend",
-    intervalDays: () => RECHECK_DAYS.musiciansFriend,
+    intervalDays: () => retailerRecheckDays("musiciansfriend"),
     collectors: ["map_parity_musiciansfriend"],
     support: /musiciansfriend|musicians_friend|_mf_|^mf_/,
   },
@@ -169,11 +171,12 @@ export function dataSourceFreshness(
     (isCollector(rule, row.job_key.toLowerCase()) ? entry.collector : entry.other).push(row.last_run_at);
     grouped.set(id, entry);
   }
-  return SOURCES.filter((source) => grouped.has(source.id) || stored[source.id]).map((source) => {
+  return SOURCES.flatMap((source) => {
+    const intervalDays = source.intervalDays();
+    if (intervalDays == null || !(grouped.has(source.id) || stored[source.id])) return [];
     const entry = grouped.get(source.id) ?? { collector: [], other: [] };
     const collector = source.storedIsCollector ? [...entry.collector, stored[source.id] ?? null] : entry.collector;
     const lastCheck = latest(collector) ?? stored[source.id] ?? latest(entry.other);
-    const intervalDays = source.intervalDays();
     return {
       id: source.id,
       label: source.label(),

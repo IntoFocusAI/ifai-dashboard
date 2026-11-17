@@ -1,4 +1,5 @@
 import { activeClient } from "@/lib/client/active-client";
+import { placeholderSpecFieldSet, placeholderSpecTooltip } from "@/lib/findability/placeholder-spec-fields";
 import { leadBrand } from "@/lib/brand-copy";
 import type { ActuationScore } from "@/lib/fender-canvas/actuation-score";
 
@@ -15,78 +16,18 @@ export type RequiredSpecGap = {
   missingFields: string[];
 };
 
-/** Guitar and instrument fields used for the D-05 required-spec placeholder. */
-export const REQUIRED_MARKETPLACE_SPEC_FIELDS = [
-  "scale_length",
-  "hand_orientation",
-  "item_weight",
-  "item_dimensions",
-  "number_of_strings",
-  "fretboard_material_type",
-  "guitar_bridge_system",
-  "guitar_pickup_configuration",
-  "neck_material_type",
-  "manufacturer_part_number",
-  "body_material_type",
-  "color",
-  "upc",
-] as const;
-
-export const REQUIRED_MARKETPLACE_SPEC_FIELD_SET: ReadonlySet<string> = new Set(
-  REQUIRED_MARKETPLACE_SPEC_FIELDS,
-);
-
-/** Plain labels for the placeholder tooltip (same wording as Catalog Governance). */
-export const REQUIRED_MARKETPLACE_SPEC_LABELS = [
-  "scale length",
-  "handedness",
-  "weight",
-  "dimensions",
-  "strings",
-  "fretboard",
-  "bridge",
-  "pickups",
-  "neck",
-  "part number",
-  "body",
-  "color",
-  "UPC",
-] as const;
-
-export const AUTHORIZED_BUY_BOX_PARTNERS = ["Austin Bazaar", "GearTree"] as const;
-
-export const REQUIRED_SPECS_PLACEHOLDER_TOOLTIP =
-  "Placeholder: this list is a default until required specs are approved by category. The guitar and instrument fields are scale length, handedness, weight, dimensions, strings, fretboard, bridge, pickups, neck, part number, body, color, and UPC.";
-
-/** Lighting fields (flashlights, headlamps, lanterns) for the same placeholder. */
-export const LIGHTING_MARKETPLACE_SPEC_FIELDS = [
-  "light_output_maximum",
-  "beam_distance",
-  "runtime",
-  "water_resistance_level",
-  "battery_type",
-  "power_source",
-  "light_source_type",
-  "item_weight",
-  "item_dimensions",
-  "material_type",
-  "color",
-  "upc",
-  "manufacturer_part_number",
-] as const;
-
-const LIGHTING_SPEC_FIELD_SET: ReadonlySet<string> = new Set(LIGHTING_MARKETPLACE_SPEC_FIELDS);
-
-export const LIGHTING_SPECS_PLACEHOLDER_TOOLTIP =
-  "Placeholder: this list is a default until required specs are approved by category. The lighting fields are max lumens, beam distance, runtime, water resistance, battery type, power source, light source, weight, dimensions, material, color, UPC, and part number.";
-
-/** Required marketplace fields for the brand on screen: guitar fields for Fender, lighting fields otherwise. */
-export function requiredMarketplaceSpecFieldSet(): ReadonlySet<string> {
-  return activeClient().key === "fender" ? REQUIRED_MARKETPLACE_SPEC_FIELD_SET : LIGHTING_SPEC_FIELD_SET;
+/**
+ * Required marketplace fields for the brand on screen: the placeholder sets for the Amazon product
+ * types in its settings (lib/findability/placeholder-spec-fields.ts, P-29). Null when its product
+ * types have no set.
+ */
+export function requiredMarketplaceSpecFieldSet(): ReadonlySet<string> | null {
+  return placeholderSpecFieldSet();
 }
 
+/** The placeholder tooltip, naming the field sets for the client's product types. */
 export function requiredSpecsPlaceholderTooltip(): string {
-  return activeClient().key === "fender" ? REQUIRED_SPECS_PLACEHOLDER_TOOLTIP : LIGHTING_SPECS_PLACEHOLDER_TOOLTIP;
+  return placeholderSpecTooltip();
 }
 
 export const CONTROLLED_BUY_BOX_PLACEHOLDER_TOOLTIP =
@@ -265,7 +206,7 @@ export function isAmazonRetailSeller(row: {
 
 /**
  * Partner names used for a Controlled Buy Box count.
- * Omit the argument, or pass null, to keep AUTHORIZED_BUY_BOX_PARTNERS.
+ * Omit the argument, or pass null, to keep the client's default_authorized_partners setting.
  * An array, including an empty one, replaces that placeholder set.
  */
 function partnerNames(partners?: readonly string[] | null): readonly string[] {
@@ -414,6 +355,7 @@ export function requiredMarketplaceSpecShare(
 ): ShareInput | null {
   if (gaps == null || checked == null || !(checked > 0)) return null;
   const required = requiredMarketplaceSpecFieldSet();
+  if (required == null) return null;
   const missingRequired = gaps.filter((gap) =>
     gap.missingFields.some((field) => required.has(field)),
   ).length;
@@ -553,7 +495,7 @@ export function foundationScore(inputs: FoundationInputs): PillarScore {
 
 export type CommerceScoreOptions = {
   /**
-   * Null keeps AUTHORIZED_BUY_BOX_PARTNERS and the Controlled Buy Box placeholder mark.
+   * Null keeps the client's default_authorized_partners and the Controlled Buy Box placeholder mark.
    * An array replaces that set. An empty array counts Amazon Retail only and clears the mark.
    */
   authorizedPartners?: readonly string[] | null;

@@ -1,6 +1,6 @@
 import type { FindabilityRow } from "@/lib/findability/outcomes";
 import type { FindabilityRead } from "@/lib/findability/copy";
-import { activeClient } from "@/lib/client/active-client";
+import { activeClientSettings } from "@/lib/client/active-client";
 
 export const FINDABILITY_COLUMNS = [
   "asin",
@@ -98,9 +98,12 @@ function asRow(value: unknown): FindabilityRow | null {
   };
 }
 
-/** Columns for the brand on screen. Only brand-led clients' views carry on_brand_sheet. */
+/**
+ * Columns for the brand on screen. Only a client with a brand sheet (data_sources.brand_sheet in its
+ * settings) has on_brand_sheet in its view.
+ */
 export function findabilityColumns(): string {
-  return activeClient().key === "fender" ? FINDABILITY_COLUMNS : `${FINDABILITY_COLUMNS},on_brand_sheet`;
+  return activeClientSettings().data_sources.brand_sheet ? `${FINDABILITY_COLUMNS},on_brand_sheet` : FINDABILITY_COLUMNS;
 }
 
 function dealerBundleMap(rows: unknown[]): Map<string, boolean> {

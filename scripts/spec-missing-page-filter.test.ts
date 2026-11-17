@@ -137,7 +137,7 @@ test("the catalog control copy stays on the live rollup and the custom tooltip",
   const root = new URL("..", import.meta.url);
   const read = (path: string) => readFileSync(new URL(path, root), "utf8");
   const lead = read("components/v3/live/AiReadinessLead.tsx");
-  const narrative = read("components/v3/live/FenderSpecNarratives.tsx");
+  const narrative = read("components/v3/live/SpecNarratives.tsx");
   const panel = read("components/v3/live/FenderSpecPanel.tsx");
   const catalog = read("components/v3/live/CatalogReadinessSpec.tsx");
   const spokes = read("components/v3/build-live-spokes.tsx");

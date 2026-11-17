@@ -1,9 +1,10 @@
 "use client";
 
-import { brandSite, isFenderClient } from "@/lib/brand-copy";
+import { specBlockPhrase } from "@/lib/findability/placeholder-spec-fields";
 
+/* The specs named come from the Amazon product types in the client's settings (P-30). */
 const ADDITIONAL_PROPERTY_DESC = () =>
-  `The Schema.org field that can carry ${isFenderClient() ? "neck, pickup, and hardware specs" : "detailed product specs"}. When it is missing from a found page, an assistant has no spec block to read there.`;
+  `The Schema.org field that can carry ${specBlockPhrase()}. When it is missing from a found page, an assistant has no spec block to read there.`;
 
 export function AdditionalPropertyTerm() {
   return (

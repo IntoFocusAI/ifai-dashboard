@@ -5,6 +5,7 @@
  * reads "N of M listings have no X in 2 days", then the last check day.
  */
 
+import { activeClientSettings } from "@/lib/client/active-client";
 import { formatInt } from "@/lib/fender-canvas/format";
 import type { PartialFigure } from "@/lib/fender-canvas/canvas-reads";
 
@@ -16,12 +17,6 @@ export const RECHECK_DAYS = {
   buyBox: 1,
   /** Splintered Listings bundle flag and parent ASIN, from the catalog pass: catalog_checked_at. */
   catalog: 1,
-  /** Walmart price (Fender): wmt_checked_at. */
-  walmartFender: 1,
-  /** Walmart price (Ledlenser): wmt_checked_at. */
-  walmartLedlenser: 2,
-  /** Musician's Friend price (Fender only): mf_checked_at. */
-  musiciansFriend: 3,
   /** Out of Stock unit estimates: smartscout_products.snapshot_date. */
   smartscout: 7,
   /** Keepa daily history: keepa_checked_at (the newest Keepa load for the listing). */
@@ -29,6 +24,15 @@ export const RECHECK_DAYS = {
   /** Amazon specs (spec_readiness.checked_at) and listing content (content_checked_at). */
   weekly: 7,
 } as const;
+
+/**
+ * A retailer's recheck interval in days, from the client settings record (retailers[].recheck_days,
+ * P-14): Walmart wmt_checked_at, Musician's Friend mf_checked_at. Null when the client on screen
+ * does not check that retailer.
+ */
+export function retailerRecheckDays(key: string): number | null {
+  return activeClientSettings().retailers.find((retailer) => retailer.key === key)?.recheck_days ?? null;
+}
 
 export type RowCheckRule = {
   /** The recheck interval in days. A row is stale after twice this. */
