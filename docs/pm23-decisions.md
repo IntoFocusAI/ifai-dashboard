@@ -509,3 +509,15 @@ closeout of each view. Open items are marked OPEN and are not built.
     gathered at onboarding. Each formula opens to its inputs and is
     approved by Brian before it ships; weak ones can be cut later. D-12 is
     a launch item. Roadmap set-aside works like Action Items' (N-08).
+112. Dollar estimates proposal approved as recommended (17 Nov, PR 224, all
+    13 recommendations): retail sales per year; brand-level headlines; R-06
+    priced on measured no-Buy-Box days; MAP beside the total; lift tables as
+    starting assumptions; AI lines at 8% mid (2% to 20%) shown plainly;
+    page, Actuation and Roadmap dollars are shares, never added; formulas
+    replace the hand-entered Phase 1 and Enterprise figures; totals may mix
+    revenue sources with the split in the trail; public revenue stands in
+    as a labeled placeholder; mid with range, labeled analyst estimate; the
+    miscategorized line waits for D-12. Upside must cover the whole catalog:
+    listings without SmartScout sales are estimated (Keepa monthly-sold or
+    sales rank; later the Amazon Solution Provider Portal), and until then
+    Ledlenser may show its real figure with the n of m asterisk.
