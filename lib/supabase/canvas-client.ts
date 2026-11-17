@@ -1,5 +1,5 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { activeClient } from "@/lib/client/active-client";
+import { activeClientSettings } from "@/lib/client/active-client";
 import { aliasingFetch } from "@/lib/client/column-aliases";
 
 let publicClient: SupabaseClient | null = null;
@@ -32,21 +32,22 @@ export function getPublicCanvasSupabase(): SupabaseClient {
 }
 
 /**
- * Browser-safe client for the active brand's read-only canvas_* views.
- * Fender reads `public`. Ledlenser reads the `ledlenser` schema, with its
- * brand-neutral column names translated to the names the dashboard uses.
+ * Browser-safe client for the active brand's read-only canvas_* views, from its settings record.
+ * Fender reads `public` with the dashboard's column names. A brand whose views use brand-neutral
+ * column names (Ledlenser, schema `ledlenser`) has them translated to the names the dashboard uses.
  */
 export function getCanvasSupabase(): SupabaseClient {
-  const client = activeClient();
-  if (client.schema === "public") return getPublicCanvasSupabase();
-  const cached = brandClients.get(client.schema);
+  const { data_schema: schema, column_naming: naming } = activeClientSettings();
+  if (schema === "public" && naming === "fender") return getPublicCanvasSupabase();
+  const cacheKey = `${schema}:${naming}`;
+  const cached = brandClients.get(cacheKey);
   if (cached) return cached;
   const { url, key } = env();
-  const brandClient = createClient(url, key, {
+  const client = createClient(url, key, {
     auth: { persistSession: false },
-    db: { schema: client.schema },
-    global: { fetch: aliasingFetch() },
+    db: { schema },
+    ...(naming === "neutral" ? { global: { fetch: aliasingFetch() } } : {}),
   }) as unknown as SupabaseClient;
-  brandClients.set(client.schema, brandClient);
-  return brandClient;
+  brandClients.set(cacheKey, client);
+  return client;
 }

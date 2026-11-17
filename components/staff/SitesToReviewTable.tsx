@@ -12,7 +12,7 @@ import {
   type ReviewRow,
 } from "@/lib/ai-search/site-review";
 import { STORED_SITE_TYPES, type StoredSiteType } from "@/lib/ai-search/site-types";
-import { CLIENTS, type ClientKey } from "@/lib/client/active-client";
+import { clientProfile, type ClientKey } from "@/lib/client/active-client";
 import { formatInt } from "@/lib/fender-canvas/format";
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
 
@@ -112,7 +112,7 @@ function TypeChoice({
     try {
       const result = await saveSiteType({
         domain: row.domain,
-        clientKey: CLIENTS[client].setAsideKey,
+        clientKey: clientProfile(client).setAsideKey,
         siteType: value,
         isGlobal: row.isGlobal,
         aiType: row.siteType,
@@ -207,7 +207,7 @@ export function SitesToReviewTable({
       <tbody>
         {shown.length === 0 ? (
           <tr>
-            <td colSpan={columns.length}>No sites need review for {CLIENTS[client].brandName}.</td>
+            <td colSpan={columns.length}>No sites need review for {clientProfile(client).brandName}.</td>
           </tr>
         ) : null}
         {sorted.rows.map((row) => (

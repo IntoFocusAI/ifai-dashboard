@@ -18,7 +18,7 @@
  * Migration: supabase/migrations/20261116233000_actuation_expiry_reminders.sql.
  */
 
-import { CLIENTS, clientHref, type ClientKey } from "@/lib/client/active-client";
+import { clientHref, clientKeyForSetAsideKey, clientProfile, type ClientKey } from "@/lib/client/active-client";
 import { ACTUATION_RECORDS_PATH, FACTOR_LABELS } from "@/lib/fender-canvas/actuation-records";
 import {
   daysBetween,
@@ -91,8 +91,7 @@ export function dueThreshold(daysLeft: number, sent: readonly number[] = []): Ex
 }
 
 function clientForKey(clientKey: string): ClientKey | null {
-  const match = (Object.keys(CLIENTS) as ClientKey[]).find((key) => CLIENTS[key].setAsideKey === clientKey);
-  return match ?? null;
+  return clientKeyForSetAsideKey(clientKey);
 }
 
 /** The reminders due on `asOf` (UTC ISO date), nearest expiry first. Unknown clients are left out. */
@@ -107,7 +106,7 @@ export function dueReminders(candidates: readonly ReminderCandidate[], asOf: str
     due.push({
       client,
       clientKey: row.client_key,
-      brandName: CLIENTS[client].brandName,
+      brandName: clientProfile(client).brandName,
       factor: row.factor,
       ownerName: row.owner_name.trim(),
       expiresOn: row.expires_on,
@@ -132,7 +131,7 @@ export function dueLapseReminders(candidates: readonly LapseCandidate[], asOf: s
     due.push({
       client,
       clientKey: row.client_key,
-      brandName: CLIENTS[client].brandName,
+      brandName: clientProfile(client).brandName,
       factor: row.factor,
       postedOn: row.posted_on,
       expiresOn: row.lapses_on,
