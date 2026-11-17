@@ -56,13 +56,16 @@ export type BenchmarkSource = {
 export type Benchmark = {
   id: string;
   label: string;
-  /** share = a fraction of sales (0.4 is 40%). units_per_month is for rank curves. */
-  unit: "share" | "units_per_month";
+  /** share = a fraction of sales (0.4 is 40%). multiplier = a factor applied to another input. */
+  unit: "share" | "units_per_month" | "multiplier";
   low: number;
   mid: number;
   high: number;
-  /** published = from a cited study. approved_assumption = an IntoFocus assumption Brian approved. */
-  basis: "published" | "approved_assumption";
+  /**
+   * published = from a cited study. approved_assumption = an IntoFocus assumption Brian approved.
+   * proposed_assumption = an IntoFocus assumption or calibration Brian has not approved yet.
+   */
+  basis: "published" | "approved_assumption" | "proposed_assumption";
   /** Plain-language note on how low, mid and high were set and how far to trust them. */
   credibility: string;
   sources: BenchmarkSource[];
@@ -81,6 +84,11 @@ export type EstimateCoverage = {
   measured: number;
   estimated: number;
   notAvailable: number;
+  /**
+   * Of notAvailable: listings SmartScout tracks and reports no sales for. They have no sales figure, so
+   * they are not priced; they are counted apart from listings nobody has a sales figure for.
+   */
+  reportedNoSales?: number;
   /** True when notAvailable > 0. The figure then carries the asterisk. */
   partial: boolean;
   /** "Based on N of M listings" when partial (N = measured + estimated), else null. */
@@ -102,7 +110,16 @@ export type EstimateTrailInput = {
 };
 
 /** Dollars and listings by sales source, so a total that mixes sources shows the split (approval 10). */
-export type SalesSourceSplit = Record<SalesSource, { listings: number; annualSales: number }>;
+export type SalesSourceSplit = Record<
+  SalesSource,
+  {
+    listings: number;
+    /** Annual sales (mid) of the listings priced from this source. */
+    annualSales: number;
+    /** The part of the line's mid figure that comes from this source. */
+    estimate?: number;
+  }
+>;
 
 /** One listing's part of a line. The drill-down rows behind N of M. */
 export type EstimateListingRow = {
@@ -110,8 +127,10 @@ export type EstimateListingRow = {
   title: string | null;
   salesSource: SalesSource;
   salesBasis: SalesBasis;
-  /** Annual sales used for the listing, USD. null when Not available*. */
+  /** Annual sales used for the listing, USD (the mid value when estimated). null when Not available*. */
   annualSales: number | null;
+  /** Set when the sales figure is estimated: its low, mid and high. */
+  annualSalesRange?: EstimateRange;
   /** The sales the problem touches (for example missed sales at the listing level). null when Not available*. */
   touchedSales: number | null;
   /** The listing's contribution to the line. null when Not available*. */
@@ -157,4 +176,59 @@ export type EstimateResult = {
   trail: EstimateTrail;
   /** Rollups only: the lines added together. */
   parts?: EstimateResult[];
+};
+
+/**
+ * One listing, as the estimate functions read it. Every field is optional except asin: a missing or
+ * null field means not collected, never zero. The read layer fills this from the canvas views.
+ */
+export type EstimateListingInput = {
+  asin: string;
+  title?: string | null;
+
+  // Sales, in source order.
+  /** The brand's own Amazon sales for the listing, last 12 months, USD (onboarding question 4). */
+  brandReportedAnnualSales?: number | null;
+  /** True when SmartScout has a record for the listing (canvas_listing_sales_loss_v2.smartscout_snapshot_date is set). */
+  smartscoutHasRecord?: boolean;
+  /** canvas_listing_sales_loss_v2.smartscout_ttm_revenue */
+  smartscoutTtmRevenue?: number | null;
+  /** canvas_listing_sales_loss_v2.smartscout_monthly_units */
+  smartscoutMonthlyUnits?: number | null;
+  /** canvas_listing_sales_loss_v2.baseline_daily_revenue: SmartScout sales per Keepa in-stock day. */
+  baselineDailyRevenue?: number | null;
+  /** canvas_listing_sales_loss_v2.est_lost_revenue_oos_365: sales per in-stock day x out-of-stock days (R-17). */
+  missedSalesOos365?: number | null;
+
+  // Keepa, for listings with no measured sales.
+  /** Current Amazon price, USD: canvas_listing_sales_loss_v2.current_price, else canvas_retail_listings.offer_price. */
+  price?: number | null;
+  /** canvas_retail_listings.monthly_sold: Amazon's "bought in past month" figure, a floor ("50+"). */
+  keepaMonthlySold?: number | null;
+  /** canvas_listing_sales_loss_v2.sales_rank_current, else canvas_retail_listings.sales_rank. */
+  salesRank?: number | null;
+  /** The Amazon category the sales rank is counted in. Picks the rank curve. */
+  rankCategory?: string | null;
+
+  // Keepa day counts, last 365 and last 30 days (canvas_listing_sales_loss_v2).
+  inStockDays365?: number | null;
+  inStockDays30?: number | null;
+  oosDays365?: number | null;
+  noBuyBoxDays365?: number | null;
+  observedDays365?: number | null;
+
+  // MAP. canvas_retail_listings.amz_leakage: Amazon price minus MAP, negative when below MAP.
+  amzLeakage?: number | null;
+
+  // Content.
+  /** canvas_retail_listings.is_bundle */
+  isBundle?: boolean | null;
+  /** canvas_retail_listings.parent_asin */
+  parentAsin?: string | null;
+  /** canvas_spec_readiness.amazon_completeness_pct, 0 to 100. null when the listing was not checked. */
+  amazonCompletenessPct?: number | null;
+  /** canvas_listing_content.aplus_state */
+  aplusState?: string | null;
+  /** True when the D-12 check flags the listing. Not collected yet. */
+  miscategorized?: boolean | null;
 };
