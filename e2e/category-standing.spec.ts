@@ -24,8 +24,9 @@ async function choose(page: Page, slot: number, id: string) {
   await page.getByRole("button", { name: `Add metric to large slot ${slot}` }).click();
   const dialog = page.getByRole("dialog", { name: `Choose metric for large slot ${slot}` });
   await expect(dialog.locator(`[data-metric-option='${id}']`)).toBeVisible();
-  await expect(dialog).not.toContainText(/beginner/i);
-  await expect(dialog.locator("[data-metric-option='beginner-sov-gap']")).toHaveCount(0);
+  // Only a client whose own questions hold a beginner category lists one (decision 106).
+  if (page.url().includes("client=ledlenser")) await expect(dialog).not.toContainText(/beginner/i);
+  await expect(dialog.locator("[data-metric-option='beginner-sov-gap'], [data-metric-option='beginner-ai-win-rate']")).toHaveCount(0);
   await dialog.locator(`[data-metric-option='${id}']`).click();
   return page.locator(`.large-metric-body[data-metric-id='${id}']`);
 }
