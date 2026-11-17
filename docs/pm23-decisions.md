@@ -528,3 +528,6 @@ closeout of each view. Open items are marked OPEN and are not built.
     to a client name. Code that names the client uses the settings or a brand
     helper (brandName()), never a hard-coded client. SmartScout listings with
     no reported sales count as "measured, no sales" ($0, covered).
+114. Handoff State cap (17 Nov): 40 lines, up from 25. Link to plan docs
+    instead of repeating them; each queue item names where to start and,
+    if blocked, why and on whom.

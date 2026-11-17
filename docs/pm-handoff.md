@@ -35,7 +35,9 @@ greater than the PM number in State. Your workers are that number .1, .2,
 2. **Plan and build.** Send the Phase 0 plan in one message. Wait for "go
    ahead." Then brief and run workers as described below.
 3. **Hand off.** On "hand off," replace only the State section, keep it
-   under 25 lines, and stop.
+   under 40 lines, and stop. Link, don't repeat: a plan that lives in its
+   own doc gets one line and the doc's path. Every queue item names where
+   to start (a PR, file or doc) and, if blocked, why and on whom.
 
 Preserve every DECISION and LATER row unless Brian changes it. The header
 title follows FDD X-26. X-20 stays TARGET.
@@ -170,7 +172,7 @@ code may branch on a client name (X-35, decision 105).
 
 ## State
 
-Replace this whole section on handoff. Keep it under 25 lines. The FDD wins.
+Replace this whole section on handoff. Keep it under 40 lines. The FDD wins.
 
 - PM27 handed off 16 Nov 2026; next is PM28. Docs 27.14. Launch CURRENT 73 of
   95 once Brian merges the 27.14 docs PR (H-07). Decisions 89 to 101 are PM27's.
