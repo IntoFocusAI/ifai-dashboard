@@ -48,6 +48,8 @@ export type SalesContext = {
    * sales: the figures as the proposal worked them, before decision 112.
    */
   salesSources?: "all" | "measured_only";
+  /** The date the listings were read ("2026-11-17"). Shown as the as-of date on collected inputs. */
+  dataAsOf?: string;
 };
 
 const pos = (x: number | null | undefined): x is number => typeof x === "number" && Number.isFinite(x) && x > 0;
@@ -171,7 +173,7 @@ export function buildCoverage(sources: Array<{ source: SalesSource; reportedNoSa
     notAvailable,
     reportedNoSales,
     partial,
-    tooltip: partial ? `Based on ${fmt(measured + estimated)} of ${fmt(total)} listings` : null,
+    tooltip: partial ? `Based on ${fmt(measured + estimated)} of ${fmt(total)} listings (${fmt(measured)} measured, ${fmt(estimated)} estimated)` : null,
     sentence: parts.join(", "),
   };
 }

@@ -25,7 +25,7 @@ import { catalogSalesCoverage } from "../lib/estimates/sales-coverage.ts";
 import type { EstimateListingInput, EstimateResult } from "../lib/estimates/types.ts";
 import { loadEstimatesFixture } from "./fixtures/estimates/load.ts";
 
-const MEASURED = { salesSources: "measured_only" } as const;
+const MEASURED = { salesSources: "measured_only", dataAsOf: "2026-11-17" } as const;
 
 /** Within rounding: the proposal's tables are whole dollars. */
 function near(actual: number | null | undefined, expected: number, tolerance = 1, label = ""): void {
@@ -325,10 +325,15 @@ test("every result carries a full trail", () => {
     const c = r.trail.coverage;
     assert.equal(c.measured + c.estimated + c.notAvailable, c.total, `${r.lineId} coverage adds up`);
     assert.equal(r.asterisk, c.partial);
-    if (c.partial) assert.match(c.tooltip ?? "", /^Based on [\d,]+ of [\d,]+ listings$/);
+    if (c.partial) assert.match(c.tooltip ?? "", /^Based on [\d,]+ of [\d,]+ listings \([\d,]+ measured, [\d,]+ estimated\)$/);
+    assert.ok((r.trail.mostImprovedBy ?? "").length > 10, `${r.lineId} names its best improvement`);
+    // An IntoFocus assumption with no published source has no date.
+    for (const i of r.trail.inputs) if (i.kind !== "assumption") assert.ok(i.asOf, `${r.lineId} input ${i.key} has an as-of date`);
     assert.ok(!/—/.test(JSON.stringify(r.trail)), `${r.lineId} has no em dash`);
   }
-  assert.equal(fender.outOfStock.trail.coverage.tooltip, "Based on 247 of 609 listings");
+  assert.equal(fender.outOfStock.trail.coverage.tooltip, "Based on 247 of 609 listings (247 measured, 0 estimated)");
+  assert.equal(fender.outOfStock.trail.inputs.find((i) => i.key === "oos_days")?.asOf, "2026-11-17");
+  assert.equal(fender.outOfStock.trail.inputs.find((i) => i.key === "brand_loss_share")?.asOf, "2018, reported Mar 2019");
   assert.equal(fender.outOfStock.trail.listings.length, 609);
   assert.ok(fender.outOfStock.trail.sources.some((s) => s.id === "corstenGruenOnlineUnh"));
 });

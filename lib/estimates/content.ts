@@ -71,6 +71,7 @@ const SPECS: Record<ContentLineId, LineSpec> = {
     benchmarks: [SPLINTERED_LIFT, CONTENT_LIFT_CAP],
     confidence: "low",
     confidenceReason: "The lift is an IntoFocus assumption. We do not yet store each listing's review count reliably.",
+    mostImprovedBy: "Review counts per listing and per parent, so the lift can follow the published review curve listing by listing.",
     notes: [COMBINE_NOTE, "A splintered listing with no recorded sales is not priced. Some of that is the splintering itself, which this formula cannot see."],
     countsInTotal: true,
   },
@@ -86,6 +87,7 @@ const SPECS: Record<ContentLineId, LineSpec> = {
     benchmarks: [...SPEC_LIFT_BANDS.map((b) => b.benchmark), CONTENT_LIFT_CAP],
     confidence: "low",
     confidenceReason: "The lifts are IntoFocus assumptions. Published evidence is thin.",
+    mostImprovedBy: "Our own before-and-after results: when a listing's completeness rises, its sales in the next 60 days against similar listings that did not change.",
     notes: [COMBINE_NOTE, "Completeness is not yet counted against the approved field lists (decision 107), so this will move when that lands."],
     countsInTotal: true,
   },
@@ -98,6 +100,7 @@ const SPECS: Record<ContentLineId, LineSpec> = {
     benchmarks: [MISCATEGORIZED_LIFT, CONTENT_LIFT_CAP],
     confidence: "low",
     confidenceReason: "The lift is an IntoFocus assumption. No study measures it.",
+    mostImprovedBy: "The D-12 check itself, then our own before-and-after results.",
     notes: [COMBINE_NOTE, "Held until the D-12 check exists. It does not count in the total."],
     // Approval 13: hold this dollar until D-12 exists.
     countsInTotal: false,
@@ -114,6 +117,7 @@ const SPECS: Record<ContentLineId, LineSpec> = {
     benchmarks: [APLUS_LIFT, CONTENT_LIFT_CAP],
     confidence: "medium",
     confidenceReason: "The lift is Amazon's own figure for its own program, used as a ceiling.",
+    mostImprovedBy: "The brand's own Amazon sales by listing (onboarding question 4), in place of SmartScout.",
     notes: [COMBINE_NOTE],
     countsInTotal: true,
   },
@@ -148,9 +152,9 @@ export function estimateContent(listings: EstimateListingInput[], ctx: SalesCont
     }
   }
   return {
-    splintered: assembleLine(SPECS.splintered, pieces.splintered, RANK_CURVE_METHOD_SOURCES),
-    missing_specs: assembleLine(SPECS.missing_specs, pieces.missing_specs, RANK_CURVE_METHOD_SOURCES),
-    miscategorized: assembleLine(SPECS.miscategorized, pieces.miscategorized, RANK_CURVE_METHOD_SOURCES),
-    aplus: assembleLine(SPECS.aplus, pieces.aplus, RANK_CURVE_METHOD_SOURCES),
+    splintered: assembleLine(SPECS.splintered, pieces.splintered, RANK_CURVE_METHOD_SOURCES, ctx.dataAsOf ?? null),
+    missing_specs: assembleLine(SPECS.missing_specs, pieces.missing_specs, RANK_CURVE_METHOD_SOURCES, ctx.dataAsOf ?? null),
+    miscategorized: assembleLine(SPECS.miscategorized, pieces.miscategorized, RANK_CURVE_METHOD_SOURCES, ctx.dataAsOf ?? null),
+    aplus: assembleLine(SPECS.aplus, pieces.aplus, RANK_CURVE_METHOD_SOURCES, ctx.dataAsOf ?? null),
   };
 }

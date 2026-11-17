@@ -91,7 +91,10 @@ export type EstimateCoverage = {
   reportedNoSales?: number;
   /** True when notAvailable > 0. The figure then carries the asterisk. */
   partial: boolean;
-  /** "Based on N of M listings" when partial (N = measured + estimated), else null. */
+  /**
+   * The short tooltip line when partial, else null: "Based on 182 of 214 listings (62 measured, 120
+   * estimated)". The first number is measured + estimated.
+   */
   tooltip: string | null;
   /** One sentence with the split, for the trail: "24 of 166 listings measured, 97 estimated, 45 Not available*". */
   sentence: string;
@@ -103,10 +106,15 @@ export type EstimateTrailInput = {
   label: string;
   value: number | string | null;
   unit: "usd" | "usd_per_day" | "days" | "share" | "count" | "units" | "text";
-  /** collected = read from a dashboard view. benchmark = a published figure. assumption = IntoFocus. derived = computed here. */
-  kind: "collected" | "benchmark" | "assumption" | "derived";
+  /**
+   * collected = read from a dashboard view. benchmark = a published figure. assumption = IntoFocus.
+   * derived = computed here. client = given by the client at onboarding.
+   */
+  kind: "collected" | "benchmark" | "assumption" | "derived" | "client";
   /** View and column ("canvas_listing_sales_loss_v2.oos_days_365"), or a benchmark id from benchmarks.ts. */
   source: string;
+  /** The data date for a collected input ("2026-11-17"); the publication date for a benchmark ("Apr 2026"). */
+  asOf?: string | null;
 };
 
 /** Dollars and listings by sales source, so a total that mixes sources shows the split (approval 10). */
@@ -155,6 +163,8 @@ export type EstimateTrail = {
   sources: BenchmarkSource[];
   confidence: EstimateConfidence;
   confidenceReason: string;
+  /** The one input that would most improve the grade (the proposal's "Best improvement"). */
+  mostImprovedBy?: string;
   /** Extra plain-language notes: overlap rules applied, caps hit, what would improve the figure. */
   notes: string[];
   /** Per-listing rows. Empty for rollups, which carry `parts` on the result instead. */

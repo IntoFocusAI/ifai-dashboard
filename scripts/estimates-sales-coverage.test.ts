@@ -128,7 +128,7 @@ test("coverage: N of M measured, K estimated, the rest Not available*, asterisk 
   const c = r.trail.coverage;
   assert.deepEqual([c.total, c.measured, c.estimated, c.notAvailable, c.reportedNoSales], [7, 2, 3, 2, 1]);
   assert.equal(c.sentence, "2 of 7 listings measured, 3 estimated, 2 Not available*");
-  assert.equal(c.tooltip, "Based on 5 of 7 listings");
+  assert.equal(c.tooltip, "Based on 5 of 7 listings (2 measured, 3 estimated)");
   assert.equal(r.asterisk, true);
   assert.equal(r.trail.salesSources.smartscout.listings, 2);
   assert.equal(r.trail.salesSources.keepa_monthly_sold.listings, 1);
@@ -240,7 +240,7 @@ test("Ledlenser: sales coverage before and after", () => {
   const c = catalogSalesCoverage(listings);
   assert.equal(c.before.sentence, "24 of 214 listings measured, 190 Not available*");
   assert.equal(c.after.sentence, "24 of 214 listings measured, 68 estimated, 122 Not available*");
-  assert.equal(c.after.tooltip, "Based on 92 of 214 listings");
+  assert.equal(c.after.tooltip, "Based on 92 of 214 listings (24 measured, 68 estimated)");
   assert.equal(c.after.reportedNoSales, 36);
   assert.equal(c.salesSources.keepa_monthly_sold.listings, 2);
   assert.equal(c.salesSources.sales_rank_curve.listings, 66);
@@ -270,7 +270,7 @@ test("Fender: sales coverage before and after", () => {
   const c = catalogSalesCoverage(listings);
   assert.equal(c.before.sentence, "403 of 1,169 listings measured, 766 Not available*");
   assert.equal(c.after.sentence, "403 of 1,169 listings measured, 322 estimated, 444 Not available*");
-  assert.equal(c.after.tooltip, "Based on 725 of 1,169 listings");
+  assert.equal(c.after.tooltip, "Based on 725 of 1,169 listings (403 measured, 322 estimated)");
   assert.equal(c.after.reportedNoSales, 262);
   assert.equal(c.salesSources.keepa_monthly_sold.listings, 0);
   assert.equal(c.salesSources.sales_rank_curve.listings, 322);

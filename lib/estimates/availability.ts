@@ -51,6 +51,7 @@ export function estimateOutOfStock(listings: EstimateListingInput[], ctx: SalesC
       benchmarks: [BRAND_LOSS_SHARE],
       confidence: "high",
       confidenceReason: "Sales per in-stock day and out-of-stock days are both measured per listing.",
+      mostImprovedBy: "The brand's own Amazon sales by listing (onboarding question 4), in place of SmartScout.",
       notes: [
         "Some shoppers buy another of the brand's listings or buy the product elsewhere, and the brand keeps that sale. The figure counts only the shopper who switches brand or does not buy.",
         "If the pattern of the last 12 months holds, this is next year's figure too.",
@@ -59,6 +60,7 @@ export function estimateOutOfStock(listings: EstimateListingInput[], ctx: SalesC
     },
     pieces,
     RANK_CURVE_METHOD_SOURCES,
+    ctx.dataAsOf ?? null,
   );
 }
 
@@ -97,6 +99,7 @@ export function estimateBuyBox(listings: EstimateListingInput[], ctx: SalesConte
       benchmarks: [BUY_BOX_LOST_SHARE, BRAND_LOSS_SHARE],
       confidence: "medium",
       confidenceReason: "The days are measured. The share of sales lost without a Buy Box is an assumption with one good study behind its direction.",
+      mostImprovedBy: "Our own measurement: each listing's sales on days with and without a Buy Box, to replace the 80%.",
       notes: [
         "The monthly R-06 figure on a listing's row is the same money seen from today. It is never added to this line.",
         "Sales per in-stock day counts days without a Buy Box as in-stock days, so it runs a little low for a listing that often has no Buy Box, and so does this figure.",
@@ -105,5 +108,6 @@ export function estimateBuyBox(listings: EstimateListingInput[], ctx: SalesConte
     },
     pieces,
     RANK_CURVE_METHOD_SOURCES,
+    ctx.dataAsOf ?? null,
   );
 }

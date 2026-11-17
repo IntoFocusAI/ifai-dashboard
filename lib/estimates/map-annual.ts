@@ -48,10 +48,12 @@ export function estimateMapLeakage(listings: EstimateListingInput[], ctx: SalesC
       benchmarks: [MAP_VOLUME_KEPT],
       confidence: "medium",
       confidenceReason: "The gap and the units are measured. The figure assumes today's gap and last month's units hold for a year.",
+      mostImprovedBy: "MAP price history, so the time below MAP is measured, plus units sold at Walmart and other retailers.",
       notes: ["Units are the last 30 days, so a strong or weak month moves the annual figure."],
       countsInTotal: false,
     },
     pieces,
     RANK_CURVE_METHOD_SOURCES,
+    ctx.dataAsOf ?? null,
   );
 }

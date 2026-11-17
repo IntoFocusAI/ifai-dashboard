@@ -31,7 +31,7 @@ export function roundRange(r: EstimateRange): EstimateRange {
 export function benchmarkInput(b: Benchmark): EstimateTrailInput {
   const pct = (x: number) => (b.unit === "share" ? `${Math.round(x * 1000) / 10}%` : String(x));
   const value = b.low === b.high ? pct(b.mid) : `${pct(b.low)} low, ${pct(b.mid)} mid, ${pct(b.high)} high`;
-  return { key: b.id, label: b.label, value, unit: "text", kind: b.basis === "published" ? "benchmark" : "assumption", source: b.id };
+  return { key: b.id, label: b.label, value, unit: "text", kind: b.basis === "published" ? "benchmark" : "assumption", source: b.id, asOf: b.sources[0]?.date ?? null };
 }
 
 /** One affected listing's part of a line, before assembly. */
@@ -57,6 +57,8 @@ export type LineSpec = {
   /** The grade when every listing is priced on measured sales. */
   confidence: EstimateConfidence;
   confidenceReason: string;
+  /** The one input that would most improve the grade. */
+  mostImprovedBy: string;
   notes: string[];
   countsInTotal: boolean;
 };
@@ -75,7 +77,7 @@ export function uniqueSources(benchmarks: Benchmark[], extra: BenchmarkSource[] 
  * counted as Not available*. A line where no listing has a figure reads Not available*, never $0.
  * Confidence drops one grade when more than half of the mid figure rests on estimated sales.
  */
-export function assembleLine(spec: LineSpec, pieces: LinePiece[], extraSources: BenchmarkSource[] = []): EstimateResult {
+export function assembleLine(spec: LineSpec, pieces: LinePiece[], extraSources: BenchmarkSource[] = [], dataAsOf: string | null = null): EstimateResult {
   const coverage = buildCoverage(pieces.map((p) => ({ source: p.range ? (p.quantity?.source ?? "none") : "none", reportedNoSales: p.reportedNoSales })));
   const split = emptySalesSplit();
   let total: EstimateRange = ZERO;
@@ -133,9 +135,11 @@ export function assembleLine(spec: LineSpec, pieces: LinePiece[], extraSources: 
       means: spec.means,
       formula: spec.formula,
       inputs: [
-        { key: "listings_affected", label: "Listings the problem touches", value: coverage.total, unit: "count", kind: "collected", source: "coverage" },
-        { key: "touched_sales", label: "Sales the problem touches, before the shares below", value: estimated ? Math.round(touched) : null, unit: "usd", kind: "derived", source: "sum of listings" },
-        ...spec.inputs,
+        ...[
+          { key: "listings_affected", label: "Listings the problem touches", value: coverage.total, unit: "count" as const, kind: "collected" as const, source: "coverage" },
+          { key: "touched_sales", label: "Sales the problem touches, before the shares below", value: estimated ? Math.round(touched) : null, unit: "usd" as const, kind: "derived" as const, source: "sum of listings" },
+          ...spec.inputs,
+        ].map((i): EstimateTrailInput => ({ ...i, asOf: i.asOf ?? dataAsOf })),
         ...spec.benchmarks.map(benchmarkInput),
       ],
       coverage,
@@ -144,6 +148,7 @@ export function assembleLine(spec: LineSpec, pieces: LinePiece[], extraSources: 
       sources: uniqueSources(spec.benchmarks, coverage.estimated > 0 ? extraSources : []),
       confidence: mostlyEstimated ? ONE_GRADE_DOWN[spec.confidence] : spec.confidence,
       confidenceReason: spec.confidenceReason,
+      mostImprovedBy: spec.mostImprovedBy,
       notes,
       listings: rows,
     },
