@@ -217,10 +217,25 @@ const SOURCE_METHOD: Record<string, string> = {
 
 /** Plain meaning of how the page was found, for the Confidence cell tooltip. */
 const SOURCE_METHOD_MEANING: Record<string, string> = {
-  derived_handle: "We built the page address from the product name.",
+  derived_handle: "We found the page by building its address from the product name.",
   model_number_search: "We found the page by searching your site for the model number.",
   search_meta: "We found the page by searching your site for the product name.",
 };
+
+/** What each Confidence value means, first sentence of the Confidence cell tooltip. */
+const CONFIDENCE_MEANING: Record<string, string> = {
+  sku: "Your page lists the same SKU as this Amazon listing.",
+  gtin: "Your page lists the same barcode (UPC or EAN) as this Amazon listing.",
+  variant_options:
+    "Your page offers the same options, such as color and size, but shows no matching SKU or barcode.",
+  none: "No page on your site carries this listing's SKU or barcode.",
+};
+
+/** Confidence cell tooltip body: what the value means, then how the page was found. */
+export function confidenceTooltip(confidence: string | null, sourceMethod: string | null): string {
+  const meaning = (confidence && CONFIDENCE_MEANING[confidence]) || "";
+  return [meaning, sourceMethodMeaning(sourceMethod)].filter(Boolean).join(" ");
+}
 
 export function sourceMethodMeaning(value: string | null): string {
   return (value && SOURCE_METHOD_MEANING[value]) || "";

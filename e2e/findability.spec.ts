@@ -272,12 +272,12 @@ test("the five outcome counts stay distinct and open the listings behind them", 
   await expect(table.locator("tbody")).not.toContainText("Built from product name");
   await expect(zebraCell.locator(".ifai-term")).toHaveAttribute(
     "data-ifai-tooltip-desc",
-    "We built the page address from the product name.",
+    "Your page lists the same SKU as this Amazon listing. We found the page by building its address from the product name.",
   );
   const alphaCell = table.locator("tbody tr").filter({ hasText: "Alpha Exact" }).locator("td").filter({ hasText: /^Same barcode$/ });
   await expect(alphaCell.locator(".ifai-term")).toHaveAttribute(
     "data-ifai-tooltip-desc",
-    "We found the page by searching your site for the model number.",
+    "Your page lists the same barcode (UPC or EAN) as this Amazon listing. We found the page by searching your site for the model number.",
   );
   await expect(page.locator("[data-findability-intro]").first()).toHaveText(
     "Findability: for each product you sell on Amazon, can AI assistants find the matching page on your own website? When they can, they cite you. When the page is missing or doesn't match, they cite retailers or competitors instead.",

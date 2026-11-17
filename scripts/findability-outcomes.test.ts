@@ -5,6 +5,7 @@ import { test } from "node:test";
 import {
   dealerBundleLabel,
   sourceMethodMeaning,
+  confidenceTooltip,
   confidenceLabel,
   findabilityHeadline,
   findabilitySortValue,
@@ -678,7 +679,24 @@ test("stacked Findability cells keep every stored fact and search both lines", (
   });
   assert.equal(listingContextLine(exact), "Solid Body · Instrument");
   assert.equal(matchMethodLine(exact), "Built from product name");
-  assert.equal(sourceMethodMeaning("derived_handle"), "We built the page address from the product name.");
+  assert.equal(sourceMethodMeaning("derived_handle"), "We found the page by building its address from the product name.");
+  assert.equal(
+    confidenceTooltip("sku", "derived_handle"),
+    "Your page lists the same SKU as this Amazon listing. We found the page by building its address from the product name.",
+  );
+  assert.equal(
+    confidenceTooltip("gtin", "model_number_search"),
+    "Your page lists the same barcode (UPC or EAN) as this Amazon listing. We found the page by searching your site for the model number.",
+  );
+  assert.equal(
+    confidenceTooltip("variant_options", "search_meta"),
+    "Your page offers the same options, such as color and size, but shows no matching SKU or barcode. We found the page by searching your site for the product name.",
+  );
+  assert.equal(
+    confidenceTooltip("none", null),
+    "No page on your site carries this listing's SKU or barcode.",
+  );
+  assert.equal(confidenceTooltip(null, null), "");
   assert.equal(confidenceLabel("sku"), "Same SKU");
   assert.equal(confidenceLabel("gtin"), "Same barcode");
   assert.equal(confidenceLabel("variant_options"), "Same options");

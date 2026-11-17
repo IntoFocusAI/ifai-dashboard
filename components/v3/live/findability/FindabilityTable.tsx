@@ -17,7 +17,7 @@ import {
   listingTitle,
   presentExplanation,
   productKindLabel,
-  sourceMethodMeaning,
+  confidenceTooltip,
   uncheckedReason,
 } from "@/lib/findability/copy";
 import {
@@ -170,7 +170,7 @@ function ListingCell({
     case "confidence":
       return (
         <td>
-          <FigureTip title={confidenceLabel(row.confidence)} desc={sourceMethodMeaning(row.source_method) || null}>
+          <FigureTip title={confidenceLabel(row.confidence)} desc={confidenceTooltip(row.confidence, row.source_method) || null}>
             {confidenceLabel(row.confidence)}
           </FigureTip>
         </td>
