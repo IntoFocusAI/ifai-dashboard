@@ -20,14 +20,18 @@ export const OUTCOME_LABEL: Record<FindabilityOutcome, string> = {
 };
 
 export const OUTCOME_DEFINITION: Record<FindabilityOutcome, string> = {
-  exact_official_product:
-    `We found the ${brandSite()} page for this one product. An assistant can use that page's specs for this Amazon listing.`,
-  official_family_page:
-    `We found a ${brandSite()} page for the whole line. Specs on it can belong to a different color or model.`,
-  completed_not_found:
-    `We finished looking and did not accept a page. This does not prove the product is missing from ${brandSite()}.`,
-  ambiguous_candidate:
-    `More than one ${brandSite()} page could fit, so we did not pick one.`,
+  get exact_official_product() {
+    return `We found the ${brandSite()} page for this one product. An assistant can use that page's specs for this Amazon listing.`;
+  },
+  get official_family_page() {
+    return `We found a ${brandSite()} page for the whole line. Specs on it can belong to a different color or model.`;
+  },
+  get completed_not_found() {
+    return `We finished looking and did not accept a page. This does not prove the product is missing from ${brandSite()}.`;
+  },
+  get ambiguous_candidate() {
+    return `More than one ${brandSite()} page could fit, so we did not pick one.`;
+  },
   not_checked:
     "This listing was not checked and should be opened for that reason. A blank result is not a missing page.",
 };
@@ -40,8 +44,9 @@ const HEADLINE_NOUN: Record<FindabilityOutcome, [string, string]> = {
   not_checked: ["unchecked listing", "unchecked listings"],
 };
 
-export const MACHINE_READABILITY_POINTER =
-  `Schema.org product data on each ${brandSite()} page is on Brand-Site Specs.`;
+export function machineReadabilityPointer(): string {
+  return `Schema.org product data on each ${brandSite()} page is on Brand-Site Specs.`;
+}
 
 /** Bundle header tooltip (decision 104). */
 export const DEALER_BUNDLE_NOTE =

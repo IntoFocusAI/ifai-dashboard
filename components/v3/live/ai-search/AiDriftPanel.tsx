@@ -11,7 +11,7 @@ import { FactCheckTable } from "@/components/v3/live/ai-search/FactCheckTable";
 import { StatusMark } from "@/components/v3/live/StatusMark";
 import { PROBE_STATE_LABELS, driftRead } from "@/lib/ai-search/drift";
 import {
-  UNVERIFIED_FLAG_TIP,
+  unverifiedFlagTip,
   amazonMismatchNote,
   factCheckCoverageNote,
   factCheckPendingNote,
@@ -80,7 +80,7 @@ function FactChecks({ snapshot }: { snapshot: AiSearchSnapshot }) {
             {drift.unverified > 0 ? (
               <li data-ai-unverified-note>
                 {drift.unverified} {drift.unverified === 1 ? "answer carries an" : "answers carry an"}{" "}
-                <CopyTip label="Unverified flag" description={UNVERIFIED_FLAG_TIP}>
+                <CopyTip label="Unverified flag" description={unverifiedFlagTip()}>
                   unverified flag
                 </CopyTip>
                 .

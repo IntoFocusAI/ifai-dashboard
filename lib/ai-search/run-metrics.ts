@@ -144,8 +144,12 @@ export function callOutcome(row: AiCallRow): CallOutcome {
 }
 
 export const OUTCOME_LABELS: Record<CallOutcome, string> = {
-  fender_win: `${leadBrand()} named most`,
-  fender_win_disqualified: `${leadBrand()} named most, with a confirmed error`,
+  get fender_win() {
+    return `${leadBrand()} named most`;
+  },
+  get fender_win_disqualified() {
+    return `${leadBrand()} named most, with a confirmed error`;
+  },
   competitor_win: "Competitor named most",
   unresolved: "No clear leader",
   error: "Provider error",

@@ -19,7 +19,12 @@ export const CANVAS_READS: Record<CanvasReadKey, { source: string; label: string
   divisions: { source: "canvas_divisions", label: "Catalog division read" },
   missing: { source: "canvas_spec_missing_fields", label: "Missing spec field read" },
   fresh: { source: "canvas_freshness", label: "Data freshness read" },
-  specPages: { source: "canvas_spec_readiness", label: `${brandSite()} page read` },
+  specPages: {
+    source: "canvas_spec_readiness",
+    get label() {
+      return `${brandSite()} page read`;
+    },
+  },
   listingContent: { source: "canvas_listing_content", label: "Amazon listing content read" },
 };
 

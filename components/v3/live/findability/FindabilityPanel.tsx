@@ -8,7 +8,7 @@ import { useFindabilityRowLanding } from "@/components/v3/live/findability/useFi
 import {
   FAMILY_IS_NOT_EXACT,
   FINDABILITY_INTRO,
-  MACHINE_READABILITY_POINTER,
+  machineReadabilityPointer,
   OUTCOME_DEFINITION,
   OUTCOME_LABEL,
   bucketLabel,
@@ -194,7 +194,7 @@ export function FindabilityPanel() {
       {shape === "partial" ? (
         <p className="findability-note">Some outcomes are zero in this read. A zero is a real count.</p>
       ) : null}
-      <p className="findability-note">{MACHINE_READABILITY_POINTER}</p>
+      <p className="findability-note">{machineReadabilityPointer()}</p>
       {selected ? (
         <div className="content-box" style={{ marginTop: 4 }}>
           <div className="content-box-title">

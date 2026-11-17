@@ -265,8 +265,9 @@ export const ANCHOR_TITLE = "Anchor";
 export const ANCHOR_TIP = "IntoFocus asks this product in every run, on top of the rotating catalog models.";
 
 /** Drawer tooltip on "catalog products", once a check names the product it asked about. */
-export const CATALOG_PICK_TIP =
-  `Catalog products are counted by ASIN. Each check compares the answer with that product's own value on its ${brandSite()} spec page.`;
+export function catalogPickTip(): string {
+  return `Catalog products are counted by ASIN. Each check compares the answer with that product's own value on its ${brandSite()} spec page.`;
+}
 
 /** Drawer tooltip on "product questions": the pick is not recorded. */
 export function factCheckPickTip(n: number): string {
@@ -305,8 +306,9 @@ export function factCheckAccuracyTip(
     .join(" ");
 }
 
-export const UNVERIFIED_FLAG_TIP =
-  `The answer carries a flag that was never verified against a ${brandName()} page, so it is not reported as a contradiction.`;
+export function unverifiedFlagTip(): string {
+  return `The answer carries a flag that was never verified against a ${brandName()} page, so it is not reported as a contradiction.`;
+}
 
 /** Engines that returned nothing. Secondary, never the headline. */
 export function factCheckCoverageNote(c: FactCheckCoverage): string | null {

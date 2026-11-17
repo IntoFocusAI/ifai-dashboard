@@ -1,9 +1,9 @@
 import type { AiSearchRead } from "@/lib/ai-search/types";
 import type { CanvasMetric } from "@/lib/canvas-sdk/types";
-import { ENTERPRISE_POTENTIAL_ESTIMATE, PHASE_ONE_LIFT_ESTIMATE } from "@/lib/fender-canvas/analyst-estimates";
+import { enterprisePotentialEstimate, phaseOneLiftEstimate } from "@/lib/fender-canvas/analyst-estimates";
 import { beginnerSovLine } from "@/lib/fender-canvas/beginner-sov";
 import { failedReadTip, READ_NOT_AVAILABLE } from "@/lib/fender-canvas/canvas-reads";
-import { MAP_PRICES_NOT_STORED } from "@/lib/fender-canvas/portfolio-retail";
+import { mapPricesNotStored } from "@/lib/fender-canvas/portfolio-retail";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
 import { roadmapMetric } from "@/lib/fender-canvas/roadmap-bubble";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
@@ -159,7 +159,7 @@ function withFailedReads(bundle: CanvasBundle, metrics: Record<string, CanvasMet
   const metricsTip = failedReadTip(bundle, "m");
   if (metricsTip) {
     for (const key of METRICS_ROW_KEYS) out[key] = notAvailable(out[key], metricsTip);
-    if (out.amazonMapDrift.detail !== MAP_PRICES_NOT_STORED) out.amazonMapDrift = notAvailable(out.amazonMapDrift, metricsTip);
+    if (out.amazonMapDrift.detail !== mapPricesNotStored()) out.amazonMapDrift = notAvailable(out.amazonMapDrift, metricsTip);
   }
   const categoryTip = failedReadTip(bundle, "cats");
   if (categoryTip) out.beginnerAiWinRate = notAvailable(out.beginnerAiWinRate, categoryTip);
@@ -233,13 +233,13 @@ function liveMetrics(
       provenance: "live",
     },
     amazonMapDrift:
-      retail.phase === "ready" && retail.snapshot.mapLeakage.missingMessage === MAP_PRICES_NOT_STORED
+      retail.phase === "ready" && retail.snapshot.mapLeakage.missingMessage === mapPricesNotStored()
         ? {
             id: "amazon-map-drift",
             spokeId: "ecommerce",
             label: "Average Amazon Price Drift",
             value: "Not stored",
-            detail: MAP_PRICES_NOT_STORED,
+            detail: mapPricesNotStored(),
             tone: "warning",
             subTab: "MAP Leakage",
             provenance: "live",
@@ -353,7 +353,7 @@ function liveMetrics(
       id: "phase-one-lift",
       spokeId: "suggestions",
       label: "Recoverable Revenue",
-      value: PHASE_ONE_LIFT_ESTIMATE,
+      value: phaseOneLiftEstimate(),
       detail: "Phase 1 annual estimate",
       tone: "success",
       subTab: "Revenue Estimates",
@@ -363,7 +363,7 @@ function liveMetrics(
       id: "enterprise-potential",
       spokeId: "suggestions",
       label: "Enterprise GMV Potential",
-      value: ENTERPRISE_POTENTIAL_ESTIMATE,
+      value: enterprisePotentialEstimate(),
       detail: "Annual estimate · full portfolio",
       tone: "success",
       subTab: "Revenue Estimates",
