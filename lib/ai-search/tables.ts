@@ -291,7 +291,12 @@ export function catalogCoverageTable(snapshot: AiSearchSnapshot, windowed: boole
 
 // ---- Trend over the selected runs
 
-export const TREND_HEADER = ["Run", "Series", "Rate", "Outside the rate"];
+/** Overall has one series, so it has no series column. By engine adds "AI engine" (decision 104). */
+export function trendHeader(breakdown: TrendBreakdown): string[] {
+  return breakdown === "engine"
+    ? ["Run", "AI engine", "Rate", "Not counted in the rate"]
+    : ["Run", "Rate", "Not counted in the rate"];
+}
 
 /** "Nov 5, 2026 · Partial · API run Nov 4, 2026", as the trend table's Run cell reads. */
 export function trendRunLabel(point: TrendPoint, apiDays: readonly string[] = []): string {
@@ -323,14 +328,20 @@ export function trendTable(
         ? `All wordings of ${params.query.promptKey}`
         : cleanPrompt(params.query.promptText);
   return {
-    header: TREND_HEADER,
+    header: trendHeader(params.breakdown),
     rows: model.series.flatMap((series) =>
-      series.points.map((point) => ({
-        key: `${point.runId}:${series.key}`,
-        cells: [trendRunLabel(point, apiDays.get(point.runId)), series.label, rateLabel(point), coverageLabel(point)],
-      })),
+      series.points.map((point) => {
+        const run = trendRunLabel(point, apiDays.get(point.runId));
+        return {
+          key: `${point.runId}:${series.key}`,
+          cells:
+            params.breakdown === "engine"
+              ? [run, series.label, rateLabel(point), coverageLabel(point)]
+              : [run, rateLabel(point), coverageLabel(point)],
+        };
+      }),
     ),
-    sort: "Series, then run date, oldest first",
+    sort: params.breakdown === "engine" ? "AI engine, then run date, oldest first" : "Run date, oldest first",
     filter: `${ROLE_LABELS[params.metric]}. ${params.breakdown === "engine" ? "By engine" : "Overall"}. Question: ${question}`,
   };
 }
@@ -357,7 +368,7 @@ export function trendPointCells(row: TrendPointRow): string[] {
     cleanPrompt(row.call.prompt),
     engineLabel(row.call.engine),
     OUTCOME_LABELS[callOutcome(row.call)],
-    row.inRate ? "In the rate" : "Outside the rate",
+    row.inRate ? "In the rate" : "Not counted in the rate",
   ];
 }
 

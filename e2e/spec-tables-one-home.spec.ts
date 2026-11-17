@@ -7,7 +7,7 @@ import { mockCanvasRead } from "./spec-read-mock";
  * Amazon Specs shows the ASIN table without a fender.com found column.
  * Brand-Site Specs counts fender.com pages, lists the page with no spec block, and not the full ASIN table.
  * Catalog Governance shows the unnested-bundle table, hides the spec-field table,
- * and its Specs complete count opens Amazon Specs.
+ * and its Specs Complete count opens Amazon Specs.
  */
 
 test("spec tables live on one surface each", async ({ page }) => {
@@ -40,7 +40,7 @@ test("spec tables live on one surface each", async ({ page }) => {
   await expect(missingHero).toContainText("1 of 2");
   await expect(
     page.locator("[data-machine-hero='product_basics'] [data-hero-percent]"),
-  ).toHaveText("100.0%");
+  ).toHaveText("100.0%*");
   const pages = page.locator("#machine-readability-pages");
   await expect(pages).toBeVisible();
   await expect(pages.locator("[data-machine-page-count]")).toHaveAttribute("data-machine-page-count", "1");
@@ -64,7 +64,7 @@ test("spec tables live on one surface each", async ({ page }) => {
 
   const specsComplete = page.locator("[data-spec-open='amazon-specs']");
   await expect(specsComplete).toBeVisible();
-  await expect(specsComplete).toContainText("Specs complete");
+  await expect(specsComplete).toContainText("Specs Complete");
   await specsComplete.click();
   await expect(canvas.activeTab).toContainText("Amazon Specs");
   await expect(page.locator("#spec-readiness-by-asin")).toBeVisible();

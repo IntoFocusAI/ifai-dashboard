@@ -81,7 +81,7 @@ test("the Competitive Radar sentence leads with the N-of-M figure", () => {
     },
   } as AiSearchRead;
   const lead = competitorsSpokeLead(read);
-  assert.match(lead.figure, /^Competitors led \d+ of \d+ resolved unbranded discovery answers\.$/);
+  assert.match(lead.figure, /^Competitors led \d+ of \d+ resolved Unbranded Discovery answers\.$/);
   assert.match(lead.explainer, /^Which brands AI engines name over Fender\/Squier/);
   assert.match(lead.explainer, /are left out\.$/);
   assert.doesNotMatch(lead.figure, /Last 30 days|Sep 19|published run/);

@@ -1,9 +1,9 @@
 import type { AiSearchRead } from "@/lib/ai-search/types";
 import type { CanvasMetric } from "@/lib/canvas-sdk/types";
-import { ENTERPRISE_POTENTIAL_ESTIMATE, PHASE_ONE_LIFT_ESTIMATE } from "@/lib/fender-canvas/analyst-estimates";
+import { enterprisePotentialEstimate, phaseOneLiftEstimate } from "@/lib/fender-canvas/analyst-estimates";
 import { beginnerSovLine } from "@/lib/fender-canvas/beginner-sov";
 import { failedReadTip, READ_NOT_AVAILABLE } from "@/lib/fender-canvas/canvas-reads";
-import { MAP_PRICES_NOT_STORED } from "@/lib/fender-canvas/portfolio-retail";
+import { mapPricesNotStored } from "@/lib/fender-canvas/portfolio-retail";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
 import { roadmapMetric } from "@/lib/fender-canvas/roadmap-bubble";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
@@ -17,6 +17,7 @@ import {
 import { specPageCounts } from "@/lib/fender-canvas/machine-readability";
 import { findabilityWidgetCopy, type FindabilityRead } from "@/lib/findability/copy";
 import { brandSite } from "@/lib/brand-copy";
+import { brandName } from "@/lib/client/active-client";
 
 function toneFromPct(pct: number | null, dangerBelow: number, warnBelow: number) {
   if (pct == null) return "neutral" as const;
@@ -158,7 +159,7 @@ function withFailedReads(bundle: CanvasBundle, metrics: Record<string, CanvasMet
   const metricsTip = failedReadTip(bundle, "m");
   if (metricsTip) {
     for (const key of METRICS_ROW_KEYS) out[key] = notAvailable(out[key], metricsTip);
-    if (out.amazonMapDrift.detail !== MAP_PRICES_NOT_STORED) out.amazonMapDrift = notAvailable(out.amazonMapDrift, metricsTip);
+    if (out.amazonMapDrift.detail !== mapPricesNotStored()) out.amazonMapDrift = notAvailable(out.amazonMapDrift, metricsTip);
   }
   const categoryTip = failedReadTip(bundle, "cats");
   if (categoryTip) out.beginnerAiWinRate = notAvailable(out.beginnerAiWinRate, categoryTip);
@@ -169,7 +170,7 @@ export function buildLiveMetrics(
   bundle: CanvasBundle,
   retail: RetailCanvasRead = { phase: "loading" },
   findability: FindabilityRead = { phase: "loading" },
-  /** The map's AI read. The Roadmap figure counts the unbranded discovery finding from it. */
+  /** The map's AI read. The Roadmap figure counts the Unbranded Discovery finding from it. */
   ai: AiSearchRead = { phase: "loading" },
 ): Record<string, CanvasMetric> {
   return withFailedReads(bundle, liveMetrics(bundle, retail, findability, ai));
@@ -232,13 +233,13 @@ function liveMetrics(
       provenance: "live",
     },
     amazonMapDrift:
-      retail.phase === "ready" && retail.snapshot.mapLeakage.missingMessage === MAP_PRICES_NOT_STORED
+      retail.phase === "ready" && retail.snapshot.mapLeakage.missingMessage === mapPricesNotStored()
         ? {
             id: "amazon-map-drift",
             spokeId: "ecommerce",
             label: "Average Amazon Price Drift",
             value: "Not stored",
-            detail: MAP_PRICES_NOT_STORED,
+            detail: mapPricesNotStored(),
             tone: "warning",
             subTab: "MAP Leakage",
             provenance: "live",
@@ -319,7 +320,7 @@ function liveMetrics(
     beginnerSovGap: {
       id: "beginner-sov-gap",
       spokeId: "competitors",
-      label: "Beginner Category SOV Gap",
+      label: "Beginner category: gap to top rival",
       value: `${formatInt(m.weakest_sov_gap_pts)} pts`,
       detail:
         beginnerSovLine(bundle.sov) ??
@@ -331,7 +332,7 @@ function liveMetrics(
     strongestCategorySov: {
       id: "strongest-category-sov",
       spokeId: "competitors",
-      label: "Strongest Category SOV",
+      label: `Strongest category for ${brandName()}`,
       value: formatPct(m.strongest_win_pct),
       detail: `${m.strongest_category ?? pendingLabel()} · ${formatRatio(m.strongest_wins, m.strongest_resolved)}`,
       tone: "success",
@@ -352,7 +353,7 @@ function liveMetrics(
       id: "phase-one-lift",
       spokeId: "suggestions",
       label: "Recoverable Revenue",
-      value: PHASE_ONE_LIFT_ESTIMATE,
+      value: phaseOneLiftEstimate(),
       detail: "Phase 1 annual estimate",
       tone: "success",
       subTab: "Revenue Estimates",
@@ -362,7 +363,7 @@ function liveMetrics(
       id: "enterprise-potential",
       spokeId: "suggestions",
       label: "Enterprise GMV Potential",
-      value: ENTERPRISE_POTENTIAL_ESTIMATE,
+      value: enterprisePotentialEstimate(),
       detail: "Annual estimate · full portfolio",
       tone: "success",
       subTab: "Revenue Estimates",

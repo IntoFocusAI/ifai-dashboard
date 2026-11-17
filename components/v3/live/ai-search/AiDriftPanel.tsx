@@ -8,9 +8,10 @@ import { CopyTip } from "@/components/v3/live/ai-search/CopyTip";
 import { ExternalLink } from "@/components/v3/live/ai-search/ExternalLink";
 import { FactCheckLead } from "@/components/v3/live/ai-search/FactCheckLead";
 import { FactCheckTable } from "@/components/v3/live/ai-search/FactCheckTable";
-import { driftRead } from "@/lib/ai-search/drift";
+import { StatusMark } from "@/components/v3/live/StatusMark";
+import { PROBE_STATE_LABELS, driftRead } from "@/lib/ai-search/drift";
 import {
-  UNVERIFIED_FLAG_TIP,
+  unverifiedFlagTip,
   amazonMismatchNote,
   factCheckCoverageNote,
   factCheckPendingNote,
@@ -46,7 +47,10 @@ function FactChecks({ snapshot }: { snapshot: AiSearchSnapshot }) {
           <div className="content-box-title">Answers that contradict a {brandName()} fact</div>
           {contradictions.map((row) => (
             <div key={row.key} className="action-card critical" style={{ marginTop: 6 }}>
-              <div className="action-head">{row.prompt}</div>
+              <div className="action-head">
+                <span>{row.prompt}</span>
+                <StatusMark status="bad" word={PROBE_STATE_LABELS.confirmed} />
+              </div>
               <div className="action-details">
                 {engineLabel(row.engine)} · {modelLabel(row.model)}. {brandName()} publishes: {sentence(row.claim)} The answer said:{" "}
                 {row.evidence}
@@ -76,7 +80,7 @@ function FactChecks({ snapshot }: { snapshot: AiSearchSnapshot }) {
             {drift.unverified > 0 ? (
               <li data-ai-unverified-note>
                 {drift.unverified} {drift.unverified === 1 ? "answer carries an" : "answers carry an"}{" "}
-                <CopyTip label="Unverified flag" description={UNVERIFIED_FLAG_TIP}>
+                <CopyTip label="Unverified flag" description={unverifiedFlagTip()}>
                   unverified flag
                 </CopyTip>
                 .

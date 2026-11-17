@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Google Shopping pilot: DataForSEO vs SerpApi on the suppressed (Buy Box withheld) set.
+// Google Shopping pilot: DataForSEO vs SerpApi on the suppressed (Buy Box Withheld) set.
 // Read-only. No database access: input is a JSON file of {asin, upc, bench_cents, title},
 // where bench_cents is Amazon's Competitive External Price for the ASIN (Keepa competitivePriceThreshold).
 // Writes raw API responses, results.json, and summary.json to the output directory.

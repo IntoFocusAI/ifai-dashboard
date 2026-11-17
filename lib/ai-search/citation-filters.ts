@@ -60,8 +60,8 @@ export function questionNoun(question: CitationQuestion): string {
 }
 
 /**
- * Unbranded and branded shopping are the two headline question roles: unbranded discovery, and
- * branded consideration. Other shopping questions count under All shopping and All answers.
+ * Unbranded and branded shopping are the two headline question roles: Unbranded Discovery, and
+ * Branded Consideration. Other shopping questions count under All shopping and All answers.
  */
 function inQuestion(call: Pick<AiCallRow, "prompt_kind" | "prompt">, question: CitationQuestion): boolean {
   if (question === "unbranded") return call.prompt_kind === "commercial" && questionRole(call) === "unbranded_discovery";

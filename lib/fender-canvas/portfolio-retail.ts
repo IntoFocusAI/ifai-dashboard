@@ -85,10 +85,13 @@ export type RetailHeadline = {
   reading: RetailReading<unknown>;
 };
 
-const MAP_UNAVAILABLE = "MAP leakage has not been stored.";
+const MAP_UNAVAILABLE = "MAP Leakage has not been stored.";
 
 /** Shown when the retail read has rows and none of them store a MAP price. */
-export const MAP_PRICES_NOT_STORED = `${brandName()} MAP prices have not been stored.`;
+export function mapPricesNotStored(): string {
+  return `${brandName()} MAP prices have not been stored.`;
+}
+
 const BUNDLE_UNAVAILABLE = "Catalog bundle parent ASINs have not been stored.";
 const BUNDLE_OFFER_UNAVAILABLE = "Live offer readings have not been stored for bundle listings.";
 const SPEC_UNAVAILABLE = "Amazon spec-field readings have not been stored.";
@@ -295,7 +298,7 @@ function mapLeakageReading(
     return {
       status: "unavailable",
       issueCount: null,
-      missingMessage: MAP_PRICES_NOT_STORED,
+      missingMessage: mapPricesNotStored(),
       detail: null,
     };
   }
@@ -347,7 +350,7 @@ function mapLeakageReading(
     return {
       status: "incomplete",
       issueCount: violations.length,
-      missingMessage: `MAP leakage is stored for ${countLabel(decided)} of ${countLabel(population)} listings. ${known}${gaps}${stopped} This is not a final count.`,
+      missingMessage: `MAP Leakage is stored for ${countLabel(decided)} of ${countLabel(population)} listings. ${known}${gaps}${stopped} This is not a final count.`,
       detail,
     };
   }
@@ -576,7 +579,7 @@ function unnestedBundlesReading(
     return {
       status: "incomplete",
       issueCount: 0,
-      missingMessage: `The catalog read stores ${countLabel(catalogBundles)} bundle listings. This retail read did not include them, so zero unnested bundles is not a final result.`,
+      missingMessage: `The catalog read stores ${countLabel(catalogBundles)} bundle listings. This retail read did not include them, so zero Splintered Listings is not a final result.`,
       detail,
     };
   }
@@ -584,7 +587,7 @@ function unnestedBundlesReading(
   if (options?.truncated) {
     const known =
       opportunities.length === 0
-        ? "No unnested bundle is confirmed in the included listings."
+        ? "No splintered listing is confirmed in the included listings."
         : `${countLabel(opportunities.length)} of the included ${LIVE_OFFER_BUNDLES} ${opportunities.length === 1 ? "has" : "have"} no usable parent ASIN.`;
     return {
       status: "incomplete",
@@ -706,7 +709,7 @@ export function suppressedListingsFinding(
 }
 
 /**
- * MAP leakage: Amazon prices carry featured_offer_checked_at (daily), Walmart wmt_checked_at
+ * MAP Leakage: Amazon prices carry featured_offer_checked_at (daily), Walmart wmt_checked_at
  * (daily for Fender, every 2 days for Ledlenser), Musician's Friend mf_checked_at (every 3 days).
  * Each channel counts the listings that have a stored comparison on it.
  */

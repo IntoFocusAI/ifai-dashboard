@@ -13,17 +13,20 @@ import {
   type TrendModel,
   type TrendPoint,
 } from "@/lib/ai-search/history-trends";
-import { TREND_HEADER, trendRunLabel } from "@/lib/ai-search/tables";
+import { trendHeader, trendRunLabel } from "@/lib/ai-search/tables";
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
 
 type TrendRow = { key: string; point: TrendPoint; series: string; apiDays: readonly string[] };
 
-const COLUMNS = [
-  clientColumn("run", TREND_HEADER[0], "date", 300, 180),
-  clientColumn("series", TREND_HEADER[1], "text", 150, 110),
-  clientColumn("rate", TREND_HEADER[2], "number", 240, 170),
-  clientColumn("outside", TREND_HEADER[3], "number", 260, 170),
-];
+function trendColumns(breakdown: TrendBreakdown) {
+  const header = trendHeader(breakdown);
+  const run = clientColumn("run", header[0], "date", 300, 180);
+  const rate = clientColumn("rate", header[breakdown === "engine" ? 2 : 1], "number", 240, 170);
+  const outside = clientColumn("outside", header[breakdown === "engine" ? 3 : 2], "number", 260, 170);
+  return breakdown === "engine"
+    ? [run, clientColumn("series", header[1], "text", 150, 110), rate, outside]
+    : [run, rate, outside];
+}
 
 const rowKey = (row: TrendRow) => row.key;
 
@@ -61,12 +64,13 @@ export function HistoryTrendTable({
       ),
     [apiDays, model],
   );
-  const sorted = useClientTableSort(rows, COLUMNS, trendValue, rowKey);
+  const columns = useMemo(() => trendColumns(breakdown), [breakdown]);
+  const sorted = useClientTableSort(rows, columns, trendValue, rowKey);
   const exportScope = useAiExportScope({ trend: { metric, breakdown, query } });
   return (
     <ResizableTable
       tableId="ai-history-trend"
-      columns={COLUMNS}
+      columns={columns}
       fillColumnId="run"
       maxHeight={360}
       sort={sorted.sort}
@@ -78,7 +82,7 @@ export function HistoryTrendTable({
         {sorted.rows.map((row) => (
           <tr key={row.key} data-ai-trend-row={row.key}>
             <td>{trendRunLabel(row.point, row.apiDays)}</td>
-            <td>{row.series}</td>
+            {breakdown === "engine" ? <td>{row.series}</td> : null}
             <td>{rateLabel(row.point)}</td>
             <td>{coverageLabel(row.point)}</td>
           </tr>

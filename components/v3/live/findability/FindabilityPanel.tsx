@@ -7,7 +7,8 @@ import { useFindability } from "@/components/v3/live/findability/FindabilityCont
 import { useFindabilityRowLanding } from "@/components/v3/live/findability/useFindabilityRowLanding";
 import {
   FAMILY_IS_NOT_EXACT,
-  MACHINE_READABILITY_POINTER,
+  FINDABILITY_INTRO,
+  machineReadabilityPointer,
   OUTCOME_DEFINITION,
   OUTCOME_LABEL,
   bucketLabel,
@@ -100,6 +101,14 @@ function OutcomeCount({
   );
 }
 
+function FindabilityIntro() {
+  return (
+    <p className="findability-note" data-findability-intro="true" style={{ marginTop: 0 }}>
+      {FINDABILITY_INTRO}
+    </p>
+  );
+}
+
 export function FindabilityPanel() {
   const read = useFindability();
   const [selected, setSelected] = useState<FindabilityBucket | null>("exact_official_product");
@@ -118,6 +127,7 @@ export function FindabilityPanel() {
   if (read.phase === "loading") {
     return (
       <div className="findability-panel">
+        <FindabilityIntro />
         <p className="findability-note">Reading official pages…</p>
       </div>
     );
@@ -125,6 +135,7 @@ export function FindabilityPanel() {
   if (read.phase === "error") {
     return (
       <div className="findability-panel">
+        <FindabilityIntro />
         <p className="findability-note">The official-page read did not load.</p>
       </div>
     );
@@ -139,6 +150,7 @@ export function FindabilityPanel() {
 
   return (
     <div className="findability-panel" data-findability-shape={shape} data-findability-total={counts!.total}>
+      <FindabilityIntro />
       <FindabilityLead counts={counts!} rows={read.rows} />
       {split ? (
         <p className="findability-note" style={{ marginTop: 12 }} data-findability-sheet-split="true">
@@ -182,7 +194,7 @@ export function FindabilityPanel() {
       {shape === "partial" ? (
         <p className="findability-note">Some outcomes are zero in this read. A zero is a real count.</p>
       ) : null}
-      <p className="findability-note">{MACHINE_READABILITY_POINTER}</p>
+      <p className="findability-note">{machineReadabilityPointer()}</p>
       {selected ? (
         <div className="content-box" style={{ marginTop: 4 }}>
           <div className="content-box-title">

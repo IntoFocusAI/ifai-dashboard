@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import { ENTERPRISE_POTENTIAL_ESTIMATE, PHASE_ONE_LIFT_ESTIMATE } from "../lib/fender-canvas/analyst-estimates.ts";
+import { enterprisePotentialEstimate, phaseOneLiftEstimate } from "../lib/fender-canvas/analyst-estimates.ts";
 import { formatEstimate } from "../lib/fender-canvas/format.ts";
 import { bindCopy, buildTemplateVars } from "../lib/fender-canvas/template-vars.ts";
 import type { CanvasBundle, CanvasMetricsRow } from "../lib/fender-canvas/types.ts";
@@ -28,8 +28,8 @@ function listItems(html: string): string[] {
 function bound(template: string): string {
   return bindCopy(template, {
     retail_headline: LIVE_HEADLINE,
-    phase_one_lift: PHASE_ONE_LIFT_ESTIMATE,
-    enterprise_potential: ENTERPRISE_POTENTIAL_ESTIMATE,
+    phase_one_lift: phaseOneLiftEstimate(),
+    enterprise_potential: enterprisePotentialEstimate(),
     catalog_skus: "3,598",
     map_violation_skus: "555",
   });
@@ -59,8 +59,9 @@ test("the Phase 1 and enterprise ROI lines do not wear the live retail headline"
   assert.equal(enterpriseLines.some((line) => line.includes("Reverb")), false);
   assert.match(enterpriseLines.join(" "), /Amazon and Walmart/);
   assert.match(enterpriseLines.join(" "), /\+\$3,500,000 \/ yr/);
-  assert.match(pilot, /tone-success">\+\$680K est\. <span/);
-  assert.match(enterprise, /tone-success">\+\$38M to \$62M est\. <span/);
+  // X-34: an estimate is not a status, so it wears no status color.
+  assert.match(pilot, /metric-card-val">\+\$680K est\. <span/);
+  assert.match(enterprise, /metric-card-val">\+\$38M to \$62M est\. <span/);
   assert.match(enterprise, /\+\$50M midpoint/);
 });
 
@@ -84,13 +85,13 @@ test("Opportunity does not paste the live headline into the Phase 1 estimate", (
 });
 
 test("the Phase 1 and enterprise estimates read the same on every tab", () => {
-  assert.equal(PHASE_ONE_LIFT_ESTIMATE, "+$680K est.");
-  assert.equal(ENTERPRISE_POTENTIAL_ESTIMATE, "+$38M to $62M est.");
-  assert.equal(formatEstimate(PHASE_ONE_LIFT_ESTIMATE), PHASE_ONE_LIFT_ESTIMATE, "formatting twice adds nothing");
+  assert.equal(phaseOneLiftEstimate(), "+$680K est.");
+  assert.equal(enterprisePotentialEstimate(), "+$38M to $62M est.");
+  assert.equal(formatEstimate(phaseOneLiftEstimate()), phaseOneLiftEstimate(), "formatting twice adds nothing");
   const empty = { m: {} as CanvasMetricsRow, cats: [], engines: [], sov: [], divisions: [], missing: [], fresh: [] } as CanvasBundle;
   const vars = buildTemplateVars(empty);
-  assert.equal(vars.phase_one_lift, PHASE_ONE_LIFT_ESTIMATE);
-  assert.equal(vars.enterprise_potential, ENTERPRISE_POTENTIAL_ESTIMATE);
+  assert.equal(vars.phase_one_lift, phaseOneLiftEstimate());
+  assert.equal(vars.enterprise_potential, enterprisePotentialEstimate());
 
   const surfaces = {
     Briefing: spec.spokes.hub.tabTemplates[0],
@@ -129,5 +130,5 @@ test("Urgent Interventions lists findings via urgent_interventions, not example 
   assert.match(readFileSync(new URL("lib/fender-canvas/roadmap-plan-read.ts", root), "utf8"), /briefingFindingsLead/);
   const parts = readFileSync(new URL("components/v3/live/RoadmapPlanParts.tsx", root), "utf8");
   assert.match(parts, /data-ifai-open/);
-  assert.match(readFileSync(new URL("lib/fender-canvas/briefing-retail-lead.ts", root), "utf8"), /Buy Box withheld/);
+  assert.match(readFileSync(new URL("lib/fender-canvas/briefing-retail-lead.ts", root), "utf8"), /Buy Box Withheld/);
 });

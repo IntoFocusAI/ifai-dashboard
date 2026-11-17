@@ -114,12 +114,12 @@ function rivalLedCategories(ai: AiSearchRead): SignalAction[] {
         id: `signal:rival:${lead.key}`,
         group: "answers" as const,
         label: `${rival.brand} leads ${lead.label}`,
-        // The figure is the share of all resolved unbranded discovery answers the rival leads
+        // The figure is the share of all resolved Unbranded Discovery answers the rival leads
         // here, the same share that ranks it (21f); the fact gives the category's own count.
         share: rival.wins / resolved,
         numerator: rival.wins,
         denominator: resolved,
-        fact: `${rival.brand} is named most in ${formatRatio(rival.wins, lead.resolved)} resolved unbranded discovery answers in ${lead.label} (${formatPct((100 * rival.wins) / lead.resolved)}). ${leadBrand()} is named most in ${formatInt(lead.fenderLeads)}.`,
+        fact: `${rival.brand} is named most in ${formatRatio(rival.wins, lead.resolved)} resolved Unbranded Discovery answers in ${lead.label} (${formatPct((100 * rival.wins) / lead.resolved)}). ${leadBrand()} is named most in ${formatInt(lead.fenderLeads)}.`,
         action: `Publish comparison content on ${brandSite()} for ${lead.label} against ${rival.brand}.`,
         open: { spokeId: "competitors", tab: "Category Battlecards" },
         partial: null,

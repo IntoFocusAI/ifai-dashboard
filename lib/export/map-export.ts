@@ -34,7 +34,7 @@ import {
   mapUnitsLookup,
   type MapExposure,
 } from "@/lib/fender-canvas/map-exposure";
-import { MAP_PRICES_NOT_STORED } from "@/lib/fender-canvas/portfolio-retail";
+import { mapPricesNotStored } from "@/lib/fender-canvas/portfolio-retail";
 import { loadPortfolioRetailSnapshot } from "@/lib/fender-canvas/portfolio-retail-queries";
 import { mapHero, mapLeakageTip } from "@/lib/fender-canvas/retail-overview-lead";
 import { activeSetAsideClientKey, SET_ASIDE_CHECKS } from "@/lib/set-aside/keys";
@@ -88,7 +88,7 @@ function exposureText(exposure: MapExposure): string {
 export async function loadMapSource(): Promise<SourceRead> {
   try {
     const snapshot = await loadPortfolioRetailSnapshot();
-    const pricesNotStored = snapshot.mapLeakage.missingMessage === MAP_PRICES_NOT_STORED;
+    const pricesNotStored = snapshot.mapLeakage.missingMessage === mapPricesNotStored();
     // Decision 82: the empty other-retailer price table is no longer read, as on the tab.
     const [readRows, exceptions, asOf] = await Promise.all([
       loadRows(!pricesNotStored),

@@ -31,7 +31,7 @@ function HeroFigure({ snapshot, mixed }: { snapshot: AiSearchSnapshot; mixed: bo
   if (resolved <= 0) return null;
   const status = competitorWinsStatus(competitorWins, resolved);
   const tip = pie
-    ? `${formatInt(competitorWins)} competitor led. ${formatInt(resolved - competitorWins)} ${leadBrand()} led. Total ${formatInt(resolved)} resolved unbranded discovery answers.`
+    ? `${formatInt(competitorWins)} competitor led. ${formatInt(resolved - competitorWins)} ${leadBrand()} led. Total ${formatInt(resolved)} resolved Unbranded Discovery answers.`
     : undefined;
 
   return (
