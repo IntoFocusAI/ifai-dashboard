@@ -267,12 +267,17 @@ test("the five outcome counts stay distinct and open the listings behind them", 
     /^Yes when this Amazon listing is a dealer bundle: the product sold together with extras such as a strap, cable or case\./,
   );
   // Decision 104: the Confidence value is short; how the page was found is in a cell tooltip only.
-  const confidenceCell = table.locator("tbody td").filter({ hasText: /^Same barcode$/ }).first();
-  await expect(confidenceCell).toBeVisible();
+  const zebraCell = table.locator("tbody tr").filter({ hasText: "B00ZEBRA" }).locator("td").filter({ hasText: /^Same SKU$/ });
+  await expect(zebraCell).toBeVisible();
   await expect(table.locator("tbody")).not.toContainText("Guessed from product name");
-  await expect(confidenceCell.locator(".ifai-term")).toHaveAttribute(
+  await expect(zebraCell.locator(".ifai-term")).toHaveAttribute(
     "data-ifai-tooltip-desc",
     "We guessed the page address from the product name.",
+  );
+  const alphaCell = table.locator("tbody tr").filter({ hasText: "Alpha Exact" }).locator("td").filter({ hasText: /^Same barcode$/ });
+  await expect(alphaCell.locator(".ifai-term")).toHaveAttribute(
+    "data-ifai-tooltip-desc",
+    "We found the page by searching your site for the model number.",
   );
   await expect(page.locator("[data-findability-intro]").first()).toHaveText(
     "Findability: for each product you sell on Amazon, can AI assistants find the matching page on your own website? When they can, they cite you. When the page is missing or doesn't match, they cite retailers or competitors instead.",
