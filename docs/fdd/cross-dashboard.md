@@ -32,7 +32,7 @@
 - **Desired:** On Balanced, remove those widgets. Hover/focus a main bubble fills three slots: largest performance gap, largest defensible opportunity, highest-priority action — large figure, short label, target, compact chart. Red never alone.
 - **User value:** The hub answers without opening every bubble.
 - **Acceptance:** Slots use live data, denominator, freshness, and evidence trail.
-- **Evidence:** Live on production main d9911c9, approved 26 Oct 2026 (workers 9.4 and 10.3). Status stays TARGET until the slots are confirmed as the largest gap, the largest opportunity, and the highest-priority action. Worker 20.3 (pull request 110) added a target, N of M, a last-checked date, an evidence link, and a one-line rule to each slot. Brian Magazu did not approve the picks on 3 Nov 2026; the pull request stays open for rework.
+- **Evidence:** Live on production main d9911c9, approved 26 Oct 2026 (workers 9.4 and 10.3). Status stays TARGET until the slots are confirmed as the largest gap, the largest opportunity, and the highest-priority action. Worker 20.3 (pull request 110) added a target, N of M, a last-checked date, an evidence link, and a one-line rule to each slot. Brian Magazu did not approve the picks on 3 Nov 2026. PR 110 closed 17 Nov 2026; the panels are rebuilt after the parity build (X-35) to decision 109: a status mark beside the figure instead of a word line, no repeated numbers, no "Opens" line, run time in a panel tooltip, and no vertical scroll on a small laptop screen.
 - **Open decision:** None.
 
 **X-23 CURRENT** · Launch
@@ -218,6 +218,17 @@ None. Status words are Poor, Fair, and Good where a figure has no word of its ow
 - **User value:** A new client's dashboard is ready in hours, and every client sees the same product.
 - **Acceptance:** Adding a client takes a settings record and a logo, with no code change. An automated test loads a made-up third client (for example a fishing-rod brand) and fails if any guitar or flashlight wording, site or data appears, or if any view's layout differs from the other clients'.
 - **Evidence:** Audit by worker 28.8 (PR 217, main 5cb722d).
+- **Open decision:** None.
+
+**X-36 TARGET** · Launch
+
+**Status source:** Explicit (Brian Magazu, 17 Nov 2026, decision 110)
+
+- **Current:** Several tabs (Amazon Specs and Amazon A+ Matrix at least) put one or two hero cards on a row with empty space beside them and push notes and tables below, so a small laptop screen needs a long scroll to reach the content.
+- **Desired:** One layout rule for every tab: hero cards line up from the top left, notes fill the space beside them, and the main table starts within the first screen at 1280 by 720.
+- **User value:** People see what they came for without scrolling past blank space.
+- **Acceptance:** At 1280 by 720, on every tab for every client, no hero row leaves more than a third of its width empty, and each tab's main table or chart starts above the fold. Screenshots of every tab for Fender and Ledlenser in the pull request.
+- **Evidence:** Brian Magazu's screenshots of Amazon Specs and Amazon A+ Matrix, 17 Nov 2026.
 - **Open decision:** None.
 
 **X-07 CURRENT** · Launch

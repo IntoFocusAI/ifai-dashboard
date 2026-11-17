@@ -42,7 +42,7 @@ Former name: Brand Portfolio. Approved rename: Summary.
 - **Current:** Fender's Briefing, Opportunity and Revenue Estimates are hand-written in data/fender-v3-spec.json; Ledlenser gets a thinner fallback with a different layout.
 - **Desired:** Briefing, Opportunity and Revenue Estimates are generated from each client's settings and data, with one layout for every client and an optional short client note in settings. An analyst estimate not yet prepared reads Not available* with the tooltip "Analyst estimate not prepared yet for <Brand>".
 - **User value:** Every client's story comes from its own numbers, and stays current.
-- **Acceptance:** No per-client hand-written Briefing file. Fender and Ledlenser show the same sections in the same order, each filled from its own data.
+- **Acceptance:** No per-client hand-written Briefing file. Fender and Ledlenser show the same sections in the same order, each filled from its own data. The Briefing's first hero card is named AI Consensus Score. Its lead section explains, from the client's own data, how AI assistants refer the brand in relevant shopping searches today and what the brand can control (Brian Magazu, 17 Nov 2026, decision 110). The Portfolio at a glance section and its Buy Box card are removed. Enterprise Potential and the Opportunity figures move to defensible estimates from real inputs, with each formula opened to its inputs (pending Brian's decision to unpark the dollar formulas).
 - **Evidence:** Audit by worker 28.8 (PR 217).
 - **Open decision:** None.
 

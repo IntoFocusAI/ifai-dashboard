@@ -43,3 +43,14 @@
 - **Acceptance:** Owner sentence on the plan.
 - **Evidence:** Worker 25.6, pull request 171, approved 11 Nov 2026, for Fender and Ledlenser.
 - **Open decision:** None. Decided by Brian Magazu on 9 Nov 2026: the owner sentence reads IntoFocus's recommended plan for the brand.
+
+**S-05 TARGET** · Launch
+
+**Status source:** Explicit (Brian Magazu, 17 Nov 2026, decision 110)
+
+- **Current:** 30-60-90 Days assigns phases by type: listing fixes to days 1 to 30, catalog and site content to days 31 to 60, outreach programs to days 61 to 90. Ledlenser shows 11 items in days 31 to 60 and 1 in days 61 to 90. No export; no way to set an item aside.
+- **Desired:** Phases are balanced by effort, dependency and impact, so each column holds a sensible share of work for any client, this month or a year from now. Each item can be set aside (the same set-aside as Action Items, N-08), and the plan exports as CSV.
+- **User value:** A plan the client can actually staff, share and edit down.
+- **Acceptance:** For Fender and Ledlenser, no column holds more than half the items when there are 6 or more; set-aside items leave the plan and can be restored; the CSV lists every visible item with its phase, owner, finding and evidence link.
+- **Evidence:** Brian Magazu's review of Ledlenser's Roadmap, 17 Nov 2026.
+- **Open decision:** None.

@@ -483,3 +483,29 @@ closeout of each view. Open items are marked OPEN and are not built.
     it; D-05 stays REFINE until it lands.
 108. Wording ownership (17 Nov): Brian owns all on-screen wording, including
     the PR 110 hover panels; Watson does not decide wording.
+109. Map hover panels (17 Nov): PR 110 is closed; the panels are rebuilt
+    after the parity build from the shared template. Each panel: one big
+    figure with a status mark beside it (x Poor, dash Fair, check Good) and
+    no status-word line; a short label; one sentence that does not repeat
+    the figure; the small chart without key lines that repeat numbers.
+    No "Opens <tab>" line; the panel click is enough. No run-time line; the
+    date pill sets the period and the exact run time sits in a tooltip on
+    the panel (decision 87 bans tooltips on main bubbles only). Numbers use
+    thousands separators. The panels must fit a small laptop screen without
+    a vertical scroll.
+110. Notes of 17 Nov (Brian): the Briefing's first hero is AI Consensus
+    Score; its lead section explains from real data how AI refers the brand
+    and what the brand controls; Portfolio at a glance and its Buy Box card
+    go (H-09). Roadmap gets export, set-aside, and phases balanced by effort
+    and impact rather than by type (S-05). A check for listings filed under
+    the wrong Amazon product type or category (D-12). One no-wasted-space
+    layout rule for every tab at small laptop size (X-36, the layout pass,
+    every tab with a gap). Brian wants Enterprise Potential and Opportunity
+    on real inputs soon; the dollar-formula hold stays until he lifts it.
+111. Dollar formulas unparked (17 Nov): a best-effort brand revenue estimate
+    for as much recommended activity as possible. Be bold, not qualified:
+    estimate from the most credible data where data is missing, cite
+    sources, use ranges and say so. Catalog revenue beyond Amazon can be
+    gathered at onboarding. Each formula opens to its inputs and is
+    approved by Brian before it ships; weak ones can be cut later. D-12 is
+    a launch item. Roadmap set-aside works like Action Items' (N-08).

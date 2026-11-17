@@ -96,8 +96,7 @@ Brian reviews a view only in its final intended form.
 1. Completion map. Run `python3 scripts/fdd-register.py --open`. Give each
    open row one class, grouped by view. BUILD: buildable now. DECISION: needs
    Brian. BLOCKED: needs data, the collector, Brian Watson, Ryan, or auth;
-   name the owner and what is missing. HELD: his held list, PR 110 (X-22),
-   and the dollar formulas.
+   name the owner and what is missing. HELD: his held list.
 2. Decisions. Every DECISION row, and any rule the FDD does not give that a
    build would need. For each, say what he decides, what the screen shows
    under the recommendation and the alternative, and why.
@@ -161,7 +160,7 @@ The brand book, `docs/brand/IntoFocus_AI_Brand_Book_V2.pdf`, is a standard
 below the FDD. Where the two conflict, ask Brian.
 
 Held, until he says otherwise: A-06, A-02, R-06, R-11, A-04, A-07, N-07,
-LATER rows, and the dollar formulas. R-19 is held until the rest of the
+LATER rows. Dollar formulas are unparked (decision 111; see AGENTS.md). R-19 is held until the rest of the
 launch build is complete (decision 46). X-15 and X-16 are released
 (decision 105; Watson is building them). Brian owns all on-screen wording
 (decision 108). Every client gets the same views from one template; no
