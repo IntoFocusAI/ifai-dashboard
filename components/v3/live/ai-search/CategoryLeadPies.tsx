@@ -197,7 +197,7 @@ export function CategoryLeadPies({
     <div className="ai-battle-pies-block" data-ai-battle-lead-graph="" data-ai-on-track="">
       <div className="content-box-title ai-battle-pies-head">
         <span>
-          Who leads each category on <AiTerm term="unbranded discovery">unbranded discovery</AiTerm>
+          Who leads each category on <AiTerm term="Unbranded Discovery">Unbranded Discovery</AiTerm>
         </span>
         <ul className="ai-battle-legend" aria-label="Pie colors">
           {legend.map((item) => (

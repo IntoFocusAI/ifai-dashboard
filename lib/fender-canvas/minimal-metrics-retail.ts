@@ -70,7 +70,7 @@ export const RETAIL_ENTRIES: MinimalEntry[] = [
   bubbleEntry({
     id: "spoke-retail",
     spokeId: "ecommerce",
-    label: "Buy Box withheld",
+    label: "Buy Box Withheld",
     tab: RETAIL_OVERVIEW_TAB,
     read: (ctx) =>
       retailReading(ctx, (snapshot) => {
@@ -95,7 +95,7 @@ export const RETAIL_ENTRIES: MinimalEntry[] = [
     id: "suppressed-buy-box-withheld",
     spokeId: "ecommerce",
     tab: "Suppressed Listings",
-    label: "Buy Box withheld",
+    label: "Buy Box Withheld",
     read: (ctx) => retailFigure(ctx, (snapshot) => heroFigure(buyBoxHero(snapshot), BUY_BOX_READINGS, "Buy Box reading not stored.")),
   },
   bubbleEntry({
@@ -119,7 +119,7 @@ export const RETAIL_ENTRIES: MinimalEntry[] = [
   bubbleEntry({
     id: "sat-map",
     spokeId: "ecommerce",
-    label: "MAP leakage",
+    label: "MAP Leakage",
     tab: "MAP Leakage",
     read: (ctx) =>
       retailReading(ctx, (snapshot) => {
@@ -153,7 +153,7 @@ export const RETAIL_ENTRIES: MinimalEntry[] = [
   bubbleEntry({
     id: "sat-asin",
     spokeId: "ecommerce",
-    label: "Unnested bundles",
+    label: "Splintered Listings",
     tab: "Catalog Governance",
     read: (ctx) =>
       retailReading(ctx, (snapshot) => {
@@ -166,7 +166,7 @@ export const RETAIL_ENTRIES: MinimalEntry[] = [
     id: "catalog-specs-complete",
     spokeId: "ecommerce",
     tab: "Catalog Governance",
-    label: "Amazon specs complete",
+    label: "Amazon Specs Complete",
     read: (ctx) =>
       retailFigure(ctx, (snapshot) => heroFigure(specHero(snapshot), "checked listings", "Amazon spec-field reading not stored.")),
   },

@@ -28,8 +28,8 @@ import { leadBrand } from "@/lib/brand-copy";
 const SIM = AI_TABS.simulations;
 
 const ROLE_TERMS: Record<HeadlineRole, AiTermKey> = {
-  unbranded_discovery: "unbranded discovery",
-  branded_consideration: "branded consideration",
+  unbranded_discovery: "Unbranded Discovery",
+  branded_consideration: "Branded Consideration",
 };
 
 const ROLE_BANDS: Record<HeadlineRole, { redBelow: number; greenAbove: number }> = {

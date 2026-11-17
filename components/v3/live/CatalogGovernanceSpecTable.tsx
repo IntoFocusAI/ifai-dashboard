@@ -245,7 +245,7 @@ function SpecGapRows({ gaps }: { gaps: AmazonSpecGap[] }) {
   );
 }
 
-/** Specs complete table: gap listings with field / how-close filters. */
+/** Specs Complete table: gap listings with field / how-close filters. */
 export function CatalogGovernanceSpecTable({
   specs,
   tableId,

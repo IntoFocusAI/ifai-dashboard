@@ -9,10 +9,10 @@ import { FEATURED_OFFER_JOB, type FeaturedOfferCounts } from "./featured-offer";
 
 /** Confirmed withheld above the outside benchmark. The strongest client-useful result. */
 export const CONFIRMED_HIGH_PRICE_LABEL =
-  "Buy Box withheld above Amazon's outside price";
+  "Buy Box Withheld above Amazon's outside price";
 
 /** Withheld with no outside benchmark stored. Still a confirmed withheld state. */
-export const WITHHELD_LABEL = "Buy Box withheld";
+export const WITHHELD_LABEL = "Buy Box Withheld";
 
 export const FEATURED_OFFER_UNAVAILABLE =
   "The Buy Box audit has not stored a reading for any monitored listing yet.";

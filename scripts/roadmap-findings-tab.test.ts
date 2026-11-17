@@ -43,8 +43,8 @@ test("Roadmap 30-60-90 Days renders the shared plan in three dated phases (S-02,
   assert.doesNotMatch(panel + data, /lostRevenue|LostRevenue|BRIEFING_LOST_REVENUE|\$680|\$38M|fee|retainer/i);
   assert.doesNotMatch(panel, /\u2014/);
   for (const label of [
-    "Buy Box withheld",
-    "MAP leakage",
+    "Buy Box Withheld",
+    "MAP Leakage",
     "Splintered Listings",
     "Exact official product pages",
     "Unbranded Discovery",

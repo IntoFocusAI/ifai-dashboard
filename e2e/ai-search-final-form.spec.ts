@@ -42,7 +42,7 @@ for (const client of CLIENTS) {
       // Each rate carries its status as color, mark, and word.
       await expect(page.locator("[data-ai-role='unbranded_discovery'] [data-status]")).toHaveText(/^(Poor|Fair|Good)$/);
       // Qualifiers that say what a figure is not live in tooltips.
-      for (const gone of ["not inside unbranded discovery", "Not in either rate above", "not counted as wins"]) {
+      for (const gone of ["not inside Unbranded Discovery", "Not in either rate above", "not counted as wins"]) {
         await expect(page.locator(".drilldown-body")).not.toContainText(gone);
       }
     });
@@ -134,7 +134,7 @@ for (const client of CLIENTS) {
       expect(lines[1]).toMatch(/^Sort,/);
       expect(lines[2]).toMatch(/^As of,".+ UTC"$/);
       expect(lines[3]).toMatch(/^Population,"?[\d,]+ calls from \d+ runs? in this selection\."?$/);
-      expect(lines[4]).toBe("Engine,Model,Unbranded discovery,Branded consideration,No leader,Errors");
+      expect(lines[4]).toBe("Engine,Model,Unbranded Discovery,Branded Consideration,No leader,Errors");
       expect(lines.length - 5).toBe(shown);
       expect(lines[5].startsWith(`${firstEngine},`)).toBe(true);
       if (firstRate) expect(lines[5]).toContain(firstRate);

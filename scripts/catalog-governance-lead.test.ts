@@ -151,7 +151,7 @@ test("spec hero 100 complete of 100 is 100.0% green success", () => {
   assert.equal(hero.percent, "100.0%");
   assert.equal(hero.color, "var(--success-green)");
   assert.equal(hero.tone, "success");
-  assert.equal(hero.label, "Specs complete");
+  assert.equal(hero.label, "Specs Complete");
   // The caption defines the measure. It does not read as a claim about the figure above it.
   assert.equal(hero.explainer, "Listings with every Amazon spec field filled.");
   assert.ok(hero.explainer.length < 48);
@@ -415,7 +415,7 @@ test("Catalog Governance panel source shows Splintered Listings chevrons and spe
   const panel = read("components/v3/live/CatalogGovernancePanel.tsx");
   const specs = read("components/v3/live/CatalogGovernanceSpecTable.tsx");
   assert.match(panel, /Splintered Listings/);
-  assert.match(panel, /Specs complete/);
+  assert.match(panel, /Specs Complete/);
   assert.match(panel, /retail-explore-chevron/);
   assert.match(panel, /aria-expanded=\{open\}/);
   assert.match(panel, /useState<OpenTable>\("splintered"\)/);

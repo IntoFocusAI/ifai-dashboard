@@ -86,7 +86,7 @@ function Wins({ snapshot }: { snapshot: AiSearchSnapshot }) {
       {competitorWins === 0 ? (
         <div className="content-box" style={{ marginTop: 12 }}>
           <EmptyRows>
-            No competitor was named most in a resolved <AiTerm term="unbranded discovery">unbranded discovery</AiTerm>{" "}
+            No competitor was named most in a resolved <AiTerm term="Unbranded Discovery">Unbranded Discovery</AiTerm>{" "}
             answer in this {emptyUnit}.
           </EmptyRows>
         </div>
@@ -126,8 +126,8 @@ function Wins({ snapshot }: { snapshot: AiSearchSnapshot }) {
               </tbody>
             </ResizableTable>
             <p style={mutedText}>
-              Each lead is a win of that many resolved <AiTerm term="unbranded discovery">unbranded discovery</AiTerm>{" "}
-              answers. Branded consideration is not in this rate.
+              Each lead is a win of that many resolved <AiTerm term="Unbranded Discovery">Unbranded Discovery</AiTerm>{" "}
+              answers. Branded Consideration is not in this rate.
             </p>
           </div>
 

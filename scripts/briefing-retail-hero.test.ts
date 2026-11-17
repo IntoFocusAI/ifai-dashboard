@@ -248,14 +248,14 @@ test("five findings reuse Retail Overview / Findability / Run Details population
   assert.equal(lead.findings[0].denominator, buyBox.denominator);
   assert.equal(lead.findings[0].percent, buyBox.percent);
   assert.equal(lead.findings[0].ratio, buyBox.ratio);
-  assert.equal(lead.findings[0].label, "Buy Box withheld");
+  assert.equal(lead.findings[0].label, "Buy Box Withheld");
   assert.equal(lead.findings[0].tab, "Suppressed Listings");
   assert.doesNotMatch(lead.findings[0].explainer, /1,049|audited|monitored/i);
 
   assert.equal(lead.findings[1].numerator, map.numerator);
   assert.equal(lead.findings[1].denominator, map.denominator);
   assert.equal(lead.findings[1].percent, map.percent);
-  assert.equal(lead.findings[1].label, "MAP leakage");
+  assert.equal(lead.findings[1].label, "MAP Leakage");
   assert.equal(lead.findings[1].tab, "MAP Leakage");
 
   assert.equal(lead.findings[2].numerator, catalog.numerator);
@@ -280,7 +280,7 @@ test("five findings reuse Retail Overview / Findability / Run Details population
   assert.equal(lead.findings[4].ratio, formatRatio(unbranded.fenderWins, unbranded.resolved));
   assert.equal(lead.findings[4].percent, formatPct((100 * unbranded.fenderWins) / unbranded.resolved));
   assert.equal(lead.findings[4].tab, "Run Details");
-  assert.doesNotMatch(lead.findings[4].explainer, /branded consideration/i);
+  assert.doesNotMatch(lead.findings[4].explainer, /Branded Consideration/i);
 
   for (const finding of lead.findings) {
     assert.ok(finding.pie, `${finding.id} needs a share pie`);

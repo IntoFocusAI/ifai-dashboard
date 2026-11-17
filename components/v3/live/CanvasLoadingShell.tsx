@@ -8,8 +8,8 @@ export function CanvasLoadingShell() {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "var(--bg-canvas, #0b0f17)",
-        color: "var(--text-muted, #94a3b8)",
+        background: "var(--bg-primary, #070b14)",
+        color: "var(--text-muted, #aeb8c7)",
         fontFamily: "Inter, system-ui, sans-serif",
       }}
     >
@@ -19,8 +19,8 @@ export function CanvasLoadingShell() {
             width: 48,
             height: 48,
             borderRadius: "50%",
-            border: "3px solid rgba(148,163,184,0.25)",
-            borderTopColor: "var(--accent-purple, #6366f1)",
+            border: "3px solid rgba(100, 116, 139, 0.38)",
+            borderTopColor: "var(--accent, #a7d8f0)",
             animation: "ifai-spin 0.8s linear infinite",
             margin: "0 auto 12px",
           }}

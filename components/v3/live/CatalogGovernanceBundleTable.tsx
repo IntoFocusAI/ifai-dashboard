@@ -127,7 +127,7 @@ export function CatalogGovernanceBundleTable({ rows }: { rows: UnnestedBundleOpp
         <tbody>
           {slice.length === 0 ? (
             <tr>
-              <td colSpan={BUNDLE_COLUMNS.length}>No unnested bundle is confirmed in this retail read.</td>
+              <td colSpan={BUNDLE_COLUMNS.length}>No splintered listing is confirmed in this retail read.</td>
             </tr>
           ) : (
             slice.map((row) => (

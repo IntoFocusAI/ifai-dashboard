@@ -137,7 +137,7 @@ test("a Ledlenser answer that names Ledlenser reads as mentioned, and Fender is 
 });
 
 test("a category whose questions are all branded is no battlecard, for every client (decision 93)", async () => {
-  // Fender: "squier" asks branded questions only. Its answers still count in branded consideration.
+  // Fender: "squier" asks branded questions only. Its answers still count in Branded Consideration.
   const squierPrompt = "Squier Classic Vibe vs Yamaha Pacifica comparison";
   const squier = [
     ...times(3, { category: "squier", prompt: squierPrompt }),
@@ -147,10 +147,10 @@ test("a category whose questions are all branded is no battlecard, for every cli
   assert.deepEqual(battlecardTable(fender, { engine: "", lead: "all" }, false).rows.map((row) => row.key), ["acoustics", "electrics"]);
   assert.deepEqual(engineCategoryTable(fender, false).header, ["Engine", "Acoustics", "Electrics"]);
   assert.deepEqual(discoveryCategories(fender.calls), ["acoustics", "electrics"]);
-  assert.equal(roleTally(fender.calls, "branded_consideration").resolved, 4, "the Squier answers still count in branded consideration");
+  assert.equal(roleTally(fender.calls, "branded_consideration").resolved, 4, "the Squier answers still count in Branded Consideration");
   assert.equal(radarBubbleLead(fender.calls)?.key, "acoustics");
 
-  // Ledlenser: "brand" holds stored branded consideration and brand-associated questions, no unbranded discovery.
+  // Ledlenser: "brand" holds stored Branded Consideration and brand-associated questions, no Unbranded Discovery.
   const led = await runWithClient("ledlenser", async () => {
     const calls = [
       ...times(4, { category: "headlamps", prompt: "Best rechargeable headlamp for backpacking and hiking", primary_brand: "Ledlenser" }),
@@ -167,5 +167,5 @@ test("a category whose questions are all branded is no battlecard, for every cli
   assert.deepEqual(led.cards, ["headlamps"]);
   assert.deepEqual(led.grid, ["Engine", "Headlamps"]);
   assert.deepEqual(led.categories, ["headlamps"]);
-  assert.equal(led.branded, 3, "the Brand answers still count in branded consideration");
+  assert.equal(led.branded, 3, "the Brand answers still count in Branded Consideration");
 });

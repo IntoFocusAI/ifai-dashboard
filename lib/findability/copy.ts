@@ -48,9 +48,19 @@ export function machineReadabilityPointer(): string {
   return `Schema.org product data on each ${brandSite()} page is on Brand-Site Specs.`;
 }
 
-/** Dealer bundle header tooltip. The caveat lives here, not on screen (let the data speak). */
+/** Bundle header tooltip (decision 104). */
 export const DEALER_BUNDLE_NOTE =
-  "Dealer bundle status comes from the retail read. It can line up with an official-page outcome. That is a correlation, not a proven cause.";
+  "Yes when this Amazon listing is a dealer bundle: the product sold together with extras such as a strap, cable or case. Bundles often have no matching page on your own site, which is one reason a listing may show no official page.";
+
+export const BUNDLE_HEADER = "Bundle";
+
+/** The explanation at the top of the Findability tab (decision 104). */
+export const FINDABILITY_INTRO =
+  "Findability: for each product you sell on Amazon, can AI assistants find the matching page on your own website? When they can, they cite you. When the page is missing or doesn't match, they cite retailers or competitors instead.";
+
+/** Header tooltip for the Confidence column. */
+export const CONFIDENCE_HEADER_NOTE =
+  "How sure we are that the page we found is the same product as the Amazon listing. Same SKU: the page carries the same SKU as the listing. Same barcode: the page carries the same barcode. Same options: the color, size or other options match, but no SKU or barcode did. No ID match: no SKU, barcode or options matched.";
 
 export const DEALER_BUNDLE_NOT_LOADED = "Dealer bundle status did not load with this read.";
 
@@ -193,17 +203,43 @@ const PRODUCT_KIND: Record<string, string> = {
 };
 
 const CONFIDENCE: Record<string, string> = {
-  sku: "SKU match",
-  gtin: "GTIN match",
-  variant_options: "Variant options",
-  none: "No identifier match",
+  sku: "Same SKU",
+  gtin: "Same barcode",
+  variant_options: "Same options",
+  none: "No ID match",
 };
 
 const SOURCE_METHOD: Record<string, string> = {
-  derived_handle: "Derived handle",
-  model_number_search: "Model number search",
-  search_meta: "Search metadata",
+  derived_handle: "Built from product name",
+  model_number_search: "Site search by model number",
+  search_meta: "Site search by product name",
 };
+
+/** Plain meaning of how the page was found, for the Confidence cell tooltip. */
+const SOURCE_METHOD_MEANING: Record<string, string> = {
+  derived_handle: "We found the page by building its address from the product name.",
+  model_number_search: "We found the page by searching your site for the model number.",
+  search_meta: "We found the page by searching your site for the product name.",
+};
+
+/** What each Confidence value means, first sentence of the Confidence cell tooltip. */
+const CONFIDENCE_MEANING: Record<string, string> = {
+  sku: "Your page lists the same SKU as this Amazon listing.",
+  gtin: "Your page lists the same barcode (UPC or EAN) as this Amazon listing.",
+  variant_options:
+    "Your page offers the same options, such as color and size, but shows no matching SKU or barcode.",
+  none: "No page on your site carries this listing's SKU or barcode.",
+};
+
+/** Confidence cell tooltip body: what the value means, then how the page was found. */
+export function confidenceTooltip(confidence: string | null, sourceMethod: string | null): string {
+  const meaning = (confidence && CONFIDENCE_MEANING[confidence]) || "";
+  return [meaning, sourceMethodMeaning(sourceMethod)].filter(Boolean).join(" ");
+}
+
+export function sourceMethodMeaning(value: string | null): string {
+  return (value && SOURCE_METHOD_MEANING[value]) || "";
+}
 
 export function productKindLabel(value: string | null): string {
   if (!value?.trim()) return "Not recorded";

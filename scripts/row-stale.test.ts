@@ -88,7 +88,7 @@ test("Buy Box and suppression: featured_offer_checked_at, stale after 2 days", (
   assert.equal(reading.stale?.missing, "1 of 2 listings has no Buy Box check in 2 days");
 });
 
-test("MAP leakage: Amazon 1 day, Walmart 1 day for Fender and 2 days for Ledlenser, Musician's Friend 3 days", () => {
+test("MAP Leakage: Amazon 1 day, Walmart 1 day for Fender and 2 days for Ledlenser, Musician's Friend 3 days", () => {
   const row = (wmtAge: number) => ({
     asin: "A",
     map_price: 100,

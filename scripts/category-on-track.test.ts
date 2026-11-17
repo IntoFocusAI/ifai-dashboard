@@ -107,7 +107,7 @@ test("on track means Fender/Squier leads more resolved answers than any single o
   assert.match(read("components/v3/live/ai-search/CategoryBattlecardsPanel.tsx"), /than any single other brand, tied when/);
 });
 
-test("lead counts use resolved unbranded discovery answers only", () => {
+test("lead counts use resolved Unbranded Discovery answers only", () => {
   const rows = [
     ...times(3, {}),
     ...times(5, yamaha),
@@ -164,8 +164,8 @@ test("categories sort behind, then tied, then the weakest Fender/Squier share, a
     "Fender/Squier leads 2 of 12 resolved answers. Yamaha, the top rival, leads 7. Other brands lead 3.",
   );
   assert.equal(leadSentence(leads[3]), "Fender/Squier leads 9 of 10 resolved answers. Yamaha, the top rival, leads 1.");
-  assert.equal(leadSentence(leads[4]), "No unbranded discovery questions in this category.");
-  assert.match(leadStatusDefinition(leads[4]), /no unbranded discovery questions/);
+  assert.equal(leadSentence(leads[4]), "No Unbranded Discovery questions in this category.");
+  assert.match(leadStatusDefinition(leads[4]), /no Unbranded Discovery questions/);
   assert.deepEqual(categoryLeadSummary(leads), {
     measured: 4,
     onTrack: 2,
@@ -264,12 +264,12 @@ test("caveats on this tab sit in tooltips, and the screen shows no line saying w
   assert.match(onTrackDefinition(), /The pie counts every category, including any the Who leads chip hides\.$/);
   assert.match(HERO_RATES_NOTE, /every category, including any the Who leads chip hides/);
   assert.match(AI_DEFINITIONS.resolved, /no clear leader and provider errors are not in the denominator/);
-  assert.match(AI_DEFINITIONS["brand-associated discovery"], /not inside unbranded discovery/);
+  assert.match(AI_DEFINITIONS["brand-associated discovery"], /not inside Unbranded Discovery/);
   assert.match(AI_DEFINITIONS["shopping guidance"], /left out of the discovery and consideration rates/);
   assert.match(AI_DEFINITIONS["product-fact question"], /stored with the shopping prompts, and they are left out/);
   for (const key of ["competitor", "leads"] as const) {
-    assert.match(BATTLE_COLUMN_NOTES[key], /unbranded discovery answers/);
-    assert.match(BATTLE_COLUMN_NOTES[key], /Branded consideration and the questions listed under the table are not counted\./);
+    assert.match(BATTLE_COLUMN_NOTES[key], /Unbranded Discovery answers/);
+    assert.match(BATTLE_COLUMN_NOTES[key], /Branded Consideration and the questions listed under the table are not counted\./);
   }
   for (const key of ["leader", "errors"] as const) {
     assert.match(BATTLE_COLUMN_NOTES[key], /They stay out of both Fender-lead rates\./);
@@ -296,12 +296,12 @@ test("caveats on this tab sit in tooltips, and the screen shows no line saying w
 
   const shared = read("components/v3/live/ai-search/RoleRateTable.tsx");
   assert.match(shared, /inlineCaveats = true,/, "Engine Comparison keeps the inline wording");
-  assert.match(shared, /caveat\("Counted on its own, not inside unbranded discovery\."\)/);
+  assert.match(shared, /caveat\("Counted on its own, not inside Unbranded Discovery\."\)/);
   assert.doesNotMatch(read("components/v3/live/ai-search/EngineComparisonPanel.tsx"), /inlineCaveats/);
   // Run Summary leaves each caveat to its term's tooltip too (Worker 24.4, let the data speak).
   const summary = read("components/v3/live/ai-search/RunSummaryPanel.tsx");
   assert.match(summary, /<KeptOutNote snapshot=\{snapshot\} inlineCaveats=\{false\} \/>/);
-  for (const gone of [/not inside unbranded discovery/, /Not in either rate above/, /, not counted as wins/]) {
+  for (const gone of [/not inside Unbranded Discovery/, /Not in either rate above/, /, not counted as wins/]) {
     assert.doesNotMatch(summary.replace(/return `These answers named .*/, ""), gone);
   }
 });
@@ -341,7 +341,7 @@ test("Category Battlecards opens on the hero pie row, then the chips, the catego
 
   const pies = read("components/v3/live/ai-search/CategoryLeadPies.tsx");
   assert.match(pies, /data-ai-battle-lead-graph=""/);
-  assert.match(pies, /AiTerm term="unbranded discovery"/);
+  assert.match(pies, /AiTerm term="Unbranded Discovery"/);
   assert.match(pies, /data-ai-on-track-status=\{lead\.status\}/);
   assert.match(pies, /<StatusMark status=\{status\} word=\{label\} \/>/, "a mark and a word carry each status, not color alone");
   assert.match(pies, /on_track: "good",\s*tied: "okay",\s*behind: "bad",\s*not_available: null/);
@@ -385,7 +385,7 @@ test("Category Battlecards drops the Competitive Radar sentence and keeps its co
   assert.deepEqual([unbranded.competitorWins, unbranded.resolved], [3, 7]);
   assert.equal(
     competitorsSpokeLead({ phase: "ready", snapshot }).figure,
-    `Competitors led ${unbranded.competitorWins} of ${unbranded.resolved} resolved unbranded discovery answers.`,
+    `Competitors led ${unbranded.competitorWins} of ${unbranded.resolved} resolved Unbranded Discovery answers.`,
     "the caption's N of M is the sentence's N of M",
   );
   assert.notEqual(unbranded.resolved - unbranded.fenderWins, unbranded.competitorWins, "a product error is not a competitor lead");

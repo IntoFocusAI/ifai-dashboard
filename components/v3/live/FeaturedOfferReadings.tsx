@@ -39,7 +39,7 @@ function readings(counts: FeaturedOfferCounts): Reading[] {
       note: "Amazon showed a purchasing offer at the last check.",
     },
     {
-      label: "Buy Box withheld",
+      label: "Buy Box Withheld",
       value: counts.withheld,
       denominator: counts.population,
       note: "Amazon showed no purchasing offer at the last check.",

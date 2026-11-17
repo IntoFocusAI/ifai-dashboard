@@ -24,6 +24,7 @@ import {
   runCategoryTable,
   runEngineTable,
   simulationTable,
+  trendHeader,
 } from "../lib/ai-search/tables.ts";
 import { DEFAULT_FILTER } from "../lib/ai-search/explorer-filter.ts";
 import { EXPORT_TABLE_IDS, isExportTable } from "../lib/export/tables.ts";
@@ -91,7 +92,7 @@ test("the server reads the same runs the pill names", () => {
 test("Run Summary rows are one engine or category each, in the cells the screen shows", () => {
   const engines = runEngineTable(snapshot, true);
   assert.deepEqual(engines.header, RUN_ENGINE_HEADER);
-  assert.deepEqual(engines.header, ["Engine", "Model", "Unbranded discovery", "Branded consideration", "No leader", "Errors"]);
+  assert.deepEqual(engines.header, ["Engine", "Model", "Unbranded Discovery", "Branded Consideration", "No leader", "Errors"]);
   assert.ok(engines.rows.length > 0);
   for (const row of engines.rows) {
     assert.equal(row.cells.length, engines.header.length);
@@ -121,7 +122,7 @@ test("Run Details rows follow the tab's filter, and the filter is named in plain
   assert.ok(shopping.rows.every((row) => row.cells[5] === "n/a"), "a shopping row is not a fact check");
   assert.equal(
     explorerFilterSentence({ ...DEFAULT_FILTER, engine: "gemini", outcome: "resolved", role: "unbranded_discovery" }),
-    "Shopping prompts. Unbranded discovery. Engine: Gemini. Outcome: A clear leader",
+    "Shopping prompts. Unbranded Discovery. Engine: Gemini. Outcome: A clear leader",
   );
   assert.deepEqual(parseExplorerFilter({ scope: "probe", engine: "chatgpt", role: "nonsense", simId: "7" }), {
     ...DEFAULT_FILTER,
@@ -259,4 +260,10 @@ test("pies use the chart tokens: one ice-blue measured slice, one second blue at
   for (const status of ["--danger-red", "--warning-amber", "--success-green", "--status-"]) {
     assert.ok(!read("lib/ai-search/pie-tones.ts").includes(status), `a chart slice never uses ${status}`);
   }
+});
+
+test("the trend table drops the question-kind column for Overall and names the AI engine by engine (decision 104)", () => {
+  assert.deepEqual(trendHeader("overall"), ["Run", "Rate", "Not counted in the rate"]);
+  assert.deepEqual(trendHeader("engine"), ["Run", "AI engine", "Rate", "Not counted in the rate"]);
+  assert.doesNotMatch(read("components/v3/live/ai-search/HistoryTrendTable.tsx"), /Question kind/);
 });

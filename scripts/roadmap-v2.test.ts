@@ -196,7 +196,7 @@ test("21d weakest engine: a gap of 10 points or more is a Days 31 to 60 priority
   const { actions, held } = weakestEngine(snapshot(calls));
   assert.equal(held.length, 0);
   assert.equal(actions[0]!.tier, "priority");
-  assert.equal(actions[0]!.fact, "Fender/Squier is named most in 10 of 40 resolved unbranded discovery answers on Gemini, the lowest of the engines checked.");
+  assert.equal(actions[0]!.fact, "Fender/Squier is named most in 10 of 40 resolved Unbranded Discovery answers on Gemini, the lowest of the engines checked.");
   assert.equal(actions[0]!.action, "Review the Gemini answers that name another brand most, and the sources they cite.");
   const plan = buildPlan({ findings: [], signals: [], sources: [], focus: actions });
   assert.equal(plan[0]!.phase, "days_31_60");
@@ -213,7 +213,7 @@ test("21d weakest engine: under 10 points is a Days 61 to 90 watch line; five en
   const { actions } = weakestEngine(snapshot(calls));
   assert.equal(actions.length, 1);
   assert.equal(actions[0]!.evidence?.engine, "grok");
-  assert.match(actions[0]!.fact, /1 of 100 resolved unbranded discovery answers on /);
+  assert.match(actions[0]!.fact, /1 of 100 resolved Unbranded Discovery answers on /);
   const plan = buildPlan({ findings: [], signals: [], sources: [], focus: actions });
   assert.equal(plan[0]!.phase, "days_61_90");
   assert.equal(plan[0]!.statusLabel, "Watch");

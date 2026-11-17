@@ -205,7 +205,7 @@ test("command center MAP item repeats the MAP tab's partial reading", () => {
   const retail = retailReady();
   if (retail.phase !== "ready") throw new Error("expected a ready retail read");
   const missingMessage =
-    "MAP leakage is stored for 3 of 4 listings. 12 stored listings are below MAP. 1 listing has a price and no stored MAP comparison, so it is missing from this count and is not counted as zero. This is not a final count.";
+    "MAP Leakage is stored for 3 of 4 listings. 12 stored listings are below MAP. 1 listing has a price and no stored MAP comparison, so it is missing from this count and is not counted as zero. This is not a final count.";
   retail.snapshot.mapLeakage = {
     status: "incomplete",
     issueCount: 12,

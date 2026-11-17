@@ -37,7 +37,7 @@ export const PLAN_PHASES: ReadonlyArray<{ id: PlanPhase; label: string; focus: s
   { id: "days_61_90", label: "Days 61 to 90", focus: "Outreach programs" },
 ];
 
-/** Shown where an item has no dated phase: unbranded discovery moves with the fixes before it. */
+/** Shown where an item has no dated phase: Unbranded Discovery moves with the fixes before it. */
 export const ALL_PHASES_LABEL = "All phases";
 
 const FINDING_PHASE: Record<BriefingFindingId, PlanPhase | null> = {

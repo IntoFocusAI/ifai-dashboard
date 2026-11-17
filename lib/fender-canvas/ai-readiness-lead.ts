@@ -1,7 +1,7 @@
 /**
  * AI Readiness tab heroes: share figures already on the old Metric/Result summary.
  * SKUs checked is the shared denominator, not its own pie.
- * Amazon completeness takes the Catalog Governance Specs complete bands (amazon-spec-bands).
+ * Amazon completeness takes the Catalog Governance Specs Complete bands (amazon-spec-bands).
  */
 
 import type { PieDiscData } from "@/lib/ai-search/citation-pies";

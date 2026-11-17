@@ -21,7 +21,7 @@ const COLUMNS = [
   clientColumn("prompt", "Prompt and answer", "text", 240, 140),
   clientColumn("engine", "Engine", "text", 130, 90),
   clientColumn("link", "Cited link", "text", 240, 140),
-  clientColumn("domain", "Domain and class", "text", 160, 110),
+  clientColumn("domain", "Site and type", "text", 160, 110),
 ];
 
 const citationKey = (row: CitationEvidence) => row.key;

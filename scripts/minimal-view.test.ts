@@ -329,7 +329,7 @@ test("both Suppressed Listings figures and both Run Summary and Run Details rate
   const beginner = slotById(slots, "battlecards-beginner-unbranded");
   assert.equal(beginner.subTab, "Category Battlecards");
   assert.equal(beginner.value, "100.0%");
-  assert.match(beginner.reading.ratio ?? "", /^2 of 2 resolved Beginner unbranded discovery answers · Small sample$/);
+  assert.match(beginner.reading.ratio ?? "", /^2 of 2 resolved Beginner Unbranded Discovery answers · Small sample$/);
 });
 
 // Squier holds branded questions only, so it is no battlecard category (decision 93).
@@ -345,16 +345,16 @@ test("Category Battlecards offers one option per question category, each with it
   for (const slot of options) {
     assert.equal(slot.spokeId, "competitors");
     assert.equal(slot.subTab, "Category Battlecards");
-    assert.match(slot.label, /^[A-Z]\w+: Fender leads in unbranded discovery$/);
+    assert.match(slot.label, /^[A-Z]\w+: Fender leads in Unbranded Discovery$/);
   }
   const electrics = slotById(slots, "battlecards-electrics-unbranded");
   assert.equal(electrics.value, "66.7%");
-  assert.equal(electrics.reading.ratio, "6 of 9 resolved Electrics unbranded discovery answers · Small sample");
-  assert.equal(slotById(slots, "battlecards-basses-unbranded").reading.ratio, "1 of 4 resolved Basses unbranded discovery answers · Small sample");
+  assert.equal(electrics.reading.ratio, "6 of 9 resolved Electrics Unbranded Discovery answers · Small sample");
+  assert.equal(slotById(slots, "battlecards-basses-unbranded").reading.ratio, "1 of 4 resolved Basses Unbranded Discovery answers · Small sample");
   assert.equal(
     slots.some((slot) => slot.id === "battlecards-squier-unbranded"),
     false,
-    "a category with no unbranded discovery questions is not offered (decision 93)",
+    "a category with no Unbranded Discovery questions is not offered (decision 93)",
   );
 
   const ai = aiReady();
@@ -365,7 +365,7 @@ test("Category Battlecards offers one option per question category, each with it
   assert.equal(amps.value, NOT_AVAILABLE, "a battery category the run did not ask stays offered");
   assert.equal(amps.reading.missing, "The selected period asked no Amps questions.");
   const ukuleles = slotById(withExtra, "battlecards-ukuleles-unbranded");
-  assert.equal(ukuleles.label, "Ukuleles: Fender leads in unbranded discovery");
+  assert.equal(ukuleles.label, "Ukuleles: Fender leads in Unbranded Discovery");
   assert.equal(ukuleles.value, "100.0%");
   assert.equal(withExtra.indexOf(ukuleles), withExtra.findIndex((slot) => slot.id === "battlecards-beginner-unbranded") + 1, "live extras follow the battery");
 
@@ -418,7 +418,7 @@ test("Other lists the figures no tab shows, last, each opening its closest tab w
 
   const gap = slotById(slots, "beginner-sov-gap");
   assert.equal(gap.value, "+100.0 pts");
-  assert.equal(gap.reading.ratio, "Fender/Squier 2 of 2 resolved Beginner unbranded discovery answers. No competitor led one.");
+  assert.equal(gap.reading.ratio, "Fender/Squier 2 of 2 resolved Beginner Unbranded Discovery answers. No competitor led one.");
   const best = slotById(slots, "strongest-category-sov");
   assert.equal(best.label, "Strongest category: Amps");
   assert.equal(best.value, slotById(slots, "battlecards-amps-unbranded").value, "reads the category's own option");
@@ -547,7 +547,7 @@ test("each live figure says N of M and the larger slots carry the tab's disc", (
   assert.equal(retail?.reading.ratio, "1 of 3 current Buy Box readings");
   const taylor = slots.find((slot) => slot.id === "sat-taylor");
   assert.ok(taylor && /^\d+\.\d%$/.test(taylor.value), "the bubble leads with the competitor-led share");
-  assert.match(taylor.reading.ratio ?? "", /^\d+ of \d+ resolved unbranded discovery answers$/, "the N of M sits under the share");
+  assert.match(taylor.reading.ratio ?? "", /^\d+ of \d+ resolved Unbranded Discovery answers$/, "the N of M sits under the share");
 });
 
 test("a missing input reads Not available* or the bubble's waiting word, with a reason for the tooltip", () => {

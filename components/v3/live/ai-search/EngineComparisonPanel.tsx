@@ -32,7 +32,7 @@ const ENGINE_COLUMNS: RetailColumn[] = [
     headerTooltip: {
       title: "Competitor leads",
       description:
-        "Each other brand this engine named most in a resolved unbranded discovery answer, with how many it led, most first. Sorting uses the total.",
+        "Each other brand this engine named most in a resolved Unbranded Discovery answer, with how many it led, most first. Sorting uses the total.",
     },
   },
   clientColumn("unresolved", "No leader", "number", 110, 80),
@@ -130,15 +130,15 @@ function Comparison({ snapshot }: { snapshot: AiSearchSnapshot }) {
           </tbody>
         </ResizableTable>
         <p className="ai-role-footnote">
-          Each engine is compared on its own for <AiTerm term="unbranded discovery">unbranded discovery</AiTerm> and for{" "}
-          <AiTerm term="branded consideration">branded consideration</AiTerm>.
+          Each engine is compared on its own for <AiTerm term="Unbranded Discovery">Unbranded Discovery</AiTerm> and for{" "}
+          <AiTerm term="Branded Consideration">Branded Consideration</AiTerm>.
           {showSmallSample ? (
             <>
               {" "}
               A <AiTerm term="small sample" /> keeps its percentage and is not ranked.
             </>
           ) : null}{" "}
-          Competitor leads count wins inside <AiTerm term="unbranded discovery">unbranded discovery</AiTerm> only.
+          Competitor leads count wins inside <AiTerm term="Unbranded Discovery">Unbranded Discovery</AiTerm> only.
         </p>
       </div>
 

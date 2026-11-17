@@ -5,13 +5,13 @@
    for everything else, status colors where a status exists. */
 
 .citation-glance {
-  --citation-owned-ink: #38bdf8;
-  --citation-owned-fill: #38bdf8;
+  --citation-owned-ink: var(--ice-300);
+  --citation-owned-fill: var(--chart-measured);
   --chain-answers: #64748b;
   --chain-on-neutral: #fff;
-  --chain-rest: color-mix(in srgb, #94a3b8 8%, transparent);
-  --chain-hatch: color-mix(in srgb, #94a3b8 34%, transparent);
-  --citation-track: color-mix(in srgb, #94a3b8 16%, transparent);
+  --chain-rest: color-mix(in srgb, #8b95a7 8%, transparent);
+  --chain-hatch: color-mix(in srgb, #8b95a7 34%, transparent);
+  --citation-track: color-mix(in srgb, #8b95a7 16%, transparent);
   --citation-card-border: var(--border-color);
   --citation-card-radius: 14px;
   --citation-card-bg: var(--bg-card);
@@ -23,14 +23,14 @@
 }
 
 .ifai-canvas.light-theme .citation-glance {
-  --citation-owned-ink: #0369a1;
-  --citation-owned-fill: #0ea5e9;
-  --chain-answers: #94a3b8;
-  --chain-on-neutral: #0f172a;
+  --citation-owned-ink: var(--ice-800);
+  --citation-owned-fill: var(--chart-measured);
+  --chain-answers: #8b95a7;
+  --chain-on-neutral: #0b1220;
   --chain-rest: #f1f5f9;
-  --chain-hatch: #cbd5e1;
+  --chain-hatch: #c9d4df;
   --citation-track: #eef2f6;
-  --citation-card-border: #0f172a1c;
+  --citation-card-border: #0b12201c;
 }
 
 /* One card style for the chart and the tiles: border, radius, padding, kicker. */
