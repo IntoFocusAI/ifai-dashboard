@@ -5,7 +5,8 @@
    is a hand-written client difference. Differences must come from the settings record and the
    client's data (data/clients/<key>.json), read through the lib/client accessors.
 
-   What it flags (each finding prints file:line):
+   What it flags (each finding prints file:line, then "use instead:" with the settings field or brand
+   helper to read in its place, from FIX_RULES below):
      x === "fender"            == != === !== against a client key or brand name literal, either side
      case "ledlenser":         a switch case on one
      .includes("fmic")         includes, startsWith, endsWith, indexOf with one
@@ -92,19 +93,53 @@ function stripComments(source) {
     });
 }
 
-/** Findings in one source text: [{ file, line, literal, text }]. Pure, for the unit test. */
+/* What to use instead, by what the branch is about. The first rule whose pattern matches the line (or
+   the file) wins. Each names a settings field in data/clients/<key>.json and the accessor that reads
+   it, or a brand helper in lib/brand-copy.ts. */
+const S = "activeClientSettings()";
+export const FIX_RULES = [
+  { re: /RECHECK_DAYS|recheck|intervalDays/i, use: `the retailer's recheck_days setting: ${S}.retailers.find((r) => r.key === "walmart")?.recheck_days` },
+  { re: /Walmart|Musician|\bmf_|retailer/i, use: `the retailers and data_sources settings: ${S}.retailers (names, keys) and ${S}.data_sources.<key>` },
+  { re: /on_brand_sheet|brand_sheet/i, use: `the data_sources.brand_sheet setting: ${S}.data_sources.brand_sheet` },
+  { re: /naming\s*===?\s*["']/, use: `the column_naming setting (already a settings field): compare to a named constant from lib/client/column-aliases.ts, not a client name` },
+  { re: /hasFenderEstimates|analyst[_-]estimates/i, use: `the analyst_estimates setting: ${S}.analyst_estimates (null reads "Analyst estimate not prepared yet for <Brand>")` },
+  { re: /clientKey\s*===?\s*["']|\?client=/, use: `the is_default setting: defaultClientKey() from lib/client` },
+  { re: /\blead\b|LeadFilter/, use: `the lead brand: leadBrand() (lead_brand_label) from lib/brand-copy.ts, or a neutral filter value such as "lead"` },
+  { re: /dealers|sells through|partner/i, use: `the seller_type setting: activeClient().sellerModel ("Partner-led" or "Brand-led")` },
+  { re: /DOMAINS|domain|isOwnedDomain|BRAND_SITE|SITE_NAMES/i, use: `the owned_domains and portfolio_brands settings: activeClient().brandSiteDomains, ${S}.portfolio_brands; brandSite() for the label` },
+  { re: /Fender, Squier|Fender or|FMIC brand|Squier counts|fender\|squier|Fender-owned/i, use: `brand helpers in lib/brand-copy.ts: leadBrandOr() (lead_brand_phrase), leadBrand(), brandOwned(); ${S}.brand_name_terms or portfolio_brands for lists` },
+  { re: /SPEC_FIELD_SET|SPECS_PLACEHOLDER|FINDABILITY_COLUMNS/, use: `the vertical and product_types settings (${S}.vertical), or the shared approved field lists table (decision 107)` },
+  { re: /Stratocaster|neck, pickup|specs\b/i, use: `the product_line_terms or vertical setting (${S}.product_line_terms, ${S}.vertical) for vertical-specific copy` },
+  { re: /ROTATION_RULE|rotation/i, use: `the catalog_rotation_rule setting: ${S}.catalog_rotation_rule (null names the rule without counts)` },
+  { re: /narrative|base\b/i, use: `copy built from settings for every client (brandName(), ${S}.display_name), with Fender's hand-written text moved into data, not a branch` },
+  { re: /canvas-client|schema/i, use: `the data_schema and column_naming settings: activeClient().schema, ${S}.column_naming` },
+];
+export const DEFAULT_FIX = `a settings field from data/clients/<key>.json read through lib/client (activeClient(), ${S}), or a brand helper in lib/brand-copy.ts (brandName(), leadBrand(), leadBrandOr(), brandSite(), brandOwned())`;
+const HELPER_DEFINITION_FIX = "remove this helper once its callers read settings fields (each caller's finding names the field)";
+
+/** What to use instead of the branch on this line. `context` is the lines around it; the line itself wins, then the context, then the file name. */
+export function suggestFix(text, file = "", context = "") {
+  if (/export function is[A-Z]\w*\s*\(/.test(`${text}\n${context}`)) return HELPER_DEFINITION_FIX;
+  const rule =
+    FIX_RULES.find((r) => r.re.test(text)) ?? FIX_RULES.find((r) => r.re.test(context)) ?? FIX_RULES.find((r) => r.re.test(file));
+  return rule ? rule.use : DEFAULT_FIX;
+}
+
+/** Findings in one source text: [{ file, line, literal, text, fix }]. Pure, for the unit test. */
 export function lintSource(source, file, terms) {
   const wanted = new Set(terms.map((t) => t.toLowerCase()));
   const found = [];
-  stripComments(source).forEach((text, index) => {
+  const lines = stripComments(source);
+  lines.forEach((text, index) => {
+    const fix = () => suggestFix(text, file, lines.slice(Math.max(0, index - 1), index + 3).join("\n"));
     const call = helperCall(text, [...wanted]);
-    if (call) found.push({ file, line: index + 1, literal: call.literal, text: text.trim() });
+    if (call) found.push({ file, line: index + 1, literal: call.literal, text: text.trim(), fix: fix() });
     for (const re of [EQ_AFTER, EQ_BEFORE, CASE, METHOD]) {
       re.lastIndex = 0;
       for (const m of text.matchAll(re)) {
         const literal = m[2];
         if (wanted.has(literal.trim().toLowerCase())) {
-          found.push({ file, line: index + 1, literal, text: text.trim() });
+          found.push({ file, line: index + 1, literal, text: text.trim(), fix: fix() });
           break;
         }
       }
@@ -141,7 +176,10 @@ export function lintRepo(root = ROOT) {
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const report = process.argv.includes("--report");
   const findings = lintRepo();
-  for (const f of findings) console.log(`${f.file}:${f.line}: branches on a client (${f.literal}): ${f.text}`);
+  for (const f of findings) {
+    console.log(`${f.file}:${f.line}: branches on a client (${f.literal}): ${f.text}`);
+    console.log(`  use instead: ${f.fix}`);
+  }
   const files = new Set(findings.map((f) => f.file)).size;
   console.log(`lint:clients ${findings.length} finding${findings.length === 1 ? "" : "s"} in ${files} file${files === 1 ? "" : "s"}`);
   process.exit(report || findings.length === 0 ? 0 : 1);
