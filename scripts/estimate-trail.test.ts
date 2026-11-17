@@ -4,14 +4,15 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { test } from "node:test";
 import {
+  asOfText,
   CONFIDENCE_STATUS,
+  coverageShortText,
   coverageText,
   estimatedFrom,
   inputBenchmark,
   inputKindLabel,
   inputKindTip,
   inputValueText,
-  MOST_IMPROVED_BY,
   resultFigureText,
   salesSourceRows,
   SOURCE_NOT_CHECKED,
@@ -61,9 +62,14 @@ test("figure: mid with range, or Not available* when no listing had a sales figu
   assert.equal(resultFigureText({ status: "not_available", range: null }), "Not available*");
 });
 
-test("coverage: N of M measured, estimated listings and their basis, Not available*", () => {
-  assert.equal(coverageText(LOW), "Based on 62 of 214 listings; 120 estimated from sales rank; 32 Not available*");
-  assert.equal(coverageText(HIGH), "Based on 247 of 609 listings; 362 Not available*");
+test("coverage: N of M with measured and estimated counted apart, Not available*", () => {
+  assert.equal(coverageShortText(LOW), "Based on 182 of 214 listings (62 measured, 120 estimated)");
+  assert.equal(coverageShortText(LOW), LOW.coverage.tooltip, "the short line matches the formula core's tooltip");
+  assert.equal(coverageShortText(HIGH), "Based on 247 of 609 listings (247 measured, 0 estimated)");
+  assert.equal(coverageText(LOW), "Based on 182 of 214 listings: 62 measured, 120 estimated from sales rank, 32 Not available*");
+  assert.equal(coverageText(HIGH), "Based on 247 of 609 listings: 247 measured, 0 estimated, 362 Not available*");
+  const full = { ...HIGH, coverage: { ...HIGH.coverage, measured: 609, notAvailable: 0, partial: false } };
+  assert.equal(coverageText(full), "Based on 609 of 609 listings: 609 measured, 0 estimated");
   const both = {
     ...LOW,
     salesSources: { ...LOW.salesSources, keepa_monthly_sold: { listings: 10, annualSales: 1 } },
@@ -94,6 +100,17 @@ test("inputs: value in its unit with the benchmark's range; kinds in the operato
     ["Measured", "Benchmark", "Placeholder", "Worked out", "Client-provided"],
   );
   assert.match(inputKindTip(byKey("brand_sales")), /Read from: canvas_listing_sales_loss_v2\.smartscout_ttm_revenue\.$/);
+  assert.equal(inputKindLabel(byKey("category_share").kind), "Client-provided");
+});
+
+test("inputs: optional as-of dates read in words", () => {
+  assert.equal(asOfText("2026-11-17"), "17 Nov 2026");
+  assert.equal(asOfText("2026-01-05T10:00:00Z"), "5 Jan 2026");
+  assert.equal(asOfText("Apr 2026"), "Apr 2026");
+  assert.equal(asOfText("2018, reported Mar 2019"), "2018, reported Mar 2019");
+  assert.equal(asOfText(""), null);
+  assert.equal(asOfText(null), null);
+  assert.equal(asOfText(undefined), null);
 });
 
 test("sources: an unchecked source says so in its tooltip only", () => {
@@ -107,14 +124,11 @@ test("sources: an unchecked source says so in its tooltip only", () => {
   assert.ok(!sources.includes("SOURCE_NOT_CHECKED"), "the unchecked note is never rendered as text");
 });
 
-test("confidence: grade wears StatusMark; every line names what would most improve it", () => {
+test("confidence: grade wears StatusMark; most improved by comes from the trail", () => {
   assert.deepEqual(CONFIDENCE_STATUS, { high: "good", medium: "okay", low: "bad" });
-  assert.equal(MOST_IMPROVED_BY.ai_unbranded, "The brand's sales in every channel, by category (onboarding questions 1 and 3).");
-  for (const [line, text] of Object.entries(MOST_IMPROVED_BY)) {
-    assert.ok(text.endsWith("."), `${line} reads as a sentence`);
-    assert.ok(!/—|n't|'re|'ll/.test(text), `${line} keeps the brand voice`);
-  }
   const drawer = read("components/v3/live/estimates/EstimateTrail.tsx");
+  assert.match(drawer, /trail\.mostImprovedBy/);
+  assert.ok(!read("components/v3/live/estimates/trail-copy.ts").includes("MOST_IMPROVED_BY"), "no copy of the formula core's text");
   assert.match(drawer, /<StatusMark status=\{CONFIDENCE_STATUS\[trail\.confidence\]\}/);
   assert.match(drawer, /ANALYST_ESTIMATE/);
   assert.match(drawer, /role="dialog"/);

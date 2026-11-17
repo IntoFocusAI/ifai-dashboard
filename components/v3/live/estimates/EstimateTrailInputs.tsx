@@ -2,6 +2,7 @@
 
 import { figureTipAttrs } from "@/components/v3/live/FigureTip";
 import {
+  asOfText,
   inputBenchmark,
   inputKindLabel,
   inputKindTip,
@@ -30,7 +31,7 @@ function NotAvailable({ testId }: { testId: string }) {
   return <span {...figureTipAttrs(READ_NOT_AVAILABLE, NOT_AVAILABLE_LISTINGS_TIP, testId)}>{READ_NOT_AVAILABLE}</span>;
 }
 
-/** Each input with its value and where it comes from: kind, and the benchmark it cites. */
+/** Each input with its value and where it comes from: kind, the benchmark it cites, and its as-of date. */
 export function EstimateTrailInputs({ trail }: { trail: EstimateTrail }) {
   return (
     <table className="table-sm estimate-trail-inputs" data-estimate-inputs={trail.inputs.length}>
@@ -45,6 +46,7 @@ export function EstimateTrailInputs({ trail }: { trail: EstimateTrail }) {
         {trail.inputs.map((input) => {
           const benchmark = inputBenchmark(input, trail);
           const text = inputValueText(input, benchmark);
+          const asOf = asOfText(input.asOf);
           return (
             <tr key={input.key} data-estimate-input={input.key}>
               <td>
@@ -54,6 +56,11 @@ export function EstimateTrailInputs({ trail }: { trail: EstimateTrail }) {
               <td>
                 <InputKindTag input={input} />
                 {benchmark ? <span className="estimate-input-source">{benchmark.label}</span> : null}
+                {asOf ? (
+                  <span className="estimate-input-asof" data-estimate-input-asof="">
+                    {`As of ${asOf}`}
+                  </span>
+                ) : null}
               </td>
             </tr>
           );

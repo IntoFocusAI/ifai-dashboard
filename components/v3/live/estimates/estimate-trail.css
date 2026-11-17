@@ -169,7 +169,8 @@
   color: var(--text-main);
 }
 
-.estimate-input-source {
+.estimate-input-source,
+.estimate-input-asof {
   display: block;
   margin-top: 2px;
   font-size: 11px;

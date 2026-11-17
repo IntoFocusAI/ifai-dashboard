@@ -24,8 +24,10 @@ greater than the PM number in State. Your workers are that number .1, .2,
    - Add one row per worker to `docs/fdd/changelog.md` (date, change, reason,
      reference).
    - Bump the version on the first line of `docs/fdd/README.md` and
-     `docs/tdd/README.md` to the last approved worker label, and update
-     the TDD where the build changed it.
+     `docs/tdd/README.md` to the last approved worker label, and set
+     `DOCUMENTATION_VERSION` in `lib/fender-canvas/build-canvas-spec.tsx`
+     to the same label (it is the header badge; X-26). Update the TDD
+     where the build changed it.
    - Run `python3 scripts/fdd-register.py` and commit the register with the
      rows.
    Workers may propose these edits in their own pull request body; the PM

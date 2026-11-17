@@ -13,8 +13,7 @@ import {
   CONFIDENCE_STATUS,
   CONFIDENCE_WORD,
   coverageParts,
-  coverageText,
-  MOST_IMPROVED_BY,
+  coverageShortText,
   NOT_AVAILABLE_LISTINGS_TIP,
   resultFigureText,
   salesSourceRows,
@@ -22,16 +21,15 @@ import {
 import { PARTIAL_MARK, READ_NOT_AVAILABLE } from "@/lib/fender-canvas/canvas-reads";
 import type { EstimateResult, EstimateTrail as EstimateTrailData } from "@/lib/estimates/types";
 
-/** "Based on 62 of 214 listings; 120 estimated from sales rank; 32 Not available*" */
+/** Every count: "Based on 182 of 214 listings: 62 measured, 120 estimated from sales rank, 32 Not available*" */
 function CoverageLine({ trail }: { trail: EstimateTrailData }) {
   const parts = coverageParts(trail);
   return (
     <p className="estimate-trail-coverage" data-estimate-coverage="">
-      {parts.lead}
-      {parts.estimated ? `; ${parts.estimated}` : null}
+      {`${parts.lead}: ${parts.measured}, ${parts.estimated}`}
       {parts.notAvailable ? (
         <>
-          {`; ${parts.notAvailable} `}
+          {`, ${parts.notAvailable} `}
           <span {...figureTipAttrs(READ_NOT_AVAILABLE, NOT_AVAILABLE_LISTINGS_TIP, "estimate-coverage-na")}>
             {READ_NOT_AVAILABLE}
           </span>
@@ -50,7 +48,7 @@ function Figure({ result }: { result: EstimateResult }) {
       </span>
     );
   }
-  const tip = coverageText(result.trail);
+  const tip = coverageShortText(result.trail);
   return (
     <>
       {resultFigureText(result)}
@@ -83,7 +81,7 @@ export function EstimateTrail({ result, onClose }: { result: EstimateResult; onC
   const titleId = useId();
   const closeRef = useRef<HTMLButtonElement>(null);
   const { trail } = result;
-  const improvedBy = MOST_IMPROVED_BY[trail.lineId];
+  const improvedBy = trail.mostImprovedBy?.trim() || null;
 
   useEffect(() => {
     closeRef.current?.focus();

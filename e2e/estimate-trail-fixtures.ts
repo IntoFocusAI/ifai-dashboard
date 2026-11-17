@@ -65,6 +65,7 @@ export const HIGH_CONFIDENCE_RESULT: EstimateResult = {
         unit: "count",
         kind: "collected",
         source: "canvas_listing_sales_loss_v2.oos_days_365",
+        asOf: "2026-11-17",
       },
       {
         key: "listing_missed_sales",
@@ -89,8 +90,9 @@ export const HIGH_CONFIDENCE_RESULT: EstimateResult = {
       estimated: 0,
       notAvailable: 362,
       partial: true,
-      tooltip: "Based on 247 of 609 listings",
-      sentence: "247 of 609 listings measured, 0 estimated, 362 Not available*",
+      reportedNoSales: 0,
+      tooltip: "Based on 247 of 609 listings (247 measured, 0 estimated)",
+      sentence: "247 of 609 listings measured, 362 Not available*",
     },
     salesSources: split({
       smartscout: { listings: 247, annualSales: 9_400_000 },
@@ -112,6 +114,7 @@ export const HIGH_CONFIDENCE_RESULT: EstimateResult = {
     sources: [CORSTEN_ONLINE, CORSTEN_STORE],
     confidence: "high",
     confidenceReason: "Both main inputs are measured per listing.",
+    mostImprovedBy: "The brand's own Amazon sales by listing (onboarding question 4), in place of SmartScout.",
     notes: [],
     listings: [],
   },
@@ -169,6 +172,16 @@ export const LOW_CONFIDENCE_RESULT: EstimateResult = {
         unit: "usd",
         kind: "collected",
         source: "canvas_listing_sales_loss_v2.smartscout_ttm_revenue",
+        asOf: "2026-11-17",
+      },
+      {
+        key: "category_share",
+        label: "Share of the brand's sales in categories with unbranded questions",
+        value: 0.35,
+        unit: "share",
+        kind: "client",
+        source: "onboarding question 3",
+        asOf: "2026-11-10",
       },
       {
         key: "current_rate",
@@ -201,6 +214,7 @@ export const LOW_CONFIDENCE_RESULT: EstimateResult = {
         unit: "share",
         kind: "benchmark",
         source: "ai_shaped_unbranded",
+        asOf: "2025",
       },
       {
         key: "purchase_share",
@@ -217,7 +231,8 @@ export const LOW_CONFIDENCE_RESULT: EstimateResult = {
       estimated: 120,
       notAvailable: 32,
       partial: true,
-      tooltip: "Based on 182 of 214 listings",
+      reportedNoSales: 0,
+      tooltip: "Based on 182 of 214 listings (62 measured, 120 estimated)",
       sentence: "62 of 214 listings measured, 120 estimated, 32 Not available*",
     },
     salesSources: split({

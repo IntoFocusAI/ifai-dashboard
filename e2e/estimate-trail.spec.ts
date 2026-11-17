@@ -16,7 +16,9 @@ test.describe("estimate trail drawer", () => {
     await expect(drawer).toBeVisible();
     await expect(drawer.locator("[data-estimate-figure]")).toHaveText("$490K, range $368K to $674K*");
     await expect(drawer.locator("[data-analyst-estimate]")).toHaveText("Analyst estimate");
-    await expect(drawer.locator("[data-estimate-coverage]")).toHaveText("Based on 247 of 609 listings; 362 Not available*");
+    await expect(drawer.locator("[data-estimate-coverage]")).toHaveText(
+      "Based on 247 of 609 listings: 247 measured, 0 estimated, 362 Not available*",
+    );
     await expect(drawer.locator("[data-estimate-input]")).toHaveCount(3);
     const share = drawer.locator('[data-estimate-input="brand_loss_share"]');
     await expect(share).toContainText("40% (30% to 55%)");
@@ -24,6 +26,9 @@ test.describe("estimate trail drawer", () => {
     await expect(drawer.locator("[data-estimate-formula]")).toContainText("out-of-stock days");
     await expect(drawer.locator("[data-estimate-grade=high] [data-status=good]")).toContainText("High");
     await expect(drawer.locator("[data-estimate-improve]")).toContainText("Most improved by");
+    await expect(drawer.locator('[data-estimate-input="oos_listings"] [data-estimate-input-asof]')).toHaveText("As of 17 Nov 2026");
+    const partial = drawer.locator('[data-figure-tip="estimate-figure-partial"]');
+    await expect(partial).toHaveAttribute("data-ifai-tooltip-desc", "Based on 247 of 609 listings (247 measured, 0 estimated)");
 
     // No sideways overflow inside the drawer at 1280 x 720.
     const overflow = await drawer.evaluate((el) => {
@@ -44,8 +49,17 @@ test.describe("estimate trail drawer", () => {
     const drawer = page.locator('[data-estimate-trail="ai_unbranded"]');
     await expect(drawer.locator("[data-estimate-figure]")).toHaveText("$2.45K, range $306 to $9.18K*");
     await expect(drawer.locator("[data-estimate-coverage]")).toHaveText(
-      "Based on 62 of 214 listings; 120 estimated from sales rank; 32 Not available*",
+      "Based on 182 of 214 listings: 62 measured, 120 estimated from sales rank, 32 Not available*",
     );
+    await expect(drawer.locator('[data-figure-tip="estimate-figure-partial"]')).toHaveAttribute(
+      "data-ifai-tooltip-desc",
+      "Based on 182 of 214 listings (62 measured, 120 estimated)",
+    );
+    const client = drawer.locator('[data-estimate-input="category_share"]');
+    await expect(client).toContainText("Client-provided");
+    await expect(client).toContainText("As of 10 Nov 2026");
+    // No "most improved by" line when the trail does not name one.
+    await expect(drawer.locator("[data-estimate-improve]")).toHaveCount(0);
     await expect(drawer.locator('[data-estimate-split-source="none"]')).toContainText("Not available*");
     await expect(drawer.locator('[data-estimate-input="purchase_share"]')).toContainText("Placeholder");
     await expect(drawer.locator("[data-estimate-grade=low] [data-status=bad]")).toContainText("Low");

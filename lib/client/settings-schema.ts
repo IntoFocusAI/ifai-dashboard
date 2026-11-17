@@ -104,8 +104,6 @@ export type ClientSettings = {
   collector_version_pin: string | null;
   /** Staff can write this client's question list from Build prompts. */
   prompts_editable: boolean;
-  /** The question category the spotlight figures use, or null for none. */
-  spotlight_category: string | null;
   /** Roadmap and Action Items focus set by IntoFocus staff; null plans for the whole brand. */
   roadmap_focus_category: string | null;
   /** Analyst estimates as entered, or null when none are prepared yet. */
@@ -156,7 +154,6 @@ const FIELDS: readonly (keyof ClientSettings)[] = [
   "data_sources",
   "collector_version_pin",
   "prompts_editable",
-  "spotlight_category",
   "roadmap_focus_category",
   "analyst_estimates",
   "catalog_rotation_rule",
@@ -277,7 +274,7 @@ export function validateClientSettings(raw: unknown, source: string): ClientSett
   for (const f of ["set_aside_key", "display_name", "legal_name", "data_schema", "lead_brand_label", "lead_brand_phrase", "brand_site_label", "vertical"]) {
     text(raw, f, out);
   }
-  for (const f of ["logo_src", "collector_version_pin", "spotlight_category", "roadmap_focus_category", "catalog_rotation_rule"]) {
+  for (const f of ["logo_src", "collector_version_pin", "roadmap_focus_category", "catalog_rotation_rule"]) {
     textOrNull(raw, f, out);
   }
   if (isText(raw.logo_src) && !raw.logo_src.startsWith("/")) out.push("logo_src must be a path under public/, starting with /");

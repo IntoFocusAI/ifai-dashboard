@@ -5,7 +5,6 @@ import type {
   Benchmark,
   BenchmarkSource,
   EstimateConfidence,
-  EstimateLineId,
   EstimateResult,
   EstimateTrail,
   EstimateTrailInput,
@@ -44,31 +43,38 @@ export function estimatedFrom(trail: Pick<EstimateTrail, "salesSources">): strin
 }
 
 export type CoverageParts = {
-  /** "Based on 62 of 214 listings" (N = listings with a measured sales figure). */
+  /** "Based on 182 of 214 listings" (N = listings with a sales figure, measured or estimated). */
   lead: string;
-  /** "120 estimated from sales rank", or null when none are estimated. */
-  estimated: string | null;
+  /** "62 measured" */
+  measured: string;
+  /** "120 estimated from sales rank" ("0 estimated" when none are). */
+  estimated: string;
   /** "32", shown before Not available*, or null when every listing has a sales figure. */
   notAvailable: string | null;
 };
 
 export function coverageParts(trail: Pick<EstimateTrail, "coverage" | "salesSources">): CoverageParts {
   const { coverage } = trail;
-  const from = estimatedFrom(trail);
+  const from = coverage.estimated > 0 ? estimatedFrom(trail) : null;
   return {
-    lead: `Based on ${formatInt(coverage.measured)} of ${formatInt(coverage.total)} listings`,
-    estimated:
-      coverage.estimated > 0 ? `${formatInt(coverage.estimated)} estimated${from ? ` from ${from}` : ""}` : null,
+    lead: `Based on ${formatInt(coverage.measured + coverage.estimated)} of ${formatInt(coverage.total)} listings`,
+    measured: `${formatInt(coverage.measured)} measured`,
+    estimated: `${formatInt(coverage.estimated)} estimated${from ? ` from ${from}` : ""}`,
     notAvailable: coverage.notAvailable > 0 ? formatInt(coverage.notAvailable) : null,
   };
 }
 
-/** "Based on 62 of 214 listings; 120 estimated from sales rank; 32 Not available*" */
+/** The short line, for the asterisk's tooltip: "Based on 182 of 214 listings (62 measured, 120 estimated)". */
+export function coverageShortText(trail: Pick<EstimateTrail, "coverage">): string {
+  const { coverage } = trail;
+  return `Based on ${formatInt(coverage.measured + coverage.estimated)} of ${formatInt(coverage.total)} listings (${formatInt(coverage.measured)} measured, ${formatInt(coverage.estimated)} estimated)`;
+}
+
+/** Every count, for the drawer: "Based on 182 of 214 listings: 62 measured, 120 estimated from sales rank, 32 Not available*" */
 export function coverageText(trail: Pick<EstimateTrail, "coverage" | "salesSources">): string {
   const parts = coverageParts(trail);
-  return [parts.lead, parts.estimated, parts.notAvailable ? `${parts.notAvailable} ${READ_NOT_AVAILABLE}` : null]
-    .filter(Boolean)
-    .join("; ");
+  const counts = [parts.measured, parts.estimated, parts.notAvailable ? `${parts.notAvailable} ${READ_NOT_AVAILABLE}` : null];
+  return `${parts.lead}: ${counts.filter(Boolean).join(", ")}`;
 }
 
 /** Where the sales figures come from, one row per source used, largest first (approval 10). */
@@ -177,28 +183,22 @@ export const CONFIDENCE_WORD: Record<EstimateConfidence, string> = {
   low: "Low",
 };
 
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
 /**
- * The one input that would most improve each line's confidence, from the approved proposal's
- * "Best improvement" (docs/dollar-estimates-proposal.md section 3; decision 112).
+ * An input's as-of date in words: a data date "2026-11-17" reads "17 Nov 2026"; a publication date
+ * already in words ("Apr 2026") reads as given. null when the input has none.
  */
-export const MOST_IMPROVED_BY: Record<EstimateLineId, string> = {
-  out_of_stock: "The brand's own Amazon sales by listing, in place of SmartScout. It would also bring in the listings awaiting inputs.",
-  buy_box:
-    "Our own measurement: each listing's sales with and without the Buy Box over a few months, in place of the 80% share.",
-  map_leakage: "MAP price history, so the time below MAP is measured, plus units sold at Walmart and other retailers.",
-  splintered: "Review counts per listing and per parent listing, so the lift follows each listing's own reviews.",
-  missing_specs:
-    "Our own before-and-after: sales in the 60 days after a listing's specs are completed, against similar listings that did not change.",
-  miscategorized: "The miscategorized-listing check itself, then the same before-and-after measurement as missing specs.",
-  aplus: "The brand's own sales by listing.",
-  ai_unbranded: "The brand's sales in every channel, by category (onboarding questions 1 and 3).",
-  ai_branded: "The brand's sales in every channel (onboarding question 1).",
-  brand_site_pages: "Brand-site revenue and the list of products meant to be sold there.",
-  ai_actuation: "Verified Actuation records over time, to see whether rates move after placements.",
-  phase_1: "The brand's own Amazon sales by listing, in place of SmartScout.",
-  measured_total: "The brand's sales in every channel (onboarding question 1).",
-  enterprise_potential: "The brand's own revenue, in place of the public placeholder.",
-};
+export function asOfText(asOf: string | null | undefined): string | null {
+  const text = asOf?.trim();
+  if (!text) return null;
+  const iso = /^(\d{4})-(\d{2})-(\d{2})/.exec(text);
+  if (iso) {
+    const month = MONTHS[Number(iso[2]) - 1];
+    if (month) return `${Number(iso[3])} ${month} ${iso[1]}`;
+  }
+  return sanitizeUiText(text);
+}
 
 /** A source link only when it is a web address; anything else shows as plain text. */
 export function sourceHref(url: string | null | undefined): string | null {

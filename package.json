@@ -14,7 +14,9 @@
     "test:e2e:report": "playwright show-report",
     "push:v3-toolbelt": "node scripts/push-v3-toolbelt.mjs",
     "lint:brand": "node scripts/lint-brand.mjs",
-    "lint:status": "node scripts/lint-status-marks.mjs"
+    "lint:status": "node scripts/lint-status-marks.mjs",
+    "lint:clients": "node scripts/lint-client-branches.mjs",
+    "test:parity": "playwright test --project=parity-compare --workers=2 --trace off"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
