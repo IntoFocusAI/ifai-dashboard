@@ -420,7 +420,7 @@ test("the four new client definitions exist with their own wording", () => {
   const expected: Array<[string, RegExp]> = [
     ["shopping answer", /one AI engine to one shopping prompt/],
     ["cited link", /does not prove that the source caused or endorsed/],
-    ["Fender-owned", /controlled by Fender or another FMIC brand/],
+    ["Fender-owned", /controlled by Fender or a brand it owns \(Squier, Jackson, EVH, Gretsch\)/],
     ["source class", /brand-owned, retailer, editorial, community, video, or other/],
   ];
   for (const [term, pattern] of expected) {

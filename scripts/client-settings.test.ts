@@ -72,22 +72,21 @@ test("C1: profiles match the values the code hard-coded before the settings file
 });
 
 test("C1: settings values equal the constants the screens still read (no behavior change)", async () => {
-  const { FMIC_OWNED_DOMAINS, FENDER_CLASS_DOMAINS, LIGHTING_BRAND_SITES } = await import("@/lib/ai-search/citations");
+  // C2 moved owned domains, brand words and site lists into settings and data/reference/; the
+  // competitor sites in settings still name the same brand the vertical reference list does.
+  const { referenceBrandSites } = await import("@/lib/ai-search/reference-sites");
   const { RECHECK_DAYS } = await import("@/lib/fender-canvas/row-stale");
   const { CATALOG_ROTATION_RULE } = await import("@/lib/ai-search/probe-catalog");
   const { TRUSTED_COLLECTOR_VERSION } = await import("@/lib/ai-search/history-eligibility");
   const { AUTHORIZED_BUY_BOX_PARTNERS } = await import("@/lib/fender-canvas/consensus-scores");
   const { catalogBundleLineLabel } = await import("@/lib/fender-canvas/portfolio-retail");
-  const { FENDER_BRAND } = await import("@/lib/ai-search/run-metrics");
   const f = getClientSettings("fender");
   const l = getClientSettings("ledlenser");
-  assert.deepEqual(f.owned_domains, FMIC_OWNED_DOMAINS);
-  assert.equal(f.lead_brand_label, FENDER_BRAND);
   assert.deepEqual(f.default_authorized_partners, [...AUTHORIZED_BUY_BOX_PARTNERS]);
-  const fenderCompetitorSites = FENDER_CLASS_DOMAINS.find(([cls]) => cls === "competitor_brand")![1];
-  assert.deepEqual(f.competitors.flatMap((c) => c.domains), fenderCompetitorSites);
-  const lighting = new Map<string, string>(LIGHTING_BRAND_SITES);
-  for (const c of l.competitors) for (const d of c.domains) assert.equal(lighting.get(d), c.name, d);
+  for (const client of [f, l]) {
+    const listed = new Map<string, string>(referenceBrandSites(client.vertical));
+    for (const c of client.competitors) for (const d of c.domains) assert.equal(listed.get(d), c.name, d);
+  }
   assert.deepEqual(
     Object.fromEntries([...f.retailers, ...l.retailers].map((r) => [`${r.key}:${r.recheck_days}`, true])),
     {
