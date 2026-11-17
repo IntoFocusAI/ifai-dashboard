@@ -112,4 +112,20 @@ npx playwright install --with-deps chromium
 E2E_BROWSER=chromium npm run test:e2e
 ```
 
-`E2E_BASE_URL` points the suite at an already-running server and skips spawning one. Specs are grouped by the behavior they protect: `guided-tour`, `command-center`, `panel-layout` (including header fit and light-theme contrast), and `panel-interactions` (filters, watchlist, collapsible explanations, drill-downs, glossary). Every test also asserts the page logged no errors.
+### Which database the tests read
+
+Unless told otherwise, the dev server the suite spawns reads production Supabase through `.env.local`. Public reads on production stop after 3 seconds, so several full suites at once make reads time out and fail random tests (16 Nov 2026). Browser tests are moving to a database copy; the 3-second limit stays on production.
+
+- **On production, run one suite at a time.** The run prints a one-line reminder when it targets production. Workers default to 2; `E2E_WORKERS` changes that.
+- **To use a copy**, set both variables in your shell (not `.env.local`). The spawned dev server reads the copy instead:
+
+  ```bash
+  E2E_SUPABASE_URL=https://<copy-ref>.supabase.co \
+  E2E_SUPABASE_ANON_KEY=<copy anon key> \
+  E2E_PORT=3112 npm run test:e2e
+  ```
+
+  Setting only one of the two stops the run. A run pointed at a copy always starts its own server and fails if `E2E_PORT` is taken, because a server already running on that port could be reading a different database. Without the override, a running dev server on the port is reused as before, whatever database it reads.
+- **Before the full suite can pass on a copy**, the copy needs the `ledlenser` schema exposed to the API and the AI Search history views. No copy has both yet.
+
+`.env.example` lists these variables. `E2E_BASE_URL` points the suite at an already-running server and skips spawning one; the database variables do not apply to it. Specs are grouped by the behavior they protect: `guided-tour`, `command-center`, `panel-layout` (including header fit and light-theme contrast), and `panel-interactions` (filters, watchlist, collapsible explanations, drill-downs, glossary). Every test also asserts the page logged no errors.
