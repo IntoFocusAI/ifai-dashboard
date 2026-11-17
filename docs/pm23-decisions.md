@@ -521,3 +521,10 @@ closeout of each view. Open items are marked OPEN and are not built.
     listings without SmartScout sales are estimated (Keepa monthly-sold or
     sales rank; later the Amazon Solution Provider Portal), and until then
     Ledlenser may show its real figure with the n of m asterisk.
+113. Parity details (17 Nov): differences that follow a client's settings
+    are allowed and additive, not parity gaps: seller model (brand-led vs
+    partner-led), retailers (e.g. a Musician's Friend column only where the
+    settings list it), and industry columns keyed to a settings field, never
+    to a client name. Code that names the client uses the settings or a brand
+    helper (brandName()), never a hard-coded client. SmartScout listings with
+    no reported sales count as "measured, no sales" ($0, covered).
