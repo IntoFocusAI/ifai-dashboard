@@ -2,7 +2,6 @@ import type { CanvasMetric, CanvasNode, NodeStatus, PriorityItem } from "@/lib/c
 import { citationEvidence, groupCitations } from "@/lib/ai-search/citations";
 import {
   battleSentence,
-  categoryBattles,
   joinBrands,
   type CategoryBattle,
 } from "@/lib/ai-search/competitors";
