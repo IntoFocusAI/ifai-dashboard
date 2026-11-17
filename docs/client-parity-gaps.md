@@ -28,7 +28,7 @@ like before its data is loaded.
 | Layout differences, Fender and Ledlenser only | 23 | hub 11, Action Items 6, Catalog Health 2, AI Search 1, deck 3 |
 | Layout differences, all three clients | 120 | the 23 plus 97 more where the fishing client differs: by bubble, AI Search 40, deck 34, Competitive Radar 19, Summary 12, Action Items 6, Catalog Health 4, minimal view 2, map 2, AI Readiness 1 |
 | Foreign-content hits | 0 | no other client's brand, domain, product-type or vertical word on any screen, for all three clients. See "Foreign content" |
-| Lint hits (`lint:clients`) | 19 in 14 files | by area below (C6, worker 28.21, removed the 11 Catalog Health and AI Readiness hits) |
+| Lint hits (`lint:clients`) | 8 in 8 files | by area below (main 760c2bc plus C6, worker 28.21, which removed the 11 Catalog Health and AI Readiness hits) |
 
 Layout lines are written with the client's own brand, numbers and question categories normalized away
 (decision 106: category columns and battlecard figures come from the client's questions, so they count by
@@ -113,7 +113,7 @@ that would leak (the music lists for Fender and the lighting lists for every oth
 data is present. Those leaks are in the lint list below. The scan will start reporting them when a third
 client has data.
 
-## Lint hits: 19 in 14 files (`npm run lint:clients`)
+## Lint hits: 8 in 8 files on main 760c2bc plus C6 (`npm run lint:clients`)
 
 Each is code that branches on the client name. Move the difference into `data/clients/<key>.json` and read it
 through `lib/client`.
