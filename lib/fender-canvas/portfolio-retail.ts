@@ -27,9 +27,10 @@ import {
   featuredOfferHeadlineLabel,
   firstPassIncomplete,
 } from "./featured-offer-copy";
-import { brandName, isFenderClient } from "@/lib/brand-copy";
+import { brandName } from "@/lib/brand-copy";
+import { activeClientSettings } from "@/lib/client/active-client";
 import type { PartialFigure } from "./canvas-reads";
-import { combineStale, RECHECK_DAYS, rowsStale } from "./row-stale";
+import { combineStale, RECHECK_DAYS, retailerRecheckDays, rowsStale } from "./row-stale";
 
 export type RetailReadingStatus =
   | "available_with_issues"
@@ -449,14 +450,14 @@ export function catalogBundleSellerIdLabel(
   return id ? shortCell(id) : null;
 }
 
-/** Compact product-line label for a catalog-governance bundle row. */
+/**
+ * Compact product-line label for a catalog-governance bundle row: the client's
+ * category_short_labels setting when it names the stored category (P-16), else the stored label.
+ */
 export function catalogBundleLineLabel(category: string | null | undefined): string {
   const value = text(category);
   if (!value) return "Unknown";
-  if (value === "Solid Body") return "Solid Body";
-  if (value === "Electric Guitar Kits") return "Kits";
-  if (value === "Hollow & Semi-Hollow Body") return "Hollow";
-  return shortCell(value);
+  return activeClientSettings().category_short_labels[value] ?? shortCell(value);
 }
 
 export type UnnestedBundleDetail = {
@@ -730,28 +731,32 @@ export function mapLeakageFinding(
     label: string,
     leakage: (row: MapLeakageRow) => unknown,
     at: (row: MapLeakageRow) => string | null | undefined,
-    intervalDays: number,
+    intervalDays: number | null,
   ) => ({
     label,
-    stale: rowsStale(
-      rows.filter((row) => finite(leakage(row)) != null),
-      at,
-      { intervalDays, check: `${label} price check`, source: "canvas_retail_listings", figure: "MAP figures" },
-      options?.now,
-    ),
+    // A retailer the client does not check (no recheck days in its settings) reads no stale line.
+    stale:
+      intervalDays == null
+        ? null
+        : rowsStale(
+            rows.filter((row) => finite(leakage(row)) != null),
+            at,
+            { intervalDays, check: `${label} price check`, source: "canvas_retail_listings", figure: "MAP figures" },
+            options?.now,
+          ),
   });
   return withStale(
     reading,
     combineStale(
       [
         channel("Amazon", (row) => row.amz_leakage, (row) => row.featured_offer_checked_at, RECHECK_DAYS.buyBox),
+        channel("Walmart", (row) => row.wmt_leakage, (row) => row.wmt_checked_at, retailerRecheckDays("walmart")),
         channel(
-          "Walmart",
-          (row) => row.wmt_leakage,
-          (row) => row.wmt_checked_at,
-          isFenderClient() ? RECHECK_DAYS.walmartFender : RECHECK_DAYS.walmartLedlenser,
+          "Musician's Friend",
+          (row) => row.mf_leakage,
+          (row) => row.mf_checked_at,
+          retailerRecheckDays("musiciansfriend"),
         ),
-        channel("Musician's Friend", (row) => row.mf_leakage, (row) => row.mf_checked_at, RECHECK_DAYS.musiciansFriend),
       ],
     ),
   );
