@@ -182,8 +182,7 @@ Replace this whole section on handoff. Keep it under 40 lines. The FDD wins.
     the Briefing rebuild. `npm run lint:clients` lists remaining client-name branches.
   - Dollar estimates (decisions 111, 112): docs/dollar-estimates-proposal.md section 7.
     E1 formula core (PR 229) and E2 trail drawer (PR 228) merged; nothing on screen yet.
-- Open PRs: 231 layout pass X-36 + C6 + badge test (Brian asked to merge after the PM
-  re-runs its e2e on main; Ledlenser wording "Amazon and Walmart" needs his OK); 232
+- Merged 17 Nov: 231 layout pass X-36 + C6 + badge test (e2e 52/52 on main). Open: 232
   zero-sales coverage + parity allow-list (decision 113; for Brian's review).
 - Queue, in order:
   1. C3 + E3 + E4 together: Briefing, Opportunity and Revenue Estimates generated from
