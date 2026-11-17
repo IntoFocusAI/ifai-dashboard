@@ -5,11 +5,14 @@
 //   2. smartscout          SmartScout's last 12 months                                  measured
 //   3. keepa_monthly_sold  Amazon's "bought in past month" figure, read by Keepa        estimated
 //   4. sales_rank_curve    tracked listings with a similar sales rank (rank-curve.ts)   estimated
-//   5. none                Not available*. Never $0.
+//   5. smartscout, $0      SmartScout tracks the listing and reports no sales           measured, no sales
+//   6. none                Not available*. Never $0.
 //
 // Step 4 applies only to listings SmartScout has no record for. A listing SmartScout tracks and
 // reports no sales for is already in the curve as a zero; pricing it at its band's average would
-// count those zeros as sales. It stays Not available* and is counted as "reported no sales".
+// count those zeros as sales. Decision 113 (Brian, 17 Nov 2026): it counts as "measured, no sales",
+// covered and contributing $0, not Not available*. Keepa's bought-in-past-month figure still wins
+// over SmartScout's zero, because Amazon itself shows units sold.
 //
 // Keepa's figures describe selling speed while in stock, so an estimated listing's annual sales are
 // its sales per in-stock day x its in-stock days in the last 12 months. Its out-of-stock days are
@@ -34,7 +37,10 @@ export type ResolvedSales = {
   perInStockDay: SalesQuantity | null;
   /** Units per month (per 30 in-stock days when estimated). */
   monthlyUnits: SalesQuantity | null;
-  /** SmartScout tracks the listing and reports no sales, and no other source has a figure. */
+  /**
+   * Measured, no sales (decision 113): SmartScout tracks the listing, reports no sales, and no other
+   * source has a figure. Its quantities are SmartScout's $0 and 0 units, so it is covered at $0.
+   */
   reportedNoSales: boolean;
   /** Inputs behind an estimated figure, for the trail row. */
   detail: Record<string, number | string | boolean | null>;
@@ -139,31 +145,44 @@ export function resolveListingSales(l: EstimateListingInput, ctx: SalesContext =
   else if (est) monthlyUnits = { source: est.source, range: est.unitsPer30InStockDays };
 
   const usedEstimate = [annual, perInStockDay, monthlyUnits].some((q) => q && salesBasis(q.source) === "estimated");
+  // Step 5: tracked by SmartScout, no sales reported, nothing else known. Measured at $0 (decision 113).
+  const reportedNoSales = !annual && !perInStockDay && !monthlyUnits && Boolean(l.smartscoutHasRecord);
+  if (reportedNoSales) {
+    const zero: SalesQuantity = { source: "smartscout", range: exact(0) };
+    annual = zero;
+    perInStockDay = zero;
+    monthlyUnits = zero;
+  }
   return {
     annual,
     perInStockDay,
     monthlyUnits,
-    reportedNoSales: !annual && !perInStockDay && !monthlyUnits && Boolean(l.smartscoutHasRecord),
+    reportedNoSales,
     detail: usedEstimate && est ? { ...est.detail, inStockDays365Used: estDays } : {},
   };
 }
 
-/** Counts for a set of listings: N measured, K estimated, the rest Not available*. */
+/**
+ * Counts for a set of listings: N measured, K estimated, the rest Not available*. A listing flagged
+ * reportedNoSales with a measured source is measured, no sales (decision 113): counted in N and
+ * again in reportedNoSales.
+ */
 export function buildCoverage(sources: Array<{ source: SalesSource; reportedNoSales?: boolean }>): EstimateCoverage {
   let measured = 0;
   let estimated = 0;
   let reportedNoSales = 0;
   for (const s of sources) {
     const basis = salesBasis(s.source);
-    if (basis === "measured") measured += 1;
-    else if (basis === "estimated") estimated += 1;
-    else if (s.reportedNoSales) reportedNoSales += 1;
+    if (basis === "measured") {
+      measured += 1;
+      if (s.reportedNoSales) reportedNoSales += 1;
+    } else if (basis === "estimated") estimated += 1;
   }
   const total = sources.length;
   const notAvailable = total - measured - estimated;
   const partial = notAvailable > 0;
   const fmt = (x: number) => new Intl.NumberFormat("en-US").format(x);
-  const parts = [`${fmt(measured)} of ${fmt(total)} listings measured`];
+  const parts = [`${fmt(measured)} of ${fmt(total)} listings measured${reportedNoSales > 0 ? ` (${fmt(reportedNoSales)} with no sales)` : ""}`];
   if (estimated > 0) parts.push(`${fmt(estimated)} estimated`);
   if (notAvailable > 0) parts.push(`${fmt(notAvailable)} Not available*`);
   return {
@@ -210,11 +229,13 @@ export function catalogSalesCoverage(listings: EstimateListingInput[], ctx: Sale
   for (const l of listings) {
     const r = resolveListingSales(l, ctx);
     const source = r.annual?.source ?? "none";
+    // Measured includes measured, no sales: SmartScout's $0 with nothing else known (decision 113).
     const measured = salesBasis(source) === "measured";
-    // "Reported no sales" here means no annual figure and a SmartScout record, whatever else is known.
-    const reportedNoSales = !r.annual && Boolean(l.smartscoutHasRecord);
-    after.push({ source, reportedNoSales });
-    before.push({ source: measured ? source : "none", reportedNoSales: !measured && Boolean(l.smartscoutHasRecord) });
+    after.push({ source, reportedNoSales: r.reportedNoSales });
+    // Before decision 112's estimates, every listing SmartScout tracks without positive sales is measured, no sales.
+    const measuredSales = measured && !r.reportedNoSales;
+    const beforeNoSales = !measuredSales && Boolean(l.smartscoutHasRecord);
+    before.push({ source: measuredSales ? source : beforeNoSales ? "smartscout" : "none", reportedNoSales: beforeNoSales });
     split[source].listings += 1;
     if (r.annual) {
       split[source].annualSales += r.annual.range.mid;

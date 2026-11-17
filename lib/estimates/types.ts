@@ -29,7 +29,8 @@ export type EstimateLineId =
 /**
  * Where a listing's annual sales figure came from, in the order used.
  *   brand_reported      the brand's own Amazon sales by listing (onboarding question 4)
- *   smartscout          SmartScout's modelled sales
+ *   smartscout          SmartScout's modelled sales; $0 when it tracks the listing and reports no sales
+ *                       and no estimate applies (measured, no sales; decision 113)
  *   keepa_monthly_sold  estimated: Keepa's units bought in the past month x price x 12
  *   sales_rank_curve    estimated: Amazon sales rank through a stated rank-to-units curve x price x 12
  *   none                no figure. The listing reads Not available* and is never $0.
@@ -74,7 +75,8 @@ export type Benchmark = {
 /**
  * How much of the catalog a figure covers.
  *   total         M: listings the line applies to (for example listings with an out-of-stock day)
- *   measured      N: listings priced on SmartScout or brand-reported sales
+ *   measured      N: listings priced on SmartScout or brand-reported sales, including listings
+ *                 SmartScout tracks and reports no sales for (measured, no sales, at $0; decision 113)
  *   estimated     K: listings priced on a Keepa or sales-rank estimate
  *   notAvailable  the rest: no sales figure. They read Not available* and are never $0.
  * measured + estimated + notAvailable = total.
@@ -85,8 +87,8 @@ export type EstimateCoverage = {
   estimated: number;
   notAvailable: number;
   /**
-   * Of notAvailable: listings SmartScout tracks and reports no sales for. They have no sales figure, so
-   * they are not priced; they are counted apart from listings nobody has a sales figure for.
+   * Of measured: listings SmartScout tracks and reports no sales for (measured, no sales; decision 113).
+   * They are covered and contribute $0; they are never Not available*.
    */
   reportedNoSales?: number;
   /** True when notAvailable > 0. The figure then carries the asterisk. */
@@ -96,7 +98,7 @@ export type EstimateCoverage = {
    * estimated)". The first number is measured + estimated.
    */
   tooltip: string | null;
-  /** One sentence with the split, for the trail: "24 of 166 listings measured, 97 estimated, 45 Not available*". */
+  /** One sentence with the split, for the trail: "60 of 166 listings measured (36 with no sales), 97 estimated, 9 Not available*". */
   sentence: string;
 };
 
