@@ -24,6 +24,13 @@ async function openAs(page: Page, client: string, path: string) {
 }
 
 async function checkFit(page: Page, name: string) {
+  // Let the panel finish sliding in, so the check and the screenshot see its resting place.
+  await page.waitForFunction(() => document.getAnimations().every((a) => a.playState !== "running"));
+  const clipped = await page.evaluate(() => {
+    const panel = document.querySelector("[data-revenue-estimates], [data-briefing-findings]");
+    return panel ? panel.getBoundingClientRect().right - window.innerWidth : 0;
+  });
+  expect(clipped, `${name} runs past the right edge`).toBeLessThanOrEqual(0);
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(overflow, `${name} scrolls sideways`).toBeLessThanOrEqual(0);
   if (SHOTS) {
