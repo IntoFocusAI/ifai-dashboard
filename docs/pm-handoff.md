@@ -182,8 +182,9 @@ Replace this whole section on handoff. Keep it under 40 lines. The FDD wins.
   Briefing/Opportunity (H-09 CURRENT); 239 dollars on Action Items and tabs; 242 MAP
   N of carried; 243 Actuation items; 245 Buy Box by cause; 246 AI lines 8-9 (light
   E5); 250/252 demo-sweep fixes. Close-out in this handoff PR.
-- Open: PR 29.29 map vs tabs (Branded Consideration, Fact Checks under a point
-  apart; worker 29.29) if it opened; check its status first.
+- Map vs tabs (worker 29.29, 18 Nov): no mismatch on main; map and tabs share
+  useMapAiSearch. FDD A-02 text ("published run plus API run") is stale; map's
+  Branded Consideration lacks the tab's stale asterisk (93.8% vs 93.8%*). Both minor.
 - Queue, in order:
   1. After the demo: Brian's feedback from the two meetings.
   2. Demo sweep leftovers: one "fix first" order across Priorities, Action Items,
