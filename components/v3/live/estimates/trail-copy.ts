@@ -1,6 +1,6 @@
 import type { DataStatus } from "@/lib/canvas-sdk/data-status";
 import { READ_NOT_AVAILABLE } from "@/lib/fender-canvas/canvas-reads";
-import { formatInt, formatMoneyRange, formatMoneyShort, sanitizeUiText } from "@/lib/fender-canvas/format";
+import { formatInt, formatMoneyRange, formatMoneyShort, formatMoneySpan, sanitizeUiText } from "@/lib/fender-canvas/format";
 import type {
   Benchmark,
   BenchmarkSource,
@@ -26,6 +26,17 @@ export function resultFigureText(result: Pick<EstimateResult, "status" | "range"
   // Every listing measured with no sales (decision 113): "$0", not "$0, range $0 to $0".
   const { low, mid, high } = result.range;
   return low === mid && mid === high ? formatMoneyShort(mid) : formatMoneyRange(result.range);
+}
+
+/**
+ * A hero card's figure: the mid as the big figure and "range $X to $Y" for the line below it, in
+ * the N of M type. The range is null when there is none to show (Not available*, or low = mid = high).
+ */
+export function resultHeroText(result: Pick<EstimateResult, "status" | "range">): { figure: string; range: string | null } {
+  if (result.status !== "estimated" || !result.range) return { figure: READ_NOT_AVAILABLE, range: null };
+  const { low, mid, high } = result.range;
+  if (low === mid && mid === high) return { figure: formatMoneyShort(mid), range: null };
+  return { figure: formatMoneyShort(mid), range: `range ${formatMoneySpan(low, high)}` };
 }
 
 /**

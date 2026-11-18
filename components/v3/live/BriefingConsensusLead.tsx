@@ -3,6 +3,7 @@
 import "@/components/v3/live/summary.css";
 import { CitationPieDisc } from "@/components/v3/live/ai-search/CitationPieDisc";
 import { PartialFigureMark } from "@/components/v3/live/FigureTip";
+import { ScoreOutOf100 } from "@/components/v3/live/ScoreOutOf100";
 import { useFindability } from "@/components/v3/live/findability/FindabilityContext";
 import { StatusMark } from "@/components/v3/live/StatusMark";
 import type { AiSearchRead } from "@/lib/ai-search/types";
@@ -91,15 +92,17 @@ export function BriefingConsensusLead({
       )}
       <div className="retail-overview-hero-row">
         <span className="retail-overview-hero-figures">
-          <span
-            className="ai-lead-figure"
-            data-briefing-consensus-score=""
-            style={{ color: status ? scoreToneColor(score) : "var(--text-muted)" }}
-          >
-            <PartialFigureMark partial={consensus ? consensusPartial(consensus) : null} testId="briefing-consensus">
-              {figure}
-            </PartialFigureMark>
-          </span>
+          <ScoreOutOf100 show={target != null}>
+            <span
+              className="ai-lead-figure"
+              data-briefing-consensus-score=""
+              style={{ color: status ? scoreToneColor(score) : "var(--text-muted)" }}
+            >
+              <PartialFigureMark partial={consensus ? consensusPartial(consensus) : null} testId="briefing-consensus">
+                {figure}
+              </PartialFigureMark>
+            </span>
+          </ScoreOutOf100>
           {target ? (
             <span className="retail-overview-hero-ratio" data-briefing-consensus-target="">
               {scoreTargetLabel()}

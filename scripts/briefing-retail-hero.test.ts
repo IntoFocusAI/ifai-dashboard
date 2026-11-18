@@ -9,6 +9,8 @@ import {
   BRIEFING_COUNT_MISSING,
   BRIEFING_LOST_REVENUE_LABEL,
   briefingFindingsLead,
+  orderBriefingFindings,
+  type BriefingFinding,
 } from "../lib/fender-canvas/briefing-retail-lead.ts";
 import {
   mapLeakageFinding,
@@ -336,7 +338,9 @@ test("hub Briefing puts consensus in the findings row, then the essay", () => {
     "findings row, then the lead section",
   );
   assert.doesNotMatch(spokes, /BriefingConsensusLead|briefing-consensus-lead/);
-  assert.match(hero, /<BriefingConsensusLead[\s\S]*<BriefingFindingCard[\s\S]*<MonthlyLostRevenue/);
+  // Worker 29.10: AI Consensus, then the monthly card, then the findings by result.
+  assert.match(hero, /<BriefingConsensusLead[\s\S]*<MonthlyLostRevenue[\s\S]*ordered\.map[\s\S]*<BriefingFindingCard/);
+  assert.match(hero, /const ordered = orderBriefingFindings\(findings\)/);
   assert.doesNotMatch(hero, /briefing-buy-box-cluster|briefing-consensus-lead/);
   assert.match(consensusLead, /consensusFromLive\(/);
   assert.match(consensusLead, /briefingConsensusSentence\(/);
@@ -387,4 +391,22 @@ test("hub Briefing puts consensus in the findings row, then the essay", () => {
   assert.doesNotMatch(card, /\stitle=/);
   assert.doesNotMatch(spokes, /DIY|Done-with-You|Done-for-You|retainer|service-fee/i);
   assert.doesNotMatch(lead, /AI Foundation|AI Commerce|AI Actuation|AI Consensus/);
+});
+
+test("Worker 29.10: Briefing findings order by result, worst first, ties keep their order", () => {
+  const card = (id: BriefingFinding["id"], tone: BriefingFinding["tone"], graded = true, loading = false) =>
+    ({ id, tone, numerator: graded ? 1 : null, denominator: graded ? 2 : null, loading }) as BriefingFinding;
+  const ordered = orderBriefingFindings([
+    card("buy_box", "success"),
+    card("map_leakage", "warning", false),
+    card("splintered_bundles", "warning"),
+    card("exact_official_product", "danger"),
+    card("unbranded_discovery", "danger", true, true),
+  ]);
+  assert.deepEqual(
+    ordered.map((f) => f.id),
+    ["exact_official_product", "splintered_bundles", "buy_box", "map_leakage", "unbranded_discovery"],
+  );
+  const ties = [card("buy_box", "danger"), card("map_leakage", "danger"), card("splintered_bundles", "danger")];
+  assert.deepEqual(orderBriefingFindings(ties).map((f) => f.id), ["buy_box", "map_leakage", "splintered_bundles"]);
 });

@@ -64,7 +64,8 @@ for (const client of ["fender", "ledlenser"]) {
       for (const pillar of ["consensus", "foundation", "commerce", "actuation"]) {
         const card = page.locator(`[data-consensus-lead] [data-consensus-pillar='${pillar}']`);
         await expect(card.locator("[data-consensus-pillar-score]")).toHaveText(/^\d{1,3}\*?$/, { timeout: AI_READ_MS });
-        await expect(card.locator("[data-consensus-target]")).toHaveText("vs target 70");
+        await expect(card.locator("[data-score-out-of]")).toHaveText("/100");
+        await expect(card.locator("[data-consensus-target]")).toHaveText("Target 70");
         await expect(card.locator("[data-status]")).toHaveText(/^(Poor|Fair|Good)$/);
       }
       // SC-03: Actuation counts from 0 at launch (decision 97); it never reads Not included (decision 78).
@@ -246,7 +247,7 @@ for (const client of ["fender", "ledlenser"]) {
 
       const point = section.locator("[data-score-history-point='consensus']").last();
       await point.hover();
-      await expect(page.locator(".node-tooltip-definition")).toContainText("56 vs target 70");
+      await expect(page.locator(".node-tooltip-definition")).toContainText("56/100, target 70");
       await expect(page.locator(".node-tooltip-definition")).toContainText("Scoring now includes AI Actuation");
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     });

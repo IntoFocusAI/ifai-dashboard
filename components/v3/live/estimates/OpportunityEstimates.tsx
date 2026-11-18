@@ -23,7 +23,16 @@ export const ESTIMATED_SALES_TIP =
  * Not prepared reads Not available* with the decision 105 tooltip. A line whose listings have no
  * sales figure at all reads Not available* with the trail's own tooltip for such listings.
  */
-export function EstimateFigure({ read, result }: { read: ClientEstimatesRead | undefined; result: EstimateResult | null }) {
+export function EstimateFigure({
+  read,
+  result,
+  hero,
+}: {
+  read: ClientEstimatesRead | undefined;
+  result: EstimateResult | null;
+  /** A hero card: the mid as the figure, its range on a line below. Table rows keep "mid, range". */
+  hero?: boolean;
+}) {
   if (!read || read.phase === "loading") return <span data-estimate-loading="">{ESTIMATE_LOADING}</span>;
   if (read.phase === "error") {
     return <span {...figureTipAttrs(NO_ANALYST_ESTIMATE, ESTIMATES_READ_FAILED, "estimate-read-failed")}>{NO_ANALYST_ESTIMATE}</span>;
@@ -42,7 +51,7 @@ export function EstimateFigure({ read, result }: { read: ClientEstimatesRead | u
       </span>
     );
   }
-  return <EstimateTrailTrigger result={result} />;
+  return <EstimateTrailTrigger result={result} hero={hero} />;
 }
 
 function Card({ id, label, tip, read, result }: { id: string; label: string; tip?: string; read: ClientEstimatesRead | undefined; result: EstimateResult | null }) {
@@ -52,7 +61,7 @@ function Card({ id, label, tip, read, result }: { id: string; label: string; tip
         <span {...figureTipAttrs(label, tip)}>{label}</span>
       </span>
       <div className="metric-card-val">
-        <EstimateFigure read={read} result={result} />
+        <EstimateFigure read={read} result={result} hero />
       </div>
     </div>
   );

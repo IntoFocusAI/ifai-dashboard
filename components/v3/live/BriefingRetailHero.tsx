@@ -8,7 +8,11 @@ import { useSummaryAiRead, useSummaryAiStale } from "@/components/v3/live/useSum
 import { EstimateFigure } from "@/components/v3/live/estimates/OpportunityEstimates";
 import { estimateMonthlyPotential } from "@/lib/estimates/monthly";
 import type { ClientEstimatesRead } from "@/lib/estimates/live-inputs";
-import { BRIEFING_LOST_REVENUE_LABEL, briefingFindingsLead } from "@/lib/fender-canvas/briefing-retail-lead";
+import {
+  BRIEFING_LOST_REVENUE_LABEL,
+  briefingFindingsLead,
+  orderBriefingFindings,
+} from "@/lib/fender-canvas/briefing-retail-lead";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
 
@@ -21,15 +25,15 @@ function MonthlyLostRevenue({ read }: { read: ClientEstimatesRead | undefined })
         {BRIEFING_LOST_REVENUE_LABEL}
       </span>
       <span className="ai-lead-figure" data-briefing-revenue-figure="">
-        <EstimateFigure read={read} result={monthly} />
+        <EstimateFigure read={read} result={monthly} hero />
       </span>
     </div>
   );
 }
 
 /**
- * Summary Briefing hero row: AI Consensus, five findings, and the monthly lost-revenue card.
- * Buy Box stays beside that placeholder. The monthly card is not a sixth finding.
+ * Summary Briefing hero row: AI Consensus, the monthly lost-revenue card, then the five findings
+ * by result, worst first (Poor, Fair, Good, Not available*). The monthly card is not a sixth finding.
  */
 export function BriefingRetailHero({
   bundle,
@@ -43,16 +47,15 @@ export function BriefingRetailHero({
   const ai = useSummaryAiRead();
   const aiStale = useSummaryAiStale(ai);
   const { findings } = briefingFindingsLead(read, findability, ai, { aiStale });
-  const [buyBox, ...rest] = findings;
+  const ordered = orderBriefingFindings(findings);
 
   return (
     <>
     <DeckLauncher bundle={bundle} retail={read} />
     <div className="briefing-findings" data-briefing-retail-hero="" data-briefing-findings="">
       <BriefingConsensusLead bundle={bundle} retail={read} ai={ai} />
-      <BriefingFindingCard finding={buyBox} />
       <MonthlyLostRevenue read={bundle.estimates} />
-      {rest.map((finding) => (
+      {ordered.map((finding) => (
         <BriefingFindingCard key={finding.id} finding={finding} />
       ))}
     </div>

@@ -24,6 +24,7 @@ import type { CanvasBundle } from "@/lib/fender-canvas/types";
 import {
   buyBoxHero,
   catalogHero,
+  heroFigureTone,
   mapHero,
   type RetailOverviewHeroModel,
 } from "@/lib/fender-canvas/retail-overview-lead";
@@ -351,4 +352,22 @@ export function briefingFindingsLead(
   return {
     findings: [buyBox, map, bundles, findabilityFinding(findability), unbrandedFinding(ai, options)],
   };
+}
+
+/** Briefing card order by result: Poor, then Fair, then Good, then Not available* (and Loading). */
+const RESULT_RANK: Record<Exclude<NodeStatus, "neutral">, number> = { danger: 0, warning: 1, success: 2 };
+
+/**
+ * The Briefing findings ordered by each client's live result, worst first: Poor, Fair, Good, then
+ * Not available*. A tie keeps the order briefingFindingsLead gives.
+ */
+export function orderBriefingFindings(findings: readonly BriefingFinding[]): BriefingFinding[] {
+  const rank = (finding: BriefingFinding) => {
+    const tone = finding.loading ? null : heroFigureTone(finding);
+    return tone ? RESULT_RANK[tone] : 3;
+  };
+  return findings
+    .map((finding, index) => ({ finding, index, rank: rank(finding) }))
+    .sort((a, b) => a.rank - b.rank || a.index - b.index)
+    .map(({ finding }) => finding);
 }

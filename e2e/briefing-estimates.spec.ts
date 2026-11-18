@@ -53,6 +53,22 @@ for (const client of ["fender", "ledlenser"]) {
       await openAs(page, client, "spoke=hub");
       const row = page.locator("[data-briefing-findings]");
       await expect(row.locator("[data-briefing-consensus-title]").first()).toHaveText("AI Consensus Score");
+      // Worker 29.10: AI Consensus, the monthly card, then the findings by result, worst first.
+      await expect(row.locator("[data-briefing-finding-ratio]")).toHaveCount(5, { timeout: AI_READ_MS });
+      const cards = await row.locator(":scope > *").evaluateAll((nodes) =>
+        nodes.map((node) => ({
+          consensus: node.hasAttribute("data-briefing-consensus"),
+          monthly: node.hasAttribute("data-briefing-revenue-placeholder"),
+          status: node.querySelector("[data-status]")?.getAttribute("data-status") ?? "none",
+        })),
+      );
+      expect(cards[0].consensus).toBe(true);
+      expect(cards[1].monthly).toBe(true);
+      const rank: Record<string, number> = { bad: 0, okay: 1, good: 2, none: 3 };
+      const ranks = cards.slice(2).map((card) => rank[card.status] ?? 3);
+      expect(ranks, `findings by result: ${ranks}`).toEqual([...ranks].sort((a, b) => a - b));
+      await expect(row.locator("[data-briefing-consensus] [data-score-out-of]")).toHaveText("/100");
+      await expect(row.locator("[data-briefing-consensus-target]")).toHaveText("Target 70");
       await expect(page.getByText("Portfolio at a glance")).toHaveCount(0);
       const lead = page.locator("[data-briefing-lead]");
       await expect(lead).toContainText(`What is changing what AI assistants recommend for ${BRAND[client]}?`);
@@ -72,7 +88,9 @@ for (const client of ["fender", "ledlenser"]) {
       const card = page.locator("[data-briefing-revenue-placeholder]");
       await expect(card.locator("[data-briefing-revenue-label]")).toHaveText("Monthly potential lost brand revenue");
       const trigger = card.locator("[data-estimate-trigger='monthly_potential']");
-      await expect(trigger).toContainText(/\$[\d.,]+[KM]?, range \$[\d.,]+[KM]? to \$[\d.,]+[KM]?/, { timeout: ESTIMATE_MS });
+      // Worker 29.10: the mid is the figure; the range sits on its own line below it.
+      await expect(trigger.locator(".estimate-trail-trigger-figure")).toHaveText(/^\$[\d.,]+[KM]?\*?$/, { timeout: ESTIMATE_MS });
+      await expect(trigger.locator("[data-estimate-range]")).toHaveText(/^range \$[\d.,]+[KM]? to \$[\d.,]+[KM]?$/);
       await expect(trigger).toContainText("analyst estimate");
       await trigger.click();
       const trail = page.getByRole("dialog");
@@ -89,7 +107,10 @@ for (const client of ["fender", "ledlenser"]) {
         test.slow();
         await openAs(page, client, path);
         const phase = page.locator("[data-estimate-card='phase_one']");
-        await expect(phase.locator("[data-estimate-trigger='phase_1']")).toContainText(/\$[\d.,]+[KM]?, range \$[\d.,]+[KM]? to \$[\d.,]+[KM]?/, { timeout: ESTIMATE_MS });
+        await expect(phase.locator("[data-estimate-trigger='phase_1'] .estimate-trail-trigger-figure")).toHaveText(/^\$[\d.,]+[KM]?\*?$/, { timeout: ESTIMATE_MS });
+        await expect(phase.locator("[data-estimate-trigger='phase_1'] [data-estimate-range]")).toHaveText(/^range \$[\d.,]+[KM]? to \$[\d.,]+[KM]?$/);
+        // Table rows keep "mid, range low to high".
+        await expect(page.locator("[data-estimate-row='phase_1'] [data-estimate-trigger]")).toContainText(/\$[\d.,]+[KM]?\*?, range \$/);
         await expect(phase).toContainText("analyst estimate");
         await expect(page.locator("[data-estimate-card='enterprise'] [data-estimate-trigger='enterprise_potential']")).toContainText(/\$[\d.,]+M/);
         await expect(page.locator("[data-estimate-card='map_leakage'] [data-estimate-trigger='map_leakage']")).toContainText("analyst estimate");

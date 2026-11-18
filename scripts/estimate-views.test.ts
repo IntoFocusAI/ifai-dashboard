@@ -6,7 +6,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import { coverageText, figureSplit, resultFigureText, salesSourceRows } from "../components/v3/live/estimates/trail-copy.ts";
+import { coverageText, figureSplit, resultFigureText, resultHeroText, salesSourceRows } from "../components/v3/live/estimates/trail-copy.ts";
 import { citationOwnedLinksLead } from "../lib/ai-search/citation-lead.ts";
 import { getClientSettings } from "../lib/client/active-client.ts";
 import { estimateEnterprise } from "../lib/estimates/enterprise.ts";
@@ -193,4 +193,18 @@ test("monthly potential lost brand revenue is Phase 1 divided by 12 with the sam
 test("a listing count reads singular for one listing", () => {
   assert.match(read("components/v3/live/BriefingAiLead.tsx"), /total === 1 \? "listing" : "listings"/);
   assert.match(read("lib/estimates/line.ts"), /=== 1 \? "listing has" : "listings have"/);
+});
+
+test("Worker 29.10: a hero card shows the mid as the figure and the range on its own line", () => {
+  const range = { low: 600_000, mid: 1_050_000, high: 1_710_000 };
+  const hero = resultHeroText({ status: "estimated", range });
+  assert.equal(hero.figure, "$1.05M");
+  assert.match(hero.range ?? "", /^range \$[\d.,]+[KM]? to \$[\d.,]+[KM]?$/);
+  assert.equal(resultHeroText({ status: "estimated", range: { low: 0, mid: 0, high: 0 } }).range, null);
+  assert.equal(resultHeroText({ status: "not_available", range: null }).range, null);
+  // Table rows keep "mid, range low to high".
+  assert.match(resultFigureText({ status: "estimated", range }), /^\$1\.05M, range /);
+  const src = read("components/v3/live/estimates/OpportunityEstimates.tsx");
+  assert.match(src, /<EstimateFigure read=\{read\} result=\{result\} hero \/>/);
+  assert.match(read("components/v3/live/BriefingRetailHero.tsx"), /<EstimateFigure read=\{read\} result=\{monthly\} hero \/>/);
 });
