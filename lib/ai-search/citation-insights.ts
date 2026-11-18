@@ -24,6 +24,7 @@ import { brandName, brandOwned } from "@/lib/brand-copy";
 import { isOwnBrandName } from "@/lib/ai-search/brand-words";
 import { matchesDomain, referenceBrandSites } from "@/lib/ai-search/reference-sites";
 import { activeClientSettings } from "@/lib/client/active-client";
+import { formatInt } from "@/lib/fender-canvas/format";
 
 export type OwnedPresence = {
   /** Shopping (or scoped) answers that cited at least one Fender-owned page. */
@@ -245,7 +246,7 @@ export function citationRangeLabel(snapshot: AiSearchSnapshot): string {
   const read = citationEvidence(snapshot.calls, snapshot.citations, "commercial");
   const byType = ownedByQuestionType(snapshot.calls, read, "commercial");
   if (!byType || byType.insight.resolved <= 0) return "No unbranded answers";
-  return `${byType.insight.withOwned} of ${byType.insight.resolved} unbranded`;
+  return `${formatInt(byType.insight.withOwned)} of ${formatInt(byType.insight.resolved)} unbranded`;
 }
 
 /**

@@ -69,9 +69,9 @@ export function BrandStackBar({ pie, tip }: { pie: CitationPie; tip: string }) {
               data-pie-count={slice.count}
               data-pie-label={slice.label}
               data-ifai-tooltip-title={slice.label}
-              data-ifai-tooltip-desc={`${slice.label}: ${slice.count} of ${pie.total} ${pie.totalLabel}.`}
+              data-ifai-tooltip-desc={`${slice.label}: ${count(slice.count)} of ${count(pie.total)} ${pie.totalLabel}.`}
               tabIndex={0}
-              aria-label={`${slice.label}: ${slice.count} of ${pie.total} ${pie.totalLabel}.`}
+              aria-label={`${slice.label}: ${count(slice.count)} of ${count(pie.total)} ${pie.totalLabel}.`}
             >
               {slice.label} <strong>{count(slice.count)}</strong>
             </li>

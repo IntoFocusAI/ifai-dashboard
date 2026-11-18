@@ -200,7 +200,7 @@ test("E1 reads the Citation Ecosystem data and counts only engines that returned
   assert.deepEqual(joined?.basis, { withOwned: 2, resolved: 10 });
   assert.equal(joined?.leftOut.length, 0);
   const rows = actuationFactorRows(actuationFromLive({ ai: windowRead(true), actuation: clientBasis(LAUNCH_ROWS), asOf: ASOF })!, joined, "Fender");
-  assert.equal(rows[2].basis, "20.0% of unbranded shopping answers cite a Fender page (2 of 10). Target 15%.");
+  assert.equal(rows[2].basis, "20.0% of unbranded shopping answers from engines that cite sources cite a Fender page (2 of 10). Target 15%.");
   assert.equal(rows[2].pointsLabel, "30 of 30 points");
 });
 

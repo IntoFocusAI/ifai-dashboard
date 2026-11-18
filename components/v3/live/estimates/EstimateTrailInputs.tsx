@@ -6,6 +6,7 @@ import {
   inputBenchmark,
   inputKindLabel,
   inputKindTip,
+  inputLabel,
   inputValueText,
   NOT_AVAILABLE_LISTINGS_TIP,
   salesSourceRows,
@@ -50,7 +51,7 @@ export function EstimateTrailInputs({ trail }: { trail: EstimateTrail }) {
           return (
             <tr key={input.key} data-estimate-input={input.key}>
               <td>
-                <span className="estimate-input-label">{input.label}</span>
+                <span className="estimate-input-label">{inputLabel(input, trail)}</span>
               </td>
               <td className="money">{text === READ_NOT_AVAILABLE ? <NotAvailable testId="estimate-input-na" /> : text}</td>
               <td>
