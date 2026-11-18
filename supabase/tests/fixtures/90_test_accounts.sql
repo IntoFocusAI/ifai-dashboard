@@ -23,8 +23,8 @@ insert into public.organization_memberships (organization_id, user_id, role, sta
   ('00000000-0000-0000-0000-0000000000f0', '00000000-0000-0000-0000-0000000000c1', 'platform_admin', 'active');
 
 insert into public.organization_modules (organization_id, module_key, enabled) values
-  ('00000000-0000-0000-0000-00000000000a', 'aeo_dashboard', true),
-  ('00000000-0000-0000-0000-00000000000b', 'aeo_dashboard', false);
+  ('00000000-0000-0000-0000-00000000000a', 'consensus_control', true),
+  ('00000000-0000-0000-0000-00000000000b', 'consensus_control', false);
 
 insert into private.client_schema_org (schema_name, organization_id, note) values
   ('command', '00000000-0000-0000-0000-00000000000a', 'test: org A'),

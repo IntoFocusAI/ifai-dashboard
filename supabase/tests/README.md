@@ -33,7 +33,7 @@ structure and made-up rows only, never client data.
 - `20_portal_accounts.sql`: `public.organizations`, `public.organization_memberships`,
   `public.organization_modules`, `private.is_staff()` and `private.module_access(uuid, text)`,
   with only the columns the 1.6 helpers read. Hosted has the intofocus-portal versions; column
-  names, membership status values and the module key `aeo_dashboard` are to be checked against
+  names, membership status values and the module key `consensus_control` are to be checked against
   the hosted catalog snapshot.
 - `25_hosted_base.sql`: `public.audit_log` with the columns the set-aside trigger writes.
 - `30_client_schemas.sql`: a model of the client schemas, not the full hosted set: one object of

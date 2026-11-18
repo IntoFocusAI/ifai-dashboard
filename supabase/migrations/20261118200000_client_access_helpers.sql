@@ -13,7 +13,7 @@
 -- A caller may read an account's data when, and only when:
 --   * they have an active membership in that account, or
 --   * they are IntoFocus staff (private.is_staff()) and the account is entitled to the AEO
---     dashboard (private.module_access(account, 'aeo_dashboard')).
+--     dashboard (private.module_access(account, 'consensus_control')).
 -- Anonymous callers (no auth.uid()) never may.
 --
 -- At apply time Brian Watson inserts one row per client schema (account ids are not in the repo):
@@ -75,7 +75,7 @@ language sql stable security definer set search_path = '' as $$
          where m.organization_id = p_organization_id
            and m.user_id = auth.uid()
            and m.status = 'active')
-       or (private.is_staff() and private.module_access(p_organization_id, 'aeo_dashboard'))
+       or (private.is_staff() and private.module_access(p_organization_id, 'consensus_control'))
      )
 $$;
 comment on function private.client_org_readable(uuid) is
