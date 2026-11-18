@@ -36,7 +36,8 @@ const C6_FILES = [
   "lib/fender-canvas/command-center-from-live.ts",
   "lib/fender-canvas/portfolio-retail.ts",
   "lib/fender-canvas/consensus-scores.ts",
-  "components/v3/live/StockLossHero.tsx",
+  "components/v3/live/StockLossPanel.tsx",
+  "lib/fender-canvas/stock-loss.ts",
   "components/v3/live/SpecNarratives.tsx",
   "lib/findability/queries.ts",
 ];
@@ -103,7 +104,7 @@ test("P-13: the MAP sentences name Amazon plus the client's retailers, read per 
 });
 
 test("P-15: the Out of Stock seller sentence keys on seller_type", () => {
-  const source = read("components/v3/live/StockLossHero.tsx");
+  const source = read("lib/fender-canvas/stock-loss.ts");
   assert.match(source, /seller_type === "partner_led"/);
   assert.doesNotMatch(source, /Fender sells through dealers/);
 });

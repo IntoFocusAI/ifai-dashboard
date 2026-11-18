@@ -108,6 +108,11 @@ export type DeckInput = {
   /** The shared date pill's label. */
   windowLabel: string;
   asOf: string | null;
+  /**
+   * Line 1, out of stock, brand-level a year, as the Out of Stock tab's estimate card shows it.
+   * Null while the estimates read, or when no listing has a sales figure.
+   */
+  outOfStockLine?: { range: { low: number; mid: number; high: number }; asterisk: boolean; means: string } | null;
   /** Hand-entered analyst estimates; null when the client has none. */
   phaseOneLift: string | null;
   enterprisePotential: string | null;

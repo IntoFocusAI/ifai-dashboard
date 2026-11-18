@@ -117,7 +117,7 @@ function estimatesSlide(input: DeckInput): DeckSlide | null {
   if (input.phaseOneLift) rows.push(["Phase 1 lift, a year", input.phaseOneLift, SOURCES.revenueEstimates]);
   if (input.enterprisePotential) rows.push(["Full portfolio potential, a year", input.enterprisePotential, SOURCES.revenueEstimates]);
   const stock = stockLossFigure(input);
-  if (stock) rows.push([stock.figure.label, `${stock.figure.value} (${stock.figure.ratio})`, SOURCES.outOfStock]);
+  if (stock?.figure) rows.push([stock.figure.label, `${stock.figure.value} (${stock.figure.ratio})`, SOURCES.outOfStock]);
   if (rows.length === 0) return null;
   return {
     id: "b4",

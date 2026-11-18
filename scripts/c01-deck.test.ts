@@ -21,7 +21,7 @@ import {
 } from "../lib/fender-canvas/portfolio-retail.ts";
 import { buyBoxHero, catalogHero, mapHero } from "../lib/fender-canvas/retail-overview-lead.ts";
 import { rankedFindings } from "../lib/fender-canvas/roadmap-plan.ts";
-import { lostSalesPartial, sumLostSales, type StockLossRow } from "../lib/fender-canvas/stock-loss.ts";
+import { sumLostSales, type StockLossRow } from "../lib/fender-canvas/stock-loss.ts";
 import { outcomeRatioFigure, outcomeShareFigure } from "../lib/findability/lead.ts";
 import { countFindability, type FindabilityRow } from "../lib/findability/outcomes.ts";
 
@@ -157,6 +157,7 @@ async function fixture(): Promise<DeckInput> {
     stockLoss: { rows: [stockRow("B01", 1200), stockRow("B02", 300), stockRow("B03", null)], populationCount: 10 },
     windowLabel: "Last 30 days",
     asOf: "Nov 10, 2026, 9:32 PM",
+    outOfStockLine: { range: { low: 392_000, mid: 541_000, high: 629_000 }, asterisk: true, means: "Line 1 means." },
     phaseOneLift: "+$680K est.",
     enterprisePotential: "+$38M to $62M est.",
   };
@@ -206,10 +207,14 @@ test("listing figures equal the Catalog Health and AI Readiness heroes", async (
   }
   assert.equal(figure(deck, "s6", "map-gap").value, formatUsd(snapshot.mapLeakage.detail!.averageLeakage, { signed: true }));
 
+  // PM29 item 1: the deck shows the tab's brand-level yearly line, never the listing-level total.
   const year = sumLostSales(input.stockLoss!.rows, 365);
-  const mark = lostSalesPartial(input.stockLoss!.rows, year) ? "*" : "";
-  assert.equal(figure(deck, "s5", "stock-loss").value, `${formatUsd(year.bySource[0].total)}${mark}`);
+  assert.equal(figure(deck, "s5", "stock-loss").label, "Out of stock, per year");
+  assert.equal(figure(deck, "s5", "stock-loss").value, "$541K* est.");
+  assert.equal(figure(deck, "s5", "stock-loss").ratio, "range $392K to $629K");
+  assert.notEqual(figure(deck, "s5", "stock-loss").value, formatUsd(year.bySource[0].total));
   assert.equal(figure(deck, "s5", "stock-loss").estimate, true);
+  assert.equal(buildDeck({ ...input, outOfStockLine: null }).slides.find((s) => s.id === "s5")?.figures.some((f) => f.id === "stock-loss"), false);
 
   assert.equal(input.findability.phase, "ready");
   if (input.findability.phase !== "ready") return;

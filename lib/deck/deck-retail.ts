@@ -4,7 +4,7 @@
  */
 
 import type { DataStatus } from "@/lib/canvas-sdk/data-status";
-import { formatInt, formatRatio, formatUsd } from "@/lib/fender-canvas/format";
+import { formatEstimate, formatInt, formatMoneyShort, formatMoneySpan, formatRatio, formatUsd } from "@/lib/fender-canvas/format";
 import { machineReadabilityHeroes, specPageCounts } from "@/lib/fender-canvas/machine-readability";
 import type { PortfolioRetailSnapshot } from "@/lib/fender-canvas/portfolio-retail";
 import {
@@ -15,7 +15,7 @@ import {
   specHero,
   type RetailOverviewHeroModel,
 } from "@/lib/fender-canvas/retail-overview-lead";
-import { lostSales, lostSalesPartial, REVENUE_SOURCE_LABELS, sumLostSales } from "@/lib/fender-canvas/stock-loss";
+import { lostSales, sumLostSales } from "@/lib/fender-canvas/stock-loss";
 import { SPLINTERED_LISTINGS_LABEL } from "@/lib/fender-canvas/briefing-retail-lead";
 import { outcomeRatioFigure, outcomeShareFigure } from "@/lib/findability/lead";
 import { countFindability } from "@/lib/findability/outcomes";
@@ -48,25 +48,30 @@ export function heroFigure(id: string, label: string, hero: RetailOverviewHeroMo
   };
 }
 
-/** The Out of Stock hero's 12-month figure for the first sales source, as that tab shows it. */
-export function stockLossFigure(input: DeckInput): { figure: DeckFigure; affected: number } | null {
+/**
+ * The Out of Stock tab's yearly figure: line 1, brand-level after the brand-loss share, as the
+ * tab's estimate card shows it (PM29 item 1). The listing-level missed sales stay an input in its
+ * trail. `affected` is the out-of-stock listing count from the tab's rows.
+ */
+export function stockLossFigure(input: DeckInput): { figure: DeckFigure | null; affected: number } | null {
   if (!input.stockLoss) return null;
   const year = sumLostSales(input.stockLoss.rows, 365);
-  const first = year.bySource[0];
-  if (!first || year.affectedCount === 0) return null;
-  const partial = lostSalesPartial(input.stockLoss.rows, year);
+  if (year.affectedCount === 0) return null;
+  const line = input.outOfStockLine ?? null;
   return {
     affected: year.affectedCount,
-    figure: {
-      id: "stock-loss",
-      label: `Est. lost sales from out of stock, 12 months (${REVENUE_SOURCE_LABELS[first.source]})`,
-      value: `${formatUsd(first.total)}${partial ? "*" : ""}`,
-      ratio: `Covers ${formatRatio(year.estimatedCount, year.affectedCount)} out-of-stock listings`,
-      status: null,
-      source: SOURCES.outOfStock,
-      tip: `${formatInt(year.estimatedCount)} of ${formatInt(year.affectedCount)} out-of-stock listings have a sales estimate.`,
-      estimate: true,
-    },
+    figure: line
+      ? {
+          id: "stock-loss",
+          label: "Out of stock, per year",
+          value: formatEstimate(`${formatMoneyShort(line.range.mid)}${line.asterisk ? "*" : ""}`),
+          ratio: `range ${formatMoneySpan(line.range.low, line.range.high)}`,
+          status: null,
+          source: SOURCES.outOfStock,
+          tip: line.means,
+          estimate: true,
+        }
+      : null,
   };
 }
 
@@ -87,7 +92,7 @@ function buyBoxSlide(input: DeckInput, snapshot: PortfolioRetailSnapshot): DeckS
       tip: "Withheld listings priced above the lowest outside price Amazon found in the same check.",
     });
   }
-  if (stock) figures.push(stock.figure);
+  if (stock?.figure) figures.push(stock.figure);
   const withheld = formatInt(hero.numerator);
   return {
     id: "s5",
