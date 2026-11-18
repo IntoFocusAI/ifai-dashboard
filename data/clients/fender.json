@@ -70,6 +70,7 @@
     ]
   },
   "catalog_rotation_rule": "about 90 catalog models per run, each asked once per engine, all 180 in-scope guitar and bass models every 2 runs, plus anchors p17 and p33",
+  "amazon_rank_category": "Musical Instruments",
   "category_short_labels": {
     "Electric Guitar Kits": "Kits",
     "Hollow & Semi-Hollow Body": "Hollow"
