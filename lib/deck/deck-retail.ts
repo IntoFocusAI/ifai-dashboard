@@ -84,12 +84,12 @@ function buyBoxSlide(input: DeckInput, snapshot: PortfolioRetailSnapshot): DeckS
   if (counts && counts.withheld > 0) {
     figures.push({
       id: "above-outside",
-      label: "Priced above Amazon's outside price",
+      label: "Priced above Amazon's reference price",
       value: formatInt(counts.confirmedHighPrice),
       ratio: `${formatRatio(counts.confirmedHighPrice, counts.withheld)} withheld listings`,
       status: null,
       source: SOURCES.suppressed,
-      tip: "Withheld listings priced above the lowest outside price Amazon found in the same check.",
+      tip: "Withheld listings priced above Amazon's reference price in the same check.",
     });
   }
   if (stock?.figure) figures.push(stock.figure);
@@ -135,7 +135,7 @@ function mapSlide(input: DeckInput, snapshot: PortfolioRetailSnapshot): DeckSlid
     why: `A price below MAP puts a lower number on the public record than ${input.brand} agreed to advertise. That is the number shoppers and assistants see.`,
     figures,
     sources: [SOURCES.map],
-    note: `A lower outside price is what Amazon compares against when it withholds a Buy Box. Amazon does not name the outside retailer, so no listing here is tied to one.`,
+    note: `A lower reference price is what Amazon compares against when it withholds a Buy Box. Amazon does not name the outside retailer, so no listing here is tied to one.`,
   };
 }
 
@@ -244,14 +244,14 @@ export function buyBoxDetailSlide(input: DeckInput): DeckSlide | null {
         row("Current readings of monitored listings", counts.current, counts.population),
         row("Buy Box present", counts.present, counts.current),
         row("Buy Box Withheld", counts.withheld, counts.current),
-        row("Withheld and priced above the outside price", counts.confirmedHighPrice, counts.withheld),
-        row("Withheld with no outside price to compare", counts.withheldWithoutBenchmark, counts.withheld),
+        row("Withheld and priced above Amazon's reference price", counts.confirmedHighPrice, counts.withheld),
+        row("Withheld with no Amazon reference price to compare", counts.withheldWithoutBenchmark, counts.withheld),
         row("No active offer", counts.noActiveOffer, counts.current),
       ],
       caption: "Each row is N of M as Suppressed Listings counts it.",
     },
     sources: [SOURCES.suppressed],
-    note: "A withheld listing with no outside price has no confirmed cause.",
+    note: "A withheld listing with no Amazon reference price has no confirmed cause.",
   };
 }
 

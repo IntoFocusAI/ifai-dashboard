@@ -180,6 +180,9 @@ export type ClientEstimates = ListingEstimates & {
   /** Listings read. */
   listingCount: number;
   dataAsOf: string;
+  /** The joined listings and the sales context they were priced with, so a line can be re-run on a subset. */
+  inputs: EstimateListingInput[];
+  ctx: SalesContext;
 };
 
 const LISTING_LINES: Array<keyof Pick<ListingEstimates, "outOfStock" | "buyBox" | "mapLeakage" | "splintered" | "missingSpecs" | "miscategorized" | "aplus">> = [
@@ -231,6 +234,8 @@ export function buildClientEstimates(
     revenue: opts.revenue ?? null,
     listingCount: listings.length,
     dataAsOf: opts.dataAsOf,
+    inputs: listings,
+    ctx,
   };
 }
 
