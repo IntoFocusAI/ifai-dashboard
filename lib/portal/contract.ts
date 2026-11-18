@@ -12,7 +12,7 @@ export const DASHBOARD_PRODUCT = "consensus_control";
 export const OPEN_MODULE_RPC = "open_module";
 export const OPEN_MODULE_ARGS = { org: "p_org", product: "p_product", reason: "p_reason" } as const;
 
-/** Wrappers this repo adds (supabase/migrations/20261118200000_dashboard_portal_access.sql). */
+/** Wrappers this repo adds (supabase/migrations/20261118210000_dashboard_portal_access.sql). */
 export const MY_ACCOUNTS_RPC = "my_dashboard_accounts";
 export const MY_CLIENTS_RPC = "my_dashboard_clients";
 export const IS_STAFF_RPC = "dashboard_viewer_is_staff";

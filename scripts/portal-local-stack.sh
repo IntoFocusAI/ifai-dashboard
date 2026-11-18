@@ -45,7 +45,7 @@ up() {
   psql_as supabase_admin -f $FIX/00-local-auth.sql
   psql_as postgres -f $FIX/10-portal-stub.sql 2>/dev/null
   psql_as postgres -f $FIX/20-isolation-contract-stub.sql 2>/dev/null
-  psql_as postgres -f supabase/migrations/20261118200000_dashboard_portal_access.sql
+  psql_as postgres -f supabase/migrations/20261118210000_dashboard_portal_access.sql
   psql_as postgres -f $FIX/30-accounts-ab.sql
 
   local secret anon

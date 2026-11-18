@@ -1,4 +1,4 @@
--- Isolation tests for supabase/migrations/20261118200000_dashboard_portal_access.sql (issue 248).
+-- Isolation tests for supabase/migrations/20261118210000_dashboard_portal_access.sql (issue 248).
 -- Local stack only. Run with scripts/portal-local-stack.sh test, which loads the fixtures in
 -- supabase/tests/fixtures/portal-dashboard/ first. Every check raises on failure; the run is
 -- rolled back, so the open log written by the staff test does not stay.
