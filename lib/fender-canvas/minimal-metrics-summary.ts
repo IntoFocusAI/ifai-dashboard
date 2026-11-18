@@ -14,7 +14,8 @@ import {
   type MinimalContext,
   type MinimalEntry,
 } from "@/lib/fender-canvas/minimal-metric-kit";
-import { activeOfferSplit } from "@/lib/fender-canvas/offer-clarity";
+import { activeOfferSplit, brandSellerLed } from "@/lib/fender-canvas/offer-clarity";
+import { brandName } from "@/lib/brand-copy";
 
 const PERFORMANCE = "Performance";
 const NO_SCORE = "AI Consensus scores are not available until the retail reading loads.";
@@ -62,17 +63,19 @@ export const SUMMARY_ENTRIES: MinimalEntry[] = [
     id: "briefing-amazon-buy-box",
     spokeId: "hub",
     tab: "Briefing",
-    label: "Amazon holds the Buy Box",
+    // A brand-led client's own store is meant to hold the Buy Box, so its card counts that store, not Amazon.
+    label: () => (brandSellerLed() ? `${brandName()}'s own store holds the Buy Box` : "Amazon holds the Buy Box"),
     read: (ctx) => {
       const failed = failedReadTip(ctx.bundle, "m");
       if (failed) return missingFigure(failed);
       const split = activeOfferSplit(ctx.bundle.m);
       if (!split) return missingFigure("The offer split is not stored.");
       if (split.active <= 0) return missingFigure("No listing in this catalog read has an active Amazon offer.");
+      const held = brandSellerLed() ? split.brand : split.oneP;
       return {
-        value: formatPct((split.oneP / split.active) * 100),
+        value: formatPct((held / split.active) * 100),
         tone: "neutral",
-        ratio: `${formatInt(split.oneP)} of ${formatInt(split.active)} listings with an active Amazon offer`,
+        ratio: `${formatInt(held)} of ${formatInt(split.active)} listings with an active Amazon offer`,
         pie: null,
         tip: null,
         missing: null,

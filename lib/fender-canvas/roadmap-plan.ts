@@ -12,6 +12,7 @@
  */
 
 import type { PieDiscData } from "@/lib/ai-search/citation-pies";
+import type { FactCheckReviewAnswer } from "@/lib/ai-search/drift";
 import type { EvidenceFocus } from "@/lib/ai-search/evidence-focus";
 import type { NodeStatus } from "@/lib/canvas-sdk/types";
 import { rankFixList, type FixListRow } from "@/lib/fender-canvas/action-items-fix-list";
@@ -103,6 +104,8 @@ export type PlanItem = {
   tip?: string | null;
   /** An Actuation confirm item's suggested target sites, each opening its Citation Ecosystem rows. */
   targets?: { label: string; sites: SuggestedTarget[] } | null;
+  /** The fact-check review task's flagged answers, each linking to its quote and source fact. */
+  reviews?: FactCheckReviewAnswer[];
 };
 
 export const RECOMMENDED_LABEL = "Recommended";
@@ -158,6 +161,7 @@ function signalItem(signal: SignalAction): PlanItem {
     pages: [],
     evidence: null,
     categories: signal.categories ?? [],
+    ...(signal.reviews ? { reviews: signal.reviews } : {}),
   };
 }
 

@@ -6,7 +6,7 @@ import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
 import { CopyTip } from "@/components/v3/live/ai-search/CopyTip";
 import { ExternalLink } from "@/components/v3/live/ai-search/ExternalLink";
 import { answerCopy, useAnswerText } from "@/components/v3/live/ai-search/useAnswerText";
-import { PROBE_STATE_LABELS, type ProbeEvidence } from "@/lib/ai-search/drift";
+import { PROBE_STATE_LABELS, evidenceQuote, type ProbeEvidence } from "@/lib/ai-search/drift";
 import {
   AMAZON_DIFFERS_TITLE,
   catalogPickTip,
@@ -116,7 +116,7 @@ export function FactCheckEvidence({
         <span data-ai-fact-result-row>
           {probe?.state === "no_contradiction" ? <AiTerm term="no contradiction found">{result}</AiTerm> : result}
         </span>
-        {probe?.evidence ? <div style={mutedText}>Conflicting text: {probe.evidence}</div> : null}
+        {probe?.evidence ? <div style={mutedText}>Conflicting text: {evidenceQuote(probe.evidence)}</div> : null}
       </Step>
 
       <details>

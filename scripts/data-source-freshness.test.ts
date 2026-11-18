@@ -122,7 +122,7 @@ test("Ledlenser shows only the sources it has, and Walmart uses its two-day inte
       "Walmart",
       "Amazon specs and A+",
       "SmartScout sales estimates",
-      "ledlenser.com pages",
+      "ledlenserusa.com pages",
     ],
   );
   assert.equal(sources.find((source) => source.id === "ai_api")!.lastCheck, LEDLENSER_API);
@@ -137,7 +137,7 @@ test("brand-site pages fall back to the newest Findability check when no job row
   resetActiveClientForTests("ledlenser");
   const withRows = dataSourceFreshness(LEDLENSER, NOW, { brand_site: "2026-11-12T08:00:00Z" });
   const site = withRows.find((source) => source.id === "brand_site")!;
-  assert.equal(site.label, "ledlenser.com pages");
+  assert.equal(site.label, "ledlenserusa.com pages");
   assert.equal(site.lastCheck, "2026-11-12T08:00:00Z");
   assert.equal(site.outOfDate, false);
   assert.equal(withRows.at(-1)!.id, "brand_site");

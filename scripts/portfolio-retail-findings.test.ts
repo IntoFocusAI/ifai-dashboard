@@ -607,6 +607,7 @@ test("the Buy Box read keeps seller names and still scores the placeholder partn
 
   assert.deepEqual(snapshot.buyBoxSellers, {
     amazonRetail: 2,
+    brandStore: 0,
     sellers: [{ name: "Austin Bazaar", listings: 1 }],
     known: 3,
     population: 4,
