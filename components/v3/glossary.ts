@@ -8,8 +8,8 @@ export const fenderGlossary: Record<string, string> = {
   "Buy Box":
     "Amazon also calls it the Featured Offer. The one-click Add to Cart button. Only one seller wins it. When nobody wins it, shoppers see other sellers listed and far fewer of them buy.",
   "Featured Offer":
-    "Same as Buy Box. The one-click Add to Cart button on an Amazon listing. Amazon withholds it when the offer, including shipping, is above a benchmark from outside Amazon, even if the price is at MAP.",
-  "Competitive External Price":
+    "Same as Buy Box. The one-click Add to Cart button on an Amazon listing. Amazon withholds it when the offer, including shipping, is above Amazon's reference price, even if the price is at MAP.",
+  "Amazon's reference price":
     "The lowest price Amazon recently found for this product outside its store. Amazon does not name that retailer. An offer above it, including shipping, can lose the Buy Box even at MAP.",
   MAP: "Minimum Advertised Price: the lowest price a retail partner has agreed to display publicly. Partners get around it by bundling a cheap accessory and discounting the pair.",
   "Brand Registry":

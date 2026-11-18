@@ -137,7 +137,7 @@ function bundle(): CanvasBundle {
 
 test("every copied surface carries the same Buy Box label and count", () => {
   const surface = headlineSurface(READ);
-  assert.equal(surface.label, "Buy Box Withheld above Amazon's outside price");
+  assert.equal(surface.label, "Buy Box Withheld above Amazon's reference price");
   assert.equal(surface.countLabel, "1 listing");
   const sentence = headlineSentence(surface);
 

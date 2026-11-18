@@ -101,7 +101,7 @@ export const RETAIL_ENTRIES: MinimalEntry[] = [
   bubbleEntry({
     id: "sat-buybox",
     spokeId: "ecommerce",
-    label: "Withheld above the outside price",
+    label: "Withheld above Amazon's reference price",
     tab: "Suppressed Listings",
     read: (ctx) =>
       retailReading(ctx, (snapshot) => {

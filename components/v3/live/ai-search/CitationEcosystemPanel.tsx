@@ -45,6 +45,7 @@ import { citationStorageCaution } from "@/lib/ai-search/review-runs";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
 import { brandName, brandOwned } from "@/lib/brand-copy";
 import { ownedSitesOwner } from "@/lib/ai-search/brand-words";
+import { formatInt } from "@/lib/fender-canvas/format";
 
 /* Columns are built per render, so the brand words read the client on screen, never the one at import. */
 function linkColumns() {
@@ -241,7 +242,7 @@ function Ecosystem({
                     </PickButton>
                   </td>
                   <td>
-                    {g.cited} of {g.answered}
+                    {formatInt(g.cited)} of {formatInt(g.answered)}
                   </td>
                   <td>{engineLinks.get(g.key)?.rows ?? 0}</td>
                   <td>{engineLinks.get(g.key)?.fenderOwnedRows ?? 0}</td>
@@ -274,7 +275,7 @@ function Ecosystem({
                       </PickButton>
                     </td>
                     <td>
-                      {g.cited} of {g.answered}
+                      {formatInt(g.cited)} of {formatInt(g.answered)}
                     </td>
                     <td>{categoryLinks.get(g.key)?.rows ?? 0}</td>
                     <td>{categoryLinks.get(g.key)?.fenderOwnedRows ?? 0}</td>

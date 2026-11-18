@@ -77,7 +77,7 @@ function e1Basis(score: ActuationScore, brand: string): string {
     return `No unbranded shopping answer from an engine that cites sources in this period.${targetText}`;
   }
   const share = formatPct((100 * e1.basis.withOwned) / e1.basis.resolved);
-  return `${share} of unbranded shopping answers cite a ${brand} page (${formatInt(e1.basis.withOwned)} of ${formatInt(e1.basis.resolved)}).${targetText}`;
+  return `${share} of unbranded shopping answers from engines that cite sources cite a ${brand} page (${formatInt(e1.basis.withOwned)} of ${formatInt(e1.basis.resolved)}).${targetText}`;
 }
 
 /** E1's tooltip: the decision 98 text, then which engines counted in this period. */

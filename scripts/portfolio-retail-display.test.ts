@@ -148,7 +148,7 @@ test("the headline bubble shows the finding and the issue count only", () => {
   assert.equal(headline?.label, "Suppressed Listings");
   assert.equal(face.subTab, "Retail Overview");
   assert.equal(source.suppressedListings.issueCount, 1);
-  assert.deepEqual(face.stats, ["1 listing withheld above outside price"]);
+  assert.deepEqual(face.stats, ["1 listing withheld above Amazon's reference price"]);
   assert.equal(face.meta, undefined);
   assert.doesNotMatch(face.stats.join(" "), /\d[\d,]* of \d/);
   // The headline bubble carries its own count; it keeps no hover explainer.
@@ -273,7 +273,7 @@ test("a higher unfinished reading is not replaced by a later count", () => {
 test("the shared headline keeps the count, the missing message, and the command-center tab", () => {
   const source = findings();
   const surface = headlineSurface({ phase: "ready", snapshot: { ...source, headline: null } });
-  assert.equal(surface.label, "Buy Box Withheld above Amazon's outside price");
+  assert.equal(surface.label, "Buy Box Withheld above Amazon's reference price");
   assert.equal(surface.countLabel, "1 listing");
   assert.equal(surface.missingMessage, source.suppressedListings.missingMessage);
   assert.equal(surface.tab, "Suppressed Listings");
