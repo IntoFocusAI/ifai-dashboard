@@ -4,7 +4,8 @@ import "@/components/v3/live/estimates/estimate-trail.css";
 import { useCallback, useRef, useState } from "react";
 import { figureTipAttrs } from "@/components/v3/live/FigureTip";
 import { EstimateTrail } from "@/components/v3/live/estimates/EstimateTrail";
-import { coverageShortText, NOT_AVAILABLE_LISTINGS_TIP } from "@/components/v3/live/estimates/trail-copy";
+import { ESTIMATES_READ_FAILED } from "@/components/v3/live/estimates/OpportunityEstimates";
+import { coverageShortText, NOT_AVAILABLE_LISTINGS_TIP, resultHeroText } from "@/components/v3/live/estimates/trail-copy";
 import { useClientEstimates, type ClientEstimatesRead } from "@/components/v3/live/estimates/useClientEstimates";
 import { estimateListingLines } from "@/lib/estimates/rollup";
 import type { EstimateLineId, EstimateRange, EstimateResult } from "@/lib/estimates/types";
@@ -16,11 +17,7 @@ import {
 } from "@/lib/fender-canvas/action-items-fix-list";
 import { BRIEFING_LOADING } from "@/lib/fender-canvas/briefing-retail-lead";
 import { PARTIAL_MARK, READ_NOT_AVAILABLE } from "@/lib/fender-canvas/canvas-reads";
-import { formatMoneyShort, formatMoneySpan } from "@/lib/fender-canvas/format";
-
-/** Shown when the listing reads behind the estimates failed: left out, never $0. */
-const ESTIMATES_READ_FAILED =
-  "The listing reads behind this estimate did not load, so it is left out rather than shown as zero.";
+import { formatMoneyShort } from "@/lib/fender-canvas/format";
 
 let titles: Map<EstimateLineId, EstimateResult> | null = null;
 
@@ -123,6 +120,8 @@ export function EstimateLineCard({ lineId }: { lineId: EstimateLineId }) {
   const { title, means } = lineTitle(lineId);
   const label = `${title}, per year`;
   const range = figure?.status === "estimated" ? figure.range : null;
+  // The range on its own line, in main's shared hero style and wording.
+  const rangeText = range ? resultHeroText({ status: "estimated", range }).range : null;
   return (
     <div
       className="content-box findability-lead-card estimate-line-card"
@@ -137,9 +136,9 @@ export function EstimateLineCard({ lineId }: { lineId: EstimateLineId }) {
         <span className="ai-lead-figure" data-estimate-line-figure="">
           {figure && range ? <MidButton line={figure.line} range={range} /> : <Placeholder read={read} figure={figure} />}
         </span>
-        {range && range.low !== range.high ? (
+        {rangeText ? (
           <span className="findability-lead-ratio" data-estimate-line-range="">
-            range {formatMoneySpan(range.low, range.high)}
+            {rangeText}
           </span>
         ) : null}
         <span className="findability-lead-ratio">
