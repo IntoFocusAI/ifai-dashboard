@@ -157,7 +157,7 @@ test.describe("drill-downs", () => {
     const list = page.locator(".suppressed-listings");
     await expect(list).toBeVisible({ timeout: 60_000 });
     await expect(list.getByText("Loading withheld listings…")).toHaveCount(0, { timeout: 60_000 });
-    await expect(list).toContainText("Competitive External Price");
+    await expect(list).toContainText("Amazon's reference price");
     await expect(list).not.toContainText("Recorded Keepa reading");
     await expect(list).not.toContainText("39 of 993");
     await expect(list).not.toContainText("Reverb");
@@ -191,8 +191,8 @@ test.describe("drill-downs", () => {
       "Buy Box Withheld",
       "No active offer",
       "Coverage exceptions",
-      "Competitive External Price available",
-      "Confirmed withheld above outside price",
+      "Amazon's reference price available",
+      "Confirmed withheld above Amazon's reference price",
     ]) {
       await expect(readings.locator(".fo-reading", { hasText: label }).first()).toBeVisible();
     }

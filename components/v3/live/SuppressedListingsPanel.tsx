@@ -75,7 +75,7 @@ const TABLE_BLOCK_STYLE = {
 };
 
 const OBSERVED_OFFER_NOTE =
-  "The observed offer and the Competitive External Price come from the same Amazon listing read, so the gap compares one moment. A blank gap means this reading has no comparable pair yet.";
+  "The observed offer and Amazon's reference price come from the same Amazon listing read, so the gap compares one moment. A blank gap means this reading has no comparable pair yet.";
 
 function suppressedSortValue(row: WithheldCauseRow, columnId: string): SortInput {
   if (columnId === "listing") return listingLabel(row).trim() || null;
@@ -204,10 +204,10 @@ function SuppressedListingsNotes({
       </div>
       <div className="ceo-callout-body">
         Amazon withholds the <DefinedTerm term="Buy Box" /> when the offer it observed,
-        including shipping, is above the Competitive External Price: the lowest price it
+        including shipping, is above Amazon&apos;s reference price: the lowest price it
         recently found outside Amazon. Amazon does not name that retailer, and a listing can
         be withheld for other reasons too. A price cause is confirmed only where Amazon
-        published a benchmark. <ReadingNotes read={read} freshness={freshness} />{" "}
+        published a reference price. <ReadingNotes read={read} freshness={freshness} />{" "}
         {OBSERVED_OFFER_NOTE}
       </div>
     </div>

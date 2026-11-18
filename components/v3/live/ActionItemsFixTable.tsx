@@ -47,10 +47,10 @@ export function ActionItemsFixTable({ plan: basePlan, today }: { plan: readonly 
   // Buy Box withheld splits by its stored cause once the withheld listings are read.
   const split = useBuyBoxCauseSplit();
   // A+ content gets its own row once the estimates show weak or missing A+ (line 7).
-  const plan = useMemo(
-    () => planWithBuyBoxCauses(planWithAplus(basePlan, estimates.phase === "ready" ? estimates.estimates : null), split),
-    [basePlan, estimates, split],
-  );
+  const plan = useMemo(() => {
+    const est = estimates.phase === "ready" ? estimates.estimates : null;
+    return planWithBuyBoxCauses(planWithAplus(basePlan, est), split, est);
+  }, [basePlan, estimates, split]);
   const sortValue = useCallback((item: PlanItem, columnId: string): SortInput => {
     if (columnId === "rank") return item.rank;
     if (columnId === "action") return `${item.kind === "finding" ? "" : `${item.fact} `}${item.action}`;

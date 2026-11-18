@@ -7,7 +7,7 @@ import type { RetailColumn } from "@/components/v3/live/ResizableTable";
 import { ListingName } from "@/components/v3/live/RetailOverviewFigure";
 import { StatusMark } from "@/components/v3/live/StatusMark";
 import { formatUsd } from "@/lib/fender-canvas/format";
-import { buyBoxCause, lowerPricesElsewhere, type WithheldCauseRow } from "@/lib/fender-canvas/buy-box-cause";
+import { lowerPricesElsewhere, type WithheldCauseRow } from "@/lib/fender-canvas/buy-box-cause";
 import {
   aboveBenchmarkDollars,
   benchmarkDollars,
@@ -39,8 +39,8 @@ export const SUPPRESSED_LISTINGS_TABLE_COLUMNS: RetailColumn[] = [
   },
   {
     id: "benchmark",
-    name: "Competitive External Price",
-    label: "Competitive External Price",
+    name: "Amazon's reference price",
+    label: "Amazon's reference price",
     width: 124,
     minWidth: 108,
     className: "money",
@@ -48,8 +48,8 @@ export const SUPPRESSED_LISTINGS_TABLE_COLUMNS: RetailColumn[] = [
   },
   {
     id: "gap",
-    name: "Above benchmark",
-    label: "Above benchmark",
+    name: "Above Amazon's reference price",
+    label: "Above Amazon's reference price",
     width: 136,
     minWidth: 120,
     className: "money",
@@ -66,9 +66,8 @@ export const SUPPRESSED_LISTINGS_TABLE_COLUMNS: RetailColumn[] = [
   { id: "checked", name: "Checked", label: "Checked", width: 124, minWidth: 108, sort: "date" },
 ];
 
-/** A listing priced above Amazon's reference price: the stored outside prices below its offer. */
+/** Any withheld listing: the stored Walmart and Musician's Friend prices below its offer. */
 function LowerPriceCell({ row }: { row: WithheldCauseRow }) {
-  if (buyBoxCause(row) !== "price") return <td data-lower-price="" />;
   const prices = lowerPricesElsewhere(row);
   if (prices.length === 0) {
     return (

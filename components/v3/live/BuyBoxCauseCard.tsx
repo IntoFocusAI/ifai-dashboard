@@ -25,7 +25,7 @@ const CAUSES: readonly BuyBoxCause[] = ["price", "other"];
 
 /**
  * Suppressed Listings: the withheld listings split by stored cause, each as N of M, and how many
- * of the price-caused listings have a lower outside price on file.
+ * of the withheld listings have a lower Walmart or Musician's Friend price on file.
  */
 export function BuyBoxCauseCard({ rows }: { rows: readonly WithheldCauseRow[] }) {
   const split = splitBuyBoxCauses(rows);
@@ -42,14 +42,12 @@ export function BuyBoxCauseCard({ rows }: { rows: readonly WithheldCauseRow[] })
           <span className="metric-card-sub">{BUY_BOX_CAUSE_LABELS[cause]}</span>
         </div>
       ))}
-      {split.price > 0 ? (
-        <div style={LINE_STYLE} data-buybox-lower-count={lower}>
-          <span className="findability-lead-ratio" style={{ whiteSpace: "nowrap" }}>
-            {formatRatio(lower, split.price)}
-          </span>
-          <span className="metric-card-sub">Lower price on file elsewhere</span>
-        </div>
-      ) : null}
+      <div style={LINE_STYLE} data-buybox-lower-count={lower}>
+        <span className="findability-lead-ratio" style={{ whiteSpace: "nowrap" }}>
+          {formatRatio(lower, split.withheld)}
+        </span>
+        <span className="metric-card-sub">Lower price on file elsewhere</span>
+      </div>
     </div>
   );
 }

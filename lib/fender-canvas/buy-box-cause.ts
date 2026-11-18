@@ -101,12 +101,12 @@ function safeUrl(value: unknown): string | null {
 }
 
 /**
- * For a listing priced above Amazon's reference price: the stored outside prices below the Amazon
- * offer, lowest first, with the page when one is stored. Empty for any other cause, and when no
- * stored outside price is lower.
+ * For any withheld listing, whatever its cause (Brian Magazu, 18 Nov 2026): the stored Walmart and
+ * Musician's Friend prices below the Amazon offer, lowest first, with the page when one is stored.
+ * Empty for a listing that is not withheld, and when no stored price is lower.
  */
 export function lowerPricesElsewhere(row: WithheldCauseRow): LowerPriceElsewhere[] {
-  if (featuredOfferState(row) !== "withheld" || buyBoxCause(row) !== "price") return [];
+  if (featuredOfferState(row) !== "withheld") return [];
   const offer = observedOfferDollars(row);
   if (offer == null) return [];
   const found: LowerPriceElsewhere[] = [];

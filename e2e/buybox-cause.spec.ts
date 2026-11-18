@@ -63,8 +63,16 @@ for (const client of CLIENTS) {
       // The table may show its first rows only; every row shown has the cell.
       const shown = await table.locator("tbody tr:has(.listing-name)").count();
       await expect(table.locator("tbody [data-lower-price]")).toHaveCount(shown);
-      const lower = price > 0 ? Number(await card.locator("[data-buybox-lower-count]").getAttribute("data-buybox-lower-count")) : 0;
-      if (price > 0) await expect(card.locator("[data-buybox-lower-count]")).toContainText(`${lower} of ${price}`);
+      // Lower price elsewhere covers every withheld listing, whatever its cause.
+      const lower = Number(await card.locator("[data-buybox-lower-count]").getAttribute("data-buybox-lower-count"));
+      await expect(card.locator("[data-buybox-lower-count]")).toContainText(`${lower} of ${total}`);
+      for (const header of ["Amazon's reference price", "Above Amazon's reference price"]) {
+        await expect(table.locator("th", { hasText: header }).first()).toBeVisible();
+      }
+      const tab = page.locator(".suppressed-listings");
+      for (const old of ["Competitive External Price", "benchmark", "outside price"]) {
+        await expect(tab).not.toContainText(old);
+      }
       const lowerShown = await table.locator("tbody td[data-lower-price]:has([data-lower-price-channel])").count();
       expect(lowerShown).toBeLessThanOrEqual(lower);
       const links = await table.locator("tbody [data-lower-price-channel] a").evaluateAll((nodes) =>
@@ -89,13 +97,18 @@ for (const client of CLIENTS) {
       await open(page, client, "suggestions", "urgent-interventions");
       const list = page.locator("[data-fix-list]");
       await expect(list.locator('[data-fix-estimate="loading"]')).toHaveCount(0, { timeout: LIVE_MS });
-      if (price === 0 || other === 0) {
-        await expect(list.locator('[data-fix-row="finding:buy_box"]')).toHaveCount(1);
-        return;
-      }
       const priceRow = list.locator('[data-fix-row="finding:buy_box:price"]');
       const otherRow = list.locator('[data-fix-row="finding:buy_box:other"]');
-      await expect(priceRow).toHaveCount(1, { timeout: LIVE_MS });
+      const earlierRow = list.locator('[data-fix-row="finding:buy_box:earlier"]');
+      await expect(earlierRow).toHaveCount(1, { timeout: LIVE_MS });
+      await expect(priceRow).toHaveCount(price > 0 ? 1 : 0);
+      await expect(otherRow).toHaveCount(other > 0 ? 1 : 0);
+      const earlier = Number((/^Watch (\d+) /.exec(await earlierRow.locator("[data-fix-action]").innerText()) ?? [])[1]);
+      expect(earlier).toBeGreaterThan(0);
+      // The Watch row ranks below the other two.
+      const ids = await list.locator("[data-fix-row]").evaluateAll((rows) => rows.map((r) => r.getAttribute("data-fix-row")));
+      const at = (id: string) => ids.indexOf(id);
+      expect(at("finding:buy_box:earlier")).toBeGreaterThan(Math.max(at("finding:buy_box:price"), at("finding:buy_box:other")));
       await expect(list.locator('[data-fix-row="finding:buy_box"]')).toHaveCount(0);
       const noun = (n: number) => (n === 1 ? "listing" : "listings");
       await expect(priceRow.locator("[data-fix-action]")).toHaveText(
@@ -106,8 +119,13 @@ for (const client of CLIENTS) {
       );
       await expect(priceRow.locator("[data-fix-ratio]")).toHaveText(new RegExp(`^${price} of [\\d,]+`));
       await expect(otherRow.locator("[data-fix-ratio]")).toHaveText(new RegExp(`^${other} of [\\d,]+`));
+      await expect(earlierRow.locator("[data-fix-action]")).toHaveText(
+        `Watch ${earlier} ${noun(earlier)} that lost the Buy Box earlier this year.`,
+      );
       const figures: Record<string, string> = {};
-      for (const [id, row] of [["price", priceRow], ["other", otherRow]] as const) {
+      const trailText = { price: "priced above Amazon's reference price", other: "other or unknown cause", earlier: "Buy Box lost earlier this year" };
+      for (const [id, row] of [["price", priceRow], ["other", otherRow], ["earlier", earlierRow]] as const) {
+        if ((await row.count()) === 0) continue;
         const cell = row.locator("[data-fix-estimate]");
         const status = await cell.getAttribute("data-fix-estimate");
         if (status === "estimated") {
@@ -117,7 +135,7 @@ for (const client of CLIENTS) {
           await trigger.click();
           const dialog = page.locator('[role="dialog"][data-estimate-trail="buy_box"]');
           await expect(dialog).toBeVisible();
-          await expect(dialog).toContainText(id === "price" ? "priced above Amazon's reference price" : "other or unknown cause");
+          await expect(dialog).toContainText(trailText[id]);
           await page.keyboard.press("Escape");
           await expect(dialog).toHaveCount(0);
         } else {
@@ -127,7 +145,7 @@ for (const client of CLIENTS) {
       await priceRow.scrollIntoViewIfNeeded();
       expect(await sideways(page)).toBeLessThanOrEqual(0);
       await shot(page, `${client}-action-items`);
-      save(`${client}-action-items`, { price, other, figures });
+      save(`${client}-action-items`, { price, other, earlier, figures });
     });
   });
 }

@@ -12,6 +12,8 @@ import {
   BUY_BOX_CAUSE_ROW_IDS,
   BUY_BOX_ROW_ID,
   buyBoxCauseLine,
+  buyBoxRowAction,
+  earlierBuyBoxListings,
   fixRowFigure,
   planWithBuyBoxCauses,
 } from "../lib/fender-canvas/action-items-buybox-rows.ts";
@@ -27,6 +29,8 @@ import {
 } from "../lib/fender-canvas/buy-box-cause.ts";
 import type { PlanItem } from "../lib/fender-canvas/roadmap-plan.ts";
 import { loadEstimatesFixture } from "./fixtures/estimates/load.ts";
+
+const GROUPS = ["price", "other", "earlier"] as const;
 
 const CHECKED = "2026-11-18T10:00:00Z";
 
@@ -72,7 +76,7 @@ test("the read carries the stored cause and the stored outside prices", () => {
   }
 });
 
-test("a lower outside price shows only for a price cause, below the Amazon offer, lowest first", () => {
+test("a lower price elsewhere shows for every withheld listing, below the Amazon offer, lowest first", () => {
   const priced = row("P", {
     competitive_offer_suppressed: true,
     featured_offer_observed_price_cents: 86239,
@@ -87,7 +91,10 @@ test("a lower outside price shows only for a price cause, below the Amazon offer
   assert.deepEqual(lowerPricesElsewhere(both).map((p) => p.channel), ["Walmart", "Musician's Friend"]);
   assert.equal(lowerPricesElsewhere(both)[1]!.url, null, "no Musician's Friend page is stored");
   assert.deepEqual(lowerPricesElsewhere({ ...priced, wmt_price: 862.39, mf_price: null }), [], "equal is not lower");
-  assert.deepEqual(lowerPricesElsewhere({ ...priced, competitive_offer_suppressed: false }), [], "other cause");
+  // Every withheld listing, whatever its cause (e.g. an Amazon offer of $154.95 against Walmart $69.99).
+  const other = row("O", { competitive_offer_suppressed: false, competitive_price_threshold_cents: null, featured_offer_observed_price_cents: 15495, wmt_price: 69.99 });
+  assert.deepEqual(lowerPricesElsewhere(other), [{ channel: "Walmart", price: 69.99, url: null }], "other cause");
+  assert.deepEqual(lowerPricesElsewhere({ ...priced, featured_offer_state: "present" }), [], "not withheld");
   assert.equal(lowerPricesElsewhere({ ...priced, wmt_url: "javascript:alert(1)" })[0]!.url, null);
 });
 
@@ -95,6 +102,9 @@ test("action wording", () => {
   assert.equal(buyBoxCauseAction("price", 51), "Review pricing on 51 listings priced above Amazon's reference price.");
   assert.equal(buyBoxCauseAction("price", 1), "Review pricing on 1 listing priced above Amazon's reference price.");
   assert.equal(buyBoxCauseAction("other", 9), "Check 9 listings without the Buy Box for other causes.");
+  assert.equal(buyBoxRowAction("earlier", 686), "Watch 686 listings that lost the Buy Box earlier this year.");
+  assert.equal(buyBoxRowAction("earlier", 1), "Watch 1 listing that lost the Buy Box earlier this year.");
+  assert.equal(buyBoxRowAction("price", 1), "Review pricing on 1 listing priced above Amazon's reference price.");
 });
 
 function item(id: string, rank: number, extra: Partial<PlanItem> = {}): PlanItem {
@@ -148,11 +158,12 @@ test("the Buy Box row becomes two cause rows in its place, ranks renumbered", ()
   assert.equal(price.open.tab, "Suppressed Listings");
 });
 
-test("the plan stays as it is while the split is missing, the row has no reading, or one cause has every listing", () => {
+test("the plan stays as it is while the split is missing or the row has no reading; an empty group has no row", () => {
   const plan = [item(BUY_BOX_ROW_ID, 1)];
   assert.equal(planWithBuyBoxCauses(plan, null), plan);
-  assert.equal(planWithBuyBoxCauses(plan, splitOf([], ["O"])), plan);
-  assert.equal(planWithBuyBoxCauses(plan, splitOf(["P"], [])), plan);
+  assert.equal(planWithBuyBoxCauses(plan, splitOf([], [])), plan);
+  assert.deepEqual(planWithBuyBoxCauses(plan, splitOf([], ["O"])).map((i) => i.id), [BUY_BOX_CAUSE_ROW_IDS.other]);
+  assert.deepEqual(planWithBuyBoxCauses(plan, splitOf(["P"], [])).map((i) => i.id), [BUY_BOX_CAUSE_ROW_IDS.price]);
   const noReading = [item(BUY_BOX_ROW_ID, 1, { noReading: true })];
   assert.equal(planWithBuyBoxCauses(noReading, splitOf(["P"], ["O"])), noReading);
 });
@@ -164,32 +175,37 @@ for (const client of ["fender", "ledlenser"] as const) {
   const line2 = [...est.byListing.values()].filter((entry) => "buy_box" in entry.lines).map((entry) => entry.asin);
   const split = splitOf(line2.filter((_, i) => i % 3 === 0), [...line2.filter((_, i) => i % 3 === 1), "NOT-IN-LINE-2"]);
 
-  test(`${client}: the two cause rows add up to line 2, and the fix list still adds up to Phase 1`, () => {
+  test(`${client}: the three Buy Box rows add up to line 2, and the fix list still adds up to Phase 1`, () => {
     assert.ok(line2.length > 2, "the fixture has line 2 listings");
     const whole = fixRowFigure(BUY_BOX_ROW_ID, est, split)!;
-    const price = fixRowFigure(BUY_BOX_CAUSE_ROW_IDS.price, est, split)!;
-    const other = fixRowFigure(BUY_BOX_CAUSE_ROW_IDS.other, est, split)!;
-    assert.equal(price.listings + other.listings, whole.listings);
+    const parts = GROUPS.map((group) => fixRowFigure(BUY_BOX_CAUSE_ROW_IDS[group], est, split)!);
+    assert.equal(parts.reduce((n, p) => n + p.listings, 0), whole.listings);
+    assert.equal(parts[2]!.listings, earlierBuyBoxListings(est, split));
+    assert.equal(parts[1]!.listings, split.other - 1, "the listing outside line 2 adds no dollar");
     for (const key of ["low", "mid", "high"] as const) {
-      const sum = (price.range?.[key] ?? 0) + (other.range?.[key] ?? 0);
+      const sum = parts.reduce((total, p) => total + (p.range?.[key] ?? 0), 0);
       assert.ok(Math.abs(sum - (whole.range?.[key] ?? 0)) < 0.01, `${key}: ${sum} vs ${whole.range?.[key]}`);
     }
-    const ids = [...Object.keys(FIX_ROW_LINES).filter((id) => id !== BUY_BOX_ROW_ID), BUY_BOX_CAUSE_ROW_IDS.price, BUY_BOX_CAUSE_ROW_IDS.other];
+    const plan = planWithBuyBoxCauses([item(BUY_BOX_ROW_ID, 1)], split, est);
+    assert.deepEqual(plan.map((i) => i.id), GROUPS.map((group) => BUY_BOX_CAUSE_ROW_IDS[group]), "the earlier row ranks below the other two");
+    assert.equal(plan[2]!.action, buyBoxRowAction("earlier", parts[2]!.listings));
+    const ids = [...Object.keys(FIX_ROW_LINES).filter((id) => id !== BUY_BOX_ROW_ID), ...GROUPS.map((group) => BUY_BOX_CAUSE_ROW_IDS[group])];
     const rows = ids.map((id) => fixRowFigure(id, est, split)).filter((r) => r?.inPhase1);
     const mid = rows.reduce((total, r) => total + (r!.range?.mid ?? 0), 0);
     assert.ok(est.phase1.range, "Phase 1 is priced");
     assert.ok(Math.abs(mid - est.phase1.range!.mid) <= PHASE_1_LINES.length, `${mid} vs ${est.phase1.range!.mid}`);
   });
 
-  test(`${client}: each cause row's trail lists exactly its own listings`, () => {
-    for (const cause of ["price", "other"] as const) {
+  test(`${client}: each Buy Box row's trail lists exactly its own listings`, () => {
+    const groupOf = (asin: string) => (split.priceAsins.has(asin) ? "price" : split.otherAsins.has(asin) ? "other" : "earlier");
+    for (const cause of GROUPS) {
       const figure = fixRowFigure(BUY_BOX_CAUSE_ROW_IDS[cause], est, split)!;
       const line = buyBoxCauseLine(est, cause, split);
       assert.equal(figure.line, line, "cached");
       assert.equal(line.lineId, "buy_box");
       assert.equal(line.trail.coverage.total, figure.listings);
       const asins = line.trail.listings.map((l) => l.asin);
-      assert.ok(asins.every((asin) => (cause === "price") === split.priceAsins.has(asin)));
+      assert.ok(asins.length > 0 && asins.every((asin) => groupOf(asin) === cause), cause);
       if (figure.range && line.range) assert.ok(Math.abs(figure.range.mid - line.range.mid) <= 1);
     }
   });
