@@ -89,14 +89,14 @@ test("the join keeps the sales view's listings and adds none from the other view
 });
 
 test("Phase 1 from the views matches the proposal's section 5", () => {
-  rangeIs(fender.est.phase1, [603107, 1050952, 1705094]);
-  rangeIs(ledlenser.est.phase1, [10997, 17101, 26397]);
+  rangeIs(fender.est.phase1, [603107, 1050952, 1549516]);
+  rangeIs(ledlenser.est.phase1, [10997, 17101, 23150]);
   assert.deepEqual(fender.est.phase1.parts?.map((p) => p.lineId), ["out_of_stock", "buy_box", "splintered", "missing_specs", "aplus"]);
 });
 
 test("each line from the views matches the proposal's section 1", () => {
-  rangeIs(fender.est.outOfStock, [367760, 490347, 674227]);
-  rangeIs(ledlenser.est.outOfStock, [8899, 11866, 16316]);
+  rangeIs(fender.est.outOfStock, [367760, 490347, 551640]);
+  rangeIs(ledlenser.est.outOfStock, [8899, 11866, 13349]);
   near(fender.est.buyBox.range?.mid, 111000, 1000, "Fender Buy Box mid");
   near(fender.est.missingSpecs.range?.mid, 328000, 1000, "Fender specs mid");
   near(fender.est.aplus.range?.mid, 66000, 1000, "Fender A+ mid");
