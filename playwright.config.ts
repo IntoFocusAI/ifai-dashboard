@@ -25,6 +25,8 @@ const overridesDb = Object.keys(dbTarget.serverEnv).length > 0;
 
 export default defineConfig({
   testDir: "./e2e",
+  /* The portal sign-in suite runs on its own config against the local stack (playwright.portal.config.ts). */
+  testIgnore: ["portal/**"],
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 2 : 0,

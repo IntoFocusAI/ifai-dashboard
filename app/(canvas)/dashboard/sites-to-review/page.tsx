@@ -4,6 +4,7 @@ import { StaffOnlyNotice } from "@/components/staff/StaffOnlyNotice";
 import { loadSitesToReview } from "@/lib/ai-search/site-review-read";
 import { CLIENT_PARAM, isClientKey } from "@/lib/client/active-client";
 import { getCommandSession } from "@/lib/command/session";
+import { runSignedIn } from "@/lib/supabase/request-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -27,6 +28,6 @@ export default async function SitesToReviewPage({ searchParams }: { searchParams
   const light = params.theme === "light";
   if (!session?.isIntoFocusAdmin) return <StaffOnlyNotice client={client} light={light} />;
 
-  const read = await loadSitesToReview(client);
+  const read = await runSignedIn(() => loadSitesToReview(client));
   return <SitesToReviewView client={client} read={read} light={light} />;
 }

@@ -112,6 +112,17 @@ npx playwright install --with-deps chromium
 E2E_BROWSER=chromium npm run test:e2e
 ```
 
+### Portal sign-in tests (local stack)
+
+Opening the dashboard from portal accounts (issue 248) has its own suite on a local stack: Postgres and PostgREST in Docker with made-up accounts A and B, a staff user, and a member of an account without the dashboard. It never touches a hosted project.
+
+```bash
+scripts/portal-local-stack.sh up        # start, load supabase/tests/fixtures/portal-dashboard/
+scripts/portal-local-stack.sh sql       # database isolation checks
+npx playwright test -c playwright.portal.config.ts --trace off
+scripts/portal-local-stack.sh down
+```
+
 ### Which database the tests read
 
 Unless told otherwise, the dev server the suite spawns reads production Supabase through `.env.local`. Public reads on production stop after 3 seconds, so several full suites at once make reads time out and fail random tests (16 Nov 2026). Browser tests are moving to a database copy; the 3-second limit stays on production.
