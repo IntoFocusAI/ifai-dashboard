@@ -38,7 +38,13 @@ test.describe("Action Items opens on the prioritized fix list", () => {
     await expect(rows.first()).toBeInViewport();
     expect(listTop).toBeLessThan(page.viewportSize()!.height / 2);
 
-    await expect(rows.locator("[data-fix-rank]")).toHaveText(["1", "2", "3", "4", "5"]);
+    // Worker 29.20: the two Confirm program rows rank right after the Critical findings, so the
+    // five findings' numbers rise in order but are not always 1 to 5.
+    await expect(rows.locator("[data-fix-rank]")).toHaveCount(5);
+    const findingRanks = (await rows.locator("[data-fix-rank]").allTextContents()).map(Number);
+    expect(findingRanks[0]).toBe(1);
+    expect([...findingRanks].sort((a, b) => a - b)).toEqual(findingRanks);
+    expect(findingRanks[4]).toBeLessThanOrEqual(7);
     const statuses = await rows.locator("[data-fix-status-label]").evaluateAll((nodes) =>
       nodes.map((node) => node.getAttribute("data-fix-status-word") ?? ""),
     );

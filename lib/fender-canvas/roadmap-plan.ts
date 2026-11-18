@@ -326,7 +326,24 @@ export function buildPlan(input: PlanInput): PlanItem[] {
   const priority = rest.filter((item) => item.tier === "priority").map(focusItem);
   const watch = rest.filter((item) => item.tier === "watch").map(focusItem);
   const actuation = (input.actuation ?? []).map(actuationItem);
-  return [...findings, ...ecommerce, ...urgentOwn, ...answers, ...priority, ...actuation, ...laterOwn, ...watch].map((item, index) => ({
+  // The two "Confirm your program" items rank right after the Critical findings, so they sit in the
+  // top 10 rows (Brian Magazu, 18 Nov 2026). Activity and renew items keep their place after the focus items.
+  const confirm = actuation.filter((item) => item.id.endsWith(":confirm"));
+  const laterActuation = actuation.filter((item) => !item.id.endsWith(":confirm"));
+  const critical = findings.filter((item) => item.statusLabel === "Critical");
+  const otherFindings = findings.filter((item) => item.statusLabel !== "Critical");
+  return [
+    ...critical,
+    ...confirm,
+    ...otherFindings,
+    ...ecommerce,
+    ...urgentOwn,
+    ...answers,
+    ...priority,
+    ...laterActuation,
+    ...laterOwn,
+    ...watch,
+  ].map((item, index) => ({
     ...item,
     rank: index + 1,
   }));

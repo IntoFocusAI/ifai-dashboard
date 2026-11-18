@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import type { AiCallRow, AiCitationRow, AiSearchSnapshot } from "../lib/ai-search/types.ts";
+import type { BriefingFinding, BriefingFindingId } from "../lib/fender-canvas/briefing-retail-lead.ts";
 import type { ClientBasis } from "../lib/fender-canvas/actuation-records.ts";
 import { addDays } from "../lib/fender-canvas/actuation-score.ts";
 import {
@@ -201,6 +202,57 @@ test("the plan: Actuation items join the existing phases and add at most two per
   const cells = fixListCells(plan[0]!, new Date("2026-11-18T12:00:00Z"));
   assert.match(cells[1]!, /Suggested communities: reddit\.com \(6 of 40 answers\), /);
   assert.deepEqual(buildPlan({ findings: [], signals: [], sources: [] }), [], "no records, no items");
+});
+
+function finding(id: BriefingFindingId, tone: BriefingFinding["tone"], n: number, d: number): BriefingFinding {
+  return {
+    id,
+    spokeId: "ecommerce",
+    tab: "MAP Leakage",
+    label: id,
+    percent: `${((100 * n) / d).toFixed(1)}%`,
+    ratio: `${n} of ${d}`,
+    color: "var(--danger-red)",
+    tone,
+    pie: null,
+    tip: null,
+    explainer: `${id} explainer`,
+    numerator: n,
+    denominator: d,
+    partial: null,
+    loading: false,
+  };
+}
+
+test("the Confirm items rank right after the Critical findings, inside the top 10, in both phases' lists", () => {
+  const findings = [
+    finding("buy_box", "danger", 57, 1088),
+    finding("map_leakage", "danger", 121, 633),
+    finding("splintered_bundles", "danger", 75, 451),
+    finding("exact_official_product", "danger", 82, 1041),
+    finding("unbranded_discovery", "warning", 30, 60),
+  ];
+  const signals = Array.from({ length: 12 }, (_, i) => ({
+    id: `signal:out_of_stock_${i}`, group: "ecommerce" as const, label: `Out of stock ${i}`, share: 0.2, numerator: 2, denominator: 10,
+    fact: "f", action: "a", open: { spokeId: "ecommerce", tab: "Out of Stock" }, partial: null,
+  }));
+  const actuation = actuationActions({ basis: NONE, asOf: ASOF, targets: suggestedTargets(snapshot()) });
+  const plan = buildPlan({ findings, signals, sources: [], actuation });
+  const ids = plan.map((item) => item.id);
+  const critical = plan.filter((item) => item.statusLabel === "Critical").length;
+  assert.ok(critical >= 1);
+  assert.deepEqual(ids.slice(critical, critical + 2), ["actuation:P1:confirm", "actuation:P2:confirm"]);
+  assert.ok(ids.indexOf("actuation:P2:confirm") < 10, "Confirm rows are inside the top 10");
+  assert.ok(plan.slice(0, critical).every((item) => item.statusLabel === "Critical"));
+  const days = phaseItems(plan, "days_1_30").map((item) => item.id);
+  assert.ok(days.indexOf("actuation:P2:confirm") >= 0 && days.indexOf("actuation:P2:confirm") < 10, "and inside the top 10 of Days 1 to 30");
+  assert.deepEqual(plan.map((item) => item.rank), plan.map((_, i) => i + 1));
+});
+
+test("activity and renew items keep their place after the focus items", () => {
+  const basis: ClientBasis = { programs: [inPlace("P1", addDays(ASOF, -80))], items: { E2: 5, E3: 0 } };
+  const plan = buildPlan({ findings: [], signals: [], sources: [], actuation: actuationActions({ basis, asOf: ASOF }) });
+  assert.deepEqual(plan.map((item) => item.id), ["actuation:P2:confirm", "actuation:E2:activity", "actuation:P1:renew"]);
 });
 
 test("the plan read takes the records from the bundle and the targets from the date-pill window", () => {

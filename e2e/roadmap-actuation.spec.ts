@@ -54,6 +54,12 @@ for (const client of ["fender", "ledlenser"]) {
       await openAs(page, client, "spoke=suggestions&tab=urgent-interventions");
       const list = page.locator(".drilldown-panel [data-fix-list]");
       await expect(list).toHaveAttribute("data-fix-sources", "ready", { timeout: 150_000 });
+      // Worker 29.20: both Confirm rows rank in the top 10, visible without "Show all".
+      const topIds = await list.locator("[data-fix-row]").evaluateAll((nodes) => nodes.slice(0, 10).map((node) => node.getAttribute("data-fix-row") ?? ""));
+      for (const id of ["actuation:P1:confirm", "actuation:P2:confirm"]) {
+        expect(topIds, `${id} is in the top 10 rows`).toContain(id);
+        await expect(list.locator(`[data-fix-row="${id}"]`)).toBeVisible();
+      }
       // The table draws 25 rows at first; lower-ranked items sit behind "Show all".
       const showAll = list.locator("[data-table-show-all]");
       if (await showAll.count()) await showAll.click();
@@ -83,6 +89,13 @@ for (const client of ["fender", "ledlenser"]) {
       const plan = page.locator(".drilldown-panel [data-roadmap-plan]");
       await expect(plan).toHaveAttribute("data-roadmap-sources", "ready", { timeout: 150_000 });
       const items = plan.locator('[data-roadmap-kind="actuation"]');
+      // Worker 29.20: both Confirm items sit in the top 10 of Days 1 to 30.
+      const days = plan.locator('[data-roadmap-phase]:has(.roadmap-phase-days:text-is("Days 1 to 30")) [data-roadmap-item]');
+      const dayIds = await days.evaluateAll((nodes) => nodes.slice(0, 10).map((node) => node.getAttribute("data-roadmap-item") ?? ""));
+      for (const id of ["actuation:P1:confirm", "actuation:P2:confirm"]) {
+        expect(dayIds, `${id} is in the top 10 of Days 1 to 30`).toContain(id);
+        await expect(plan.locator(`[data-roadmap-item="${id}"]`)).toBeVisible();
+      }
       const count = await items.count();
       expect(count).toBeLessThanOrEqual(4);
       for (const item of await items.all()) {
