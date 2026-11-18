@@ -235,8 +235,8 @@ test("Scores over time marks the first week scoring included AI Actuation (decis
   const model = scoreHistoryModel([row("2026-11-09", null), row("2026-11-16", 9), row("2026-11-23", 9)]);
   assert.ok(model);
   assert.equal(model.actuationAdded, "2026-11-16");
-  assert.equal(scorePointTip(model, "2026-11-16", "36 vs target 70"), `36 vs target 70. ${ACTUATION_ADDED_NOTE}`);
-  assert.equal(scorePointTip(model, "2026-11-23", "36 vs target 70"), "36 vs target 70.");
+  assert.equal(scorePointTip(model, "2026-11-16", "36/100, target 70"), `36/100, target 70. ${ACTUATION_ADDED_NOTE}`);
+  assert.equal(scorePointTip(model, "2026-11-23", "36/100, target 70"), "36/100, target 70.");
   assert.equal(ACTUATION_ADDED_NOTE, "Scoring now includes AI Actuation.");
   const chart = readFileSync("components/v3/live/ScoreHistoryChart.tsx", "utf8");
   assert.match(chart, /data-score-history-actuation-marker/);

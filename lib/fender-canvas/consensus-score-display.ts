@@ -16,7 +16,7 @@ export const CONSENSUS_SCORE_BANDS = { redBelow: 40, greenAbove: 70 } as const;
 
 /**
  * H-07, decision 8: AI Consensus, AI Foundation, and AI Commerce are each read against a
- * target of 70, shown as "41 vs target 70".
+ * target of 70, shown as "41 /100" with "Target 70" below (Brian, 18 Nov 2026).
  */
 export const CONSENSUS_SCORE_TARGET = 70;
 
@@ -77,15 +77,18 @@ export function scoreFigure(score: number | null | undefined): string {
   return String(Math.round(score));
 }
 
-/** "vs target 70" beside a score figure (H-07). */
+/** The small mark right after a score figure, so the score reads out of 100. */
+export const SCORE_OUT_OF = "/100";
+
+/** "Target 70" under a score figure (H-07). */
 export function scoreTargetLabel(target: number = CONSENSUS_SCORE_TARGET): string {
-  return `vs target ${target}`;
+  return `Target ${target}`;
 }
 
-/** "41 vs target 70", for tooltips and accessible names. Null when there is no score. */
+/** "41/100, target 70", for tooltips and accessible names. Null when there is no score. */
 export function scoreAgainstTarget(score: number | null | undefined): string | null {
   if (score == null || !Number.isFinite(score)) return null;
-  return `${scoreFigure(score)} ${scoreTargetLabel()}`;
+  return `${scoreFigure(score)}${SCORE_OUT_OF}, target ${CONSENSUS_SCORE_TARGET}`;
 }
 
 /** The brand status for a score band: Poor below 40, Fair 40 to 70, Good above 70. */

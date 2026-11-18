@@ -89,16 +89,15 @@ test("a Fender fix-list download still names Fender and fender.com", async () =>
   assert.doesNotMatch(text, /ledlenser/i);
 });
 
-test("analyst estimates are Fender's only: another client reads Not available*", async () => {
-  assert.deepEqual(await inClient("ledlenser", () => [phaseOneLiftEstimate(), enterprisePotentialEstimate()]), [
-    NO_ANALYST_ESTIMATE,
-    NO_ANALYST_ESTIMATE,
-  ]);
+test("analyst estimates come from each client's own read: a failed read is Not available* for every client", async () => {
+  const failed = { estimates: { phase: "error" as const, message: "x" } };
+  for (const client of ["ledlenser", "fender"]) {
+    assert.deepEqual(await inClient(client, () => [phaseOneLiftEstimate(failed), enterprisePotentialEstimate(failed)]), [
+      NO_ANALYST_ESTIMATE,
+      NO_ANALYST_ESTIMATE,
+    ]);
+  }
   assert.equal(NO_ANALYST_ESTIMATE, "Not available*");
-  assert.deepEqual(await inClient("fender", () => [phaseOneLiftEstimate(), enterprisePotentialEstimate()]), [
-    "+$680K est.",
-    "+$38M to $62M est.",
-  ]);
 });
 
 test("brand copy reachable from the export loaders follows the request's client", async () => {

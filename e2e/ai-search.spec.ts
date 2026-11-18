@@ -299,7 +299,7 @@ test.describe("AI Search Visibility", () => {
       const section = page.locator("[data-citation-actuation]");
       const score = section.locator("[data-consensus-pillar-score]");
       await expect(score).toHaveText(/^\d{1,3}$/, { timeout: AI_READ_MS });
-      await expect(section.locator("[data-consensus-target]")).toHaveText("vs target 70");
+      await expect(section.locator("[data-consensus-target]")).toHaveText("Target 70");
       await expect(section.locator("[data-status]").first()).toHaveText(/^(Poor|Fair|Good)$/);
       await expect(section.locator("[data-actuation-factor]")).toHaveCount(5);
       await expect(section.locator("[data-actuation-factor='E1'] [data-actuation-factor-basis]")).toContainText("unbranded shopping answers");

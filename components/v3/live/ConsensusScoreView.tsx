@@ -7,6 +7,7 @@ import { ActuationFactorBars } from "@/components/v3/live/ActuationFactorBars";
 import { ConsensusComponentBars } from "@/components/v3/live/ConsensusComponentBars";
 import { ConsensusWeightBreakdown } from "@/components/v3/live/ConsensusWeightBreakdown";
 import { PartialFigureMark } from "@/components/v3/live/FigureTip";
+import { ScoreOutOf100 } from "@/components/v3/live/ScoreOutOf100";
 import { StatusMark } from "@/components/v3/live/StatusMark";
 import { SCORE_CARD_TIPS, SCORE_CARD_TITLES } from "@/components/v3/live/score-card-tips";
 import type { PartialFigure } from "@/lib/fender-canvas/canvas-reads";
@@ -137,21 +138,23 @@ export function ScoreHeroCard({
       <ScoreCardTitle label={label} tip={titleTip} />
       <div className="findability-lead-row">
         <div className="findability-lead-figures">
-          <span
-            className="ai-lead-figure"
-            data-consensus-pillar-score=""
-            data-consensus-score={dominant ? "" : undefined}
-            data-consensus-pillar-included={score != null ? "true" : "false"}
-            style={{
-              color,
-              fontSize: dominant && !wide ? "clamp(34px, 4vw, 48px)" : undefined,
-              lineHeight: 1.05,
-            }}
-          >
-            <PartialFigureMark partial={partial} testId={`consensus-${id}`}>
-              {figure}
-            </PartialFigureMark>
-          </span>
+          <ScoreOutOf100 show={target != null}>
+            <span
+              className="ai-lead-figure"
+              data-consensus-pillar-score=""
+              data-consensus-score={dominant ? "" : undefined}
+              data-consensus-pillar-included={score != null ? "true" : "false"}
+              style={{
+                color,
+                fontSize: dominant && !wide ? "clamp(34px, 4vw, 48px)" : undefined,
+                lineHeight: 1.05,
+              }}
+            >
+              <PartialFigureMark partial={partial} testId={`consensus-${id}`}>
+                {figure}
+              </PartialFigureMark>
+            </span>
+          </ScoreOutOf100>
           {target ? (
             <span className="findability-lead-ratio" data-consensus-target="">
               {scoreTargetLabel()}

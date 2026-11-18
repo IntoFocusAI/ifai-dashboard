@@ -11,6 +11,7 @@ import { buildDeck } from "@/lib/deck/deck-model";
 import type { DeckModel } from "@/lib/deck/deck-types";
 import {
   enterprisePotentialEstimate,
+  ESTIMATE_LOADING,
   NO_ANALYST_ESTIMATE,
   phaseOneLiftEstimate,
 } from "@/lib/fender-canvas/analyst-estimates";
@@ -29,7 +30,7 @@ function asOfLabel(rows: readonly CanvasFreshnessRow[]): string | null {
 }
 
 function estimate(value: string): string | null {
-  return value === NO_ANALYST_ESTIMATE ? null : value;
+  return value === NO_ANALYST_ESTIMATE || value === ESTIMATE_LOADING ? null : value;
 }
 
 export type DeckLoad = { phase: "loading" } | { phase: "ready"; model: DeckModel };
@@ -61,8 +62,8 @@ export function useDeckModel(bundle: CanvasBundle, retail: RetailCanvasRead): De
       stockLoss: stock.phase === "ready" ? { rows: stock.rows, populationCount: stock.populationCount } : null,
       windowLabel: history.controlLabel,
       asOf: asOfLabel(bundle.fresh),
-      phaseOneLift: estimate(phaseOneLiftEstimate()),
-      enterprisePotential: estimate(enterprisePotentialEstimate()),
+      phaseOneLift: estimate(phaseOneLiftEstimate(bundle)),
+      enterprisePotential: estimate(enterprisePotentialEstimate(bundle)),
     });
     return { phase: "ready", model };
   }, [aiStale, bundle, findability, history.controlLabel, retail, stock, tabRead]);

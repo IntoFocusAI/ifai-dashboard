@@ -23,6 +23,7 @@ export type EstimateLineId =
   | "brand_site_pages" // 10 (chunk E5)
   | "ai_actuation" // 11 (chunk E5)
   | "phase_1" // A: near-term upside
+  | "monthly_potential" // Phase 1 divided by 12 (Briefing card)
   | "measured_total" // B
   | "enterprise_potential"; // C (chunk E6)
 
