@@ -184,6 +184,22 @@ Deterministic: counts, joins, freshness, publication, score arithmetic, suppress
 >
 > • Security protocol content is documentation of real controls only (X-29 REFINE). The page is /dashboard/security, linked from UserMenuDropdown, and states nothing about fees. Ryan and Brian Watson review it before launch.
 
+## 13.1 Opening the dashboard from the portal (3.5b, issue 248)
+
+> • Accounts come from the portal: `public.organizations` and `public.organization_memberships` (active memberships only). Staff come from the portal's `private.is_staff()`. The dashboard reads them through three additive functions (migration 20261118210000, not applied): `public.my_dashboard_accounts(p_selected)`, `public.dashboard_viewer_is_staff()`, `public.my_dashboard_clients(p_organization_id)`. All are SECURITY DEFINER with an empty search_path, EXECUTE for authenticated only. They need the portal migrations and the 1.6 isolation migration (issue 247: `private.client_schema_org`, `private.can_read_schema`, `private.can_read_client`) applied first.
+>
+> • Every `/dashboard` load, on the server, as the signed-in user (lib/portal/resolve.ts): read the claims; list the caller's accounts; pick the account (link selector `?account=`, then the account remembered on this browser, then the only account; anything not in the caller's list is ignored); call the portal's `public.open_module(account, 'consensus_control', reason)`; on an open state, list the brands that account may read and pick the brand (`?client=` only if it is in that list). The page then redirects so the URL names the account and brand the server allowed. Blocked states show the portal's messages (components/portal/access-copy.ts) and read no client data. Staff without membership give a reason in the dashboard (10 to 500 characters); it is kept in an httpOnly cookie for that account for 8 hours and passed to `open_module`, which logs each open.
+>
+> • URL values are selectors only (approved rule, 17 Nov 2026). The database re-checks every one: `my_dashboard_clients` returns brands only through the 1.6 helpers, which read the caller's membership.
+>
+> • Reads run as the signed-in user. lib/supabase/canvas-client.ts is the only way the app reads client data. In the browser its clients carry the session's access token from the one @supabase/ssr session holder. On the server they read the request's cookies inside `runSignedIn` (lib/supabase/request-auth.ts); a server read outside it throws. CSV downloads re-check the brand with `my_dashboard_clients` before reading.
+>
+> • One sign-in: the portal and the dashboard use the same Supabase project, so the session cookie (`sb-<project ref>-auth-token`) has the same name in both. Go-live: portal at app.intofocus.ai, dashboard at a sibling subdomain (recommended: dashboard.intofocus.ai), and both apps set `NEXT_PUBLIC_SUPABASE_COOKIE_DOMAIN=.intofocus.ai` (or the portal's equivalent) so they share one cookie. Tokens never travel in a URL; a unit test fails on code that writes one into a link.
+>
+> • `DASHBOARD_ACCOUNTS=command` keeps the old open dashboard and the `command.*` sign-in for current internal users until 247 and this migration are applied; unset means portal accounts. Still on `command.*` (retired by 1.2): the staff pages and their checks (Sites to review, Actuation records, Battery builder, `command.is_intofocus_admin()`), the profile settings page, and the user menu's organization switcher.
+>
+> • Tests: supabase/tests/dashboard_portal_access.test.sql (30 checks), scripts/portal-access.test.ts, and e2e/portal/portal-signin.spec.ts on the local stack from scripts/portal-local-stack.sh. The stack uses test-only stand-ins for the portal objects and the 247 contract (supabase/tests/fixtures/portal-dashboard/); each file lists how it differs from hosted.
+
 # 14. Export architecture
 
 Server-side from the same published query as the screen; CSV for rows at launch, with filter, sort, as-of time, and population sentence; Excel and a PDF of the view are LATER (decided 9 Nov 2026); cap and audit (X-10).

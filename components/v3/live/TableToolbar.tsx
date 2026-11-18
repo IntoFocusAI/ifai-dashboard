@@ -4,6 +4,7 @@ import { Children, cloneElement, isValidElement, useState, type ReactNode } from
 import type { TableControls } from "@/components/v3/live/table-controls";
 import { activeClientKey } from "@/lib/client/active-client";
 import { exportFileName, exportHref, isExportTable } from "@/lib/export/tables";
+import { portalScope } from "@/lib/portal/browser-scope";
 import { formatInt } from "@/lib/fender-canvas/format";
 import { describeTableSort } from "@/lib/fender-canvas/table-search";
 import type { SortKind, TableSort } from "@/lib/fender-canvas/table-sort";
@@ -39,7 +40,7 @@ export async function downloadCsv(
     scope: Record<string, unknown> | null;
   },
 ): Promise<string | null> {
-  const response = await fetch(exportHref(tableId, activeClientKey()), {
+  const response = await fetch(exportHref(tableId, activeClientKey(), portalScope()?.accountId ?? null), {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify(body),

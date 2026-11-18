@@ -1,0 +1,135 @@
+/* Access screens for the dashboard (issue 248). Brand Book, October 2026: dark default, no
+   shadows, glows or gradients. Geist for text, Geist Mono for labels. */
+.dashboard-access {
+  --da-page: #070b14;
+  --da-card: #0b1220;
+  --da-hover: #141e33;
+  --da-accent: #a7d8f0;
+  --da-head: #f8fafc;
+  --da-body: #aeb8c7;
+  --da-caption: #8b95a7;
+  --da-border: #334155;
+  --da-button-text: #070b14;
+  min-height: 100dvh;
+  background: var(--da-page);
+  color: var(--da-body);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  font-family: var(--font-geist-sans, "Geist", system-ui, sans-serif);
+}
+.dashboard-access.light-theme {
+  --da-page: #ffffff;
+  --da-card: #f9fafb;
+  --da-hover: #e4e9ee;
+  --da-accent: #194257;
+  --da-head: #0b1220;
+  --da-body: #334155;
+  --da-caption: #475569;
+  --da-border: #c9d4df;
+  --da-button-text: #ffffff;
+}
+.dashboard-access-card {
+  width: 100%;
+  max-width: 480px;
+  background: var(--da-card);
+  border: 1px solid var(--da-border);
+  border-radius: 12px;
+  padding: 24px;
+}
+.dashboard-access-eyebrow {
+  font-family: var(--font-geist-mono, "Geist Mono", ui-monospace, monospace);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--da-caption);
+  margin: 0 0 8px;
+}
+.dashboard-access h1 {
+  color: var(--da-head);
+  font-weight: 600;
+  font-size: 20px;
+  line-height: 1.3;
+  margin: 0 0 8px;
+}
+.dashboard-access p {
+  margin: 0 0 16px;
+  line-height: 1.5;
+}
+.dashboard-access-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.dashboard-access-option,
+.dashboard-access-button,
+.dashboard-access-link {
+  font: inherit;
+  border-radius: 8px;
+  min-height: 44px;
+  cursor: pointer;
+}
+.dashboard-access-option {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  color: var(--da-head);
+  border: 1px solid var(--da-border);
+  padding: 10px 12px;
+}
+.dashboard-access-option:hover {
+  background: var(--da-hover);
+}
+.dashboard-access-button {
+  background: var(--da-accent);
+  color: var(--da-button-text);
+  border: 1px solid var(--da-accent);
+  font-weight: 600;
+  padding: 10px 16px;
+}
+.dashboard-access-link {
+  color: var(--da-accent);
+  display: inline-flex;
+  align-items: center;
+  text-decoration: underline;
+}
+.dashboard-access label {
+  display: block;
+  color: var(--da-head);
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.dashboard-access textarea {
+  width: 100%;
+  min-height: 96px;
+  font: inherit;
+  color: var(--da-head);
+  background: var(--da-page);
+  border: 1px solid var(--da-border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  resize: vertical;
+}
+.dashboard-access-hint {
+  font-size: 13px;
+  color: var(--da-caption);
+}
+.dashboard-access-error {
+  color: var(--da-head);
+  border-left: 3px solid var(--da-accent);
+  padding-left: 8px;
+}
+.dashboard-access :focus-visible {
+  outline: 2px solid var(--da-accent);
+  outline-offset: 2px;
+}
+.dashboard-access-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}

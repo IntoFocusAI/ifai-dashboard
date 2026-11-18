@@ -61,9 +61,14 @@ export function isExportTable(tableId: string): tableId is ExportTableId {
   return (EXPORT_TABLE_IDS as readonly string[]).includes(tableId) || stockEpisodesAsin(tableId) != null;
 }
 
-export function exportHref(tableId: string, clientKey: string): string {
+/** The download link. The account, when signed in through portal accounts, is a selector the route re-checks. */
+export function exportHref(tableId: string, clientKey: string, accountId: string | null = null): string {
   const base = `/dashboard/export/${encodeURIComponent(tableId)}`;
-  return clientKey === "fender" ? base : `${base}?client=${encodeURIComponent(clientKey)}`;
+  const params = new URLSearchParams();
+  if (clientKey !== "fender") params.set("client", clientKey);
+  if (accountId) params.set("account", accountId);
+  const query = params.toString();
+  return query ? `${base}?${query}` : base;
 }
 
 /** A saved file named for the figure where the table id keeps an older internal name (X-18). */

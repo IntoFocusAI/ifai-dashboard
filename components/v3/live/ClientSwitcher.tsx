@@ -1,16 +1,24 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { activeClientKey, clientHref, isClientKey, listClients } from "@/lib/client/active-client";
+import { activeClientKey, clientHref, defaultClientKey, isClientKey, listClients } from "@/lib/client/active-client";
+import { dashboardHref } from "@/lib/portal/access";
+import { portalScope } from "@/lib/portal/browser-scope";
 
 /**
- * Testing switcher between client brands until login ships. Each brand reads
- * its own database schema; changing it reloads the page so nothing from the
- * previous brand stays on screen.
+ * Switcher between client brands. Each brand reads its own database schema; changing it reloads
+ * the page so nothing from the previous brand stays on screen. Signed in through portal accounts,
+ * it lists only the brands the server allowed for the account, keeps the account in the link, and
+ * hides itself when the account has one brand. The server re-checks the brand on every load.
  */
 export function ClientSwitcher() {
   const pathname = usePathname() ?? "/dashboard";
   const current = activeClientKey();
+  const scope = portalScope();
+  const clients = scope ? listClients().filter((c) => scope.clients.includes(c.client_key)) : listClients();
+  if (scope && clients.length < 2) return null;
+  const hrefFor = (key: string) =>
+    scope ? dashboardHref(pathname, scope.accountId, key, defaultClientKey()) : clientHref(key, pathname);
 
   return (
     <label
@@ -23,7 +31,7 @@ export function ClientSwitcher() {
         onChange={(event) => {
           const next = event.target.value;
           if (!isClientKey(next) || next === current) return;
-          window.location.assign(clientHref(next, pathname));
+          window.location.assign(hrefFor(next));
         }}
         style={{
           fontSize: 11,
@@ -34,7 +42,7 @@ export function ClientSwitcher() {
           color: "var(--text-primary, inherit)",
         }}
       >
-        {listClients().map((client) => (
+        {clients.map((client) => (
           <option key={client.client_key} value={client.client_key}>
             {client.display_name}
           </option>
