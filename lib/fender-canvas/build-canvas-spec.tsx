@@ -35,7 +35,7 @@ import { bindCopy } from "@/lib/fender-canvas/template-vars";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
 
 /** Documentation version shown beside the product name in the canvas header. */
-export const DOCUMENTATION_VERSION = "28.15";
+export const DOCUMENTATION_VERSION = "29.10";
 
 const FOCUS_TARGETS = withPrimaryFocusTargets(
   graphLayout.focusTargets as Record<string, { x: number; y: number }>,
