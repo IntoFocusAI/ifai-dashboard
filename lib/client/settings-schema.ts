@@ -114,6 +114,11 @@ export type ClientSettings = {
   category_short_labels: Record<string, string>;
   /** Optional short client note for the Briefing (decision 105). */
   briefing_note?: string | null;
+  /**
+   * The Amazon category the client's sales ranks are counted in. Names the stored rank curve used
+   * when too few listings are tracked to calibrate one (lib/estimates/benchmarks.ts RANK_CURVES).
+   */
+  amazon_rank_category?: string | null;
 };
 
 export class ClientSettingsError extends Error {
@@ -159,8 +164,9 @@ const FIELDS: readonly (keyof ClientSettings)[] = [
   "catalog_rotation_rule",
   "category_short_labels",
   "briefing_note",
+  "amazon_rank_category",
 ];
-const OPTIONAL: ReadonlySet<string> = new Set(["briefing_note"]);
+const OPTIONAL: ReadonlySet<string> = new Set(["briefing_note", "amazon_rank_category"]);
 
 type Problems = string[];
 type Obj = Record<string, unknown>;
@@ -279,6 +285,7 @@ export function validateClientSettings(raw: unknown, source: string): ClientSett
   }
   if (isText(raw.logo_src) && !raw.logo_src.startsWith("/")) out.push("logo_src must be a path under public/, starting with /");
   if ("briefing_note" in raw && raw.briefing_note !== undefined) textOrNull(raw, "briefing_note", out);
+  if ("amazon_rank_category" in raw && raw.amazon_rank_category !== undefined) textOrNull(raw, "amazon_rank_category", out);
   for (const f of ["is_default", "regional_site_rule", "prompts_editable"]) bool(raw, f, out);
   texts(raw, "brand_name_terms", out, { nonEmpty: true, lower: true });
   texts(raw, "product_line_terms", out, { lower: true });
