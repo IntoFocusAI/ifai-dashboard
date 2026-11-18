@@ -42,8 +42,8 @@
 --   5. Functions: EXECUTE revoked from anon and PUBLIC on every function in the client schemas and
 --      on the public functions that return client data. The set-aside write path checks the
 --      caller's membership for the client_key (private.check_issue_input, public.reopen_set_aside).
---   6. Default privileges: new tables, views and functions in the client schemas are not granted
---      to anon.
+--   6. Default privileges (for role postgres, which owns these schemas and creates their objects):
+--      new tables, views and functions in the client schemas are not granted to anon.
 --
 -- Check after applying (both must return no rows):
 --   select n.nspname, c.relname from pg_class c join pg_namespace n on n.oid = c.relnamespace
@@ -446,8 +446,9 @@ do $$
 declare s text;
 begin
   for s in select schema_name from pg_temp.lockdown_schema where to_regnamespace(schema_name) is not null loop
-    execute format('alter default privileges in schema %I revoke all on tables from anon', s);
-    execute format('alter default privileges in schema %I revoke all on functions from anon', s);
+    -- for role postgres: the role that owns these schemas and creates their objects on hosted.
+    execute format('alter default privileges for role postgres in schema %I revoke all on tables from anon', s);
+    execute format('alter default privileges for role postgres in schema %I revoke all on functions from anon', s);
     raise notice '1.6 schema %: default privileges no longer grant anon', s;
   end loop;
 end $$;
