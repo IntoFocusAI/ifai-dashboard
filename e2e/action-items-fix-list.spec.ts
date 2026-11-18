@@ -77,7 +77,8 @@ test.describe("Action Items opens on the prioritized fix list", () => {
     await expect(list).toHaveAttribute("data-fix-sources", "ready", { timeout: 90_000 });
     const extra = list.locator('[data-fix-row]:not([data-fix-kind="finding"])');
     for (const row of await extra.all()) {
-      await expect(row.locator("[data-plan-fact]")).not.toBeEmpty();
+      // A Confirm row carries its points in the action line and has no fact line.
+      if (!(await row.getAttribute("data-fix-row"))?.endsWith(":confirm")) await expect(row.locator("[data-plan-fact]")).not.toBeEmpty();
       await expect(row.locator("[data-fix-action]")).not.toBeEmpty();
       await expect(row.locator("[data-fix-open]")).toHaveText(/^Open .+ →$/);
     }

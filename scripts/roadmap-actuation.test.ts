@@ -123,7 +123,8 @@ test("confirm: each program not in place asks to confirm it in Days 1 to 30, wit
   ]);
   const [p1, p2] = items;
   assert.equal(p1!.percent, "0 of 20 points");
-  assert.match(p1!.action, /^Confirm your community response program to IntoFocus: who owns it, which communities, and how many responses every 30 days\.$/);
+  assert.equal(p1!.fact, "");
+  assert.match(p1!.action, /^Confirm your community response program to IntoFocus \(worth 20 AI Actuation points\): who owns it, which communities, and how many responses every 30 days\.$/);
   assert.equal(p1!.targets?.label, "Suggested communities");
   assert.equal(p1!.targets?.sites.length, 5);
   assert.equal(p2!.targets?.sites[0]?.domain, "guitarworld.com");

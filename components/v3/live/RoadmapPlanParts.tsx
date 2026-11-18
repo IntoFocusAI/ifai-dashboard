@@ -59,7 +59,7 @@ export function PlanStatus({ item }: { item: PlanItem }) {
 export function PlanAction({ item }: { item: PlanItem }) {
   return (
     <>
-      {item.kind !== "finding" ? (
+      {item.kind !== "finding" && item.fact ? (
         <p className="plan-fact" data-plan-fact="">
           {item.fact}
         </p>

@@ -73,7 +73,7 @@ for (const client of ["fender", "ledlenser"]) {
         await expect(row.locator("[data-fix-action]")).not.toBeEmpty();
         await expect(row.locator("[data-fix-open]")).toHaveText("Open Citation Ecosystem →");
         if (id.endsWith(":confirm")) {
-          await expect(row.locator("[data-fix-action]")).toContainText(/^Confirm your .+ to IntoFocus: who owns it/);
+          await expect(row.locator("[data-fix-action]")).toContainText(/^Confirm your .+ to IntoFocus \(worth 20 AI Actuation points\): who owns it/);
           const targets = row.locator("[data-plan-target]");
           expect(await targets.count()).toBeLessThanOrEqual(5);
         }
