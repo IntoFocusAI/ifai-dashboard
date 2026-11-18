@@ -11,7 +11,7 @@ Plan documents (shared Drive, 17 Nov 2026): `rm-multi-tenant-migration-plan.md`,
 | D2 | External and dealer users will log in later. | Build `core.member_scope` in Phase 0 so access rules aren't retrofitted. Login and permission UI come later. |
 | D3 | Keep 13 months of raw observations in **monthly** partitions, keep daily rollups forever, and move raw data older than 13 months to cold Parquet storage. | Replaces the "30 days, daily partitions" wording in the plan. Revisit if one tenant's monthly partition passes about 10M rows. |
 | D4 | Sandbox data is backfilled into `core` through the same crosswalk. | Not thrown away. |
-| D5 | Brian Watson approves database changes. Each change gets a Slack FYI drafted to Brian Magazu. | AGENTS.md "Database changes" updated. |
+| D5 | Approvals stay as AGENTS.md "Database changes" says: Brian Magazu approves additive changes; Brian Watson applies changes to existing objects. | No change to AGENTS.md. |
 
 ## Phase 0 checklist
 
