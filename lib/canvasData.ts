@@ -74,17 +74,30 @@ export function listingsQuery(
   return q;
 }
 
+/** A retailer the MAP channel lines count carried listings for. */
+export type RetailCarryChannel = "amazon" | "walmart" | "musiciansfriend";
+
 /**
  * Head count of the retail listing read.
- * `storedWalmartPrice` keeps rows whose Walmart price is greater than zero.
- * A null or non-positive price is not in that count.
+ * No options: every listing in the read.
+ * `carriedBy` keeps the listings that retailer carries: Walmart has a stored page URL or a price
+ * above zero; Musician's Friend has a price above zero (no page is stored); every listing is an
+ * Amazon listing.
+ * `priced` keeps rows whose price at that retailer is greater than zero. A null or non-positive
+ * price is not in that count.
  */
-export function retailListingHeadCountQuery(options?: { storedWalmartPrice?: boolean }) {
+export function retailListingHeadCountQuery(options?: {
+  carriedBy?: RetailCarryChannel;
+  priced?: RetailCarryChannel;
+}) {
   const supabase = getCanvasSupabase();
   let query = supabase
     .from("canvas_retail_listings")
     .select("asin", { count: "exact", head: true });
-  if (options?.storedWalmartPrice) query = query.gt("wmt_price", 0);
+  const priceColumn = { amazon: "offer_price", walmart: "wmt_price", musiciansfriend: "mf_price" } as const;
+  if (options?.carriedBy === "walmart") query = query.or("wmt_price.gt.0,wmt_url.like.http%");
+  else if (options?.carriedBy === "musiciansfriend") query = query.gt("mf_price", 0);
+  if (options?.priced) query = query.gt(priceColumn[options.priced], 0);
   return query;
 }
 

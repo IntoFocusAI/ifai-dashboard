@@ -6,21 +6,23 @@ import {
   channelReadingNote,
   channelSummaryText,
   musiciansFriendCheckNote,
-  walmartMissingPriceNote,
+  missingPriceNote,
 } from "../lib/fender-canvas/map-reading-status.ts";
 
 const CHECKED = "2026-10-06T16:36:37.630Z";
 
-test("Walmart missing prices are not counted as zero", () => {
-  assert.equal(walmartMissingPriceNote(null), null);
-  assert.equal(walmartMissingPriceNote(0), null);
+test("only carried listings with no price are missing, and never counted as zero", () => {
+  assert.equal(missingPriceNote("Walmart", null), null);
+  assert.equal(missingPriceNote("Walmart", 0), null);
   assert.equal(
-    walmartMissingPriceNote(1),
-    "1 listing in this read has no stored Walmart price, so it is missing from this count and is not counted as zero.",
+    missingPriceNote("Walmart", 1),
+    "1 listing carried by Walmart has no price in this read, so it is missing from this count and is not counted as zero.",
   );
-  assert.match(walmartMissingPriceNote(919) ?? "", /919 listings in this read have no stored Walmart price/);
-  assert.match(walmartMissingPriceNote(919) ?? "", /not counted as zero/);
-  assert.doesNotMatch(walmartMissingPriceNote(919) ?? "", /\b(40|84|532|920)\b/);
+  assert.equal(
+    missingPriceNote("Musician's Friend", 1034),
+    "1,034 listings carried by Musician's Friend have no price in this read, so they are missing from this count and are not counted as zero.",
+  );
+  assert.doesNotMatch(missingPriceNote("Walmart", 12) ?? "", /stored Walmart price|in this read have/);
 });
 
 // X-25, decision 4: MAP prices are checked daily; the asterisk appears past twice that schedule.
@@ -38,29 +40,48 @@ test("Musician's Friend states the last check only past twice the daily MAP sche
   );
 });
 
-test("channel lines keep the below-MAP count and add only the Walmart and Musician's Friend notes", () => {
-  const walmart = channelReadingNote("Walmart", { walmartMissing: 3 });
-  const friend = channelReadingNote("Musician's Friend", {
-    walmartMissing: 3,
-    musiciansFriendLastRunAt: CHECKED,
-    now: new Date(CHECKED).getTime() + STALE_AFTER_MS + 60_000,
-  });
+test("channel lines read N of carried listings below MAP", () => {
+  // Fender shape: 136 carried on Walmart and all priced; 365 carried on Musician's Friend.
+  assert.equal(channelSummaryText(12, 136, null), "12 of 136 listings below MAP");
+  assert.equal(channelSummaryText(72, 365, null), "72 of 365 listings below MAP");
+  assert.equal(channelSummaryText(40, 1170, null), "40 of 1,170 listings below MAP");
+  assert.equal(channelSummaryText(1, 1, null), "1 of 1 listing below MAP");
+  // The carried count could not be read: the count stands alone.
+  assert.equal(channelSummaryText(2, null, null), "2 listings below MAP");
+});
+
+test("not carried is not missing; matched without a price is, with an asterisk and a tooltip", () => {
+  // Walmart: 1,034 listings are not on Walmart, so only matched-without-price listings count as missing.
+  const allPriced = { Walmart: { carried: 136, missing: 0 } };
+  assert.equal(channelReadingNote("Walmart", { carry: allPriced }), null);
+  assert.equal(channelSummaryText(12, 136, channelReadingNote("Walmart", { carry: allPriced })), "12 of 136 listings below MAP");
+  const matchedNoPrice = { Walmart: { carried: 136, missing: 3 } };
+  const note = channelReadingNote("Walmart", { carry: matchedNoPrice });
+  assert.equal(
+    note,
+    "3 listings carried by Walmart have no price in this read, so they are missing from this count and are not counted as zero.",
+  );
+  assert.equal(channelSummaryText(12, 136, note), "12 of 136 listings below MAP*");
+  // Musician's Friend with no price on 805 uncarried listings carries no asterisk.
+  const friendCarry = { "Musician's Friend": { carried: 365, missing: 0 } };
   const fresh = channelReadingNote("Musician's Friend", {
-    walmartMissing: 3,
+    carry: friendCarry,
     musiciansFriendLastRunAt: CHECKED,
     now: new Date(CHECKED).getTime(),
   });
-  // R-08: the caveat moves to the figure's tooltip; the visible count keeps an asterisk.
-  assert.equal(channelSummaryText(2, walmart), "2 listings below MAP*");
-  assert.equal(
-    walmart,
-    "3 listings in this read have no stored Walmart price, so they are missing from this count and are not counted as zero.",
-  );
-  assert.equal(channelSummaryText(1, friend), "1 listing below MAP*");
-  assert.match(friend ?? "", /^Last checked /);
-  assert.equal(channelSummaryText(4, fresh), "4 listings below MAP");
-  assert.equal(channelReadingNote("Amazon", { walmartMissing: 3 }), null);
-  assert.equal(channelReadingNote("Sweetwater", { walmartMissing: 3 }), null);
+  assert.equal(fresh, null);
+  assert.equal(channelSummaryText(72, 365, fresh), "72 of 365 listings below MAP");
+  // A stale Musician's Friend check still asterisks the line.
+  const stale = channelReadingNote("Musician's Friend", {
+    carry: friendCarry,
+    musiciansFriendLastRunAt: CHECKED,
+    now: new Date(CHECKED).getTime() + STALE_AFTER_MS + 60_000,
+  });
+  assert.match(stale ?? "", /^Last checked /);
+  assert.equal(channelSummaryText(72, 365, stale), "72 of 365 listings below MAP*");
+  // The note names the retailer on the line, for any retailer in the client's settings.
+  assert.match(channelReadingNote("Amazon", { carry: { Amazon: { carried: 1170, missing: 2 } } }) ?? "", /^2 listings carried by Amazon /);
+  assert.equal(channelReadingNote("Sweetwater", { carry: allPriced }), null);
 });
 
 test("a channel cell prints the signed gap and does not name it Amazon gap", () => {

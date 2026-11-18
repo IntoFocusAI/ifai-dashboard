@@ -25,10 +25,25 @@ test("the MAP tab defines MAP once and keeps caveats in tooltips", async ({ page
   await expect(surface).not.toContainText("are missing from this count");
   await expect(surface).not.toContainText("not counted as zero");
   const tip = page.locator('[data-map-channel="Walmart"] [data-figure-tip="map-channel"]');
-  await expect(tip).toHaveText(/below MAP\*$/);
-  await expect(tip).toHaveAttribute("data-ifai-tooltip-desc", /no stored Walmart price/);
+  await expect(tip).toHaveText("1 of 3 listings below MAP*");
+  await expect(tip).toHaveAttribute(
+    "data-ifai-tooltip-desc",
+    /^1 listing carried by Walmart has no price in this read, so it is missing from this count and is not counted as zero\./,
+  );
   await tip.hover();
-  await expect(page.locator(".node-tooltip-definition")).toContainText("no stored Walmart price");
+  await expect(page.locator(".node-tooltip-definition")).toContainText("carried by Walmart has no price");
+  // Amazon carries all six mock listings; one has no price.
+  await expect(page.locator('[data-map-channel="Amazon"] [data-figure-tip="map-channel"]')).toHaveText("3 of 6 listings below MAP*");
 
+  expect(errors, `unexpected page errors:\n${errors.join("\n")}`).toEqual([]);
+});
+
+test("the same N of carried line reads for the second client", async ({ page }) => {
+  const { errors } = await openCatalogHealthCanvas(page);
+  await page.goto("/dashboard?client=ledlenser&spoke=ecommerce&tab=map");
+  await expect(page.locator("[data-map-notes-channels]")).toBeVisible();
+  await expect(page.locator('[data-map-channel="Walmart"] [data-figure-tip="map-channel"]')).toHaveText("1 of 3 listings below MAP*");
+  await expect(page.locator('[data-map-channel="Amazon"] [data-figure-tip="map-channel"]')).toHaveText("3 of 6 listings below MAP*");
+  await expect(page.locator('[data-map-channel="Musician\'s Friend"]')).toHaveCount(0);
   expect(errors, `unexpected page errors:\n${errors.join("\n")}`).toEqual([]);
 });

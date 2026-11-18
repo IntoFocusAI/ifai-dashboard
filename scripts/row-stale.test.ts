@@ -128,8 +128,8 @@ test("channel lines carry a per-channel note from each channel's own listings", 
     assert.equal(stale.Amazon, null);
     assert.equal(stale.Walmart, null);
     assert.equal(stale["Musician's Friend"]?.missing, "1 of 2 listings has no Musician's Friend price check in 6 days");
-    assert.match(channelReadingNote("Musician's Friend", { walmartMissing: 0, channelStale: stale }) ?? "", /^1 of 2 listings has no Musician's Friend price check in 6 days\./);
-    assert.equal(channelReadingNote("Amazon", { walmartMissing: 0, channelStale: stale }), null);
+    assert.match(channelReadingNote("Musician's Friend", { channelStale: stale }) ?? "", /^1 of 2 listings has no Musician's Friend price check in 6 days\./);
+    assert.equal(channelReadingNote("Amazon", { channelStale: stale }), null);
   } finally {
     resetActiveClientForTests(null);
   }
