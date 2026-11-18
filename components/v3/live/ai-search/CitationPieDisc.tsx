@@ -1,5 +1,6 @@
 import type { CitationPieSlice, PieDiscData } from "@/lib/ai-search/citation-pies";
 import { keyColor, sliceColors } from "@/lib/ai-search/pie-tones";
+import { formatInt } from "@/lib/fender-canvas/format";
 
 /**
  * One key's chart color: ice blue for the measured figure, the second blue for the one other
@@ -64,9 +65,9 @@ export function CitationPieLegend({ pie }: { pie: PieDiscData }) {
           data-pie-label={slice.label}
           className="citation-chart-tip ifai-term"
           data-ifai-tooltip-title={slice.label}
-          data-ifai-tooltip-desc={`${slice.label}: ${slice.count} of ${pie.total} ${pie.totalLabel}.`}
+          data-ifai-tooltip-desc={`${slice.label}: ${formatInt(slice.count)} of ${formatInt(pie.total)} ${pie.totalLabel}.`}
           tabIndex={0}
-          aria-label={`${slice.label}: ${slice.count} of ${pie.total} ${pie.totalLabel}.`}
+          aria-label={`${slice.label}: ${formatInt(slice.count)} of ${formatInt(pie.total)} ${pie.totalLabel}.`}
         >
           <span className="citation-pie-swatch" style={{ background: colors[index] }} />
           <span>

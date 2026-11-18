@@ -3,6 +3,7 @@ import { categoryLabel, engineLabel, isCommercial, isError } from "@/lib/ai-sear
 import type { AiCallRow } from "@/lib/ai-search/types";
 import { brandName, leadBrand, leadBrandOr } from "@/lib/brand-copy";
 import { PARTIAL_TITLE, partialFigureTip } from "@/lib/fender-canvas/canvas-reads";
+import { formatInt } from "@/lib/fender-canvas/format";
 
 /** Who leads one category on Unbranded Discovery. */
 export type CategoryLeadStatus = "on_track" | "tied" | "behind" | "not_available";
@@ -171,7 +172,7 @@ export function leadSentence(lead: CategoryLead): string {
   const restPart = rival && rest > 0 ? ` Other brands lead ${rest}.` : "";
   const flagged =
     lead.disqualified > 0 ? ` ${lead.disqualified} more named ${leadBrand()} most with a confirmed product error.` : "";
-  return `${leadBrand()} leads ${lead.fenderLeads} of ${lead.resolved} resolved answers.${rivalPart}${restPart}${flagged}`;
+  return `${leadBrand()} leads ${formatInt(lead.fenderLeads)} of ${formatInt(lead.resolved)} resolved answers.${rivalPart}${restPart}${flagged}`;
 }
 
 /** Same shape CitationPieDisc draws. Slice keys pick the shared slice colors. */

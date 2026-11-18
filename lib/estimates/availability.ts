@@ -65,7 +65,7 @@ export function estimateOutOfStock(listings: EstimateListingInput[], ctx: SalesC
 }
 
 /**
- * Line 2, Buy Box withheld or suppressed. For each listing: sales per in-stock day x days with stock
+ * Line 2, Buy Box lost on any day in the last 12 months. For each listing: sales per in-stock day x days with stock
  * and no Buy Box in the last 12 months x the share lost without a Buy Box x the brand-loss share.
  */
 export function estimateBuyBox(listings: EstimateListingInput[], ctx: SalesContext = {}): EstimateResult {
@@ -88,7 +88,7 @@ export function estimateBuyBox(listings: EstimateListingInput[], ctx: SalesConte
   return assembleLine(
     {
       lineId: "buy_box",
-      title: "Buy Box withheld or suppressed",
+      title: "Buy Box lost on any day in the last 12 months",
       means: "The brand's Amazon sales lost in a year on days when a listing had stock but Amazon showed no Buy Box.",
       formula:
         "For each listing: sales per in-stock day x days with stock and no Buy Box in the last 12 months x the share of sales lost without a Buy Box x the share of missed sales the brand loses. Then add the listings.",

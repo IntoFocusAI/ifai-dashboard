@@ -187,7 +187,7 @@ test("a finished reading with a confirmed suppression is available", () => {
   assert.equal(reading.missingMessage, null);
   assert.equal(reading.detail?.audited, reading.detail?.population);
   // Every withheld listing has a benchmark here, so the stronger label applies.
-  assert.equal(reading.headlineLabel, "Buy Box Withheld above Amazon's outside price");
+  assert.equal(reading.headlineLabel, "Buy Box Withheld above Amazon's reference price");
 });
 
 test("a withheld listing with no benchmark keeps the plain withheld headline", () => {
@@ -607,6 +607,7 @@ test("the Buy Box read keeps seller names and still scores the placeholder partn
 
   assert.deepEqual(snapshot.buyBoxSellers, {
     amazonRetail: 2,
+    brandStore: 0,
     sellers: [{ name: "Austin Bazaar", listings: 1 }],
     known: 3,
     population: 4,

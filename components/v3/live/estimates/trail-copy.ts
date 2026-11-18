@@ -11,6 +11,19 @@ import type {
   SalesSource,
 } from "@/lib/estimates/types";
 
+/**
+ * Line-specific names for a shared input. Line 1's touched sales is the listing-level missed sales,
+ * before the brand-loss share, that the Out of Stock table adds up (decision 112, PM29 item 1).
+ */
+const LINE_INPUT_LABELS: Partial<Record<EstimateTrail["lineId"], Record<string, string>>> = {
+  out_of_stock: { touched_sales: "Listing-level missed sales before brand loss, 12 months" },
+};
+
+/** The input's name on this line's trail. */
+export function inputLabel(input: Pick<EstimateTrailInput, "key" | "label">, trail: Pick<EstimateTrail, "lineId">): string {
+  return LINE_INPUT_LABELS[trail.lineId]?.[input.key] ?? input.label;
+}
+
 /** The required label on every dollar estimate (AGENTS.md), as a heading. */
 export const ANALYST_ESTIMATE = "Analyst estimate";
 

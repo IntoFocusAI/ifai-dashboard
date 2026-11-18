@@ -196,14 +196,13 @@ test("the command center prints no division count, loaded or failed", () => {
   }
 });
 
-test("the tour names a failed missing-field read instead of counting zero rows", () => {
-  const line = (b: CanvasBundle) =>
-    buildLiveTourSteps(b)
+test("the tour names a failed retail read on its Amazon Specs line instead of counting zero rows", () => {
+  const line = (r: RetailCanvasRead) =>
+    buildLiveTourSteps(bundle(), r)
       .find((step) => step.nodeId === "specs")!
-      .displays.find((text) => /missing-field rows/.test(text));
-  assert.equal(line(bundle()), "1 missing-field rows are on Amazon Specs");
-  const failed = line(bundle(["missing"]));
-  assert.equal(failed, "Amazon Specs missing-field rows: Not available* (canvas_spec_missing_fields did not load)");
+      .displays.find((text) => /^Amazon Specs: /.test(text));
+  const failed = line({ phase: "error", message: "forced" } as RetailCanvasRead);
+  assert.equal(failed, "Amazon Specs: Not available* (retail read did not load)");
   assert.doesNotMatch(failed ?? "", /\b0\b/);
 });
 

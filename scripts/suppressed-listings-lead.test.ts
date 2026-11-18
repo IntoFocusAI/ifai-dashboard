@@ -161,7 +161,7 @@ test("Suppressed Listings places one callout body beside the share", () => {
   assert.match(panel, /featuredOfferFreshnessSentence/);
   assert.match(
     panel,
-    /The observed offer and the Competitive External Price come from the same Amazon/,
+    /The observed offer and Amazon's reference price come from the same Amazon/,
   );
 
   const topAt = panel.indexOf("data-suppressed-listings-top");

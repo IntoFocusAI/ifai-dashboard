@@ -531,3 +531,46 @@ closeout of each view. Open items are marked OPEN and are not built.
 114. Handoff State cap (17 Nov): 40 lines, up from 25. Link to plan docs
     instead of repeating them; each queue item names where to start and,
     if blocked, why and on whom.
+115. Benchmarks (18 Nov, PR 234): use the most recent credible estimate,
+    documented and cited. Brand-loss share high 45%; Amazon share of US
+    e-commerce 35.7% (online share low 6.1%); AI share 3% / 8% / 20%;
+    miscategorized lift 5 / 15 / 25% as Brian's own assumption.
+    docs/benchmark-register.md ("the benchmark register") is canonical.
+116. Enterprise Potential (18 Nov): ships on a labeled public-revenue
+    placeholder (Fender $1B, Ledlenser $75M) and, from PR 246, includes the
+    AI Search part (lines 8 and 9, light v1). Lines 10, 11, the source split
+    and Roadmap dollars wait for full E5.
+117. Briefing and estimate cards (18 Nov): AI Consensus Score, then Monthly
+    potential lost brand revenue (Phase 1 / 12), then findings worst first;
+    Brian may later name "always include" cards after Monthly. Ranges sit
+    under the mid in N-of-M type. Scores read "45 /100" with "Target 70".
+    Minimal view scores move to /100 with the X-22 hover rebuild.
+118. Opportunity table keeps the "On measured sales" / "On estimated sales"
+    columns. Where SmartScout reports zero but Amazon shows "bought in past
+    month", Amazon's figure wins.
+119. Action Items (18 Nov): an "Add A+ content to {n} listings." row; Buy
+    Box in three rows (Review pricing / Check other causes / Watch earlier
+    this year); "Amazon's reference price" is the one term, deck included;
+    lower price elsewhere shown for every withheld listing. Two Actuation
+    Confirm items (worth 20 points each) rank in the top 10.
+120. Fact checks (18 Nov): unreviewed contradictions show as one normal-
+    priority review task ("Review {n} AI answers that may contradict your
+    product facts.") in Priorities, Action Items and the Roadmap; kept out
+    of the deck until IntoFocus confirms them.
+121. Brand-led sellers (18 Nov): any brand_led client's own seller ids
+    (settings brand_seller_ids) count as the brand everywhere. River City
+    Tools holds Ledlenser's exclusive US distribution and counts as
+    Ledlenser's own store.
+122. MAP (18 Nov): retailer lines read "{below} of {carried} listings
+    below MAP". A "no MAP" client setting hides MAP views (queue item 3).
+    Price erosion against list price is R-20 LATER. Collectors search every
+    listing each pass; Watson is adding drop-off after 2 no-match passes
+    and searching bundles (or not stamping them checked).
+123. Roadmap breadth (18 Nov): build every recommendation in
+    docs/roadmap-gap-audit.md over time; not all need to show in Action
+    Items or 30-60-90 at once; lower-priority items can sit in later
+    periods but stay in consideration.
+124. Process (18 Nov): up to 5 workers at once. Database approvals stay as
+    in AGENTS.md: Watson may make any database change; Brian approves
+    additive changes only (PR 238 no longer changes this). Always give
+    Brian bubble > tab paths.

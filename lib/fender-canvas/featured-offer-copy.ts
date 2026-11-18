@@ -9,7 +9,7 @@ import { FEATURED_OFFER_JOB, type FeaturedOfferCounts } from "./featured-offer";
 
 /** Confirmed withheld above the outside benchmark. The strongest client-useful result. */
 export const CONFIRMED_HIGH_PRICE_LABEL =
-  "Buy Box Withheld above Amazon's outside price";
+  "Buy Box Withheld above Amazon's reference price";
 
 /** Withheld with no outside benchmark stored. Still a confirmed withheld state. */
 export const WITHHELD_LABEL = "Buy Box Withheld";
@@ -116,14 +116,14 @@ export function firstPassIncomplete(counts: FeaturedOfferCounts): boolean {
 }
 
 /** Tooltip on the unpublished-benchmark count: what an unpublished benchmark is and is not. */
-export const BENCHMARK_UNPUBLISHED_TITLE = "No published benchmark";
+export const BENCHMARK_UNPUBLISHED_TITLE = "No published reference price";
 export const BENCHMARK_UNPUBLISHED_TIP =
-  "Amazon finished the check and published no outside price for these listings. That is not a failed check and not a price of zero.";
+  "Amazon finished the check and published no reference price for these listings. That is not a failed check and not a price of zero.";
 
 /** Tooltip on a blank gap cell: why there is nothing to compare. */
 export const NO_COMPARABLE_PAIR_LABEL = "No comparable pair";
 export const NO_COMPARABLE_PAIR_TIP =
-  "This reading has no observed offer and outside price from one check to compare yet. It is not a gap of zero.";
+  "This reading has no observed offer and Amazon's reference price from one check to compare yet. It is not a gap of zero.";
 
 /** Tooltip on the coverage-exceptions count: how failed and unchecked listings are counted. */
 export const COVERAGE_EXCEPTIONS_TIP =
@@ -141,19 +141,19 @@ export function benchmarkCoverageParts(counts: FeaturedOfferCounts): {
   if (counts.keepaClassified === 0) {
     return {
       before:
-        "No listing has a finished Amazon Buy Box check yet, so the outside-price benchmark has no coverage to report.",
+        "No listing has a finished Amazon Buy Box check yet, so Amazon's reference price has no coverage to report.",
       figure: null,
       after: "",
     };
   }
-  const lead = `Amazon's outside price is stored for ${formatInt(
+  const lead = `Amazon's reference price is stored for ${formatInt(
     counts.benchmarkPresent,
   )} of ${formatInt(counts.keepaClassified)} checked ${listings(
     counts.keepaClassified,
   )}. Amazon does not name the retailer behind that price.`;
   if (counts.benchmarkUnavailable === 0) return { before: lead, figure: null, after: "" };
   return {
-    before: `${lead} Amazon did not publish a benchmark for `,
+    before: `${lead} Amazon did not publish a reference price for `,
     figure: `the other ${formatInt(counts.benchmarkUnavailable)}`,
     after: ".",
   };
@@ -177,13 +177,13 @@ export function confirmedSuppressionSentence(counts: FeaturedOfferCounts): strin
     counts.confirmedHighPrice > 0
       ? ` ${formatInt(counts.confirmedHighPrice)} of ${
           counts.confirmedHighPrice === 1 ? "those is" : "those are"
-        } priced above Amazon's outside price in the same check.`
-      : " None is confirmed above Amazon's outside price in the same check.";
+        } priced above Amazon's reference price in the same check.`
+      : " None is confirmed above Amazon's reference price in the same check.";
   const withoutBenchmark =
     counts.withheldWithoutBenchmark > 0
       ? ` ${formatInt(counts.withheldWithoutBenchmark)} ${
           counts.withheldWithoutBenchmark === 1 ? "has" : "have"
-        } no outside price and offer from one check to compare, so ${
+        } no offer and Amazon's reference price from one check to compare, so ${
           counts.withheldWithoutBenchmark === 1 ? "it is" : "they are"
         } withheld without a confirmed price cause.`
       : "";

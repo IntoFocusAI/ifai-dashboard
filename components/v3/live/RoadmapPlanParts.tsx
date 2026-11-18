@@ -6,8 +6,11 @@ import { figureTipAttrs, PartialFigureMark } from "@/components/v3/live/FigureTi
 import { StatusMark } from "@/components/v3/live/StatusMark";
 import { ExternalLink } from "@/components/v3/live/ai-search/ExternalLink";
 import { formatEvidence, setEvidenceFocus, type EvidenceFocus } from "@/lib/ai-search/evidence-focus";
+import { engineLabel } from "@/lib/ai-search/run-metrics";
+import { brandName } from "@/lib/brand-copy";
 import { dataStatusColor, dataStatusFromNode } from "@/lib/canvas-sdk/data-status";
 import { BRIEFING_LOADING } from "@/lib/fender-canvas/briefing-retail-lead";
+import { targetAnswers } from "@/lib/fender-canvas/roadmap-actuation";
 import type { PlanItem } from "@/lib/fender-canvas/roadmap-plan";
 
 /** Cited pages listed under a source action (21e). */
@@ -58,7 +61,7 @@ export function PlanStatus({ item }: { item: PlanItem }) {
 export function PlanAction({ item }: { item: PlanItem }) {
   return (
     <>
-      {item.kind !== "finding" ? (
+      {item.kind !== "finding" && item.fact ? (
         <p className="plan-fact" data-plan-fact="">
           {item.fact}
         </p>
@@ -66,7 +69,77 @@ export function PlanAction({ item }: { item: PlanItem }) {
       <p className="plan-action" data-fix-action="">
         <DefinedCopy text={item.action} />
       </p>
+      <PlanTargets item={item} />
+      <PlanReviews item={item} />
     </>
+  );
+}
+
+/** The fact-check review task: each flagged answer opens its stored answer, next to the fact and its source page. */
+function PlanReviews({ item }: { item: PlanItem }) {
+  if (!item.reviews?.length) return null;
+  return (
+    <ul className="plan-reviews" data-plan-reviews={item.id}>
+      {item.reviews.map((answer) => {
+        const focus: EvidenceFocus = { field: "sim", value: answer.answerFocus };
+        return (
+          <li key={answer.key} data-plan-review={answer.key}>
+            <button
+              type="button"
+              className="plan-target"
+              data-plan-review-quote=""
+              data-ifai-open="aeo"
+              data-ifai-tab="Run Details"
+              data-ifai-evidence={formatEvidence(focus)}
+              onClickCapture={() => setEvidenceFocus(focus)}
+            >
+              {engineLabel(answer.engine)}: &ldquo;{answer.quote || answer.prompt}&rdquo;
+            </button>
+            {answer.claim ? (
+              <span className="plan-cell-sub" data-plan-review-fact="">
+                {" "}
+                Fact: {answer.claim}{" "}
+                {answer.sourceUrl ? <ExternalLink href={answer.sourceUrl}>{brandName()} source</ExternalLink> : null}
+              </span>
+            ) : null}
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+/** An Actuation item's suggested target sites; each opens Citation Ecosystem on that site's rows. */
+function PlanTargets({ item }: { item: PlanItem }) {
+  if (!item.targets?.sites.length) return null;
+  return (
+    <div className="plan-targets" data-plan-targets={item.id}>
+      <span className="plan-cell-sub">{item.targets.label}:</span>
+      <ul>
+        {item.targets.sites.map((site) => {
+          const focus: EvidenceFocus = { field: "domain", value: site.domain };
+          return (
+            <li key={site.domain}>
+              <button
+                type="button"
+                className="plan-target"
+                data-plan-target={site.domain}
+                data-ifai-open="aeo"
+                data-ifai-tab="Citation Ecosystem"
+                data-ifai-evidence={formatEvidence(focus)}
+                onClickCapture={() => setEvidenceFocus(focus)}
+              >
+                {site.domain}
+              </button>
+              <span className="plan-cell-sub">
+                {" "}
+                {targetAnswers(site)}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
   );
 }
 

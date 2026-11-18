@@ -12,6 +12,7 @@
  */
 
 import type { PieDiscData } from "@/lib/ai-search/citation-pies";
+import type { FactCheckReviewAnswer } from "@/lib/ai-search/drift";
 import type { EvidenceFocus } from "@/lib/ai-search/evidence-focus";
 import type { NodeStatus } from "@/lib/canvas-sdk/types";
 import { rankFixList, type FixListRow } from "@/lib/fender-canvas/action-items-fix-list";
@@ -24,6 +25,7 @@ import {
   type SiteType,
   type SourceAction,
 } from "@/lib/fender-canvas/roadmap-sources";
+import type { ActuationAction, SuggestedTarget } from "@/lib/fender-canvas/roadmap-actuation";
 import type { FocusAction, PlanFocus } from "@/lib/fender-canvas/roadmap-focus";
 import type { OwnPageAction } from "@/lib/fender-canvas/roadmap-own-pages";
 import type { SignalAction } from "@/lib/fender-canvas/roadmap-signals";
@@ -69,7 +71,7 @@ const FOCUS_PHASE: Record<"engine" | "question", PlanPhase> = {
   question: "days_31_60",
 };
 
-export type PlanKind = "finding" | "signal" | "source" | "own_page" | "focus";
+export type PlanKind = "finding" | "signal" | "source" | "own_page" | "focus" | "actuation";
 
 export type PlanItem = {
   id: string;
@@ -100,6 +102,10 @@ export type PlanItem = {
   categories: string[];
   /** An AI row's tooltip: the latest run's count, "Latest run (Nov 12): X of Y" (roadmap-latest). */
   tip?: string | null;
+  /** An Actuation confirm item's suggested target sites, each opening its Citation Ecosystem rows. */
+  targets?: { label: string; sites: SuggestedTarget[] } | null;
+  /** The fact-check review task's flagged answers, each linking to its quote and source fact. */
+  reviews?: FactCheckReviewAnswer[];
 };
 
 export const RECOMMENDED_LABEL = "Recommended";
@@ -155,6 +161,7 @@ function signalItem(signal: SignalAction): PlanItem {
     pages: [],
     evidence: null,
     categories: signal.categories ?? [],
+    ...(signal.reviews ? { reviews: signal.reviews } : {}),
   };
 }
 
@@ -238,6 +245,32 @@ function focusItem(focus: FocusAction): PlanItem {
   };
 }
 
+function actuationItem(item: ActuationAction): PlanItem {
+  return {
+    id: item.id,
+    kind: "actuation",
+    rank: 0,
+    phase: item.phase,
+    label: item.label,
+    percent: item.percent,
+    ratio: item.ratio,
+    tone: null,
+    statusLabel: RECOMMENDED_LABEL,
+    fact: item.fact,
+    action: item.action,
+    needsAction: true,
+    noReading: false,
+    loading: false,
+    partial: null,
+    open: { spokeId: "aeo", tab: "Citation Ecosystem" },
+    siteType: null,
+    pages: [],
+    evidence: null,
+    categories: [],
+    targets: item.targets,
+  };
+}
+
 /** The five findings as the fix list ranks them, with their action lines. */
 export function rankedFindings(findings: readonly BriefingFinding[]): FixListRow[] {
   return rankFixList(
@@ -253,6 +286,8 @@ export type PlanInput = {
   ownPages?: OwnPageAction | null;
   /** 21d: the focus items, each past both guardrails. */
   focus?: readonly FocusAction[];
+  /** SC-03: confirm, post against the target, or renew each Actuation program (roadmap-actuation). */
+  actuation?: readonly ActuationAction[];
 };
 
 /**
@@ -294,7 +329,25 @@ export function buildPlan(input: PlanInput): PlanItem[] {
   const laterOwn = own && !input.ownPages?.urgent ? [own] : [];
   const priority = rest.filter((item) => item.tier === "priority").map(focusItem);
   const watch = rest.filter((item) => item.tier === "watch").map(focusItem);
-  return [...findings, ...ecommerce, ...urgentOwn, ...answers, ...priority, ...laterOwn, ...watch].map((item, index) => ({
+  const actuation = (input.actuation ?? []).map(actuationItem);
+  // The two "Confirm your program" items rank right after the Critical findings, so they sit in the
+  // top 10 rows (Brian Magazu, 18 Nov 2026). Activity and renew items keep their place after the focus items.
+  const confirm = actuation.filter((item) => item.id.endsWith(":confirm"));
+  const laterActuation = actuation.filter((item) => !item.id.endsWith(":confirm"));
+  const critical = findings.filter((item) => item.statusLabel === "Critical");
+  const otherFindings = findings.filter((item) => item.statusLabel !== "Critical");
+  return [
+    ...critical,
+    ...confirm,
+    ...otherFindings,
+    ...ecommerce,
+    ...urgentOwn,
+    ...answers,
+    ...priority,
+    ...laterActuation,
+    ...laterOwn,
+    ...watch,
+  ].map((item, index) => ({
     ...item,
     rank: index + 1,
   }));
