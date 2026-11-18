@@ -22,6 +22,12 @@ import { mapAsinKey } from "./portfolio-retail";
 import { RECHECK_DAYS, rowsStale } from "./row-stale";
 import { getCanvasSupabase } from "../supabase/canvas-client";
 
+/**
+ * The yearly line the MAP Leakage tab shows (E4, decision 112): line 3, retail value below MAP per
+ * year. It sits beside Phase 1 and is never added to it.
+ */
+export const MAP_ESTIMATE_LINE = "map_leakage" as const;
+
 /** The one units source today. A second source gets its own total; totals are never added. */
 export const MAP_UNITS_SOURCE = "SmartScout";
 

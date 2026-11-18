@@ -5,6 +5,7 @@ import { DefinedCopy } from "@/components/v3/live/DefinedTerm";
 import { FigureTip, PartialFigureMark } from "@/components/v3/live/FigureTip";
 import { MapExposureCard, type MapExposureState } from "@/components/v3/live/MapExposureCard";
 import { MapListingsTable } from "@/components/v3/live/MapListingsTable";
+import { EstimateLineCard } from "@/components/v3/live/estimates/EstimateLineFigure";
 import { RetailShareDisc, RetailStatusMark } from "@/components/v3/live/RetailOverviewFigure";
 import { listingsQuery, retailListingHeadCountQuery } from "@/lib/canvasData";
 import { formatUsd } from "@/lib/fender-canvas/format";
@@ -22,6 +23,7 @@ import {
 } from "@/lib/fender-canvas/map-approved-exceptions";
 import {
   loadMapUnits,
+  MAP_ESTIMATE_LINE,
   mapExposureOrder,
   mapExposureSummary,
   mapUnitsLookup,
@@ -226,6 +228,7 @@ function MapTopRow({
       }}
     >
       <MapLeakageLead read={read} />
+      <EstimateLineCard lineId={MAP_ESTIMATE_LINE} />
       <div className="map-top-side" data-map-top-side="">
         {exposure ? <MapExposureCard state={exposure} exceptionsSentence={exceptionsSentence} /> : null}
         <div className="content-box" data-map-notes="">
