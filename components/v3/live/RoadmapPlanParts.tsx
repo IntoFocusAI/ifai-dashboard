@@ -6,6 +6,8 @@ import { figureTipAttrs, PartialFigureMark } from "@/components/v3/live/FigureTi
 import { StatusMark } from "@/components/v3/live/StatusMark";
 import { ExternalLink } from "@/components/v3/live/ai-search/ExternalLink";
 import { formatEvidence, setEvidenceFocus, type EvidenceFocus } from "@/lib/ai-search/evidence-focus";
+import { engineLabel } from "@/lib/ai-search/run-metrics";
+import { brandName } from "@/lib/brand-copy";
 import { dataStatusColor, dataStatusFromNode } from "@/lib/canvas-sdk/data-status";
 import { BRIEFING_LOADING } from "@/lib/fender-canvas/briefing-retail-lead";
 import { targetAnswers } from "@/lib/fender-canvas/roadmap-actuation";
@@ -68,7 +70,42 @@ export function PlanAction({ item }: { item: PlanItem }) {
         <DefinedCopy text={item.action} />
       </p>
       <PlanTargets item={item} />
+      <PlanReviews item={item} />
     </>
+  );
+}
+
+/** The fact-check review task: each flagged answer opens its stored answer, next to the fact and its source page. */
+function PlanReviews({ item }: { item: PlanItem }) {
+  if (!item.reviews?.length) return null;
+  return (
+    <ul className="plan-reviews" data-plan-reviews={item.id}>
+      {item.reviews.map((answer) => {
+        const focus: EvidenceFocus = { field: "sim", value: answer.answerFocus };
+        return (
+          <li key={answer.key} data-plan-review={answer.key}>
+            <button
+              type="button"
+              className="plan-target"
+              data-plan-review-quote=""
+              data-ifai-open="aeo"
+              data-ifai-tab="Run Details"
+              data-ifai-evidence={formatEvidence(focus)}
+              onClickCapture={() => setEvidenceFocus(focus)}
+            >
+              {engineLabel(answer.engine)}: &ldquo;{answer.quote || answer.prompt}&rdquo;
+            </button>
+            {answer.claim ? (
+              <span className="plan-cell-sub" data-plan-review-fact="">
+                {" "}
+                Fact: {answer.claim}{" "}
+                {answer.sourceUrl ? <ExternalLink href={answer.sourceUrl}>{brandName()} source</ExternalLink> : null}
+              </span>
+            ) : null}
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 

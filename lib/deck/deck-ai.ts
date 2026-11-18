@@ -4,7 +4,7 @@
  */
 
 import { competitorTallies, joinBrands, largestCompetitorGap } from "@/lib/ai-search/competitors";
-import { driftRead, evidenceQuote, FACT_CHECK_VERDICTS_RAISED } from "@/lib/ai-search/drift";
+import { driftRead, evidenceQuote, FACT_CHECK_VERDICTS_IN_DECK } from "@/lib/ai-search/drift";
 import { factCheckAccuracyLead, factCheckAccuracyStatus } from "@/lib/ai-search/fact-check-copy";
 import { competitorCategoryLine, competitorEngineLine } from "@/lib/ai-search/radar-tables";
 import { categoryLabel, engineLabel } from "@/lib/ai-search/run-metrics";
@@ -200,8 +200,8 @@ export function rivalTableSlide(input: DeckInput, snapshot: AiSearchSnapshot | n
 
 /** b5: the answers that contradicted a fact the brand publishes. */
 export function contradictionSlide(input: DeckInput, snapshot: AiSearchSnapshot | null): DeckSlide | null {
-  // Unreviewed checker verdicts stay on Product Fact Checks (FACT_CHECK_VERDICTS_RAISED).
-  if (!snapshot || !FACT_CHECK_VERDICTS_RAISED) return null;
+  // Slides read as finished findings, so unreviewed checker verdicts stay out of the deck (FACT_CHECK_VERDICTS_IN_DECK).
+  if (!snapshot || !FACT_CHECK_VERDICTS_IN_DECK) return null;
   const drift = driftRead(snapshot.calls, snapshot.probes);
   const confirmed = drift.probes.filter((row) => row.state === "confirmed");
   if (confirmed.length === 0) return null;

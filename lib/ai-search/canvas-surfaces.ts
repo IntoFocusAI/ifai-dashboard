@@ -1,6 +1,6 @@
 import type { CanvasMetric, CanvasNode, NodeStatus, PriorityItem } from "@/lib/canvas-sdk/types";
 import { citationEvidence, groupCitations } from "@/lib/ai-search/citations";
-import { FACT_CHECK_VERDICTS_RAISED } from "@/lib/ai-search/drift";
+import { factCheckReviewAnswers, factCheckReviewTitle } from "@/lib/ai-search/drift";
 import {
   battleSentence,
   joinBrands,
@@ -38,7 +38,7 @@ import {
 } from "@/lib/ai-search/category-standing";
 import { READ_NOT_AVAILABLE } from "@/lib/fender-canvas/canvas-reads";
 import { brandName, leadBrand } from "@/lib/brand-copy";
-import { formatInt } from "@/lib/fender-canvas/format";
+import { formatInt, formatRatio } from "@/lib/fender-canvas/format";
 
 /** Engines with resolved unbranded answers, weakest Fender-lead share first (same order as Engine Comparison). */
 function unbrandedEnginesWeakestFirst(engines: readonly RoleGroupTally[]): RoleGroupTally[] {
@@ -453,20 +453,6 @@ export function aiPriorityItems(read: AiSearchRead): PriorityItem[] {
   const s = summarizeRun(read.snapshot);
   const items: PriorityItem[] = [];
 
-  // Unreviewed checker verdicts stay on Product Fact Checks (FACT_CHECK_VERDICTS_RAISED).
-  if (FACT_CHECK_VERDICTS_RAISED && s.drift.totalConfirmed > 0) {
-    items.push({
-      id: "ai-confirmed-contradiction",
-      title: `${s.drift.totalConfirmed} AI answers contradict a verified ${brandName()} fact`,
-      why: `In the published run, ${s.drift.totalConfirmed} of ${s.drift.totalChecked} checked answers stated something an official ${brandName()} page contradicts. The Product Fact Checks tab shows each question, the verified fact, its ${brandName()} source page, and the answer.`,
-      impact: "A shopper who reads a wrong spec may buy the wrong product or return it.",
-      severity: "critical",
-      spokeId: "aeo",
-      subTab: AI_TABS.drift,
-      defaultOwner: "client",
-    });
-  }
-
   const gap = s.largestGap;
   if (gap) {
     const calls = read.snapshot.calls.filter(
@@ -489,6 +475,20 @@ export function aiPriorityItems(read: AiSearchRead): PriorityItem[] {
       severity: "high",
       spokeId: "competitors",
       subTab: "Competitor Wins",
+      defaultOwner: "client",
+    });
+  }
+
+  // Checker verdicts are unreviewed, so they are raised as a review task, never as a Critical finding.
+  const review = factCheckReviewAnswers(s.drift.probes);
+  if (review.length > 0) {
+    items.push({
+      id: "ai-fact-check-review",
+      title: factCheckReviewTitle(review.length),
+      why: `The automatic fact check flagged ${formatRatio(review.length, s.drift.coverage.answersChecked)} checked answers. The Product Fact Checks tab shows each flagged answer's words next to the ${brandName()} fact and its source page.`,
+      severity: "moderate",
+      spokeId: "aeo",
+      subTab: AI_TABS.drift,
       defaultOwner: "client",
     });
   }

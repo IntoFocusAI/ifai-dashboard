@@ -59,12 +59,48 @@ export type ProbeEvidence = {
 };
 
 /**
- * Whether a contradiction verdict is raised outside Product Fact Checks (Priorities, Action Items cards, the deck).
- * Verdicts come from the automatic checker and no human review of a verdict is stored. On 18 Nov 2026, 2 of the 4
- * Fender verdicts in the 30-day window were answers that agree with the published fact (Grok API on the Player II
- * radius, ChatGPT on the Mustang Micro tubes), so verdicts stay on their own tab until a reviewed flag exists.
+ * Fact-check verdicts come from the automatic checker and no human review of a verdict is stored. On 18 Nov 2026, 2 of
+ * the 4 Fender verdicts in the 30-day window were answers that agree with the published fact (Grok API on the Player II
+ * radius, ChatGPT on the Mustang Micro tubes). So outside Product Fact Checks a verdict is raised only as a review task
+ * (Priorities, Action Items, the Roadmap), never as a finding, and the deck, whose slides read as finished findings,
+ * leaves verdicts out (Brian Magazu, 18 Nov 2026).
  */
-export const FACT_CHECK_VERDICTS_RAISED = false;
+export const FACT_CHECK_VERDICTS_IN_DECK = false;
+
+/** One answer the checker flagged, with what the review task links to. */
+export type FactCheckReviewAnswer = {
+  key: string;
+  /** Opens the stored answer in Run Details (`sim:` evidence), as the Product Fact Checks table does. */
+  answerFocus: string;
+  engine: string;
+  prompt: string;
+  /** The stored answer text, whole-word trimmed. */
+  quote: string;
+  claim: string | null;
+  sourceUrl: string | null;
+};
+
+/** The flagged answers a reviewer should check: confirmed verdicts, each with its quote and source fact. */
+export function factCheckReviewAnswers(probes: readonly ProbeEvidence[]): FactCheckReviewAnswer[] {
+  return probes
+    .filter((row) => row.state === "confirmed")
+    .map((row) => ({
+      key: row.key,
+      answerFocus: row.callId ?? String(row.simId),
+      engine: row.engine,
+      prompt: row.prompt,
+      quote: evidenceQuote(row.evidence),
+      claim: row.claim,
+      sourceUrl: row.sourceUrl,
+    }));
+}
+
+/** The review task's wording (Brian Magazu, 18 Nov 2026). */
+export function factCheckReviewTitle(count: number): string {
+  return count === 1
+    ? "Review 1 AI answer that may contradict your product facts."
+    : `Review ${count} AI answers that may contradict your product facts.`;
+}
 
 /**
  * The stored "answer said" text is a window cut from the answer, so it can start or end mid-word. Shown text starts

@@ -126,6 +126,24 @@
   text-decoration: underline;
 }
 
+/* Fact-check review task: each flagged answer on its own line. */
+.plan-reviews {
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.plan-reviews li {
+  font-size: 11px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  text-align: left;
+}
+
+.plan-reviews .plan-target {
+  text-align: left;
+}
+
 /* Roadmap: owner sentence, positions, then three phase columns. */
 .roadmap-owner {
   margin: 0;

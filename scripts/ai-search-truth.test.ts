@@ -12,7 +12,7 @@ import {
 } from "../lib/ai-search/canvas-surfaces.ts";
 import { canonicalUrl, citationEvidence, classifySource, groupCitations, isValidCitationUrl } from "../lib/ai-search/citations.ts";
 import { categoryBattles, competitorTallies } from "../lib/ai-search/competitors.ts";
-import { driftRead, PROBE_STATE_LABELS } from "../lib/ai-search/drift.ts";
+import { driftRead, factCheckReviewAnswers, factCheckReviewTitle, PROBE_STATE_LABELS } from "../lib/ai-search/drift.ts";
 import {
   FACT_CHECK_SCOPE,
   FACT_CHECK_SHOPPING_SCOPE,
@@ -286,7 +286,7 @@ test("AI freshness is the run's completion time, and partial runs say so", () =>
 
 test("client priorities come from run evidence, never pipeline work", () => {
   const items = aiPriorityItems(ready);
-  // Unreviewed fact-check verdicts stay on Product Fact Checks (FACT_CHECK_VERDICTS_RAISED, PM29 item 3).
+  // A commercial answer flagged by the checker has no probe quote, so it raises no fact-check review task.
   assert.deepEqual(items.map((i) => i.id), ["ai-competitor-gap"]);
   const gap = items[0];
   assert.match(
@@ -388,6 +388,25 @@ test("a contradiction changes the headline instead of hiding it", () => {
   const c = driftRead([], rows).coverage;
   assert.equal(c.contradictions, 1);
   assert.match(factCheckHeadline(c), /1 of 8 answers contradicted the verified fact/);
+});
+
+test("a flagged answer is raised in Priorities as a review task, normal priority, after the competitor gap", () => {
+  const flag = (row: AiProbeRow, evidence: string) => ({ ...row, material_hallucination: "confirmed", hallucination_evidence: evidence });
+  const one = { phase: "ready" as const, snapshot: { ...snapshot, probes: [flag(probes[0], "**Yes** — it has a tube preamp.")] } };
+  const items = aiPriorityItems(one);
+  assert.deepEqual(items.map((i) => i.id), ["ai-competitor-gap", "ai-fact-check-review"]);
+  const review = items[1];
+  assert.equal(review.title, "Review 1 AI answer that may contradict your product facts.");
+  assert.equal(review.severity, "moderate");
+  assert.equal(review.subTab, "Product Fact Checks");
+  assert.doesNotMatch(`${review.title} ${review.why}`, /—|n't/);
+  const answers = factCheckReviewAnswers(driftRead(one.snapshot.calls, one.snapshot.probes).probes);
+  assert.deepEqual(answers.map((a) => [a.answerFocus, a.quote, a.claim, a.sourceUrl]), [
+    ["c6", "Yes — it has a tube preamp.", "No tubes.", "https://www.fender.com/products/mustang-micro"],
+  ]);
+  const rows = factCheckRun().map((row) => (row.sim_id === 1161 || row.sim_id === 1163 ? flag(row, "Said 12 inch radius.") : row));
+  assert.equal(factCheckReviewAnswers(driftRead([], rows).probes).length, 2);
+  assert.equal(factCheckReviewTitle(2), "Review 2 AI answers that may contradict your product facts.");
 });
 
 test("provider failures and pending facts are secondary notes", () => {

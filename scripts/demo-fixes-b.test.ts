@@ -1,7 +1,7 @@
 /* Worker 29.24 (PM29 demo fixes): fact-check quotes, brand-led Buy Box split, brand site label. */
 import assert from "node:assert/strict";
 import { afterEach, test } from "node:test";
-import { evidenceQuote, FACT_CHECK_VERDICTS_RAISED } from "../lib/ai-search/drift.ts";
+import { evidenceQuote, FACT_CHECK_VERDICTS_IN_DECK } from "../lib/ai-search/drift.ts";
 import { resetActiveClientForTests } from "../lib/client/active-client.ts";
 import { brandSite } from "../lib/brand-copy.ts";
 import { buyBoxSellerCensus, controlledBuyBoxFinding, controlledBuyBoxFromCensus } from "../lib/fender-canvas/consensus-scores.ts";
@@ -31,8 +31,8 @@ test("a stored answer window that starts and ends mid-word shows whole sentences
   assert.equal(evidenceQuote(null), "");
 });
 
-test("unreviewed fact-check verdicts are not raised outside their tab", () => {
-  assert.equal(FACT_CHECK_VERDICTS_RAISED, false);
+test("unreviewed fact-check verdicts stay out of the deck", () => {
+  assert.equal(FACT_CHECK_VERDICTS_IN_DECK, false);
 });
 
 const LEDLENSER_ROW = { ...EMPTY_METRICS_ROW, bb_brand: 68, bb_1p: 0, bb_3p: 111, bb_unharvested: 11, bb_no_offer: 14 };
