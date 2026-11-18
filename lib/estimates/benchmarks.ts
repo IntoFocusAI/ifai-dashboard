@@ -2,12 +2,11 @@
 // to trust it. Approved by Brian Magazu with docs/dollar-estimates-proposal.md (decision 111).
 //
 // Sources were found by web search on 17 Nov 2026. Worker 29.1 opened each page on 18 Nov 2026
-// (docs/benchmark-verification.md). A source is verified: true only where the quote was read on the
+// (docs/benchmark-register.md). A source is verified: true only where the quote was read on the
 // page or a faithful reproduction of it; `quote` holds those words and `checked` says how. Sources
 // still verified: false could not be opened. Do not put a quote on screen from an unverified source.
 // Rule (Brian, 18 Nov 2026): use the most recent credible estimate; document and cite it.
-// Changes 2 and 4 of docs/benchmark-verification.md were approved on 18 Nov 2026 and applied below.
-// Changes 1 and 3 still wait for Brian, so those values are unchanged.
+// Changes 1 to 4 of docs/benchmark-register.md were approved on 18 Nov 2026 and applied below.
 
 import type { RankCurve } from "./rank-curve";
 import type { Benchmark, BenchmarkSource } from "./types";
@@ -387,10 +386,10 @@ export const BRAND_LOSS_SHARE: Benchmark = {
   unit: "share",
   low: 0.3,
   mid: 0.4,
-  high: 0.55,
+  high: 0.45,
   basis: "published",
   credibility:
-    "Good. Online: 15% of shoppers switched sites and 60% bought a substitute from the same merchant, half of them another brand, so 30% switched brand (low) and at most 55% did not end up with the brand's product (high). In store: 26% switch brand and 9% do not buy. Large samples, known authors; general retail, not this category.",
+    "Good. Online: 15% of shoppers switched sites and 60% bought a substitute from the same merchant, half of them another brand, so 30% switched brand (low). High, 45%, adds up to 15% who delayed or canceled. Shoppers who buy the same item in a store still buy the brand, so they are not counted. In store: 26% switch brand and 9% do not buy. Large samples, known authors; general retail, not this category.",
   sources: [SOURCES.corstenGruenOnlineUnh, SOURCES.corstenGruenOnlineRetailDive, SOURCES.corstenGruenInStore],
 };
 
@@ -479,9 +478,9 @@ export const MISCATEGORIZED_LIFT: Benchmark = {
   unit: "share",
   low: 0.05,
   mid: 0.15,
-  high: 0.3,
+  high: 0.25,
   basis: "approved_assumption",
-  credibility: "IntoFocus assumption. No study measures it; reported effects run from none to large.",
+  credibility: "IntoFocus assumption set by Brian Magazu, 18 Nov 2026. No study measures it; the one case found showed no effect. To be replaced by IntoFocus before-and-after results.",
   sources: [SOURCES.acadiaCategory],
 };
 
