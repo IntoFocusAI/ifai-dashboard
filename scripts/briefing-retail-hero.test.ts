@@ -7,10 +7,10 @@ import type { AiCallRow, AiSearchSnapshot } from "../lib/ai-search/types.ts";
 import { formatPct, formatRatio } from "../lib/fender-canvas/format.ts";
 import {
   BRIEFING_COUNT_MISSING,
-  BRIEFING_LOST_REVENUE_FIGURE,
   BRIEFING_LOST_REVENUE_LABEL,
   briefingFindingsLead,
-  briefingLostRevenuePlaceholder,
+  orderBriefingFindings,
+  type BriefingFinding,
 } from "../lib/fender-canvas/briefing-retail-lead.ts";
 import {
   mapLeakageFinding,
@@ -290,14 +290,8 @@ test("five findings reuse Retail Overview / Findability / Run Details population
   }
 });
 
-test("lost-revenue placeholder is Not available* and is not a sixth finding", () => {
-  const placeholder = briefingLostRevenuePlaceholder();
-  assert.equal(placeholder.label, BRIEFING_LOST_REVENUE_LABEL);
-  assert.equal(placeholder.figure, BRIEFING_LOST_REVENUE_FIGURE);
-  assert.equal(placeholder.figure, BRIEFING_COUNT_MISSING);
-  assert.doesNotMatch(placeholder.figure, /\$|USD|\d{2,}/);
-  assert.doesNotMatch(placeholder.explainer, /fee|retainer|IntoFocus/i);
-
+test("monthly lost-revenue card is Phase 1 divided by 12 and is not a sixth finding", () => {
+  assert.equal(BRIEFING_LOST_REVENUE_LABEL, "Monthly potential lost brand revenue");
   const types = read("lib/fender-canvas/types.ts");
   const retail = read("lib/fender-canvas/portfolio-retail.ts");
   assert.doesNotMatch(types, /monthly.?potential.?lost|lost.?brand.?revenue/i);
@@ -311,7 +305,6 @@ test("lost-revenue placeholder is Not available* and is not a sixth finding", ()
     { phase: "loading" },
   );
   assert.equal(lead.findings.length, 5);
-  assert.equal(lead.lostRevenue.figure, BRIEFING_COUNT_MISSING);
   assert.ok(!lead.findings.some((f) => /revenue|\$/i.test(f.label)));
 });
 
@@ -337,19 +330,21 @@ test("hub Briefing puts consensus in the findings row, then the essay", () => {
   const hero = read("components/v3/live/BriefingRetailHero.tsx");
   const lead = read("lib/fender-canvas/briefing-retail-lead.ts");
   const consensusLead = read("components/v3/live/BriefingConsensusLead.tsx");
-  const briefingHtml = JSON.parse(read("data/fender-v3-spec.json")).spokes.hub.tabTemplates[0] as string;
+  const briefingHtml = JSON.parse(read("data/canvas-narrative.json")).spokes.hub.tabTemplates[0] as string;
   assert.match(spokes, /BriefingRetailHero/);
   assert.match(
     spokes,
-    /0:\s*\([^)]*\)\s*=>\s*\(\s*<>\s*<BriefingRetailHero[\s\S]*?htmlBlock\(bindCopy\(HUB_BRIEFING_HTML/,
-    "findings row, then the essay",
+    /0:\s*\([^)]*\)\s*=>\s*\(\s*<>\s*<BriefingRetailHero[\s\S]*?<BriefingAiLead bundle=\{bundle\} \/>/,
+    "findings row, then the lead section",
   );
   assert.doesNotMatch(spokes, /BriefingConsensusLead|briefing-consensus-lead/);
-  assert.match(hero, /<BriefingConsensusLead[\s\S]*<BriefingFindingCard[\s\S]*<LostRevenuePlaceholder/);
+  // Worker 29.10: AI Consensus, then the monthly card, then the findings by result.
+  assert.match(hero, /<BriefingConsensusLead[\s\S]*<MonthlyLostRevenue[\s\S]*ordered\.map[\s\S]*<BriefingFindingCard/);
+  assert.match(hero, /const ordered = orderBriefingFindings\(findings\)/);
   assert.doesNotMatch(hero, /briefing-buy-box-cluster|briefing-consensus-lead/);
   assert.match(consensusLead, /consensusFromLive\(/);
   assert.match(consensusLead, /briefingConsensusSentence\(/);
-  assert.match(consensusLead, /data-ifai-tooltip-title="AI Consensus"/);
+  assert.match(consensusLead, /data-ifai-tooltip-title="AI Consensus Score"/);
   assert.match(consensusLead, /data-ifai-tooltip-desc=\{sentence\}/);
   assert.doesNotMatch(consensusLead, /<p[\s>]|className="briefing-consensus-sentence"|className="briefing-consensus-lead"/);
   assert.doesNotMatch(
@@ -372,7 +367,6 @@ test("hub Briefing puts consensus in the findings row, then the essay", () => {
   assert.match(card, /className="metric-card-label ifai-term"/);
   assert.match(card, /data-ifai-tooltip-title=\{finding\.label\}/);
   assert.match(card, /aria-label=\{`\$\{finding\.label\}: \$\{finding\.explainer\}`\}/);
-  assert.match(hero, /data-ifai-tooltip-desc=\{placeholder\.explainer\}/);
   assert.doesNotMatch(hero, /metric-card-sub|data-briefing-revenue-explainer/);
   assert.doesNotMatch(read("components/v3/live/RoadmapFindingsPanel.tsx"), /BriefingConsensusLead|AI Consensus/);
   assert.match(hero, /briefingFindingsLead/);
@@ -385,14 +379,34 @@ test("hub Briefing puts consensus in the findings row, then the essay", () => {
   assert.match(lead, /buyBoxHero|mapHero|catalogHero/);
   assert.match(lead, /BRIEFING_LOST_REVENUE/);
   assert.match(lead, /Not available\*/);
-  assert.doesNotMatch(briefingHtml, /\{retail_headline\}/);
-  assert.match(briefingHtml, /Buy Box/);
-  assert.match(briefingHtml, /\{enterprise_potential\}/);
-  assert.match(briefingHtml, /commercial selling model/i);
+  // H-09: the Briefing is generated; no hand-written template and no Portfolio at a glance.
+  assert.equal(briefingHtml, "");
+  const aiLead = read("components/v3/live/BriefingAiLead.tsx");
+  assert.match(aiLead, /headlineLine\(summary\)/);
+  assert.match(aiLead, /selling model on Amazon/);
+  assert.doesNotMatch(aiLead, /Portfolio at a glance/);
   assert.doesNotMatch(hero, /\u2014/);
   assert.doesNotMatch(lead, /\u2014/);
   assert.doesNotMatch(hero, /\stitle=/);
   assert.doesNotMatch(card, /\stitle=/);
   assert.doesNotMatch(spokes, /DIY|Done-with-You|Done-for-You|retainer|service-fee/i);
   assert.doesNotMatch(lead, /AI Foundation|AI Commerce|AI Actuation|AI Consensus/);
+});
+
+test("Worker 29.10: Briefing findings order by result, worst first, ties keep their order", () => {
+  const card = (id: BriefingFinding["id"], tone: BriefingFinding["tone"], graded = true, loading = false) =>
+    ({ id, tone, numerator: graded ? 1 : null, denominator: graded ? 2 : null, loading }) as BriefingFinding;
+  const ordered = orderBriefingFindings([
+    card("buy_box", "success"),
+    card("map_leakage", "warning", false),
+    card("splintered_bundles", "warning"),
+    card("exact_official_product", "danger"),
+    card("unbranded_discovery", "danger", true, true),
+  ]);
+  assert.deepEqual(
+    ordered.map((f) => f.id),
+    ["exact_official_product", "splintered_bundles", "buy_box", "map_leakage", "unbranded_discovery"],
+  );
+  const ties = [card("buy_box", "danger"), card("map_leakage", "danger"), card("splintered_bundles", "danger")];
+  assert.deepEqual(orderBriefingFindings(ties).map((f) => f.id), ["buy_box", "map_leakage", "splintered_bundles"]);
 });

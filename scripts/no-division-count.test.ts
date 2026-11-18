@@ -25,11 +25,11 @@ function bundle(): CanvasBundle {
 }
 
 test("no narrative copy binds a division count", () => {
-  const spec = read("data/fender-v3-spec.json");
+  const spec = read("data/canvas-narrative.json");
   assert.doesNotMatch(spec, /\{division_count\}/);
   assert.doesNotMatch(spec, /division read lists/i);
   const hub = (JSON.parse(spec) as { spokes: { hub: { desc: string } } }).spokes.hub.desc;
-  assert.equal(hub, "Overview of Fender's electric catalog health.");
+  assert.equal(hub, "Overview of {brand}'s catalog health.");
   assert.equal("division_count" in buildTemplateVars(bundle()), false);
 });
 

@@ -2,6 +2,10 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
+import { getClientSettings } from "../lib/client/active-client.ts";
+import { buildClientEstimates } from "../lib/estimates/live-inputs.ts";
+import { enterprisePotentialEstimate, phaseOneLiftEstimate } from "../lib/fender-canvas/analyst-estimates.ts";
+import { loadEstimatesFixture } from "./fixtures/estimates/load.ts";
 import { aiMetrics } from "../lib/ai-search/canvas-surfaces.ts";
 import { historyFixtureSnapshots } from "../lib/ai-search/history-fixtures.ts";
 import type { AiSearchRead } from "../lib/ai-search/types.ts";
@@ -34,7 +38,7 @@ import type { CanvasBundle, CanvasMetricsRow } from "../lib/fender-canvas/types.
 
 const root = new URL("..", import.meta.url);
 const read = (path: string) => readFileSync(new URL(path, root), "utf8");
-const spec = JSON.parse(read("data/fender-v3-spec.json")) as { spokes: Record<string, { tabs: string[] }> };
+const spec = JSON.parse(read("data/canvas-narrative.json")) as { spokes: Record<string, { tabs: string[] }> };
 
 /** The substring rule CanvasShell uses to open a tab. */
 function openedTab(spokeId: string, subTab: string | undefined): string | null {
@@ -584,12 +588,17 @@ test("a missing input reads Not available* or the bubble's waiting word, with a 
 });
 
 test("Phase 1 stays an analyst estimate and nothing mentions fees", () => {
-  const { nodes, slots } = build(retailReady(), aiReady());
+  // The formula figures from the client's own listings (H-09), here the 17 Nov fixture.
+  const fx = loadEstimatesFixture("fender");
+  const estimates = buildClientEstimates(fx.listings, { rankCategory: fx.rankCategory, dataAsOf: fx.readOn, salesSources: "measured_only", revenue: getClientSettings("fender").revenue_inputs });
+  const b = { ...bundle(), estimates: { phase: "ready" as const, estimates } };
+  const { nodes, slots } = build(retailReady(), aiReady(), findability, { b });
   const phaseOne = slots.find((slot) => slot.id === "spoke-fixes");
   assert.ok(phaseOne);
-  assert.deepEqual(nodeById(nodes, "spoke-fixes").heroValue, { value: "+$680K est.", label: "Phase 1 lift" });
-  assert.equal(phaseOne.value, "+$680K est.");
-  assert.equal(slotById(slots, "enterprise-potential").value, "+$38M to $62M est.");
+  assert.match(phaseOneLiftEstimate(b), /^\+\$1\.05M\*? est\.$/);
+  assert.deepEqual(nodeById(nodes, "spoke-fixes").heroValue, { value: phaseOneLiftEstimate(b), label: "Phase 1 lift" });
+  assert.equal(phaseOne.value, phaseOneLiftEstimate(b));
+  assert.equal(slotById(slots, "enterprise-potential").value, enterprisePotentialEstimate(b));
   assert.equal(phaseOne.provenance, "estimate");
   assert.match(phaseOne.detail, /^Analyst estimate\./);
   assert.equal(phaseOne.subTab, "Revenue Estimates");

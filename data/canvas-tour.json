@@ -5,7 +5,7 @@
     "targetY": 500,
     "radius": 185,
     "title": "Brand Overview",
-    "subtitle": "Fender's health across the catalog divisions",
+    "subtitle": "{brand}'s health across the catalog divisions",
     "category": "BRAND CORE",
     "displays": [
       "Retail health uses the same headline as the ticker",
@@ -33,14 +33,14 @@
     "targetY": 320,
     "radius": 125,
     "title": "AI Search Visibility",
-    "subtitle": "What ChatGPT, Perplexity, and Gemini say about Fender",
+    "subtitle": "What ChatGPT, Perplexity, and Gemini say about {brand}",
     "category": "AI SEARCH VISIBILITY",
     "displays": [
       "Simulation calls load with the latest battery",
-      "Fender/Squier win rate uses resolved answers from that read",
+      "{lead_brand} win rate uses resolved answers from that read",
       "Flagged answers and stored root causes are on the hallucination tab"
     ],
-    "value": "See why AI assistants leave Fender out of recommendations and exactly what to change."
+    "value": "See why AI assistants leave {brand} out of recommendations and exactly what to change."
   },
   {
     "nodeId": "specs",
@@ -53,9 +53,9 @@
     "displays": [
       "additionalProperty coverage loads with the spec read",
       "Official-page outcomes stay separate and load with the findability read",
-      "Missing-field rows for found fender.com pages are listed on Brand-Site Specs"
+      "Missing-field rows for found {brand_site} pages are listed on Brand-Site Specs"
     ],
-    "value": "Make fender.com the source AI trusts for specs, with fewer wrong answers and fewer returns."
+    "value": "Make {brand_site} the source AI trusts for specs, with fewer wrong answers and fewer returns."
   },
   {
     "nodeId": "competitors",
@@ -63,14 +63,14 @@
     "targetY": 680,
     "radius": 120,
     "title": "Competitors",
-    "subtitle": "Where rivals beat Fender, and why",
+    "subtitle": "Where rivals beat {brand}, and why",
     "category": "COMPETITORS",
     "displays": [
       "Beginner share of voice loads from the competitor table",
       "Category leaders load from that same read",
       "Tracked on Amazon, Sweetwater, Reverb, and Walmart"
     ],
-    "value": "Get ready-made playbooks for shoppers deciding between Fender and a rival."
+    "value": "Get ready-made playbooks for shoppers deciding between {brand} and a rival."
   },
   {
     "nodeId": "suggestions",
@@ -82,8 +82,8 @@
     "category": "OPPORTUNITY",
     "displays": [
       "Revenue figures on this spoke are estimates",
-      "Phase 1: +$680K est.",
-      "Enterprise: +$38M to $62M est."
+      "Phase 1: {phase_one_lift}",
+      "Enterprise: {enterprise_potential}"
     ],
     "value": "See what each Action Item is worth, so you know where to start."
   },

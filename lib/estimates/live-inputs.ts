@@ -17,6 +17,7 @@
 // view for a listing the sales view does not hold is left out, so no N of M counts it.
 
 import { RANK_CURVES } from "./benchmarks";
+import { estimateEnterprise, type BrandRevenueInput } from "./enterprise";
 import { calibrateRankCurve, type RankCurve } from "./rank-curve";
 import { estimateListingLines, type ListingEstimates } from "./rollup";
 import { rankCurvePoints, type SalesContext } from "./sales-coverage";
@@ -169,6 +170,8 @@ export type ClientEstimates = ListingEstimates & {
   lines: EstimateResult[];
   /** By ASIN: each listing's part of each line. */
   byListing: Map<string, ListingEstimate>;
+  /** Enterprise Potential from Phase 1 and the brand's revenue in settings. Not available* without one. */
+  enterprise: EstimateResult;
   /** Listings read. */
   listingCount: number;
   dataAsOf: string;
@@ -207,7 +210,7 @@ function byListing(est: ListingEstimates): Map<string, ListingEstimate> {
 /** Lines 1 to 7, Phase 1 and the per-listing parts for one client's joined listings. */
 export function buildClientEstimates(
   listings: EstimateListingInput[],
-  opts: { rankCategory: string | null; dataAsOf: string; salesSources?: SalesContext["salesSources"] },
+  opts: { rankCategory: string | null; dataAsOf: string; salesSources?: SalesContext["salesSources"]; revenue?: BrandRevenueInput | null },
 ): ClientEstimates {
   const ctx: SalesContext = {
     dataAsOf: opts.dataAsOf,
@@ -219,10 +222,17 @@ export function buildClientEstimates(
     ...est,
     lines: [est.outOfStock, est.buyBox, est.mapLeakage, est.splintered, est.missingSpecs, est.miscategorized, est.aplus],
     byListing: byListing(est),
+    enterprise: estimateEnterprise(est.phase1, est.catalog, opts.revenue ?? null, opts.dataAsOf),
     listingCount: listings.length,
     dataAsOf: opts.dataAsOf,
   };
 }
+
+/** The estimates as a screen reads them: loading, ready, or a failed read (Not available*, never $0). */
+export type ClientEstimatesRead =
+  | { phase: "loading" }
+  | { phase: "ready"; estimates: ClientEstimates }
+  | { phase: "error"; message: string };
 
 /** The read client: enough of supabase-js for paged selects. */
 export type EstimateReadClient = {
@@ -268,12 +278,12 @@ export async function loadEstimateViewRows(client: EstimateReadClient): Promise<
 /** Reads and prices one client's listings. The client comes from the read client and the settings passed. */
 export async function loadClientEstimates(
   client: EstimateReadClient,
-  settings: { amazon_rank_category?: string | null },
+  settings: { amazon_rank_category?: string | null; revenue_inputs?: BrandRevenueInput | null },
   dataAsOf: string = todayIso(),
 ): Promise<ClientEstimates> {
   const rankCategory = settings.amazon_rank_category ?? null;
   const rows = await loadEstimateViewRows(client);
-  return buildClientEstimates(joinEstimateListings(rows, rankCategory), { rankCategory, dataAsOf });
+  return buildClientEstimates(joinEstimateListings(rows, rankCategory), { rankCategory, dataAsOf, revenue: settings.revenue_inputs ?? null });
 }
 
 /** Today's date as the trail's as-of date: "2026-11-18". */

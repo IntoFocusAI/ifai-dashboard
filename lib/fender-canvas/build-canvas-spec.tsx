@@ -9,7 +9,7 @@ import { FENDER_METRICS } from "@/components/v3/fender-metrics";
 import { fenderStaticNodes } from "@/components/v3/fender-static-nodes";
 import { PromptsEditor } from "@/components/v3/prompts/PromptsEditor";
 import { spokeData } from "@/components/v3/spoke-data";
-import staticTourSteps from "@/data/fender-v3-tour.json";
+import staticTourSteps from "@/data/canvas-tour.json";
 import graphLayout from "@/data/fender-v3-spokes.json";
 import type { TourStep } from "@/lib/canvas-sdk/types";
 import type { CanvasUserMenu } from "@/lib/canvas-sdk/types";
@@ -29,6 +29,9 @@ import { buildLiveNodes } from "@/lib/fender-canvas/nodes-from-live";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
 import { fenderCanvasEdges, frameTourStep, withPrimaryFocusTargets } from "@/lib/fender-canvas/primary-spoke-layout";
 import { buildLiveTourSteps } from "@/lib/fender-canvas/tour-from-live";
+import { enterprisePotentialEstimate, phaseOneLiftEstimate } from "@/lib/fender-canvas/analyst-estimates";
+import { bindBrandTokens } from "@/lib/fender-canvas/spoke-narrative";
+import { bindCopy } from "@/lib/fender-canvas/template-vars";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
 
 /** Documentation version shown beside the product name in the canvas header. */
@@ -37,7 +40,17 @@ export const DOCUMENTATION_VERSION = "28.15";
 const FOCUS_TARGETS = withPrimaryFocusTargets(
   graphLayout.focusTargets as Record<string, { x: number; y: number }>,
 );
-const tourSteps = (staticTourSteps as TourStep[]).map(frameTourStep);
+/** The brand-free fallback tour, filled from the client's settings; estimates read Loading until the bundle arrives. */
+function staticTour(): TourStep[] {
+  const vars = { phase_one_lift: phaseOneLiftEstimate(null), enterprise_potential: enterprisePotentialEstimate(null) };
+  const fill = (value: unknown): unknown => {
+    if (typeof value === "string") return bindCopy(bindBrandTokens(value), vars);
+    if (Array.isArray(value)) return value.map(fill);
+    if (value && typeof value === "object") return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, fill(v)]));
+    return value;
+  };
+  return (staticTourSteps as TourStep[]).map((step) => frameTourStep(fill(step) as TourStep));
+}
 
 export type BuildCanvasSpecOptions = {
   userMenu?: CanvasUserMenu;
@@ -172,7 +185,7 @@ export function buildFenderCanvasSpec(
     nodes,
     spokes: bundle ? buildLiveSpokes(bundle, retail, aiSearch, findability) : spokeData,
     focusTargets: FOCUS_TARGETS,
-    tour: bundle ? buildLiveTourSteps(bundle, retail, aiSearch, findability) : tourSteps,
+    tour: bundle ? buildLiveTourSteps(bundle, retail, aiSearch, findability) : staticTour(),
     ...(options.userMenu
       ? { userMenu: options.userMenu, userEmail: options.userMenu.email }
       : {}),

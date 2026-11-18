@@ -45,15 +45,22 @@ export type ClientRetailer = {
   recheck_days: number;
 };
 
-export type AnalystEstimateLine = { label: string; value: string };
+/** The basis of the brand's annual sales figure: a labeled public stand-in, or the client's own. */
+export const REVENUE_BASES = ["public_placeholder", "client"] as const;
 
-export type ClientAnalystEstimates = {
-  /** Phase 1 quick-win lift, as entered: "+$680K". */
-  phase_one: string;
-  /** Full enterprise potential, as entered: "+$38M to $62M". */
-  enterprise: string;
-  phase_one_lines: AnalystEstimateLine[];
-  enterprise_lines: AnalystEstimateLine[];
+/**
+ * The brand's annual sales, for Enterprise Potential (proposal section 5, decision 112). A public
+ * figure may stand in, labeled as a placeholder, until the client gives its own at onboarding.
+ */
+export type ClientRevenueInputs = {
+  annual_sales_usd: number;
+  basis: (typeof REVENUE_BASES)[number];
+  source_title: string;
+  source_url: string | null;
+  /** As published: "21 Oct 2022", "Read Nov 2026". */
+  source_date: string;
+  /** What the figure covers, in a few words: "global, all channels". */
+  scope: string;
 };
 
 export type ClientSettings = {
@@ -106,8 +113,8 @@ export type ClientSettings = {
   prompts_editable: boolean;
   /** Roadmap and Action Items focus set by IntoFocus staff; null plans for the whole brand. */
   roadmap_focus_category: string | null;
-  /** Analyst estimates as entered, or null when none are prepared yet. */
-  analyst_estimates: ClientAnalystEstimates | null;
+  /** The brand's annual sales for Enterprise Potential, or null: Enterprise Potential then reads Not available*. */
+  revenue_inputs: ClientRevenueInputs | null;
   /** The approved catalog rotation plan for product fact checks, or null. */
   catalog_rotation_rule: string | null;
   /** Shorter labels for long stored category names in tight cells. */
@@ -160,7 +167,7 @@ const FIELDS: readonly (keyof ClientSettings)[] = [
   "collector_version_pin",
   "prompts_editable",
   "roadmap_focus_category",
-  "analyst_estimates",
+  "revenue_inputs",
   "catalog_rotation_rule",
   "category_short_labels",
   "briefing_note",
@@ -239,21 +246,16 @@ function dataSources(o: Obj, out: Problems): void {
   }
 }
 
-function estimateLines(o: Obj, field: string, out: Problems): void {
-  const v = o[field];
-  if (!Array.isArray(v) || !v.every((l) => isObj(l) && isText(l.label) && isText(l.value))) {
-    out.push(`analyst_estimates.${field} must be a list of {label, value}`);
-  }
-}
-
-function analystEstimates(o: Obj, out: Problems): void {
-  const v = o.analyst_estimates;
+function revenueInputs(o: Obj, out: Problems): void {
+  const v = o.revenue_inputs;
   if (v === null) return;
-  if (!isObj(v)) return void out.push("analyst_estimates must be an object or null");
-  if (!isText(v.phase_one)) out.push("analyst_estimates.phase_one must be a non-empty string");
-  if (!isText(v.enterprise)) out.push("analyst_estimates.enterprise must be a non-empty string");
-  estimateLines(v, "phase_one_lines", out);
-  estimateLines(v, "enterprise_lines", out);
+  if (!isObj(v)) return void out.push("revenue_inputs must be an object or null");
+  if (typeof v.annual_sales_usd !== "number" || !(v.annual_sales_usd > 0)) out.push("revenue_inputs.annual_sales_usd must be a positive number");
+  if (!(REVENUE_BASES as readonly string[]).includes(v.basis as string)) out.push(`revenue_inputs.basis must be one of ${REVENUE_BASES.join(", ")}`);
+  for (const f of ["source_title", "source_date", "scope"]) {
+    if (!isText(v[f])) out.push(`revenue_inputs.${f} must be a non-empty string`);
+  }
+  if (v.source_url !== null && !isText(v.source_url)) out.push("revenue_inputs.source_url must be a non-empty string or null");
 }
 
 function shortLabels(o: Obj, out: Problems): void {
@@ -300,7 +302,7 @@ export function validateClientSettings(raw: unknown, source: string): ClientSett
   competitors(raw, out);
   retailers(raw, out);
   dataSources(raw, out);
-  analystEstimates(raw, out);
+  revenueInputs(raw, out);
   shortLabels(raw, out);
   if (out.length > 0) throw new ClientSettingsError(source, out);
   return raw as unknown as ClientSettings;

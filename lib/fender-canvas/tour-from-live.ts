@@ -191,8 +191,8 @@ export function buildLiveTourSteps(
       category: "OPPORTUNITY",
       displays: [
         "Revenue figures on this spoke are estimates",
-        `Phase 1: ${phaseOneLiftEstimate()}`,
-        `Enterprise: ${enterprisePotentialEstimate()}`,
+        `Phase 1: ${phaseOneLiftEstimate(bundle)}`,
+        `Enterprise: ${enterprisePotentialEstimate(bundle)}`,
       ],
       value: "See what each Action Item is worth, so you know where to start.",
     },

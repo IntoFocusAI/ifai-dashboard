@@ -9,7 +9,7 @@ function read(rel: string): string {
   return readFileSync(new URL(rel, root), "utf8");
 }
 
-const spec = JSON.parse(read("data/fender-v3-spec.json")) as {
+const spec = JSON.parse(read("data/canvas-narrative.json")) as {
   spokes: {
     roadmap: { tabs: string[]; tabTemplates: string[] };
     suggestions: { tabs: string[] };

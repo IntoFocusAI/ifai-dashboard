@@ -19,7 +19,7 @@ function resolveSubTab(tabs: string[], subTab: string): number {
 }
 
 test("the spoke carries Findability plus the renamed tabs and no earlier title", () => {
-  const spec = json("data/fender-v3-spec.json");
+  const spec = json("data/canvas-narrative.json");
   assert.deepEqual(spec.spokes.specs.tabs, SPEC_TABS);
   assert.equal(spec.spokes.specs.navLabel, "AI Readiness");
   const serialized = JSON.stringify(spec.spokes.specs.tabs);
