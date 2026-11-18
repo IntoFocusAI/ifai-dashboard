@@ -81,15 +81,15 @@ test("the short figures read Loading, the Phase 1 mid, or Not available*", () =>
   assert.match(enterprisePotentialEstimate({ estimates: ready }), /^\+\$8\.\d{1,2}M\*? est\.$/);
 });
 
-test("Enterprise Potential, listing-fix part, reproduces the proposal's section 5 on the public placeholders", () => {
+test("Enterprise Potential, listing-fix part, reproduces the proposal's section 5 on the public placeholders, with the 18 Nov benchmarks", () => {
   const fender = measured("fender").enterprise;
-  near(fender.range?.low, 2.0e6, 0.05e6, "Fender low");
-  near(fender.range?.mid, 8.7e6, 0.05e6, "Fender mid");
-  near(fender.range?.high, 24.7e6, 0.1e6, "Fender high");
+  near(fender.range?.low, 1.78e6, 0.05e6, "Fender low");
+  near(fender.range?.mid, 8.68e6, 0.05e6, "Fender mid");
+  near(fender.range?.high, 22.46e6, 0.1e6, "Fender high");
   const ledlenser = measured("ledlenser").enterprise;
-  near(ledlenser.range?.low, 0.5e6, 0.05e6, "Ledlenser low");
-  near(ledlenser.range?.mid, 1.8e6, 0.05e6, "Ledlenser mid");
-  near(ledlenser.range?.high, 4.9e6, 0.1e6, "Ledlenser high");
+  near(ledlenser.range?.low, 0.41e6, 0.05e6, "Ledlenser low");
+  near(ledlenser.range?.mid, 1.79e6, 0.05e6, "Ledlenser mid");
+  near(ledlenser.range?.high, 4.26e6, 0.1e6, "Ledlenser high");
   for (const e of [fender, ledlenser]) {
     assert.equal(e.countsInTotal, false);
     assert.equal(e.label, "analyst estimate");
