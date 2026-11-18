@@ -6,8 +6,12 @@
 create role anon nologin noinherit;
 create role authenticated nologin noinherit;
 create role service_role nologin noinherit bypassrls;
+-- PostgREST logs in as authenticator and switches to anon / authenticated / service_role.
+create role authenticator login noinherit;
+grant anon, authenticated, service_role to authenticator;
 
 create schema auth;
+create table auth.users (id uuid primary key, email text);
 create schema private;
 create schema extensions;
 grant usage on schema public, auth to anon, authenticated, service_role;
@@ -23,12 +27,14 @@ create or replace function auth.role() returns text language sql stable as $$
 $$;
 grant execute on function auth.jwt(), auth.uid(), auth.role() to anon, authenticated, service_role;
 
--- Test helper: act as a role and user, the way PostgREST does per request.
+-- Test helper: act as a role and user, the way PostgREST does per request (session user
+-- authenticator, then SET ROLE). Undo with: reset role; reset session authorization;
 create or replace function public.test_act_as(p_role text, p_user uuid default null) returns void
 language plpgsql as $$
 begin
   perform set_config('request.jwt.claims',
     jsonb_build_object('role', p_role, 'sub', coalesce(p_user::text, ''))::text, false);
+  set session authorization authenticator;
   execute format('set role %I', p_role);
 end $$;
 grant execute on function public.test_act_as(text, uuid) to anon, authenticated, service_role;

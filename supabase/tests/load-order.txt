@@ -1,4 +1,13 @@
-# Files loaded before the tests, in order (paths from the repo root).
+# Files loaded before the tests, in order (paths from the repo root). See supabase/tests/README.md.
 supabase/tests/fixtures/00_supabase_roles.sql
-supabase/tests/fixtures/10_write_rpcs.sql
+# The hosted structure, generated from the 2026-11-18 catalog snapshot (build_hosted_fixture.py)
+supabase/tests/fixtures/30_hosted_structure.sql
+# Repo migrations not yet on hosted
+supabase/migrations/20261118160000_prompt_rpcs_staff_only.sql
+# Under test
 supabase/migrations/20261118190000_write_rpcs_no_anon.sql
+supabase/migrations/20261118200000_client_access_helpers.sql
+supabase/migrations/20261118200100_client_data_lockdown.sql
+supabase/migrations/20261118200200_client_read_functions.sql
+# Rows (as owner, after the migrations; includes what Watson inserts at apply time)
+supabase/tests/fixtures/90_test_accounts.sql

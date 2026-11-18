@@ -50,16 +50,20 @@ begin
   end loop;
 end $$;
 reset role;
+reset session authorization;
 
--- Calls as a signed-in user go through.
+-- Calls as a signed-in user reach the function body: the prompt functions then refuse
+-- non-staff themselves (20261118160000), which is not the "permission denied" anon gets.
 select public.test_act_as('authenticated', gen_random_uuid());
-select public.mark_issue_done('fender', 'chk', 'e1', 'Ann');
-select public.set_aside_issue('fender', 'chk', 'e1', 'r1', 'Ann');
-select public.reopen_set_aside(gen_random_uuid(), 'Ann');
-reset role;
-
 do $$ begin
-  if (select count(*) from public.test_write_calls) <> 3 then
-    raise exception 'expected 3 signed-in calls, got %', (select count(*) from public.test_write_calls);
-  end if;
+  begin
+    perform public.ai_prompt_set_active('p01', false);
+    raise exception 'non-staff edited a prompt';
+  exception when insufficient_privilege then
+    if sqlerrm like 'permission denied%' then
+      raise exception 'authenticated cannot execute ai_prompt_set_active: %', sqlerrm;
+    end if;
+  end;
 end $$;
+reset role;
+reset session authorization;

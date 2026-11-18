@@ -1,21 +1,53 @@
 # Database tests
 
 `bash supabase/tests/run.sh` starts a throwaway local Postgres cluster, loads the files listed in
-`load-order.txt` (fixtures first, then the migrations under test), and runs every `*.test.sql`
-here. A test fails by raising an error. It never connects to the hosted project. CI runs it on
-every pull request that touches `supabase/` (`.github/workflows/db-tests.yml`).
+`load-order.txt` (the hosted structure, pending repo migrations, the migrations under test, then
+made-up rows), and runs every `*.test.sql` here. A test fails by raising an error. It never
+connects to the hosted project. CI runs it on every pull request that touches `supabase/`
+(`.github/workflows/db-tests.yml`).
 
 Needs Postgres 15 or later server binaries (`initdb`, `pg_ctl`, `psql`); set `PG_BIN` if they are
 not on `PATH`.
 
-## How the fixtures differ from hosted
+## Tests
 
-The repo's migrations do not build the hosted schemas from scratch (many tables were created
-before migrations were kept), so tests load test-only fixtures from `fixtures/`. They hold
-structure and made-up rows only, never client data.
+| File | Checks |
+| --- | --- |
+| `write_rpcs_no_anon.test.sql` | 1.6 Step 0a: anon and PUBLIC cannot execute the five write functions; signed-in users reach the function body. |
+| `catalog_guard.test.sql` | 1.6: nothing with client data is selectable by anon; every view over client data has `security_invoker`; every client table has RLS and a membership policy and no literal `true` policy; materialized views are not selectable by signed-in users; every SECURITY DEFINER function over client data that signed-in users can call checks membership; signed-in users reach only the listed `private` helpers; no default privileges for anon in client schemas. Read-only, so it can also be run against staging after applying. |
+| `client_isolation.test.sql` | 1.6: every relation with client data (189 on the hosted structure, found from the catalog) for 7 actors: anon is refused; org A members see exactly org A's data and none of org B's, and the reverse; a removed member and a signed-in user with no account see nothing; backend-only relations are refused to every signed-in user. Run twice: as the database is today (staff read every account with dashboard data) and with the portal's `private.is_staff()` / `private.module_access()` present (staff read entitled accounts only). Also materialized view readers, and set-aside write and reopen across accounts. |
+| `read_functions.test.sql` | 1.6: the read functions that return client data give rows to members and entitled staff only, and refuse anon; the three unchecked `command.fmic_ai_*` functions are refused to signed-in users. |
 
-- `00_supabase_roles.sql`: the `anon`, `authenticated` and `service_role` roles and `auth.uid()` /
-  `auth.jwt()` reading `request.jwt.claims`, as PostgREST sets them. Hosted Supabase has many more
-  roles, extensions and the real `auth` schema.
-- `10_write_rpcs.sql`: the five write functions with their hosted signatures and pre-1.6 grants,
-  but bodies that only record the call. The real bodies are in their own migrations.
+Each actor runs the way PostgREST runs a request: session user `authenticator`, then
+`SET ROLE anon` or `authenticated`, with `request.jwt.claims` set.
+
+## Fixtures
+
+- `00_supabase_roles.sql`: the Supabase pieces the hosted snapshot does not include: `anon`,
+  `authenticated`, `service_role` and `authenticator`, a one-column `auth.users`, and
+  `auth.uid()` / `auth.jwt()` / `auth.role()` reading `request.jwt.claims` as PostgREST sets them.
+- `30_hosted_structure.sql`: **generated** by `build_hosted_fixture.py` from the read-only hosted
+  catalog snapshot of 2026-11-18 (client-portal-pm `docs/schema-snapshot/2026-11-18/out`). It
+  recreates the hosted schemas, types, 115 tables, constraints, indexes, 69 functions, 100 views,
+  6 materialized views, triggers, RLS flags, 99 policies and every grant. Structure only; the
+  snapshot has no rows. Regenerate with:
+
+      python3 -I supabase/tests/fixtures/build_hosted_fixture.py <snapshot>/out \
+          > supabase/tests/fixtures/30_hosted_structure.sql
+
+  Checked by running the snapshot's own catalog queries against the local copy: types, indexes,
+  triggers, policies, column, routine and schema grants match exactly; relation grants match
+  except `MAINTAIN` (Postgres 17 only). Differences that do not affect these tests: foreign keys
+  are added `NOT VALID`, schema comments are not copied, Postgres 16 prints some view definitions
+  differently, Supabase platform roles are plain roles, extensions other than pgcrypto and
+  uuid-ossp are left out, and pg_cron jobs are listed as comments only.
+- `90_test_accounts.sql`: made-up accounts and rows, loaded after the migrations. Org A owns
+  `command`, sandbox client `cl_fender` and set-aside client `fmic`; org B owns `ledlenser`,
+  `cl_ledlenser` and `ledlenser`; a staff user (`platform_admin`) belongs to neither. It inserts
+  the `private.client_schema_org` rows Brian Watson inserts at apply time, puts at least one row in
+  every client table (a generic filler that reads column types and defaults), and drops CHECK
+  constraints on the tables it fills so made-up values need not match URL patterns (checks do not
+  affect grants, policies or views).
+
+`load-order.txt` also loads `20261118160000_prompt_rpcs_staff_only.sql`, which is in the repo but
+not yet on hosted.
