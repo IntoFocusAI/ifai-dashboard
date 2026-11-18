@@ -50,7 +50,7 @@ export function ActionItemsFixTable({ plan: basePlan, today }: { plan: readonly 
   );
   const sortValue = useCallback((item: PlanItem, columnId: string): SortInput => {
     if (columnId === "rank") return item.rank;
-    if (columnId === "action") return `${item.kind === "finding" ? "" : `${item.fact} `}${item.action}`;
+    if (columnId === "action") return `${item.kind === "finding" || !item.fact ? "" : `${item.fact} `}${item.action}`;
     if (columnId === "finding") return shareOf(item);
     if (columnId === "estimate") {
       const figure = estimates.phase === "ready" ? fixRowEstimate(item.id, estimates.estimates) : null;
