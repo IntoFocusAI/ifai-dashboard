@@ -12,6 +12,9 @@ import { briefingFindingsLead, BRIEFING_LOADING, type BriefingFinding } from "@/
 import { markPartial, type PartialFigure } from "@/lib/fender-canvas/canvas-reads";
 import type { StockLossRead } from "@/lib/fender-canvas/minimal-metric-kit";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
+import { ownedAnswersFromAi } from "@/lib/fender-canvas/actuation-e1";
+import { isoDay } from "@/lib/fender-canvas/actuation-score";
+import { actuationActions, suggestedTargets, targetAnswers, withOwnedAnswersGap } from "@/lib/fender-canvas/roadmap-actuation";
 import { phaseWindow } from "@/lib/fender-canvas/roadmap-dates";
 import { withLatestRunTips } from "@/lib/fender-canvas/roadmap-latest";
 import { focusActions, type FocusWindows, type HeldItem, type PlanFocus } from "@/lib/fender-canvas/roadmap-focus";
@@ -130,6 +133,8 @@ export type RoadmapPlanInput = {
   sources: SourceRunsRead;
   windows: FocusWindowsRead;
   focus: PlanFocus;
+  /** The day the Actuation items are judged on (UTC ISO date). Defaults to today. */
+  asOf?: string;
 };
 
 /**
@@ -142,6 +147,12 @@ export function assembleRoadmapPlan(input: RoadmapPlanInput): RoadmapPlanRead {
   const { findings } = briefingFindingsLead(retail, findability, ai, { aiStale });
   const current = ai.phase === "ready" ? ai.snapshot : null;
   const own = ownPagesAction(bundle, current);
+  const ownAction = withOwnedAnswersGap(own.action, ownedAnswersFromAi(ai)?.basis ?? null);
+  const actuation = actuationActions({
+    basis: bundle?.actuation,
+    asOf: input.asOf ?? isoDay(new Date()),
+    targets: suggestedTargets(current),
+  });
   const focused = focusActions({ windows: windows.phase === "ready" ? windows.windows : null, focus });
   const held: HeldItem[] =
     windows.phase === "error"
@@ -152,8 +163,9 @@ export function assembleRoadmapPlan(input: RoadmapPlanInput): RoadmapPlanRead {
     findings,
     signals,
     sources: sources.phase === "ready" ? sourceActions(sources.snapshots, current) : [],
-    ownPages: own.action,
+    ownPages: ownAction,
     focus: focused.actions,
+    actuation,
   });
   const plan = withLatestRunTips(built, sources.phase === "ready" ? (sources.snapshots[0] ?? null) : null, signals);
   const window = windows.phase === "ready" ? windows.summary : null;
@@ -168,12 +180,19 @@ function joined(...parts: Array<string | null | undefined>): string {
   return parts.filter((part): part is string => Boolean(part?.trim())).join(" · ");
 }
 
+/** "Suggested communities: reddit.com (12 of 80 answers), ...", as the row lists them. */
+export function targetsLine(item: PlanItem): string | null {
+  if (!item.targets?.sites.length) return null;
+  const sites = item.targets.sites.map((site) => `${site.domain} (${targetAnswers(site)})`);
+  return `${item.targets.label}: ${sites.join(", ")}`;
+}
+
 /** One fix-list row as the screen reads it; stacked lines are joined with " · ". */
 export function fixListCells(item: PlanItem, today: Date): string[] {
   const figure = markPartial(item.loading ? BRIEFING_LOADING : item.percent, item.partial);
   return [
     String(item.rank),
-    joined(item.kind === "finding" ? null : item.fact, item.action),
+    joined(item.kind === "finding" ? null : item.fact, item.action, targetsLine(item)),
     joined(item.label, item.siteType, item.ratio ? `${figure} ${item.ratio}` : figure),
     item.statusLabel,
     joined(phaseLabel(item.phase), item.phase ? phaseWindow(item.phase, today).label : null),
