@@ -7,6 +7,22 @@ import { formatDay } from "@/components/staff/ActuationScorePanel";
 import type { ClientKey } from "@/lib/client/active-client";
 import { FACTOR_LABELS, staffProgramBasis, type StaffProgramRow } from "@/lib/fender-canvas/actuation-records";
 import { expiresOn, programInPlace, type ProgramFactorId } from "@/lib/fender-canvas/actuation-score";
+import { targetAnswers, type SuggestedTarget } from "@/lib/fender-canvas/roadmap-actuation";
+
+type Suggested = { sites: SuggestedTarget[]; windowLabel: string };
+
+/** The suggested targets: the community or publication sites AI cites most in the client's shopping answers. */
+function SuggestedSites({ factor, suggested }: { factor: ProgramFactorId; suggested: Suggested }) {
+  const noun = factor === "P1" ? "community" : "publication or review";
+  const sites = suggested.sites.map((site) => `${site.domain} (${targetAnswers(site)})`).join(", ");
+  return (
+    <p className="actuation-muted" data-actuation-suggested={factor}>
+      {suggested.sites.length
+        ? `Suggested from AI answers (${suggested.windowLabel}): ${sites}.`
+        : `No ${noun} site is cited in shopping answers (${suggested.windowLabel}).`}
+    </p>
+  );
+}
 
 /** What is missing, in the order the acceptance rule lists it: owner, evidence, verification, expiry. */
 function programStatus(row: StaffProgramRow | null, today: string): string {
@@ -27,11 +43,13 @@ export function ActuationProgramCard({
   factor,
   row,
   today,
+  suggested = null,
 }: {
   client: ClientKey;
   factor: ProgramFactorId;
   row: StaffProgramRow | null;
   today: string;
+  suggested?: Suggested | null;
 }) {
   const router = useRouter();
   const [ownerName, setOwnerName] = useState(row?.owner_name ?? "");
@@ -87,6 +105,7 @@ export function ActuationProgramCard({
         placeholder="reddit.com, one per line or comma separated"
         onChange={(e) => setTargetDomains(e.target.value)}
       />
+      {suggested ? <SuggestedSites factor={factor} suggested={suggested} /> : null}
       <label htmlFor={`${id}-amount`}>{factor === "P1" ? "Responses per 30 days" : "Placements per 90 days"}</label>
       <input
         id={`${id}-amount`}
