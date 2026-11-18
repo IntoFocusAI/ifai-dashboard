@@ -15,6 +15,12 @@ import { formatInt } from "@/lib/fender-canvas/format";
 import { combineStale, mergePartial, RECHECK_DAYS, rowsStale } from "@/lib/fender-canvas/row-stale";
 import { getCanvasSupabase } from "../supabase/canvas-client";
 
+/**
+ * The yearly line the Out of Stock tab shows beside its missed-sales hero (E4, decision 112): line 1,
+ * brand-level after the brand-loss share, from the shared estimate read (lib/estimates).
+ */
+export const STOCK_LOSS_ESTIMATE_LINE = "out_of_stock" as const;
+
 export type RevenueSource = "brand_reported" | "smartscout";
 
 export type AwaitingInputsReason =

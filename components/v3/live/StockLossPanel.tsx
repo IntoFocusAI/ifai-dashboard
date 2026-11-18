@@ -8,6 +8,8 @@ import { ListingName, RETAIL_FIT_TABLE, wrapColumnIdsAfterFirst } from "@/compon
 import { NewTag, SourceTag, type DataSource } from "@/components/v3/live/SourceTag";
 import { StockLossDetail } from "@/components/v3/live/StockLossDetail";
 import { StockLossHero } from "@/components/v3/live/StockLossHero";
+import { EstimateLineCard } from "@/components/v3/live/estimates/EstimateLineFigure";
+import { STOCK_LOSS_ESTIMATE_LINE } from "@/lib/fender-canvas/stock-loss";
 import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
 import { formatInt, formatUsd } from "@/lib/fender-canvas/format";
 import {
@@ -165,6 +167,7 @@ export function StockLossPanel() {
           style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "flex-start" }}
         >
           <StockLossHero rows={rows} populationCount={state.populationCount} />
+          <EstimateLineCard lineId={STOCK_LOSS_ESTIMATE_LINE} />
           <Explanation />
         </div>
       ) : null}

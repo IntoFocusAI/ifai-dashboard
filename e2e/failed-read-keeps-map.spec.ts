@@ -1,4 +1,5 @@
 import type { Page } from "@playwright/test";
+import { activeClientSettings } from "../lib/client/active-client";
 import { Canvas, expect, test as base } from "./fixtures";
 import { mockCanvasRead } from "./spec-read-mock";
 
@@ -99,7 +100,7 @@ test.describe("a failed read keeps the map", () => {
     await expect(canvas.panel.locator('[data-consensus-pillar="consensus"]')).toBeVisible();
 
     const desc = page.locator(".drilldown-desc");
-    await expect(desc).toContainText("Overview of Fender's electric catalog health.");
+    await expect(desc).toContainText(`Overview of ${activeClientSettings().display_name}'s catalog health.`);
     await expect(desc).not.toContainText(/divisions?/i);
 
     await page.screenshot({ path: testInfo.outputPath("failed-division-read.png") });

@@ -263,3 +263,14 @@ Not live. Brian Magazu asked for this on 2 Nov 2026. Worker 19.4 builds only the
 **Open decision**
 
 None. Decided by Brian Magazu on 9 Nov 2026: wait for the first real Partner-led client, with X-16. Who loads the list and its file format are decided then.
+
+**R-20 LATER** · After launch
+
+**Status source:** Explicit (Brian Magazu, 18 Nov 2026)
+
+- **Current:** Price checks depend on MAP. A brand with no MAP policy (for example Durvet) gets no price view; a "no MAP" setting will hide MAP Leakage for it (queue item 3).
+- **Desired:** Price erosion for brands without MAP: compare each listing's Amazon price, and who sells at it, with the brand's list price, to show unauthorized or undercutting sellers.
+- **User value:** Brands without MAP still see where their price is being eroded and by whom.
+- **Acceptance:** Built only when a client needs it. List prices are collected at onboarding; the formula and wording are approved by Brian before it ships.
+- **Evidence:** Not live. Raised by Brian Magazu on 18 Nov 2026 after Durvet said it has no MAP.
+- **Open decision:** None until a client asks.
