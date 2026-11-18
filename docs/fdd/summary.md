@@ -35,15 +35,15 @@ Former name: Brand Portfolio. Approved rename: Summary.
 - **Evidence:** Score layout approved by Brian Magazu on 29 Oct 2026. Pull request 92, commits 7bf55cf and b5c6ce2. Published on main at 65e2c79. Tab labels were desktop-verified on 21 Oct 2026, commit 1fdbfc0. A target comparison and AI Actuation remain open, so this stays REFINE. Worker 27.6, PR 203 (main 4c6c0a6), approved 16 Nov 2026: division table removed, weakest score card opens by default, Scores over time chart under the cards with weekly saves (table applied 16 Nov by PM27). Stays REFINE until AI Actuation (SC-03) is on the cards. Worker 27.14, PR 207 (main cd202ab), approved 16 Nov 2026: AI Foundation, AI Commerce and AI Actuation sit side by side against target 70.
 - **Open decision:** None. Decided by Brian Magazu on 9 Nov 2026: each score is shown against a target of 70, for example 41 vs target 70. H-07 stays REFINE until AI Actuation (SC-03) exists.
 
-**H-09 TARGET** · Launch
+**H-09 CURRENT** · Launch
 
-**Status source:** Explicit (Brian Magazu, 17 Nov 2026, decision 105)
+**Status source:** Explicit (Brian Magazu, 17 Nov 2026, decision 105; approved 18 Nov 2026)
 
-- **Current:** Fender's Briefing, Opportunity and Revenue Estimates are hand-written in data/fender-v3-spec.json; Ledlenser gets a thinner fallback with a different layout.
+- **Current:** Briefing, Opportunity and Revenue Estimates are generated for every client from settings and data (brand-free data/canvas-narrative.json). Briefing cards: AI Consensus Score, Monthly potential lost brand revenue (Phase 1 / 12), then findings worst first; a generated lead on how AI assistants name the brand and what it controls; Portfolio at a glance removed. Opportunity: Phase 1, Full Enterprise Potential (public revenue placeholder; AI part waits for E5) and MAP beside, each opening its trail, with the measured and estimated split. Scores read out of 100 with Target 70.
 - **Desired:** Briefing, Opportunity and Revenue Estimates are generated from each client's settings and data, with one layout for every client and an optional short client note in settings. An analyst estimate not yet prepared reads Not available* with the tooltip "Analyst estimate not prepared yet for <Brand>".
 - **User value:** Every client's story comes from its own numbers, and stays current.
 - **Acceptance:** No per-client hand-written Briefing file. Fender and Ledlenser show the same sections in the same order, each filled from its own data. The Briefing's first hero card is named AI Consensus Score. Its lead section explains, from the client's own data, how AI assistants refer the brand in relevant shopping searches today and what the brand can control (Brian Magazu, 17 Nov 2026, decision 110). The Portfolio at a glance section and its Buy Box card are removed. Enterprise Potential and the Opportunity figures move to defensible estimates from real inputs, with each formula opened to its inputs (pending Brian's decision to unpark the dollar formulas).
-- **Evidence:** Audit by worker 28.8 (PR 217).
+- **Evidence:** Audit by worker 28.8 (PR 217). Built by workers 29.2, 29.4, 29.7 to 29.10: PR 235 (main f0171b6) and PR 236 (main b2e3ff3). Live reads reconciled to the approved proposal on measured sales (Fender Phase 1 $1,052,831 vs $1,050,952). Unit 1,150 pass; e2e briefing-estimates and summary-final-form pass for both clients. Brian Magazu approved 18 Nov 2026.
 - **Open decision:** None.
 
 **H-05 CURRENT** · Launch
