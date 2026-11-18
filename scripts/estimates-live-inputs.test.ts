@@ -73,9 +73,19 @@ const measured = (client: "fender" | "ledlenser") => {
 const fender = measured("fender");
 const ledlenser = measured("ledlenser");
 
-test("the join keeps every listing in any of the four views", () => {
-  assert.equal(fender.listings.length, fender.fx.listings.length);
-  assert.equal(ledlenser.listings.length, ledlenser.fx.listings.length);
+test("the join keeps the sales view's listings and adds none from the other views", () => {
+  assert.equal(fender.listings.length, fender.fx.listings.filter((l) => l.inSalesView).length);
+  assert.equal(ledlenser.listings.length, ledlenser.fx.listings.filter((l) => l.inSalesView).length);
+  const joined = joinEstimateListings(
+    {
+      sales: [{ asin: "A1", current_price: 10 }],
+      retail: [{ asin: "R9", offer_price: 5, is_bundle: true, parent_asin: null }],
+      spec: [{ asin: "S9", amazon_checked: true, amazon_completeness_pct: 10 }],
+      content: [{ asin: "C9", aplus_state: "absent" }],
+    },
+    "Cat",
+  );
+  assert.deepEqual(joined.map((l) => l.asin), ["A1"]);
 });
 
 test("Phase 1 from the views matches the proposal's section 5", () => {
@@ -90,6 +100,35 @@ test("each line from the views matches the proposal's section 1", () => {
   near(fender.est.buyBox.range?.mid, 111000, 1000, "Fender Buy Box mid");
   near(fender.est.missingSpecs.range?.mid, 328000, 1000, "Fender specs mid");
   near(fender.est.aplus.range?.mid, 66000, 1000, "Fender A+ mid");
+});
+
+test("a listing with no retail read is not counted as splintered", () => {
+  const est = buildClientEstimates(
+    joinEstimateListings({ sales: [{ asin: "A1", current_price: 10 }], retail: [], spec: [], content: [] }, "Cat"),
+    { rankCategory: "Cat", dataAsOf: "2026-11-18" },
+  );
+  assert.equal(est.splintered.trail.coverage.total, 0);
+});
+
+test("a line whose listings are all measured with no sales reads $0 with its N of M (decision 113)", () => {
+  const rows: EstimateViewRows = {
+    sales: ["A1", "A2"].map((asin) => ({ asin, current_price: 50, smartscout_snapshot_date: "2026-11-17", smartscout_ttm_revenue: null })),
+    retail: ["A1", "A2"].map((asin) => ({ asin, is_bundle: true, parent_asin: null })),
+    spec: [],
+    content: [],
+  };
+  const est = buildClientEstimates(joinEstimateListings(rows, "Cat"), { rankCategory: "Cat", dataAsOf: "2026-11-18" });
+  assert.equal(est.splintered.status, "estimated");
+  assert.deepEqual(est.splintered.range, { low: 0, mid: 0, high: 0 });
+  assert.equal(est.splintered.trail.coverage.measured, 2);
+  assert.equal(est.splintered.trail.coverage.reportedNoSales, 2);
+  assert.equal(est.splintered.trail.coverage.total, 2);
+  assert.equal(est.splintered.asterisk, false);
+  // No sales record at all and nothing to estimate from: Not available*, never $0.
+  rows.sales = rows.sales.map((r) => ({ ...r, smartscout_snapshot_date: null }));
+  const none = buildClientEstimates(joinEstimateListings(rows, "Cat"), { rankCategory: "Cat", dataAsOf: "2026-11-18" });
+  assert.equal(none.splintered.status, "not_available");
+  assert.equal(none.splintered.range, null);
 });
 
 test("MAP sits beside Phase 1 and line 6 is held", () => {

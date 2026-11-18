@@ -9,7 +9,12 @@
 //   MAP          line 3, shown beside Phase 1, never added (overlap rule 2)
 //   Held         line 6, miscategorized listings, until the D-12 check exists
 //
-// A listing with no sales figure is counted as Not available*, never $0.
+// A listing SmartScout tracks with no reported sales is measured, no sales: covered at $0 (decision
+// 113). Only a listing with no sales record at all and nothing to estimate from (no Keepa
+// bought-in-past-month figure, no sales rank) is Not available*, and it is never $0.
+//
+// The catalog is the sales view: it holds every live listing plus the retail read. A row in another
+// view for a listing the sales view does not hold is left out, so no N of M counts it.
 
 import { RANK_CURVES } from "./benchmarks";
 import { calibrateRankCurve, type RankCurve } from "./rank-curve";
@@ -33,7 +38,6 @@ export type SalesLossInputRow = {
   oos_days_365?: number | string | null;
   no_buy_box_days_365?: number | string | null;
   observed_days_365?: number | string | null;
-  is_bundle?: boolean | null;
 };
 
 /** canvas_retail_listings: the Amazon offer read. */
@@ -71,7 +75,7 @@ export type EstimateViewRows = {
 /** The columns each view is read with. Kept to what the formulas use. */
 export const ESTIMATE_VIEW_COLUMNS = {
   canvas_listing_sales_loss_v2:
-    "asin,title,current_price,sales_rank_current,smartscout_snapshot_date,smartscout_ttm_revenue,smartscout_monthly_units,baseline_daily_revenue,est_lost_revenue_oos_365,in_stock_days_30,in_stock_days_365,oos_days_365,no_buy_box_days_365,observed_days_365,is_bundle",
+    "asin,title,current_price,sales_rank_current,smartscout_snapshot_date,smartscout_ttm_revenue,smartscout_monthly_units,baseline_daily_revenue,est_lost_revenue_oos_365,in_stock_days_30,in_stock_days_365,oos_days_365,no_buy_box_days_365,observed_days_365",
   canvas_retail_listings: "asin,title,offer_price,sales_rank,monthly_sold,amz_leakage,is_bundle,parent_asin",
   canvas_spec_readiness: "asin,amazon_checked,amazon_completeness_pct",
   canvas_listing_content: "asin,aplus_state",
@@ -86,23 +90,18 @@ const num = (v: unknown): number | null => {
 };
 
 /**
- * Joins the four views into one input per listing. The population is every listing in any of the
- * views. Price is the sales view's current price, else the retail read's offer price; sales rank
- * likewise. Spec completeness counts only when Amazon was checked.
+ * Joins the four views into one input per listing. The population is the sales view's listings; the
+ * other views add to them and never add a listing. Price is the sales view's current price, else the
+ * retail read's offer price; sales rank likewise. Bundle and parent ASIN come from the retail read
+ * only, so a listing with no retail read is never counted as splintered on an unknown parent. Spec
+ * completeness counts only when Amazon was checked.
  */
 export function joinEstimateListings(rows: EstimateViewRows, rankCategory: string | null): EstimateListingInput[] {
   const byAsin = new Map<string, EstimateListingInput>();
-  const get = (asin: string) => {
-    let l = byAsin.get(asin);
-    if (!l) {
-      l = { asin, rankCategory };
-      byAsin.set(asin, l);
-    }
-    return l;
-  };
   for (const r of rows.sales) {
     if (!r.asin) continue;
-    const l = get(r.asin);
+    const l: EstimateListingInput = byAsin.get(r.asin) ?? { asin: r.asin, rankCategory };
+    byAsin.set(r.asin, l);
     l.title = r.title ?? l.title ?? null;
     l.price = num(r.current_price);
     l.salesRank = num(r.sales_rank_current);
@@ -116,11 +115,10 @@ export function joinEstimateListings(rows: EstimateViewRows, rankCategory: strin
     l.oosDays365 = num(r.oos_days_365);
     l.noBuyBoxDays365 = num(r.no_buy_box_days_365);
     l.observedDays365 = num(r.observed_days_365);
-    if (r.is_bundle != null) l.isBundle = r.is_bundle;
   }
   for (const r of rows.retail) {
-    if (!r.asin) continue;
-    const l = get(r.asin);
+    const l = byAsin.get(r.asin);
+    if (!l) continue;
     l.title = l.title ?? r.title ?? null;
     if (l.price == null) l.price = num(r.offer_price);
     if (l.salesRank == null) l.salesRank = num(r.sales_rank);
@@ -130,12 +128,12 @@ export function joinEstimateListings(rows: EstimateViewRows, rankCategory: strin
     l.parentAsin = r.parent_asin ?? null;
   }
   for (const r of rows.spec) {
-    if (!r.asin) continue;
-    get(r.asin).amazonCompletenessPct = r.amazon_checked === true ? num(r.amazon_completeness_pct) : null;
+    const l = byAsin.get(r.asin);
+    if (l) l.amazonCompletenessPct = r.amazon_checked === true ? num(r.amazon_completeness_pct) : null;
   }
   for (const r of rows.content) {
-    if (!r.asin) continue;
-    get(r.asin).aplusState = r.aplus_state ?? null;
+    const l = byAsin.get(r.asin);
+    if (l) l.aplusState = r.aplus_state ?? null;
   }
   return [...byAsin.values()];
 }
