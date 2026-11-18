@@ -7,12 +7,14 @@ import { MapExposureCard, type MapExposureState } from "@/components/v3/live/Map
 import { MapListingsTable } from "@/components/v3/live/MapListingsTable";
 import { EstimateLineCard } from "@/components/v3/live/estimates/EstimateLineFigure";
 import { RetailShareDisc, RetailStatusMark } from "@/components/v3/live/RetailOverviewFigure";
-import { listingsQuery, retailListingHeadCountQuery } from "@/lib/canvasData";
+import { listingsQuery } from "@/lib/canvasData";
+import { loadChannelCarry } from "@/lib/fender-canvas/map-channel-carry";
 import { formatUsd } from "@/lib/fender-canvas/format";
 import { mapTabModel, type MapSourceRow } from "@/lib/fender-canvas/map-channels";
 import {
   channelReadingNote,
   channelSummaryText,
+  type ChannelCarryMap,
   mapChannelStale,
   type ChannelStale,
 } from "@/lib/fender-canvas/map-reading-status";
@@ -54,20 +56,6 @@ async function loadMapRows(violationsOnly: boolean): Promise<MapSourceRow[]> {
     if (batch.length < PAGE_SIZE) return rows;
   }
   throw new Error("Below-MAP rows are not available.");
-}
-
-/** Listings in the retail read with no Walmart price above zero. Null when the count cannot be read. */
-async function loadListingsWithoutWalmartPrice(): Promise<number | null> {
-  try {
-    const [all, priced] = await Promise.all([
-      retailListingHeadCountQuery(),
-      retailListingHeadCountQuery({ storedWalmartPrice: true }),
-    ]);
-    if (all.error || priced.error || all.count == null || priced.count == null) return null;
-    return all.count - priced.count;
-  } catch {
-    return null;
-  }
 }
 
 /**
@@ -158,12 +146,12 @@ function MapLeakageLead({ read }: { read: RetailCanvasRead }) {
 function MapNotes({
   read,
   channels,
-  walmartMissing,
+  carry,
   channelStale,
 }: {
   read: RetailCanvasRead;
   channels: MapChannelLine[];
-  walmartMissing: number | null;
+  carry: ChannelCarryMap;
   channelStale: ChannelStale;
 }) {
   if (read.phase === "loading") {
@@ -185,13 +173,13 @@ function MapNotes({
   return (
     <ul className="tour-card-list" style={{ margin: 0 }} data-map-notes-channels="">
       {channels.map((channel) => {
-        const note = channelReadingNote(channel.name, { walmartMissing, channelStale });
+        const note = channelReadingNote(channel.name, { carry, channelStale });
         return (
           <li key={channel.key} data-map-channel={channel.name}>
             <strong>{channel.name}</strong>
             {" · "}
             <FigureTip title={channel.name} desc={note} testId="map-channel">
-              {channelSummaryText(channel.count, note)}
+              {channelSummaryText(channel.count, carry[channel.name]?.carried, note)}
             </FigureTip>
           </li>
         );
@@ -203,14 +191,14 @@ function MapNotes({
 function MapTopRow({
   read,
   channels,
-  walmartMissing,
+  carry,
   channelStale,
   exposure,
   exceptionsSentence,
 }: {
   read: RetailCanvasRead;
   channels: MapChannelLine[];
-  walmartMissing: number | null;
+  carry: ChannelCarryMap;
   channelStale: ChannelStale;
   /** Null hides the exposure card: MAP prices are not stored, or the rows did not load. */
   exposure: MapExposureState | null;
@@ -235,7 +223,7 @@ function MapTopRow({
           <MapNotes
             read={read}
             channels={channels}
-            walmartMissing={walmartMissing}
+            carry={carry}
             channelStale={channelStale}
           />
         </div>
@@ -251,7 +239,7 @@ export function MapChannelPanel({
   musiciansFriendFreshness?: CanvasFreshnessRow | null;
 }) {
   const [rows, setRows] = useState<MapSourceRow[] | null>(null);
-  const [walmartMissing, setWalmartMissing] = useState<number | null>(null);
+  const [carry, setCarry] = useState<ChannelCarryMap>({});
   const [failed, setFailed] = useState(false);
   /** Undefined while loading, null when the unit read failed. */
   const [units, setUnits] = useState<MapUnitsLookup | null | undefined>(undefined);
@@ -264,11 +252,11 @@ export function MapChannelPanel({
     if (read.phase === "loading") return;
     let cancelled = false;
     // Decision 82: the empty other-retailer price table is no longer read on screen.
-    Promise.all([loadMapRows(!pricesNotStored), loadListingsWithoutWalmartPrice()])
-      .then(([nextRows, missing]) => {
+    Promise.all([loadMapRows(!pricesNotStored), loadChannelCarry()])
+      .then(([nextRows, nextCarry]) => {
         if (cancelled) return;
         setRows(nextRows);
-        setWalmartMissing(missing);
+        setCarry(nextCarry);
         if (pricesNotStored) return;
         // R-09: the unit estimates behind discounted retail value, for the listings below MAP only.
         void loadMapUnits(nextRows.map((row) => row.asin)).then((unitRows) => {
@@ -320,7 +308,7 @@ export function MapChannelPanel({
       <MapTopRow
         read={read}
         channels={summaryChannels}
-        walmartMissing={walmartMissing}
+        carry={carry}
         channelStale={channelStale}
         exposure={failed ? null : exposure}
         exceptionsSentence={exceptionsSentence}
