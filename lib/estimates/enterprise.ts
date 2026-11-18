@@ -11,7 +11,7 @@
 import { ONLINE_SALES_SHARE } from "./benchmarks";
 import { uniqueSources } from "./line";
 import type { CatalogSalesCoverage } from "./sales-coverage";
-import type { BenchmarkSource, EstimateRange, EstimateResult } from "./types";
+import type { BenchmarkSource, EstimateRange, EstimateResult, SalesSource, SalesSourceSplit } from "./types";
 
 /** The brand's annual sales, from the settings record (revenue_inputs). */
 export type BrandRevenueInput = {
@@ -50,6 +50,14 @@ export function estimateEnterprise(
           high: Math.round(rate.high * revenue.annual_sales_usd * ONLINE_SALES_SHARE.high),
         }
       : null;
+  // The split by sales source, scaled from Phase 1's so its parts add to this figure (decision 112).
+  const scaleUp = range && phase1.range && phase1.range.mid > 0 ? range.mid / phase1.range.mid : null;
+  const salesSources = Object.fromEntries(
+    (Object.keys(phase1.trail.salesSources) as SalesSource[]).map((key) => {
+      const { estimate, ...rest } = phase1.trail.salesSources[key];
+      return [key, scaleUp != null && estimate != null ? { ...rest, estimate: estimate * scaleUp } : rest];
+    }),
+  ) as SalesSourceSplit;
   const placeholder = revenue?.basis === "public_placeholder";
   const revenueSource: BenchmarkSource[] = revenue
     ? [
@@ -111,7 +119,7 @@ export function estimateEnterprise(
         },
       ],
       coverage: catalog.after,
-      salesSources: phase1.trail.salesSources,
+      salesSources,
       benchmarks: [ONLINE_SALES_SHARE],
       sources: uniqueSources([ONLINE_SALES_SHARE], revenueSource),
       confidence: "low",

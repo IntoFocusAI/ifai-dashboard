@@ -59,6 +59,10 @@ for (const client of ["fender", "ledlenser"]) {
       await expect(lead.locator("[data-briefing-lead-ai]")).toContainText(/Unbranded Discovery: .+ named most in [\d,]+ of [\d,]+ resolved answers/, { timeout: AI_READ_MS });
       await expect(lead.locator("[data-briefing-lead-controls] li").first()).toContainText(/Out of stock: [\d,]+ listings/, { timeout: ESTIMATE_MS });
       await expect(lead).toContainText(`${BRAND[client]}'s selling model on Amazon:`);
+      // Worker 29.4: every number in the generated lead carries thousands separators.
+      await expect(lead.locator("[data-briefing-lead-ai]")).toContainText(/[\d,]+ of [\d,]+ cited links/);
+      expect(await lead.locator("[data-briefing-lead-ai]").innerText()).not.toMatch(/\d{4,}/);
+      expect(await lead.locator("[data-briefing-lead-controls]").innerText()).not.toMatch(/\d{4,}/);
       await checkFit(page, `${client}-briefing`);
     });
 
@@ -77,7 +81,20 @@ for (const client of ["fender", "ledlenser"]) {
         const rows = page.locator("[data-estimate-method] tbody tr");
         await expect(rows.first()).toContainText("Out of stock");
         await expect(page.locator("[data-estimate-row='miscategorized'] [data-estimate-not-prepared]")).toHaveText("Not available*");
+        // Worker 29.4 (decision 112): each figure is split between measured and estimated sales.
+        const oos = page.locator("[data-estimate-row='out_of_stock']");
+        await expect(oos.locator("[data-estimate-measured]")).toHaveText(/^\$[\d.,]+[KM]?$/);
+        await expect(oos.locator("[data-estimate-estimated]")).toHaveText(/^\$[\d.,]+[KM]?$/);
+        await expect(oos.locator("[data-estimate-listings] [data-figure-tip]")).toHaveAttribute("data-ifai-tooltip-desc", /listings measured \([\d,]+ with no sales\)/);
+        const tableOverflow = await page.locator("[data-estimate-method] .table-scroll").evaluate((el) => el.scrollWidth - el.clientWidth);
+        expect(tableOverflow, `${name} table scrolls sideways`).toBeLessThanOrEqual(0);
         await checkFit(page, `${client}-${name}`);
+
+        await oos.locator("[data-estimate-trigger]").click();
+        const oosTrail = page.getByRole("dialog");
+        await expect(oosTrail.locator("[data-estimate-coverage]")).toContainText(/measured \([\d,]+ with no sales\), [\d,]+ estimated/);
+        await expect(oosTrail.locator("[data-estimate-split-source='smartscout'] [data-estimate-split-estimate]")).toHaveText(/^\$[\d.,]+[KM]?$/);
+        await page.keyboard.press("Escape");
 
         await phase.locator("[data-estimate-trigger='phase_1']").click();
         const trail = page.getByRole("dialog");

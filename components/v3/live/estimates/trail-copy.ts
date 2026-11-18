@@ -22,7 +22,21 @@ export const NOT_AVAILABLE_LISTINGS_TIP =
 
 /** The figure as mid with its range, or Not available* when no listing had a sales figure. */
 export function resultFigureText(result: Pick<EstimateResult, "status" | "range">): string {
-  return result.status === "estimated" && result.range ? formatMoneyRange(result.range) : READ_NOT_AVAILABLE;
+  if (result.status !== "estimated" || !result.range) return READ_NOT_AVAILABLE;
+  // Every listing measured with no sales (decision 113): "$0", not "$0, range $0 to $0".
+  const { low, mid, high } = result.range;
+  return low === mid && mid === high ? formatMoneyShort(mid) : formatMoneyRange(result.range);
+}
+
+/**
+ * The figure's mid split by where each listing's sales come from (decision 112): the part on
+ * measured sales (the brand's own or SmartScout) and the part on estimated sales (Keepa monthly
+ * sold or sales rank). null when the figure is Not available*.
+ */
+export function figureSplit(result: Pick<EstimateResult, "status" | "range" | "trail">): { measured: number; estimated: number } | null {
+  if (result.status !== "estimated" || !result.range) return null;
+  const part = (source: SalesSource) => result.trail.salesSources[source]?.estimate ?? 0;
+  return { measured: part("brand_reported") + part("smartscout"), estimated: part("keepa_monthly_sold") + part("sales_rank_curve") };
 }
 
 const SALES_SOURCE_WORDS: Record<SalesSource, string> = {
@@ -45,7 +59,7 @@ export function estimatedFrom(trail: Pick<EstimateTrail, "salesSources">): strin
 export type CoverageParts = {
   /** "Based on 182 of 214 listings" (N = listings with a sales figure, measured or estimated). */
   lead: string;
-  /** "62 measured" */
+  /** "62 measured", or "62 measured (38 with no sales)" when SmartScout reports none for some (decision 113). */
   measured: string;
   /** "120 estimated from sales rank" ("0 estimated" when none are). */
   estimated: string;
@@ -58,7 +72,7 @@ export function coverageParts(trail: Pick<EstimateTrail, "coverage" | "salesSour
   const from = coverage.estimated > 0 ? estimatedFrom(trail) : null;
   return {
     lead: `Based on ${formatInt(coverage.measured + coverage.estimated)} of ${formatInt(coverage.total)} listings`,
-    measured: `${formatInt(coverage.measured)} measured`,
+    measured: `${formatInt(coverage.measured)} measured${(coverage.reportedNoSales ?? 0) > 0 ? ` (${formatInt(coverage.reportedNoSales)} with no sales)` : ""}`,
     estimated: `${formatInt(coverage.estimated)} estimated${from ? ` from ${from}` : ""}`,
     notAvailable: coverage.notAvailable > 0 ? formatInt(coverage.notAvailable) : null,
   };
@@ -77,7 +91,11 @@ export function coverageText(trail: Pick<EstimateTrail, "coverage" | "salesSourc
   return `${parts.lead}: ${counts.filter(Boolean).join(", ")}`;
 }
 
-/** Where the sales figures come from, one row per source used, largest first (approval 10). */
+/**
+ * Where the sales figures come from, one row per source used, largest first (approval 10), with the
+ * part of the estimate that rests on each (decision 112). `estimate` is null for a source that
+ * prices nothing.
+ */
 export function salesSourceRows(trail: Pick<EstimateTrail, "salesSources">) {
   return (Object.keys(SALES_SOURCE_WORDS) as SalesSource[])
     .map((source) => ({ source, ...(trail.salesSources[source] ?? { listings: 0, annualSales: 0 }) }))
@@ -88,6 +106,7 @@ export function salesSourceRows(trail: Pick<EstimateTrail, "salesSources">) {
       label: SALES_SOURCE_LABELS[row.source],
       listings: formatInt(row.listings),
       annualSales: row.source === "none" ? READ_NOT_AVAILABLE : `${formatMoneyShort(row.annualSales)} a year`,
+      estimate: row.source === "none" || row.estimate == null ? null : formatMoneyShort(row.estimate),
     }));
 }
 

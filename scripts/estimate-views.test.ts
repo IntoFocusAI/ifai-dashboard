@@ -6,6 +6,8 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
+import { coverageText, figureSplit, resultFigureText, salesSourceRows } from "../components/v3/live/estimates/trail-copy.ts";
+import { citationOwnedLinksLead } from "../lib/ai-search/citation-lead.ts";
 import { getClientSettings } from "../lib/client/active-client.ts";
 import { estimateEnterprise } from "../lib/estimates/enterprise.ts";
 import { buildClientEstimates, joinEstimateListings, type ClientEstimatesRead } from "../lib/estimates/live-inputs.ts";
@@ -128,4 +130,36 @@ test("Urgent Interventions lists findings via urgent_interventions, not example 
   const template = spec.spokes.suggestions.tabTemplates[0] as string;
   assert.match(template, /\{urgent_interventions\}/);
   assert.equal(/Austin Bazaar|Bundle MAP|comparison matrix|buy button/i.test(template), false);
+});
+
+test("every figure splits into its part on measured sales and its part on estimated sales (decision 112)", () => {
+  const fx = loadEstimatesFixture("ledlenser");
+  const est = buildClientEstimates(fx.listings, { rankCategory: fx.rankCategory, dataAsOf: fx.readOn, revenue: getClientSettings("ledlenser").revenue_inputs });
+  for (const result of [...est.lines, est.phase1, est.enterprise]) {
+    const split = figureSplit(result);
+    if (result.status !== "estimated") {
+      assert.equal(split, null, result.lineId);
+      continue;
+    }
+    // Lines round to the dollar; the parts are added before rounding.
+    near(split!.measured + split!.estimated, result.range!.mid, Math.max(3, result.range!.mid * 1e-4), `${result.lineId} split`);
+  }
+  assert.ok(figureSplit(est.phase1)!.estimated > 0);
+  const measuredOnly = measured("ledlenser");
+  assert.equal(figureSplit(measuredOnly.phase1)!.estimated, 0);
+  assert.ok(salesSourceRows(est.outOfStock.trail).some((row) => row.source === "smartscout" && row.estimate != null));
+});
+
+test("a figure that is $0 on every listing reads $0, and the coverage line counts measured, no sales (decision 113)", () => {
+  assert.equal(resultFigureText({ status: "estimated", range: { low: 0, mid: 0, high: 0 } }), "$0");
+  assert.equal(resultFigureText({ status: "not_available", range: null }), "Not available*");
+  const fx = loadEstimatesFixture("ledlenser");
+  const est = buildClientEstimates(fx.listings, { rankCategory: fx.rankCategory, dataAsOf: fx.readOn });
+  const noSales = est.outOfStock.trail.coverage.reportedNoSales ?? 0;
+  assert.ok(noSales > 0);
+  assert.match(coverageText(est.outOfStock.trail), new RegExp(`measured \\(${noSales} with no sales\\)`));
+});
+
+test("the cited-links sentence in the Briefing lead uses thousands separators", () => {
+  assert.equal(citationOwnedLinksLead(6404, 36289).population, "6,404 of 36,289 cited links lead to Fender-owned sites");
 });
