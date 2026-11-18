@@ -17,8 +17,12 @@ with recursive base as (
       to_regclass('sandbox.seller_type')]::oid[], null))
   union
   select c.oid from pg_class c
-  where c.oid = any (array_remove(array[to_regclass('public.issue_set_asides'), to_regclass('public.audit_log'),
-    to_regclass('public.set_aside_clients')]::oid[], null))
+  where c.oid = any (array_remove(array[
+    to_regclass('public.issue_set_asides'), to_regclass('public.set_aside_clients'),
+    to_regclass('public.canvas_score_snapshots'), to_regclass('public.site_type_classifications'),
+    to_regclass('public.site_type_overrides'), to_regclass('public.audit_log'),
+    to_regclass('public.actuation_programs'), to_regclass('public.actuation_items'),
+    to_regclass('public.actuation_expiry_reminders_sent')]::oid[], null))
   union
   select rw.ev_class from pg_depend d join pg_rewrite rw on rw.oid = d.objid
   join base b on b.oid = d.refobjid
@@ -108,12 +112,14 @@ begin
     and p.prorettype <> 'trigger'::regtype
     and has_function_privilege('authenticated', p.oid, 'execute')
     and p.prosrc ~* '\m(command|canvas_private|ledlenser|ledlenser_private|sandbox)\.|\mpublic\.(issue_set_asides|audit_log|set_aside_clients|actuation_|canvas_)'
-    and p.prosrc !~* 'private\.(can_read_schema|can_read_client|readable_client_ids|client_org_readable|can_read_set_aside_client|is_staff|check_issue_input)\(|command\.is_intofocus_admin\('
+    -- Membership checks: the 1.6 helpers, staff checks, and the dashboard's older command org
+    -- model (command.user_has_org_role and the prompt workflow's wrappers of it; retired in 1.2).
+    and p.prosrc !~* 'private\.(can_read_schema|can_read_client|readable_client_ids|client_org_readable|can_read_set_aside_client|is_staff|check_issue_input|has_org_role|is_active_org_member)\(|command\.(is_intofocus_admin|user_has_org_role|fmic_ai_prompt_require|fmic_ai_prompt_actor_ok)\('
     -- The dashboard sign-in functions read only the sign-in tables.
     and p.oid <> all (array_remove(array[to_regprocedure('command.is_intofocus_admin()'),
       to_regprocedure('command.user_has_org_role(uuid,command.organization_role)'),
       to_regprocedure('command.role_rank(command.organization_role)')]::oid[], null))
-    and not (n.nspname = 'private' and p.proname in ('is_backend_caller', 'client_org_readable', 'can_read_schema',
+    and not (n.nspname = 'private' and p.proname in ('is_backend_caller', 'staff_entitled', 'client_org_readable', 'can_read_schema',
       'can_read_client', 'readable_client_ids', 'can_read_set_aside_client'));
   if bad is not null then raise exception 'SECURITY DEFINER functions over client data without a membership check: %', bad; end if;
 
@@ -121,7 +127,8 @@ begin
   select string_agg(p.oid::regprocedure::text, ', ') into bad
   from pg_proc p where p.pronamespace = 'private'::regnamespace
     and has_function_privilege('authenticated', p.oid, 'execute')
-    and p.proname not in ('is_staff', 'module_access', 'is_backend_caller', 'client_org_readable', 'can_read_schema',
+    and p.proname not in ('is_staff', 'module_access', 'has_org_role', 'is_active_org_member',
+      'is_backend_caller', 'staff_entitled', 'client_org_readable', 'can_read_schema',
       'can_read_client', 'readable_client_ids', 'can_read_set_aside_client')
     and p.proname !~ '^mv__';
   if bad is not null then raise exception 'private functions callable by signed-in users: %', bad; end if;

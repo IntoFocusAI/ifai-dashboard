@@ -12,15 +12,21 @@
 -- Not client data, left as they are: command.organizations, command.user_profiles,
 -- command.organization_memberships (dashboard sign-in tables with their own policies),
 -- sandbox.seller and sandbox.seller_type (marketplace reference lists, readable when signed in).
--- Public tables with client data: public.issue_set_asides (by client_key) and public.audit_log
--- (by organization_id).
+-- Public tables with client data, scoped by the account that owns the client_key
+-- (public.set_aside_clients.organization_id) or by organization_id:
+--   read by the dashboard: issue_set_asides, set_aside_clients, canvas_score_snapshots,
+--     site_type_classifications, site_type_overrides, audit_log;
+--   staff only (read through their staff functions, no SELECT grant): actuation_programs,
+--     actuation_items, actuation_expiry_reminders_sent.
+-- Registries the client views join (same for every client): set_aside_checks, set_aside_reasons,
+-- site_type_settings become readable when signed in, and lose anon and authenticated writes.
+-- Portal tables in public (organizations, work_* and so on) already have membership policies and
+-- are not changed here.
 --
 -- What it does (objects are found from the catalog at apply time; every change is printed as a
 -- NOTICE, so run it on staging first and keep the output):
 --   1. Schema usage: anon loses USAGE on command, ledlenser and sandbox; authenticated gets USAGE
 --      on canvas_private and ledlenser_private (views now run as the caller and read through them).
---      public.set_aside_checks and set_aside_reasons (registries, same for every client) become
---      readable by authenticated; public.set_aside_clients shows each caller only their clients.
 --   2. Every client table: REVOKE ALL from anon and PUBLIC; RLS on; every policy for anon,
 --      authenticated or PUBLIC that is a literal true is dropped, as is every policy for anon;
 --      a SELECT policy "client_read" for authenticated with the membership check is added;
@@ -86,6 +92,31 @@ begin
   end loop;
 end $$;
 
+-- Public tables that hold client data. read = the dashboard reads them (directly or through a
+-- view), so signed-in users get SELECT, filtered by the policy; staff-only tables keep no SELECT
+-- grant (read through their staff functions) but get the same policy.
+create temporary table lockdown_public (rel regclass primary key, check_expr text not null, read boolean not null) on commit drop;
+do $$
+declare r record;
+begin
+  for r in select * from (values
+      ('public.issue_set_asides', '(private.can_read_set_aside_client(client_key))', true),
+      ('public.set_aside_clients', '(private.can_read_set_aside_client(client_key))', true),
+      ('public.canvas_score_snapshots', '(private.can_read_set_aside_client(client_key))', true),
+      ('public.site_type_classifications', '(private.can_read_set_aside_client(client_key))', true),
+      ('public.site_type_overrides', '(private.can_read_set_aside_client(client_key))', true),
+      ('public.audit_log', '(private.client_org_readable(organization_id))', true),
+      ('public.actuation_programs', '(private.can_read_set_aside_client(client_key))', false),
+      ('public.actuation_items', '(private.can_read_set_aside_client(client_key))', false),
+      ('public.actuation_expiry_reminders_sent', '(private.can_read_set_aside_client(client_key))', false)
+    ) v(name, check_expr, read)
+  loop
+    if to_regclass(r.name) is not null then
+      insert into pg_temp.lockdown_public values (to_regclass(r.name), r.check_expr, r.read);
+    end if;
+  end loop;
+end $$;
+
 -- Row check for one client table (null when the table needs a decision).
 create function pg_temp.lockdown_check(p_rel regclass) returns text language sql stable as $$
   select case
@@ -122,11 +153,18 @@ end $$;
 
 -- 2. Client tables -----------------------------------------------------------------------------
 
-create function pg_temp.lockdown_table(p_rel regclass, p_check text) returns void
+create function pg_temp.lockdown_table(p_rel regclass, p_check text, p_grant boolean default true) returns void
 language plpgsql as $$
 declare pol record;
 begin
   execute format('revoke all on table %s from anon, public', p_rel);
+  -- Sequences behind the table's id columns too.
+  for pol in
+    select d.objid::regclass as seq from pg_depend d join pg_class s on s.oid = d.objid
+    where d.refobjid = p_rel and d.classid = 'pg_class'::regclass and s.relkind = 'S'
+  loop
+    execute format('revoke all on sequence %s from anon, public', pol.seq);
+  end loop;
   execute format('alter table %s enable row level security', p_rel);
   for pol in
     select p.polname, pg_get_expr(p.polqual, p.polrelid) as qual,
@@ -146,8 +184,11 @@ begin
   end loop;
   execute format('drop policy if exists client_read on %s', p_rel);
   execute format('create policy client_read on %s for select to authenticated using (%s)', p_rel, p_check);
-  execute format('grant select on table %s to authenticated', p_rel);
-  raise notice '1.6 table %: rls on, anon revoked, policy client_read using %', p_rel, p_check;
+  if p_grant then
+    execute format('grant select on table %s to authenticated', p_rel);
+  end if;
+  raise notice '1.6 table %: rls on, anon revoked, policy client_read using %, select for authenticated: %',
+    p_rel, p_check, p_grant;
 end $$;
 
 do $$
@@ -176,35 +217,25 @@ begin
   end loop;
 
   -- Public tables that hold client data.
-  if to_regclass('public.issue_set_asides') is not null then
-    perform pg_temp.lockdown_table('public.issue_set_asides',
-      '(private.can_read_set_aside_client(client_key))');
-  end if;
-  if to_regclass('public.audit_log') is not null then
-    perform pg_temp.lockdown_table('public.audit_log',
-      '(private.client_org_readable(organization_id))');
-  end if;
+  for r in select * from pg_temp.lockdown_public order by rel::text loop
+    perform pg_temp.lockdown_table(r.rel, r.check_expr, r.read);
+  end loop;
 end $$;
 
--- Set-aside registries: views over issue_set_asides now run as the caller and join these.
--- Checks and reasons are the same for every client; the client list shows only the caller's.
+-- Registries the client views join (same rows for every client): readable when signed in.
 do $$
 declare t text;
 begin
-  foreach t in array array['public.set_aside_checks', 'public.set_aside_reasons'] loop
+  foreach t in array array['public.set_aside_checks', 'public.set_aside_reasons', 'public.site_type_settings'] loop
     if to_regclass(t) is not null then
-      execute format('revoke all on table %s from anon', t);
+      execute format('revoke insert, update, delete, truncate, references, trigger on table %s from anon, authenticated', t);
       execute format('alter table %s enable row level security', t);
       execute format('drop policy if exists registry_read on %s', t);
       execute format('create policy registry_read on %s for select to authenticated using (true)', t);
       execute format('grant select on table %s to authenticated', t);
-      raise notice '1.6 table % (registry, not client data): select for authenticated, anon revoked', t;
+      raise notice '1.6 table % (registry, not client data): select for authenticated; anon and authenticated writes revoked', t;
     end if;
   end loop;
-  if to_regclass('public.set_aside_clients') is not null then
-    perform pg_temp.lockdown_table('public.set_aside_clients',
-      '(private.can_read_set_aside_client(client_key))');
-  end if;
 end $$;
 
 -- 3. Materialized views ------------------------------------------------------------------------
@@ -284,8 +315,7 @@ begin
       -- Client schema relations and the public client tables.
       select c.oid from pg_class c join pg_namespace n on n.oid = c.relnamespace
       where n.nspname in (select schema_name from pg_temp.lockdown_schema)
-         or c.oid = any (array_remove(array[to_regclass('public.issue_set_asides'), to_regclass('public.audit_log'),
-              to_regclass('public.set_aside_clients')]::oid[], null))
+         or c.oid in (select rel from pg_temp.lockdown_public)
       union
       -- Views that read any of them.
       select rw.ev_class from pg_depend d join pg_rewrite rw on rw.oid = d.objid

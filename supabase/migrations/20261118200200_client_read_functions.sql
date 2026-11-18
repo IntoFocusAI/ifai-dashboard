@@ -17,10 +17,20 @@
 -- Check after applying (as anon: permission denied; as a signed-in non-member: zero rows):
 --   select count(*) from public.ai_prompts_list();
 --
+-- Also: EXECUTE on command.fmic_ai_current_published_prompts(uuid),
+-- command.fmic_ai_prompt_validation_failures(uuid,uuid[],integer) and
+-- command.fmic_ai_published_set_status(uuid) is revoked from authenticated (no membership check;
+-- not called by the dashboard); service_role keeps it. The view command.fmic_ai_published_prompts,
+-- which reads them, is no longer granted to authenticated.
+--
 -- Undo: re-run the four CREATE OR REPLACE statements from the migrations named above, then
 --   grant execute on function public.ai_prompts_list(), public.ai_prompts_status(),
 --     public.ai_prompt_edits_list(text), public.actuation_basis(text),
 --     public.canvas_ai_history_run_rows(uuid) to anon;
+--   grant execute on function command.fmic_ai_current_published_prompts(uuid),
+--     command.fmic_ai_prompt_validation_failures(uuid,uuid[],integer),
+--     command.fmic_ai_published_set_status(uuid) to authenticated;
+--   grant select on command.fmic_ai_published_prompts to authenticated;
 
 begin;
 
@@ -142,6 +152,29 @@ begin
       raise notice '1.6 function %: anon revoked, authenticated and service_role kept', f;
     end if;
   end loop;
+end $$;
+
+-- Three SECURITY DEFINER functions in command return FMIC prompt data for any organization id
+-- passed in, with no membership check, and are executable by authenticated. Nothing in the
+-- dashboard calls them; the prompt workflow functions call them internally (as the owner), and
+-- the pipelines use service_role. Signed-in users lose EXECUTE; service_role keeps it.
+do $$
+declare f text;
+begin
+  foreach f in array array['command.fmic_ai_current_published_prompts(uuid)',
+      'command.fmic_ai_prompt_validation_failures(uuid,uuid[],integer)',
+      'command.fmic_ai_published_set_status(uuid)'] loop
+    if to_regprocedure(f) is not null then
+      execute format('revoke execute on function %s from public, anon, authenticated', f);
+      execute format('grant execute on function %s to service_role', f);
+      raise notice '1.6 function %: authenticated and anon revoked, service_role kept', f;
+    end if;
+  end loop;
+  -- The one view that reads them (not used by the dashboard) becomes backend only too.
+  if to_regclass('command.fmic_ai_published_prompts') is not null then
+    revoke all on command.fmic_ai_published_prompts from anon, authenticated;
+    raise notice '1.6 view command.fmic_ai_published_prompts: backend only (service_role)';
+  end if;
 end $$;
 
 notify pgrst, 'reload schema';

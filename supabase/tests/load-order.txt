@@ -1,16 +1,8 @@
 # Files loaded before the tests, in order (paths from the repo root). See supabase/tests/README.md.
 supabase/tests/fixtures/00_supabase_roles.sql
-supabase/tests/fixtures/20_portal_accounts.sql
-supabase/tests/fixtures/25_hosted_base.sql
-supabase/tests/fixtures/30_client_schemas.sql
-# Repo migrations the tests build on
-supabase/migrations/20261026150208_sandbox_schema.sql
-supabase/migrations/20261027183846_ai_prompts_editor.sql
-supabase/migrations/20261102190000_issue_set_asides.sql
-supabase/migrations/20261103150000_issue_done.sql
-supabase/migrations/20261104215427_canvas_set_aside_views_select_only.sql
-supabase/migrations/20261109233000_ai_prompt_edits_list.sql
-supabase/migrations/20261116220000_actuation_records.sql
+# The hosted structure, generated from the 2026-11-18 catalog snapshot (build_hosted_fixture.py)
+supabase/tests/fixtures/30_hosted_structure.sql
+# Repo migrations not yet on hosted
 supabase/migrations/20261118160000_prompt_rpcs_staff_only.sql
 # Under test
 supabase/migrations/20261118190000_write_rpcs_no_anon.sql

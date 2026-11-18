@@ -1,6 +1,7 @@
 -- 1.6 Step 1: who may read which client's data. Mapping table and helper functions.
 --
 -- Additive: new table private.client_schema_org, new functions private.is_backend_caller,
+-- private.staff_entitled,
 -- private.client_org_readable, private.can_read_schema, private.can_read_client,
 -- private.readable_client_ids and private.can_read_set_aside_client, and a NOT VALID foreign key
 -- on sandbox.client.organization_id. Nothing existing is read differently until
@@ -12,8 +13,10 @@
 --
 -- A caller may read an account's data when, and only when:
 --   * they have an active membership in that account, or
---   * they are IntoFocus staff (private.is_staff()) and the account is entitled to the AEO
---     dashboard (private.module_access(account, 'consensus_control')).
+--   * they are IntoFocus staff and the account is entitled to the dashboard
+--     (private.staff_entitled: the portal's private.is_staff() and
+--     private.module_access(account, 'consensus_control') once they exist on the database; until
+--     then an active platform_admin membership, and the account being mapped to dashboard data).
 -- Anonymous callers (no auth.uid()) never may.
 --
 -- At apply time Brian Watson inserts one row per client schema (account ids are not in the repo):
@@ -37,7 +40,7 @@
 --   alter table sandbox.client drop constraint if exists client_organization_id_fkey;
 --   drop function if exists private.can_read_set_aside_client(text), private.readable_client_ids(),
 --     private.can_read_client(text), private.can_read_schema(text), private.client_org_readable(uuid),
---     private.is_backend_caller();
+--     private.staff_entitled(uuid), private.is_backend_caller();
 --   drop table if exists private.client_schema_org;
 
 begin;
@@ -64,6 +67,39 @@ $$;
 comment on function private.is_backend_caller() is
   '1.6: true for service_role and direct database sessions (not PostgREST requests).';
 
+-- Staff: IntoFocus staff may read an account that has the dashboard. The intofocus-portal
+-- functions private.is_staff() and private.module_access(org, module) are not on the database yet
+-- (2026-11-18 snapshot), so this uses them when they exist and otherwise falls back to:
+--   staff    = an active platform_admin membership in public.organization_memberships;
+--   entitled = the account is mapped to dashboard data (private.client_schema_org or sandbox.client).
+create function private.staff_entitled(p_organization_id uuid) returns boolean
+language plpgsql stable security definer set search_path = '' as $$
+declare v_staff boolean; v_entitled boolean;
+begin
+  if auth.uid() is null or p_organization_id is null then
+    return false;
+  end if;
+  if to_regprocedure('private.is_staff()') is not null then
+    execute 'select private.is_staff()' into v_staff;
+  else
+    select exists (
+      select 1 from public.organization_memberships m
+      where m.user_id = auth.uid() and m.status = 'active' and m.role = 'platform_admin')
+      into v_staff;
+  end if;
+  if not coalesce(v_staff, false) then
+    return false;
+  end if;
+  if to_regprocedure('private.module_access(uuid,text)') is not null then
+    execute 'select private.module_access($1, $2)' into v_entitled using p_organization_id, 'consensus_control';
+    return coalesce(v_entitled, false);
+  end if;
+  return exists (select 1 from private.client_schema_org c where c.organization_id = p_organization_id)
+      or exists (select 1 from sandbox.client c where c.organization_id = p_organization_id);
+end $$;
+comment on function private.staff_entitled(uuid) is
+  '1.6: true when the caller is IntoFocus staff and the account is entitled to the dashboard (portal functions when present, else platform_admin and a dashboard mapping).';
+
 -- The one place the membership and staff rule lives.
 create function private.client_org_readable(p_organization_id uuid) returns boolean
 language sql stable security definer set search_path = '' as $$
@@ -75,11 +111,11 @@ language sql stable security definer set search_path = '' as $$
          where m.organization_id = p_organization_id
            and m.user_id = auth.uid()
            and m.status = 'active')
-       or (private.is_staff() and private.module_access(p_organization_id, 'consensus_control'))
+       or private.staff_entitled(p_organization_id)
      )
 $$;
 comment on function private.client_org_readable(uuid) is
-  '1.6: true when the signed-in caller is an active member of the account, or staff and the account is entitled to the AEO dashboard.';
+  '1.6: true when the signed-in caller is an active member of the account, or staff and the account is entitled to the dashboard.';
 
 create function private.can_read_schema(p_schema_name text) returns boolean
 language sql stable security definer set search_path = '' as $$
@@ -122,10 +158,10 @@ comment on function private.can_read_set_aside_client(text) is
 
 revoke all on function private.client_org_readable(uuid), private.can_read_schema(text),
   private.can_read_client(text), private.readable_client_ids(),
-  private.can_read_set_aside_client(text), private.is_backend_caller() from public, anon;
+  private.can_read_set_aside_client(text), private.is_backend_caller(), private.staff_entitled(uuid) from public, anon;
 grant execute on function private.client_org_readable(uuid), private.can_read_schema(text),
   private.can_read_client(text), private.readable_client_ids(),
-  private.can_read_set_aside_client(text), private.is_backend_caller() to authenticated, service_role;
+  private.can_read_set_aside_client(text), private.is_backend_caller(), private.staff_entitled(uuid) to authenticated, service_role;
 -- Row policies call these as the signed-in user, so authenticated needs to reach the schema.
 grant usage on schema private to authenticated;
 

@@ -21,19 +21,25 @@ begin
   return v;
 end $$;
 
+-- Expected values are computed from the base tables as the owner. Staff read every account
+-- with dashboard data while the portal's entitlement functions are absent (as today).
 do $$
 declare
-  q text; who text; got text; want text;
+  got text; want text; i int; j int; errors text[] := '{}';
+  n_prompts text := (select count(*)::text from command.fmic_ai_prompts);
+  n_active text := (select count(*)::text from command.fmic_ai_prompts where active);
+  n_edits text := (select count(*)::text from command.fmic_ai_prompt_edits);
   cases text[][] := array[
     -- query, anon, org A, org B, staff, no account
-    array['select count(*) from public.ai_prompts_list()', 'denied', '2', '0', '2', '0'],
-    array['select count(*) from public.ai_prompt_edits_list(null)', 'denied', '1', '0', '1', '0'],
-    array['select (public.ai_prompts_status() ->> ''active_count'')', 'denied', '2', null, '2', null],
+    array['select count(*) from public.ai_prompts_list()', 'denied', n_prompts, '0', n_prompts, '0'],
+    array['select count(*) from public.ai_prompt_edits_list(null)', 'denied', n_edits, '0', n_edits, '0'],
+    array['select (public.ai_prompts_status() ->> ''active_count'')', 'denied', n_active, null, n_active, null],
     array['select count(*) from public.actuation_basis(''fmic'')', 'denied', '4', '0', '4', '0'],
-    array['select count(*) from public.actuation_basis(''ledlenser'')', 'denied', '0', '4', '0', '0']];
+    array['select count(*) from public.actuation_basis(''ledlenser'')', 'denied', '0', '4', '4', '0'],
+    array['select count(*) from command.fmic_ai_current_published_prompts(''00000000-0000-0000-0000-00000000000a'')', 'denied', 'denied', 'denied', 'denied', 'denied']];
   whos text[] := array['anon', 'a', 'b', 'staff', 'none'];
-  i int; j int; errors text[] := '{}';
 begin
+  if n_prompts = '0' or n_edits = '0' then raise exception 'fixture: no prompt rows'; end if;
   for i in 1 .. array_length(cases, 1) loop
     for j in 1 .. 5 loop
       got := pg_temp.as_user(whos[j], cases[i][1]);
