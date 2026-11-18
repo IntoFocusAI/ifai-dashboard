@@ -2,6 +2,7 @@
 
 import { figureTipAttrs } from "@/components/v3/live/FigureTip";
 import { EstimateTrailTrigger } from "@/components/v3/live/estimates/EstimateTrailTrigger";
+import { AI_ESTIMATE_READ_FAILED } from "@/lib/estimates/ai-gap-read";
 import type { ClientEstimatesRead } from "@/lib/estimates/live-inputs";
 import type { EstimateResult } from "@/lib/estimates/types";
 import { figureSplit, NOT_AVAILABLE_LISTINGS_TIP } from "@/components/v3/live/estimates/trail-copy";
@@ -36,6 +37,9 @@ export function EstimateFigure({
   if (!read || read.phase === "loading") return <span data-estimate-loading="">{ESTIMATE_LOADING}</span>;
   if (read.phase === "error") {
     return <span {...figureTipAttrs(NO_ANALYST_ESTIMATE, ESTIMATES_READ_FAILED, "estimate-read-failed")}>{NO_ANALYST_ESTIMATE}</span>;
+  }
+  if (result && (result.lineId === "ai_unbranded" || result.lineId === "ai_branded") && result.status !== "estimated") {
+    return <span {...figureTipAttrs(NO_ANALYST_ESTIMATE, AI_ESTIMATE_READ_FAILED, "estimate-ai-na")}>{NO_ANALYST_ESTIMATE}</span>;
   }
   if (result && result.status !== "estimated" && result.trail.coverage.total > 0) {
     return (
@@ -89,6 +93,26 @@ function Row({ read, result, title, tip, total }: { read: ClientEstimatesRead | 
   );
 }
 
+/** Lines 8 and 9: Not available* with the AI tooltip when the AI read failed, else a row like the others. */
+function AiRow({ read, result, title, lineId }: { read: ClientEstimatesRead | undefined; result: EstimateResult | null; title: string; lineId: string }) {
+  if (read?.phase === "ready" && !result) {
+    return (
+      <tr data-estimate-row={lineId}>
+        <td>{title}</td>
+        <td>
+          <span {...figureTipAttrs(NO_ANALYST_ESTIMATE, AI_ESTIMATE_READ_FAILED, "estimate-ai-na")} data-estimate-ai-na="">
+            {NO_ANALYST_ESTIMATE}
+          </span>
+        </td>
+        <td />
+        <td />
+        <td />
+      </tr>
+    );
+  }
+  return <Row read={read} result={result} title={title} />;
+}
+
 /**
  * Opportunity (Summary) and Revenue Estimates (Action Items): the same sections for every client,
  * generated from its own listings and settings (H-09, decision 112). Phase 1 adds lines 1, 2, 4, 5
@@ -97,6 +121,10 @@ function Row({ read, result, title, tip, total }: { read: ClientEstimatesRead | 
 export function OpportunityEstimates({ read }: { read: ClientEstimatesRead | undefined }) {
   const est = read?.phase === "ready" ? read.estimates : null;
   const phaseLines = est?.phase1.parts ?? [];
+  // Lines 8 and 9 and Enterprise Potential's AI part wait for the date-pill window's AI read.
+  const ai = est?.ai;
+  const aiRead: ClientEstimatesRead | undefined = ai?.phase === "loading" ? { phase: "loading" } : read;
+  const aiLine = (key: "unbranded" | "branded") => (ai?.phase === "ready" ? ai[key] : null);
   return (
     <>
       <div className="content-box" data-revenue-estimates="" style={{ marginTop: 12 }}>
@@ -105,7 +133,7 @@ export function OpportunityEstimates({ read }: { read: ClientEstimatesRead | und
         </div>
         <div className="metric-grid-2" style={{ marginTop: 8 }}>
           <Card id="phase_one" label="Phase 1 Quick-Win Lift" read={read} result={est?.phase1 ?? null} />
-          <Card id="enterprise" label="Full Enterprise Potential" read={read} result={est?.enterprise ?? null} />
+          <Card id="enterprise" label="Full Enterprise Potential" read={aiRead} result={est?.enterprise ?? null} />
           <Card id="map_leakage" label="MAP Leakage" tip={MAP_BESIDE_TIP} read={read} result={est?.mapLeakage ?? null} />
         </div>
       </div>
@@ -133,7 +161,9 @@ export function OpportunityEstimates({ read }: { read: ClientEstimatesRead | und
               <Row read={read} result={est?.phase1 ?? null} title="Phase 1 Quick-Win Lift" total />
               <Row read={read} result={est?.mapLeakage ?? null} title="MAP Leakage" tip={MAP_BESIDE_TIP} />
               <Row read={read} result={est?.miscategorized ?? null} title={est?.miscategorized.trail.title ?? "Miscategorized listings"} />
-              <Row read={read} result={est?.enterprise ?? null} title="Full Enterprise Potential" total />
+              <AiRow read={aiRead} result={aiLine("unbranded")} lineId="ai_unbranded" title="AI Search: Unbranded Discovery gap" />
+              <AiRow read={aiRead} result={aiLine("branded")} lineId="ai_branded" title="AI Search: Branded Consideration" />
+              <Row read={aiRead} result={est?.enterprise ?? null} title="Full Enterprise Potential" total />
             </tbody>
           </table>
         </div>

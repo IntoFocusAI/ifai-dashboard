@@ -16,6 +16,7 @@
 // The catalog is the sales view: it holds every live listing plus the retail read. A row in another
 // view for a listing the sales view does not hold is left out, so no N of M counts it.
 
+import type { AiEstimatesRead } from "./ai-gap";
 import { RANK_CURVES } from "./benchmarks";
 import { estimateEnterprise, type BrandRevenueInput } from "./enterprise";
 import { calibrateRankCurve, type RankCurve } from "./rank-curve";
@@ -172,6 +173,10 @@ export type ClientEstimates = ListingEstimates & {
   byListing: Map<string, ListingEstimate>;
   /** Enterprise Potential from Phase 1 and the brand's revenue in settings. Not available* without one. */
   enterprise: EstimateResult;
+  /** The brand's annual sales from settings, for Enterprise Potential's AI part. */
+  revenue?: BrandRevenueInput | null;
+  /** Lines 8 and 9, joined from the date-pill window's AI read (lib/estimates/ai-gap-read). Absent until joined. */
+  ai?: AiEstimatesRead;
   /** Listings read. */
   listingCount: number;
   dataAsOf: string;
@@ -223,6 +228,7 @@ export function buildClientEstimates(
     lines: [est.outOfStock, est.buyBox, est.mapLeakage, est.splintered, est.missingSpecs, est.miscategorized, est.aplus],
     byListing: byListing(est),
     enterprise: estimateEnterprise(est.phase1, est.catalog, opts.revenue ?? null, opts.dataAsOf),
+    revenue: opts.revenue ?? null,
     listingCount: listings.length,
     dataAsOf: opts.dataAsOf,
   };
