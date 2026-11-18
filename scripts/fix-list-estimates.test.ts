@@ -8,7 +8,8 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { buildClientEstimates } from "../lib/estimates/live-inputs.ts";
 import { PHASE_1_LINES } from "../lib/estimates/rollup.ts";
-import { FIX_ROW_LINES, fixRowEstimate, lineFromListings } from "../lib/fender-canvas/action-items-fix-list.ts";
+import { aplusActionText, aplusPlanItem, planWithAplus } from "../lib/fender-canvas/action-items-aplus-row.ts";
+import { APLUS_ROW_ID, FIX_ROW_LINES, fixRowEstimate, lineFromListings } from "../lib/fender-canvas/action-items-fix-list.ts";
 import { MAP_ESTIMATE_LINE } from "../lib/fender-canvas/map-exposure.ts";
 import { STOCK_LOSS_ESTIMATE_LINE } from "../lib/fender-canvas/stock-loss.ts";
 import { loadEstimatesFixture } from "./fixtures/estimates/load.ts";
@@ -43,6 +44,23 @@ for (const client of CLIENTS) {
     }
   });
 
+  test(`${client}: Phase 1 rows add up to Phase 1 with or without the own-pages row; A+ is on its own row`, () => {
+    assert.equal(FIX_ROW_LINES["own:pages"], undefined, "the own-pages row carries no dollar");
+    assert.equal(FIX_ROW_LINES[APLUS_ROW_ID], "aplus");
+    for (const ownPagesShows of [true, false]) {
+      const ids = Object.keys(FIX_ROW_LINES).filter((id) => ownPagesShows || id !== "own:pages");
+      if (ownPagesShows) ids.push("own:pages");
+      const rows = ids.map((id) => fixRowEstimate(id, est)).filter((row) => row?.inPhase1);
+      const mid = rows.reduce((total, row) => total + (row!.range?.mid ?? 0), 0);
+      assert.ok(Math.abs(mid - est.phase1.range!.mid) <= PHASE_1_LINES.length, `own pages ${ownPagesShows}: ${mid} vs ${est.phase1.range!.mid}`);
+    }
+    const aplus = lineFromListings(est, "aplus")!;
+    const item = aplusPlanItem(est);
+    const applies = aplus.status !== "none" && ((aplus.range?.mid ?? 0) > 0 || aplus.priced < aplus.listings);
+    assert.equal(item !== null, applies);
+    if (item) assert.equal(item.action, aplusActionText(aplus.listings));
+  });
+
   test(`${client}: each row equals its line, MAP is beside Phase 1, line 6 has no row`, () => {
     for (const [id, lineId] of Object.entries(FIX_ROW_LINES)) {
       const row = fixRowEstimate(id, est)!;
@@ -69,6 +87,27 @@ test("a row whose listings all lack a sales figure reads Not available*, never $
   assert.equal(row.status, "not_available");
   assert.equal(row.range, null);
   assert.equal(lineFromListings(est, "map_leakage")!.status, "none");
+});
+
+test("A+ row wording is singular for one listing and is placed after the other e-commerce rows", () => {
+  assert.equal(aplusActionText(1), "Add A+ content to 1 listing.");
+  assert.equal(aplusActionText(12), "Add A+ content to 12 listings.");
+  const est = buildClientEstimates(
+    [{ asin: "A1", aplusState: "absent" }, { asin: "A2", aplusState: "present" }],
+    { rankCategory: null, dataAsOf: "2026-11-18" },
+  );
+  const base = [
+    { id: "finding:buy_box", kind: "finding" },
+    { id: "signal:missing_specs", kind: "signal" },
+    { id: "own:pages", kind: "own_page" },
+  ] as never[];
+  const item = aplusPlanItem(est);
+  assert.ok(item, "an unpriced A+ listing gets a row");
+  assert.equal(item.action, "Add A+ content to 1 listing.");
+  const plan = planWithAplus(base, est);
+  assert.deepEqual(plan.map((row) => row.id), ["finding:buy_box", "signal:missing_specs", APLUS_ROW_ID, "own:pages"]);
+  assert.deepEqual(plan.map((row) => row.rank), [1, 2, 3, 4]);
+  assert.equal(planWithAplus(base, null), base);
 });
 
 test("the tabs read the lines their constants name, from one template", () => {

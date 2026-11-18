@@ -1,12 +1,13 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import { ResizableTable, type RetailColumn } from "@/components/v3/live/ResizableTable";
 import { useAiExportScope } from "@/components/v3/live/ai-search/useAiExport";
 import { PlanAction, PlanEvidence, PlanFigure, PlanStatus } from "@/components/v3/live/RoadmapPlanParts";
 import { FixRowEstimate } from "@/components/v3/live/estimates/EstimateLineFigure";
 import { useClientEstimates } from "@/components/v3/live/estimates/useClientEstimates";
 import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
+import { planWithAplus } from "@/lib/fender-canvas/action-items-aplus-row";
 import { fixRowEstimate } from "@/lib/fender-canvas/action-items-fix-list";
 import { phaseWindow } from "@/lib/fender-canvas/roadmap-dates";
 import { PLAN_PHASES, phaseLabel, type PlanItem } from "@/lib/fender-canvas/roadmap-plan";
@@ -39,9 +40,14 @@ const rowKey = (item: PlanItem) => item.id;
  * Every plan item in Action Items order (decision 21 f) on the shared table: each column sorts,
  * the toolbar searches and counts rows. Rows are not clickable; the evidence button opens the tab.
  */
-export function ActionItemsFixTable({ plan, today }: { plan: readonly PlanItem[]; today: Date }) {
+export function ActionItemsFixTable({ plan: basePlan, today }: { plan: readonly PlanItem[]; today: Date }) {
   // The shared per-listing estimates (one read per page load); each row adds its line's listings.
   const estimates = useClientEstimates();
+  // A+ content gets its own row once the estimates show weak or missing A+ (line 7).
+  const plan = useMemo(
+    () => planWithAplus(basePlan, estimates.phase === "ready" ? estimates.estimates : null),
+    [basePlan, estimates],
+  );
   const sortValue = useCallback((item: PlanItem, columnId: string): SortInput => {
     if (columnId === "rank") return item.rank;
     if (columnId === "action") return `${item.kind === "finding" ? "" : `${item.fact} `}${item.action}`;

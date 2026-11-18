@@ -14,12 +14,15 @@ export const FIX_LIST_TITLE = "Fixes in priority order";
 export const FIX_LIST_PRIORITY_RULE =
   "Critical findings come first, then at risk, then on track, then findings with no stored reading. Within a status, the finding that affects the larger share of its listings or answers comes first. For exact official product pages and Unbranded Discovery a higher share is better, so the share affected is the rest: listings without an exact page, and answers that do not lead with the brand. After the five findings come out-of-stock listings and missing Amazon spec fields, then the brand's own pages and listings when one of their factors is below Good, then the source, competitor, and fact-check actions, by the share of answers each affects. Then come the weakest engine and the weakest Unbranded Discovery questions that trail the best by 10 points or more, and the cited sites whose share moved by 10% or more against the 30 days before, each counted over the last 30 days with at least 30 answers behind the figure. Wording the brand's pages to match shopper questions comes next. Watch lines come last: the weakest engine and questions when they trail the best by less than 10 points.";
 
+/** The A+ content row id (action-items-aplus-row.ts builds the row). */
+export const APLUS_ROW_ID = "estimate:aplus";
+
 export const FIX_ESTIMATE_LABEL = "analyst estimate";
 
 /**
  * The estimate line behind each fix-list row (E4, decision 112). One line per row, so no dollar is
- * counted twice: missing specs sit on the spec row, and the own-pages row carries A+ content (21c
- * lists A+ among the brand's own page factors). MAP leakage sits beside Phase 1, never in it. The
+ * counted twice: missing specs sit on the spec row, and A+ content sits on its own row (Brian,
+ * 18 Nov 2026), never on the own-pages row, which keeps its other factors. MAP leakage sits beside Phase 1, never in it. The
  * AI rows wait for the AI lines (chunk E5); line 6 waits for D-12.
  */
 export const FIX_ROW_LINES: Readonly<Record<string, EstimateLineId>> = {
@@ -28,7 +31,7 @@ export const FIX_ROW_LINES: Readonly<Record<string, EstimateLineId>> = {
   "finding:splintered_bundles": "splintered",
   "signal:out_of_stock": "out_of_stock",
   "signal:missing_specs": "missing_specs",
-  "own:pages": "aplus",
+  [APLUS_ROW_ID]: "aplus",
 };
 
 export type LineListingsEstimate = {

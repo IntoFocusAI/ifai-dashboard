@@ -10,7 +10,7 @@ import type { Page } from "@playwright/test";
 const CLIENTS = ["fender", "ledlenser"] as const;
 const ESTIMATE_MS = 90_000;
 const SHOTS = process.env.E4_SHOTS ?? "";
-const ROW_LINES = ["finding:buy_box", "finding:map_leakage", "finding:splintered_bundles", "signal:out_of_stock", "signal:missing_specs", "own:pages"];
+const ROW_LINES = ["finding:buy_box", "finding:map_leakage", "finding:splintered_bundles", "signal:out_of_stock", "signal:missing_specs", "estimate:aplus"];
 const MID = /^(\$[\d.,]+[KMB]?|Not available\*)$/;
 
 const TABS = [
@@ -97,6 +97,11 @@ for (const client of CLIENTS) {
         }
       }
       expect(Object.keys(figures).length, JSON.stringify(figures)).toBeGreaterThan(0);
+      // A+ content has its own row (line 7): its action reads "Add A+ content to {n} listing(s)." and the
+      // own-pages row carries no dollar, so line 7 is never counted twice.
+      const aplus = page.locator('[data-fix-row="estimate:aplus"]');
+      if ((await aplus.count()) > 0) await expect(aplus).toContainText(/Add A\+ content to \d+ listings?\./);
+      await expect(page.locator('[data-fix-row="own:pages"] [data-fix-estimate]')).toHaveCount(0);
       // The AI rows wait for the AI lines (E5): no dollar on them.
       await expect(page.locator('[data-fix-kind="source"] [data-fix-estimate]')).toHaveCount(0);
       const first = cells.locator("[data-estimate-trigger]").first();
