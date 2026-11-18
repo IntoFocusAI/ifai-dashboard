@@ -10,7 +10,7 @@ import type { Page } from "@playwright/test";
 const CLIENTS = ["fender", "ledlenser"] as const;
 const ESTIMATE_MS = 90_000;
 const SHOTS = process.env.E4_SHOTS ?? "";
-const ROW_LINES = ["finding:buy_box", "finding:map_leakage", "finding:splintered_bundles", "signal:out_of_stock", "signal:missing_specs", "estimate:aplus"];
+const ROW_LINES = ["finding:buy_box", "finding:buy_box:price", "finding:buy_box:other", "finding:map_leakage", "finding:splintered_bundles", "signal:out_of_stock", "signal:missing_specs", "estimate:aplus"];
 const MID = /^(\$[\d.,]+[KMB]?|Not available\*)$/;
 
 const TABS = [

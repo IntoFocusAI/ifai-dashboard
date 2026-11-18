@@ -1,7 +1,9 @@
 "use client";
 
-import { Fragment, useEffect, useState } from "react";
+import { Fragment } from "react";
+import { BuyBoxCauseCard } from "@/components/v3/live/BuyBoxCauseCard";
 import { DefinedTerm } from "@/components/v3/live/DefinedTerm";
+import { useWithheldListings } from "@/components/v3/live/useWithheldListings";
 import {
   RETAIL_FIT_TABLE,
   RetailShareDisc,
@@ -25,18 +27,12 @@ import {
   FeaturedOfferTableRow,
 } from "@/components/v3/live/FeaturedOfferRow";
 import { BenchmarkCoverageText } from "@/components/v3/live/FeaturedOfferReadings";
-import {
-  featuredOfferColumnProbe,
-  featuredOfferReadingCountQuery,
-  suppressedListingsQuery,
-} from "@/lib/canvasData";
+import { lowerPricesElsewhere, type WithheldCauseRow } from "@/lib/fender-canvas/buy-box-cause";
 import {
   aboveBenchmarkDollars,
   benchmarkDollars,
   listingLabel,
   observedOfferDollars,
-  withheldListings,
-  type FeaturedOfferRow,
 } from "@/lib/fender-canvas/featured-offer";
 import { PartialFigureMark } from "@/components/v3/live/FigureTip";
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
@@ -49,7 +45,6 @@ import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-disp
 import { buyBoxHero, heroFigureColor, heroFigureTone } from "@/lib/fender-canvas/retail-overview-lead";
 import type { CanvasFreshnessRow } from "@/lib/fender-canvas/types";
 
-const PAGE_SIZE = 1000;
 
 const TABLE_COLUMNS = [...SUPPRESSED_LISTINGS_TABLE_COLUMNS, SET_ASIDE_SORT_COLUMN];
 
@@ -82,35 +77,13 @@ const TABLE_BLOCK_STYLE = {
 const OBSERVED_OFFER_NOTE =
   "The observed offer and the Competitive External Price come from the same Amazon listing read, so the gap compares one moment. A blank gap means this reading has no comparable pair yet.";
 
-function suppressedSortValue(row: FeaturedOfferRow, columnId: string): SortInput {
+function suppressedSortValue(row: WithheldCauseRow, columnId: string): SortInput {
   if (columnId === "listing") return listingLabel(row).trim() || null;
   if (columnId === "offer") return observedOfferDollars(row);
   if (columnId === "benchmark") return benchmarkDollars(row);
   if (columnId === "gap") return aboveBenchmarkDollars(row);
+  if (columnId === "lower") return lowerPricesElsewhere(row)[0]?.price ?? null;
   return row.featured_offer_checked_at ?? null;
-}
-
-async function loadWithheldListings(): Promise<
-  { available: false } | { available: true; rows: FeaturedOfferRow[] }
-> {
-  const probe = await featuredOfferColumnProbe();
-  if (probe.error || !probe.present) return { available: false };
-
-  const reading = await featuredOfferReadingCountQuery();
-  if (reading.error || !reading.count) return { available: false };
-
-  const rows: FeaturedOfferRow[] = [];
-  for (let page = 0; page < 20; page += 1) {
-    const { data, error, count } = await suppressedListingsQuery(page, PAGE_SIZE);
-    if (error) return { available: false };
-    rows.push(...((data ?? []) as FeaturedOfferRow[]));
-    const loaded = rows.length;
-    const total = count ?? loaded;
-    if (loaded >= total || (data ?? []).length < PAGE_SIZE) {
-      return { available: true, rows: withheldListings(rows) };
-    }
-  }
-  return { available: false };
 }
 
 /** Reading passages for the notes callout body (one paragraph, space-separated). */
@@ -248,25 +221,7 @@ export function SuppressedListingsPanel({
   read: RetailCanvasRead;
   freshness?: CanvasFreshnessRow[] | null;
 }) {
-  const [state, setState] = useState<"loading" | "unavailable" | { rows: FeaturedOfferRow[] }>(
-    "loading",
-  );
-
-  useEffect(() => {
-    let cancelled = false;
-    loadWithheldListings()
-      .then((next) => {
-        if (cancelled) return;
-        setState(next.available ? { rows: next.rows } : "unavailable");
-      })
-      .catch(() => {
-        if (!cancelled) setState("unavailable");
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
+  const state = useWithheldListings();
   const rows = typeof state === "object" ? state.rows : null;
   const setAsides = useCheckSetAsides(SET_ASIDE_CHECKS.buyboxSuppression, "Suppressed Listings");
   const sorted = useClientTableSort(rows ?? [], TABLE_COLUMNS, (row, columnId) =>
@@ -279,6 +234,7 @@ export function SuppressedListingsPanel({
     <div className="suppressed-listings retail-surface">
       <div data-suppressed-listings-top="" style={TOP_ROW_STYLE}>
         <SuppressedListingsLead read={read} />
+        {rows ? <BuyBoxCauseCard rows={rows} /> : null}
         <SuppressedListingsNotes read={read} freshness={freshness} />
       </div>
       <div data-suppressed-listings-table="" style={TABLE_BLOCK_STYLE}>

@@ -49,8 +49,15 @@ export type LineListingsEstimate = {
   inPhase1: boolean;
 };
 
-/** A line's figure added from the shared per-listing parts (live-inputs byListing), with its trail. */
-export function lineFromListings(est: ClientEstimates, lineId: EstimateLineId): LineListingsEstimate | null {
+/**
+ * A line's figure added from the shared per-listing parts (live-inputs byListing), with its trail.
+ * `keep` narrows it to some of the line's listings (a cause row); the trail is then the caller's.
+ */
+export function lineFromListings(
+  est: ClientEstimates,
+  lineId: EstimateLineId,
+  keep?: (asin: string) => boolean,
+): LineListingsEstimate | null {
   const line = est.lines.find((entry) => entry.lineId === lineId);
   if (!line) return null;
   let range: EstimateRange | null = null;
@@ -58,6 +65,7 @@ export function lineFromListings(est: ClientEstimates, lineId: EstimateLineId): 
   let priced = 0;
   for (const entry of est.byListing.values()) {
     if (!(lineId in entry.lines)) continue;
+    if (keep && !keep(entry.asin)) continue;
     listings += 1;
     const part = entry.lines[lineId];
     if (part) {

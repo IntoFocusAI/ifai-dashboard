@@ -9,7 +9,7 @@ import {
   type CanvasReadResult,
 } from "@/lib/fender-canvas/canvas-reads";
 import { loadActuationBasis } from "@/lib/fender-canvas/actuation-basis-read";
-import { FEATURED_OFFER_COLUMNS } from "@/lib/fender-canvas/featured-offer";
+import { WITHHELD_CAUSE_COLUMNS } from "@/lib/fender-canvas/buy-box-cause";
 import { loadListingContent, type ListingContentClient } from "@/lib/fender-canvas/listing-content";
 import { loadSpecPages, type SpecPageClient } from "@/lib/fender-canvas/machine-readability";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
@@ -119,13 +119,14 @@ export async function featuredOfferColumnProbe(): Promise<{
 /**
  * Every listing whose current Featured Offer state is withheld. Confirmed high-price
  * suppression is the subset the reading can compare against Amazon's outside price,
- * and the table marks it. A withheld listing with no benchmark still belongs here.
+ * and the table marks it. A withheld listing with no benchmark still belongs here. The stored cause
+ * and the stored outside prices ride along for the cause split (buy-box-cause.ts).
  */
 export function suppressedListingsQuery(page = 0, size = 1000) {
   const supabase = getCanvasSupabase();
   return supabase
     .from("canvas_retail_listings")
-    .select(FEATURED_OFFER_COLUMNS, { count: "exact" })
+    .select(WITHHELD_CAUSE_COLUMNS, { count: "exact" })
     .eq("featured_offer_state", "withheld")
     .order("asin")
     .range(page * size, page * size + size - 1);

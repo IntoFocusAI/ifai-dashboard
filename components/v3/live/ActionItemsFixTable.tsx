@@ -7,8 +7,9 @@ import { PlanAction, PlanEvidence, PlanFigure, PlanStatus } from "@/components/v
 import { FixRowEstimate } from "@/components/v3/live/estimates/EstimateLineFigure";
 import { useClientEstimates } from "@/components/v3/live/estimates/useClientEstimates";
 import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
+import { useBuyBoxCauseSplit } from "@/components/v3/live/useWithheldListings";
 import { planWithAplus } from "@/lib/fender-canvas/action-items-aplus-row";
-import { fixRowEstimate } from "@/lib/fender-canvas/action-items-fix-list";
+import { fixRowFigure, planWithBuyBoxCauses } from "@/lib/fender-canvas/action-items-buybox-rows";
 import { phaseWindow } from "@/lib/fender-canvas/roadmap-dates";
 import { PLAN_PHASES, phaseLabel, type PlanItem } from "@/lib/fender-canvas/roadmap-plan";
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
@@ -43,17 +44,19 @@ const rowKey = (item: PlanItem) => item.id;
 export function ActionItemsFixTable({ plan: basePlan, today }: { plan: readonly PlanItem[]; today: Date }) {
   // The shared per-listing estimates (one read per page load); each row adds its line's listings.
   const estimates = useClientEstimates();
+  // Buy Box withheld splits by its stored cause once the withheld listings are read.
+  const split = useBuyBoxCauseSplit();
   // A+ content gets its own row once the estimates show weak or missing A+ (line 7).
   const plan = useMemo(
-    () => planWithAplus(basePlan, estimates.phase === "ready" ? estimates.estimates : null),
-    [basePlan, estimates],
+    () => planWithBuyBoxCauses(planWithAplus(basePlan, estimates.phase === "ready" ? estimates.estimates : null), split),
+    [basePlan, estimates, split],
   );
   const sortValue = useCallback((item: PlanItem, columnId: string): SortInput => {
     if (columnId === "rank") return item.rank;
     if (columnId === "action") return `${item.kind === "finding" ? "" : `${item.fact} `}${item.action}`;
     if (columnId === "finding") return shareOf(item);
     if (columnId === "estimate") {
-      const figure = estimates.phase === "ready" ? fixRowEstimate(item.id, estimates.estimates) : null;
+      const figure = estimates.phase === "ready" ? fixRowFigure(item.id, estimates.estimates, split) : null;
       return figure?.range ? figure.range.mid : null;
     }
     if (columnId === "status") return item.statusLabel;
@@ -63,7 +66,7 @@ export function ActionItemsFixTable({ plan: basePlan, today }: { plan: readonly 
     }
     if (columnId === "evidence") return item.open.tab;
     return null;
-  }, [estimates]);
+  }, [estimates, split]);
   const sorted = useClientTableSort(plan, COLUMNS, sortValue, rowKey);
   // The date pill and engine switch, so the download reads the window the screen reads.
   const exportScope = useAiExportScope() ?? undefined;
@@ -94,7 +97,7 @@ export function ActionItemsFixTable({ plan: basePlan, today }: { plan: readonly 
               <PlanFigure item={item} />
             </td>
             <td data-fix-estimate-cell="">
-              <FixRowEstimate itemId={item.id} read={estimates} />
+              <FixRowEstimate itemId={item.id} read={estimates} split={split} />
             </td>
             <td>
               <PlanStatus item={item} />

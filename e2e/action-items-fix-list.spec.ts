@@ -8,8 +8,10 @@ const STATUS_RANK: Record<string, number> = { Critical: 0, "At risk": 1, "On tra
 async function openUrgentInterventions(page: Page, baseURL: string | undefined) {
   pageErrors = await openSpokeTab(page, baseURL, "suggestions", "urgent-interventions");
   const findings = page.locator('.drilldown-panel [data-fix-list] [data-fix-kind="finding"]');
-  await expect(findings).toHaveCount(5);
   await expect(findings.first().locator("[data-fix-ratio]")).toBeVisible({ timeout: LIVE_READ_TIMEOUT });
+  // Five findings; Buy Box withheld becomes two rows by cause once the withheld listings are read.
+  await expect(page.locator('[data-fix-row="finding:buy_box:price"]')).toHaveCount(1, { timeout: LIVE_READ_TIMEOUT });
+  await expect(findings).toHaveCount(6);
   return findings;
 }
 
@@ -38,7 +40,7 @@ test.describe("Action Items opens on the prioritized fix list", () => {
     await expect(rows.first()).toBeInViewport();
     expect(listTop).toBeLessThan(page.viewportSize()!.height / 2);
 
-    await expect(rows.locator("[data-fix-rank]")).toHaveText(["1", "2", "3", "4", "5"]);
+    await expect(rows.locator("[data-fix-rank]")).toHaveText(["1", "2", "3", "4", "5", "6"]);
     const statuses = await rows.locator("[data-fix-status-label]").evaluateAll((nodes) =>
       nodes.map((node) => node.getAttribute("data-fix-status-word") ?? ""),
     );

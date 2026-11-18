@@ -9,12 +9,13 @@ import { coverageShortText, NOT_AVAILABLE_LISTINGS_TIP, resultHeroText } from "@
 import { useClientEstimates, type ClientEstimatesRead } from "@/components/v3/live/estimates/useClientEstimates";
 import { estimateListingLines } from "@/lib/estimates/rollup";
 import type { EstimateLineId, EstimateRange, EstimateResult } from "@/lib/estimates/types";
+import { fixRowFigure } from "@/lib/fender-canvas/action-items-buybox-rows";
 import {
   FIX_ESTIMATE_LABEL,
-  fixRowEstimate,
   lineFromListings,
   type LineListingsEstimate,
 } from "@/lib/fender-canvas/action-items-fix-list";
+import type { BuyBoxCauseSplit } from "@/lib/fender-canvas/buy-box-cause";
 import { BRIEFING_LOADING } from "@/lib/fender-canvas/briefing-retail-lead";
 import { PARTIAL_MARK, READ_NOT_AVAILABLE } from "@/lib/fender-canvas/canvas-reads";
 import { formatMoneyShort } from "@/lib/fender-canvas/format";
@@ -85,8 +86,17 @@ function Placeholder({ read, figure }: { read: ClientEstimatesRead; figure: Line
  * Action Items fix list: the row's dollar, added from the shared per-listing estimates, labeled
  * analyst estimate and opening the row's trail. Empty for a row no estimate line covers yet.
  */
-export function FixRowEstimate({ itemId, read }: { itemId: string; read: ClientEstimatesRead }) {
-  const figure = read.phase === "ready" ? fixRowEstimate(itemId, read.estimates) : null;
+export function FixRowEstimate({
+  itemId,
+  read,
+  split = null,
+}: {
+  itemId: string;
+  read: ClientEstimatesRead;
+  /** The Buy Box cause split, for the two cause rows. */
+  split?: BuyBoxCauseSplit | null;
+}) {
+  const figure = read.phase === "ready" ? fixRowFigure(itemId, read.estimates, split) : null;
   if (read.phase === "ready" && !figure) return null;
   return (
     <span
