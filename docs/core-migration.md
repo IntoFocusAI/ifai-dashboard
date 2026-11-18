@@ -17,7 +17,7 @@ Plan documents (shared Drive, 17 Nov 2026): `rm-multi-tenant-migration-plan.md`,
 
 - [x] Snapshot every live `canvas_*`, `canvas_private.*` and `ledlenser_private.*` view into `supabase/view-snapshots/` with `scripts/snapshot-canvas-views.sh` (87 views on 18 Nov 2026). This becomes the contract the `core`-backed read layer must match. If the CLI has no project access, run the query in the script in the Supabase SQL Editor, copy the JSON result, and pass that file to `scripts/snapshot-canvas-views.py`.
 - [ ] Contract tests: same fixtures, same column names, types and meaning for each view.
-- [ ] List every job that writes to the database (workflows, workers, edge functions, Toolbelt wrenches), including the MAP writer role `cursor_map_writer`.
+- [x] List every job that writes to the database: [core-migration-writers.md](core-migration-writers.md) (18 Nov 2026). Confirm the per-wrench target tables from wrench source before Phase 4.
 - [ ] Write the `core` DDL, RLS and partitions as migration files. They only add objects.
 - [ ] Finish the cut-off §9 (crosswalk keys) of the mapping document.
 
