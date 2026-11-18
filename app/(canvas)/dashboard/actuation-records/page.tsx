@@ -5,6 +5,7 @@ import { StaffOnlyNotice } from "@/components/staff/StaffOnlyNotice";
 import { CLIENT_PARAM, isClientKey } from "@/lib/client/active-client";
 import { getCommandSession } from "@/lib/command/session";
 import { loadActuationRecords } from "@/lib/fender-canvas/actuation-read";
+import { loadActuationTargets } from "@/lib/fender-canvas/actuation-targets-read";
 import { isoDay } from "@/lib/fender-canvas/actuation-score";
 
 export const dynamic = "force-dynamic";
@@ -44,6 +45,6 @@ export default async function ActuationRecordsPage({ searchParams }: { searchPar
     return <StaffOnlyNotice client={client} light={light} title="Actuation records" />;
   }
 
-  const read = await loadActuationRecords(client);
-  return <ActuationRecordsView client={client} read={read} light={light} today={isoDay(new Date())} />;
+  const [read, targets] = await Promise.all([loadActuationRecords(client), loadActuationTargets(client)]);
+  return <ActuationRecordsView client={client} read={read} targets={targets} light={light} today={isoDay(new Date())} />;
 }

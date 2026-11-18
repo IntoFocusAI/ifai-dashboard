@@ -73,7 +73,6 @@ test("X-34: Catalog Health leads use the status mark and the chart tokens, not t
     "components/v3/live/SuppressedListingsPanel.tsx",
     "components/v3/live/MapChannelPanel.tsx",
     "components/v3/live/CatalogGovernancePanel.tsx",
-    "components/v3/live/StockLossHero.tsx",
   ]) {
     const source = read(file);
     assert.match(source, /RetailShareDisc/, file);
@@ -220,8 +219,7 @@ test("let the data speak: what a figure is not lives in a tooltip on Catalog Hea
   assert.match(copy, /BENCHMARK_UNPUBLISHED_TIP/);
   assert.match(copy, /NO_COMPARABLE_PAIR_TIP/);
   assert.match(copy, /COVERAGE_EXCEPTIONS_TIP/);
-  const hero = read("components/v3/live/StockLossHero.tsx");
-  assert.match(hero, /It is an analyst estimate, not reported sales\./);
+  assert.match(read("components/v3/live/StockLossPanel.tsx"), /figureTipAttrs\("analyst estimate", stockOutSellerTip\(\)/);
 });
 
 test("X-18: the tab reads MAP Leakage and the figure reads Splintered Listings", () => {
@@ -250,7 +248,6 @@ test("every Catalog Health TSX file stays at or under 400 lines", () => {
     "RetailOverviewLead",
     "SetAsideTable",
     "StockLossDetail",
-    "StockLossHero",
     "StockLossPanel",
     "SuppressedListingsPanel",
   ]) {
@@ -288,11 +285,10 @@ test("at 1280 wide every Catalog Health table is fitted, and listing names clamp
   assert.doesNotMatch(read("components/v3/live/MapListingsTable.tsx"), /listing-title-scroll/);
 });
 
-test("Out of Stock leads with a partial total labeled analyst estimate (X-25)", () => {
-  const hero = read("components/v3/live/StockLossHero.tsx");
-  assert.match(hero, /PartialFigureMark partial=\{partial\}/);
-  assert.match(hero, /const ANALYST_ESTIMATE = "analyst estimate"/);
-  assert.doesNotMatch(hero, />\s*Estimate\s*</);
+test("Out of Stock leads with the brand-level yearly line only, labeled analyst estimate (X-25, PM29 item 1)", () => {
+  const panel = read("components/v3/live/StockLossPanel.tsx");
+  assert.match(panel, /<EstimateLineCard lineId=\{STOCK_LOSS_ESTIMATE_LINE\} \/>/);
+  assert.doesNotMatch(panel, /StockLossHero/);
   const tag = read("components/v3/live/SourceTag.tsx");
   assert.match(tag, /Estimate: "analyst estimate"/);
   assert.match(tag, /data-source=\{source\}/);

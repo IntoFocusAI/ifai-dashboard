@@ -112,7 +112,8 @@ for (const client of ["fender", "ledlenser"]) {
         // Table rows keep "mid, range low to high".
         await expect(page.locator("[data-estimate-row='phase_1'] [data-estimate-trigger]")).toContainText(/\$[\d.,]+[KM]?\*?, range \$/);
         await expect(phase).toContainText("analyst estimate");
-        await expect(page.locator("[data-estimate-card='enterprise'] [data-estimate-trigger='enterprise_potential']")).toContainText(/\$[\d.,]+M/);
+        // Enterprise Potential waits for its AI part, so for the date-pill window's AI read (Worker 29.19).
+        await expect(page.locator("[data-estimate-card='enterprise'] [data-estimate-trigger='enterprise_potential']")).toContainText(/\$[\d.,]+M/, { timeout: AI_READ_MS });
         await expect(page.locator("[data-estimate-card='map_leakage'] [data-estimate-trigger='map_leakage']")).toContainText("analyst estimate");
         const rows = page.locator("[data-estimate-method] tbody tr");
         await expect(rows.first()).toContainText("Out of stock");
@@ -140,6 +141,39 @@ for (const client of ["fender", "ledlenser"]) {
         await expect(page.getByRole("dialog")).toContainText(/placeholder/i);
       });
     }
+
+    // Worker 29.19 (chunk E5 light v1): lines 8 and 9 sit in the table, open their trails at Low
+    // confidence, and Enterprise Potential carries their AI part, never Phase 1.
+    test("opportunity: AI Search rows open their trails and join Enterprise, not Phase 1", async ({ page }) => {
+      test.slow();
+      await openAs(page, client, "spoke=hub&tab=opportunity");
+      for (const [lineId, title] of [
+        ["ai_unbranded", "AI Search: Unbranded Discovery gap"],
+        ["ai_branded", "AI Search: Branded Consideration"],
+      ] as const) {
+        const row = page.locator(`[data-estimate-row='${lineId}']`);
+        await expect(row).toContainText(title);
+        const trigger = row.locator(`[data-estimate-trigger='${lineId}']`);
+        await expect(trigger).toContainText(/^\$[\d.,]+[KM]?(, range \$[\d.,]+[KM]? to \$[\d.,]+[KM]?)?\*?analyst estimate$/, { timeout: AI_READ_MS });
+        await trigger.click();
+        const trail = page.getByRole("dialog");
+        await expect(trail).toContainText(title);
+        await expect(trail.locator("[data-estimate-grade='low']")).toBeVisible();
+        await expect(trail.locator("[data-estimate-input='target']")).toBeVisible();
+        await expect(trail.locator("[data-estimate-formula]")).toContainText("relative gap to");
+        if (SHOTS) await page.screenshot({ path: `${SHOTS}/${client}-trail-${lineId}.png` });
+        await page.keyboard.press("Escape");
+      }
+      await expect(page.locator("[data-estimate-row='phase_1'] [data-estimate-trigger]")).toBeVisible({ timeout: ESTIMATE_MS });
+      await page.locator("[data-estimate-card='enterprise'] [data-estimate-trigger]").click();
+      const enterprise = page.getByRole("dialog");
+      await expect(enterprise.locator("[data-estimate-input='ai_part']")).toBeVisible();
+      await expect(enterprise).not.toContainText("joins when the AI Search estimates are built");
+      if (SHOTS) await page.screenshot({ path: `${SHOTS}/${client}-trail-enterprise.png` });
+      await page.keyboard.press("Escape");
+      await page.locator("[data-estimate-card='phase_one'] [data-estimate-trigger]").click();
+      await expect(page.getByRole("dialog")).not.toContainText("AI Search");
+    });
 
     test("Action Items bubble shows the Phase 1 formula, not a hand-entered figure", async ({ page }) => {
       test.slow();

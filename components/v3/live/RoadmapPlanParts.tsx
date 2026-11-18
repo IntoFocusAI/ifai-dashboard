@@ -8,6 +8,7 @@ import { ExternalLink } from "@/components/v3/live/ai-search/ExternalLink";
 import { formatEvidence, setEvidenceFocus, type EvidenceFocus } from "@/lib/ai-search/evidence-focus";
 import { dataStatusColor, dataStatusFromNode } from "@/lib/canvas-sdk/data-status";
 import { BRIEFING_LOADING } from "@/lib/fender-canvas/briefing-retail-lead";
+import { targetAnswers } from "@/lib/fender-canvas/roadmap-actuation";
 import type { PlanItem } from "@/lib/fender-canvas/roadmap-plan";
 
 /** Cited pages listed under a source action (21e). */
@@ -58,7 +59,7 @@ export function PlanStatus({ item }: { item: PlanItem }) {
 export function PlanAction({ item }: { item: PlanItem }) {
   return (
     <>
-      {item.kind !== "finding" ? (
+      {item.kind !== "finding" && item.fact ? (
         <p className="plan-fact" data-plan-fact="">
           {item.fact}
         </p>
@@ -66,7 +67,42 @@ export function PlanAction({ item }: { item: PlanItem }) {
       <p className="plan-action" data-fix-action="">
         <DefinedCopy text={item.action} />
       </p>
+      <PlanTargets item={item} />
     </>
+  );
+}
+
+/** An Actuation item's suggested target sites; each opens Citation Ecosystem on that site's rows. */
+function PlanTargets({ item }: { item: PlanItem }) {
+  if (!item.targets?.sites.length) return null;
+  return (
+    <div className="plan-targets" data-plan-targets={item.id}>
+      <span className="plan-cell-sub">{item.targets.label}:</span>
+      <ul>
+        {item.targets.sites.map((site) => {
+          const focus: EvidenceFocus = { field: "domain", value: site.domain };
+          return (
+            <li key={site.domain}>
+              <button
+                type="button"
+                className="plan-target"
+                data-plan-target={site.domain}
+                data-ifai-open="aeo"
+                data-ifai-tab="Citation Ecosystem"
+                data-ifai-evidence={formatEvidence(focus)}
+                onClickCapture={() => setEvidenceFocus(focus)}
+              >
+                {site.domain}
+              </button>
+              <span className="plan-cell-sub">
+                {" "}
+                {targetAnswers(site)}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
   );
 }
 

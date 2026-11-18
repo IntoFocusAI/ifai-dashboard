@@ -37,6 +37,7 @@ import {
 } from "@/lib/ai-search/category-standing";
 import { READ_NOT_AVAILABLE } from "@/lib/fender-canvas/canvas-reads";
 import { brandName, leadBrand } from "@/lib/brand-copy";
+import { formatInt } from "@/lib/fender-canvas/format";
 
 /** Engines with resolved unbranded answers, weakest Fender-lead share first (same order as Engine Comparison). */
 function unbrandedEnginesWeakestFirst(engines: readonly RoleGroupTally[]): RoleGroupTally[] {
@@ -220,8 +221,8 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
       status: brandedHero.status,
       title: "Run Details",
       stats: [
-        `Unbranded ${s.roles.unbranded.fenderWins} of ${s.roles.unbranded.resolved}`,
-        `Branded ${s.roles.branded.fenderWins} of ${s.roles.branded.resolved}`,
+        `Unbranded ${formatInt(s.roles.unbranded.fenderWins)} of ${formatInt(s.roles.unbranded.resolved)}`,
+        `Branded ${formatInt(s.roles.branded.fenderWins)} of ${formatInt(s.roles.branded.resolved)}`,
       ],
       heroValue: brandedHero.heroValue,
       meta: `Completed ${s.completedAt}`,
@@ -232,7 +233,7 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
       status: citationsHero.status,
       title: "Citations",
       stats: [
-        `${citations.answersWithCitation} of ${citations.answered} answers cited sources`,
+        `${formatInt(citations.answersWithCitation)} of ${formatInt(citations.answered)} answers cited sources`,
         `${brandName()}-owned ${pct(citations.fenderOwnedRows, citations.rows)} of links`,
       ],
       heroValue: citationsHero.heroValue,
@@ -286,7 +287,7 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
       title: "Competitor Wins",
       stats:
         s.roles.unbranded.resolved > 0
-          ? [`${s.competitorWins} of ${s.roles.unbranded.resolved} resolved`]
+          ? [`${formatInt(s.competitorWins)} of ${formatInt(s.roles.unbranded.resolved)} resolved`]
           : ["No resolved answers"],
       heroValue:
         s.roles.unbranded.resolved > 0
@@ -309,7 +310,7 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
         return {
           status: engineHero.status,
           title: "Engine Comparison",
-          stats: [`${tally.fenderWins} of ${tally.resolved} ${brandName()} leads`],
+          stats: [`${formatInt(tally.fenderWins)} of ${formatInt(tally.resolved)} ${brandName()} leads`],
           heroValue: engineHero.heroValue,
           meta: `Weakest ${brandName()} lead first`,
           subTab: RADAR_TABS.engines,
@@ -328,7 +329,7 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
         title: "Engine Comparison",
         stats:
           s.roles.unbranded.resolved > 0
-            ? [`${s.roles.unbranded.fenderWins} of ${s.roles.unbranded.resolved} resolved`]
+            ? [`${formatInt(s.roles.unbranded.fenderWins)} of ${formatInt(s.roles.unbranded.resolved)} resolved`]
             : ["No resolved answers"],
         heroValue:
           s.roles.unbranded.resolved > 0
@@ -480,7 +481,7 @@ export function aiPriorityItems(read: AiSearchRead): PriorityItem[] {
     items.push({
       id: "ai-competitor-gap",
       title: battleSentence(gap),
-      why: `In the published run, ${engines} named ${joinBrands(gap.leaders.map((l) => l.brand))} more often than ${leadBrand()} in ${gap.competitorWins} of ${gap.resolved} resolved Unbranded Discovery ${gap.category} answers.${domains.length ? ` Those answers cited ${domains.join(", ")}.` : ""} Start with those pages: check how they describe ${brandName()}'s ${gap.category} line against the brand they favor.`,
+      why: `In the published run, ${engines} named ${joinBrands(gap.leaders.map((l) => l.brand))} more often than ${leadBrand()} in ${formatInt(gap.competitorWins)} of ${formatInt(gap.resolved)} resolved Unbranded Discovery ${gap.category} answers.${domains.length ? ` Those answers cited ${domains.join(", ")}.` : ""} Start with those pages: check how they describe ${brandName()}'s ${gap.category} line against the brand they favor.`,
       impact: `The Competitor Wins tab lists each of the ${gap.competitorWins} answers with its engine, model, and cited pages.`,
       severity: "high",
       spokeId: "competitors",
@@ -628,7 +629,7 @@ export function aiTourLines(read: AiSearchRead): AiTourLines {
     ],
     competitors: [
       s.topCompetitor
-        ? `${s.topCompetitor.brand} named most in ${s.topCompetitor.wins} of ${s.topCompetitor.resolved} resolved Unbranded Discovery answers`
+        ? `${s.topCompetitor.brand} named most in ${formatInt(s.topCompetitor.wins)} of ${formatInt(s.topCompetitor.resolved)} resolved Unbranded Discovery answers`
         : "No competitor named most in a resolved Unbranded Discovery answer",
       s.largestGap ? battleSentence(s.largestGap) : "No category gap in this run",
       "Unbranded Discovery answers only",
