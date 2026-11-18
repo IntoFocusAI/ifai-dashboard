@@ -71,13 +71,28 @@ function Card({ id, label, tip, read, result }: { id: string; label: string; tip
   );
 }
 
-function Row({ read, result, title, tip, total }: { read: ClientEstimatesRead | undefined; result: EstimateResult | null; title: string; tip?: string; total?: boolean }) {
+function Row({
+  read,
+  result,
+  title,
+  tip,
+  total,
+  rowId,
+}: {
+  read: ClientEstimatesRead | undefined;
+  result: EstimateResult | null;
+  title: string;
+  tip?: string;
+  total?: boolean;
+  /** The row's id while its result is not there yet (the AI rows while the AI read loads). */
+  rowId?: string;
+}) {
   const ready = read?.phase === "ready" && result ? result : null;
   // N of M also for a line with listings and no sales figure ("0 of 1"); blank for a held line with none.
   const coverage = ready && (ready.status === "estimated" || ready.trail.coverage.total > 0) ? ready.trail.coverage : null;
   const split = ready ? figureSplit(ready) : null;
   return (
-    <tr data-estimate-row={result?.lineId ?? title}>
+    <tr data-estimate-row={result?.lineId ?? rowId ?? title}>
       <td style={total ? { fontWeight: 600, color: "var(--text-main)" } : undefined}>
         <span {...figureTipAttrs(title, tip)}>{title}</span>
       </td>
@@ -110,7 +125,7 @@ function AiRow({ read, result, title, lineId }: { read: ClientEstimatesRead | un
       </tr>
     );
   }
-  return <Row read={read} result={result} title={title} />;
+  return <Row read={read} result={result} title={title} rowId={lineId} />;
 }
 
 /**

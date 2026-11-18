@@ -68,6 +68,7 @@ test("line 9: Fender at target reads $0 and says so; Ledlenser reproduces $567",
   const f = estimateAiLines(FENDER_AI, measured("fender").catalog).branded;
   assert.equal(f.status, "estimated");
   assert.deepEqual(f.range, { low: 0, mid: 0, high: 0 });
+  assert.equal(f.asterisk, false);
   assert.ok(f.trail.notes.some((n) => /^At target: 92\.3% against 90%/.test(n)));
   const l = estimateAiLines(LEDLENSER_AI, measured("ledlenser").catalog).branded;
   near(l.range?.mid, 567, 1, "Ledlenser line 9 mid");

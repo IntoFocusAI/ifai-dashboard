@@ -151,7 +151,8 @@ export function estimateAiLine(kind: LineKind, inputs: AiGapInputs, catalog: Cat
       status: range ? "estimated" : "not_available",
       range,
       label: "analyst estimate",
-      asterisk: Boolean(range) && catalog.after.partial,
+      // A line at target is $0 whatever the coverage, so it carries no asterisk.
+      asterisk: Boolean(range) && !atTarget && catalog.after.partial,
       countsInTotal: false,
       trail: {
         lineId: copy.lineId,
