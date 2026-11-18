@@ -7,10 +7,8 @@ import type { AiCallRow, AiSearchSnapshot } from "../lib/ai-search/types.ts";
 import { formatPct, formatRatio } from "../lib/fender-canvas/format.ts";
 import {
   BRIEFING_COUNT_MISSING,
-  BRIEFING_LOST_REVENUE_FIGURE,
   BRIEFING_LOST_REVENUE_LABEL,
   briefingFindingsLead,
-  briefingLostRevenuePlaceholder,
 } from "../lib/fender-canvas/briefing-retail-lead.ts";
 import {
   mapLeakageFinding,
@@ -290,14 +288,8 @@ test("five findings reuse Retail Overview / Findability / Run Details population
   }
 });
 
-test("lost-revenue placeholder is Not available* and is not a sixth finding", () => {
-  const placeholder = briefingLostRevenuePlaceholder();
-  assert.equal(placeholder.label, BRIEFING_LOST_REVENUE_LABEL);
-  assert.equal(placeholder.figure, BRIEFING_LOST_REVENUE_FIGURE);
-  assert.equal(placeholder.figure, BRIEFING_COUNT_MISSING);
-  assert.doesNotMatch(placeholder.figure, /\$|USD|\d{2,}/);
-  assert.doesNotMatch(placeholder.explainer, /fee|retainer|IntoFocus/i);
-
+test("monthly lost-revenue card is Phase 1 divided by 12 and is not a sixth finding", () => {
+  assert.equal(BRIEFING_LOST_REVENUE_LABEL, "Monthly potential lost brand revenue");
   const types = read("lib/fender-canvas/types.ts");
   const retail = read("lib/fender-canvas/portfolio-retail.ts");
   assert.doesNotMatch(types, /monthly.?potential.?lost|lost.?brand.?revenue/i);
@@ -311,7 +303,6 @@ test("lost-revenue placeholder is Not available* and is not a sixth finding", ()
     { phase: "loading" },
   );
   assert.equal(lead.findings.length, 5);
-  assert.equal(lead.lostRevenue.figure, BRIEFING_COUNT_MISSING);
   assert.ok(!lead.findings.some((f) => /revenue|\$/i.test(f.label)));
 });
 
@@ -345,7 +336,7 @@ test("hub Briefing puts consensus in the findings row, then the essay", () => {
     "findings row, then the lead section",
   );
   assert.doesNotMatch(spokes, /BriefingConsensusLead|briefing-consensus-lead/);
-  assert.match(hero, /<BriefingConsensusLead[\s\S]*<BriefingFindingCard[\s\S]*<LostRevenuePlaceholder/);
+  assert.match(hero, /<BriefingConsensusLead[\s\S]*<BriefingFindingCard[\s\S]*<MonthlyLostRevenue/);
   assert.doesNotMatch(hero, /briefing-buy-box-cluster|briefing-consensus-lead/);
   assert.match(consensusLead, /consensusFromLive\(/);
   assert.match(consensusLead, /briefingConsensusSentence\(/);
@@ -372,7 +363,6 @@ test("hub Briefing puts consensus in the findings row, then the essay", () => {
   assert.match(card, /className="metric-card-label ifai-term"/);
   assert.match(card, /data-ifai-tooltip-title=\{finding\.label\}/);
   assert.match(card, /aria-label=\{`\$\{finding\.label\}: \$\{finding\.explainer\}`\}/);
-  assert.match(hero, /data-ifai-tooltip-desc=\{placeholder\.explainer\}/);
   assert.doesNotMatch(hero, /metric-card-sub|data-briefing-revenue-explainer/);
   assert.doesNotMatch(read("components/v3/live/RoadmapFindingsPanel.tsx"), /BriefingConsensusLead|AI Consensus/);
   assert.match(hero, /briefingFindingsLead/);

@@ -47,7 +47,7 @@ function Controls({ bundle }: { bundle: CanvasBundle }) {
     <ul style={{ margin: "4px 0 0 16px", padding: 0 }} data-briefing-lead-controls="">
       {lines.map((line) => (
         <li key={line.lineId}>
-          <strong>{line.trail.title}:</strong> {formatInt(line.trail.coverage.total)} listings
+          <strong>{line.trail.title}:</strong> {formatInt(line.trail.coverage.total)} {line.trail.coverage.total === 1 ? "listing" : "listings"}
         </li>
       ))}
     </ul>

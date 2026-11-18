@@ -5,36 +5,31 @@ import { BriefingFindingCard } from "@/components/v3/live/BriefingFindingCard";
 import { DeckLauncher } from "@/components/v3/live/deck/DeckLauncher";
 import { useFindability } from "@/components/v3/live/findability/FindabilityContext";
 import { useSummaryAiRead, useSummaryAiStale } from "@/components/v3/live/useSummaryAiRead";
-import {
-  briefingFindingsLead,
-  type BriefingLostRevenuePlaceholder,
-} from "@/lib/fender-canvas/briefing-retail-lead";
+import { EstimateFigure } from "@/components/v3/live/estimates/OpportunityEstimates";
+import { estimateMonthlyPotential } from "@/lib/estimates/monthly";
+import type { ClientEstimatesRead } from "@/lib/estimates/live-inputs";
+import { BRIEFING_LOST_REVENUE_LABEL, briefingFindingsLead } from "@/lib/fender-canvas/briefing-retail-lead";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
 
-function LostRevenuePlaceholder({ placeholder }: { placeholder: BriefingLostRevenuePlaceholder }) {
+/** Phase 1 divided by 12 from the shared estimate read, with the same trail as Phase 1. */
+function MonthlyLostRevenue({ read }: { read: ClientEstimatesRead | undefined }) {
+  const monthly = read?.phase === "ready" ? estimateMonthlyPotential(read.estimates.phase1) : null;
   return (
     <div className="briefing-revenue-placeholder" data-briefing-revenue-placeholder="">
-      <span
-        className="metric-card-label ifai-term"
-        data-briefing-revenue-label=""
-        data-ifai-tooltip-title={placeholder.label}
-        data-ifai-tooltip-desc={placeholder.explainer}
-        tabIndex={0}
-        aria-label={`${placeholder.label}: ${placeholder.explainer}`}
-      >
-        {placeholder.label}
+      <span className="metric-card-label" data-briefing-revenue-label="">
+        {BRIEFING_LOST_REVENUE_LABEL}
       </span>
       <span className="ai-lead-figure" data-briefing-revenue-figure="">
-        {placeholder.figure}
+        <EstimateFigure read={read} result={monthly} />
       </span>
     </div>
   );
 }
 
 /**
- * Summary Briefing hero row: AI Consensus, five findings, and the lost-revenue placeholder.
- * Buy Box stays beside that placeholder. The placeholder is not a sixth finding.
+ * Summary Briefing hero row: AI Consensus, five findings, and the monthly lost-revenue card.
+ * Buy Box stays beside that placeholder. The monthly card is not a sixth finding.
  */
 export function BriefingRetailHero({
   bundle,
@@ -47,7 +42,7 @@ export function BriefingRetailHero({
   // The date-pill window every AI figure reads: the Briefing, the tabs, and the map read one number.
   const ai = useSummaryAiRead();
   const aiStale = useSummaryAiStale(ai);
-  const { findings, lostRevenue } = briefingFindingsLead(read, findability, ai, { aiStale });
+  const { findings } = briefingFindingsLead(read, findability, ai, { aiStale });
   const [buyBox, ...rest] = findings;
 
   return (
@@ -56,7 +51,7 @@ export function BriefingRetailHero({
     <div className="briefing-findings" data-briefing-retail-hero="" data-briefing-findings="">
       <BriefingConsensusLead bundle={bundle} retail={read} ai={ai} />
       <BriefingFindingCard finding={buyBox} />
-      <LostRevenuePlaceholder placeholder={lostRevenue} />
+      <MonthlyLostRevenue read={bundle.estimates} />
       {rest.map((finding) => (
         <BriefingFindingCard key={finding.id} finding={finding} />
       ))}

@@ -167,7 +167,6 @@ test("Briefing keeps the consensus sentence on the title tooltip inside the find
   assert.match(findingCard, /data-ifai-tooltip-title=\{finding\.label\}/);
   assert.doesNotMatch(findingCard, /metric-card-sub|data-briefing-finding-explainer/);
   assert.doesNotMatch(findingCard.slice(buttonAt), /tabIndex=\{0\}/);
-  assert.match(hero, /data-ifai-tooltip-desc=\{placeholder\.explainer\}/);
   assert.doesNotMatch(hero, /metric-card-sub/);
 
   assert.match(performanceCard, /id="consensus"[\s\S]*?dominant/);

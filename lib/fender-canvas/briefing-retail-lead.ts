@@ -39,6 +39,7 @@ import {
 } from "@/lib/findability/lead";
 import { countFindability } from "@/lib/findability/outcomes";
 import { leadBrand } from "@/lib/brand-copy";
+import { MONTHLY_POTENTIAL_TITLE } from "@/lib/estimates/monthly";
 
 export const BRIEFING_COUNT_MISSING = "Not available*";
 
@@ -48,12 +49,8 @@ export const BRIEFING_LOADING = "Loading";
 /** X-18: one name for this figure everywhere (the map, Briefing, and the Roadmap card). */
 export const SPLINTERED_LISTINGS_LABEL = "Splintered Listings";
 
-/**
- * Searched PortfolioRetailSnapshot detail/counts and CanvasMetricsRow once.
- * No stored field is clearly monthly potential lost brand revenue.
- */
-export const BRIEFING_LOST_REVENUE_LABEL = "Monthly potential lost brand revenue";
-export const BRIEFING_LOST_REVENUE_FIGURE = BRIEFING_COUNT_MISSING;
+/** The card beside Buy Box: Phase 1 divided by 12 (lib/estimates/monthly.ts), read from the shared estimate. */
+export const BRIEFING_LOST_REVENUE_LABEL = MONTHLY_POTENTIAL_TITLE;
 
 export type BriefingFindingId =
   | "buy_box"
@@ -88,15 +85,8 @@ export type BriefingAiOptions = {
   aiStale?: PartialFigure | null;
 };
 
-export type BriefingLostRevenuePlaceholder = {
-  label: string;
-  figure: string;
-  explainer: string;
-};
-
 export type BriefingFindingsLead = {
   findings: BriefingFinding[];
-  lostRevenue: BriefingLostRevenuePlaceholder;
 };
 
 const TONE_COLOR: Record<Exclude<NodeStatus, "neutral">, string> = {
@@ -348,17 +338,8 @@ export function activeOffersLine(bundle: CanvasBundle): string {
   return `<span class="ifai-term" data-ifai-tooltip-title="${READ_NOT_AVAILABLE}" data-ifai-tooltip-desc="${desc}" data-read-unavailable="${CANVAS_READS.m.source}" tabindex="0" aria-label="${READ_NOT_AVAILABLE}: ${desc}">${READ_NOT_AVAILABLE}</span>`;
 }
 
-export function briefingLostRevenuePlaceholder(): BriefingLostRevenuePlaceholder {
-  return {
-    label: BRIEFING_LOST_REVENUE_LABEL,
-    figure: BRIEFING_LOST_REVENUE_FIGURE,
-    explainer: "Not stored in this reading yet.",
-  };
-}
-
 /**
- * Five executive findings for Summary Briefing, plus the lost-revenue placeholder
- * that sits beside Buy Box (not a sixth finding).
+ * Five executive findings for Summary Briefing. The monthly lost-revenue card beside Buy Box is not one.
  */
 export function briefingFindingsLead(
   retail: RetailCanvasRead,
@@ -369,6 +350,5 @@ export function briefingFindingsLead(
   const [buyBox, map, bundles] = retailFindings(retail);
   return {
     findings: [buyBox, map, bundles, findabilityFinding(findability), unbrandedFinding(ai, options)],
-    lostRevenue: briefingLostRevenuePlaceholder(),
   };
 }

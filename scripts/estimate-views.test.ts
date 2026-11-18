@@ -10,6 +10,7 @@ import { coverageText, figureSplit, resultFigureText, salesSourceRows } from "..
 import { citationOwnedLinksLead } from "../lib/ai-search/citation-lead.ts";
 import { getClientSettings } from "../lib/client/active-client.ts";
 import { estimateEnterprise } from "../lib/estimates/enterprise.ts";
+import { estimateMonthlyPotential } from "../lib/estimates/monthly.ts";
 import { buildClientEstimates, joinEstimateListings, type ClientEstimatesRead } from "../lib/estimates/live-inputs.ts";
 import {
   enterprisePotentialEstimate,
@@ -162,4 +163,34 @@ test("a figure that is $0 on every listing reads $0, and the coverage line count
 
 test("the cited-links sentence in the Briefing lead uses thousands separators", () => {
   assert.equal(citationOwnedLinksLead(6404, 36289).population, "6,404 of 36,289 cited links lead to Fender-owned sites");
+});
+
+test("monthly potential lost brand revenue is Phase 1 divided by 12 with the same trail and split (18 Nov 2026)", () => {
+  for (const client of ["fender", "ledlenser"] as const) {
+    const fx = loadEstimatesFixture(client);
+    const est = buildClientEstimates(fx.listings, { rankCategory: fx.rankCategory, dataAsOf: fx.readOn, revenue: getClientSettings(client).revenue_inputs });
+    const monthly = estimateMonthlyPotential(est.phase1);
+    assert.equal(monthly.status, "estimated");
+    assert.equal(monthly.label, "analyst estimate");
+    assert.equal(monthly.asterisk, est.phase1.asterisk);
+    near(monthly.range!.mid, est.phase1.range!.mid / 12, 1, `${client} monthly mid`);
+    near(monthly.range!.low, est.phase1.range!.low / 12, 1, `${client} monthly low`);
+    near(monthly.range!.high, est.phase1.range!.high / 12, 1, `${client} monthly high`);
+    assert.match(monthly.trail.formula, /^Phase 1 divided by 12\./);
+    assert.deepEqual(monthly.trail.coverage, est.phase1.trail.coverage);
+    assert.deepEqual(monthly.trail.inputs, est.phase1.trail.inputs);
+    const split = figureSplit(monthly)!;
+    near(split.measured + split.estimated, monthly.range!.mid, 3, `${client} monthly split`);
+    console.log(client, "monthly", monthly.range!.low, monthly.range!.mid, monthly.range!.high);
+  }
+  const fx = loadEstimatesFixture("ledlenser");
+  const est = buildClientEstimates(fx.listings, { rankCategory: fx.rankCategory, dataAsOf: fx.readOn, revenue: getClientSettings("ledlenser").revenue_inputs });
+  const held = estimateMonthlyPotential({ ...est.phase1, status: "not_available", range: null });
+  assert.equal(held.status, "not_available");
+  assert.equal(held.range, null);
+});
+
+test("a listing count reads singular for one listing", () => {
+  assert.match(read("components/v3/live/BriefingAiLead.tsx"), /total === 1 \? "listing" : "listings"/);
+  assert.match(read("lib/estimates/line.ts"), /=== 1 \? "listing has" : "listings have"/);
 });

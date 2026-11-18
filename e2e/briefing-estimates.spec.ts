@@ -66,6 +66,21 @@ for (const client of ["fender", "ledlenser"]) {
       await checkFit(page, `${client}-briefing`);
     });
 
+    test("Briefing monthly card is Phase 1 divided by 12, opening a trail that says so", async ({ page }) => {
+      test.slow();
+      await openAs(page, client, "spoke=hub");
+      const card = page.locator("[data-briefing-revenue-placeholder]");
+      await expect(card.locator("[data-briefing-revenue-label]")).toHaveText("Monthly potential lost brand revenue");
+      const trigger = card.locator("[data-estimate-trigger='monthly_potential']");
+      await expect(trigger).toContainText(/\$[\d.,]+[KM]?, range \$[\d.,]+[KM]? to \$[\d.,]+[KM]?/, { timeout: ESTIMATE_MS });
+      await expect(trigger).toContainText("analyst estimate");
+      await trigger.click();
+      const trail = page.getByRole("dialog");
+      await expect(trail.locator("[data-estimate-formula]")).toContainText("Phase 1 divided by 12.");
+      await expect(trail.locator("[data-estimate-coverage]")).toContainText(/measured/);
+      await page.keyboard.press("Escape");
+    });
+
     for (const [path, name] of [
       ["spoke=hub&tab=opportunity", "opportunity"],
       ["spoke=suggestions&tab=revenue-estimates", "revenue-estimates"],
