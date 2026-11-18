@@ -1,7 +1,6 @@
-import { enterprisePotentialEstimate, NO_ANALYST_ESTIMATE, phaseOneLiftEstimate } from "@/lib/fender-canvas/analyst-estimates";
-import type { CanvasBundle, CanvasMetricsRow } from "@/lib/fender-canvas/types";
+import { enterprisePotentialEstimate, phaseOneLiftEstimate } from "@/lib/fender-canvas/analyst-estimates";
+import type { CanvasBundle } from "@/lib/fender-canvas/types";
 import {
-  formatEstimate,
   formatInt,
   formatPct,
   formatRatio,
@@ -10,16 +9,6 @@ import {
   sanitizeUiText,
   titleCaseCategory,
 } from "@/lib/fender-canvas/format";
-
-function estimateOrNone(figure: string): string {
-  return figure === NO_ANALYST_ESTIMATE ? figure : formatEstimate(figure);
-}
-
-function kpiString(m: CanvasMetricsRow, key: string, fallback: string): string {
-  const raw = m.kpi?.[key];
-  if (raw == null) return fallback;
-  return sanitizeUiText(String(raw));
-}
 
 export function buildTemplateVars(bundle: CanvasBundle): Record<string, string> {
   const { m, cats } = bundle;
@@ -82,8 +71,9 @@ export function buildTemplateVars(bundle: CanvasBundle): Record<string, string> 
     bb_1p_detail: `${formatInt(m.bb_1p)} 1P vs ${formatInt(m.bb_3p)} 3P`,
     sim_resolved_detail: `${formatInt(m.sim_resolved)} resolved (${formatInt(m.sim_unclear)} unclear, ${formatInt(m.sim_errors)} errors)`,
     fender_found_ratio: formatRatio(m.spec_fender_found, m.spec_checked),
-    phase_one_lift: estimateOrNone(kpiString(m, "phase1_lift", phaseOneLiftEstimate())),
-    enterprise_potential: estimateOrNone(kpiString(m, "enterprise_potential", enterprisePotentialEstimate())),
+    // The formulas (lib/estimates), never a hand-entered or stored kpi figure (decision 112).
+    phase_one_lift: phaseOneLiftEstimate(bundle),
+    enterprise_potential: enterprisePotentialEstimate(bundle),
   };
 
   for (const row of cats) {

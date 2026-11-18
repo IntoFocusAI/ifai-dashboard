@@ -337,19 +337,19 @@ test("hub Briefing puts consensus in the findings row, then the essay", () => {
   const hero = read("components/v3/live/BriefingRetailHero.tsx");
   const lead = read("lib/fender-canvas/briefing-retail-lead.ts");
   const consensusLead = read("components/v3/live/BriefingConsensusLead.tsx");
-  const briefingHtml = JSON.parse(read("data/fender-v3-spec.json")).spokes.hub.tabTemplates[0] as string;
+  const briefingHtml = JSON.parse(read("data/canvas-narrative.json")).spokes.hub.tabTemplates[0] as string;
   assert.match(spokes, /BriefingRetailHero/);
   assert.match(
     spokes,
-    /0:\s*\([^)]*\)\s*=>\s*\(\s*<>\s*<BriefingRetailHero[\s\S]*?htmlBlock\(bindCopy\(HUB_BRIEFING_HTML/,
-    "findings row, then the essay",
+    /0:\s*\([^)]*\)\s*=>\s*\(\s*<>\s*<BriefingRetailHero[\s\S]*?<BriefingAiLead bundle=\{bundle\} \/>/,
+    "findings row, then the lead section",
   );
   assert.doesNotMatch(spokes, /BriefingConsensusLead|briefing-consensus-lead/);
   assert.match(hero, /<BriefingConsensusLead[\s\S]*<BriefingFindingCard[\s\S]*<LostRevenuePlaceholder/);
   assert.doesNotMatch(hero, /briefing-buy-box-cluster|briefing-consensus-lead/);
   assert.match(consensusLead, /consensusFromLive\(/);
   assert.match(consensusLead, /briefingConsensusSentence\(/);
-  assert.match(consensusLead, /data-ifai-tooltip-title="AI Consensus"/);
+  assert.match(consensusLead, /data-ifai-tooltip-title="AI Consensus Score"/);
   assert.match(consensusLead, /data-ifai-tooltip-desc=\{sentence\}/);
   assert.doesNotMatch(consensusLead, /<p[\s>]|className="briefing-consensus-sentence"|className="briefing-consensus-lead"/);
   assert.doesNotMatch(
@@ -385,10 +385,12 @@ test("hub Briefing puts consensus in the findings row, then the essay", () => {
   assert.match(lead, /buyBoxHero|mapHero|catalogHero/);
   assert.match(lead, /BRIEFING_LOST_REVENUE/);
   assert.match(lead, /Not available\*/);
-  assert.doesNotMatch(briefingHtml, /\{retail_headline\}/);
-  assert.match(briefingHtml, /Buy Box/);
-  assert.match(briefingHtml, /\{enterprise_potential\}/);
-  assert.match(briefingHtml, /commercial selling model/i);
+  // H-09: the Briefing is generated; no hand-written template and no Portfolio at a glance.
+  assert.equal(briefingHtml, "");
+  const aiLead = read("components/v3/live/BriefingAiLead.tsx");
+  assert.match(aiLead, /headlineLine\(summary\)/);
+  assert.match(aiLead, /selling model on Amazon/);
+  assert.doesNotMatch(aiLead, /Portfolio at a glance/);
   assert.doesNotMatch(hero, /\u2014/);
   assert.doesNotMatch(lead, /\u2014/);
   assert.doesNotMatch(hero, /\stitle=/);

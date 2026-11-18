@@ -282,7 +282,7 @@ function unbrandedPie(fenderWins: number, resolved: number): PieDiscData | null 
   };
 }
 
-const AI_READ_FAILED =
+export const AI_READ_FAILED =
   "The AI Search runs in the selected period did not load, so this figure is left out rather than shown as zero.";
 
 function unbrandedFinding(read: AiSearchRead, options: BriefingAiOptions): BriefingFinding {

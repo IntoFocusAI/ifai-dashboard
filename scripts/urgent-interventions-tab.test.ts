@@ -49,7 +49,7 @@ const MISSING_ACTIONS = [
 ] as const;
 
 test("Urgent Interventions template drops spoke-template example cards", () => {
-  const spec = JSON.parse(read("data/fender-v3-spec.json")) as {
+  const spec = JSON.parse(read("data/canvas-narrative.json")) as {
     spokes: { suggestions: { tabs: string[]; tabTemplates: string[] } };
   };
   assert.equal(spec.spokes.suggestions.tabs[0], "Urgent Interventions");

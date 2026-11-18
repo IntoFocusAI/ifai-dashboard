@@ -113,7 +113,7 @@ test("Brand-Site Specs renders the page-found hero first with the shared card an
 });
 
 test("the AI Readiness bubble's page-found figure opens Brand-Site Specs at that hero", () => {
-  const specTabs = JSON.parse(read("data/fender-v3-spec.json")).spokes.specs.tabs as string[];
+  const specTabs = JSON.parse(read("data/canvas-narrative.json")).spokes.specs.tabs as string[];
   const resolve = (subTab: string) =>
     specTabs.findIndex((tab) => tab.toLowerCase().includes(subTab.toLowerCase()));
   const m = metrics({});

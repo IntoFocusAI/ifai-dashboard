@@ -1,0 +1,92 @@
+import { mkdirSync } from "node:fs";
+import { AI_READ_MS, expect, test } from "./fixtures";
+import type { Page } from "@playwright/test";
+
+/* Worker 29.2, H-09 (decisions 105, 110, 112): Briefing, Opportunity and Revenue Estimates are
+   generated from each client's settings and data, with the same sections in the same order for
+   every client. Each brand is reached through the client switcher. Screenshots at 1280x720 go to
+   E2E_SHOTS_DIR when it is set, and each is checked by script for sideways scroll. */
+
+const ESTIMATE_MS = 60_000;
+const SHOTS = process.env.E2E_SHOTS_DIR;
+
+const BRAND: Record<string, string> = { fender: "Fender", ledlenser: "Ledlenser" };
+
+async function openAs(page: Page, client: string, path: string) {
+  await page.goto("/dashboard?spoke=hub");
+  const switcher = page.getByLabel("Client brand");
+  await expect(switcher).toBeVisible();
+  if ((await switcher.inputValue()) !== client) {
+    await Promise.all([page.waitForURL(new RegExp(`client=${client}`)), switcher.selectOption(client)]);
+  }
+  const query = client === "fender" ? "" : `client=${client}&`;
+  await page.goto(`/dashboard?${query}${path}`);
+}
+
+async function checkFit(page: Page, name: string) {
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  expect(overflow, `${name} scrolls sideways`).toBeLessThanOrEqual(0);
+  if (SHOTS) {
+    mkdirSync(SHOTS, { recursive: true });
+    await page.screenshot({ path: `${SHOTS}/${name}.png` });
+  }
+}
+
+for (const client of ["fender", "ledlenser"]) {
+  test.describe(`Generated estimates (${client})`, () => {
+    test.beforeEach(async ({ page }) => {
+      await page.context().addCookies([
+        { name: `ifai_guest_${client}`, value: "1", domain: "localhost", path: "/" },
+        { name: "ifai_guest_fender", value: "1", domain: "localhost", path: "/" },
+      ]);
+    });
+
+    test("Briefing opens on AI Consensus Score and the lead section from the client's own data", async ({ page }) => {
+      test.slow();
+      await openAs(page, client, "spoke=hub");
+      const row = page.locator("[data-briefing-findings]");
+      await expect(row.locator("[data-briefing-consensus-title]").first()).toHaveText("AI Consensus Score");
+      await expect(page.getByText("Portfolio at a glance")).toHaveCount(0);
+      const lead = page.locator("[data-briefing-lead]");
+      await expect(lead).toContainText(`What is changing what AI assistants recommend for ${BRAND[client]}?`);
+      await expect(lead.locator("[data-briefing-lead-ai]")).toContainText(/Unbranded Discovery: .+ named most in [\d,]+ of [\d,]+ resolved answers/, { timeout: AI_READ_MS });
+      await expect(lead.locator("[data-briefing-lead-controls] li").first()).toContainText(/Out of stock: [\d,]+ listings/, { timeout: ESTIMATE_MS });
+      await expect(lead).toContainText(`${BRAND[client]}'s selling model on Amazon:`);
+      await checkFit(page, `${client}-briefing`);
+    });
+
+    for (const [path, name] of [
+      ["spoke=hub&tab=opportunity", "opportunity"],
+      ["spoke=suggestions&tab=revenue-estimates", "revenue-estimates"],
+    ] as const) {
+      test(`${name}: Phase 1, Enterprise and MAP beside, each opening its trail`, async ({ page }) => {
+        test.slow();
+        await openAs(page, client, path);
+        const phase = page.locator("[data-estimate-card='phase_one']");
+        await expect(phase.locator("[data-estimate-trigger='phase_1']")).toContainText(/\$[\d.,]+[KM]?, range \$[\d.,]+[KM]? to \$[\d.,]+[KM]?/, { timeout: ESTIMATE_MS });
+        await expect(phase).toContainText("analyst estimate");
+        await expect(page.locator("[data-estimate-card='enterprise'] [data-estimate-trigger='enterprise_potential']")).toContainText(/\$[\d.,]+M/);
+        await expect(page.locator("[data-estimate-card='map_leakage'] [data-estimate-trigger='map_leakage']")).toContainText("analyst estimate");
+        const rows = page.locator("[data-estimate-method] tbody tr");
+        await expect(rows.first()).toContainText("Out of stock");
+        await expect(page.locator("[data-estimate-row='miscategorized'] [data-estimate-not-prepared]")).toHaveText("Not available*");
+        await checkFit(page, `${client}-${name}`);
+
+        await phase.locator("[data-estimate-trigger='phase_1']").click();
+        const trail = page.getByRole("dialog");
+        await expect(trail).toContainText("Near-term upside (Phase 1)");
+        await page.keyboard.press("Escape");
+        await page.locator("[data-estimate-card='enterprise'] [data-estimate-trigger]").click();
+        await expect(page.getByRole("dialog")).toContainText(/placeholder/i);
+      });
+    }
+
+    test("Action Items bubble shows the Phase 1 formula, not a hand-entered figure", async ({ page }) => {
+      test.slow();
+      await openAs(page, client, "spoke=hub");
+      const bubble = page.locator(".graph-node").filter({ hasText: /Action Items/i }).first();
+      await expect(bubble).toContainText(/\+\$[\d.,]+[KM]\*? est\./, { timeout: ESTIMATE_MS });
+      await expect(bubble).not.toContainText("+$680K");
+    });
+  });
+}

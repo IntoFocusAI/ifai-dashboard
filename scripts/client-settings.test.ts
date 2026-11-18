@@ -99,22 +99,17 @@ test("C1: settings values equal the constants the screens still read (no behavio
   assert.deepEqual([...f.brand_name_terms, ...f.product_line_terms, ...f.competitors.flatMap((c) => c.terms)].sort(), words);
 });
 
-test("C1: analyst estimates in settings match what the screens show", async () => {
-  const { phaseOneLiftEstimate, enterprisePotentialEstimate } = await import("@/lib/fender-canvas/analyst-estimates");
-  try {
-    resetActiveClientForTests("fender");
-    const est = getClientSettings("fender").analyst_estimates!;
-    assert.equal(phaseOneLiftEstimate(), `${est.phase_one} est.`);
-    assert.equal(enterprisePotentialEstimate(), `${est.enterprise} est.`);
-    const spec = readFileSync("data/fender-v3-spec.json", "utf8");
-    for (const line of [...est.phase_one_lines, ...est.enterprise_lines]) {
-      assert.ok(spec.includes(line.value), line.value);
-      assert.ok(spec.includes(line.label.replace("&", "&amp;")) || spec.includes(line.label), line.label);
-    }
-    assert.equal(getClientSettings("ledlenser").analyst_estimates, null);
-  } finally {
-    resetActiveClientForTests();
+test("C1: settings hold the revenue inputs, never hand-entered estimate figures (decision 112)", () => {
+  for (const key of ["fender", "ledlenser"]) {
+    const s = getClientSettings(key) as unknown as Record<string, unknown>;
+    assert.equal("analyst_estimates" in s, false);
+    const revenue = getClientSettings(key).revenue_inputs!;
+    assert.ok(revenue.annual_sales_usd > 0);
+    assert.equal(revenue.basis, "public_placeholder");
+    assert.ok(revenue.source_url?.startsWith("https://"));
   }
+  const spec = readFileSync("data/canvas-narrative.json", "utf8");
+  assert.equal(/\+\$680K|\$38M|Earlier analyst estimate/.test(spec), false);
 });
 
 test("C1: brand copy reads the settings record per call", async () => {
@@ -160,10 +155,13 @@ test("C1: a bad settings file fails with the file name and each problem", () => 
     "data_sources.walmart must be true or false",
   ]);
   assert.deepEqual(problemsOf(() => validateClientSettings("not an object", "x")), ["the file must hold one JSON object"]);
-  assert.deepEqual(problemsOf(() => validateClientSettings({ ...fender(), analyst_estimates: { phase_one: "+$1" } }, "x")), [
-    "analyst_estimates.enterprise must be a non-empty string",
-    "analyst_estimates.phase_one_lines must be a list of {label, value}",
-    "analyst_estimates.enterprise_lines must be a list of {label, value}",
+  assert.deepEqual(problemsOf(() => validateClientSettings({ ...fender(), revenue_inputs: { annual_sales_usd: 0, basis: "guess" } }, "x")), [
+    "revenue_inputs.annual_sales_usd must be a positive number",
+    "revenue_inputs.basis must be one of public_placeholder, client",
+    "revenue_inputs.source_title must be a non-empty string",
+    "revenue_inputs.source_date must be a non-empty string",
+    "revenue_inputs.scope must be a non-empty string",
+    "revenue_inputs.source_url must be a non-empty string or null",
   ]);
 });
 

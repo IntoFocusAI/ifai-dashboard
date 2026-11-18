@@ -77,16 +77,16 @@ export function BriefingConsensusLead({
         <span
           className="metric-card-label ifai-term"
           data-briefing-consensus-title=""
-          data-ifai-tooltip-title="AI Consensus"
+          data-ifai-tooltip-title="AI Consensus Score"
           data-ifai-tooltip-desc={sentence}
           tabIndex={0}
-          aria-label={`AI Consensus: ${sentence}`}
+          aria-label={`AI Consensus Score: ${sentence}`}
         >
-          AI Consensus
+          AI Consensus Score
         </span>
       ) : (
         <span className="metric-card-label" data-briefing-consensus-title="">
-          AI Consensus
+          AI Consensus Score
         </span>
       )}
       <div className="retail-overview-hero-row">

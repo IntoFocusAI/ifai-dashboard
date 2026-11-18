@@ -2,13 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { activeClientSettings } from "@/lib/client/active-client";
-import { loadClientEstimates, type ClientEstimates, type EstimateReadClient } from "@/lib/estimates/live-inputs";
+import {
+  loadClientEstimates,
+  type ClientEstimates,
+  type ClientEstimatesRead,
+  type EstimateReadClient,
+} from "@/lib/estimates/live-inputs";
 import { getCanvasSupabase } from "@/lib/supabase/canvas-client";
 
-export type ClientEstimatesRead =
-  | { phase: "loading" }
-  | { phase: "ready"; estimates: ClientEstimates }
-  | { phase: "error"; message: string };
+export type { ClientEstimatesRead };
 
 /** One read per page load: every view on the page shares it. The client is fixed for the page load. */
 let shared: Promise<ClientEstimates> | null = null;
