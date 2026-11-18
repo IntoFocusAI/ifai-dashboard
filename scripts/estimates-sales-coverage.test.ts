@@ -124,7 +124,7 @@ test("an estimated listing's out-of-stock days are priced once", () => {
   near(oos.range?.mid, rate * 265 * 0.4, 1, "brand loss");
   // The range is the sales range times the benchmark range: low x low, high x high.
   near(oos.range?.low, ((8 * 100) / 30) * 265 * 0.3, 1, "low");
-  near(oos.range?.high, ((12 * 100) / 30) * 265 * 0.55, 1, "high");
+  near(oos.range?.high, ((12 * 100) / 30) * 265 * 0.45, 1, "high");
 });
 
 // ---------------------------------------------------------------------------------------------
@@ -279,7 +279,7 @@ test("Ledlenser: sales coverage before and after", () => {
   assert.deepEqual(cov(e.missingSpecs), [53, 60, 73, 186]);
   assert.deepEqual(cov(e.aplus), [16, 34, 69, 119]);
   // Measured, no sales adds listings at $0: the dollars do not move.
-  assert.deepEqual(e.phase1.range, { low: 23110, mid: 55248, high: 120458 });
+  assert.deepEqual(e.phase1.range, { low: 23110, mid: 55248, high: 104546 });
   assert.equal(e.phase1.asterisk, true);
   assert.equal(e.mapLeakage.asterisk, false);
   // Measured listings are untouched: the measured part of each line is the proposal's figure.
@@ -303,7 +303,7 @@ test("Fender: sales coverage before and after", () => {
   near(c.annualSales.mid, 21997511, 1, "measured plus estimated sales");
 
   const e = estimateListingLines(loadEstimatesFixture("fender").listings);
-  assert.deepEqual(e.phase1.range, { low: 668826, mid: 1218490, high: 2071162 });
+  assert.deepEqual(e.phase1.range, { low: 668826, mid: 1218490, high: 1884102 });
   assert.equal(e.outOfStock.trail.coverage.sentence, "383 of 609 listings measured (136 with no sales), 144 estimated, 82 Not available*");
   assert.equal(e.outOfStock.trail.confidence, "high");
 });

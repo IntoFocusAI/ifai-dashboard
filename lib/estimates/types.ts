@@ -52,6 +52,10 @@ export type BenchmarkSource = {
   usedFor: string;
   credibility: string;
   verified: boolean;
+  /** The words on the page that support the figure, when verified. Not rendered on screen. */
+  quote?: string;
+  /** When and how the page was checked, and any correction. Not rendered on screen. */
+  checked?: string;
 };
 
 /** One benchmark value with its low, mid and high and where they come from. */
