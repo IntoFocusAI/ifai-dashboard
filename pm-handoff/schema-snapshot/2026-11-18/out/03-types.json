@@ -1,0 +1,353 @@
+[
+ {
+  "comment": null,
+  "composite_attrs": null,
+  "domain_base": null,
+  "domain_constraints": null,
+  "domain_default": null,
+  "domain_notnull": null,
+  "enum_labels": [
+   "active",
+   "invited",
+   "suspended",
+   "removed"
+  ],
+  "kind": "enum",
+  "name": "membership_status",
+  "owner": "postgres",
+  "schema": "command"
+ },
+ {
+  "comment": null,
+  "composite_attrs": null,
+  "domain_base": null,
+  "domain_constraints": null,
+  "domain_default": null,
+  "domain_notnull": null,
+  "enum_labels": [
+   "intofocus_admin",
+   "org_admin",
+   "org_viewer"
+  ],
+  "kind": "enum",
+  "name": "organization_role",
+  "owner": "postgres",
+  "schema": "command"
+ },
+ {
+  "comment": null,
+  "composite_attrs": null,
+  "domain_base": "text",
+  "domain_constraints": [
+   "CHECK ((VALUE = ANY (ARRAY['exact_official_product'::text, 'official_family_page'::text, 'ambiguous_candidate'::text, 'completed_not_found'::text, 'unsupported_product_type'::text, 'blocked'::text, 'timeout'::text, 'parse_failure'::text, 'not_checked'::text])))"
+  ],
+  "domain_default": null,
+  "domain_notnull": false,
+  "enum_labels": null,
+  "kind": "domain",
+  "name": "findability_state",
+  "owner": "postgres",
+  "schema": "ledlenser"
+ },
+ {
+  "comment": null,
+  "composite_attrs": null,
+  "domain_base": "text",
+  "domain_constraints": [
+   "CHECK ((VALUE = ANY (ARRAY['headlamp'::text, 'flashlight'::text, 'work_light'::text, 'area_light'::text, 'lantern'::text, 'powerbank'::text, 'accessory'::text])))"
+  ],
+  "domain_default": null,
+  "domain_notnull": false,
+  "enum_labels": null,
+  "kind": "domain",
+  "name": "product_kind",
+  "owner": "postgres",
+  "schema": "ledlenser"
+ },
+ {
+  "comment": null,
+  "composite_attrs": null,
+  "domain_base": null,
+  "domain_constraints": null,
+  "domain_default": null,
+  "domain_notnull": null,
+  "enum_labels": [
+   "active",
+   "ended"
+  ],
+  "kind": "enum",
+  "name": "assignment_status",
+  "owner": "postgres",
+  "schema": "public"
+ },
+ {
+  "comment": null,
+  "composite_attrs": null,
+  "domain_base": null,
+  "domain_constraints": null,
+  "domain_default": null,
+  "domain_notnull": null,
+  "enum_labels": [
+   "open",
+   "resolved",
+   "waived"
+  ],
+  "kind": "enum",
+  "name": "dependency_status",
+  "owner": "postgres",
+  "schema": "public"
+ },
+ {
+  "comment": null,
+  "composite_attrs": null,
+  "domain_base": null,
+  "domain_constraints": null,
+  "domain_default": null,
+  "domain_notnull": null,
+  "enum_labels": [
+   "approval",
+   "technical",
+   "data",
+   "vendor",
+   "legal",
+   "assistant",
+   "other"
+  ],
+  "kind": "enum",
+  "name": "dependency_type",
+  "owner": "postgres",
+  "schema": "public"
+ },
+ {
+  "comment": null,
+  "composite_attrs": null,
+  "domain_base": null,
+  "domain_constraints": null,
+  "domain_default": null,
+  "domain_notnull": null,
+  "enum_labels": [
+   "active",
+   "invited",
+   "suspended",
+   "removed"
+  ],
+  "kind": "enum",
+  "name": "membership_status",
+  "owner": "postgres",
+  "schema": "public"
+ },
+ {
+  "comment": null,
+  "composite_attrs": null,
+  "domain_base": null,
+  "domain_constraints": null,
+  "domain_default": null,
+  "domain_notnull": null,
+  "enum_labels": [
+   "not_started",
+   "in_progress",
+   "blocked",
+   "complete",
+   "not_applicable"
+  ],
+  "kind": "enum",
+  "name": "milestone_status",
+  "owner": "postgres",
+  "schema": "public"
+ },
+ {
+  "comment": null,
+  "composite_attrs": null,
+  "domain_base": null,
+  "domain_constraints": null,
+  "domain_default": null,
+  "domain_notnull": null,
+  "enum_labels": [
+   "gate",
+   "deliverable",
+   "review",
+   "decision",
+   "release",
+   "signoff"
+  ],
+  "kind": "enum",
+  "name": "milestone_type",
+  "owner": "postgres",
+  "schema": "public"
+ },
+ {
+  "comment": null,
+  "composite_attrs": null,
+  "domain_base": null,
+  "domain_constraints": null,
+  "domain_default": null,
+  "domain_notnull": null,
+  "enum_labels": [
+   "concept",
+   "in_development",
+   "pilot",
+   "ga",
+   "deprecated"
+  ],
+  "kind": "enum",
+  "name": "module_status",
+  "owner": "postgres",
+  "schema": "public"
+ },
+ {
+  "comment": null,
+  "composite_attrs": null,
+  "domain_base": null,
+  "domain_constraints": null,
+  "domain_default": null,
+  "domain_notnull": null,
+  "enum_labels": [
+   "platform_admin",
+   "org_admin",
+   "leader",
+   "member",
+   "recruiting_manager",
+   "viewer"
+  ],
+  "kind": "enum",
+  "name": "organization_role",
+  "owner": "postgres",
+  "schema": "public"
+ },
+ {
+  "comment": null,
+  "composite_attrs": null,
+  "domain_base": null,
+  "domain_constraints": null,
+  "domain_default": null,
+  "domain_notnull": null,
+  "enum_labels": [
+   "employee",
+   "contractor",
+   "advisor",
+   "other"
+  ],
+  "kind": "enum",
+  "name": "participant_type",
+  "owner": "postgres",
+  "schema": "public"
+ },
+ {
+  "comment": null,
+  "composite_attrs": null,
+  "domain_base": null,
+  "domain_constraints": null,
+  "domain_default": null,
+  "domain_notnull": null,
+  "enum_labels": [
+   "standard",
+   "confidential",
+   "restricted"
+  ],
+  "kind": "enum",
+  "name": "sensitivity_level",
+  "owner": "postgres",
+  "schema": "public"
+ },
+ {
+  "comment": null,
+  "composite_attrs": null,
+  "domain_base": null,
+  "domain_constraints": null,
+  "domain_default": null,
+  "domain_notnull": null,
+  "enum_labels": [
+   "critical",
+   "high",
+   "medium",
+   "low"
+  ],
+  "kind": "enum",
+  "name": "work_priority",
+  "owner": "postgres",
+  "schema": "public"
+ },
+ {
+  "comment": null,
+  "composite_attrs": null,
+  "domain_base": null,
+  "domain_constraints": null,
+  "domain_default": null,
+  "domain_notnull": null,
+  "enum_labels": [
+   "charter",
+   "requirements",
+   "decision",
+   "evidence",
+   "release_note",
+   "reference",
+   "prototype"
+  ],
+  "kind": "enum",
+  "name": "work_source_role",
+  "owner": "postgres",
+  "schema": "public"
+ },
+ {
+  "comment": null,
+  "composite_attrs": null,
+  "domain_base": null,
+  "domain_constraints": null,
+  "domain_default": null,
+  "domain_notnull": null,
+  "enum_labels": [
+   "github",
+   "shared_storage",
+   "external_system",
+   "supabase_record",
+   "toolbelt_prototype"
+  ],
+  "kind": "enum",
+  "name": "work_source_type",
+  "owner": "postgres",
+  "schema": "public"
+ },
+ {
+  "comment": null,
+  "composite_attrs": null,
+  "domain_base": null,
+  "domain_constraints": null,
+  "domain_default": null,
+  "domain_notnull": null,
+  "enum_labels": [
+   "intake",
+   "defined",
+   "approved",
+   "active",
+   "review",
+   "complete",
+   "on_hold",
+   "blocked",
+   "cancelled",
+   "archived"
+  ],
+  "kind": "enum",
+  "name": "work_status",
+  "owner": "postgres",
+  "schema": "public"
+ },
+ {
+  "comment": null,
+  "composite_attrs": null,
+  "domain_base": null,
+  "domain_constraints": null,
+  "domain_default": null,
+  "domain_notnull": null,
+  "enum_labels": [
+   "internal_initiative",
+   "module_delivery",
+   "client_delivery",
+   "platform_build",
+   "implementation_project"
+  ],
+  "kind": "enum",
+  "name": "work_type",
+  "owner": "postgres",
+  "schema": "public"
+ }
+]

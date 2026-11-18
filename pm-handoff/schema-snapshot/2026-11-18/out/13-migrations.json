@@ -1,0 +1,318 @@
+[
+ {
+  "name": "remove_exposed_rls_helper",
+  "version": "20260804140224"
+ },
+ {
+  "name": "organization_foundation_rls_first",
+  "version": "20260804140243"
+ },
+ {
+  "name": "harden_rls_helpers_and_audit_retention",
+  "version": "20260804140306"
+ },
+ {
+  "name": "fix_write_audit_log_organizations_org_id",
+  "version": "20260814210550"
+ },
+ {
+  "name": "work_register_and_modules_schema",
+  "version": "20260814212015"
+ },
+ {
+  "name": "command_identity",
+  "version": "20260930181556"
+ },
+ {
+  "name": "fender_organization",
+  "version": "20261001151405"
+ },
+ {
+  "name": "fmic_duckdb_retirement_phase1_schema",
+  "version": "20261005141823"
+ },
+ {
+  "name": "fmic_phase1_views_security_invoker",
+  "version": "20261005141845"
+ },
+ {
+  "name": "fmic_phase2_buybox_map_price_nullable",
+  "version": "20261005143953"
+ },
+ {
+  "name": "fmic_phase2_wmt_columns",
+  "version": "20261005144712"
+ },
+ {
+  "name": "fmic_phase3_spec_readiness_id_default",
+  "version": "20261005150346"
+ },
+ {
+  "name": "v_fmic_ai_simulations_all",
+  "version": "20261005155037"
+ },
+ {
+  "name": "canvas_v3_live_views",
+  "version": "20261006184453"
+ },
+ {
+  "name": "canvas_v3_private_sources",
+  "version": "20261006184621"
+ },
+ {
+  "name": "create_fmic_dual_write_errors",
+  "version": "20261008160002"
+ },
+ {
+  "name": "canvas_retail_listings_featured_offer_columns",
+  "version": "20261012133807"
+ },
+ {
+  "name": "canvas_retail_listings_grant_all_service_role",
+  "version": "20261012133815"
+ },
+ {
+  "name": "canvas_retail_listings_grant_select_anon_auth",
+  "version": "20261012133819"
+ },
+ {
+  "name": "canvas_retail_listings_notify_pgrst_reload",
+  "version": "20261012133823"
+ },
+ {
+  "name": "ai_search_truth_1_schema",
+  "version": "20261012153134"
+ },
+ {
+  "name": "ai_search_truth_2_backfill",
+  "version": "20261012153158"
+ },
+ {
+  "name": "ai_search_truth_3_publish",
+  "version": "20261012153224"
+ },
+ {
+  "name": "ai_search_truth_probe_facts_seed",
+  "version": "20261012153733"
+ },
+ {
+  "name": "ai_search_truth_probe_patterns_js",
+  "version": "20261012153802"
+ },
+ {
+  "name": "ai_search_truth_4_current_views",
+  "version": "20261012171258"
+ },
+ {
+  "name": "ai_search_truth_5_views_read_only",
+  "version": "20261012171317"
+ },
+ {
+  "name": "fmic_history_listing_content_publish_guard",
+  "version": "20261020002619"
+ },
+ {
+  "name": "fmic_prompt_versioning_and_dealer_catalog",
+  "version": "20261020132056"
+ },
+ {
+  "name": "div_latest_only_latest_run",
+  "version": "20261021002840"
+ },
+ {
+  "name": "security_advisor_fixes_20261021",
+  "version": "20261021174809"
+ },
+ {
+  "name": "sandbox_schema",
+  "version": "20261026150208"
+ },
+ {
+  "name": "sandbox_load",
+  "version": "20261026150502"
+ },
+ {
+  "name": "fender_prompt_set",
+  "version": "20261026151031"
+ },
+ {
+  "name": "sandbox_reload_schedule",
+  "version": "20261026151040"
+ },
+ {
+  "name": "replace_fmic_ai_publish_run",
+  "version": "20261026155847"
+ },
+ {
+  "name": "keepa_smartscout_expansion",
+  "version": "20261027160519"
+ },
+ {
+  "name": "keepa_history_trigger_fixes",
+  "version": "20261027160659"
+ },
+ {
+  "name": "sku_map_part_number_core",
+  "version": "20261027161052"
+ },
+ {
+  "name": "smartscout_product_extras",
+  "version": "20261027180721"
+ },
+ {
+  "name": "ai_prompts_editor",
+  "version": "20261027183846"
+ },
+ {
+  "name": "ai_subchat_lane",
+  "version": "20261027194403"
+ },
+ {
+  "name": "listing_sales_loss",
+  "version": "20261027204827"
+ },
+ {
+  "name": "listing_stock_episodes",
+  "version": "20261028181335"
+ },
+ {
+  "name": "stock_loss_materialized",
+  "version": "20261028182515"
+ },
+ {
+  "name": "listing_content_view",
+  "version": "20261028203301"
+ },
+ {
+  "name": "spec_readiness_v11_columns",
+  "version": "20261029115930"
+ },
+ {
+  "name": "listing_content_state_source",
+  "version": "20261029120259"
+ },
+ {
+  "name": "listing_sales_loss_v2",
+  "version": "20261102192006"
+ },
+ {
+  "name": "issue_set_asides",
+  "version": "20261102204140"
+ },
+ {
+  "name": "issue_done",
+  "version": "20261103143947"
+ },
+ {
+  "name": "ai_history_citations_by_run",
+  "version": "20261103214459"
+ },
+ {
+  "name": "ai_search_v15_probe_schema",
+  "version": "20261103221322"
+ },
+ {
+  "name": "ai_search_v15_probe_views",
+  "version": "20261103221353"
+ },
+ {
+  "name": "20261104_pm20_step2_rotation_on",
+  "version": "20261104132719"
+ },
+ {
+  "name": "canvas_ai_probe_coverage_select_only",
+  "version": "20261104145317"
+ },
+ {
+  "name": "ai_history_citations_run_join",
+  "version": "20261104145327"
+ },
+ {
+  "name": "pause_refresh_stock_loss_v1",
+  "version": "20261104153254"
+ },
+ {
+  "name": "ledlenser_schema",
+  "version": "20261104155851"
+ },
+ {
+  "name": "ledlenser_prompt_battery",
+  "version": "20261104155937"
+ },
+ {
+  "name": "ledlenser_river_city_tools_brand_seller",
+  "version": "20261104173005"
+ },
+ {
+  "name": "ai_search_api_engine_views",
+  "version": "20261104213042"
+ },
+ {
+  "name": "canvas_set_aside_views_select_only",
+  "version": "20261104215427"
+ },
+ {
+  "name": "ledlenser_spec_views_genuine",
+  "version": "20261104225938"
+ },
+ {
+  "name": "ai_prompt_edits_list",
+  "version": "20261110142426"
+ },
+ {
+  "name": "site_types",
+  "version": "20261111160005"
+ },
+ {
+  "name": "fender_battery_wave2",
+  "version": "20261111205426"
+ },
+ {
+  "name": "ledlenser_ai_api_views",
+  "version": "20261111222737"
+ },
+ {
+  "name": "check_times_retail_and_stock",
+  "version": "20261111222745"
+ },
+ {
+  "name": "amazon_product_types_view",
+  "version": "20261112133251"
+ },
+ {
+  "name": "canvas_three_views_select_only",
+  "version": "20261112140110"
+ },
+ {
+  "name": "site_type_staff_review",
+  "version": "20261112144130"
+ },
+ {
+  "name": "ai_history_run_rows",
+  "version": "20261112213029"
+ },
+ {
+  "name": "canvas_score_snapshots",
+  "version": "20261116153457"
+ },
+ {
+  "name": "actuation_records",
+  "version": "20261116154123"
+ },
+ {
+  "name": "ledlenser_canvas_ai_prompts",
+  "version": "20261116170131"
+ },
+ {
+  "name": "score_snapshot_writer_role",
+  "version": "20261116171939"
+ },
+ {
+  "name": "actuation_expiry_reminders",
+  "version": "20261117135328"
+ },
+ {
+  "name": "actuation_reminder_grants",
+  "version": "20261117140850"
+ }
+]

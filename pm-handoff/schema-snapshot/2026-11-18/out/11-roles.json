@@ -1,0 +1,312 @@
+[
+ {
+  "bypassrls": false,
+  "config": [
+   "statement_timeout=3s"
+  ],
+  "connlimit": -1,
+  "createdb": false,
+  "createrole": false,
+  "inherit": true,
+  "login": false,
+  "member_of": null,
+  "name": "anon",
+  "replication": false,
+  "super": false
+ },
+ {
+  "bypassrls": false,
+  "config": [
+   "statement_timeout=8s"
+  ],
+  "connlimit": -1,
+  "createdb": false,
+  "createrole": false,
+  "inherit": true,
+  "login": false,
+  "member_of": null,
+  "name": "authenticated",
+  "replication": false,
+  "super": false
+ },
+ {
+  "bypassrls": false,
+  "config": [
+   "session_preload_libraries=supautils, safeupdate",
+   "statement_timeout=8s",
+   "lock_timeout=8s"
+  ],
+  "connlimit": -1,
+  "createdb": false,
+  "createrole": false,
+  "inherit": false,
+  "login": true,
+  "member_of": [
+   "anon",
+   "authenticated",
+   "service_role"
+  ],
+  "name": "authenticator",
+  "replication": false,
+  "super": false
+ },
+ {
+  "bypassrls": false,
+  "config": null,
+  "connlimit": -1,
+  "createdb": false,
+  "createrole": false,
+  "inherit": false,
+  "login": true,
+  "member_of": [
+   "postgres"
+  ],
+  "name": "cli_login_postgres",
+  "replication": false,
+  "super": false
+ },
+ {
+  "bypassrls": true,
+  "config": [
+   "default_transaction_read_only=off"
+  ],
+  "connlimit": -1,
+  "createdb": false,
+  "createrole": false,
+  "inherit": false,
+  "login": true,
+  "member_of": null,
+  "name": "cursor_map_writer",
+  "replication": false,
+  "super": false
+ },
+ {
+  "bypassrls": false,
+  "config": [
+   "default_transaction_read_only=on"
+  ],
+  "connlimit": -1,
+  "createdb": false,
+  "createrole": false,
+  "inherit": true,
+  "login": true,
+  "member_of": null,
+  "name": "cursor_schema_reader",
+  "replication": false,
+  "super": false
+ },
+ {
+  "bypassrls": false,
+  "config": null,
+  "connlimit": -1,
+  "createdb": true,
+  "createrole": true,
+  "inherit": true,
+  "login": false,
+  "member_of": null,
+  "name": "dashboard_user",
+  "replication": true,
+  "super": false
+ },
+ {
+  "bypassrls": false,
+  "config": null,
+  "connlimit": -1,
+  "createdb": false,
+  "createrole": false,
+  "inherit": true,
+  "login": true,
+  "member_of": null,
+  "name": "pgbouncer",
+  "replication": false,
+  "super": false
+ },
+ {
+  "bypassrls": true,
+  "config": [
+   "search_path=\"\\$user\", public, extensions"
+  ],
+  "connlimit": -1,
+  "createdb": true,
+  "createrole": true,
+  "inherit": true,
+  "login": true,
+  "member_of": [
+   "anon",
+   "authenticated",
+   "authenticator",
+   "cursor_map_writer",
+   "cursor_schema_reader",
+   "pg_create_subscription",
+   "pg_monitor",
+   "pg_read_all_data",
+   "pg_signal_backend",
+   "score_snapshot_writer",
+   "service_role",
+   "supabase_privileged_role"
+  ],
+  "name": "postgres",
+  "replication": true,
+  "super": false
+ },
+ {
+  "bypassrls": false,
+  "config": [
+   "statement_timeout=30s"
+  ],
+  "connlimit": 2,
+  "createdb": false,
+  "createrole": false,
+  "inherit": false,
+  "login": true,
+  "member_of": null,
+  "name": "score_snapshot_writer",
+  "replication": false,
+  "super": false
+ },
+ {
+  "bypassrls": true,
+  "config": null,
+  "connlimit": -1,
+  "createdb": false,
+  "createrole": false,
+  "inherit": true,
+  "login": false,
+  "member_of": null,
+  "name": "service_role",
+  "replication": false,
+  "super": false
+ },
+ {
+  "bypassrls": true,
+  "config": [
+   "search_path=\"$user\", public, auth, extensions",
+   "log_statement=none",
+   "statement_timeout=0"
+  ],
+  "connlimit": -1,
+  "createdb": true,
+  "createrole": true,
+  "inherit": true,
+  "login": true,
+  "member_of": null,
+  "name": "supabase_admin",
+  "replication": true,
+  "super": true
+ },
+ {
+  "bypassrls": false,
+  "config": [
+   "search_path=auth",
+   "idle_in_transaction_session_timeout=60000",
+   "log_statement=none"
+  ],
+  "connlimit": -1,
+  "createdb": false,
+  "createrole": true,
+  "inherit": false,
+  "login": true,
+  "member_of": null,
+  "name": "supabase_auth_admin",
+  "replication": false,
+  "super": false
+ },
+ {
+  "bypassrls": true,
+  "config": null,
+  "connlimit": -1,
+  "createdb": false,
+  "createrole": false,
+  "inherit": true,
+  "login": true,
+  "member_of": [
+   "pg_monitor",
+   "pg_read_all_data",
+   "supabase_privileged_role"
+  ],
+  "name": "supabase_etl_admin",
+  "replication": true,
+  "super": false
+ },
+ {
+  "bypassrls": false,
+  "config": null,
+  "connlimit": -1,
+  "createdb": false,
+  "createrole": false,
+  "inherit": true,
+  "login": false,
+  "member_of": null,
+  "name": "supabase_privileged_role",
+  "replication": false,
+  "super": false
+ },
+ {
+  "bypassrls": true,
+  "config": [
+   "default_transaction_read_only=on"
+  ],
+  "connlimit": -1,
+  "createdb": false,
+  "createrole": false,
+  "inherit": true,
+  "login": true,
+  "member_of": [
+   "pg_monitor",
+   "pg_read_all_data"
+  ],
+  "name": "supabase_read_only_user",
+  "replication": false,
+  "super": false
+ },
+ {
+  "bypassrls": false,
+  "config": [
+   "search_path=public, extensions, realtime"
+  ],
+  "connlimit": -1,
+  "createdb": false,
+  "createrole": false,
+  "inherit": false,
+  "login": false,
+  "member_of": [
+   "anon",
+   "authenticated",
+   "service_role"
+  ],
+  "name": "supabase_realtime_admin",
+  "replication": false,
+  "super": false
+ },
+ {
+  "bypassrls": false,
+  "config": null,
+  "connlimit": -1,
+  "createdb": false,
+  "createrole": false,
+  "inherit": true,
+  "login": true,
+  "member_of": null,
+  "name": "supabase_replication_admin",
+  "replication": true,
+  "super": false
+ },
+ {
+  "bypassrls": false,
+  "config": [
+   "search_path=storage",
+   "log_statement=none"
+  ],
+  "connlimit": -1,
+  "createdb": false,
+  "createrole": true,
+  "inherit": false,
+  "login": true,
+  "member_of": [
+   "authenticator"
+  ],
+  "name": "supabase_storage_admin",
+  "replication": false,
+  "super": false
+ }
+]

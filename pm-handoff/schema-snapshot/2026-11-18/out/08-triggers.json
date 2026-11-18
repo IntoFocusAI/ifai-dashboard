@@ -1,0 +1,401 @@
+[
+ {
+  "def": "CREATE TRIGGER trg_fmic_ai_prompt_fact_guard BEFORE INSERT OR UPDATE ON command.fmic_ai_prompt_revisions FOR EACH ROW EXECUTE FUNCTION command.fmic_ai_prompt_fact_guard()",
+  "enabled": "O",
+  "schema": "command",
+  "table": "fmic_ai_prompt_revisions",
+  "trigger": "trg_fmic_ai_prompt_fact_guard"
+ },
+ {
+  "def": "CREATE TRIGGER trg_fmic_ai_prompt_revision_guard BEFORE INSERT OR DELETE OR UPDATE ON command.fmic_ai_prompt_revisions FOR EACH ROW EXECUTE FUNCTION command.fmic_ai_prompt_revision_guard()",
+  "enabled": "O",
+  "schema": "command",
+  "table": "fmic_ai_prompt_revisions",
+  "trigger": "trg_fmic_ai_prompt_revision_guard"
+ },
+ {
+  "def": "CREATE TRIGGER trg_fmic_ai_prompt_member_guard BEFORE INSERT OR DELETE OR UPDATE ON command.fmic_ai_prompt_set_members FOR EACH ROW EXECUTE FUNCTION command.fmic_ai_prompt_member_guard()",
+  "enabled": "O",
+  "schema": "command",
+  "table": "fmic_ai_prompt_set_members",
+  "trigger": "trg_fmic_ai_prompt_member_guard"
+ },
+ {
+  "def": "CREATE TRIGGER trg_fmic_ai_prompt_set_guard BEFORE INSERT OR DELETE OR UPDATE ON command.fmic_ai_prompt_sets FOR EACH ROW EXECUTE FUNCTION command.fmic_ai_prompt_set_guard()",
+  "enabled": "O",
+  "schema": "command",
+  "table": "fmic_ai_prompt_sets",
+  "trigger": "trg_fmic_ai_prompt_set_guard"
+ },
+ {
+  "def": "CREATE TRIGGER trg_fmic_ai_sim_published_immutable BEFORE INSERT OR DELETE OR UPDATE ON command.fmic_ai_simulations FOR EACH ROW EXECUTE FUNCTION command.fmic_ai_block_published_edit()",
+  "enabled": "O",
+  "schema": "command",
+  "table": "fmic_ai_simulations",
+  "trigger": "trg_fmic_ai_sim_published_immutable"
+ },
+ {
+  "def": "CREATE TRIGGER trg_fmic_ai_simulations_updated_at BEFORE UPDATE ON command.fmic_ai_simulations FOR EACH ROW EXECUTE FUNCTION command.update_fmic_timestamp()",
+  "enabled": "O",
+  "schema": "command",
+  "table": "fmic_ai_simulations",
+  "trigger": "trg_fmic_ai_simulations_updated_at"
+ },
+ {
+  "def": "CREATE TRIGGER trg_fmic_brand_kpi_summary_updated_at BEFORE UPDATE ON command.fmic_brand_kpi_summary FOR EACH ROW EXECUTE FUNCTION command.update_fmic_timestamp()",
+  "enabled": "O",
+  "schema": "command",
+  "table": "fmic_brand_kpi_summary",
+  "trigger": "trg_fmic_brand_kpi_summary_updated_at"
+ },
+ {
+  "def": "CREATE TRIGGER trg_fmic_division_metrics_updated_at BEFORE UPDATE ON command.fmic_division_metrics FOR EACH ROW EXECUTE FUNCTION command.update_fmic_timestamp()",
+  "enabled": "O",
+  "schema": "command",
+  "table": "fmic_division_metrics",
+  "trigger": "trg_fmic_division_metrics_updated_at"
+ },
+ {
+  "def": "CREATE TRIGGER trg_fmic_electric_catalog_history AFTER INSERT OR UPDATE ON command.fmic_electric_catalog FOR EACH ROW EXECUTE FUNCTION command.fmic_capture_history('asin', 'created_at', 'updated_at', 'extracted_at')",
+  "enabled": "O",
+  "schema": "command",
+  "table": "fmic_electric_catalog",
+  "trigger": "trg_fmic_electric_catalog_history"
+ },
+ {
+  "def": "CREATE TRIGGER trg_fmic_listing_content_history AFTER INSERT OR UPDATE ON command.fmic_listing_content FOR EACH ROW EXECUTE FUNCTION command.fmic_capture_history('asin', 'updated_at', 'checked_at', 'keepa_last_update', 'raw_payload_ref', 'collector_version', 'content_checked_at', 'content_payload_ref')",
+  "enabled": "O",
+  "schema": "command",
+  "table": "fmic_listing_content",
+  "trigger": "trg_fmic_listing_content_history"
+ },
+ {
+  "def": "CREATE TRIGGER trg_fmic_enforce_channel_leakage BEFORE INSERT OR UPDATE ON command.fmic_retail_buybox_map FOR EACH ROW EXECUTE FUNCTION command.fmic_enforce_channel_leakage()",
+  "enabled": "O",
+  "schema": "command",
+  "table": "fmic_retail_buybox_map",
+  "trigger": "trg_fmic_enforce_channel_leakage"
+ },
+ {
+  "def": "CREATE TRIGGER trg_fmic_retail_buybox_map_history AFTER INSERT OR UPDATE ON command.fmic_retail_buybox_map FOR EACH ROW EXECUTE FUNCTION command.fmic_capture_history('asin', 'id', 'created_at', 'updated_at', 'audit_run_id')",
+  "enabled": "O",
+  "schema": "command",
+  "table": "fmic_retail_buybox_map",
+  "trigger": "trg_fmic_retail_buybox_map_history"
+ },
+ {
+  "def": "CREATE TRIGGER trg_fmic_retail_buybox_map_updated_at BEFORE UPDATE ON command.fmic_retail_buybox_map FOR EACH ROW EXECUTE FUNCTION command.update_fmic_timestamp()",
+  "enabled": "O",
+  "schema": "command",
+  "table": "fmic_retail_buybox_map",
+  "trigger": "trg_fmic_retail_buybox_map_updated_at"
+ },
+ {
+  "def": "CREATE TRIGGER trg_fmic_sellers_history AFTER INSERT OR UPDATE ON command.fmic_sellers FOR EACH ROW EXECUTE FUNCTION command.fmic_capture_history('seller_id', 'updated_at')",
+  "enabled": "O",
+  "schema": "command",
+  "table": "fmic_sellers",
+  "trigger": "trg_fmic_sellers_history"
+ },
+ {
+  "def": "CREATE TRIGGER organization_memberships_enforce_intofocus_admin BEFORE INSERT OR UPDATE OF role, organization_id ON command.organization_memberships FOR EACH ROW EXECUTE FUNCTION command.enforce_intofocus_admin_platform_org()",
+  "enabled": "O",
+  "schema": "command",
+  "table": "organization_memberships",
+  "trigger": "organization_memberships_enforce_intofocus_admin"
+ },
+ {
+  "def": "CREATE TRIGGER organization_memberships_set_updated_at BEFORE UPDATE ON command.organization_memberships FOR EACH ROW EXECUTE FUNCTION command.set_updated_at()",
+  "enabled": "O",
+  "schema": "command",
+  "table": "organization_memberships",
+  "trigger": "organization_memberships_set_updated_at"
+ },
+ {
+  "def": "CREATE TRIGGER organizations_set_updated_at BEFORE UPDATE ON command.organizations FOR EACH ROW EXECUTE FUNCTION command.set_updated_at()",
+  "enabled": "O",
+  "schema": "command",
+  "table": "organizations",
+  "trigger": "organizations_set_updated_at"
+ },
+ {
+  "def": "CREATE TRIGGER user_profiles_set_updated_at BEFORE UPDATE ON command.user_profiles FOR EACH ROW EXECUTE FUNCTION command.set_updated_at()",
+  "enabled": "O",
+  "schema": "command",
+  "table": "user_profiles",
+  "trigger": "user_profiles_set_updated_at"
+ },
+ {
+  "def": "CREATE TRIGGER ai_simulations_published_immutable BEFORE INSERT OR DELETE OR UPDATE ON ledlenser.ai_simulations FOR EACH ROW EXECUTE FUNCTION ledlenser.block_published_edit()",
+  "enabled": "O",
+  "schema": "ledlenser",
+  "table": "ai_simulations",
+  "trigger": "ai_simulations_published_immutable"
+ },
+ {
+  "def": "CREATE TRIGGER ai_simulations_updated_at BEFORE UPDATE ON ledlenser.ai_simulations FOR EACH ROW EXECUTE FUNCTION ledlenser.touch_updated_at()",
+  "enabled": "O",
+  "schema": "ledlenser",
+  "table": "ai_simulations",
+  "trigger": "ai_simulations_updated_at"
+ },
+ {
+  "def": "CREATE TRIGGER brand_kpi_summary_updated_at BEFORE UPDATE ON ledlenser.brand_kpi_summary FOR EACH ROW EXECUTE FUNCTION ledlenser.touch_updated_at()",
+  "enabled": "O",
+  "schema": "ledlenser",
+  "table": "brand_kpi_summary",
+  "trigger": "brand_kpi_summary_updated_at"
+ },
+ {
+  "def": "CREATE TRIGGER catalog_history AFTER INSERT OR UPDATE ON ledlenser.catalog FOR EACH ROW EXECUTE FUNCTION ledlenser.capture_history('asin', 'created_at', 'updated_at', 'extracted_at')",
+  "enabled": "O",
+  "schema": "ledlenser",
+  "table": "catalog",
+  "trigger": "catalog_history"
+ },
+ {
+  "def": "CREATE TRIGGER division_metrics_updated_at BEFORE UPDATE ON ledlenser.division_metrics FOR EACH ROW EXECUTE FUNCTION ledlenser.touch_updated_at()",
+  "enabled": "O",
+  "schema": "ledlenser",
+  "table": "division_metrics",
+  "trigger": "division_metrics_updated_at"
+ },
+ {
+  "def": "CREATE TRIGGER listing_content_history AFTER INSERT OR UPDATE ON ledlenser.listing_content FOR EACH ROW EXECUTE FUNCTION ledlenser.capture_history('asin', 'updated_at', 'checked_at', 'keepa_last_update', 'raw_payload_ref', 'collector_version', 'content_checked_at', 'content_payload_ref')",
+  "enabled": "O",
+  "schema": "ledlenser",
+  "table": "listing_content",
+  "trigger": "listing_content_history"
+ },
+ {
+  "def": "CREATE TRIGGER retail_buybox_map_channel_leakage BEFORE INSERT OR UPDATE ON ledlenser.retail_buybox_map FOR EACH ROW EXECUTE FUNCTION ledlenser.enforce_channel_leakage()",
+  "enabled": "O",
+  "schema": "ledlenser",
+  "table": "retail_buybox_map",
+  "trigger": "retail_buybox_map_channel_leakage"
+ },
+ {
+  "def": "CREATE TRIGGER retail_buybox_map_history AFTER INSERT OR UPDATE ON ledlenser.retail_buybox_map FOR EACH ROW EXECUTE FUNCTION ledlenser.capture_history('asin', 'id', 'created_at', 'updated_at', 'audit_run_id')",
+  "enabled": "O",
+  "schema": "ledlenser",
+  "table": "retail_buybox_map",
+  "trigger": "retail_buybox_map_history"
+ },
+ {
+  "def": "CREATE TRIGGER retail_buybox_map_updated_at BEFORE UPDATE ON ledlenser.retail_buybox_map FOR EACH ROW EXECUTE FUNCTION ledlenser.touch_updated_at()",
+  "enabled": "O",
+  "schema": "ledlenser",
+  "table": "retail_buybox_map",
+  "trigger": "retail_buybox_map_updated_at"
+ },
+ {
+  "def": "CREATE TRIGGER sellers_history AFTER INSERT OR UPDATE ON ledlenser.sellers FOR EACH ROW EXECUTE FUNCTION ledlenser.capture_history('seller_id', 'updated_at')",
+  "enabled": "O",
+  "schema": "ledlenser",
+  "table": "sellers",
+  "trigger": "sellers_history"
+ },
+ {
+  "def": "CREATE TRIGGER departments_audit AFTER INSERT OR DELETE OR UPDATE ON departments FOR EACH ROW EXECUTE FUNCTION write_audit_log()",
+  "enabled": "O",
+  "schema": "public",
+  "table": "departments",
+  "trigger": "departments_audit"
+ },
+ {
+  "def": "CREATE TRIGGER departments_updated_at BEFORE UPDATE ON departments FOR EACH ROW EXECUTE FUNCTION set_updated_at()",
+  "enabled": "O",
+  "schema": "public",
+  "table": "departments",
+  "trigger": "departments_updated_at"
+ },
+ {
+  "def": "CREATE TRIGGER issue_set_asides_audit AFTER INSERT OR UPDATE ON issue_set_asides FOR EACH ROW EXECUTE FUNCTION private.write_set_aside_audit()",
+  "enabled": "O",
+  "schema": "public",
+  "table": "issue_set_asides",
+  "trigger": "issue_set_asides_audit"
+ },
+ {
+  "def": "CREATE TRIGGER modules_audit AFTER INSERT OR DELETE OR UPDATE ON modules FOR EACH ROW EXECUTE FUNCTION write_audit_log()",
+  "enabled": "O",
+  "schema": "public",
+  "table": "modules",
+  "trigger": "modules_audit"
+ },
+ {
+  "def": "CREATE TRIGGER modules_set_key BEFORE INSERT ON modules FOR EACH ROW EXECUTE FUNCTION set_module_key()",
+  "enabled": "O",
+  "schema": "public",
+  "table": "modules",
+  "trigger": "modules_set_key"
+ },
+ {
+  "def": "CREATE TRIGGER modules_updated_at BEFORE UPDATE ON modules FOR EACH ROW EXECUTE FUNCTION set_updated_at()",
+  "enabled": "O",
+  "schema": "public",
+  "table": "modules",
+  "trigger": "modules_updated_at"
+ },
+ {
+  "def": "CREATE TRIGGER memberships_audit AFTER INSERT OR DELETE OR UPDATE ON organization_memberships FOR EACH ROW EXECUTE FUNCTION write_audit_log()",
+  "enabled": "O",
+  "schema": "public",
+  "table": "organization_memberships",
+  "trigger": "memberships_audit"
+ },
+ {
+  "def": "CREATE TRIGGER memberships_updated_at BEFORE UPDATE ON organization_memberships FOR EACH ROW EXECUTE FUNCTION set_updated_at()",
+  "enabled": "O",
+  "schema": "public",
+  "table": "organization_memberships",
+  "trigger": "memberships_updated_at"
+ },
+ {
+  "def": "CREATE TRIGGER organizations_audit AFTER INSERT OR DELETE OR UPDATE ON organizations FOR EACH ROW EXECUTE FUNCTION write_audit_log()",
+  "enabled": "O",
+  "schema": "public",
+  "table": "organizations",
+  "trigger": "organizations_audit"
+ },
+ {
+  "def": "CREATE TRIGGER organizations_updated_at BEFORE UPDATE ON organizations FOR EACH ROW EXECUTE FUNCTION set_updated_at()",
+  "enabled": "O",
+  "schema": "public",
+  "table": "organizations",
+  "trigger": "organizations_updated_at"
+ },
+ {
+  "def": "CREATE TRIGGER people_audit AFTER INSERT OR DELETE OR UPDATE ON people FOR EACH ROW EXECUTE FUNCTION write_audit_log()",
+  "enabled": "O",
+  "schema": "public",
+  "table": "people",
+  "trigger": "people_audit"
+ },
+ {
+  "def": "CREATE TRIGGER people_updated_at BEFORE UPDATE ON people FOR EACH ROW EXECUTE FUNCTION set_updated_at()",
+  "enabled": "O",
+  "schema": "public",
+  "table": "people",
+  "trigger": "people_updated_at"
+ },
+ {
+  "def": "CREATE TRIGGER profiles_updated_at BEFORE UPDATE ON profiles FOR EACH ROW EXECUTE FUNCTION set_updated_at()",
+  "enabled": "O",
+  "schema": "public",
+  "table": "profiles",
+  "trigger": "profiles_updated_at"
+ },
+ {
+  "def": "CREATE TRIGGER role_assignments_audit AFTER INSERT OR DELETE OR UPDATE ON role_assignments FOR EACH ROW EXECUTE FUNCTION write_audit_log()",
+  "enabled": "O",
+  "schema": "public",
+  "table": "role_assignments",
+  "trigger": "role_assignments_audit"
+ },
+ {
+  "def": "CREATE TRIGGER role_assignments_updated_at BEFORE UPDATE ON role_assignments FOR EACH ROW EXECUTE FUNCTION set_updated_at()",
+  "enabled": "O",
+  "schema": "public",
+  "table": "role_assignments",
+  "trigger": "role_assignments_updated_at"
+ },
+ {
+  "def": "CREATE TRIGGER role_responsibilities_audit AFTER INSERT OR DELETE OR UPDATE ON role_responsibilities FOR EACH ROW EXECUTE FUNCTION write_audit_log()",
+  "enabled": "O",
+  "schema": "public",
+  "table": "role_responsibilities",
+  "trigger": "role_responsibilities_audit"
+ },
+ {
+  "def": "CREATE TRIGGER role_responsibilities_updated_at BEFORE UPDATE ON role_responsibilities FOR EACH ROW EXECUTE FUNCTION set_updated_at()",
+  "enabled": "O",
+  "schema": "public",
+  "table": "role_responsibilities",
+  "trigger": "role_responsibilities_updated_at"
+ },
+ {
+  "def": "CREATE TRIGGER role_seats_audit AFTER INSERT OR DELETE OR UPDATE ON role_seats FOR EACH ROW EXECUTE FUNCTION write_audit_log()",
+  "enabled": "O",
+  "schema": "public",
+  "table": "role_seats",
+  "trigger": "role_seats_audit"
+ },
+ {
+  "def": "CREATE TRIGGER role_seats_updated_at BEFORE UPDATE ON role_seats FOR EACH ROW EXECUTE FUNCTION set_updated_at()",
+  "enabled": "O",
+  "schema": "public",
+  "table": "role_seats",
+  "trigger": "role_seats_updated_at"
+ },
+ {
+  "def": "CREATE TRIGGER work_dependencies_audit AFTER INSERT OR DELETE OR UPDATE ON work_dependencies FOR EACH ROW EXECUTE FUNCTION write_audit_log()",
+  "enabled": "O",
+  "schema": "public",
+  "table": "work_dependencies",
+  "trigger": "work_dependencies_audit"
+ },
+ {
+  "def": "CREATE TRIGGER work_dependencies_updated_at BEFORE UPDATE ON work_dependencies FOR EACH ROW EXECUTE FUNCTION set_updated_at()",
+  "enabled": "O",
+  "schema": "public",
+  "table": "work_dependencies",
+  "trigger": "work_dependencies_updated_at"
+ },
+ {
+  "def": "CREATE TRIGGER work_items_audit AFTER INSERT OR DELETE OR UPDATE ON work_items FOR EACH ROW EXECUTE FUNCTION write_audit_log()",
+  "enabled": "O",
+  "schema": "public",
+  "table": "work_items",
+  "trigger": "work_items_audit"
+ },
+ {
+  "def": "CREATE TRIGGER work_items_set_key BEFORE INSERT ON work_items FOR EACH ROW EXECUTE FUNCTION set_work_key()",
+  "enabled": "O",
+  "schema": "public",
+  "table": "work_items",
+  "trigger": "work_items_set_key"
+ },
+ {
+  "def": "CREATE TRIGGER work_items_updated_at BEFORE UPDATE ON work_items FOR EACH ROW EXECUTE FUNCTION set_updated_at()",
+  "enabled": "O",
+  "schema": "public",
+  "table": "work_items",
+  "trigger": "work_items_updated_at"
+ },
+ {
+  "def": "CREATE TRIGGER work_milestones_audit AFTER INSERT OR DELETE OR UPDATE ON work_milestones FOR EACH ROW EXECUTE FUNCTION write_audit_log()",
+  "enabled": "O",
+  "schema": "public",
+  "table": "work_milestones",
+  "trigger": "work_milestones_audit"
+ },
+ {
+  "def": "CREATE TRIGGER work_milestones_updated_at BEFORE UPDATE ON work_milestones FOR EACH ROW EXECUTE FUNCTION set_updated_at()",
+  "enabled": "O",
+  "schema": "public",
+  "table": "work_milestones",
+  "trigger": "work_milestones_updated_at"
+ },
+ {
+  "def": "CREATE TRIGGER work_source_links_audit AFTER INSERT OR DELETE OR UPDATE ON work_source_links FOR EACH ROW EXECUTE FUNCTION write_audit_log()",
+  "enabled": "O",
+  "schema": "public",
+  "table": "work_source_links",
+  "trigger": "work_source_links_audit"
+ },
+ {
+  "def": "CREATE TRIGGER work_source_links_updated_at BEFORE UPDATE ON work_source_links FOR EACH ROW EXECUTE FUNCTION set_updated_at()",
+  "enabled": "O",
+  "schema": "public",
+  "table": "work_source_links",
+  "trigger": "work_source_links_updated_at"
+ },
+ {
+  "def": "CREATE TRIGGER action_item_refresh_metrics AFTER INSERT OR DELETE OR UPDATE ON sandbox.action_item FOR EACH STATEMENT EXECUTE FUNCTION sandbox.tg_action_item_refresh()",
+  "enabled": "O",
+  "schema": "sandbox",
+  "table": "action_item",
+  "trigger": "action_item_refresh_metrics"
+ }
+]

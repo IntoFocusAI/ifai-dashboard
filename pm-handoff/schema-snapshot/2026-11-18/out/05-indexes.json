@@ -1,0 +1,1382 @@
+[
+ {
+  "def": "CREATE INDEX fmic_ai_citations_domain_idx ON command.fmic_ai_citations USING btree (domain)",
+  "index": "fmic_ai_citations_domain_idx",
+  "schema": "command",
+  "table": "fmic_ai_citations"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX fmic_ai_citations_pkey ON command.fmic_ai_citations USING btree (id)",
+  "index": "fmic_ai_citations_pkey",
+  "schema": "command",
+  "table": "fmic_ai_citations"
+ },
+ {
+  "def": "CREATE INDEX fmic_ai_citations_run_idx ON command.fmic_ai_citations USING btree (audit_run_id)",
+  "index": "fmic_ai_citations_run_idx",
+  "schema": "command",
+  "table": "fmic_ai_citations"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX fmic_ai_citations_sim_pos_uq ON command.fmic_ai_citations USING btree (simulation_id, \"position\")",
+  "index": "fmic_ai_citations_sim_pos_uq",
+  "schema": "command",
+  "table": "fmic_ai_citations"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX fmic_ai_probe_facts_pkey ON command.fmic_ai_probe_facts USING btree (prompt_key)",
+  "index": "fmic_ai_probe_facts_pkey",
+  "schema": "command",
+  "table": "fmic_ai_probe_facts"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX fmic_ai_probe_plan_pkey ON command.fmic_ai_probe_plan USING btree (id)",
+  "index": "fmic_ai_probe_plan_pkey",
+  "schema": "command",
+  "table": "fmic_ai_probe_plan"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX fmic_ai_probe_plan_run_prompt_repeat_uq ON command.fmic_ai_probe_plan USING btree (audit_run_id, prompt_key, repeat_no)",
+  "index": "fmic_ai_probe_plan_run_prompt_repeat_uq",
+  "schema": "command",
+  "table": "fmic_ai_probe_plan"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX fmic_ai_prompt_edits_pkey ON command.fmic_ai_prompt_edits USING btree (id)",
+  "index": "fmic_ai_prompt_edits_pkey",
+  "schema": "command",
+  "table": "fmic_ai_prompt_edits"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX fmic_ai_prompt_revisions_key_rev_uq ON command.fmic_ai_prompt_revisions USING btree (organization_id, prompt_key, revision_no)",
+  "index": "fmic_ai_prompt_revisions_key_rev_uq",
+  "schema": "command",
+  "table": "fmic_ai_prompt_revisions"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX fmic_ai_prompt_revisions_pkey ON command.fmic_ai_prompt_revisions USING btree (revision_id)",
+  "index": "fmic_ai_prompt_revisions_pkey",
+  "schema": "command",
+  "table": "fmic_ai_prompt_revisions"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX fmic_ai_prompt_set_members_key_uq ON command.fmic_ai_prompt_set_members USING btree (set_id, prompt_key)",
+  "index": "fmic_ai_prompt_set_members_key_uq",
+  "schema": "command",
+  "table": "fmic_ai_prompt_set_members"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX fmic_ai_prompt_set_members_pkey ON command.fmic_ai_prompt_set_members USING btree (set_id, revision_id)",
+  "index": "fmic_ai_prompt_set_members_pkey",
+  "schema": "command",
+  "table": "fmic_ai_prompt_set_members"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX fmic_ai_prompt_sets_one_draft ON command.fmic_ai_prompt_sets USING btree (organization_id) WHERE (status = 'draft'::text)",
+  "index": "fmic_ai_prompt_sets_one_draft",
+  "schema": "command",
+  "table": "fmic_ai_prompt_sets"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX fmic_ai_prompt_sets_pkey ON command.fmic_ai_prompt_sets USING btree (set_id)",
+  "index": "fmic_ai_prompt_sets_pkey",
+  "schema": "command",
+  "table": "fmic_ai_prompt_sets"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX fmic_ai_prompts_pkey ON command.fmic_ai_prompts USING btree (prompt_key)",
+  "index": "fmic_ai_prompts_pkey",
+  "schema": "command",
+  "table": "fmic_ai_prompts"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX fmic_ai_prompts_text_uq ON command.fmic_ai_prompts USING btree (prompt_text)",
+  "index": "fmic_ai_prompts_text_uq",
+  "schema": "command",
+  "table": "fmic_ai_prompts"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX fmic_ai_remediations_pkey ON command.fmic_ai_remediations USING btree (id)",
+  "index": "fmic_ai_remediations_pkey",
+  "schema": "command",
+  "table": "fmic_ai_remediations"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX fmic_ai_remediations_simulation_id_key ON command.fmic_ai_remediations USING btree (simulation_id)",
+  "index": "fmic_ai_remediations_simulation_id_key",
+  "schema": "command",
+  "table": "fmic_ai_remediations"
+ },
+ {
+  "def": "CREATE INDEX fmic_ai_simulations_hist_excl_idx ON command.fmic_ai_simulations USING btree (audit_run_id) WHERE ((record_origin = 'historical_backfill'::text) OR (material_hallucination = 'historical_unverified'::text))",
+  "index": "fmic_ai_simulations_hist_excl_idx",
+  "schema": "command",
+  "table": "fmic_ai_simulations"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX fmic_ai_simulations_pkey ON command.fmic_ai_simulations USING btree (id)",
+  "index": "fmic_ai_simulations_pkey",
+  "schema": "command",
+  "table": "fmic_ai_simulations"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX fmic_ai_simulations_run_sim_uq ON command.fmic_ai_simulations USING btree (audit_run_id, sim_id)",
+  "index": "fmic_ai_simulations_run_sim_uq",
+  "schema": "command",
+  "table": "fmic_ai_simulations"
+ },
+ {
+  "def": "CREATE INDEX idx_fmic_ai_simulations_probe_asin ON command.fmic_ai_simulations USING btree (probe_asin) WHERE (probe_asin IS NOT NULL)",
+  "index": "idx_fmic_ai_simulations_probe_asin",
+  "schema": "command",
+  "table": "fmic_ai_simulations"
+ },
+ {
+  "def": "CREATE INDEX idx_fmic_ai_simulations_probe_kind ON command.fmic_ai_simulations USING btree (audit_run_id) WHERE (prompt_kind = 'probe'::text)",
+  "index": "idx_fmic_ai_simulations_probe_kind",
+  "schema": "command",
+  "table": "fmic_ai_simulations"
+ },
+ {
+  "def": "CREATE INDEX idx_fmic_ai_simulations_sim_created ON command.fmic_ai_simulations USING btree (sim_id, created_at DESC)",
+  "index": "idx_fmic_ai_simulations_sim_created",
+  "schema": "command",
+  "table": "fmic_ai_simulations"
+ },
+ {
+  "def": "CREATE INDEX idx_fmic_sim_category ON command.fmic_ai_simulations USING btree (category)",
+  "index": "idx_fmic_sim_category",
+  "schema": "command",
+  "table": "fmic_ai_simulations"
+ },
+ {
+  "def": "CREATE INDEX idx_fmic_sim_hallucination ON command.fmic_ai_simulations USING btree (hallucination_flag)",
+  "index": "idx_fmic_sim_hallucination",
+  "schema": "command",
+  "table": "fmic_ai_simulations"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX fmic_audit_runs_pkey ON command.fmic_audit_runs USING btree (id)",
+  "index": "fmic_audit_runs_pkey",
+  "schema": "command",
+  "table": "fmic_audit_runs"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX fmic_audit_runs_workflow_execution_id_key ON command.fmic_audit_runs USING btree (workflow_execution_id)",
+  "index": "fmic_audit_runs_workflow_execution_id_key",
+  "schema": "command",
+  "table": "fmic_audit_runs"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX fmic_brand_kpi_summary_pkey ON command.fmic_brand_kpi_summary USING btree (id)",
+  "index": "fmic_brand_kpi_summary_pkey",
+  "schema": "command",
+  "table": "fmic_brand_kpi_summary"
+ },
+ {
+  "def": "CREATE INDEX idx_fmic_brand_kpi_metric_created ON command.fmic_brand_kpi_summary USING btree (metric_id, created_at DESC)",
+  "index": "idx_fmic_brand_kpi_metric_created",
+  "schema": "command",
+  "table": "fmic_brand_kpi_summary"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX fmic_competitor_sov_pkey ON command.fmic_competitor_sov USING btree (id)",
+  "index": "fmic_competitor_sov_pkey",
+  "schema": "command",
+  "table": "fmic_competitor_sov"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX fmic_dealer_catalog_pkey ON command.fmic_dealer_catalog USING btree (report_date, model_number)",
+  "index": "fmic_dealer_catalog_pkey",
+  "schema": "command",
+  "table": "fmic_dealer_catalog"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX fmic_division_metrics_pkey ON command.fmic_division_metrics USING btree (id)",
+  "index": "fmic_division_metrics_pkey",
+  "schema": "command",
+  "table": "fmic_division_metrics"
+ },
+ {
+  "def": "CREATE INDEX idx_fmic_division_metrics_div_created ON command.fmic_division_metrics USING btree (division, created_at DESC)",
+  "index": "idx_fmic_division_metrics_div_created",
+  "schema": "command",
+  "table": "fmic_division_metrics"
+ },
+ {
+  "def": "CREATE INDEX fmic_dual_write_errors_pending_idx ON command.fmic_dual_write_errors USING btree (created_at) WHERE (replayed_at IS NULL)",
+  "index": "fmic_dual_write_errors_pending_idx",
+  "schema": "command",
+  "table": "fmic_dual_write_errors"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX fmic_dual_write_errors_pkey ON command.fmic_dual_write_errors USING btree (id)",
+  "index": "fmic_dual_write_errors_pkey",
+  "schema": "command",
+  "table": "fmic_dual_write_errors"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX fmic_electric_catalog_pkey ON command.fmic_electric_catalog USING btree (asin)",
+  "index": "fmic_electric_catalog_pkey",
+  "schema": "command",
+  "table": "fmic_electric_catalog"
+ },
+ {
+  "def": "CREATE INDEX idx_fmic_electric_catalog_model ON command.fmic_electric_catalog USING btree (model_number)",
+  "index": "idx_fmic_electric_catalog_model",
+  "schema": "command",
+  "table": "fmic_electric_catalog"
+ },
+ {
+  "def": "CREATE INDEX idx_fmic_electric_catalog_sales_rank ON command.fmic_electric_catalog USING btree (sales_rank)",
+  "index": "idx_fmic_electric_catalog_sales_rank",
+  "schema": "command",
+  "table": "fmic_electric_catalog"
+ },
+ {
+  "def": "CREATE INDEX idx_fmic_electric_catalog_upc ON command.fmic_electric_catalog USING btree (upc)",
+  "index": "idx_fmic_electric_catalog_upc",
+  "schema": "command",
+  "table": "fmic_electric_catalog"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX fmic_electric_catalog_history_pkey ON command.fmic_electric_catalog_history USING btree (entity_key, row_hash)",
+  "index": "fmic_electric_catalog_history_pkey",
+  "schema": "command",
+  "table": "fmic_electric_catalog_history"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX fmic_job_state_pkey ON command.fmic_job_state USING btree (job_key)",
+  "index": "fmic_job_state_pkey",
+  "schema": "command",
+  "table": "fmic_job_state"
+ },
+ {
+  "def": "CREATE INDEX fmic_keepa_daily_day_idx ON command.fmic_keepa_daily USING btree (day)",
+  "index": "fmic_keepa_daily_day_idx",
+  "schema": "command",
+  "table": "fmic_keepa_daily"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX fmic_keepa_daily_pkey ON command.fmic_keepa_daily USING btree (asin, day)",
+  "index": "fmic_keepa_daily_pkey",
+  "schema": "command",
+  "table": "fmic_keepa_daily"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX fmic_keepa_stats_pkey ON command.fmic_keepa_stats USING btree (asin)",
+  "index": "fmic_keepa_stats_pkey",
+  "schema": "command",
+  "table": "fmic_keepa_stats"
+ },
+ {
+  "def": "CREATE INDEX fmic_listing_content_part_number_idx ON command.fmic_listing_content USING btree (part_number)",
+  "index": "fmic_listing_content_part_number_idx",
+  "schema": "command",
+  "table": "fmic_listing_content"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX fmic_listing_content_pkey ON command.fmic_listing_content USING btree (asin)",
+  "index": "fmic_listing_content_pkey",
+  "schema": "command",
+  "table": "fmic_listing_content"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX fmic_listing_content_history_pkey ON command.fmic_listing_content_history USING btree (entity_key, row_hash)",
+  "index": "fmic_listing_content_history_pkey",
+  "schema": "command",
+  "table": "fmic_listing_content_history"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX fmic_retail_buybox_map_asin_uq ON command.fmic_retail_buybox_map USING btree (asin)",
+  "index": "fmic_retail_buybox_map_asin_uq",
+  "schema": "command",
+  "table": "fmic_retail_buybox_map"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX fmic_retail_buybox_map_pkey ON command.fmic_retail_buybox_map USING btree (id)",
+  "index": "fmic_retail_buybox_map_pkey",
+  "schema": "command",
+  "table": "fmic_retail_buybox_map"
+ },
+ {
+  "def": "CREATE INDEX idx_fmic_retail_asin ON command.fmic_retail_buybox_map USING btree (asin)",
+  "index": "idx_fmic_retail_asin",
+  "schema": "command",
+  "table": "fmic_retail_buybox_map"
+ },
+ {
+  "def": "CREATE INDEX idx_fmic_retail_buybox_asin_created ON command.fmic_retail_buybox_map USING btree (asin, created_at DESC)",
+  "index": "idx_fmic_retail_buybox_asin_created",
+  "schema": "command",
+  "table": "fmic_retail_buybox_map"
+ },
+ {
+  "def": "CREATE INDEX idx_fmic_retail_status ON command.fmic_retail_buybox_map USING btree (buybox_status)",
+  "index": "idx_fmic_retail_status",
+  "schema": "command",
+  "table": "fmic_retail_buybox_map"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX fmic_retail_buybox_map_history_pkey ON command.fmic_retail_buybox_map_history USING btree (entity_key, row_hash)",
+  "index": "fmic_retail_buybox_map_history_pkey",
+  "schema": "command",
+  "table": "fmic_retail_buybox_map_history"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX fmic_sellers_pkey ON command.fmic_sellers USING btree (seller_id)",
+  "index": "fmic_sellers_pkey",
+  "schema": "command",
+  "table": "fmic_sellers"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX fmic_sellers_history_pkey ON command.fmic_sellers_history USING btree (entity_key, row_hash)",
+  "index": "fmic_sellers_history_pkey",
+  "schema": "command",
+  "table": "fmic_sellers_history"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX fmic_smartscout_products_pkey ON command.fmic_smartscout_products USING btree (asin, snapshot_date)",
+  "index": "fmic_smartscout_products_pkey",
+  "schema": "command",
+  "table": "fmic_smartscout_products"
+ },
+ {
+  "def": "CREATE INDEX fmic_smartscout_products_snapshot_idx ON command.fmic_smartscout_products USING btree (snapshot_date)",
+  "index": "fmic_smartscout_products_snapshot_idx",
+  "schema": "command",
+  "table": "fmic_smartscout_products"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX fmic_social_intelligence_pkey ON command.fmic_social_intelligence USING btree (id)",
+  "index": "fmic_social_intelligence_pkey",
+  "schema": "command",
+  "table": "fmic_social_intelligence"
+ },
+ {
+  "def": "CREATE INDEX idx_fmic_social_flagged ON command.fmic_social_intelligence USING btree (flagged_for_review)",
+  "index": "idx_fmic_social_flagged",
+  "schema": "command",
+  "table": "fmic_social_intelligence"
+ },
+ {
+  "def": "CREATE INDEX idx_fmic_social_platform ON command.fmic_social_intelligence USING btree (platform)",
+  "index": "idx_fmic_social_platform",
+  "schema": "command",
+  "table": "fmic_social_intelligence"
+ },
+ {
+  "def": "CREATE INDEX fmic_spec_findability_attempt_asin_idx ON command.fmic_spec_findability_attempt USING btree (asin, attempt_at DESC)",
+  "index": "fmic_spec_findability_attempt_asin_idx",
+  "schema": "command",
+  "table": "fmic_spec_findability_attempt"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX fmic_spec_findability_attempt_attempt_key_key ON command.fmic_spec_findability_attempt USING btree (attempt_key)",
+  "index": "fmic_spec_findability_attempt_attempt_key_key",
+  "schema": "command",
+  "table": "fmic_spec_findability_attempt"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX fmic_spec_findability_attempt_pkey ON command.fmic_spec_findability_attempt USING btree (id)",
+  "index": "fmic_spec_findability_attempt_pkey",
+  "schema": "command",
+  "table": "fmic_spec_findability_attempt"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX fmic_spec_findability_current_pkey ON command.fmic_spec_findability_current USING btree (asin)",
+  "index": "fmic_spec_findability_current_pkey",
+  "schema": "command",
+  "table": "fmic_spec_findability_current"
+ },
+ {
+  "def": "CREATE INDEX fmic_spec_readiness_asin_checked_idx ON command.fmic_spec_readiness USING btree (asin, checked_at DESC)",
+  "index": "fmic_spec_readiness_asin_checked_idx",
+  "schema": "command",
+  "table": "fmic_spec_readiness"
+ },
+ {
+  "def": "CREATE INDEX fmic_spec_readiness_asin_idx ON command.fmic_spec_readiness USING btree (asin, checked_at DESC)",
+  "index": "fmic_spec_readiness_asin_idx",
+  "schema": "command",
+  "table": "fmic_spec_readiness"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX fmic_spec_readiness_pkey ON command.fmic_spec_readiness USING btree (id)",
+  "index": "fmic_spec_readiness_pkey",
+  "schema": "command",
+  "table": "fmic_spec_readiness"
+ },
+ {
+  "def": "CREATE INDEX listing_channel_price_channel_idx ON command.listing_channel_price USING btree (channel)",
+  "index": "listing_channel_price_channel_idx",
+  "schema": "command",
+  "table": "listing_channel_price"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX listing_channel_price_pkey ON command.listing_channel_price USING btree (asin, channel)",
+  "index": "listing_channel_price_pkey",
+  "schema": "command",
+  "table": "listing_channel_price"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX mv_listing_offer_state_v2_key_idx ON command.mv_listing_offer_state_v2 USING btree (asin, state, start_day)",
+  "index": "mv_listing_offer_state_v2_key_idx",
+  "schema": "command",
+  "table": "mv_listing_offer_state_v2"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX mv_listing_sales_loss_asin_idx ON command.mv_listing_sales_loss USING btree (asin)",
+  "index": "mv_listing_sales_loss_asin_idx",
+  "schema": "command",
+  "table": "mv_listing_sales_loss"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX mv_listing_sales_loss_v2_asin_idx ON command.mv_listing_sales_loss_v2 USING btree (asin)",
+  "index": "mv_listing_sales_loss_v2_asin_idx",
+  "schema": "command",
+  "table": "mv_listing_sales_loss_v2"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX mv_listing_stock_episodes_key_idx ON command.mv_listing_stock_episodes USING btree (asin, state, start_day)",
+  "index": "mv_listing_stock_episodes_key_idx",
+  "schema": "command",
+  "table": "mv_listing_stock_episodes"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX organization_memberships_organization_id_user_id_key ON command.organization_memberships USING btree (organization_id, user_id)",
+  "index": "organization_memberships_organization_id_user_id_key",
+  "schema": "command",
+  "table": "organization_memberships"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX organization_memberships_pkey ON command.organization_memberships USING btree (id)",
+  "index": "organization_memberships_pkey",
+  "schema": "command",
+  "table": "organization_memberships"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX organizations_pkey ON command.organizations USING btree (id)",
+  "index": "organizations_pkey",
+  "schema": "command",
+  "table": "organizations"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX organizations_single_platform_org ON command.organizations USING btree (is_platform_org) WHERE (is_platform_org = true)",
+  "index": "organizations_single_platform_org",
+  "schema": "command",
+  "table": "organizations"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX organizations_slug_key ON command.organizations USING btree (slug)",
+  "index": "organizations_slug_key",
+  "schema": "command",
+  "table": "organizations"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX user_profiles_pkey ON command.user_profiles USING btree (id)",
+  "index": "user_profiles_pkey",
+  "schema": "command",
+  "table": "user_profiles"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX worker20_prompt_versioning_checks_pkey ON command.worker20_prompt_versioning_checks USING btree (check_name)",
+  "index": "worker20_prompt_versioning_checks_pkey",
+  "schema": "command",
+  "table": "worker20_prompt_versioning_checks"
+ },
+ {
+  "def": "CREATE INDEX ai_citations_domain_idx ON ledlenser.ai_citations USING btree (domain)",
+  "index": "ai_citations_domain_idx",
+  "schema": "ledlenser",
+  "table": "ai_citations"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX ai_citations_pkey ON ledlenser.ai_citations USING btree (id)",
+  "index": "ai_citations_pkey",
+  "schema": "ledlenser",
+  "table": "ai_citations"
+ },
+ {
+  "def": "CREATE INDEX ai_citations_run_idx ON ledlenser.ai_citations USING btree (audit_run_id)",
+  "index": "ai_citations_run_idx",
+  "schema": "ledlenser",
+  "table": "ai_citations"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX ai_citations_simulation_id_position_key ON ledlenser.ai_citations USING btree (simulation_id, \"position\")",
+  "index": "ai_citations_simulation_id_position_key",
+  "schema": "ledlenser",
+  "table": "ai_citations"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX ai_probe_facts_pkey ON ledlenser.ai_probe_facts USING btree (prompt_key)",
+  "index": "ai_probe_facts_pkey",
+  "schema": "ledlenser",
+  "table": "ai_probe_facts"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX ai_probe_plan_audit_run_id_prompt_key_repeat_no_key ON ledlenser.ai_probe_plan USING btree (audit_run_id, prompt_key, repeat_no)",
+  "index": "ai_probe_plan_audit_run_id_prompt_key_repeat_no_key",
+  "schema": "ledlenser",
+  "table": "ai_probe_plan"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX ai_probe_plan_pkey ON ledlenser.ai_probe_plan USING btree (id)",
+  "index": "ai_probe_plan_pkey",
+  "schema": "ledlenser",
+  "table": "ai_probe_plan"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX ai_prompts_pkey ON ledlenser.ai_prompts USING btree (prompt_key)",
+  "index": "ai_prompts_pkey",
+  "schema": "ledlenser",
+  "table": "ai_prompts"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX ai_prompts_prompt_text_key ON ledlenser.ai_prompts USING btree (prompt_text)",
+  "index": "ai_prompts_prompt_text_key",
+  "schema": "ledlenser",
+  "table": "ai_prompts"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX ai_remediations_pkey ON ledlenser.ai_remediations USING btree (id)",
+  "index": "ai_remediations_pkey",
+  "schema": "ledlenser",
+  "table": "ai_remediations"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX ai_remediations_simulation_id_key ON ledlenser.ai_remediations USING btree (simulation_id)",
+  "index": "ai_remediations_simulation_id_key",
+  "schema": "ledlenser",
+  "table": "ai_remediations"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX ai_simulations_audit_run_id_sim_id_key ON ledlenser.ai_simulations USING btree (audit_run_id, sim_id)",
+  "index": "ai_simulations_audit_run_id_sim_id_key",
+  "schema": "ledlenser",
+  "table": "ai_simulations"
+ },
+ {
+  "def": "CREATE INDEX ai_simulations_category_idx ON ledlenser.ai_simulations USING btree (category)",
+  "index": "ai_simulations_category_idx",
+  "schema": "ledlenser",
+  "table": "ai_simulations"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX ai_simulations_pkey ON ledlenser.ai_simulations USING btree (id)",
+  "index": "ai_simulations_pkey",
+  "schema": "ledlenser",
+  "table": "ai_simulations"
+ },
+ {
+  "def": "CREATE INDEX ai_simulations_probe_asin_idx ON ledlenser.ai_simulations USING btree (probe_asin) WHERE (probe_asin IS NOT NULL)",
+  "index": "ai_simulations_probe_asin_idx",
+  "schema": "ledlenser",
+  "table": "ai_simulations"
+ },
+ {
+  "def": "CREATE INDEX ai_simulations_probe_kind_idx ON ledlenser.ai_simulations USING btree (audit_run_id) WHERE (prompt_kind = 'probe'::text)",
+  "index": "ai_simulations_probe_kind_idx",
+  "schema": "ledlenser",
+  "table": "ai_simulations"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX audit_runs_pkey ON ledlenser.audit_runs USING btree (id)",
+  "index": "audit_runs_pkey",
+  "schema": "ledlenser",
+  "table": "audit_runs"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX audit_runs_workflow_execution_id_key ON ledlenser.audit_runs USING btree (workflow_execution_id)",
+  "index": "audit_runs_workflow_execution_id_key",
+  "schema": "ledlenser",
+  "table": "audit_runs"
+ },
+ {
+  "def": "CREATE INDEX brand_catalog_model_idx ON ledlenser.brand_catalog USING btree (model)",
+  "index": "brand_catalog_model_idx",
+  "schema": "ledlenser",
+  "table": "brand_catalog"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX brand_catalog_pkey ON ledlenser.brand_catalog USING btree (sku)",
+  "index": "brand_catalog_pkey",
+  "schema": "ledlenser",
+  "table": "brand_catalog"
+ },
+ {
+  "def": "CREATE INDEX brand_catalog_upc_idx ON ledlenser.brand_catalog USING btree (upc)",
+  "index": "brand_catalog_upc_idx",
+  "schema": "ledlenser",
+  "table": "brand_catalog"
+ },
+ {
+  "def": "CREATE INDEX brand_kpi_metric_created_idx ON ledlenser.brand_kpi_summary USING btree (metric_id, created_at DESC)",
+  "index": "brand_kpi_metric_created_idx",
+  "schema": "ledlenser",
+  "table": "brand_kpi_summary"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX brand_kpi_summary_pkey ON ledlenser.brand_kpi_summary USING btree (id)",
+  "index": "brand_kpi_summary_pkey",
+  "schema": "ledlenser",
+  "table": "brand_kpi_summary"
+ },
+ {
+  "def": "CREATE INDEX catalog_model_idx ON ledlenser.catalog USING btree (model_number)",
+  "index": "catalog_model_idx",
+  "schema": "ledlenser",
+  "table": "catalog"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX catalog_pkey ON ledlenser.catalog USING btree (asin)",
+  "index": "catalog_pkey",
+  "schema": "ledlenser",
+  "table": "catalog"
+ },
+ {
+  "def": "CREATE INDEX catalog_sales_rank_idx ON ledlenser.catalog USING btree (sales_rank)",
+  "index": "catalog_sales_rank_idx",
+  "schema": "ledlenser",
+  "table": "catalog"
+ },
+ {
+  "def": "CREATE INDEX catalog_upc_idx ON ledlenser.catalog USING btree (upc)",
+  "index": "catalog_upc_idx",
+  "schema": "ledlenser",
+  "table": "catalog"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX catalog_history_pkey ON ledlenser.catalog_history USING btree (entity_key, row_hash)",
+  "index": "catalog_history_pkey",
+  "schema": "ledlenser",
+  "table": "catalog_history"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX client_config_pkey ON ledlenser.client_config USING btree (client_key)",
+  "index": "client_config_pkey",
+  "schema": "ledlenser",
+  "table": "client_config"
+ },
+ {
+  "def": "CREATE INDEX division_metrics_div_created_idx ON ledlenser.division_metrics USING btree (division, created_at DESC)",
+  "index": "division_metrics_div_created_idx",
+  "schema": "ledlenser",
+  "table": "division_metrics"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX division_metrics_pkey ON ledlenser.division_metrics USING btree (id)",
+  "index": "division_metrics_pkey",
+  "schema": "ledlenser",
+  "table": "division_metrics"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX job_state_pkey ON ledlenser.job_state USING btree (job_key)",
+  "index": "job_state_pkey",
+  "schema": "ledlenser",
+  "table": "job_state"
+ },
+ {
+  "def": "CREATE INDEX keepa_daily_day_idx ON ledlenser.keepa_daily USING btree (day)",
+  "index": "keepa_daily_day_idx",
+  "schema": "ledlenser",
+  "table": "keepa_daily"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX keepa_daily_pkey ON ledlenser.keepa_daily USING btree (asin, day)",
+  "index": "keepa_daily_pkey",
+  "schema": "ledlenser",
+  "table": "keepa_daily"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX keepa_stats_pkey ON ledlenser.keepa_stats USING btree (asin)",
+  "index": "keepa_stats_pkey",
+  "schema": "ledlenser",
+  "table": "keepa_stats"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX listing_channel_price_pkey ON ledlenser.listing_channel_price USING btree (asin, channel)",
+  "index": "listing_channel_price_pkey",
+  "schema": "ledlenser",
+  "table": "listing_channel_price"
+ },
+ {
+  "def": "CREATE INDEX listing_content_part_number_idx ON ledlenser.listing_content USING btree (part_number)",
+  "index": "listing_content_part_number_idx",
+  "schema": "ledlenser",
+  "table": "listing_content"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX listing_content_pkey ON ledlenser.listing_content USING btree (asin)",
+  "index": "listing_content_pkey",
+  "schema": "ledlenser",
+  "table": "listing_content"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX listing_content_history_pkey ON ledlenser.listing_content_history USING btree (entity_key, row_hash)",
+  "index": "listing_content_history_pkey",
+  "schema": "ledlenser",
+  "table": "listing_content_history"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX mv_listing_offer_state_v2_key_idx ON ledlenser.mv_listing_offer_state_v2 USING btree (asin, state, start_day)",
+  "index": "mv_listing_offer_state_v2_key_idx",
+  "schema": "ledlenser",
+  "table": "mv_listing_offer_state_v2"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX mv_listing_sales_loss_v2_asin_idx ON ledlenser.mv_listing_sales_loss_v2 USING btree (asin)",
+  "index": "mv_listing_sales_loss_v2_asin_idx",
+  "schema": "ledlenser",
+  "table": "mv_listing_sales_loss_v2"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX retail_buybox_map_asin_key ON ledlenser.retail_buybox_map USING btree (asin)",
+  "index": "retail_buybox_map_asin_key",
+  "schema": "ledlenser",
+  "table": "retail_buybox_map"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX retail_buybox_map_pkey ON ledlenser.retail_buybox_map USING btree (id)",
+  "index": "retail_buybox_map_pkey",
+  "schema": "ledlenser",
+  "table": "retail_buybox_map"
+ },
+ {
+  "def": "CREATE INDEX retail_buybox_map_status_idx ON ledlenser.retail_buybox_map USING btree (buybox_status)",
+  "index": "retail_buybox_map_status_idx",
+  "schema": "ledlenser",
+  "table": "retail_buybox_map"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX retail_buybox_map_history_pkey ON ledlenser.retail_buybox_map_history USING btree (entity_key, row_hash)",
+  "index": "retail_buybox_map_history_pkey",
+  "schema": "ledlenser",
+  "table": "retail_buybox_map_history"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX sellers_pkey ON ledlenser.sellers USING btree (seller_id)",
+  "index": "sellers_pkey",
+  "schema": "ledlenser",
+  "table": "sellers"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX sellers_history_pkey ON ledlenser.sellers_history USING btree (entity_key, row_hash)",
+  "index": "sellers_history_pkey",
+  "schema": "ledlenser",
+  "table": "sellers_history"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX smartscout_products_pkey ON ledlenser.smartscout_products USING btree (asin, snapshot_date)",
+  "index": "smartscout_products_pkey",
+  "schema": "ledlenser",
+  "table": "smartscout_products"
+ },
+ {
+  "def": "CREATE INDEX smartscout_products_snapshot_idx ON ledlenser.smartscout_products USING btree (snapshot_date)",
+  "index": "smartscout_products_snapshot_idx",
+  "schema": "ledlenser",
+  "table": "smartscout_products"
+ },
+ {
+  "def": "CREATE INDEX spec_findability_attempt_asin_idx ON ledlenser.spec_findability_attempt USING btree (asin, attempt_at DESC)",
+  "index": "spec_findability_attempt_asin_idx",
+  "schema": "ledlenser",
+  "table": "spec_findability_attempt"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX spec_findability_attempt_attempt_key_key ON ledlenser.spec_findability_attempt USING btree (attempt_key)",
+  "index": "spec_findability_attempt_attempt_key_key",
+  "schema": "ledlenser",
+  "table": "spec_findability_attempt"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX spec_findability_attempt_pkey ON ledlenser.spec_findability_attempt USING btree (id)",
+  "index": "spec_findability_attempt_pkey",
+  "schema": "ledlenser",
+  "table": "spec_findability_attempt"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX spec_findability_current_pkey ON ledlenser.spec_findability_current USING btree (asin)",
+  "index": "spec_findability_current_pkey",
+  "schema": "ledlenser",
+  "table": "spec_findability_current"
+ },
+ {
+  "def": "CREATE INDEX spec_readiness_asin_checked_idx ON ledlenser.spec_readiness USING btree (asin, checked_at DESC)",
+  "index": "spec_readiness_asin_checked_idx",
+  "schema": "ledlenser",
+  "table": "spec_readiness"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX spec_readiness_pkey ON ledlenser.spec_readiness USING btree (id)",
+  "index": "spec_readiness_pkey",
+  "schema": "ledlenser",
+  "table": "spec_readiness"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX actuation_expiry_reminders_sent_pkey ON public.actuation_expiry_reminders_sent USING btree (client_key, factor, expires_on, threshold_days)",
+  "index": "actuation_expiry_reminders_sent_pkey",
+  "schema": "public",
+  "table": "actuation_expiry_reminders_sent"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX actuation_items_client_key_factor_url_key ON public.actuation_items USING btree (client_key, factor, url)",
+  "index": "actuation_items_client_key_factor_url_key",
+  "schema": "public",
+  "table": "actuation_items"
+ },
+ {
+  "def": "CREATE INDEX actuation_items_client_posted_idx ON public.actuation_items USING btree (client_key, factor, posted_on DESC)",
+  "index": "actuation_items_client_posted_idx",
+  "schema": "public",
+  "table": "actuation_items"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX actuation_items_pkey ON public.actuation_items USING btree (id)",
+  "index": "actuation_items_pkey",
+  "schema": "public",
+  "table": "actuation_items"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX actuation_programs_pkey ON public.actuation_programs USING btree (client_key, factor)",
+  "index": "actuation_programs_pkey",
+  "schema": "public",
+  "table": "actuation_programs"
+ },
+ {
+  "def": "CREATE INDEX audit_log_org_occurred_idx ON public.audit_log USING btree (organization_id, occurred_at DESC)",
+  "index": "audit_log_org_occurred_idx",
+  "schema": "public",
+  "table": "audit_log"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX audit_log_pkey ON public.audit_log USING btree (id)",
+  "index": "audit_log_pkey",
+  "schema": "public",
+  "table": "audit_log"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX brand_tokens_pkey ON public.brand_tokens USING btree (id)",
+  "index": "brand_tokens_pkey",
+  "schema": "public",
+  "table": "brand_tokens"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX brand_tokens_token_key_key ON public.brand_tokens USING btree (token_key)",
+  "index": "brand_tokens_token_key_key",
+  "schema": "public",
+  "table": "brand_tokens"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX canvas_score_snapshots_client_key_week_start_key ON public.canvas_score_snapshots USING btree (client_key, week_start)",
+  "index": "canvas_score_snapshots_client_key_week_start_key",
+  "schema": "public",
+  "table": "canvas_score_snapshots"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX canvas_score_snapshots_pkey ON public.canvas_score_snapshots USING btree (id)",
+  "index": "canvas_score_snapshots_pkey",
+  "schema": "public",
+  "table": "canvas_score_snapshots"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX components_pkey ON public.components USING btree (id)",
+  "index": "components_pkey",
+  "schema": "public",
+  "table": "components"
+ },
+ {
+  "def": "CREATE INDEX departments_org_idx ON public.departments USING btree (organization_id)",
+  "index": "departments_org_idx",
+  "schema": "public",
+  "table": "departments"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX departments_organization_id_name_key ON public.departments USING btree (organization_id, name)",
+  "index": "departments_organization_id_name_key",
+  "schema": "public",
+  "table": "departments"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX departments_pkey ON public.departments USING btree (id)",
+  "index": "departments_pkey",
+  "schema": "public",
+  "table": "departments"
+ },
+ {
+  "def": "CREATE INDEX issue_set_asides_check_idx ON public.issue_set_asides USING btree (client_key, check_key, status)",
+  "index": "issue_set_asides_check_idx",
+  "schema": "public",
+  "table": "issue_set_asides"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX issue_set_asides_client_key_check_key_entity_key_key ON public.issue_set_asides USING btree (client_key, check_key, entity_key)",
+  "index": "issue_set_asides_client_key_check_key_entity_key_key",
+  "schema": "public",
+  "table": "issue_set_asides"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX issue_set_asides_pkey ON public.issue_set_asides USING btree (id)",
+  "index": "issue_set_asides_pkey",
+  "schema": "public",
+  "table": "issue_set_asides"
+ },
+ {
+  "def": "CREATE INDEX modules_org_idx ON public.modules USING btree (organization_id)",
+  "index": "modules_org_idx",
+  "schema": "public",
+  "table": "modules"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX modules_organization_id_module_key_key ON public.modules USING btree (organization_id, module_key)",
+  "index": "modules_organization_id_module_key_key",
+  "schema": "public",
+  "table": "modules"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX modules_pkey ON public.modules USING btree (id)",
+  "index": "modules_pkey",
+  "schema": "public",
+  "table": "modules"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX organization_memberships_organization_id_user_id_key ON public.organization_memberships USING btree (organization_id, user_id)",
+  "index": "organization_memberships_organization_id_user_id_key",
+  "schema": "public",
+  "table": "organization_memberships"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX organization_memberships_pkey ON public.organization_memberships USING btree (id)",
+  "index": "organization_memberships_pkey",
+  "schema": "public",
+  "table": "organization_memberships"
+ },
+ {
+  "def": "CREATE INDEX organization_memberships_user_active_idx ON public.organization_memberships USING btree (user_id, organization_id) WHERE (status = 'active'::membership_status)",
+  "index": "organization_memberships_user_active_idx",
+  "schema": "public",
+  "table": "organization_memberships"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX organizations_pkey ON public.organizations USING btree (id)",
+  "index": "organizations_pkey",
+  "schema": "public",
+  "table": "organizations"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX organizations_slug_key ON public.organizations USING btree (slug)",
+  "index": "organizations_slug_key",
+  "schema": "public",
+  "table": "organizations"
+ },
+ {
+  "def": "CREATE INDEX people_org_idx ON public.people USING btree (organization_id)",
+  "index": "people_org_idx",
+  "schema": "public",
+  "table": "people"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX people_pkey ON public.people USING btree (id)",
+  "index": "people_pkey",
+  "schema": "public",
+  "table": "people"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX profiles_pkey ON public.profiles USING btree (id)",
+  "index": "profiles_pkey",
+  "schema": "public",
+  "table": "profiles"
+ },
+ {
+  "def": "CREATE INDEX role_assignments_org_idx ON public.role_assignments USING btree (organization_id)",
+  "index": "role_assignments_org_idx",
+  "schema": "public",
+  "table": "role_assignments"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX role_assignments_pkey ON public.role_assignments USING btree (id)",
+  "index": "role_assignments_pkey",
+  "schema": "public",
+  "table": "role_assignments"
+ },
+ {
+  "def": "CREATE INDEX role_responsibilities_org_idx ON public.role_responsibilities USING btree (organization_id)",
+  "index": "role_responsibilities_org_idx",
+  "schema": "public",
+  "table": "role_responsibilities"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX role_responsibilities_pkey ON public.role_responsibilities USING btree (id)",
+  "index": "role_responsibilities_pkey",
+  "schema": "public",
+  "table": "role_responsibilities"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX role_responsibilities_role_seat_id_display_order_key ON public.role_responsibilities USING btree (role_seat_id, display_order)",
+  "index": "role_responsibilities_role_seat_id_display_order_key",
+  "schema": "public",
+  "table": "role_responsibilities"
+ },
+ {
+  "def": "CREATE INDEX role_seats_org_idx ON public.role_seats USING btree (organization_id)",
+  "index": "role_seats_org_idx",
+  "schema": "public",
+  "table": "role_seats"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX role_seats_organization_id_title_key ON public.role_seats USING btree (organization_id, title)",
+  "index": "role_seats_organization_id_title_key",
+  "schema": "public",
+  "table": "role_seats"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX role_seats_pkey ON public.role_seats USING btree (id)",
+  "index": "role_seats_pkey",
+  "schema": "public",
+  "table": "role_seats"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX set_aside_checks_pkey ON public.set_aside_checks USING btree (check_key)",
+  "index": "set_aside_checks_pkey",
+  "schema": "public",
+  "table": "set_aside_checks"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX set_aside_clients_pkey ON public.set_aside_clients USING btree (client_key)",
+  "index": "set_aside_clients_pkey",
+  "schema": "public",
+  "table": "set_aside_clients"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX set_aside_reasons_pkey ON public.set_aside_reasons USING btree (reason_code)",
+  "index": "set_aside_reasons_pkey",
+  "schema": "public",
+  "table": "set_aside_reasons"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX site_type_classifications_key_idx ON public.site_type_classifications USING btree (domain, COALESCE(client_key, ''::text))",
+  "index": "site_type_classifications_key_idx",
+  "schema": "public",
+  "table": "site_type_classifications"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX site_type_classifications_pkey ON public.site_type_classifications USING btree (id)",
+  "index": "site_type_classifications_pkey",
+  "schema": "public",
+  "table": "site_type_classifications"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX site_type_overrides_key_idx ON public.site_type_overrides USING btree (domain, COALESCE(client_key, ''::text))",
+  "index": "site_type_overrides_key_idx",
+  "schema": "public",
+  "table": "site_type_overrides"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX site_type_overrides_pkey ON public.site_type_overrides USING btree (id)",
+  "index": "site_type_overrides_pkey",
+  "schema": "public",
+  "table": "site_type_overrides"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX site_type_settings_pkey ON public.site_type_settings USING btree (id)",
+  "index": "site_type_settings_pkey",
+  "schema": "public",
+  "table": "site_type_settings"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX variants_pkey ON public.variants USING btree (id)",
+  "index": "variants_pkey",
+  "schema": "public",
+  "table": "variants"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX votes_pkey ON public.votes USING btree (id)",
+  "index": "votes_pkey",
+  "schema": "public",
+  "table": "votes"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX votes_variant_id_user_email_key ON public.votes USING btree (variant_id, user_email)",
+  "index": "votes_variant_id_user_email_key",
+  "schema": "public",
+  "table": "votes"
+ },
+ {
+  "def": "CREATE INDEX work_dependencies_blocked_idx ON public.work_dependencies USING btree (blocked_work_item_id)",
+  "index": "work_dependencies_blocked_idx",
+  "schema": "public",
+  "table": "work_dependencies"
+ },
+ {
+  "def": "CREATE INDEX work_dependencies_blocking_idx ON public.work_dependencies USING btree (blocking_work_item_id)",
+  "index": "work_dependencies_blocking_idx",
+  "schema": "public",
+  "table": "work_dependencies"
+ },
+ {
+  "def": "CREATE INDEX work_dependencies_org_idx ON public.work_dependencies USING btree (organization_id)",
+  "index": "work_dependencies_org_idx",
+  "schema": "public",
+  "table": "work_dependencies"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX work_dependencies_pkey ON public.work_dependencies USING btree (id)",
+  "index": "work_dependencies_pkey",
+  "schema": "public",
+  "table": "work_dependencies"
+ },
+ {
+  "def": "CREATE INDEX work_items_module_idx ON public.work_items USING btree (module_id)",
+  "index": "work_items_module_idx",
+  "schema": "public",
+  "table": "work_items"
+ },
+ {
+  "def": "CREATE INDEX work_items_org_idx ON public.work_items USING btree (organization_id)",
+  "index": "work_items_org_idx",
+  "schema": "public",
+  "table": "work_items"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX work_items_organization_id_work_key_key ON public.work_items USING btree (organization_id, work_key)",
+  "index": "work_items_organization_id_work_key_key",
+  "schema": "public",
+  "table": "work_items"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX work_items_pkey ON public.work_items USING btree (id)",
+  "index": "work_items_pkey",
+  "schema": "public",
+  "table": "work_items"
+ },
+ {
+  "def": "CREATE INDEX work_items_status_idx ON public.work_items USING btree (organization_id, status)",
+  "index": "work_items_status_idx",
+  "schema": "public",
+  "table": "work_items"
+ },
+ {
+  "def": "CREATE INDEX work_milestones_item_idx ON public.work_milestones USING btree (work_item_id)",
+  "index": "work_milestones_item_idx",
+  "schema": "public",
+  "table": "work_milestones"
+ },
+ {
+  "def": "CREATE INDEX work_milestones_org_idx ON public.work_milestones USING btree (organization_id)",
+  "index": "work_milestones_org_idx",
+  "schema": "public",
+  "table": "work_milestones"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX work_milestones_pkey ON public.work_milestones USING btree (id)",
+  "index": "work_milestones_pkey",
+  "schema": "public",
+  "table": "work_milestones"
+ },
+ {
+  "def": "CREATE INDEX work_source_links_item_idx ON public.work_source_links USING btree (work_item_id)",
+  "index": "work_source_links_item_idx",
+  "schema": "public",
+  "table": "work_source_links"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX work_source_links_one_canonical_idx ON public.work_source_links USING btree (work_item_id) WHERE is_canonical",
+  "index": "work_source_links_one_canonical_idx",
+  "schema": "public",
+  "table": "work_source_links"
+ },
+ {
+  "def": "CREATE INDEX work_source_links_org_idx ON public.work_source_links USING btree (organization_id)",
+  "index": "work_source_links_org_idx",
+  "schema": "public",
+  "table": "work_source_links"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX work_source_links_pkey ON public.work_source_links USING btree (id)",
+  "index": "work_source_links_pkey",
+  "schema": "public",
+  "table": "work_source_links"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX action_item_pkey ON sandbox.action_item USING btree (action_item_id)",
+  "index": "action_item_pkey",
+  "schema": "sandbox",
+  "table": "action_item"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX ai_answer_pkey ON sandbox.ai_answer USING btree (ai_answer_id)",
+  "index": "ai_answer_pkey",
+  "schema": "sandbox",
+  "table": "ai_answer"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX ai_prompt_client_id_prompt_text_key ON sandbox.ai_prompt USING btree (client_id, prompt_text)",
+  "index": "ai_prompt_client_id_prompt_text_key",
+  "schema": "sandbox",
+  "table": "ai_prompt"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX ai_prompt_pkey ON sandbox.ai_prompt USING btree (ai_prompt_id)",
+  "index": "ai_prompt_pkey",
+  "schema": "sandbox",
+  "table": "ai_prompt"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX client_pkey ON sandbox.client USING btree (client_id)",
+  "index": "client_pkey",
+  "schema": "sandbox",
+  "table": "client"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX client_slug_key ON sandbox.client USING btree (slug)",
+  "index": "client_slug_key",
+  "schema": "sandbox",
+  "table": "client"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX competitor_brand_client_id_name_key ON sandbox.competitor_brand USING btree (client_id, name)",
+  "index": "competitor_brand_client_id_name_key",
+  "schema": "sandbox",
+  "table": "competitor_brand"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX competitor_brand_pkey ON sandbox.competitor_brand USING btree (competitor_brand_id)",
+  "index": "competitor_brand_pkey",
+  "schema": "sandbox",
+  "table": "competitor_brand"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX estimate_pkey ON sandbox.estimate USING btree (estimate_id)",
+  "index": "estimate_pkey",
+  "schema": "sandbox",
+  "table": "estimate"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX estimate_input_estimate_id_input_key_key ON sandbox.estimate_input USING btree (estimate_id, input_key)",
+  "index": "estimate_input_estimate_id_input_key_key",
+  "schema": "sandbox",
+  "table": "estimate_input"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX estimate_input_pkey ON sandbox.estimate_input USING btree (estimate_input_id)",
+  "index": "estimate_input_pkey",
+  "schema": "sandbox",
+  "table": "estimate_input"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX fender_dealer_catalog_pkey ON sandbox.fender_dealer_catalog USING btree (report_date, model_number)",
+  "index": "fender_dealer_catalog_pkey",
+  "schema": "sandbox",
+  "table": "fender_dealer_catalog"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX listing_client_id_retailer_asin_key ON sandbox.listing USING btree (client_id, retailer, asin)",
+  "index": "listing_client_id_retailer_asin_key",
+  "schema": "sandbox",
+  "table": "listing"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX listing_pkey ON sandbox.listing USING btree (listing_id)",
+  "index": "listing_pkey",
+  "schema": "sandbox",
+  "table": "listing"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX listing_channel_price_listing_id_channel_reading_run_id_key ON sandbox.listing_channel_price USING btree (listing_id, channel, reading_run_id)",
+  "index": "listing_channel_price_listing_id_channel_reading_run_id_key",
+  "schema": "sandbox",
+  "table": "listing_channel_price"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX listing_channel_price_pkey ON sandbox.listing_channel_price USING btree (listing_channel_price_id)",
+  "index": "listing_channel_price_pkey",
+  "schema": "sandbox",
+  "table": "listing_channel_price"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX listing_map_price_pkey ON sandbox.listing_map_price USING btree (listing_map_price_id)",
+  "index": "listing_map_price_pkey",
+  "schema": "sandbox",
+  "table": "listing_map_price"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX listing_offer_reading_listing_id_reading_run_id_key ON sandbox.listing_offer_reading USING btree (listing_id, reading_run_id)",
+  "index": "listing_offer_reading_listing_id_reading_run_id_key",
+  "schema": "sandbox",
+  "table": "listing_offer_reading"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX listing_offer_reading_pkey ON sandbox.listing_offer_reading USING btree (listing_offer_reading_id)",
+  "index": "listing_offer_reading_pkey",
+  "schema": "sandbox",
+  "table": "listing_offer_reading"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX metric_registry_client_id_registry_id_key ON sandbox.metric_registry USING btree (client_id, registry_id)",
+  "index": "metric_registry_client_id_registry_id_key",
+  "schema": "sandbox",
+  "table": "metric_registry"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX metric_registry_pkey ON sandbox.metric_registry USING btree (registry_key)",
+  "index": "metric_registry_pkey",
+  "schema": "sandbox",
+  "table": "metric_registry"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX metric_value_pkey ON sandbox.metric_value USING btree (metric_value_id)",
+  "index": "metric_value_pkey",
+  "schema": "sandbox",
+  "table": "metric_value"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX reading_run_pkey ON sandbox.reading_run USING btree (reading_run_id)",
+  "index": "reading_run_pkey",
+  "schema": "sandbox",
+  "table": "reading_run"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX reading_run_workflow_execution_id_key ON sandbox.reading_run USING btree (workflow_execution_id)",
+  "index": "reading_run_workflow_execution_id_key",
+  "schema": "sandbox",
+  "table": "reading_run"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX seller_pkey ON sandbox.seller USING btree (seller_id)",
+  "index": "seller_pkey",
+  "schema": "sandbox",
+  "table": "seller"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX seller_authorization_client_id_seller_id_effective_from_key ON sandbox.seller_authorization USING btree (client_id, seller_id, effective_from)",
+  "index": "seller_authorization_client_id_seller_id_effective_from_key",
+  "schema": "sandbox",
+  "table": "seller_authorization"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX seller_authorization_pkey ON sandbox.seller_authorization USING btree (seller_authorization_id)",
+  "index": "seller_authorization_pkey",
+  "schema": "sandbox",
+  "table": "seller_authorization"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX seller_type_pkey ON sandbox.seller_type USING btree (seller_type)",
+  "index": "seller_type_pkey",
+  "schema": "sandbox",
+  "table": "seller_type"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX spec_reading_listing_id_reading_run_id_read_at_key ON sandbox.spec_reading USING btree (listing_id, reading_run_id, read_at)",
+  "index": "spec_reading_listing_id_reading_run_id_read_at_key",
+  "schema": "sandbox",
+  "table": "spec_reading"
+ },
+ {
+  "def": "CREATE UNIQUE INDEX spec_reading_pkey ON sandbox.spec_reading USING btree (spec_reading_id)",
+  "index": "spec_reading_pkey",
+  "schema": "sandbox",
+  "table": "spec_reading"
+ }
+]

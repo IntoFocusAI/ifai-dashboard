@@ -1,0 +1,37 @@
+[
+ {
+  "comment": null,
+  "owner": "postgres",
+  "schema": "canvas_private"
+ },
+ {
+  "comment": null,
+  "owner": "postgres",
+  "schema": "command"
+ },
+ {
+  "comment": "Ledlenser client data (Toolbelt writes with service_role) and the canvas_* views the dashboard reads. Mirrors command.fmic_* for Fender.",
+  "owner": "postgres",
+  "schema": "ledlenser"
+ },
+ {
+  "comment": "Helper views behind ledlenser.canvas_*. Not exposed to the API.",
+  "owner": "postgres",
+  "schema": "ledlenser_private"
+ },
+ {
+  "comment": null,
+  "owner": "postgres",
+  "schema": "private"
+ },
+ {
+  "comment": "standard public schema",
+  "owner": "pg_database_owner",
+  "schema": "public"
+ },
+ {
+  "comment": "Dashboard v2 model (see docs/v2 on branch dashboard-v2).",
+  "owner": "postgres",
+  "schema": "sandbox"
+ }
+]

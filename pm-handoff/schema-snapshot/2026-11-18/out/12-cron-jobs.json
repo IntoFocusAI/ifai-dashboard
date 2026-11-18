@@ -1,0 +1,38 @@
+[
+ {
+  "active": true,
+  "command": "REFRESH MATERIALIZED VIEW CONCURRENTLY ledlenser.mv_listing_sales_loss_v2; REFRESH MATERIALIZED VIEW CONCURRENTLY ledlenser.mv_listing_offer_state_v2;",
+  "database": "postgres",
+  "jobid": 4,
+  "jobname": "ledlenser_refresh_stock_loss_v2",
+  "schedule": "47 * * * *",
+  "username": "postgres"
+ },
+ {
+  "active": false,
+  "command": "REFRESH MATERIALIZED VIEW CONCURRENTLY command.mv_listing_sales_loss; REFRESH MATERIALIZED VIEW CONCURRENTLY command.mv_listing_stock_episodes;",
+  "database": "postgres",
+  "jobid": 2,
+  "jobname": "refresh_stock_loss",
+  "schedule": "17 * * * *",
+  "username": "postgres"
+ },
+ {
+  "active": true,
+  "command": "REFRESH MATERIALIZED VIEW CONCURRENTLY command.mv_listing_sales_loss_v2; REFRESH MATERIALIZED VIEW CONCURRENTLY command.mv_listing_offer_state_v2;",
+  "database": "postgres",
+  "jobid": 3,
+  "jobname": "refresh_stock_loss_v2",
+  "schedule": "37 * * * *",
+  "username": "postgres"
+ },
+ {
+  "active": true,
+  "command": "select sandbox.reload_readings('cl_fender')",
+  "database": "postgres",
+  "jobid": 1,
+  "jobname": "sandbox_reload_readings",
+  "schedule": "0 14 * * *",
+  "username": "postgres"
+ }
+]

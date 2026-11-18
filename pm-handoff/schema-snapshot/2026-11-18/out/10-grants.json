@@ -1,0 +1,4812 @@
+{
+ "column_grants": [
+  {
+   "column": "map_price",
+   "grantee": "cursor_map_writer",
+   "privilege": "UPDATE",
+   "relation": "fmic_retail_buybox_map",
+   "schema": "command"
+  },
+  {
+   "column": "mf_leakage",
+   "grantee": "cursor_map_writer",
+   "privilege": "UPDATE",
+   "relation": "fmic_retail_buybox_map",
+   "schema": "command"
+  },
+  {
+   "column": "wmt_leakage",
+   "grantee": "cursor_map_writer",
+   "privilege": "UPDATE",
+   "relation": "fmic_retail_buybox_map",
+   "schema": "command"
+  }
+ ],
+ "default_privileges": [
+  {
+   "acl": "{postgres=arwdDxtm/postgres,authenticated=r/postgres,service_role=arwdDxtm/postgres}",
+   "for_role": "postgres",
+   "object_type": "r",
+   "schema": "command"
+  },
+  {
+   "acl": "{postgres=rwU/postgres,anon=rwU/postgres,authenticated=rwU/postgres,service_role=rwU/postgres}",
+   "for_role": "postgres",
+   "object_type": "S",
+   "schema": "public"
+  },
+  {
+   "acl": "{postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+   "for_role": "postgres",
+   "object_type": "f",
+   "schema": "public"
+  },
+  {
+   "acl": "{postgres=arwdDxtm/postgres,anon=arwdDxtm/postgres,authenticated=arwdDxtm/postgres,service_role=arwdDxtm/postgres}",
+   "for_role": "postgres",
+   "object_type": "r",
+   "schema": "public"
+  },
+  {
+   "acl": "{anon=r/postgres,authenticated=r/postgres}",
+   "for_role": "postgres",
+   "object_type": "r",
+   "schema": "sandbox"
+  },
+  {
+   "acl": "{postgres=rwU/postgres,anon=rwU/postgres,authenticated=rwU/postgres,service_role=rwU/postgres}",
+   "for_role": "postgres",
+   "object_type": "S",
+   "schema": "storage"
+  },
+  {
+   "acl": "{postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+   "for_role": "postgres",
+   "object_type": "f",
+   "schema": "storage"
+  },
+  {
+   "acl": "{postgres=arwdDxtm/postgres,anon=arwdDxtm/postgres,authenticated=arwdDxtm/postgres,service_role=arwdDxtm/postgres}",
+   "for_role": "postgres",
+   "object_type": "r",
+   "schema": "storage"
+  },
+  {
+   "acl": "{postgres=r*w*U*/supabase_admin}",
+   "for_role": "supabase_admin",
+   "object_type": "S",
+   "schema": "cron"
+  },
+  {
+   "acl": "{postgres=X*/supabase_admin}",
+   "for_role": "supabase_admin",
+   "object_type": "f",
+   "schema": "cron"
+  },
+  {
+   "acl": "{postgres=a*r*w*d*D*x*t*m*/supabase_admin}",
+   "for_role": "supabase_admin",
+   "object_type": "r",
+   "schema": "cron"
+  },
+  {
+   "acl": "{postgres=r*w*U*/supabase_admin}",
+   "for_role": "supabase_admin",
+   "object_type": "S",
+   "schema": "extensions"
+  },
+  {
+   "acl": "{postgres=X*/supabase_admin}",
+   "for_role": "supabase_admin",
+   "object_type": "f",
+   "schema": "extensions"
+  },
+  {
+   "acl": "{postgres=a*r*w*d*D*x*t*m*/supabase_admin}",
+   "for_role": "supabase_admin",
+   "object_type": "r",
+   "schema": "extensions"
+  },
+  {
+   "acl": "{postgres=rwU/supabase_admin,anon=rwU/supabase_admin,authenticated=rwU/supabase_admin,service_role=rwU/supabase_admin}",
+   "for_role": "supabase_admin",
+   "object_type": "S",
+   "schema": "graphql"
+  },
+  {
+   "acl": "{postgres=X/supabase_admin,anon=X/supabase_admin,authenticated=X/supabase_admin,service_role=X/supabase_admin}",
+   "for_role": "supabase_admin",
+   "object_type": "f",
+   "schema": "graphql"
+  },
+  {
+   "acl": "{postgres=arwdDxtm/supabase_admin,anon=arwdDxtm/supabase_admin,authenticated=arwdDxtm/supabase_admin,service_role=arwdDxtm/supabase_admin}",
+   "for_role": "supabase_admin",
+   "object_type": "r",
+   "schema": "graphql"
+  },
+  {
+   "acl": "{postgres=rwU/supabase_admin,anon=rwU/supabase_admin,authenticated=rwU/supabase_admin,service_role=rwU/supabase_admin}",
+   "for_role": "supabase_admin",
+   "object_type": "S",
+   "schema": "graphql_public"
+  },
+  {
+   "acl": "{postgres=X/supabase_admin,anon=X/supabase_admin,authenticated=X/supabase_admin,service_role=X/supabase_admin}",
+   "for_role": "supabase_admin",
+   "object_type": "f",
+   "schema": "graphql_public"
+  },
+  {
+   "acl": "{postgres=arwdDxtm/supabase_admin,anon=arwdDxtm/supabase_admin,authenticated=arwdDxtm/supabase_admin,service_role=arwdDxtm/supabase_admin}",
+   "for_role": "supabase_admin",
+   "object_type": "r",
+   "schema": "graphql_public"
+  },
+  {
+   "acl": "{postgres=rwU/supabase_admin,anon=rwU/supabase_admin,authenticated=rwU/supabase_admin,service_role=rwU/supabase_admin}",
+   "for_role": "supabase_admin",
+   "object_type": "S",
+   "schema": "public"
+  },
+  {
+   "acl": "{postgres=X/supabase_admin,anon=X/supabase_admin,authenticated=X/supabase_admin,service_role=X/supabase_admin}",
+   "for_role": "supabase_admin",
+   "object_type": "f",
+   "schema": "public"
+  },
+  {
+   "acl": "{postgres=arwdDxtm/supabase_admin,anon=arwdDxtm/supabase_admin,authenticated=arwdDxtm/supabase_admin,service_role=arwdDxtm/supabase_admin}",
+   "for_role": "supabase_admin",
+   "object_type": "r",
+   "schema": "public"
+  },
+  {
+   "acl": "{postgres=rwU/supabase_admin,dashboard_user=rwU/supabase_admin}",
+   "for_role": "supabase_admin",
+   "object_type": "S",
+   "schema": "realtime"
+  },
+  {
+   "acl": "{postgres=X/supabase_admin,dashboard_user=X/supabase_admin}",
+   "for_role": "supabase_admin",
+   "object_type": "f",
+   "schema": "realtime"
+  },
+  {
+   "acl": "{postgres=a*r*wdDxtm/supabase_admin,dashboard_user=arwdDxtm/supabase_admin}",
+   "for_role": "supabase_admin",
+   "object_type": "r",
+   "schema": "realtime"
+  },
+  {
+   "acl": "{postgres=rwU/supabase_auth_admin,dashboard_user=rwU/supabase_auth_admin}",
+   "for_role": "supabase_auth_admin",
+   "object_type": "S",
+   "schema": "auth"
+  },
+  {
+   "acl": "{postgres=X/supabase_auth_admin,dashboard_user=X/supabase_auth_admin}",
+   "for_role": "supabase_auth_admin",
+   "object_type": "f",
+   "schema": "auth"
+  },
+  {
+   "acl": "{postgres=arwdDxtm/supabase_auth_admin,dashboard_user=arwdDxtm/supabase_auth_admin}",
+   "for_role": "supabase_auth_admin",
+   "object_type": "r",
+   "schema": "auth"
+  }
+ ],
+ "relation_grants": [
+  {
+   "grantee": "authenticated",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "fmic_ai_citations",
+   "schema": "command"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "fmic_ai_citations",
+   "schema": "command"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "fmic_ai_probe_facts",
+   "schema": "command"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "fmic_ai_probe_facts",
+   "schema": "command"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "fmic_ai_probe_plan",
+   "schema": "command"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "fmic_ai_prompt_edits",
+   "schema": "command"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "fmic_ai_prompts",
+   "schema": "command"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "fmic_ai_prompts",
+   "schema": "command"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "fmic_ai_published_prompts",
+   "schema": "command"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "fmic_ai_published_prompts",
+   "schema": "command"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "fmic_ai_remediations",
+   "schema": "command"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "fmic_ai_remediations",
+   "schema": "command"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "fmic_ai_sim_conflict_snapshot",
+   "schema": "command"
+  },
+  {
+   "grantee": "cursor_schema_reader",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "fmic_ai_sim_conflict_snapshot",
+   "schema": "command"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "fmic_ai_sim_conflict_snapshot",
+   "schema": "command"
+  },
+  {
+   "grantee": "anon",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "fmic_ai_simulations",
+   "schema": "command"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,SELECT,UPDATE",
+   "relation": "fmic_ai_simulations",
+   "schema": "command"
+  },
+  {
+   "grantee": "cursor_schema_reader",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "fmic_ai_simulations",
+   "schema": "command"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "fmic_ai_simulations",
+   "schema": "command"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "fmic_ai_simulations_run1_archive",
+   "schema": "command"
+  },
+  {
+   "grantee": "cursor_schema_reader",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "fmic_ai_simulations_run1_archive",
+   "schema": "command"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "fmic_ai_simulations_run1_archive",
+   "schema": "command"
+  },
+  {
+   "grantee": "anon",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "fmic_audit_runs",
+   "schema": "command"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,SELECT,UPDATE",
+   "relation": "fmic_audit_runs",
+   "schema": "command"
+  },
+  {
+   "grantee": "cursor_schema_reader",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "fmic_audit_runs",
+   "schema": "command"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "fmic_audit_runs",
+   "schema": "command"
+  },
+  {
+   "grantee": "anon",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "fmic_brand_kpi_summary",
+   "schema": "command"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,SELECT,UPDATE",
+   "relation": "fmic_brand_kpi_summary",
+   "schema": "command"
+  },
+  {
+   "grantee": "cursor_schema_reader",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "fmic_brand_kpi_summary",
+   "schema": "command"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "fmic_brand_kpi_summary",
+   "schema": "command"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "fmic_competitor_sov",
+   "schema": "command"
+  },
+  {
+   "grantee": "cursor_schema_reader",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "fmic_competitor_sov",
+   "schema": "command"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "fmic_competitor_sov",
+   "schema": "command"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "fmic_dealer_catalog",
+   "schema": "command"
+  },
+  {
+   "grantee": "anon",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "fmic_division_metrics",
+   "schema": "command"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,SELECT,UPDATE",
+   "relation": "fmic_division_metrics",
+   "schema": "command"
+  },
+  {
+   "grantee": "cursor_schema_reader",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "fmic_division_metrics",
+   "schema": "command"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "fmic_division_metrics",
+   "schema": "command"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "fmic_dual_write_errors",
+   "schema": "command"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "fmic_dual_write_errors",
+   "schema": "command"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "fmic_electric_catalog",
+   "schema": "command"
+  },
+  {
+   "grantee": "cursor_map_writer",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "fmic_electric_catalog",
+   "schema": "command"
+  },
+  {
+   "grantee": "cursor_schema_reader",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "fmic_electric_catalog",
+   "schema": "command"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "fmic_electric_catalog",
+   "schema": "command"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "fmic_electric_catalog_history",
+   "schema": "command"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "fmic_job_state",
+   "schema": "command"
+  },
+  {
+   "grantee": "cursor_schema_reader",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "fmic_job_state",
+   "schema": "command"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "fmic_job_state",
+   "schema": "command"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "fmic_keepa_daily",
+   "schema": "command"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "fmic_keepa_stats",
+   "schema": "command"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "fmic_listing_content",
+   "schema": "command"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "fmic_listing_content_history",
+   "schema": "command"
+  },
+  {
+   "grantee": "anon",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "fmic_retail_buybox_map",
+   "schema": "command"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,SELECT,UPDATE",
+   "relation": "fmic_retail_buybox_map",
+   "schema": "command"
+  },
+  {
+   "grantee": "cursor_map_writer",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "fmic_retail_buybox_map",
+   "schema": "command"
+  },
+  {
+   "grantee": "cursor_schema_reader",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "fmic_retail_buybox_map",
+   "schema": "command"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "fmic_retail_buybox_map",
+   "schema": "command"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "fmic_retail_buybox_map_history",
+   "schema": "command"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "fmic_sellers",
+   "schema": "command"
+  },
+  {
+   "grantee": "cursor_schema_reader",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "fmic_sellers",
+   "schema": "command"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "fmic_sellers",
+   "schema": "command"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "fmic_sellers_history",
+   "schema": "command"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "fmic_smartscout_products",
+   "schema": "command"
+  },
+  {
+   "grantee": "anon",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "fmic_social_intelligence",
+   "schema": "command"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,SELECT,UPDATE",
+   "relation": "fmic_social_intelligence",
+   "schema": "command"
+  },
+  {
+   "grantee": "cursor_schema_reader",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "fmic_social_intelligence",
+   "schema": "command"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "fmic_social_intelligence",
+   "schema": "command"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "fmic_spec_findability_attempt",
+   "schema": "command"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "fmic_spec_findability_attempt",
+   "schema": "command"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "fmic_spec_findability_current",
+   "schema": "command"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "fmic_spec_findability_current",
+   "schema": "command"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "fmic_spec_readiness",
+   "schema": "command"
+  },
+  {
+   "grantee": "cursor_schema_reader",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "fmic_spec_readiness",
+   "schema": "command"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "fmic_spec_readiness",
+   "schema": "command"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "listing_channel_price",
+   "schema": "command"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "listing_channel_price",
+   "schema": "command"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "m",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "mv_listing_offer_state_v2",
+   "schema": "command"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "m",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "mv_listing_sales_loss",
+   "schema": "command"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "m",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "mv_listing_sales_loss_v2",
+   "schema": "command"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "m",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "mv_listing_stock_episodes",
+   "schema": "command"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,SELECT,UPDATE",
+   "relation": "organization_memberships",
+   "schema": "command"
+  },
+  {
+   "grantee": "cursor_schema_reader",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "organization_memberships",
+   "schema": "command"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "organization_memberships",
+   "schema": "command"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,SELECT,UPDATE",
+   "relation": "organizations",
+   "schema": "command"
+  },
+  {
+   "grantee": "cursor_schema_reader",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "organizations",
+   "schema": "command"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "organizations",
+   "schema": "command"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "r",
+   "privileges": "INSERT,SELECT,UPDATE",
+   "relation": "user_profiles",
+   "schema": "command"
+  },
+  {
+   "grantee": "cursor_schema_reader",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "user_profiles",
+   "schema": "command"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "user_profiles",
+   "schema": "command"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "v_fmic_ai_simulations_all",
+   "schema": "command"
+  },
+  {
+   "grantee": "cursor_schema_reader",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "v_fmic_ai_simulations_all",
+   "schema": "command"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "v_fmic_ai_simulations_all",
+   "schema": "command"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "v_fmic_ai_simulations_latest",
+   "schema": "command"
+  },
+  {
+   "grantee": "cursor_schema_reader",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "v_fmic_ai_simulations_latest",
+   "schema": "command"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "v_fmic_ai_simulations_latest",
+   "schema": "command"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "v_fmic_brand_kpi_summary_latest",
+   "schema": "command"
+  },
+  {
+   "grantee": "cursor_schema_reader",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "v_fmic_brand_kpi_summary_latest",
+   "schema": "command"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "v_fmic_brand_kpi_summary_latest",
+   "schema": "command"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "v_fmic_division_metrics_latest",
+   "schema": "command"
+  },
+  {
+   "grantee": "cursor_schema_reader",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "v_fmic_division_metrics_latest",
+   "schema": "command"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "v_fmic_division_metrics_latest",
+   "schema": "command"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "v_fmic_listing_monitor",
+   "schema": "command"
+  },
+  {
+   "grantee": "cursor_schema_reader",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "v_fmic_listing_monitor",
+   "schema": "command"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "v_fmic_listing_monitor",
+   "schema": "command"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "v_fmic_retail_buybox_latest",
+   "schema": "command"
+  },
+  {
+   "grantee": "cursor_schema_reader",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "v_fmic_retail_buybox_latest",
+   "schema": "command"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "v_fmic_retail_buybox_latest",
+   "schema": "command"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "v_fmic_sku_map",
+   "schema": "command"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "v_fmic_spec_readiness_latest",
+   "schema": "command"
+  },
+  {
+   "grantee": "cursor_schema_reader",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "v_fmic_spec_readiness_latest",
+   "schema": "command"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "v_fmic_spec_readiness_latest",
+   "schema": "command"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "zz_map_snap_20261013",
+   "schema": "command"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "ai_citations",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "ai_probe_facts",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "ai_probe_plan",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "ai_prompts",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "ai_remediations",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "ai_simulations",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "audit_runs",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "brand_catalog",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "brand_kpi_summary",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_ai_api_calls",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_ai_api_calls",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_ai_api_citations",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_ai_api_citations",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_ai_api_probes",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_ai_api_probes",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_ai_api_runs",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_ai_api_runs",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_ai_category",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_ai_category",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "canvas_ai_category",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_ai_citations",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_ai_citations",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "canvas_ai_citations",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_ai_current_run",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_ai_current_run",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "canvas_ai_current_run",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_ai_engine",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_ai_engine",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "canvas_ai_engine",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_ai_history_calls",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_ai_history_calls",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "canvas_ai_history_calls",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_ai_history_citations",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_ai_history_citations",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "canvas_ai_history_citations",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_ai_history_citations_by_run",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_ai_history_citations_by_run",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "canvas_ai_history_citations_by_run",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_ai_history_outcome_counts",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_ai_history_outcome_counts",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "canvas_ai_history_outcome_counts",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_ai_history_probes",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_ai_history_probes",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "canvas_ai_history_probes",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_ai_history_runs",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_ai_history_runs",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "canvas_ai_history_runs",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_ai_probe_coverage",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_ai_probe_coverage",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "canvas_ai_probe_coverage",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_ai_probes",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_ai_probes",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "canvas_ai_probes",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_ai_prompts",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_ai_prompts",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "canvas_ai_prompts",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_ai_run_history",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_ai_run_history",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "canvas_ai_run_history",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_ai_simulations",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_ai_simulations",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "canvas_ai_simulations",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_amazon_product_types",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_amazon_product_types",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "canvas_amazon_product_types",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_client_config",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_client_config",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "canvas_client_config",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_competitor_sov",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_competitor_sov",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "canvas_competitor_sov",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_divisions",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_divisions",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "canvas_divisions",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_freshness",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_freshness",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "canvas_freshness",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_listing_channel_price",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_listing_channel_price",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "canvas_listing_channel_price",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_listing_content",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_listing_content",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "canvas_listing_content",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_listing_offer_state_v2",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_listing_offer_state_v2",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "canvas_listing_offer_state_v2",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_listing_sales_loss_v2",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_listing_sales_loss_v2",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "canvas_listing_sales_loss_v2",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_metrics",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_metrics",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "canvas_metrics",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_retail_listings",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_retail_listings",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "canvas_retail_listings",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_spec_findability",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_spec_findability",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "canvas_spec_findability",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_spec_missing_fields",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_spec_missing_fields",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "canvas_spec_missing_fields",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_spec_readiness",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_spec_readiness",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "canvas_spec_readiness",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "catalog",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "catalog_history",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "client_config",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "division_metrics",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "job_state",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "keepa_daily",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "keepa_stats",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "listing_channel_price",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "listing_content",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "listing_content_history",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "m",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "mv_listing_offer_state_v2",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "m",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "mv_listing_sales_loss_v2",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "retail_buybox_map",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "retail_buybox_map_history",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "sellers",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "sellers_history",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "smartscout_products",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "spec_findability_attempt",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "spec_findability_current",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "spec_readiness",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "ai_current_calls",
+   "schema": "ledlenser_private"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "ai_current_run",
+   "schema": "ledlenser_private"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "ai_history_calls",
+   "schema": "ledlenser_private"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "ai_history_runs",
+   "schema": "ledlenser_private"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "div_latest",
+   "schema": "ledlenser_private"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "spec_latest",
+   "schema": "ledlenser_private"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "actuation_expiry_reminders_sent",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "actuation_items",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "actuation_programs",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "audit_log",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "audit_log",
+   "schema": "public"
+  },
+  {
+   "grantee": "cursor_schema_reader",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "audit_log",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "audit_log",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "kind": "S",
+   "privileges": "SELECT,UPDATE,USAGE",
+   "relation": "audit_log_id_seq",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "S",
+   "privileges": "SELECT,UPDATE,USAGE",
+   "relation": "audit_log_id_seq",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "S",
+   "privileges": "SELECT,UPDATE,USAGE",
+   "relation": "audit_log_id_seq",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "brand_tokens",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "brand_tokens",
+   "schema": "public"
+  },
+  {
+   "grantee": "cursor_schema_reader",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "brand_tokens",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "brand_tokens",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_ai_api_calls",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_ai_api_calls",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "canvas_ai_api_calls",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_ai_api_citations",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_ai_api_citations",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "canvas_ai_api_citations",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_ai_api_probes",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_ai_api_probes",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "canvas_ai_api_probes",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_ai_api_runs",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_ai_api_runs",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "canvas_ai_api_runs",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_ai_category",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_ai_category",
+   "schema": "public"
+  },
+  {
+   "grantee": "cursor_schema_reader",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_ai_category",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "canvas_ai_category",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "MAINTAIN,SELECT",
+   "relation": "canvas_ai_citations",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "MAINTAIN,SELECT",
+   "relation": "canvas_ai_citations",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "canvas_ai_citations",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "MAINTAIN,SELECT",
+   "relation": "canvas_ai_current_run",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "MAINTAIN,SELECT",
+   "relation": "canvas_ai_current_run",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "canvas_ai_current_run",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_ai_engine",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_ai_engine",
+   "schema": "public"
+  },
+  {
+   "grantee": "cursor_schema_reader",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_ai_engine",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "canvas_ai_engine",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_ai_history_calls",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_ai_history_calls",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "canvas_ai_history_calls",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_ai_history_citations",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_ai_history_citations",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "canvas_ai_history_citations",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_ai_history_citations_by_run",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_ai_history_citations_by_run",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "canvas_ai_history_citations_by_run",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_ai_history_outcome_counts",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_ai_history_outcome_counts",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "canvas_ai_history_outcome_counts",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_ai_history_probes",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_ai_history_probes",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "canvas_ai_history_probes",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_ai_history_runs",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_ai_history_runs",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "canvas_ai_history_runs",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_ai_probe_coverage",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_ai_probe_coverage",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "canvas_ai_probe_coverage",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "MAINTAIN,SELECT",
+   "relation": "canvas_ai_probes",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "MAINTAIN,SELECT",
+   "relation": "canvas_ai_probes",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "canvas_ai_probes",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "MAINTAIN,SELECT",
+   "relation": "canvas_ai_run_history",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "MAINTAIN,SELECT",
+   "relation": "canvas_ai_run_history",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "canvas_ai_run_history",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_ai_simulations",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_ai_simulations",
+   "schema": "public"
+  },
+  {
+   "grantee": "cursor_schema_reader",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_ai_simulations",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "canvas_ai_simulations",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "canvas_amazon_product_types",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "canvas_amazon_product_types",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "canvas_amazon_product_types",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_competitor_sov",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_competitor_sov",
+   "schema": "public"
+  },
+  {
+   "grantee": "cursor_schema_reader",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_competitor_sov",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "canvas_competitor_sov",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_divisions",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_divisions",
+   "schema": "public"
+  },
+  {
+   "grantee": "cursor_schema_reader",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_divisions",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "canvas_divisions",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_freshness",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_freshness",
+   "schema": "public"
+  },
+  {
+   "grantee": "cursor_schema_reader",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_freshness",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "canvas_freshness",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_issue_set_asides",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_issue_set_asides",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "canvas_issue_set_asides",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_listing_channel_price",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_listing_channel_price",
+   "schema": "public"
+  },
+  {
+   "grantee": "cursor_schema_reader",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_listing_channel_price",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "canvas_listing_channel_price",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_listing_content",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_listing_content",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "canvas_listing_content",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_listing_offer_state_v2",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_listing_offer_state_v2",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "canvas_listing_offer_state_v2",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_listing_sales_loss",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_listing_sales_loss",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "canvas_listing_sales_loss",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_listing_sales_loss_v2",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_listing_sales_loss_v2",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "canvas_listing_sales_loss_v2",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_listing_stock_episodes",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_listing_stock_episodes",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "canvas_listing_stock_episodes",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_metrics",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_metrics",
+   "schema": "public"
+  },
+  {
+   "grantee": "cursor_schema_reader",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_metrics",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "canvas_metrics",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_retail_listings",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_retail_listings",
+   "schema": "public"
+  },
+  {
+   "grantee": "cursor_schema_reader",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_retail_listings",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "canvas_retail_listings",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "canvas_score_snapshots",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "canvas_score_snapshots",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "canvas_score_snapshots",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_set_aside_events",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_set_aside_events",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "canvas_set_aside_events",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_set_aside_reasons",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_set_aside_reasons",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "canvas_set_aside_reasons",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "canvas_site_types",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "canvas_site_types",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "canvas_site_types",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_spec_findability",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_spec_findability",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "canvas_spec_findability",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_spec_missing_fields",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_spec_missing_fields",
+   "schema": "public"
+  },
+  {
+   "grantee": "cursor_schema_reader",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_spec_missing_fields",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "canvas_spec_missing_fields",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_spec_readiness",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_spec_readiness",
+   "schema": "public"
+  },
+  {
+   "grantee": "cursor_schema_reader",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "canvas_spec_readiness",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "canvas_spec_readiness",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "components",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "components",
+   "schema": "public"
+  },
+  {
+   "grantee": "cursor_schema_reader",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "components",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "components",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "departments",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "departments",
+   "schema": "public"
+  },
+  {
+   "grantee": "cursor_schema_reader",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "departments",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "departments",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "issue_set_asides",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "issue_set_asides",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "issue_set_asides",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "kind": "S",
+   "privileges": "SELECT,UPDATE,USAGE",
+   "relation": "module_key_seq",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "S",
+   "privileges": "SELECT,UPDATE,USAGE",
+   "relation": "module_key_seq",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "S",
+   "privileges": "SELECT,UPDATE,USAGE",
+   "relation": "module_key_seq",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "modules",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "modules",
+   "schema": "public"
+  },
+  {
+   "grantee": "cursor_schema_reader",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "modules",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "modules",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "organization_memberships",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "organization_memberships",
+   "schema": "public"
+  },
+  {
+   "grantee": "cursor_schema_reader",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "organization_memberships",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "organization_memberships",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "organizations",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "organizations",
+   "schema": "public"
+  },
+  {
+   "grantee": "cursor_schema_reader",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "organizations",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "organizations",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "people",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "people",
+   "schema": "public"
+  },
+  {
+   "grantee": "cursor_schema_reader",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "people",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "people",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "profiles",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "profiles",
+   "schema": "public"
+  },
+  {
+   "grantee": "cursor_schema_reader",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "profiles",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "profiles",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "role_assignments",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "role_assignments",
+   "schema": "public"
+  },
+  {
+   "grantee": "cursor_schema_reader",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "role_assignments",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "role_assignments",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "role_responsibilities",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "role_responsibilities",
+   "schema": "public"
+  },
+  {
+   "grantee": "cursor_schema_reader",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "role_responsibilities",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "role_responsibilities",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "role_seats",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "role_seats",
+   "schema": "public"
+  },
+  {
+   "grantee": "cursor_schema_reader",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "role_seats",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "role_seats",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "set_aside_checks",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "set_aside_checks",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "set_aside_checks",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "set_aside_clients",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "set_aside_clients",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "set_aside_clients",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "set_aside_reasons",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "set_aside_reasons",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "set_aside_reasons",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "site_type_classifications",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "site_type_classifications",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "site_type_classifications",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "kind": "S",
+   "privileges": "SELECT,UPDATE,USAGE",
+   "relation": "site_type_classifications_id_seq",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "S",
+   "privileges": "SELECT,UPDATE,USAGE",
+   "relation": "site_type_classifications_id_seq",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "S",
+   "privileges": "SELECT,UPDATE,USAGE",
+   "relation": "site_type_classifications_id_seq",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "site_type_overrides",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "site_type_overrides",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "site_type_overrides",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "kind": "S",
+   "privileges": "SELECT,UPDATE,USAGE",
+   "relation": "site_type_overrides_id_seq",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "S",
+   "privileges": "SELECT,UPDATE,USAGE",
+   "relation": "site_type_overrides_id_seq",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "S",
+   "privileges": "SELECT,UPDATE,USAGE",
+   "relation": "site_type_overrides_id_seq",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "site_type_settings",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "site_type_settings",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "site_type_settings",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "variants",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "variants",
+   "schema": "public"
+  },
+  {
+   "grantee": "cursor_schema_reader",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "variants",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "variants",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "votes",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "votes",
+   "schema": "public"
+  },
+  {
+   "grantee": "cursor_schema_reader",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "votes",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "votes",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "work_dependencies",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "work_dependencies",
+   "schema": "public"
+  },
+  {
+   "grantee": "cursor_schema_reader",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "work_dependencies",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "work_dependencies",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "kind": "S",
+   "privileges": "SELECT,UPDATE,USAGE",
+   "relation": "work_item_key_seq",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "S",
+   "privileges": "SELECT,UPDATE,USAGE",
+   "relation": "work_item_key_seq",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "S",
+   "privileges": "SELECT,UPDATE,USAGE",
+   "relation": "work_item_key_seq",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "work_items",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "work_items",
+   "schema": "public"
+  },
+  {
+   "grantee": "cursor_schema_reader",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "work_items",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "work_items",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "work_milestones",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "work_milestones",
+   "schema": "public"
+  },
+  {
+   "grantee": "cursor_schema_reader",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "work_milestones",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "work_milestones",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "work_source_links",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "work_source_links",
+   "schema": "public"
+  },
+  {
+   "grantee": "cursor_schema_reader",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "work_source_links",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "work_source_links",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "action_item",
+   "schema": "sandbox"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "action_item",
+   "schema": "sandbox"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "action_item",
+   "schema": "sandbox"
+  },
+  {
+   "grantee": "anon",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "ai_answer",
+   "schema": "sandbox"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "ai_answer",
+   "schema": "sandbox"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "ai_answer",
+   "schema": "sandbox"
+  },
+  {
+   "grantee": "anon",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "ai_prompt",
+   "schema": "sandbox"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "ai_prompt",
+   "schema": "sandbox"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "ai_prompt",
+   "schema": "sandbox"
+  },
+  {
+   "grantee": "anon",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "client",
+   "schema": "sandbox"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "client",
+   "schema": "sandbox"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "client",
+   "schema": "sandbox"
+  },
+  {
+   "grantee": "anon",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "competitor_brand",
+   "schema": "sandbox"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "competitor_brand",
+   "schema": "sandbox"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "competitor_brand",
+   "schema": "sandbox"
+  },
+  {
+   "grantee": "anon",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "estimate",
+   "schema": "sandbox"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "estimate",
+   "schema": "sandbox"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "estimate",
+   "schema": "sandbox"
+  },
+  {
+   "grantee": "anon",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "estimate_input",
+   "schema": "sandbox"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "estimate_input",
+   "schema": "sandbox"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "estimate_input",
+   "schema": "sandbox"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "fender_dealer_catalog",
+   "schema": "sandbox"
+  },
+  {
+   "grantee": "anon",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "listing",
+   "schema": "sandbox"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "listing",
+   "schema": "sandbox"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "listing",
+   "schema": "sandbox"
+  },
+  {
+   "grantee": "anon",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "listing_channel_price",
+   "schema": "sandbox"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "listing_channel_price",
+   "schema": "sandbox"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "listing_channel_price",
+   "schema": "sandbox"
+  },
+  {
+   "grantee": "anon",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "listing_map_price",
+   "schema": "sandbox"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "listing_map_price",
+   "schema": "sandbox"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "listing_map_price",
+   "schema": "sandbox"
+  },
+  {
+   "grantee": "anon",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "listing_offer_reading",
+   "schema": "sandbox"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "listing_offer_reading",
+   "schema": "sandbox"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "listing_offer_reading",
+   "schema": "sandbox"
+  },
+  {
+   "grantee": "anon",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "metric_registry",
+   "schema": "sandbox"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "metric_registry",
+   "schema": "sandbox"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "metric_registry",
+   "schema": "sandbox"
+  },
+  {
+   "grantee": "anon",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "metric_value",
+   "schema": "sandbox"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "metric_value",
+   "schema": "sandbox"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "metric_value",
+   "schema": "sandbox"
+  },
+  {
+   "grantee": "anon",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "reading_run",
+   "schema": "sandbox"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "reading_run",
+   "schema": "sandbox"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "reading_run",
+   "schema": "sandbox"
+  },
+  {
+   "grantee": "anon",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "seller",
+   "schema": "sandbox"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "seller",
+   "schema": "sandbox"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "seller",
+   "schema": "sandbox"
+  },
+  {
+   "grantee": "anon",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "seller_authorization",
+   "schema": "sandbox"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "seller_authorization",
+   "schema": "sandbox"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "seller_authorization",
+   "schema": "sandbox"
+  },
+  {
+   "grantee": "anon",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "seller_type",
+   "schema": "sandbox"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "seller_type",
+   "schema": "sandbox"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "seller_type",
+   "schema": "sandbox"
+  },
+  {
+   "grantee": "anon",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "spec_reading",
+   "schema": "sandbox"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "r",
+   "privileges": "SELECT",
+   "relation": "spec_reading",
+   "schema": "sandbox"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "r",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "spec_reading",
+   "schema": "sandbox"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "v_ai_answer_detail",
+   "schema": "sandbox"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "v_ai_answer_detail",
+   "schema": "sandbox"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "v_ai_answer_detail",
+   "schema": "sandbox"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "v_listing_current",
+   "schema": "sandbox"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "v_listing_current",
+   "schema": "sandbox"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "v_listing_current",
+   "schema": "sandbox"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "v_reading_freshness",
+   "schema": "sandbox"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "v_reading_freshness",
+   "schema": "sandbox"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "v_reading_freshness",
+   "schema": "sandbox"
+  },
+  {
+   "grantee": "anon",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "v_spec_current",
+   "schema": "sandbox"
+  },
+  {
+   "grantee": "authenticated",
+   "kind": "v",
+   "privileges": "SELECT",
+   "relation": "v_spec_current",
+   "schema": "sandbox"
+  },
+  {
+   "grantee": "service_role",
+   "kind": "v",
+   "privileges": "DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE",
+   "relation": "v_spec_current",
+   "schema": "sandbox"
+  }
+ ],
+ "routine_grants": [
+  {
+   "grantee": "authenticated",
+   "privileges": "EXECUTE",
+   "routine": "fmic_ai_current_published_prompts(p_organization_id uuid)",
+   "schema": "command"
+  },
+  {
+   "grantee": "service_role",
+   "privileges": "EXECUTE",
+   "routine": "fmic_ai_current_published_prompts(p_organization_id uuid)",
+   "schema": "command"
+  },
+  {
+   "grantee": "PUBLIC",
+   "privileges": "EXECUTE",
+   "routine": "fmic_ai_legacy_hash_for_set(p_set_id uuid)",
+   "schema": "command"
+  },
+  {
+   "grantee": "authenticated",
+   "privileges": "EXECUTE",
+   "routine": "fmic_ai_prompt_actor_ok(p_organization_id uuid, p_min_role command.organization_role)",
+   "schema": "command"
+  },
+  {
+   "grantee": "service_role",
+   "privileges": "EXECUTE",
+   "routine": "fmic_ai_prompt_actor_ok(p_organization_id uuid, p_min_role command.organization_role)",
+   "schema": "command"
+  },
+  {
+   "grantee": "authenticated",
+   "privileges": "EXECUTE",
+   "routine": "fmic_ai_prompt_approve_revision(p_revision_id uuid, p_decision text, p_review_note text)",
+   "schema": "command"
+  },
+  {
+   "grantee": "PUBLIC",
+   "privileges": "EXECUTE",
+   "routine": "fmic_ai_prompt_fact_guard()",
+   "schema": "command"
+  },
+  {
+   "grantee": "authenticated",
+   "privileges": "EXECUTE",
+   "routine": "fmic_ai_prompt_list_sets(p_organization_id uuid)",
+   "schema": "command"
+  },
+  {
+   "grantee": "service_role",
+   "privileges": "EXECUTE",
+   "routine": "fmic_ai_prompt_lock()",
+   "schema": "command"
+  },
+  {
+   "grantee": "PUBLIC",
+   "privileges": "EXECUTE",
+   "routine": "fmic_ai_prompt_member_guard()",
+   "schema": "command"
+  },
+  {
+   "grantee": "authenticated",
+   "privileges": "EXECUTE",
+   "routine": "fmic_ai_prompt_preview(p_organization_id uuid, p_revision_ids uuid[])",
+   "schema": "command"
+  },
+  {
+   "grantee": "authenticated",
+   "privileges": "EXECUTE",
+   "routine": "fmic_ai_prompt_publish_set(p_organization_id uuid, p_revision_ids uuid[], p_max_active integer)",
+   "schema": "command"
+  },
+  {
+   "grantee": "authenticated",
+   "privileges": "EXECUTE",
+   "routine": "fmic_ai_prompt_require(p_organization_id uuid, p_min_role command.organization_role, p_action text)",
+   "schema": "command"
+  },
+  {
+   "grantee": "service_role",
+   "privileges": "EXECUTE",
+   "routine": "fmic_ai_prompt_require(p_organization_id uuid, p_min_role command.organization_role, p_action text)",
+   "schema": "command"
+  },
+  {
+   "grantee": "PUBLIC",
+   "privileges": "EXECUTE",
+   "routine": "fmic_ai_prompt_revision_guard()",
+   "schema": "command"
+  },
+  {
+   "grantee": "authenticated",
+   "privileges": "EXECUTE",
+   "routine": "fmic_ai_prompt_save_draft(p_organization_id uuid, p_prompt_key text, p_prompt_text text, p_category text, p_prompt_kind text, p_analytical_intent text, p_names_client_brand boolean, p_induces_client_brand boolean, p_headline_denominator text, p_active boolean)",
+   "schema": "command"
+  },
+  {
+   "grantee": "PUBLIC",
+   "privileges": "EXECUTE",
+   "routine": "fmic_ai_prompt_set_guard()",
+   "schema": "command"
+  },
+  {
+   "grantee": "service_role",
+   "privileges": "EXECUTE",
+   "routine": "fmic_ai_prompt_set_hash()",
+   "schema": "command"
+  },
+  {
+   "grantee": "authenticated",
+   "privileges": "EXECUTE",
+   "routine": "fmic_ai_prompt_validation_failures(p_organization_id uuid, p_revision_ids uuid[], p_max_active integer)",
+   "schema": "command"
+  },
+  {
+   "grantee": "service_role",
+   "privileges": "EXECUTE",
+   "routine": "fmic_ai_prompt_validation_failures(p_organization_id uuid, p_revision_ids uuid[], p_max_active integer)",
+   "schema": "command"
+  },
+  {
+   "grantee": "service_role",
+   "privileges": "EXECUTE",
+   "routine": "fmic_ai_publish_run(p_run_id uuid)",
+   "schema": "command"
+  },
+  {
+   "grantee": "authenticated",
+   "privileges": "EXECUTE",
+   "routine": "fmic_ai_published_set_status(p_organization_id uuid)",
+   "schema": "command"
+  },
+  {
+   "grantee": "service_role",
+   "privileges": "EXECUTE",
+   "routine": "fmic_ai_published_set_status(p_organization_id uuid)",
+   "schema": "command"
+  },
+  {
+   "grantee": "PUBLIC",
+   "privileges": "EXECUTE",
+   "routine": "fmic_ai_versioned_set_hash(p_set_id uuid)",
+   "schema": "command"
+  },
+  {
+   "grantee": "PUBLIC",
+   "privileges": "EXECUTE",
+   "routine": "fmic_enforce_channel_leakage()",
+   "schema": "command"
+  },
+  {
+   "grantee": "authenticated",
+   "privileges": "EXECUTE",
+   "routine": "is_intofocus_admin()",
+   "schema": "command"
+  },
+  {
+   "grantee": "service_role",
+   "privileges": "EXECUTE",
+   "routine": "is_intofocus_admin()",
+   "schema": "command"
+  },
+  {
+   "grantee": "service_role",
+   "privileges": "EXECUTE",
+   "routine": "record_spec_findability_attempt(payload jsonb)",
+   "schema": "command"
+  },
+  {
+   "grantee": "PUBLIC",
+   "privileges": "EXECUTE",
+   "routine": "role_rank(r command.organization_role)",
+   "schema": "command"
+  },
+  {
+   "grantee": "PUBLIC",
+   "privileges": "EXECUTE",
+   "routine": "set_updated_at()",
+   "schema": "command"
+  },
+  {
+   "grantee": "PUBLIC",
+   "privileges": "EXECUTE",
+   "routine": "update_fmic_timestamp()",
+   "schema": "command"
+  },
+  {
+   "grantee": "anon",
+   "privileges": "EXECUTE",
+   "routine": "update_fmic_timestamp()",
+   "schema": "command"
+  },
+  {
+   "grantee": "authenticated",
+   "privileges": "EXECUTE",
+   "routine": "update_fmic_timestamp()",
+   "schema": "command"
+  },
+  {
+   "grantee": "service_role",
+   "privileges": "EXECUTE",
+   "routine": "update_fmic_timestamp()",
+   "schema": "command"
+  },
+  {
+   "grantee": "authenticated",
+   "privileges": "EXECUTE",
+   "routine": "user_has_org_role(p_organization_id uuid, p_min_role command.organization_role)",
+   "schema": "command"
+  },
+  {
+   "grantee": "service_role",
+   "privileges": "EXECUTE",
+   "routine": "user_has_org_role(p_organization_id uuid, p_min_role command.organization_role)",
+   "schema": "command"
+  },
+  {
+   "grantee": "PUBLIC",
+   "privileges": "EXECUTE",
+   "routine": "worker20_check(p_name text, p_passed boolean, p_detail text)",
+   "schema": "command"
+  },
+  {
+   "grantee": "service_role",
+   "privileges": "EXECUTE",
+   "routine": "ai_prompt_set_hash()",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "service_role",
+   "privileges": "EXECUTE",
+   "routine": "ai_publish_run(p_run_id uuid)",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "service_role",
+   "privileges": "EXECUTE",
+   "routine": "block_published_edit()",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "service_role",
+   "privileges": "EXECUTE",
+   "routine": "capture_history()",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "service_role",
+   "privileges": "EXECUTE",
+   "routine": "enforce_channel_leakage()",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "service_role",
+   "privileges": "EXECUTE",
+   "routine": "touch_updated_at()",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "authenticated",
+   "privileges": "EXECUTE",
+   "routine": "has_org_role(target_organization_id uuid, allowed_roles organization_role[])",
+   "schema": "private"
+  },
+  {
+   "grantee": "service_role",
+   "privileges": "EXECUTE",
+   "routine": "has_org_role(target_organization_id uuid, allowed_roles organization_role[])",
+   "schema": "private"
+  },
+  {
+   "grantee": "authenticated",
+   "privileges": "EXECUTE",
+   "routine": "is_active_org_member(target_organization_id uuid)",
+   "schema": "private"
+  },
+  {
+   "grantee": "service_role",
+   "privileges": "EXECUTE",
+   "routine": "is_active_org_member(target_organization_id uuid)",
+   "schema": "private"
+  },
+  {
+   "grantee": "anon",
+   "privileges": "EXECUTE",
+   "routine": "actuation_basis(p_client_key text)",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "privileges": "EXECUTE",
+   "routine": "actuation_basis(p_client_key text)",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "privileges": "EXECUTE",
+   "routine": "actuation_basis(p_client_key text)",
+   "schema": "public"
+  },
+  {
+   "grantee": "score_snapshot_writer",
+   "privileges": "EXECUTE",
+   "routine": "actuation_expiry_reminder_candidates()",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "privileges": "EXECUTE",
+   "routine": "actuation_expiry_reminder_candidates()",
+   "schema": "public"
+  },
+  {
+   "grantee": "score_snapshot_writer",
+   "privileges": "EXECUTE",
+   "routine": "actuation_expiry_reminder_claim(p_client_key text, p_factor text, p_expires_on date, p_threshold_days integer, p_days_left integer)",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "privileges": "EXECUTE",
+   "routine": "actuation_expiry_reminder_claim(p_client_key text, p_factor text, p_expires_on date, p_threshold_days integer, p_days_left integer)",
+   "schema": "public"
+  },
+  {
+   "grantee": "score_snapshot_writer",
+   "privileges": "EXECUTE",
+   "routine": "actuation_expiry_reminder_release(p_client_key text, p_factor text, p_expires_on date, p_threshold_days integer)",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "privileges": "EXECUTE",
+   "routine": "actuation_expiry_reminder_release(p_client_key text, p_factor text, p_expires_on date, p_threshold_days integer)",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "privileges": "EXECUTE",
+   "routine": "actuation_item_remove(p_id uuid)",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "privileges": "EXECUTE",
+   "routine": "actuation_item_remove(p_id uuid)",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "privileges": "EXECUTE",
+   "routine": "actuation_item_save(p_client_key text, p_factor text, p_url text, p_posted_on date, p_verified_on date, p_note text)",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "privileges": "EXECUTE",
+   "routine": "actuation_item_save(p_client_key text, p_factor text, p_url text, p_posted_on date, p_verified_on date, p_note text)",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "privileges": "EXECUTE",
+   "routine": "actuation_items_for_staff(p_client_key text)",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "privileges": "EXECUTE",
+   "routine": "actuation_items_for_staff(p_client_key text)",
+   "schema": "public"
+  },
+  {
+   "grantee": "score_snapshot_writer",
+   "privileges": "EXECUTE",
+   "routine": "actuation_lapse_reminder_candidates()",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "privileges": "EXECUTE",
+   "routine": "actuation_lapse_reminder_candidates()",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "privileges": "EXECUTE",
+   "routine": "actuation_program_save(p_client_key text, p_factor text, p_owner_name text, p_target_domains text[], p_cadence_per_30_days integer, p_target_count integer, p_evidence_url text, p_verified_on date, p_note text)",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "privileges": "EXECUTE",
+   "routine": "actuation_program_save(p_client_key text, p_factor text, p_owner_name text, p_target_domains text[], p_cadence_per_30_days integer, p_target_count integer, p_evidence_url text, p_verified_on date, p_note text)",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "privileges": "EXECUTE",
+   "routine": "actuation_programs_for_staff(p_client_key text)",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "privileges": "EXECUTE",
+   "routine": "actuation_programs_for_staff(p_client_key text)",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "privileges": "EXECUTE",
+   "routine": "ai_prompt_edits_list(p_prompt_key text)",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "privileges": "EXECUTE",
+   "routine": "ai_prompt_edits_list(p_prompt_key text)",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "privileges": "EXECUTE",
+   "routine": "ai_prompt_edits_list(p_prompt_key text)",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "privileges": "EXECUTE",
+   "routine": "ai_prompt_save(p_prompt_key text, p_prompt_text text, p_category text)",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "privileges": "EXECUTE",
+   "routine": "ai_prompt_save(p_prompt_key text, p_prompt_text text, p_category text)",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "privileges": "EXECUTE",
+   "routine": "ai_prompt_set_active(p_prompt_key text, p_active boolean)",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "privileges": "EXECUTE",
+   "routine": "ai_prompt_set_active(p_prompt_key text, p_active boolean)",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "privileges": "EXECUTE",
+   "routine": "ai_prompts_list()",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "privileges": "EXECUTE",
+   "routine": "ai_prompts_list()",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "privileges": "EXECUTE",
+   "routine": "ai_prompts_list()",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "privileges": "EXECUTE",
+   "routine": "ai_prompts_status()",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "privileges": "EXECUTE",
+   "routine": "ai_prompts_status()",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "privileges": "EXECUTE",
+   "routine": "ai_prompts_status()",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "privileges": "EXECUTE",
+   "routine": "canvas_ai_history_run_rows(p_run_id uuid)",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "privileges": "EXECUTE",
+   "routine": "canvas_ai_history_run_rows(p_run_id uuid)",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "privileges": "EXECUTE",
+   "routine": "canvas_ai_history_run_rows(p_run_id uuid)",
+   "schema": "public"
+  },
+  {
+   "grantee": "score_snapshot_writer",
+   "privileges": "EXECUTE",
+   "routine": "canvas_score_snapshot_save(p_client_key text, p_week_start date, p_consensus numeric, p_foundation numeric, p_commerce numeric, p_actuation numeric, p_inputs jsonb)",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "privileges": "EXECUTE",
+   "routine": "canvas_score_snapshot_save(p_client_key text, p_week_start date, p_consensus numeric, p_foundation numeric, p_commerce numeric, p_actuation numeric, p_inputs jsonb)",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "privileges": "EXECUTE",
+   "routine": "mark_issue_done(p_client_key text, p_check_key text, p_entity_key text, p_name text, p_note text, p_entity_label text)",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "privileges": "EXECUTE",
+   "routine": "mark_issue_done(p_client_key text, p_check_key text, p_entity_key text, p_name text, p_note text, p_entity_label text)",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "privileges": "EXECUTE",
+   "routine": "mark_issue_done(p_client_key text, p_check_key text, p_entity_key text, p_name text, p_note text, p_entity_label text)",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "privileges": "EXECUTE",
+   "routine": "reopen_set_aside(p_id uuid, p_name text, p_note text)",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "privileges": "EXECUTE",
+   "routine": "reopen_set_aside(p_id uuid, p_name text, p_note text)",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "privileges": "EXECUTE",
+   "routine": "reopen_set_aside(p_id uuid, p_name text, p_note text)",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "privileges": "EXECUTE",
+   "routine": "set_aside_issue(p_client_key text, p_check_key text, p_entity_key text, p_reason_code text, p_name text, p_note text, p_entity_label text)",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "privileges": "EXECUTE",
+   "routine": "set_aside_issue(p_client_key text, p_check_key text, p_entity_key text, p_reason_code text, p_name text, p_note text, p_entity_label text)",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "privileges": "EXECUTE",
+   "routine": "set_aside_issue(p_client_key text, p_check_key text, p_entity_key text, p_reason_code text, p_name text, p_note text, p_entity_label text)",
+   "schema": "public"
+  },
+  {
+   "grantee": "PUBLIC",
+   "privileges": "EXECUTE",
+   "routine": "set_module_key()",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "privileges": "EXECUTE",
+   "routine": "set_module_key()",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "privileges": "EXECUTE",
+   "routine": "set_module_key()",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "privileges": "EXECUTE",
+   "routine": "set_module_key()",
+   "schema": "public"
+  },
+  {
+   "grantee": "PUBLIC",
+   "privileges": "EXECUTE",
+   "routine": "set_updated_at()",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "privileges": "EXECUTE",
+   "routine": "set_updated_at()",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "privileges": "EXECUTE",
+   "routine": "set_updated_at()",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "privileges": "EXECUTE",
+   "routine": "set_updated_at()",
+   "schema": "public"
+  },
+  {
+   "grantee": "PUBLIC",
+   "privileges": "EXECUTE",
+   "routine": "set_work_key()",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "privileges": "EXECUTE",
+   "routine": "set_work_key()",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "privileges": "EXECUTE",
+   "routine": "set_work_key()",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "privileges": "EXECUTE",
+   "routine": "set_work_key()",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "privileges": "EXECUTE",
+   "routine": "site_type_override(p_domain text, p_client_key text, p_site_type text, p_note text)",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "privileges": "EXECUTE",
+   "routine": "site_type_override(p_domain text, p_client_key text, p_site_type text, p_note text)",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "privileges": "EXECUTE",
+   "routine": "site_types_to_review(p_client_key text)",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "privileges": "EXECUTE",
+   "routine": "site_types_to_review(p_client_key text)",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "privileges": "EXECUTE",
+   "routine": "write_audit_log()",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "privileges": "EXECUTE",
+   "routine": "refresh_metric_values(p_client_id text)",
+   "schema": "sandbox"
+  },
+  {
+   "grantee": "service_role",
+   "privileges": "EXECUTE",
+   "routine": "reload_readings(p_client_id text)",
+   "schema": "sandbox"
+  },
+  {
+   "grantee": "service_role",
+   "privileges": "EXECUTE",
+   "routine": "tg_action_item_refresh()",
+   "schema": "sandbox"
+  }
+ ],
+ "schema_grants": [
+  {
+   "grantee": "anon",
+   "privilege": "USAGE",
+   "schema": "command"
+  },
+  {
+   "grantee": "authenticated",
+   "privilege": "USAGE",
+   "schema": "command"
+  },
+  {
+   "grantee": "cursor_map_writer",
+   "privilege": "USAGE",
+   "schema": "command"
+  },
+  {
+   "grantee": "cursor_schema_reader",
+   "privilege": "USAGE",
+   "schema": "command"
+  },
+  {
+   "grantee": "service_role",
+   "privilege": "USAGE",
+   "schema": "command"
+  },
+  {
+   "grantee": "anon",
+   "privilege": "USAGE",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "authenticated",
+   "privilege": "USAGE",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "service_role",
+   "privilege": "USAGE",
+   "schema": "ledlenser"
+  },
+  {
+   "grantee": "service_role",
+   "privilege": "USAGE",
+   "schema": "ledlenser_private"
+  },
+  {
+   "grantee": "authenticated",
+   "privilege": "USAGE",
+   "schema": "private"
+  },
+  {
+   "grantee": "PUBLIC",
+   "privilege": "USAGE",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "privilege": "USAGE",
+   "schema": "public"
+  },
+  {
+   "grantee": "authenticated",
+   "privilege": "USAGE",
+   "schema": "public"
+  },
+  {
+   "grantee": "cursor_schema_reader",
+   "privilege": "USAGE",
+   "schema": "public"
+  },
+  {
+   "grantee": "postgres",
+   "privilege": "USAGE",
+   "schema": "public"
+  },
+  {
+   "grantee": "score_snapshot_writer",
+   "privilege": "USAGE",
+   "schema": "public"
+  },
+  {
+   "grantee": "service_role",
+   "privilege": "USAGE",
+   "schema": "public"
+  },
+  {
+   "grantee": "anon",
+   "privilege": "USAGE",
+   "schema": "sandbox"
+  },
+  {
+   "grantee": "authenticated",
+   "privilege": "USAGE",
+   "schema": "sandbox"
+  },
+  {
+   "grantee": "service_role",
+   "privilege": "USAGE",
+   "schema": "sandbox"
+  }
+ ]
+}

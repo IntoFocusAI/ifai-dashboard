@@ -1,0 +1,1209 @@
+[
+ {
+  "cmd": "SELECT",
+  "permissive": "PERMISSIVE",
+  "policyname": "fmic_ai_citations_authenticated_select",
+  "qual": "true",
+  "roles": [
+   "authenticated"
+  ],
+  "schemaname": "command",
+  "tablename": "fmic_ai_citations",
+  "with_check": null
+ },
+ {
+  "cmd": "ALL",
+  "permissive": "PERMISSIVE",
+  "policyname": "fmic_ai_citations_service_role_all",
+  "qual": "true",
+  "roles": [
+   "service_role"
+  ],
+  "schemaname": "command",
+  "tablename": "fmic_ai_citations",
+  "with_check": "true"
+ },
+ {
+  "cmd": "SELECT",
+  "permissive": "PERMISSIVE",
+  "policyname": "fmic_ai_probe_facts_authenticated_select",
+  "qual": "true",
+  "roles": [
+   "authenticated"
+  ],
+  "schemaname": "command",
+  "tablename": "fmic_ai_probe_facts",
+  "with_check": null
+ },
+ {
+  "cmd": "ALL",
+  "permissive": "PERMISSIVE",
+  "policyname": "fmic_ai_probe_facts_service_role_all",
+  "qual": "true",
+  "roles": [
+   "service_role"
+  ],
+  "schemaname": "command",
+  "tablename": "fmic_ai_probe_facts",
+  "with_check": "true"
+ },
+ {
+  "cmd": "SELECT",
+  "permissive": "PERMISSIVE",
+  "policyname": "fmic_ai_prompt_revisions_no_direct",
+  "qual": "false",
+  "roles": [
+   "authenticated"
+  ],
+  "schemaname": "command",
+  "tablename": "fmic_ai_prompt_revisions",
+  "with_check": null
+ },
+ {
+  "cmd": "SELECT",
+  "permissive": "PERMISSIVE",
+  "policyname": "fmic_ai_prompt_members_no_direct",
+  "qual": "false",
+  "roles": [
+   "authenticated"
+  ],
+  "schemaname": "command",
+  "tablename": "fmic_ai_prompt_set_members",
+  "with_check": null
+ },
+ {
+  "cmd": "SELECT",
+  "permissive": "PERMISSIVE",
+  "policyname": "fmic_ai_prompt_sets_no_direct",
+  "qual": "false",
+  "roles": [
+   "authenticated"
+  ],
+  "schemaname": "command",
+  "tablename": "fmic_ai_prompt_sets",
+  "with_check": null
+ },
+ {
+  "cmd": "SELECT",
+  "permissive": "PERMISSIVE",
+  "policyname": "fmic_ai_prompts_authenticated_select",
+  "qual": "true",
+  "roles": [
+   "authenticated"
+  ],
+  "schemaname": "command",
+  "tablename": "fmic_ai_prompts",
+  "with_check": null
+ },
+ {
+  "cmd": "ALL",
+  "permissive": "PERMISSIVE",
+  "policyname": "fmic_ai_prompts_service_role_all",
+  "qual": "true",
+  "roles": [
+   "service_role"
+  ],
+  "schemaname": "command",
+  "tablename": "fmic_ai_prompts",
+  "with_check": "true"
+ },
+ {
+  "cmd": "SELECT",
+  "permissive": "PERMISSIVE",
+  "policyname": "fmic_ai_remediations_authenticated_select",
+  "qual": "true",
+  "roles": [
+   "authenticated"
+  ],
+  "schemaname": "command",
+  "tablename": "fmic_ai_remediations",
+  "with_check": null
+ },
+ {
+  "cmd": "ALL",
+  "permissive": "PERMISSIVE",
+  "policyname": "fmic_ai_remediations_service_role_all",
+  "qual": "true",
+  "roles": [
+   "service_role"
+  ],
+  "schemaname": "command",
+  "tablename": "fmic_ai_remediations",
+  "with_check": "true"
+ },
+ {
+  "cmd": "SELECT",
+  "permissive": "PERMISSIVE",
+  "policyname": "cursor_schema_reader_select",
+  "qual": "true",
+  "roles": [
+   "cursor_schema_reader"
+  ],
+  "schemaname": "command",
+  "tablename": "fmic_ai_sim_conflict_snapshot",
+  "with_check": null
+ },
+ {
+  "cmd": "SELECT",
+  "permissive": "PERMISSIVE",
+  "policyname": "Allow read access to authenticated users",
+  "qual": "true",
+  "roles": [
+   "authenticated"
+  ],
+  "schemaname": "command",
+  "tablename": "fmic_ai_simulations",
+  "with_check": null
+ },
+ {
+  "cmd": "ALL",
+  "permissive": "PERMISSIVE",
+  "policyname": "Allow service role full access",
+  "qual": "true",
+  "roles": [
+   "service_role"
+  ],
+  "schemaname": "command",
+  "tablename": "fmic_ai_simulations",
+  "with_check": null
+ },
+ {
+  "cmd": "SELECT",
+  "permissive": "PERMISSIVE",
+  "policyname": "cursor_schema_reader_select",
+  "qual": "true",
+  "roles": [
+   "cursor_schema_reader"
+  ],
+  "schemaname": "command",
+  "tablename": "fmic_ai_simulations",
+  "with_check": null
+ },
+ {
+  "cmd": "SELECT",
+  "permissive": "PERMISSIVE",
+  "policyname": "Allow read access to authenticated users",
+  "qual": "true",
+  "roles": [
+   "authenticated"
+  ],
+  "schemaname": "command",
+  "tablename": "fmic_ai_simulations_run1_archive",
+  "with_check": null
+ },
+ {
+  "cmd": "ALL",
+  "permissive": "PERMISSIVE",
+  "policyname": "Allow service role full access",
+  "qual": "true",
+  "roles": [
+   "service_role"
+  ],
+  "schemaname": "command",
+  "tablename": "fmic_ai_simulations_run1_archive",
+  "with_check": "true"
+ },
+ {
+  "cmd": "SELECT",
+  "permissive": "PERMISSIVE",
+  "policyname": "cursor_schema_reader_select",
+  "qual": "true",
+  "roles": [
+   "cursor_schema_reader"
+  ],
+  "schemaname": "command",
+  "tablename": "fmic_ai_simulations_run1_archive",
+  "with_check": null
+ },
+ {
+  "cmd": "ALL",
+  "permissive": "PERMISSIVE",
+  "policyname": "Allow service role full access",
+  "qual": "true",
+  "roles": [
+   "service_role"
+  ],
+  "schemaname": "command",
+  "tablename": "fmic_audit_runs",
+  "with_check": null
+ },
+ {
+  "cmd": "SELECT",
+  "permissive": "PERMISSIVE",
+  "policyname": "cursor_schema_reader_select",
+  "qual": "true",
+  "roles": [
+   "cursor_schema_reader"
+  ],
+  "schemaname": "command",
+  "tablename": "fmic_audit_runs",
+  "with_check": null
+ },
+ {
+  "cmd": "SELECT",
+  "permissive": "PERMISSIVE",
+  "policyname": "Allow read access to authenticated users",
+  "qual": "true",
+  "roles": [
+   "authenticated"
+  ],
+  "schemaname": "command",
+  "tablename": "fmic_brand_kpi_summary",
+  "with_check": null
+ },
+ {
+  "cmd": "ALL",
+  "permissive": "PERMISSIVE",
+  "policyname": "Allow service role full access",
+  "qual": "true",
+  "roles": [
+   "service_role"
+  ],
+  "schemaname": "command",
+  "tablename": "fmic_brand_kpi_summary",
+  "with_check": null
+ },
+ {
+  "cmd": "SELECT",
+  "permissive": "PERMISSIVE",
+  "policyname": "cursor_schema_reader_select",
+  "qual": "true",
+  "roles": [
+   "cursor_schema_reader"
+  ],
+  "schemaname": "command",
+  "tablename": "fmic_brand_kpi_summary",
+  "with_check": null
+ },
+ {
+  "cmd": "SELECT",
+  "permissive": "PERMISSIVE",
+  "policyname": "cursor_schema_reader_select",
+  "qual": "true",
+  "roles": [
+   "cursor_schema_reader"
+  ],
+  "schemaname": "command",
+  "tablename": "fmic_competitor_sov",
+  "with_check": null
+ },
+ {
+  "cmd": "SELECT",
+  "permissive": "PERMISSIVE",
+  "policyname": "Allow read access to authenticated users",
+  "qual": "true",
+  "roles": [
+   "authenticated"
+  ],
+  "schemaname": "command",
+  "tablename": "fmic_division_metrics",
+  "with_check": null
+ },
+ {
+  "cmd": "ALL",
+  "permissive": "PERMISSIVE",
+  "policyname": "Allow service role full access",
+  "qual": "true",
+  "roles": [
+   "service_role"
+  ],
+  "schemaname": "command",
+  "tablename": "fmic_division_metrics",
+  "with_check": null
+ },
+ {
+  "cmd": "SELECT",
+  "permissive": "PERMISSIVE",
+  "policyname": "cursor_schema_reader_select",
+  "qual": "true",
+  "roles": [
+   "cursor_schema_reader"
+  ],
+  "schemaname": "command",
+  "tablename": "fmic_division_metrics",
+  "with_check": null
+ },
+ {
+  "cmd": "SELECT",
+  "permissive": "PERMISSIVE",
+  "policyname": "Allow read access to authenticated users",
+  "qual": "true",
+  "roles": [
+   "authenticated"
+  ],
+  "schemaname": "command",
+  "tablename": "fmic_electric_catalog",
+  "with_check": null
+ },
+ {
+  "cmd": "ALL",
+  "permissive": "PERMISSIVE",
+  "policyname": "Allow service role full access",
+  "qual": "true",
+  "roles": [
+   "service_role"
+  ],
+  "schemaname": "command",
+  "tablename": "fmic_electric_catalog",
+  "with_check": "true"
+ },
+ {
+  "cmd": "SELECT",
+  "permissive": "PERMISSIVE",
+  "policyname": "cursor_schema_reader_select",
+  "qual": "true",
+  "roles": [
+   "cursor_schema_reader"
+  ],
+  "schemaname": "command",
+  "tablename": "fmic_electric_catalog",
+  "with_check": null
+ },
+ {
+  "cmd": "SELECT",
+  "permissive": "PERMISSIVE",
+  "policyname": "cursor_schema_reader_select",
+  "qual": "true",
+  "roles": [
+   "cursor_schema_reader"
+  ],
+  "schemaname": "command",
+  "tablename": "fmic_job_state",
+  "with_check": null
+ },
+ {
+  "cmd": "SELECT",
+  "permissive": "PERMISSIVE",
+  "policyname": "Allow read access to authenticated users",
+  "qual": "true",
+  "roles": [
+   "authenticated"
+  ],
+  "schemaname": "command",
+  "tablename": "fmic_retail_buybox_map",
+  "with_check": null
+ },
+ {
+  "cmd": "ALL",
+  "permissive": "PERMISSIVE",
+  "policyname": "Allow service role full access",
+  "qual": "true",
+  "roles": [
+   "service_role"
+  ],
+  "schemaname": "command",
+  "tablename": "fmic_retail_buybox_map",
+  "with_check": null
+ },
+ {
+  "cmd": "SELECT",
+  "permissive": "PERMISSIVE",
+  "policyname": "cursor_schema_reader_select",
+  "qual": "true",
+  "roles": [
+   "cursor_schema_reader"
+  ],
+  "schemaname": "command",
+  "tablename": "fmic_retail_buybox_map",
+  "with_check": null
+ },
+ {
+  "cmd": "SELECT",
+  "permissive": "PERMISSIVE",
+  "policyname": "cursor_schema_reader_select",
+  "qual": "true",
+  "roles": [
+   "cursor_schema_reader"
+  ],
+  "schemaname": "command",
+  "tablename": "fmic_sellers",
+  "with_check": null
+ },
+ {
+  "cmd": "SELECT",
+  "permissive": "PERMISSIVE",
+  "policyname": "Allow read access to authenticated users",
+  "qual": "true",
+  "roles": [
+   "authenticated"
+  ],
+  "schemaname": "command",
+  "tablename": "fmic_social_intelligence",
+  "with_check": null
+ },
+ {
+  "cmd": "ALL",
+  "permissive": "PERMISSIVE",
+  "policyname": "Allow service role full access",
+  "qual": "true",
+  "roles": [
+   "service_role"
+  ],
+  "schemaname": "command",
+  "tablename": "fmic_social_intelligence",
+  "with_check": null
+ },
+ {
+  "cmd": "SELECT",
+  "permissive": "PERMISSIVE",
+  "policyname": "cursor_schema_reader_select",
+  "qual": "true",
+  "roles": [
+   "cursor_schema_reader"
+  ],
+  "schemaname": "command",
+  "tablename": "fmic_social_intelligence",
+  "with_check": null
+ },
+ {
+  "cmd": "ALL",
+  "permissive": "PERMISSIVE",
+  "policyname": "fmic_spec_findability_attempt_service_all",
+  "qual": "true",
+  "roles": [
+   "service_role"
+  ],
+  "schemaname": "command",
+  "tablename": "fmic_spec_findability_attempt",
+  "with_check": "true"
+ },
+ {
+  "cmd": "ALL",
+  "permissive": "PERMISSIVE",
+  "policyname": "fmic_spec_findability_current_service_all",
+  "qual": "true",
+  "roles": [
+   "service_role"
+  ],
+  "schemaname": "command",
+  "tablename": "fmic_spec_findability_current",
+  "with_check": "true"
+ },
+ {
+  "cmd": "SELECT",
+  "permissive": "PERMISSIVE",
+  "policyname": "cursor_schema_reader_select",
+  "qual": "true",
+  "roles": [
+   "cursor_schema_reader"
+  ],
+  "schemaname": "command",
+  "tablename": "fmic_spec_readiness",
+  "with_check": null
+ },
+ {
+  "cmd": "SELECT",
+  "permissive": "PERMISSIVE",
+  "policyname": "listing_channel_price_authenticated_select",
+  "qual": "true",
+  "roles": [
+   "authenticated"
+  ],
+  "schemaname": "command",
+  "tablename": "listing_channel_price",
+  "with_check": null
+ },
+ {
+  "cmd": "ALL",
+  "permissive": "PERMISSIVE",
+  "policyname": "listing_channel_price_service_role_all",
+  "qual": "true",
+  "roles": [
+   "service_role"
+  ],
+  "schemaname": "command",
+  "tablename": "listing_channel_price",
+  "with_check": "true"
+ },
+ {
+  "cmd": "DELETE",
+  "permissive": "PERMISSIVE",
+  "policyname": "memberships_delete",
+  "qual": "(command.is_intofocus_admin() OR command.user_has_org_role(organization_id, 'org_admin'::command.organization_role))",
+  "roles": [
+   "authenticated"
+  ],
+  "schemaname": "command",
+  "tablename": "organization_memberships",
+  "with_check": null
+ },
+ {
+  "cmd": "INSERT",
+  "permissive": "PERMISSIVE",
+  "policyname": "memberships_insert",
+  "qual": null,
+  "roles": [
+   "authenticated"
+  ],
+  "schemaname": "command",
+  "tablename": "organization_memberships",
+  "with_check": "(command.is_intofocus_admin() OR command.user_has_org_role(organization_id, 'org_admin'::command.organization_role))"
+ },
+ {
+  "cmd": "SELECT",
+  "permissive": "PERMISSIVE",
+  "policyname": "memberships_select",
+  "qual": "((user_id = auth.uid()) OR command.is_intofocus_admin() OR command.user_has_org_role(organization_id, 'org_admin'::command.organization_role))",
+  "roles": [
+   "authenticated"
+  ],
+  "schemaname": "command",
+  "tablename": "organization_memberships",
+  "with_check": null
+ },
+ {
+  "cmd": "UPDATE",
+  "permissive": "PERMISSIVE",
+  "policyname": "memberships_update",
+  "qual": "(command.is_intofocus_admin() OR command.user_has_org_role(organization_id, 'org_admin'::command.organization_role))",
+  "roles": [
+   "authenticated"
+  ],
+  "schemaname": "command",
+  "tablename": "organization_memberships",
+  "with_check": "(command.is_intofocus_admin() OR command.user_has_org_role(organization_id, 'org_admin'::command.organization_role))"
+ },
+ {
+  "cmd": "INSERT",
+  "permissive": "PERMISSIVE",
+  "policyname": "organizations_insert",
+  "qual": null,
+  "roles": [
+   "authenticated"
+  ],
+  "schemaname": "command",
+  "tablename": "organizations",
+  "with_check": "command.is_intofocus_admin()"
+ },
+ {
+  "cmd": "SELECT",
+  "permissive": "PERMISSIVE",
+  "policyname": "organizations_select",
+  "qual": "(command.is_intofocus_admin() OR (EXISTS ( SELECT 1\n   FROM command.organization_memberships m\n  WHERE ((m.organization_id = organizations.id) AND (m.user_id = auth.uid()) AND (m.status = 'active'::command.membership_status)))))",
+  "roles": [
+   "authenticated"
+  ],
+  "schemaname": "command",
+  "tablename": "organizations",
+  "with_check": null
+ },
+ {
+  "cmd": "UPDATE",
+  "permissive": "PERMISSIVE",
+  "policyname": "organizations_update",
+  "qual": "(command.is_intofocus_admin() OR command.user_has_org_role(id, 'org_admin'::command.organization_role))",
+  "roles": [
+   "authenticated"
+  ],
+  "schemaname": "command",
+  "tablename": "organizations",
+  "with_check": "(command.is_intofocus_admin() OR command.user_has_org_role(id, 'org_admin'::command.organization_role))"
+ },
+ {
+  "cmd": "INSERT",
+  "permissive": "PERMISSIVE",
+  "policyname": "user_profiles_insert",
+  "qual": null,
+  "roles": [
+   "authenticated"
+  ],
+  "schemaname": "command",
+  "tablename": "user_profiles",
+  "with_check": "((id = auth.uid()) OR command.is_intofocus_admin())"
+ },
+ {
+  "cmd": "SELECT",
+  "permissive": "PERMISSIVE",
+  "policyname": "user_profiles_select",
+  "qual": "((id = auth.uid()) OR command.is_intofocus_admin())",
+  "roles": [
+   "authenticated"
+  ],
+  "schemaname": "command",
+  "tablename": "user_profiles",
+  "with_check": null
+ },
+ {
+  "cmd": "UPDATE",
+  "permissive": "PERMISSIVE",
+  "policyname": "user_profiles_update",
+  "qual": "((id = auth.uid()) OR command.is_intofocus_admin())",
+  "roles": [
+   "authenticated"
+  ],
+  "schemaname": "command",
+  "tablename": "user_profiles",
+  "with_check": "((id = auth.uid()) OR command.is_intofocus_admin())"
+ },
+ {
+  "cmd": "SELECT",
+  "permissive": "PERMISSIVE",
+  "policyname": "admins read organization audit log",
+  "qual": "private.has_org_role(organization_id, ARRAY['org_admin'::organization_role])",
+  "roles": [
+   "authenticated"
+  ],
+  "schemaname": "public",
+  "tablename": "audit_log",
+  "with_check": null
+ },
+ {
+  "cmd": "SELECT",
+  "permissive": "PERMISSIVE",
+  "policyname": "canvas_score_snapshots_read",
+  "qual": "true",
+  "roles": [
+   "anon",
+   "authenticated"
+  ],
+  "schemaname": "public",
+  "tablename": "canvas_score_snapshots",
+  "with_check": null
+ },
+ {
+  "cmd": "ALL",
+  "permissive": "PERMISSIVE",
+  "policyname": "admins manage departments",
+  "qual": "private.has_org_role(organization_id, ARRAY['org_admin'::organization_role])",
+  "roles": [
+   "authenticated"
+  ],
+  "schemaname": "public",
+  "tablename": "departments",
+  "with_check": "private.has_org_role(organization_id, ARRAY['org_admin'::organization_role])"
+ },
+ {
+  "cmd": "SELECT",
+  "permissive": "PERMISSIVE",
+  "policyname": "members read departments",
+  "qual": "private.is_active_org_member(organization_id)",
+  "roles": [
+   "authenticated"
+  ],
+  "schemaname": "public",
+  "tablename": "departments",
+  "with_check": null
+ },
+ {
+  "cmd": "ALL",
+  "permissive": "PERMISSIVE",
+  "policyname": "admins manage modules",
+  "qual": "private.has_org_role(organization_id, ARRAY['org_admin'::organization_role])",
+  "roles": [
+   "authenticated"
+  ],
+  "schemaname": "public",
+  "tablename": "modules",
+  "with_check": "private.has_org_role(organization_id, ARRAY['org_admin'::organization_role])"
+ },
+ {
+  "cmd": "SELECT",
+  "permissive": "PERMISSIVE",
+  "policyname": "members read modules",
+  "qual": "private.is_active_org_member(organization_id)",
+  "roles": [
+   "authenticated"
+  ],
+  "schemaname": "public",
+  "tablename": "modules",
+  "with_check": null
+ },
+ {
+  "cmd": "ALL",
+  "permissive": "PERMISSIVE",
+  "policyname": "admins manage memberships",
+  "qual": "private.has_org_role(organization_id, ARRAY['org_admin'::organization_role])",
+  "roles": [
+   "authenticated"
+  ],
+  "schemaname": "public",
+  "tablename": "organization_memberships",
+  "with_check": "private.has_org_role(organization_id, ARRAY['org_admin'::organization_role])"
+ },
+ {
+  "cmd": "SELECT",
+  "permissive": "PERMISSIVE",
+  "policyname": "members read organization memberships",
+  "qual": "private.is_active_org_member(organization_id)",
+  "roles": [
+   "authenticated"
+  ],
+  "schemaname": "public",
+  "tablename": "organization_memberships",
+  "with_check": null
+ },
+ {
+  "cmd": "UPDATE",
+  "permissive": "PERMISSIVE",
+  "policyname": "admins update own organizations",
+  "qual": "private.has_org_role(id, ARRAY['org_admin'::organization_role])",
+  "roles": [
+   "authenticated"
+  ],
+  "schemaname": "public",
+  "tablename": "organizations",
+  "with_check": "private.has_org_role(id, ARRAY['org_admin'::organization_role])"
+ },
+ {
+  "cmd": "SELECT",
+  "permissive": "PERMISSIVE",
+  "policyname": "members read own organizations",
+  "qual": "private.is_active_org_member(id)",
+  "roles": [
+   "authenticated"
+  ],
+  "schemaname": "public",
+  "tablename": "organizations",
+  "with_check": null
+ },
+ {
+  "cmd": "ALL",
+  "permissive": "PERMISSIVE",
+  "policyname": "admins manage people",
+  "qual": "private.has_org_role(organization_id, ARRAY['org_admin'::organization_role])",
+  "roles": [
+   "authenticated"
+  ],
+  "schemaname": "public",
+  "tablename": "people",
+  "with_check": "private.has_org_role(organization_id, ARRAY['org_admin'::organization_role])"
+ },
+ {
+  "cmd": "SELECT",
+  "permissive": "PERMISSIVE",
+  "policyname": "members read people",
+  "qual": "private.is_active_org_member(organization_id)",
+  "roles": [
+   "authenticated"
+  ],
+  "schemaname": "public",
+  "tablename": "people",
+  "with_check": null
+ },
+ {
+  "cmd": "SELECT",
+  "permissive": "PERMISSIVE",
+  "policyname": "users read own profile",
+  "qual": "(id = auth.uid())",
+  "roles": [
+   "authenticated"
+  ],
+  "schemaname": "public",
+  "tablename": "profiles",
+  "with_check": null
+ },
+ {
+  "cmd": "UPDATE",
+  "permissive": "PERMISSIVE",
+  "policyname": "users update own profile",
+  "qual": "(id = auth.uid())",
+  "roles": [
+   "authenticated"
+  ],
+  "schemaname": "public",
+  "tablename": "profiles",
+  "with_check": "(id = auth.uid())"
+ },
+ {
+  "cmd": "ALL",
+  "permissive": "PERMISSIVE",
+  "policyname": "admins manage role assignments",
+  "qual": "private.has_org_role(organization_id, ARRAY['org_admin'::organization_role])",
+  "roles": [
+   "authenticated"
+  ],
+  "schemaname": "public",
+  "tablename": "role_assignments",
+  "with_check": "private.has_org_role(organization_id, ARRAY['org_admin'::organization_role])"
+ },
+ {
+  "cmd": "SELECT",
+  "permissive": "PERMISSIVE",
+  "policyname": "members read role assignments",
+  "qual": "private.is_active_org_member(organization_id)",
+  "roles": [
+   "authenticated"
+  ],
+  "schemaname": "public",
+  "tablename": "role_assignments",
+  "with_check": null
+ },
+ {
+  "cmd": "ALL",
+  "permissive": "PERMISSIVE",
+  "policyname": "admins manage role responsibilities",
+  "qual": "private.has_org_role(organization_id, ARRAY['org_admin'::organization_role])",
+  "roles": [
+   "authenticated"
+  ],
+  "schemaname": "public",
+  "tablename": "role_responsibilities",
+  "with_check": "private.has_org_role(organization_id, ARRAY['org_admin'::organization_role])"
+ },
+ {
+  "cmd": "SELECT",
+  "permissive": "PERMISSIVE",
+  "policyname": "members read role responsibilities",
+  "qual": "private.is_active_org_member(organization_id)",
+  "roles": [
+   "authenticated"
+  ],
+  "schemaname": "public",
+  "tablename": "role_responsibilities",
+  "with_check": null
+ },
+ {
+  "cmd": "ALL",
+  "permissive": "PERMISSIVE",
+  "policyname": "admins manage role seats",
+  "qual": "private.has_org_role(organization_id, ARRAY['org_admin'::organization_role])",
+  "roles": [
+   "authenticated"
+  ],
+  "schemaname": "public",
+  "tablename": "role_seats",
+  "with_check": "private.has_org_role(organization_id, ARRAY['org_admin'::organization_role])"
+ },
+ {
+  "cmd": "SELECT",
+  "permissive": "PERMISSIVE",
+  "policyname": "members read role seats",
+  "qual": "private.is_active_org_member(organization_id)",
+  "roles": [
+   "authenticated"
+  ],
+  "schemaname": "public",
+  "tablename": "role_seats",
+  "with_check": null
+ },
+ {
+  "cmd": "ALL",
+  "permissive": "PERMISSIVE",
+  "policyname": "admins manage work dependencies",
+  "qual": "private.has_org_role(organization_id, ARRAY['org_admin'::organization_role])",
+  "roles": [
+   "authenticated"
+  ],
+  "schemaname": "public",
+  "tablename": "work_dependencies",
+  "with_check": "private.has_org_role(organization_id, ARRAY['org_admin'::organization_role])"
+ },
+ {
+  "cmd": "SELECT",
+  "permissive": "PERMISSIVE",
+  "policyname": "members read work dependencies",
+  "qual": "private.is_active_org_member(organization_id)",
+  "roles": [
+   "authenticated"
+  ],
+  "schemaname": "public",
+  "tablename": "work_dependencies",
+  "with_check": null
+ },
+ {
+  "cmd": "ALL",
+  "permissive": "PERMISSIVE",
+  "policyname": "admins manage work items",
+  "qual": "private.has_org_role(organization_id, ARRAY['org_admin'::organization_role])",
+  "roles": [
+   "authenticated"
+  ],
+  "schemaname": "public",
+  "tablename": "work_items",
+  "with_check": "private.has_org_role(organization_id, ARRAY['org_admin'::organization_role])"
+ },
+ {
+  "cmd": "SELECT",
+  "permissive": "PERMISSIVE",
+  "policyname": "members read work items",
+  "qual": "(private.is_active_org_member(organization_id) AND ((sensitivity_level <> 'restricted'::sensitivity_level) OR private.has_org_role(organization_id, ARRAY['org_admin'::organization_role])))",
+  "roles": [
+   "authenticated"
+  ],
+  "schemaname": "public",
+  "tablename": "work_items",
+  "with_check": null
+ },
+ {
+  "cmd": "ALL",
+  "permissive": "PERMISSIVE",
+  "policyname": "admins manage work milestones",
+  "qual": "private.has_org_role(organization_id, ARRAY['org_admin'::organization_role])",
+  "roles": [
+   "authenticated"
+  ],
+  "schemaname": "public",
+  "tablename": "work_milestones",
+  "with_check": "private.has_org_role(organization_id, ARRAY['org_admin'::organization_role])"
+ },
+ {
+  "cmd": "SELECT",
+  "permissive": "PERMISSIVE",
+  "policyname": "members read work milestones",
+  "qual": "(private.is_active_org_member(organization_id) AND (EXISTS ( SELECT 1\n   FROM work_items wi\n  WHERE ((wi.id = work_milestones.work_item_id) AND ((wi.sensitivity_level <> 'restricted'::sensitivity_level) OR private.has_org_role(wi.organization_id, ARRAY['org_admin'::organization_role]))))))",
+  "roles": [
+   "authenticated"
+  ],
+  "schemaname": "public",
+  "tablename": "work_milestones",
+  "with_check": null
+ },
+ {
+  "cmd": "ALL",
+  "permissive": "PERMISSIVE",
+  "policyname": "admins manage work source links",
+  "qual": "private.has_org_role(organization_id, ARRAY['org_admin'::organization_role])",
+  "roles": [
+   "authenticated"
+  ],
+  "schemaname": "public",
+  "tablename": "work_source_links",
+  "with_check": "private.has_org_role(organization_id, ARRAY['org_admin'::organization_role])"
+ },
+ {
+  "cmd": "SELECT",
+  "permissive": "PERMISSIVE",
+  "policyname": "members read work source links",
+  "qual": "(private.is_active_org_member(organization_id) AND (EXISTS ( SELECT 1\n   FROM work_items wi\n  WHERE ((wi.id = work_source_links.work_item_id) AND ((wi.sensitivity_level <> 'restricted'::sensitivity_level) OR private.has_org_role(wi.organization_id, ARRAY['org_admin'::organization_role]))))))",
+  "roles": [
+   "authenticated"
+  ],
+  "schemaname": "public",
+  "tablename": "work_source_links",
+  "with_check": null
+ },
+ {
+  "cmd": "SELECT",
+  "permissive": "PERMISSIVE",
+  "policyname": "action_item_read_all",
+  "qual": "true",
+  "roles": [
+   "anon",
+   "authenticated"
+  ],
+  "schemaname": "sandbox",
+  "tablename": "action_item",
+  "with_check": null
+ },
+ {
+  "cmd": "SELECT",
+  "permissive": "PERMISSIVE",
+  "policyname": "ai_answer_read_all",
+  "qual": "true",
+  "roles": [
+   "anon",
+   "authenticated"
+  ],
+  "schemaname": "sandbox",
+  "tablename": "ai_answer",
+  "with_check": null
+ },
+ {
+  "cmd": "SELECT",
+  "permissive": "PERMISSIVE",
+  "policyname": "ai_prompt_read_all",
+  "qual": "true",
+  "roles": [
+   "anon",
+   "authenticated"
+  ],
+  "schemaname": "sandbox",
+  "tablename": "ai_prompt",
+  "with_check": null
+ },
+ {
+  "cmd": "SELECT",
+  "permissive": "PERMISSIVE",
+  "policyname": "client_read_all",
+  "qual": "true",
+  "roles": [
+   "anon",
+   "authenticated"
+  ],
+  "schemaname": "sandbox",
+  "tablename": "client",
+  "with_check": null
+ },
+ {
+  "cmd": "SELECT",
+  "permissive": "PERMISSIVE",
+  "policyname": "competitor_brand_read_all",
+  "qual": "true",
+  "roles": [
+   "anon",
+   "authenticated"
+  ],
+  "schemaname": "sandbox",
+  "tablename": "competitor_brand",
+  "with_check": null
+ },
+ {
+  "cmd": "SELECT",
+  "permissive": "PERMISSIVE",
+  "policyname": "estimate_read_all",
+  "qual": "true",
+  "roles": [
+   "anon",
+   "authenticated"
+  ],
+  "schemaname": "sandbox",
+  "tablename": "estimate",
+  "with_check": null
+ },
+ {
+  "cmd": "SELECT",
+  "permissive": "PERMISSIVE",
+  "policyname": "estimate_input_read_all",
+  "qual": "true",
+  "roles": [
+   "anon",
+   "authenticated"
+  ],
+  "schemaname": "sandbox",
+  "tablename": "estimate_input",
+  "with_check": null
+ },
+ {
+  "cmd": "SELECT",
+  "permissive": "PERMISSIVE",
+  "policyname": "listing_read_all",
+  "qual": "true",
+  "roles": [
+   "anon",
+   "authenticated"
+  ],
+  "schemaname": "sandbox",
+  "tablename": "listing",
+  "with_check": null
+ },
+ {
+  "cmd": "SELECT",
+  "permissive": "PERMISSIVE",
+  "policyname": "listing_channel_price_read_all",
+  "qual": "true",
+  "roles": [
+   "anon",
+   "authenticated"
+  ],
+  "schemaname": "sandbox",
+  "tablename": "listing_channel_price",
+  "with_check": null
+ },
+ {
+  "cmd": "SELECT",
+  "permissive": "PERMISSIVE",
+  "policyname": "listing_map_price_read_all",
+  "qual": "true",
+  "roles": [
+   "anon",
+   "authenticated"
+  ],
+  "schemaname": "sandbox",
+  "tablename": "listing_map_price",
+  "with_check": null
+ },
+ {
+  "cmd": "SELECT",
+  "permissive": "PERMISSIVE",
+  "policyname": "listing_offer_reading_read_all",
+  "qual": "true",
+  "roles": [
+   "anon",
+   "authenticated"
+  ],
+  "schemaname": "sandbox",
+  "tablename": "listing_offer_reading",
+  "with_check": null
+ },
+ {
+  "cmd": "SELECT",
+  "permissive": "PERMISSIVE",
+  "policyname": "metric_registry_read_all",
+  "qual": "true",
+  "roles": [
+   "anon",
+   "authenticated"
+  ],
+  "schemaname": "sandbox",
+  "tablename": "metric_registry",
+  "with_check": null
+ },
+ {
+  "cmd": "SELECT",
+  "permissive": "PERMISSIVE",
+  "policyname": "metric_value_read_all",
+  "qual": "true",
+  "roles": [
+   "anon",
+   "authenticated"
+  ],
+  "schemaname": "sandbox",
+  "tablename": "metric_value",
+  "with_check": null
+ },
+ {
+  "cmd": "SELECT",
+  "permissive": "PERMISSIVE",
+  "policyname": "reading_run_read_all",
+  "qual": "true",
+  "roles": [
+   "anon",
+   "authenticated"
+  ],
+  "schemaname": "sandbox",
+  "tablename": "reading_run",
+  "with_check": null
+ },
+ {
+  "cmd": "SELECT",
+  "permissive": "PERMISSIVE",
+  "policyname": "seller_read_all",
+  "qual": "true",
+  "roles": [
+   "anon",
+   "authenticated"
+  ],
+  "schemaname": "sandbox",
+  "tablename": "seller",
+  "with_check": null
+ },
+ {
+  "cmd": "SELECT",
+  "permissive": "PERMISSIVE",
+  "policyname": "seller_authorization_read_all",
+  "qual": "true",
+  "roles": [
+   "anon",
+   "authenticated"
+  ],
+  "schemaname": "sandbox",
+  "tablename": "seller_authorization",
+  "with_check": null
+ },
+ {
+  "cmd": "SELECT",
+  "permissive": "PERMISSIVE",
+  "policyname": "seller_type_read_all",
+  "qual": "true",
+  "roles": [
+   "anon",
+   "authenticated"
+  ],
+  "schemaname": "sandbox",
+  "tablename": "seller_type",
+  "with_check": null
+ },
+ {
+  "cmd": "SELECT",
+  "permissive": "PERMISSIVE",
+  "policyname": "spec_reading_read_all",
+  "qual": "true",
+  "roles": [
+   "anon",
+   "authenticated"
+  ],
+  "schemaname": "sandbox",
+  "tablename": "spec_reading",
+  "with_check": null
+ }
+]
