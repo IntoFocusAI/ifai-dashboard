@@ -1,0 +1,6696 @@
+{
+ "canvas_private.ai_api_calls": [
+  {
+   "column": "id",
+   "type": "uuid"
+  },
+  {
+   "column": "audit_run_id",
+   "type": "uuid"
+  },
+  {
+   "column": "sim_id",
+   "type": "integer"
+  },
+  {
+   "column": "category",
+   "type": "character varying(60)"
+  },
+  {
+   "column": "prompt_key",
+   "type": "text"
+  },
+  {
+   "column": "prompt_text",
+   "type": "text"
+  },
+  {
+   "column": "prompt_kind",
+   "type": "text"
+  },
+  {
+   "column": "engine",
+   "type": "character varying"
+  },
+  {
+   "column": "model",
+   "type": "text"
+  },
+  {
+   "column": "repeat_no",
+   "type": "integer"
+  },
+  {
+   "column": "attempt_no",
+   "type": "integer"
+  },
+  {
+   "column": "call_status",
+   "type": "text"
+  },
+  {
+   "column": "outcome",
+   "type": "text"
+  },
+  {
+   "column": "primary_brand",
+   "type": "text"
+  },
+  {
+   "column": "winner",
+   "type": "character varying(100)"
+  },
+  {
+   "column": "material_hallucination",
+   "type": "text"
+  },
+  {
+   "column": "hallucination_evidence",
+   "type": "text"
+  },
+  {
+   "column": "root_cause",
+   "type": "text"
+  },
+  {
+   "column": "remediation_text",
+   "type": "text"
+  },
+  {
+   "column": "error_message",
+   "type": "text"
+  },
+  {
+   "column": "answer_text",
+   "type": "text"
+  },
+  {
+   "column": "citation_urls",
+   "type": "text"
+  },
+  {
+   "column": "created_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "run_state",
+   "type": "text"
+  },
+  {
+   "column": "published_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "probe_asin",
+   "type": "text"
+  },
+  {
+   "column": "probe_asins",
+   "type": "text[]"
+  },
+  {
+   "column": "probe_fender_sku",
+   "type": "text"
+  },
+  {
+   "column": "probe_category",
+   "type": "text"
+  },
+  {
+   "column": "probe_series",
+   "type": "text"
+  },
+  {
+   "column": "probe_spec_field",
+   "type": "text"
+  },
+  {
+   "column": "probe_expected_value",
+   "type": "text"
+  },
+  {
+   "column": "probe_source_url",
+   "type": "text"
+  },
+  {
+   "column": "probe_amazon_value",
+   "type": "text"
+  },
+  {
+   "column": "probe_is_anchor",
+   "type": "boolean"
+  }
+ ],
+ "canvas_private.ai_api_runs": [
+  {
+   "column": "id",
+   "type": "uuid"
+  },
+  {
+   "column": "run_kind",
+   "type": "text"
+  },
+  {
+   "column": "run_state",
+   "type": "text"
+  },
+  {
+   "column": "collector_version",
+   "type": "text"
+  },
+  {
+   "column": "prompt_set_hash",
+   "type": "text"
+  },
+  {
+   "column": "expected_calls",
+   "type": "integer"
+  },
+  {
+   "column": "attempted_calls",
+   "type": "integer"
+  },
+  {
+   "column": "answered_calls",
+   "type": "integer"
+  },
+  {
+   "column": "error_calls",
+   "type": "integer"
+  },
+  {
+   "column": "is_published",
+   "type": "boolean"
+  },
+  {
+   "column": "published_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "started_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "completed_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "engines",
+   "type": "text[]"
+  },
+  {
+   "column": "repeats",
+   "type": "integer"
+  },
+  {
+   "column": "questions_asked",
+   "type": "integer"
+  },
+  {
+   "column": "questions_matched",
+   "type": "integer"
+  },
+  {
+   "column": "question_set_match",
+   "type": "boolean"
+  },
+  {
+   "column": "counted",
+   "type": "boolean"
+  }
+ ],
+ "canvas_private.ai_current_calls": [
+  {
+   "column": "id",
+   "type": "uuid"
+  },
+  {
+   "column": "audit_run_id",
+   "type": "uuid"
+  },
+  {
+   "column": "sim_id",
+   "type": "integer"
+  },
+  {
+   "column": "category",
+   "type": "character varying(60)"
+  },
+  {
+   "column": "prompt_key",
+   "type": "text"
+  },
+  {
+   "column": "prompt_text",
+   "type": "text"
+  },
+  {
+   "column": "prompt_kind",
+   "type": "text"
+  },
+  {
+   "column": "engine",
+   "type": "character varying"
+  },
+  {
+   "column": "model",
+   "type": "text"
+  },
+  {
+   "column": "repeat_no",
+   "type": "integer"
+  },
+  {
+   "column": "attempt_no",
+   "type": "integer"
+  },
+  {
+   "column": "call_status",
+   "type": "text"
+  },
+  {
+   "column": "outcome",
+   "type": "text"
+  },
+  {
+   "column": "primary_brand",
+   "type": "text"
+  },
+  {
+   "column": "winner",
+   "type": "character varying(100)"
+  },
+  {
+   "column": "material_hallucination",
+   "type": "text"
+  },
+  {
+   "column": "hallucination_evidence",
+   "type": "text"
+  },
+  {
+   "column": "root_cause",
+   "type": "text"
+  },
+  {
+   "column": "remediation_text",
+   "type": "text"
+  },
+  {
+   "column": "error_message",
+   "type": "text"
+  },
+  {
+   "column": "answer_text",
+   "type": "text"
+  },
+  {
+   "column": "citation_urls",
+   "type": "text"
+  },
+  {
+   "column": "created_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "run_state",
+   "type": "text"
+  },
+  {
+   "column": "published_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "probe_asin",
+   "type": "text"
+  },
+  {
+   "column": "probe_asins",
+   "type": "text[]"
+  },
+  {
+   "column": "probe_fender_sku",
+   "type": "text"
+  },
+  {
+   "column": "probe_category",
+   "type": "text"
+  },
+  {
+   "column": "probe_series",
+   "type": "text"
+  },
+  {
+   "column": "probe_spec_field",
+   "type": "text"
+  },
+  {
+   "column": "probe_expected_value",
+   "type": "text"
+  },
+  {
+   "column": "probe_source_url",
+   "type": "text"
+  },
+  {
+   "column": "probe_amazon_value",
+   "type": "text"
+  },
+  {
+   "column": "probe_is_anchor",
+   "type": "boolean"
+  }
+ ],
+ "canvas_private.ai_current_run": [
+  {
+   "column": "id",
+   "type": "uuid"
+  },
+  {
+   "column": "run_state",
+   "type": "text"
+  },
+  {
+   "column": "collector_version",
+   "type": "text"
+  },
+  {
+   "column": "prompt_set_hash",
+   "type": "text"
+  },
+  {
+   "column": "expected_calls",
+   "type": "integer"
+  },
+  {
+   "column": "attempted_calls",
+   "type": "integer"
+  },
+  {
+   "column": "answered_calls",
+   "type": "integer"
+  },
+  {
+   "column": "error_calls",
+   "type": "integer"
+  },
+  {
+   "column": "started_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "completed_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "published_at",
+   "type": "timestamp with time zone"
+  }
+ ],
+ "canvas_private.ai_history_calls": [
+  {
+   "column": "id",
+   "type": "uuid"
+  },
+  {
+   "column": "audit_run_id",
+   "type": "uuid"
+  },
+  {
+   "column": "sim_id",
+   "type": "integer"
+  },
+  {
+   "column": "category",
+   "type": "character varying(60)"
+  },
+  {
+   "column": "prompt_key",
+   "type": "text"
+  },
+  {
+   "column": "prompt_text",
+   "type": "text"
+  },
+  {
+   "column": "prompt_kind",
+   "type": "text"
+  },
+  {
+   "column": "engine",
+   "type": "character varying"
+  },
+  {
+   "column": "model",
+   "type": "text"
+  },
+  {
+   "column": "repeat_no",
+   "type": "integer"
+  },
+  {
+   "column": "attempt_no",
+   "type": "integer"
+  },
+  {
+   "column": "call_status",
+   "type": "text"
+  },
+  {
+   "column": "outcome",
+   "type": "text"
+  },
+  {
+   "column": "primary_brand",
+   "type": "text"
+  },
+  {
+   "column": "winner",
+   "type": "character varying(100)"
+  },
+  {
+   "column": "material_hallucination",
+   "type": "text"
+  },
+  {
+   "column": "hallucination_evidence",
+   "type": "text"
+  },
+  {
+   "column": "root_cause",
+   "type": "text"
+  },
+  {
+   "column": "remediation_text",
+   "type": "text"
+  },
+  {
+   "column": "error_message",
+   "type": "text"
+  },
+  {
+   "column": "answer_text",
+   "type": "text"
+  },
+  {
+   "column": "citation_urls",
+   "type": "text"
+  },
+  {
+   "column": "created_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "run_state",
+   "type": "text"
+  },
+  {
+   "column": "published_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "probe_asin",
+   "type": "text"
+  },
+  {
+   "column": "probe_asins",
+   "type": "text[]"
+  },
+  {
+   "column": "probe_fender_sku",
+   "type": "text"
+  },
+  {
+   "column": "probe_category",
+   "type": "text"
+  },
+  {
+   "column": "probe_series",
+   "type": "text"
+  },
+  {
+   "column": "probe_spec_field",
+   "type": "text"
+  },
+  {
+   "column": "probe_expected_value",
+   "type": "text"
+  },
+  {
+   "column": "probe_source_url",
+   "type": "text"
+  },
+  {
+   "column": "probe_amazon_value",
+   "type": "text"
+  },
+  {
+   "column": "probe_is_anchor",
+   "type": "boolean"
+  }
+ ],
+ "canvas_private.ai_history_runs": [
+  {
+   "column": "id",
+   "type": "uuid"
+  },
+  {
+   "column": "run_kind",
+   "type": "text"
+  },
+  {
+   "column": "run_state",
+   "type": "text"
+  },
+  {
+   "column": "collector_version",
+   "type": "text"
+  },
+  {
+   "column": "prompt_set_hash",
+   "type": "text"
+  },
+  {
+   "column": "expected_calls",
+   "type": "integer"
+  },
+  {
+   "column": "attempted_calls",
+   "type": "integer"
+  },
+  {
+   "column": "answered_calls",
+   "type": "integer"
+  },
+  {
+   "column": "error_calls",
+   "type": "integer"
+  },
+  {
+   "column": "is_published",
+   "type": "boolean"
+  },
+  {
+   "column": "published_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "started_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "completed_at",
+   "type": "timestamp with time zone"
+  }
+ ],
+ "canvas_private.div_latest": [
+  {
+   "column": "id",
+   "type": "uuid"
+  },
+  {
+   "column": "audit_run_id",
+   "type": "uuid"
+  },
+  {
+   "column": "division",
+   "type": "character varying(80)"
+  },
+  {
+   "column": "monitored_skus",
+   "type": "integer"
+  },
+  {
+   "column": "buybox_pct",
+   "type": "numeric(5,2)"
+  },
+  {
+   "column": "splinter_bundles",
+   "type": "integer"
+  },
+  {
+   "column": "schema_sync_pct",
+   "type": "numeric(5,2)"
+  },
+  {
+   "column": "primary_threat",
+   "type": "character varying(255)"
+  },
+  {
+   "column": "strategic_action",
+   "type": "text"
+  },
+  {
+   "column": "created_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "updated_at",
+   "type": "timestamp with time zone"
+  }
+ ],
+ "canvas_private.sims_all": [
+  {
+   "column": "id",
+   "type": "uuid"
+  },
+  {
+   "column": "audit_run_id",
+   "type": "uuid"
+  },
+  {
+   "column": "sim_id",
+   "type": "integer"
+  },
+  {
+   "column": "category",
+   "type": "character varying(60)"
+  },
+  {
+   "column": "prompt",
+   "type": "text"
+  },
+  {
+   "column": "winner",
+   "type": "character varying(100)"
+  },
+  {
+   "column": "hallucination_flag",
+   "type": "boolean"
+  },
+  {
+   "column": "root_cause",
+   "type": "text"
+  },
+  {
+   "column": "remediation_patch",
+   "type": "text"
+  },
+  {
+   "column": "created_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "answer_text",
+   "type": "text"
+  },
+  {
+   "column": "citation_urls",
+   "type": "text"
+  },
+  {
+   "column": "engine",
+   "type": "character varying"
+  },
+  {
+   "column": "repeat_no",
+   "type": "integer"
+  },
+  {
+   "column": "source_table",
+   "type": "text"
+  }
+ ],
+ "canvas_private.spec_latest": [
+  {
+   "column": "id",
+   "type": "character varying"
+  },
+  {
+   "column": "asin",
+   "type": "character varying"
+  },
+  {
+   "column": "title",
+   "type": "text"
+  },
+  {
+   "column": "category",
+   "type": "character varying"
+  },
+  {
+   "column": "amazon_fields_found",
+   "type": "integer"
+  },
+  {
+   "column": "amazon_fields_expected",
+   "type": "integer"
+  },
+  {
+   "column": "amazon_completeness_pct",
+   "type": "double precision"
+  },
+  {
+   "column": "amazon_missing_fields",
+   "type": "text"
+  },
+  {
+   "column": "amazon_checked",
+   "type": "boolean"
+  },
+  {
+   "column": "fender_url",
+   "type": "text"
+  },
+  {
+   "column": "fender_found",
+   "type": "boolean"
+  },
+  {
+   "column": "fender_fields_found",
+   "type": "integer"
+  },
+  {
+   "column": "fender_fields_expected",
+   "type": "integer"
+  },
+  {
+   "column": "fender_completeness_pct",
+   "type": "double precision"
+  },
+  {
+   "column": "fender_missing_fields",
+   "type": "text"
+  },
+  {
+   "column": "checked_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "batch_run_id",
+   "type": "character varying"
+  },
+  {
+   "column": "created_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "collector_version",
+   "type": "text"
+  },
+  {
+   "column": "fender_page_source",
+   "type": "text"
+  },
+  {
+   "column": "fender_identity_match",
+   "type": "text"
+  },
+  {
+   "column": "fender_variant_sku",
+   "type": "text"
+  },
+  {
+   "column": "fender_spec_values",
+   "type": "jsonb"
+  },
+  {
+   "column": "fender_rating_markup",
+   "type": "boolean"
+  },
+  {
+   "column": "amazon_spec_values",
+   "type": "jsonb"
+  },
+  {
+   "column": "amazon_gtin",
+   "type": "text"
+  },
+  {
+   "column": "amazon_mpn",
+   "type": "text"
+  },
+  {
+   "column": "amazon_aplus_state",
+   "type": "text"
+  },
+  {
+   "column": "amazon_aplus_image_count",
+   "type": "integer"
+  },
+  {
+   "column": "amazon_video_state",
+   "type": "text"
+  },
+  {
+   "column": "amazon_bullet_count",
+   "type": "integer"
+  },
+  {
+   "column": "amazon_image_count",
+   "type": "integer"
+  }
+ ],
+ "ledlenser.canvas_ai_api_calls": [
+  {
+   "column": "id",
+   "type": "uuid"
+  },
+  {
+   "column": "audit_run_id",
+   "type": "uuid"
+  },
+  {
+   "column": "source_table",
+   "type": "text"
+  },
+  {
+   "column": "sim_id",
+   "type": "integer"
+  },
+  {
+   "column": "engine",
+   "type": "character varying"
+  },
+  {
+   "column": "repeat_no",
+   "type": "integer"
+  },
+  {
+   "column": "category",
+   "type": "character varying(60)"
+  },
+  {
+   "column": "prompt",
+   "type": "text"
+  },
+  {
+   "column": "winner",
+   "type": "character varying(100)"
+  },
+  {
+   "column": "is_resolved",
+   "type": "boolean"
+  },
+  {
+   "column": "hallucination_flag",
+   "type": "boolean"
+  },
+  {
+   "column": "root_cause",
+   "type": "text"
+  },
+  {
+   "column": "remediation_patch",
+   "type": "text"
+  },
+  {
+   "column": "answer_text",
+   "type": "text"
+  },
+  {
+   "column": "citation_urls",
+   "type": "text"
+  },
+  {
+   "column": "created_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "prompt_key",
+   "type": "text"
+  },
+  {
+   "column": "prompt_kind",
+   "type": "text"
+  },
+  {
+   "column": "model",
+   "type": "text"
+  },
+  {
+   "column": "call_status",
+   "type": "text"
+  },
+  {
+   "column": "outcome",
+   "type": "text"
+  },
+  {
+   "column": "primary_brand",
+   "type": "text"
+  },
+  {
+   "column": "material_hallucination",
+   "type": "text"
+  },
+  {
+   "column": "hallucination_evidence",
+   "type": "text"
+  },
+  {
+   "column": "attempt_no",
+   "type": "integer"
+  },
+  {
+   "column": "error_message",
+   "type": "text"
+  },
+  {
+   "column": "run_state",
+   "type": "text"
+  },
+  {
+   "column": "published_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "engine_group",
+   "type": "text"
+  }
+ ],
+ "ledlenser.canvas_ai_api_citations": [
+  {
+   "column": "audit_run_id",
+   "type": "uuid"
+  },
+  {
+   "column": "sim_id",
+   "type": "integer"
+  },
+  {
+   "column": "simulation_id",
+   "type": "uuid"
+  },
+  {
+   "column": "prompt_key",
+   "type": "text"
+  },
+  {
+   "column": "prompt_kind",
+   "type": "text"
+  },
+  {
+   "column": "category",
+   "type": "character varying(60)"
+  },
+  {
+   "column": "engine",
+   "type": "text"
+  },
+  {
+   "column": "position",
+   "type": "integer"
+  },
+  {
+   "column": "url",
+   "type": "text"
+  },
+  {
+   "column": "domain",
+   "type": "text"
+  },
+  {
+   "column": "title",
+   "type": "text"
+  },
+  {
+   "column": "engine_group",
+   "type": "text"
+  }
+ ],
+ "ledlenser.canvas_ai_api_probes": [
+  {
+   "column": "audit_run_id",
+   "type": "uuid"
+  },
+  {
+   "column": "sim_id",
+   "type": "integer"
+  },
+  {
+   "column": "prompt_key",
+   "type": "text"
+  },
+  {
+   "column": "prompt",
+   "type": "text"
+  },
+  {
+   "column": "engine",
+   "type": "character varying"
+  },
+  {
+   "column": "model",
+   "type": "text"
+  },
+  {
+   "column": "call_status",
+   "type": "text"
+  },
+  {
+   "column": "material_hallucination",
+   "type": "text"
+  },
+  {
+   "column": "hallucination_evidence",
+   "type": "text"
+  },
+  {
+   "column": "root_cause",
+   "type": "text"
+  },
+  {
+   "column": "remediation_text",
+   "type": "text"
+  },
+  {
+   "column": "verified_claim",
+   "type": "text"
+  },
+  {
+   "column": "verified_source_url",
+   "type": "text"
+  },
+  {
+   "column": "verified_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "answer_text",
+   "type": "text"
+  },
+  {
+   "column": "created_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "probe_asin",
+   "type": "text"
+  },
+  {
+   "column": "probe_asins",
+   "type": "text[]"
+  },
+  {
+   "column": "probe_brand_sku",
+   "type": "text"
+  },
+  {
+   "column": "probe_category",
+   "type": "text"
+  },
+  {
+   "column": "probe_series",
+   "type": "text"
+  },
+  {
+   "column": "probe_spec_field",
+   "type": "text"
+  },
+  {
+   "column": "probe_expected_value",
+   "type": "text"
+  },
+  {
+   "column": "probe_source_url",
+   "type": "text"
+  },
+  {
+   "column": "probe_amazon_value",
+   "type": "text"
+  },
+  {
+   "column": "probe_is_anchor",
+   "type": "boolean"
+  },
+  {
+   "column": "engine_group",
+   "type": "text"
+  }
+ ],
+ "ledlenser.canvas_ai_api_runs": [
+  {
+   "column": "audit_run_id",
+   "type": "uuid"
+  },
+  {
+   "column": "run_kind",
+   "type": "text"
+  },
+  {
+   "column": "run_state",
+   "type": "text"
+  },
+  {
+   "column": "collector_version",
+   "type": "text"
+  },
+  {
+   "column": "prompt_set_hash",
+   "type": "text"
+  },
+  {
+   "column": "expected_calls",
+   "type": "integer"
+  },
+  {
+   "column": "attempted_calls",
+   "type": "integer"
+  },
+  {
+   "column": "answered_calls",
+   "type": "integer"
+  },
+  {
+   "column": "error_calls",
+   "type": "integer"
+  },
+  {
+   "column": "is_published",
+   "type": "boolean"
+  },
+  {
+   "column": "published_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "started_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "completed_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "missing_calls",
+   "type": "integer"
+  },
+  {
+   "column": "engine_group",
+   "type": "text"
+  },
+  {
+   "column": "engines",
+   "type": "text[]"
+  },
+  {
+   "column": "repeats",
+   "type": "integer"
+  },
+  {
+   "column": "questions_asked",
+   "type": "integer"
+  },
+  {
+   "column": "questions_matched",
+   "type": "integer"
+  },
+  {
+   "column": "question_set_match",
+   "type": "boolean"
+  },
+  {
+   "column": "counted",
+   "type": "boolean"
+  }
+ ],
+ "ledlenser.canvas_ai_category": [
+  {
+   "column": "category",
+   "type": "character varying(60)"
+  },
+  {
+   "column": "total_sims",
+   "type": "bigint"
+  },
+  {
+   "column": "resolved",
+   "type": "bigint"
+  },
+  {
+   "column": "brand_wins",
+   "type": "bigint"
+  },
+  {
+   "column": "brand_win_pct",
+   "type": "numeric"
+  },
+  {
+   "column": "top_competitor",
+   "type": "character varying(100)"
+  },
+  {
+   "column": "top_competitor_wins",
+   "type": "bigint"
+  },
+  {
+   "column": "top_competitor_pct",
+   "type": "numeric"
+  },
+  {
+   "column": "sov_gap_pts",
+   "type": "numeric"
+  },
+  {
+   "column": "unclear",
+   "type": "bigint"
+  },
+  {
+   "column": "errors",
+   "type": "bigint"
+  },
+  {
+   "column": "hallucinations",
+   "type": "bigint"
+  }
+ ],
+ "ledlenser.canvas_ai_citations": [
+  {
+   "column": "audit_run_id",
+   "type": "uuid"
+  },
+  {
+   "column": "sim_id",
+   "type": "integer"
+  },
+  {
+   "column": "simulation_id",
+   "type": "uuid"
+  },
+  {
+   "column": "prompt_key",
+   "type": "text"
+  },
+  {
+   "column": "prompt_kind",
+   "type": "text"
+  },
+  {
+   "column": "category",
+   "type": "character varying(60)"
+  },
+  {
+   "column": "engine",
+   "type": "text"
+  },
+  {
+   "column": "position",
+   "type": "integer"
+  },
+  {
+   "column": "url",
+   "type": "text"
+  },
+  {
+   "column": "domain",
+   "type": "text"
+  },
+  {
+   "column": "title",
+   "type": "text"
+  }
+ ],
+ "ledlenser.canvas_ai_current_run": [
+  {
+   "column": "audit_run_id",
+   "type": "uuid"
+  },
+  {
+   "column": "run_state",
+   "type": "text"
+  },
+  {
+   "column": "collector_version",
+   "type": "text"
+  },
+  {
+   "column": "prompt_set_hash",
+   "type": "text"
+  },
+  {
+   "column": "expected_calls",
+   "type": "integer"
+  },
+  {
+   "column": "attempted_calls",
+   "type": "integer"
+  },
+  {
+   "column": "answered_calls",
+   "type": "integer"
+  },
+  {
+   "column": "error_calls",
+   "type": "integer"
+  },
+  {
+   "column": "started_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "completed_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "published_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "missing_calls",
+   "type": "integer"
+  }
+ ],
+ "ledlenser.canvas_ai_engine": [
+  {
+   "column": "engine",
+   "type": "character varying"
+  },
+  {
+   "column": "total_sims",
+   "type": "bigint"
+  },
+  {
+   "column": "resolved",
+   "type": "bigint"
+  },
+  {
+   "column": "brand_wins",
+   "type": "bigint"
+  },
+  {
+   "column": "brand_win_pct",
+   "type": "numeric"
+  },
+  {
+   "column": "hallucinations",
+   "type": "bigint"
+  }
+ ],
+ "ledlenser.canvas_ai_history_calls": [
+  {
+   "column": "id",
+   "type": "uuid"
+  },
+  {
+   "column": "audit_run_id",
+   "type": "uuid"
+  },
+  {
+   "column": "source_table",
+   "type": "text"
+  },
+  {
+   "column": "sim_id",
+   "type": "integer"
+  },
+  {
+   "column": "engine",
+   "type": "character varying"
+  },
+  {
+   "column": "repeat_no",
+   "type": "integer"
+  },
+  {
+   "column": "category",
+   "type": "character varying(60)"
+  },
+  {
+   "column": "prompt",
+   "type": "text"
+  },
+  {
+   "column": "winner",
+   "type": "character varying(100)"
+  },
+  {
+   "column": "is_resolved",
+   "type": "boolean"
+  },
+  {
+   "column": "hallucination_flag",
+   "type": "boolean"
+  },
+  {
+   "column": "root_cause",
+   "type": "text"
+  },
+  {
+   "column": "remediation_patch",
+   "type": "text"
+  },
+  {
+   "column": "answer_text",
+   "type": "text"
+  },
+  {
+   "column": "citation_urls",
+   "type": "text"
+  },
+  {
+   "column": "created_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "prompt_key",
+   "type": "text"
+  },
+  {
+   "column": "prompt_kind",
+   "type": "text"
+  },
+  {
+   "column": "model",
+   "type": "text"
+  },
+  {
+   "column": "call_status",
+   "type": "text"
+  },
+  {
+   "column": "outcome",
+   "type": "text"
+  },
+  {
+   "column": "primary_brand",
+   "type": "text"
+  },
+  {
+   "column": "material_hallucination",
+   "type": "text"
+  },
+  {
+   "column": "hallucination_evidence",
+   "type": "text"
+  },
+  {
+   "column": "attempt_no",
+   "type": "integer"
+  },
+  {
+   "column": "error_message",
+   "type": "text"
+  },
+  {
+   "column": "run_state",
+   "type": "text"
+  },
+  {
+   "column": "published_at",
+   "type": "timestamp with time zone"
+  }
+ ],
+ "ledlenser.canvas_ai_history_citations": [
+  {
+   "column": "audit_run_id",
+   "type": "uuid"
+  },
+  {
+   "column": "sim_id",
+   "type": "integer"
+  },
+  {
+   "column": "simulation_id",
+   "type": "uuid"
+  },
+  {
+   "column": "prompt_key",
+   "type": "text"
+  },
+  {
+   "column": "prompt_kind",
+   "type": "text"
+  },
+  {
+   "column": "category",
+   "type": "character varying(60)"
+  },
+  {
+   "column": "engine",
+   "type": "text"
+  },
+  {
+   "column": "position",
+   "type": "integer"
+  },
+  {
+   "column": "url",
+   "type": "text"
+  },
+  {
+   "column": "domain",
+   "type": "text"
+  },
+  {
+   "column": "title",
+   "type": "text"
+  }
+ ],
+ "ledlenser.canvas_ai_history_citations_by_run": [
+  {
+   "column": "audit_run_id",
+   "type": "uuid"
+  },
+  {
+   "column": "sim_id",
+   "type": "integer"
+  },
+  {
+   "column": "simulation_id",
+   "type": "uuid"
+  },
+  {
+   "column": "prompt_key",
+   "type": "text"
+  },
+  {
+   "column": "prompt_kind",
+   "type": "text"
+  },
+  {
+   "column": "category",
+   "type": "character varying(60)"
+  },
+  {
+   "column": "engine",
+   "type": "text"
+  },
+  {
+   "column": "position",
+   "type": "integer"
+  },
+  {
+   "column": "url",
+   "type": "text"
+  },
+  {
+   "column": "domain",
+   "type": "text"
+  },
+  {
+   "column": "title",
+   "type": "text"
+  }
+ ],
+ "ledlenser.canvas_ai_history_outcome_counts": [
+  {
+   "column": "audit_run_id",
+   "type": "uuid"
+  },
+  {
+   "column": "engine",
+   "type": "character varying"
+  },
+  {
+   "column": "prompt_kind",
+   "type": "text"
+  },
+  {
+   "column": "prompt_key",
+   "type": "text"
+  },
+  {
+   "column": "prompt_text",
+   "type": "text"
+  },
+  {
+   "column": "category",
+   "type": "character varying(60)"
+  },
+  {
+   "column": "call_status",
+   "type": "text"
+  },
+  {
+   "column": "outcome",
+   "type": "text"
+  },
+  {
+   "column": "material_hallucination",
+   "type": "text"
+  },
+  {
+   "column": "primary_brand",
+   "type": "text"
+  },
+  {
+   "column": "calls",
+   "type": "bigint"
+  }
+ ],
+ "ledlenser.canvas_ai_history_probes": [
+  {
+   "column": "audit_run_id",
+   "type": "uuid"
+  },
+  {
+   "column": "sim_id",
+   "type": "integer"
+  },
+  {
+   "column": "prompt_key",
+   "type": "text"
+  },
+  {
+   "column": "prompt",
+   "type": "text"
+  },
+  {
+   "column": "engine",
+   "type": "character varying"
+  },
+  {
+   "column": "model",
+   "type": "text"
+  },
+  {
+   "column": "call_status",
+   "type": "text"
+  },
+  {
+   "column": "material_hallucination",
+   "type": "text"
+  },
+  {
+   "column": "hallucination_evidence",
+   "type": "text"
+  },
+  {
+   "column": "root_cause",
+   "type": "text"
+  },
+  {
+   "column": "remediation_text",
+   "type": "text"
+  },
+  {
+   "column": "verified_claim",
+   "type": "text"
+  },
+  {
+   "column": "verified_source_url",
+   "type": "text"
+  },
+  {
+   "column": "verified_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "answer_text",
+   "type": "text"
+  },
+  {
+   "column": "created_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "probe_asin",
+   "type": "text"
+  },
+  {
+   "column": "probe_asins",
+   "type": "text[]"
+  },
+  {
+   "column": "probe_brand_sku",
+   "type": "text"
+  },
+  {
+   "column": "probe_category",
+   "type": "text"
+  },
+  {
+   "column": "probe_series",
+   "type": "text"
+  },
+  {
+   "column": "probe_spec_field",
+   "type": "text"
+  },
+  {
+   "column": "probe_expected_value",
+   "type": "text"
+  },
+  {
+   "column": "probe_source_url",
+   "type": "text"
+  },
+  {
+   "column": "probe_amazon_value",
+   "type": "text"
+  },
+  {
+   "column": "probe_is_anchor",
+   "type": "boolean"
+  }
+ ],
+ "ledlenser.canvas_ai_history_runs": [
+  {
+   "column": "audit_run_id",
+   "type": "uuid"
+  },
+  {
+   "column": "run_kind",
+   "type": "text"
+  },
+  {
+   "column": "run_state",
+   "type": "text"
+  },
+  {
+   "column": "collector_version",
+   "type": "text"
+  },
+  {
+   "column": "prompt_set_hash",
+   "type": "text"
+  },
+  {
+   "column": "expected_calls",
+   "type": "integer"
+  },
+  {
+   "column": "attempted_calls",
+   "type": "integer"
+  },
+  {
+   "column": "answered_calls",
+   "type": "integer"
+  },
+  {
+   "column": "error_calls",
+   "type": "integer"
+  },
+  {
+   "column": "is_published",
+   "type": "boolean"
+  },
+  {
+   "column": "published_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "started_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "completed_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "missing_calls",
+   "type": "integer"
+  }
+ ],
+ "ledlenser.canvas_ai_probe_coverage": [
+  {
+   "column": "audit_run_id",
+   "type": "uuid"
+  },
+  {
+   "column": "cycle_no",
+   "type": "integer"
+  },
+  {
+   "column": "category",
+   "type": "text"
+  },
+  {
+   "column": "engine",
+   "type": "text"
+  },
+  {
+   "column": "models_in_scope",
+   "type": "integer"
+  },
+  {
+   "column": "models_checked",
+   "type": "bigint"
+  },
+  {
+   "column": "asins_covered",
+   "type": "bigint"
+  },
+  {
+   "column": "wrong_answers",
+   "type": "bigint"
+  }
+ ],
+ "ledlenser.canvas_ai_probes": [
+  {
+   "column": "audit_run_id",
+   "type": "uuid"
+  },
+  {
+   "column": "sim_id",
+   "type": "integer"
+  },
+  {
+   "column": "prompt_key",
+   "type": "text"
+  },
+  {
+   "column": "prompt",
+   "type": "text"
+  },
+  {
+   "column": "engine",
+   "type": "character varying"
+  },
+  {
+   "column": "model",
+   "type": "text"
+  },
+  {
+   "column": "call_status",
+   "type": "text"
+  },
+  {
+   "column": "material_hallucination",
+   "type": "text"
+  },
+  {
+   "column": "hallucination_evidence",
+   "type": "text"
+  },
+  {
+   "column": "root_cause",
+   "type": "text"
+  },
+  {
+   "column": "remediation_text",
+   "type": "text"
+  },
+  {
+   "column": "verified_claim",
+   "type": "text"
+  },
+  {
+   "column": "verified_source_url",
+   "type": "text"
+  },
+  {
+   "column": "verified_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "answer_text",
+   "type": "text"
+  },
+  {
+   "column": "created_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "probe_asin",
+   "type": "text"
+  },
+  {
+   "column": "probe_asins",
+   "type": "text[]"
+  },
+  {
+   "column": "probe_brand_sku",
+   "type": "text"
+  },
+  {
+   "column": "probe_category",
+   "type": "text"
+  },
+  {
+   "column": "probe_series",
+   "type": "text"
+  },
+  {
+   "column": "probe_spec_field",
+   "type": "text"
+  },
+  {
+   "column": "probe_expected_value",
+   "type": "text"
+  },
+  {
+   "column": "probe_source_url",
+   "type": "text"
+  },
+  {
+   "column": "probe_amazon_value",
+   "type": "text"
+  },
+  {
+   "column": "probe_is_anchor",
+   "type": "boolean"
+  }
+ ],
+ "ledlenser.canvas_ai_prompts": [
+  {
+   "column": "prompt_key",
+   "type": "text"
+  },
+  {
+   "column": "prompt_text",
+   "type": "text"
+  },
+  {
+   "column": "category",
+   "type": "text"
+  },
+  {
+   "column": "prompt_kind",
+   "type": "text"
+  },
+  {
+   "column": "active",
+   "type": "boolean"
+  },
+  {
+   "column": "created_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "updated_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "analytical_intent",
+   "type": "text"
+  }
+ ],
+ "ledlenser.canvas_ai_run_history": [
+  {
+   "column": "audit_run_id",
+   "type": "uuid"
+  },
+  {
+   "column": "run_kind",
+   "type": "text"
+  },
+  {
+   "column": "run_state",
+   "type": "text"
+  },
+  {
+   "column": "collector_version",
+   "type": "text"
+  },
+  {
+   "column": "prompt_set_hash",
+   "type": "text"
+  },
+  {
+   "column": "expected_calls",
+   "type": "integer"
+  },
+  {
+   "column": "attempted_calls",
+   "type": "integer"
+  },
+  {
+   "column": "answered_calls",
+   "type": "integer"
+  },
+  {
+   "column": "error_calls",
+   "type": "integer"
+  },
+  {
+   "column": "is_published",
+   "type": "boolean"
+  },
+  {
+   "column": "published_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "started_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "completed_at",
+   "type": "timestamp with time zone"
+  }
+ ],
+ "ledlenser.canvas_ai_simulations": [
+  {
+   "column": "id",
+   "type": "uuid"
+  },
+  {
+   "column": "audit_run_id",
+   "type": "uuid"
+  },
+  {
+   "column": "source_table",
+   "type": "text"
+  },
+  {
+   "column": "sim_id",
+   "type": "integer"
+  },
+  {
+   "column": "engine",
+   "type": "character varying"
+  },
+  {
+   "column": "repeat_no",
+   "type": "integer"
+  },
+  {
+   "column": "category",
+   "type": "character varying(60)"
+  },
+  {
+   "column": "prompt",
+   "type": "text"
+  },
+  {
+   "column": "winner",
+   "type": "character varying(100)"
+  },
+  {
+   "column": "is_resolved",
+   "type": "boolean"
+  },
+  {
+   "column": "hallucination_flag",
+   "type": "boolean"
+  },
+  {
+   "column": "root_cause",
+   "type": "text"
+  },
+  {
+   "column": "remediation_patch",
+   "type": "text"
+  },
+  {
+   "column": "answer_text",
+   "type": "text"
+  },
+  {
+   "column": "citation_urls",
+   "type": "text"
+  },
+  {
+   "column": "created_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "prompt_key",
+   "type": "text"
+  },
+  {
+   "column": "prompt_kind",
+   "type": "text"
+  },
+  {
+   "column": "model",
+   "type": "text"
+  },
+  {
+   "column": "call_status",
+   "type": "text"
+  },
+  {
+   "column": "outcome",
+   "type": "text"
+  },
+  {
+   "column": "primary_brand",
+   "type": "text"
+  },
+  {
+   "column": "material_hallucination",
+   "type": "text"
+  },
+  {
+   "column": "hallucination_evidence",
+   "type": "text"
+  },
+  {
+   "column": "attempt_no",
+   "type": "integer"
+  },
+  {
+   "column": "error_message",
+   "type": "text"
+  },
+  {
+   "column": "run_state",
+   "type": "text"
+  },
+  {
+   "column": "published_at",
+   "type": "timestamp with time zone"
+  }
+ ],
+ "ledlenser.canvas_amazon_product_types": [
+  {
+   "column": "asin",
+   "type": "text"
+  },
+  {
+   "column": "product_type",
+   "type": "text"
+  },
+  {
+   "column": "item_type_keyword",
+   "type": "text"
+  }
+ ],
+ "ledlenser.canvas_client_config": [
+  {
+   "column": "client_key",
+   "type": "text"
+  },
+  {
+   "column": "display_name",
+   "type": "text"
+  },
+  {
+   "column": "seller_type",
+   "type": "text"
+  },
+  {
+   "column": "brand_site_domains",
+   "type": "text[]"
+  },
+  {
+   "column": "brand_name_terms",
+   "type": "text[]"
+  },
+  {
+   "column": "amazon_brand_names",
+   "type": "text[]"
+  },
+  {
+   "column": "brand_seller_ids",
+   "type": "text[]"
+  },
+  {
+   "column": "competitor_brands",
+   "type": "jsonb"
+  },
+  {
+   "column": "updated_at",
+   "type": "timestamp with time zone"
+  }
+ ],
+ "ledlenser.canvas_competitor_sov": [
+  {
+   "column": "category",
+   "type": "character varying"
+  },
+  {
+   "column": "competitor",
+   "type": "character varying(100)"
+  },
+  {
+   "column": "wins",
+   "type": "bigint"
+  },
+  {
+   "column": "category_resolved",
+   "type": "bigint"
+  },
+  {
+   "column": "sov_pct",
+   "type": "numeric"
+  }
+ ],
+ "ledlenser.canvas_divisions": [
+  {
+   "column": "division",
+   "type": "character varying(80)"
+  },
+  {
+   "column": "monitored_skus",
+   "type": "integer"
+  },
+  {
+   "column": "buybox_pct",
+   "type": "numeric(5,2)"
+  },
+  {
+   "column": "splinter_bundles",
+   "type": "integer"
+  },
+  {
+   "column": "schema_sync_pct",
+   "type": "numeric(5,2)"
+  },
+  {
+   "column": "primary_threat",
+   "type": "character varying(255)"
+  },
+  {
+   "column": "strategic_action",
+   "type": "text"
+  },
+  {
+   "column": "created_at",
+   "type": "timestamp with time zone"
+  }
+ ],
+ "ledlenser.canvas_freshness": [
+  {
+   "column": "job_key",
+   "type": "character varying"
+  },
+  {
+   "column": "last_run_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "cursor_offset",
+   "type": "integer"
+  },
+  {
+   "column": "updated_at",
+   "type": "timestamp with time zone"
+  }
+ ],
+ "ledlenser.canvas_listing_channel_price": [
+  {
+   "column": "asin",
+   "type": "character varying(12)"
+  },
+  {
+   "column": "channel",
+   "type": "text"
+  },
+  {
+   "column": "price",
+   "type": "numeric(10,2)"
+  },
+  {
+   "column": "url",
+   "type": "text"
+  },
+  {
+   "column": "checked_at",
+   "type": "timestamp with time zone"
+  }
+ ],
+ "ledlenser.canvas_listing_content": [
+  {
+   "column": "asin",
+   "type": "text"
+  },
+  {
+   "column": "title",
+   "type": "text"
+  },
+  {
+   "column": "bullet_count",
+   "type": "integer"
+  },
+  {
+   "column": "image_count",
+   "type": "integer"
+  },
+  {
+   "column": "main_image_px",
+   "type": "integer"
+  },
+  {
+   "column": "aplus_state",
+   "type": "text"
+  },
+  {
+   "column": "aplus_module_count",
+   "type": "integer"
+  },
+  {
+   "column": "video_state",
+   "type": "text"
+  },
+  {
+   "column": "video_count",
+   "type": "integer"
+  },
+  {
+   "column": "content_checked_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "checked_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "aplus_source",
+   "type": "text"
+  },
+  {
+   "column": "video_source",
+   "type": "text"
+  }
+ ],
+ "ledlenser.canvas_listing_offer_state_v2": [
+  {
+   "column": "asin",
+   "type": "text"
+  },
+  {
+   "column": "state",
+   "type": "text"
+  },
+  {
+   "column": "start_day",
+   "type": "date"
+  },
+  {
+   "column": "end_day",
+   "type": "date"
+  },
+  {
+   "column": "days",
+   "type": "integer"
+  },
+  {
+   "column": "ongoing",
+   "type": "boolean"
+  },
+  {
+   "column": "rank_drops_activity",
+   "type": "integer"
+  },
+  {
+   "column": "source",
+   "type": "text"
+  }
+ ],
+ "ledlenser.canvas_listing_sales_loss_v2": [
+  {
+   "column": "asin",
+   "type": "character varying"
+  },
+  {
+   "column": "title",
+   "type": "text"
+  },
+  {
+   "column": "is_bundle",
+   "type": "boolean"
+  },
+  {
+   "column": "current_price",
+   "type": "numeric(10,2)"
+  },
+  {
+   "column": "featured_offer_state",
+   "type": "text"
+  },
+  {
+   "column": "featured_offer_checked_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "history_from",
+   "type": "date"
+  },
+  {
+   "column": "history_through",
+   "type": "date"
+  },
+  {
+   "column": "last_in_stock_day",
+   "type": "date"
+  },
+  {
+   "column": "offline_now",
+   "type": "boolean"
+  },
+  {
+   "column": "current_oos_days",
+   "type": "bigint"
+  },
+  {
+   "column": "observed_days_30",
+   "type": "bigint"
+  },
+  {
+   "column": "in_stock_days_30",
+   "type": "bigint"
+  },
+  {
+   "column": "oos_days_30",
+   "type": "bigint"
+  },
+  {
+   "column": "no_buy_box_days_30",
+   "type": "bigint"
+  },
+  {
+   "column": "observed_days_90",
+   "type": "bigint"
+  },
+  {
+   "column": "oos_days_90",
+   "type": "bigint"
+  },
+  {
+   "column": "no_buy_box_days_90",
+   "type": "bigint"
+  },
+  {
+   "column": "observed_days_365",
+   "type": "bigint"
+  },
+  {
+   "column": "in_stock_days_365",
+   "type": "bigint"
+  },
+  {
+   "column": "oos_days_365",
+   "type": "bigint"
+  },
+  {
+   "column": "no_buy_box_days_365",
+   "type": "bigint"
+  },
+  {
+   "column": "current_stretch_rank_drops",
+   "type": "bigint"
+  },
+  {
+   "column": "sales_rank_current",
+   "type": "integer"
+  },
+  {
+   "column": "sales_rank_drops_30",
+   "type": "integer"
+  },
+  {
+   "column": "sales_rank_drops_90",
+   "type": "integer"
+  },
+  {
+   "column": "smartscout_snapshot_date",
+   "type": "date"
+  },
+  {
+   "column": "smartscout_monthly_units",
+   "type": "integer"
+  },
+  {
+   "column": "smartscout_monthly_revenue",
+   "type": "numeric(14,2)"
+  },
+  {
+   "column": "smartscout_ttm_revenue",
+   "type": "numeric(14,2)"
+  },
+  {
+   "column": "smartscout_prev_12m_revenue",
+   "type": "numeric(14,2)"
+  },
+  {
+   "column": "revenue_source",
+   "type": "text"
+  },
+  {
+   "column": "baseline_method",
+   "type": "text"
+  },
+  {
+   "column": "currency",
+   "type": "text"
+  },
+  {
+   "column": "revenue_window_start",
+   "type": "date"
+  },
+  {
+   "column": "revenue_window_end",
+   "type": "date"
+  },
+  {
+   "column": "in_stock_days_used",
+   "type": "bigint"
+  },
+  {
+   "column": "baseline_daily_revenue",
+   "type": "numeric"
+  },
+  {
+   "column": "est_lost_revenue_oos_30",
+   "type": "numeric"
+  },
+  {
+   "column": "est_lost_revenue_oos_90",
+   "type": "numeric"
+  },
+  {
+   "column": "est_lost_revenue_oos_365",
+   "type": "numeric"
+  },
+  {
+   "column": "estimate_label",
+   "type": "text"
+  },
+  {
+   "column": "awaiting_inputs_reason",
+   "type": "text"
+  },
+  {
+   "column": "keepa_checked_at",
+   "type": "timestamp with time zone"
+  }
+ ],
+ "ledlenser.canvas_metrics": [
+  {
+   "column": "kpi_audit_run_id",
+   "type": "uuid"
+  },
+  {
+   "column": "kpi_computed_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "kpi",
+   "type": "jsonb"
+  },
+  {
+   "column": "catalog_skus",
+   "type": "bigint"
+  },
+  {
+   "column": "catalog_bundles",
+   "type": "bigint"
+  },
+  {
+   "column": "seller_harvested",
+   "type": "bigint"
+  },
+  {
+   "column": "seller_harvested_pct",
+   "type": "numeric"
+  },
+  {
+   "column": "division_count",
+   "type": "bigint"
+  },
+  {
+   "column": "bb_total",
+   "type": "bigint"
+  },
+  {
+   "column": "bb_1p",
+   "type": "bigint"
+  },
+  {
+   "column": "bb_3p",
+   "type": "bigint"
+  },
+  {
+   "column": "bb_unharvested",
+   "type": "bigint"
+  },
+  {
+   "column": "bb_no_offer",
+   "type": "bigint"
+  },
+  {
+   "column": "bb_1p_pct",
+   "type": "numeric"
+  },
+  {
+   "column": "bb_3p_pct",
+   "type": "numeric"
+  },
+  {
+   "column": "bb_unharvested_pct",
+   "type": "numeric"
+  },
+  {
+   "column": "active_offer_coverage_pct",
+   "type": "numeric"
+  },
+  {
+   "column": "amz_below_map",
+   "type": "bigint"
+  },
+  {
+   "column": "amz_avg_drift",
+   "type": "numeric"
+  },
+  {
+   "column": "wmt_checked",
+   "type": "bigint"
+  },
+  {
+   "column": "wmt_priced",
+   "type": "bigint"
+  },
+  {
+   "column": "wmt_leaks",
+   "type": "bigint"
+  },
+  {
+   "column": "offamz_avg_leak",
+   "type": "numeric"
+  },
+  {
+   "column": "map_violation_skus",
+   "type": "bigint"
+  },
+  {
+   "column": "bundle_reviews",
+   "type": "bigint"
+  },
+  {
+   "column": "spec_checked",
+   "type": "bigint"
+  },
+  {
+   "column": "spec_avg_amazon_pct",
+   "type": "numeric"
+  },
+  {
+   "column": "spec_brand_site_found",
+   "type": "bigint"
+  },
+  {
+   "column": "spec_brand_site_found_pct",
+   "type": "numeric"
+  },
+  {
+   "column": "spec_avg_brand_site_pct",
+   "type": "numeric"
+  },
+  {
+   "column": "spec_missing_additional_property",
+   "type": "bigint"
+  },
+  {
+   "column": "spec_missing_field_types",
+   "type": "bigint"
+  },
+  {
+   "column": "sim_total",
+   "type": "bigint"
+  },
+  {
+   "column": "sim_runs",
+   "type": "bigint"
+  },
+  {
+   "column": "sim_resolved",
+   "type": "bigint"
+  },
+  {
+   "column": "sim_wins",
+   "type": "bigint"
+  },
+  {
+   "column": "sim_win_pct",
+   "type": "numeric"
+  },
+  {
+   "column": "sim_unclear",
+   "type": "bigint"
+  },
+  {
+   "column": "sim_errors",
+   "type": "bigint"
+  },
+  {
+   "column": "sim_hallucinations",
+   "type": "bigint"
+  },
+  {
+   "column": "sim_hallucination_risk",
+   "type": "bigint"
+  },
+  {
+   "column": "sim_last_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "weakest_category",
+   "type": "character varying(60)"
+  },
+  {
+   "column": "weakest_win_pct",
+   "type": "numeric"
+  },
+  {
+   "column": "weakest_top_competitor",
+   "type": "character varying(100)"
+  },
+  {
+   "column": "weakest_competitor_pct",
+   "type": "numeric"
+  },
+  {
+   "column": "weakest_sov_gap_pts",
+   "type": "numeric"
+  },
+  {
+   "column": "strongest_category",
+   "type": "character varying(60)"
+  },
+  {
+   "column": "strongest_win_pct",
+   "type": "numeric"
+  },
+  {
+   "column": "strongest_wins",
+   "type": "bigint"
+  },
+  {
+   "column": "strongest_resolved",
+   "type": "bigint"
+  },
+  {
+   "column": "served_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "bb_brand",
+   "type": "bigint"
+  },
+  {
+   "column": "bb_brand_pct",
+   "type": "numeric"
+  }
+ ],
+ "ledlenser.canvas_retail_listings": [
+  {
+   "column": "asin",
+   "type": "character varying(12)"
+  },
+  {
+   "column": "model_name",
+   "type": "character varying(150)"
+  },
+  {
+   "column": "title",
+   "type": "text"
+  },
+  {
+   "column": "category",
+   "type": "character varying"
+  },
+  {
+   "column": "is_bundle",
+   "type": "boolean"
+  },
+  {
+   "column": "parent_asin",
+   "type": "character varying"
+  },
+  {
+   "column": "product_url",
+   "type": "text"
+  },
+  {
+   "column": "map_price",
+   "type": "numeric(10,2)"
+  },
+  {
+   "column": "offer_price",
+   "type": "numeric(10,2)"
+  },
+  {
+   "column": "amz_leakage",
+   "type": "numeric(10,2)"
+  },
+  {
+   "column": "buybox_status",
+   "type": "character varying(50)"
+  },
+  {
+   "column": "buybox_winner",
+   "type": "character varying(100)"
+  },
+  {
+   "column": "buybox_seller_id",
+   "type": "character varying"
+  },
+  {
+   "column": "buybox_seller_name",
+   "type": "text"
+  },
+  {
+   "column": "buybox_is_fba",
+   "type": "boolean"
+  },
+  {
+   "column": "offer_count_new",
+   "type": "integer"
+  },
+  {
+   "column": "sales_rank",
+   "type": "integer"
+  },
+  {
+   "column": "monthly_sold",
+   "type": "integer"
+  },
+  {
+   "column": "reviews_count",
+   "type": "integer"
+  },
+  {
+   "column": "channels",
+   "type": "character varying(50)"
+  },
+  {
+   "column": "bundle_name",
+   "type": "character varying(255)"
+  },
+  {
+   "column": "wmt_price",
+   "type": "numeric(10,2)"
+  },
+  {
+   "column": "wmt_leakage",
+   "type": "numeric"
+  },
+  {
+   "column": "wmt_url",
+   "type": "text"
+  },
+  {
+   "column": "wmt_seller",
+   "type": "text"
+  },
+  {
+   "column": "wmt_match_conf",
+   "type": "numeric"
+  },
+  {
+   "column": "wmt_checked_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "worst_leakage",
+   "type": "numeric"
+  },
+  {
+   "column": "is_map_violation",
+   "type": "boolean"
+  },
+  {
+   "column": "updated_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "competitive_price_threshold_cents",
+   "type": "integer"
+  },
+  {
+   "column": "featured_offer_withheld",
+   "type": "boolean"
+  },
+  {
+   "column": "competitive_offer_suppressed",
+   "type": "boolean"
+  },
+  {
+   "column": "featured_offer_state",
+   "type": "text"
+  },
+  {
+   "column": "featured_offer_source",
+   "type": "text"
+  },
+  {
+   "column": "featured_offer_checked_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "featured_offer_attempted_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "featured_offer_last_error",
+   "type": "text"
+  },
+  {
+   "column": "competitive_external_price_state",
+   "type": "text"
+  },
+  {
+   "column": "featured_offer_observed_price_cents",
+   "type": "integer"
+  },
+  {
+   "column": "featured_offer_observed_shipping_cents",
+   "type": "integer"
+  },
+  {
+   "column": "featured_offer_observed_seller",
+   "type": "text"
+  },
+  {
+   "column": "catalog_checked_at",
+   "type": "timestamp with time zone"
+  }
+ ],
+ "ledlenser.canvas_spec_findability": [
+  {
+   "column": "asin",
+   "type": "character varying"
+  },
+  {
+   "column": "title",
+   "type": "text"
+  },
+  {
+   "column": "category",
+   "type": "text"
+  },
+  {
+   "column": "latest_state",
+   "type": "text"
+  },
+  {
+   "column": "latest_attempt_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "latest_canonical_url",
+   "type": "text"
+  },
+  {
+   "column": "latest_variant_sku",
+   "type": "text"
+  },
+  {
+   "column": "last_success_state",
+   "type": "text"
+  },
+  {
+   "column": "last_success_url",
+   "type": "text"
+  },
+  {
+   "column": "last_success_variant_sku",
+   "type": "text"
+  },
+  {
+   "column": "last_success_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "last_success_explanation",
+   "type": "text"
+  },
+  {
+   "column": "last_success_schema_profile",
+   "type": "text"
+  },
+  {
+   "column": "last_success_present_fields",
+   "type": "jsonb"
+  },
+  {
+   "column": "last_success_missing_applicable_fields",
+   "type": "jsonb"
+  },
+  {
+   "column": "product_kind",
+   "type": "text"
+  },
+  {
+   "column": "confidence",
+   "type": "text"
+  },
+  {
+   "column": "explanation",
+   "type": "text"
+  },
+  {
+   "column": "source_method",
+   "type": "text"
+  },
+  {
+   "column": "latest_failure",
+   "type": "text"
+  },
+  {
+   "column": "schema_profile",
+   "type": "text"
+  },
+  {
+   "column": "present_fields",
+   "type": "jsonb"
+  },
+  {
+   "column": "missing_applicable_fields",
+   "type": "jsonb"
+  },
+  {
+   "column": "catalog_identity_hash",
+   "type": "text"
+  },
+  {
+   "column": "last_success_identity_hash",
+   "type": "text"
+  },
+  {
+   "column": "collector_version",
+   "type": "text"
+  },
+  {
+   "column": "http_status",
+   "type": "integer"
+  },
+  {
+   "column": "success_needs_review",
+   "type": "boolean"
+  },
+  {
+   "column": "counts_as_confirmed",
+   "type": "boolean"
+  },
+  {
+   "column": "counts_as_finished_search",
+   "type": "boolean"
+  },
+  {
+   "column": "counts_as_ambiguous",
+   "type": "boolean"
+  },
+  {
+   "column": "counts_as_blocked",
+   "type": "boolean"
+  },
+  {
+   "column": "counts_as_timeout",
+   "type": "boolean"
+  },
+  {
+   "column": "counts_as_parse_failure",
+   "type": "boolean"
+  },
+  {
+   "column": "counts_as_unchecked",
+   "type": "boolean"
+  },
+  {
+   "column": "prior_success_latest_failed",
+   "type": "boolean"
+  },
+  {
+   "column": "prior_success_latest_completed_not_found",
+   "type": "boolean"
+  },
+  {
+   "column": "prior_success_latest_ambiguous",
+   "type": "boolean"
+  },
+  {
+   "column": "jsonld_status",
+   "type": "text"
+  },
+  {
+   "column": "counts_as_eligible",
+   "type": "boolean"
+  },
+  {
+   "column": "counts_as_attempted",
+   "type": "boolean"
+  },
+  {
+   "column": "counts_as_completed_not_found",
+   "type": "boolean"
+  },
+  {
+   "column": "counts_as_unsupported",
+   "type": "boolean"
+  },
+  {
+   "column": "on_brand_sheet",
+   "type": "boolean"
+  }
+ ],
+ "ledlenser.canvas_spec_missing_fields": [
+  {
+   "column": "source",
+   "type": "text"
+  },
+  {
+   "column": "field",
+   "type": "text"
+  },
+  {
+   "column": "sku_count",
+   "type": "bigint"
+  }
+ ],
+ "ledlenser.canvas_spec_readiness": [
+  {
+   "column": "asin",
+   "type": "character varying"
+  },
+  {
+   "column": "title",
+   "type": "text"
+  },
+  {
+   "column": "category",
+   "type": "character varying"
+  },
+  {
+   "column": "amazon_checked",
+   "type": "boolean"
+  },
+  {
+   "column": "amazon_fields_found",
+   "type": "integer"
+  },
+  {
+   "column": "amazon_fields_expected",
+   "type": "integer"
+  },
+  {
+   "column": "amazon_completeness_pct",
+   "type": "double precision"
+  },
+  {
+   "column": "amazon_missing_fields",
+   "type": "text"
+  },
+  {
+   "column": "brand_site_url",
+   "type": "text"
+  },
+  {
+   "column": "brand_site_found",
+   "type": "boolean"
+  },
+  {
+   "column": "brand_site_fields_found",
+   "type": "integer"
+  },
+  {
+   "column": "brand_site_fields_expected",
+   "type": "integer"
+  },
+  {
+   "column": "brand_site_completeness_pct",
+   "type": "double precision"
+  },
+  {
+   "column": "brand_site_missing_fields",
+   "type": "text"
+  },
+  {
+   "column": "checked_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "collector_version",
+   "type": "text"
+  },
+  {
+   "column": "brand_site_page_source",
+   "type": "text"
+  },
+  {
+   "column": "brand_site_identity_match",
+   "type": "text"
+  },
+  {
+   "column": "brand_site_variant_sku",
+   "type": "text"
+  },
+  {
+   "column": "brand_site_spec_values",
+   "type": "jsonb"
+  },
+  {
+   "column": "brand_site_rating_markup",
+   "type": "boolean"
+  },
+  {
+   "column": "amazon_spec_values",
+   "type": "jsonb"
+  },
+  {
+   "column": "amazon_gtin",
+   "type": "text"
+  },
+  {
+   "column": "amazon_mpn",
+   "type": "text"
+  },
+  {
+   "column": "amazon_aplus_state",
+   "type": "text"
+  },
+  {
+   "column": "amazon_aplus_image_count",
+   "type": "integer"
+  },
+  {
+   "column": "amazon_video_state",
+   "type": "text"
+  },
+  {
+   "column": "amazon_bullet_count",
+   "type": "integer"
+  },
+  {
+   "column": "amazon_image_count",
+   "type": "integer"
+  }
+ ],
+ "ledlenser_private.ai_api_calls": [
+  {
+   "column": "id",
+   "type": "uuid"
+  },
+  {
+   "column": "audit_run_id",
+   "type": "uuid"
+  },
+  {
+   "column": "sim_id",
+   "type": "integer"
+  },
+  {
+   "column": "category",
+   "type": "character varying(60)"
+  },
+  {
+   "column": "prompt_key",
+   "type": "text"
+  },
+  {
+   "column": "prompt_text",
+   "type": "text"
+  },
+  {
+   "column": "prompt_kind",
+   "type": "text"
+  },
+  {
+   "column": "engine",
+   "type": "character varying"
+  },
+  {
+   "column": "model",
+   "type": "text"
+  },
+  {
+   "column": "repeat_no",
+   "type": "integer"
+  },
+  {
+   "column": "attempt_no",
+   "type": "integer"
+  },
+  {
+   "column": "call_status",
+   "type": "text"
+  },
+  {
+   "column": "outcome",
+   "type": "text"
+  },
+  {
+   "column": "primary_brand",
+   "type": "text"
+  },
+  {
+   "column": "winner",
+   "type": "character varying(100)"
+  },
+  {
+   "column": "material_hallucination",
+   "type": "text"
+  },
+  {
+   "column": "hallucination_evidence",
+   "type": "text"
+  },
+  {
+   "column": "root_cause",
+   "type": "text"
+  },
+  {
+   "column": "remediation_text",
+   "type": "text"
+  },
+  {
+   "column": "error_message",
+   "type": "text"
+  },
+  {
+   "column": "answer_text",
+   "type": "text"
+  },
+  {
+   "column": "citation_urls",
+   "type": "text"
+  },
+  {
+   "column": "created_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "run_state",
+   "type": "text"
+  },
+  {
+   "column": "published_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "probe_asin",
+   "type": "text"
+  },
+  {
+   "column": "probe_asins",
+   "type": "text[]"
+  },
+  {
+   "column": "probe_brand_sku",
+   "type": "text"
+  },
+  {
+   "column": "probe_category",
+   "type": "text"
+  },
+  {
+   "column": "probe_series",
+   "type": "text"
+  },
+  {
+   "column": "probe_spec_field",
+   "type": "text"
+  },
+  {
+   "column": "probe_expected_value",
+   "type": "text"
+  },
+  {
+   "column": "probe_source_url",
+   "type": "text"
+  },
+  {
+   "column": "probe_amazon_value",
+   "type": "text"
+  },
+  {
+   "column": "probe_is_anchor",
+   "type": "boolean"
+  }
+ ],
+ "ledlenser_private.ai_api_runs": [
+  {
+   "column": "id",
+   "type": "uuid"
+  },
+  {
+   "column": "run_kind",
+   "type": "text"
+  },
+  {
+   "column": "run_state",
+   "type": "text"
+  },
+  {
+   "column": "collector_version",
+   "type": "text"
+  },
+  {
+   "column": "prompt_set_hash",
+   "type": "text"
+  },
+  {
+   "column": "expected_calls",
+   "type": "integer"
+  },
+  {
+   "column": "attempted_calls",
+   "type": "integer"
+  },
+  {
+   "column": "answered_calls",
+   "type": "integer"
+  },
+  {
+   "column": "error_calls",
+   "type": "integer"
+  },
+  {
+   "column": "is_published",
+   "type": "boolean"
+  },
+  {
+   "column": "published_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "started_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "completed_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "engines",
+   "type": "text[]"
+  },
+  {
+   "column": "repeats",
+   "type": "integer"
+  },
+  {
+   "column": "questions_asked",
+   "type": "integer"
+  },
+  {
+   "column": "questions_matched",
+   "type": "integer"
+  },
+  {
+   "column": "question_set_match",
+   "type": "boolean"
+  },
+  {
+   "column": "counted",
+   "type": "boolean"
+  }
+ ],
+ "ledlenser_private.ai_current_calls": [
+  {
+   "column": "id",
+   "type": "uuid"
+  },
+  {
+   "column": "audit_run_id",
+   "type": "uuid"
+  },
+  {
+   "column": "sim_id",
+   "type": "integer"
+  },
+  {
+   "column": "category",
+   "type": "character varying(60)"
+  },
+  {
+   "column": "prompt_key",
+   "type": "text"
+  },
+  {
+   "column": "prompt_text",
+   "type": "text"
+  },
+  {
+   "column": "prompt_kind",
+   "type": "text"
+  },
+  {
+   "column": "engine",
+   "type": "character varying"
+  },
+  {
+   "column": "model",
+   "type": "text"
+  },
+  {
+   "column": "repeat_no",
+   "type": "integer"
+  },
+  {
+   "column": "attempt_no",
+   "type": "integer"
+  },
+  {
+   "column": "call_status",
+   "type": "text"
+  },
+  {
+   "column": "outcome",
+   "type": "text"
+  },
+  {
+   "column": "primary_brand",
+   "type": "text"
+  },
+  {
+   "column": "winner",
+   "type": "character varying(100)"
+  },
+  {
+   "column": "material_hallucination",
+   "type": "text"
+  },
+  {
+   "column": "hallucination_evidence",
+   "type": "text"
+  },
+  {
+   "column": "root_cause",
+   "type": "text"
+  },
+  {
+   "column": "remediation_text",
+   "type": "text"
+  },
+  {
+   "column": "error_message",
+   "type": "text"
+  },
+  {
+   "column": "answer_text",
+   "type": "text"
+  },
+  {
+   "column": "citation_urls",
+   "type": "text"
+  },
+  {
+   "column": "created_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "run_state",
+   "type": "text"
+  },
+  {
+   "column": "published_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "probe_asin",
+   "type": "text"
+  },
+  {
+   "column": "probe_asins",
+   "type": "text[]"
+  },
+  {
+   "column": "probe_brand_sku",
+   "type": "text"
+  },
+  {
+   "column": "probe_category",
+   "type": "text"
+  },
+  {
+   "column": "probe_series",
+   "type": "text"
+  },
+  {
+   "column": "probe_spec_field",
+   "type": "text"
+  },
+  {
+   "column": "probe_expected_value",
+   "type": "text"
+  },
+  {
+   "column": "probe_source_url",
+   "type": "text"
+  },
+  {
+   "column": "probe_amazon_value",
+   "type": "text"
+  },
+  {
+   "column": "probe_is_anchor",
+   "type": "boolean"
+  }
+ ],
+ "ledlenser_private.ai_current_run": [
+  {
+   "column": "id",
+   "type": "uuid"
+  },
+  {
+   "column": "run_state",
+   "type": "text"
+  },
+  {
+   "column": "collector_version",
+   "type": "text"
+  },
+  {
+   "column": "prompt_set_hash",
+   "type": "text"
+  },
+  {
+   "column": "expected_calls",
+   "type": "integer"
+  },
+  {
+   "column": "attempted_calls",
+   "type": "integer"
+  },
+  {
+   "column": "answered_calls",
+   "type": "integer"
+  },
+  {
+   "column": "error_calls",
+   "type": "integer"
+  },
+  {
+   "column": "started_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "completed_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "published_at",
+   "type": "timestamp with time zone"
+  }
+ ],
+ "ledlenser_private.ai_history_calls": [
+  {
+   "column": "id",
+   "type": "uuid"
+  },
+  {
+   "column": "audit_run_id",
+   "type": "uuid"
+  },
+  {
+   "column": "sim_id",
+   "type": "integer"
+  },
+  {
+   "column": "category",
+   "type": "character varying(60)"
+  },
+  {
+   "column": "prompt_key",
+   "type": "text"
+  },
+  {
+   "column": "prompt_text",
+   "type": "text"
+  },
+  {
+   "column": "prompt_kind",
+   "type": "text"
+  },
+  {
+   "column": "engine",
+   "type": "character varying"
+  },
+  {
+   "column": "model",
+   "type": "text"
+  },
+  {
+   "column": "repeat_no",
+   "type": "integer"
+  },
+  {
+   "column": "attempt_no",
+   "type": "integer"
+  },
+  {
+   "column": "call_status",
+   "type": "text"
+  },
+  {
+   "column": "outcome",
+   "type": "text"
+  },
+  {
+   "column": "primary_brand",
+   "type": "text"
+  },
+  {
+   "column": "winner",
+   "type": "character varying(100)"
+  },
+  {
+   "column": "material_hallucination",
+   "type": "text"
+  },
+  {
+   "column": "hallucination_evidence",
+   "type": "text"
+  },
+  {
+   "column": "root_cause",
+   "type": "text"
+  },
+  {
+   "column": "remediation_text",
+   "type": "text"
+  },
+  {
+   "column": "error_message",
+   "type": "text"
+  },
+  {
+   "column": "answer_text",
+   "type": "text"
+  },
+  {
+   "column": "citation_urls",
+   "type": "text"
+  },
+  {
+   "column": "created_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "run_state",
+   "type": "text"
+  },
+  {
+   "column": "published_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "probe_asin",
+   "type": "text"
+  },
+  {
+   "column": "probe_asins",
+   "type": "text[]"
+  },
+  {
+   "column": "probe_brand_sku",
+   "type": "text"
+  },
+  {
+   "column": "probe_category",
+   "type": "text"
+  },
+  {
+   "column": "probe_series",
+   "type": "text"
+  },
+  {
+   "column": "probe_spec_field",
+   "type": "text"
+  },
+  {
+   "column": "probe_expected_value",
+   "type": "text"
+  },
+  {
+   "column": "probe_source_url",
+   "type": "text"
+  },
+  {
+   "column": "probe_amazon_value",
+   "type": "text"
+  },
+  {
+   "column": "probe_is_anchor",
+   "type": "boolean"
+  }
+ ],
+ "ledlenser_private.ai_history_runs": [
+  {
+   "column": "id",
+   "type": "uuid"
+  },
+  {
+   "column": "run_kind",
+   "type": "text"
+  },
+  {
+   "column": "run_state",
+   "type": "text"
+  },
+  {
+   "column": "collector_version",
+   "type": "text"
+  },
+  {
+   "column": "prompt_set_hash",
+   "type": "text"
+  },
+  {
+   "column": "expected_calls",
+   "type": "integer"
+  },
+  {
+   "column": "attempted_calls",
+   "type": "integer"
+  },
+  {
+   "column": "answered_calls",
+   "type": "integer"
+  },
+  {
+   "column": "error_calls",
+   "type": "integer"
+  },
+  {
+   "column": "is_published",
+   "type": "boolean"
+  },
+  {
+   "column": "published_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "started_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "completed_at",
+   "type": "timestamp with time zone"
+  }
+ ],
+ "ledlenser_private.div_latest": [
+  {
+   "column": "id",
+   "type": "uuid"
+  },
+  {
+   "column": "audit_run_id",
+   "type": "uuid"
+  },
+  {
+   "column": "division",
+   "type": "character varying(80)"
+  },
+  {
+   "column": "monitored_skus",
+   "type": "integer"
+  },
+  {
+   "column": "buybox_pct",
+   "type": "numeric(5,2)"
+  },
+  {
+   "column": "splinter_bundles",
+   "type": "integer"
+  },
+  {
+   "column": "schema_sync_pct",
+   "type": "numeric(5,2)"
+  },
+  {
+   "column": "primary_threat",
+   "type": "character varying(255)"
+  },
+  {
+   "column": "strategic_action",
+   "type": "text"
+  },
+  {
+   "column": "created_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "updated_at",
+   "type": "timestamp with time zone"
+  }
+ ],
+ "ledlenser_private.spec_latest": [
+  {
+   "column": "id",
+   "type": "character varying"
+  },
+  {
+   "column": "asin",
+   "type": "character varying"
+  },
+  {
+   "column": "title",
+   "type": "text"
+  },
+  {
+   "column": "category",
+   "type": "character varying"
+  },
+  {
+   "column": "amazon_fields_found",
+   "type": "integer"
+  },
+  {
+   "column": "amazon_fields_expected",
+   "type": "integer"
+  },
+  {
+   "column": "amazon_completeness_pct",
+   "type": "double precision"
+  },
+  {
+   "column": "amazon_missing_fields",
+   "type": "text"
+  },
+  {
+   "column": "amazon_checked",
+   "type": "boolean"
+  },
+  {
+   "column": "brand_site_url",
+   "type": "text"
+  },
+  {
+   "column": "brand_site_found",
+   "type": "boolean"
+  },
+  {
+   "column": "brand_site_fields_found",
+   "type": "integer"
+  },
+  {
+   "column": "brand_site_fields_expected",
+   "type": "integer"
+  },
+  {
+   "column": "brand_site_completeness_pct",
+   "type": "double precision"
+  },
+  {
+   "column": "brand_site_missing_fields",
+   "type": "text"
+  },
+  {
+   "column": "checked_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "batch_run_id",
+   "type": "character varying"
+  },
+  {
+   "column": "created_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "collector_version",
+   "type": "text"
+  },
+  {
+   "column": "brand_site_page_source",
+   "type": "text"
+  },
+  {
+   "column": "brand_site_identity_match",
+   "type": "text"
+  },
+  {
+   "column": "brand_site_variant_sku",
+   "type": "text"
+  },
+  {
+   "column": "brand_site_spec_values",
+   "type": "jsonb"
+  },
+  {
+   "column": "brand_site_rating_markup",
+   "type": "boolean"
+  },
+  {
+   "column": "amazon_spec_values",
+   "type": "jsonb"
+  },
+  {
+   "column": "amazon_gtin",
+   "type": "text"
+  },
+  {
+   "column": "amazon_mpn",
+   "type": "text"
+  },
+  {
+   "column": "amazon_aplus_state",
+   "type": "text"
+  },
+  {
+   "column": "amazon_aplus_image_count",
+   "type": "integer"
+  },
+  {
+   "column": "amazon_video_state",
+   "type": "text"
+  },
+  {
+   "column": "amazon_bullet_count",
+   "type": "integer"
+  },
+  {
+   "column": "amazon_image_count",
+   "type": "integer"
+  }
+ ],
+ "public.canvas_ai_api_calls": [
+  {
+   "column": "id",
+   "type": "uuid"
+  },
+  {
+   "column": "audit_run_id",
+   "type": "uuid"
+  },
+  {
+   "column": "source_table",
+   "type": "text"
+  },
+  {
+   "column": "sim_id",
+   "type": "integer"
+  },
+  {
+   "column": "engine",
+   "type": "character varying"
+  },
+  {
+   "column": "repeat_no",
+   "type": "integer"
+  },
+  {
+   "column": "category",
+   "type": "character varying(60)"
+  },
+  {
+   "column": "prompt",
+   "type": "text"
+  },
+  {
+   "column": "winner",
+   "type": "character varying(100)"
+  },
+  {
+   "column": "is_resolved",
+   "type": "boolean"
+  },
+  {
+   "column": "hallucination_flag",
+   "type": "boolean"
+  },
+  {
+   "column": "root_cause",
+   "type": "text"
+  },
+  {
+   "column": "remediation_patch",
+   "type": "text"
+  },
+  {
+   "column": "answer_text",
+   "type": "text"
+  },
+  {
+   "column": "citation_urls",
+   "type": "text"
+  },
+  {
+   "column": "created_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "prompt_key",
+   "type": "text"
+  },
+  {
+   "column": "prompt_kind",
+   "type": "text"
+  },
+  {
+   "column": "model",
+   "type": "text"
+  },
+  {
+   "column": "call_status",
+   "type": "text"
+  },
+  {
+   "column": "outcome",
+   "type": "text"
+  },
+  {
+   "column": "primary_brand",
+   "type": "text"
+  },
+  {
+   "column": "material_hallucination",
+   "type": "text"
+  },
+  {
+   "column": "hallucination_evidence",
+   "type": "text"
+  },
+  {
+   "column": "attempt_no",
+   "type": "integer"
+  },
+  {
+   "column": "error_message",
+   "type": "text"
+  },
+  {
+   "column": "run_state",
+   "type": "text"
+  },
+  {
+   "column": "published_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "engine_group",
+   "type": "text"
+  }
+ ],
+ "public.canvas_ai_api_citations": [
+  {
+   "column": "audit_run_id",
+   "type": "uuid"
+  },
+  {
+   "column": "sim_id",
+   "type": "integer"
+  },
+  {
+   "column": "simulation_id",
+   "type": "uuid"
+  },
+  {
+   "column": "prompt_key",
+   "type": "text"
+  },
+  {
+   "column": "prompt_kind",
+   "type": "text"
+  },
+  {
+   "column": "category",
+   "type": "character varying(60)"
+  },
+  {
+   "column": "engine",
+   "type": "text"
+  },
+  {
+   "column": "position",
+   "type": "integer"
+  },
+  {
+   "column": "url",
+   "type": "text"
+  },
+  {
+   "column": "domain",
+   "type": "text"
+  },
+  {
+   "column": "title",
+   "type": "text"
+  },
+  {
+   "column": "engine_group",
+   "type": "text"
+  }
+ ],
+ "public.canvas_ai_api_probes": [
+  {
+   "column": "audit_run_id",
+   "type": "uuid"
+  },
+  {
+   "column": "sim_id",
+   "type": "integer"
+  },
+  {
+   "column": "prompt_key",
+   "type": "text"
+  },
+  {
+   "column": "prompt",
+   "type": "text"
+  },
+  {
+   "column": "engine",
+   "type": "character varying"
+  },
+  {
+   "column": "model",
+   "type": "text"
+  },
+  {
+   "column": "call_status",
+   "type": "text"
+  },
+  {
+   "column": "material_hallucination",
+   "type": "text"
+  },
+  {
+   "column": "hallucination_evidence",
+   "type": "text"
+  },
+  {
+   "column": "root_cause",
+   "type": "text"
+  },
+  {
+   "column": "remediation_text",
+   "type": "text"
+  },
+  {
+   "column": "verified_claim",
+   "type": "text"
+  },
+  {
+   "column": "verified_source_url",
+   "type": "text"
+  },
+  {
+   "column": "verified_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "answer_text",
+   "type": "text"
+  },
+  {
+   "column": "created_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "probe_asin",
+   "type": "text"
+  },
+  {
+   "column": "probe_asins",
+   "type": "text[]"
+  },
+  {
+   "column": "probe_fender_sku",
+   "type": "text"
+  },
+  {
+   "column": "probe_category",
+   "type": "text"
+  },
+  {
+   "column": "probe_series",
+   "type": "text"
+  },
+  {
+   "column": "probe_spec_field",
+   "type": "text"
+  },
+  {
+   "column": "probe_expected_value",
+   "type": "text"
+  },
+  {
+   "column": "probe_source_url",
+   "type": "text"
+  },
+  {
+   "column": "probe_amazon_value",
+   "type": "text"
+  },
+  {
+   "column": "probe_is_anchor",
+   "type": "boolean"
+  },
+  {
+   "column": "engine_group",
+   "type": "text"
+  }
+ ],
+ "public.canvas_ai_api_runs": [
+  {
+   "column": "audit_run_id",
+   "type": "uuid"
+  },
+  {
+   "column": "run_kind",
+   "type": "text"
+  },
+  {
+   "column": "run_state",
+   "type": "text"
+  },
+  {
+   "column": "collector_version",
+   "type": "text"
+  },
+  {
+   "column": "prompt_set_hash",
+   "type": "text"
+  },
+  {
+   "column": "expected_calls",
+   "type": "integer"
+  },
+  {
+   "column": "attempted_calls",
+   "type": "integer"
+  },
+  {
+   "column": "answered_calls",
+   "type": "integer"
+  },
+  {
+   "column": "error_calls",
+   "type": "integer"
+  },
+  {
+   "column": "is_published",
+   "type": "boolean"
+  },
+  {
+   "column": "published_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "started_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "completed_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "missing_calls",
+   "type": "integer"
+  },
+  {
+   "column": "engine_group",
+   "type": "text"
+  },
+  {
+   "column": "engines",
+   "type": "text[]"
+  },
+  {
+   "column": "repeats",
+   "type": "integer"
+  },
+  {
+   "column": "questions_asked",
+   "type": "integer"
+  },
+  {
+   "column": "questions_matched",
+   "type": "integer"
+  },
+  {
+   "column": "question_set_match",
+   "type": "boolean"
+  },
+  {
+   "column": "counted",
+   "type": "boolean"
+  }
+ ],
+ "public.canvas_ai_category": [
+  {
+   "column": "category",
+   "type": "character varying(60)"
+  },
+  {
+   "column": "total_sims",
+   "type": "bigint"
+  },
+  {
+   "column": "resolved",
+   "type": "bigint"
+  },
+  {
+   "column": "fender_wins",
+   "type": "bigint"
+  },
+  {
+   "column": "fender_win_pct",
+   "type": "numeric"
+  },
+  {
+   "column": "top_competitor",
+   "type": "character varying(100)"
+  },
+  {
+   "column": "top_competitor_wins",
+   "type": "bigint"
+  },
+  {
+   "column": "top_competitor_pct",
+   "type": "numeric"
+  },
+  {
+   "column": "sov_gap_pts",
+   "type": "numeric"
+  },
+  {
+   "column": "unclear",
+   "type": "bigint"
+  },
+  {
+   "column": "errors",
+   "type": "bigint"
+  },
+  {
+   "column": "hallucinations",
+   "type": "bigint"
+  }
+ ],
+ "public.canvas_ai_citations": [
+  {
+   "column": "audit_run_id",
+   "type": "uuid"
+  },
+  {
+   "column": "sim_id",
+   "type": "integer"
+  },
+  {
+   "column": "simulation_id",
+   "type": "uuid"
+  },
+  {
+   "column": "prompt_key",
+   "type": "text"
+  },
+  {
+   "column": "prompt_kind",
+   "type": "text"
+  },
+  {
+   "column": "category",
+   "type": "character varying(60)"
+  },
+  {
+   "column": "engine",
+   "type": "text"
+  },
+  {
+   "column": "position",
+   "type": "integer"
+  },
+  {
+   "column": "url",
+   "type": "text"
+  },
+  {
+   "column": "domain",
+   "type": "text"
+  },
+  {
+   "column": "title",
+   "type": "text"
+  }
+ ],
+ "public.canvas_ai_current_run": [
+  {
+   "column": "audit_run_id",
+   "type": "uuid"
+  },
+  {
+   "column": "run_state",
+   "type": "text"
+  },
+  {
+   "column": "collector_version",
+   "type": "text"
+  },
+  {
+   "column": "prompt_set_hash",
+   "type": "text"
+  },
+  {
+   "column": "expected_calls",
+   "type": "integer"
+  },
+  {
+   "column": "attempted_calls",
+   "type": "integer"
+  },
+  {
+   "column": "answered_calls",
+   "type": "integer"
+  },
+  {
+   "column": "error_calls",
+   "type": "integer"
+  },
+  {
+   "column": "started_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "completed_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "published_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "missing_calls",
+   "type": "integer"
+  }
+ ],
+ "public.canvas_ai_engine": [
+  {
+   "column": "engine",
+   "type": "character varying"
+  },
+  {
+   "column": "total_sims",
+   "type": "bigint"
+  },
+  {
+   "column": "resolved",
+   "type": "bigint"
+  },
+  {
+   "column": "fender_wins",
+   "type": "bigint"
+  },
+  {
+   "column": "fender_win_pct",
+   "type": "numeric"
+  },
+  {
+   "column": "hallucinations",
+   "type": "bigint"
+  }
+ ],
+ "public.canvas_ai_history_calls": [
+  {
+   "column": "id",
+   "type": "uuid"
+  },
+  {
+   "column": "audit_run_id",
+   "type": "uuid"
+  },
+  {
+   "column": "source_table",
+   "type": "text"
+  },
+  {
+   "column": "sim_id",
+   "type": "integer"
+  },
+  {
+   "column": "engine",
+   "type": "character varying"
+  },
+  {
+   "column": "repeat_no",
+   "type": "integer"
+  },
+  {
+   "column": "category",
+   "type": "character varying(60)"
+  },
+  {
+   "column": "prompt",
+   "type": "text"
+  },
+  {
+   "column": "winner",
+   "type": "character varying(100)"
+  },
+  {
+   "column": "is_resolved",
+   "type": "boolean"
+  },
+  {
+   "column": "hallucination_flag",
+   "type": "boolean"
+  },
+  {
+   "column": "root_cause",
+   "type": "text"
+  },
+  {
+   "column": "remediation_patch",
+   "type": "text"
+  },
+  {
+   "column": "answer_text",
+   "type": "text"
+  },
+  {
+   "column": "citation_urls",
+   "type": "text"
+  },
+  {
+   "column": "created_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "prompt_key",
+   "type": "text"
+  },
+  {
+   "column": "prompt_kind",
+   "type": "text"
+  },
+  {
+   "column": "model",
+   "type": "text"
+  },
+  {
+   "column": "call_status",
+   "type": "text"
+  },
+  {
+   "column": "outcome",
+   "type": "text"
+  },
+  {
+   "column": "primary_brand",
+   "type": "text"
+  },
+  {
+   "column": "material_hallucination",
+   "type": "text"
+  },
+  {
+   "column": "hallucination_evidence",
+   "type": "text"
+  },
+  {
+   "column": "attempt_no",
+   "type": "integer"
+  },
+  {
+   "column": "error_message",
+   "type": "text"
+  },
+  {
+   "column": "run_state",
+   "type": "text"
+  },
+  {
+   "column": "published_at",
+   "type": "timestamp with time zone"
+  }
+ ],
+ "public.canvas_ai_history_citations": [
+  {
+   "column": "audit_run_id",
+   "type": "uuid"
+  },
+  {
+   "column": "sim_id",
+   "type": "integer"
+  },
+  {
+   "column": "simulation_id",
+   "type": "uuid"
+  },
+  {
+   "column": "prompt_key",
+   "type": "text"
+  },
+  {
+   "column": "prompt_kind",
+   "type": "text"
+  },
+  {
+   "column": "category",
+   "type": "character varying(60)"
+  },
+  {
+   "column": "engine",
+   "type": "text"
+  },
+  {
+   "column": "position",
+   "type": "integer"
+  },
+  {
+   "column": "url",
+   "type": "text"
+  },
+  {
+   "column": "domain",
+   "type": "text"
+  },
+  {
+   "column": "title",
+   "type": "text"
+  }
+ ],
+ "public.canvas_ai_history_citations_by_run": [
+  {
+   "column": "audit_run_id",
+   "type": "uuid"
+  },
+  {
+   "column": "sim_id",
+   "type": "integer"
+  },
+  {
+   "column": "simulation_id",
+   "type": "uuid"
+  },
+  {
+   "column": "prompt_key",
+   "type": "text"
+  },
+  {
+   "column": "prompt_kind",
+   "type": "text"
+  },
+  {
+   "column": "category",
+   "type": "character varying(60)"
+  },
+  {
+   "column": "engine",
+   "type": "text"
+  },
+  {
+   "column": "position",
+   "type": "integer"
+  },
+  {
+   "column": "url",
+   "type": "text"
+  },
+  {
+   "column": "domain",
+   "type": "text"
+  },
+  {
+   "column": "title",
+   "type": "text"
+  }
+ ],
+ "public.canvas_ai_history_outcome_counts": [
+  {
+   "column": "audit_run_id",
+   "type": "uuid"
+  },
+  {
+   "column": "engine",
+   "type": "character varying"
+  },
+  {
+   "column": "prompt_kind",
+   "type": "text"
+  },
+  {
+   "column": "prompt_key",
+   "type": "text"
+  },
+  {
+   "column": "prompt_text",
+   "type": "text"
+  },
+  {
+   "column": "category",
+   "type": "character varying(60)"
+  },
+  {
+   "column": "call_status",
+   "type": "text"
+  },
+  {
+   "column": "outcome",
+   "type": "text"
+  },
+  {
+   "column": "material_hallucination",
+   "type": "text"
+  },
+  {
+   "column": "primary_brand",
+   "type": "text"
+  },
+  {
+   "column": "calls",
+   "type": "bigint"
+  }
+ ],
+ "public.canvas_ai_history_probes": [
+  {
+   "column": "audit_run_id",
+   "type": "uuid"
+  },
+  {
+   "column": "sim_id",
+   "type": "integer"
+  },
+  {
+   "column": "prompt_key",
+   "type": "text"
+  },
+  {
+   "column": "prompt",
+   "type": "text"
+  },
+  {
+   "column": "engine",
+   "type": "character varying"
+  },
+  {
+   "column": "model",
+   "type": "text"
+  },
+  {
+   "column": "call_status",
+   "type": "text"
+  },
+  {
+   "column": "material_hallucination",
+   "type": "text"
+  },
+  {
+   "column": "hallucination_evidence",
+   "type": "text"
+  },
+  {
+   "column": "root_cause",
+   "type": "text"
+  },
+  {
+   "column": "remediation_text",
+   "type": "text"
+  },
+  {
+   "column": "verified_claim",
+   "type": "text"
+  },
+  {
+   "column": "verified_source_url",
+   "type": "text"
+  },
+  {
+   "column": "verified_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "answer_text",
+   "type": "text"
+  },
+  {
+   "column": "created_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "probe_asin",
+   "type": "text"
+  },
+  {
+   "column": "probe_asins",
+   "type": "text[]"
+  },
+  {
+   "column": "probe_fender_sku",
+   "type": "text"
+  },
+  {
+   "column": "probe_category",
+   "type": "text"
+  },
+  {
+   "column": "probe_series",
+   "type": "text"
+  },
+  {
+   "column": "probe_spec_field",
+   "type": "text"
+  },
+  {
+   "column": "probe_expected_value",
+   "type": "text"
+  },
+  {
+   "column": "probe_source_url",
+   "type": "text"
+  },
+  {
+   "column": "probe_amazon_value",
+   "type": "text"
+  },
+  {
+   "column": "probe_is_anchor",
+   "type": "boolean"
+  }
+ ],
+ "public.canvas_ai_history_runs": [
+  {
+   "column": "audit_run_id",
+   "type": "uuid"
+  },
+  {
+   "column": "run_kind",
+   "type": "text"
+  },
+  {
+   "column": "run_state",
+   "type": "text"
+  },
+  {
+   "column": "collector_version",
+   "type": "text"
+  },
+  {
+   "column": "prompt_set_hash",
+   "type": "text"
+  },
+  {
+   "column": "expected_calls",
+   "type": "integer"
+  },
+  {
+   "column": "attempted_calls",
+   "type": "integer"
+  },
+  {
+   "column": "answered_calls",
+   "type": "integer"
+  },
+  {
+   "column": "error_calls",
+   "type": "integer"
+  },
+  {
+   "column": "is_published",
+   "type": "boolean"
+  },
+  {
+   "column": "published_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "started_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "completed_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "missing_calls",
+   "type": "integer"
+  }
+ ],
+ "public.canvas_ai_probe_coverage": [
+  {
+   "column": "audit_run_id",
+   "type": "uuid"
+  },
+  {
+   "column": "cycle_no",
+   "type": "integer"
+  },
+  {
+   "column": "category",
+   "type": "text"
+  },
+  {
+   "column": "engine",
+   "type": "text"
+  },
+  {
+   "column": "models_in_scope",
+   "type": "integer"
+  },
+  {
+   "column": "models_checked",
+   "type": "bigint"
+  },
+  {
+   "column": "asins_covered",
+   "type": "bigint"
+  },
+  {
+   "column": "wrong_answers",
+   "type": "bigint"
+  }
+ ],
+ "public.canvas_ai_probes": [
+  {
+   "column": "audit_run_id",
+   "type": "uuid"
+  },
+  {
+   "column": "sim_id",
+   "type": "integer"
+  },
+  {
+   "column": "prompt_key",
+   "type": "text"
+  },
+  {
+   "column": "prompt",
+   "type": "text"
+  },
+  {
+   "column": "engine",
+   "type": "character varying"
+  },
+  {
+   "column": "model",
+   "type": "text"
+  },
+  {
+   "column": "call_status",
+   "type": "text"
+  },
+  {
+   "column": "material_hallucination",
+   "type": "text"
+  },
+  {
+   "column": "hallucination_evidence",
+   "type": "text"
+  },
+  {
+   "column": "root_cause",
+   "type": "text"
+  },
+  {
+   "column": "remediation_text",
+   "type": "text"
+  },
+  {
+   "column": "verified_claim",
+   "type": "text"
+  },
+  {
+   "column": "verified_source_url",
+   "type": "text"
+  },
+  {
+   "column": "verified_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "answer_text",
+   "type": "text"
+  },
+  {
+   "column": "created_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "probe_asin",
+   "type": "text"
+  },
+  {
+   "column": "probe_asins",
+   "type": "text[]"
+  },
+  {
+   "column": "probe_fender_sku",
+   "type": "text"
+  },
+  {
+   "column": "probe_category",
+   "type": "text"
+  },
+  {
+   "column": "probe_series",
+   "type": "text"
+  },
+  {
+   "column": "probe_spec_field",
+   "type": "text"
+  },
+  {
+   "column": "probe_expected_value",
+   "type": "text"
+  },
+  {
+   "column": "probe_source_url",
+   "type": "text"
+  },
+  {
+   "column": "probe_amazon_value",
+   "type": "text"
+  },
+  {
+   "column": "probe_is_anchor",
+   "type": "boolean"
+  }
+ ],
+ "public.canvas_ai_run_history": [
+  {
+   "column": "audit_run_id",
+   "type": "uuid"
+  },
+  {
+   "column": "run_kind",
+   "type": "text"
+  },
+  {
+   "column": "run_state",
+   "type": "text"
+  },
+  {
+   "column": "collector_version",
+   "type": "text"
+  },
+  {
+   "column": "prompt_set_hash",
+   "type": "text"
+  },
+  {
+   "column": "expected_calls",
+   "type": "integer"
+  },
+  {
+   "column": "attempted_calls",
+   "type": "integer"
+  },
+  {
+   "column": "answered_calls",
+   "type": "integer"
+  },
+  {
+   "column": "error_calls",
+   "type": "integer"
+  },
+  {
+   "column": "is_published",
+   "type": "boolean"
+  },
+  {
+   "column": "published_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "started_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "completed_at",
+   "type": "timestamp with time zone"
+  }
+ ],
+ "public.canvas_ai_simulations": [
+  {
+   "column": "id",
+   "type": "uuid"
+  },
+  {
+   "column": "audit_run_id",
+   "type": "uuid"
+  },
+  {
+   "column": "source_table",
+   "type": "text"
+  },
+  {
+   "column": "sim_id",
+   "type": "integer"
+  },
+  {
+   "column": "engine",
+   "type": "character varying"
+  },
+  {
+   "column": "repeat_no",
+   "type": "integer"
+  },
+  {
+   "column": "category",
+   "type": "character varying(60)"
+  },
+  {
+   "column": "prompt",
+   "type": "text"
+  },
+  {
+   "column": "winner",
+   "type": "character varying(100)"
+  },
+  {
+   "column": "is_resolved",
+   "type": "boolean"
+  },
+  {
+   "column": "hallucination_flag",
+   "type": "boolean"
+  },
+  {
+   "column": "root_cause",
+   "type": "text"
+  },
+  {
+   "column": "remediation_patch",
+   "type": "text"
+  },
+  {
+   "column": "answer_text",
+   "type": "text"
+  },
+  {
+   "column": "citation_urls",
+   "type": "text"
+  },
+  {
+   "column": "created_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "prompt_key",
+   "type": "text"
+  },
+  {
+   "column": "prompt_kind",
+   "type": "text"
+  },
+  {
+   "column": "model",
+   "type": "text"
+  },
+  {
+   "column": "call_status",
+   "type": "text"
+  },
+  {
+   "column": "outcome",
+   "type": "text"
+  },
+  {
+   "column": "primary_brand",
+   "type": "text"
+  },
+  {
+   "column": "material_hallucination",
+   "type": "text"
+  },
+  {
+   "column": "hallucination_evidence",
+   "type": "text"
+  },
+  {
+   "column": "attempt_no",
+   "type": "integer"
+  },
+  {
+   "column": "error_message",
+   "type": "text"
+  },
+  {
+   "column": "run_state",
+   "type": "text"
+  },
+  {
+   "column": "published_at",
+   "type": "timestamp with time zone"
+  }
+ ],
+ "public.canvas_amazon_product_types": [
+  {
+   "column": "asin",
+   "type": "text"
+  },
+  {
+   "column": "product_type",
+   "type": "text"
+  },
+  {
+   "column": "item_type_keyword",
+   "type": "text"
+  }
+ ],
+ "public.canvas_competitor_sov": [
+  {
+   "column": "category",
+   "type": "character varying"
+  },
+  {
+   "column": "competitor",
+   "type": "character varying(100)"
+  },
+  {
+   "column": "wins",
+   "type": "bigint"
+  },
+  {
+   "column": "category_resolved",
+   "type": "bigint"
+  },
+  {
+   "column": "sov_pct",
+   "type": "numeric"
+  }
+ ],
+ "public.canvas_divisions": [
+  {
+   "column": "division",
+   "type": "character varying(80)"
+  },
+  {
+   "column": "monitored_skus",
+   "type": "integer"
+  },
+  {
+   "column": "buybox_pct",
+   "type": "numeric(5,2)"
+  },
+  {
+   "column": "splinter_bundles",
+   "type": "integer"
+  },
+  {
+   "column": "schema_sync_pct",
+   "type": "numeric(5,2)"
+  },
+  {
+   "column": "primary_threat",
+   "type": "character varying(255)"
+  },
+  {
+   "column": "strategic_action",
+   "type": "text"
+  },
+  {
+   "column": "created_at",
+   "type": "timestamp with time zone"
+  }
+ ],
+ "public.canvas_freshness": [
+  {
+   "column": "job_key",
+   "type": "character varying"
+  },
+  {
+   "column": "last_run_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "cursor_offset",
+   "type": "integer"
+  },
+  {
+   "column": "updated_at",
+   "type": "timestamp with time zone"
+  }
+ ],
+ "public.canvas_issue_set_asides": [
+  {
+   "column": "id",
+   "type": "uuid"
+  },
+  {
+   "column": "client_key",
+   "type": "text"
+  },
+  {
+   "column": "check_key",
+   "type": "text"
+  },
+  {
+   "column": "check_label",
+   "type": "text"
+  },
+  {
+   "column": "entity_type",
+   "type": "text"
+  },
+  {
+   "column": "entity_key",
+   "type": "text"
+  },
+  {
+   "column": "entity_label",
+   "type": "text"
+  },
+  {
+   "column": "status",
+   "type": "text"
+  },
+  {
+   "column": "reason_code",
+   "type": "text"
+  },
+  {
+   "column": "reason_label",
+   "type": "text"
+  },
+  {
+   "column": "note",
+   "type": "text"
+  },
+  {
+   "column": "set_by_name",
+   "type": "text"
+  },
+  {
+   "column": "set_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "reopened_by_name",
+   "type": "text"
+  },
+  {
+   "column": "reopened_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "reopen_note",
+   "type": "text"
+  },
+  {
+   "column": "updated_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "outcome",
+   "type": "text"
+  }
+ ],
+ "public.canvas_listing_channel_price": [
+  {
+   "column": "asin",
+   "type": "character varying(12)"
+  },
+  {
+   "column": "channel",
+   "type": "text"
+  },
+  {
+   "column": "price",
+   "type": "numeric(10,2)"
+  },
+  {
+   "column": "url",
+   "type": "text"
+  },
+  {
+   "column": "checked_at",
+   "type": "timestamp with time zone"
+  }
+ ],
+ "public.canvas_listing_content": [
+  {
+   "column": "asin",
+   "type": "text"
+  },
+  {
+   "column": "title",
+   "type": "text"
+  },
+  {
+   "column": "bullet_count",
+   "type": "integer"
+  },
+  {
+   "column": "image_count",
+   "type": "integer"
+  },
+  {
+   "column": "main_image_px",
+   "type": "integer"
+  },
+  {
+   "column": "aplus_state",
+   "type": "text"
+  },
+  {
+   "column": "aplus_module_count",
+   "type": "integer"
+  },
+  {
+   "column": "video_state",
+   "type": "text"
+  },
+  {
+   "column": "video_count",
+   "type": "integer"
+  },
+  {
+   "column": "content_checked_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "checked_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "aplus_source",
+   "type": "text"
+  },
+  {
+   "column": "video_source",
+   "type": "text"
+  }
+ ],
+ "public.canvas_listing_offer_state_v2": [
+  {
+   "column": "asin",
+   "type": "text"
+  },
+  {
+   "column": "state",
+   "type": "text"
+  },
+  {
+   "column": "start_day",
+   "type": "date"
+  },
+  {
+   "column": "end_day",
+   "type": "date"
+  },
+  {
+   "column": "days",
+   "type": "integer"
+  },
+  {
+   "column": "ongoing",
+   "type": "boolean"
+  },
+  {
+   "column": "rank_drops_activity",
+   "type": "integer"
+  },
+  {
+   "column": "source",
+   "type": "text"
+  }
+ ],
+ "public.canvas_listing_sales_loss": [
+  {
+   "column": "asin",
+   "type": "character varying"
+  },
+  {
+   "column": "title",
+   "type": "text"
+  },
+  {
+   "column": "smartscout_snapshot_date",
+   "type": "date"
+  },
+  {
+   "column": "smartscout_monthly_units",
+   "type": "integer"
+  },
+  {
+   "column": "smartscout_monthly_revenue",
+   "type": "numeric(14,2)"
+  },
+  {
+   "column": "smartscout_ttm_revenue",
+   "type": "numeric(14,2)"
+  },
+  {
+   "column": "smartscout_prev_12m_revenue",
+   "type": "numeric(14,2)"
+  },
+  {
+   "column": "sales_rank_current",
+   "type": "integer"
+  },
+  {
+   "column": "sales_rank_drops_30",
+   "type": "integer"
+  },
+  {
+   "column": "sales_rank_drops_90",
+   "type": "integer"
+  },
+  {
+   "column": "history_through",
+   "type": "date"
+  },
+  {
+   "column": "observed_days_30",
+   "type": "bigint"
+  },
+  {
+   "column": "in_stock_days_30",
+   "type": "bigint"
+  },
+  {
+   "column": "observed_days_90",
+   "type": "bigint"
+  },
+  {
+   "column": "oos_days_90",
+   "type": "bigint"
+  },
+  {
+   "column": "suppressed_days_90",
+   "type": "bigint"
+  },
+  {
+   "column": "observed_days_365",
+   "type": "bigint"
+  },
+  {
+   "column": "in_stock_days_365",
+   "type": "bigint"
+  },
+  {
+   "column": "oos_days_365",
+   "type": "bigint"
+  },
+  {
+   "column": "suppressed_days_365",
+   "type": "bigint"
+  },
+  {
+   "column": "baseline_method",
+   "type": "text"
+  },
+  {
+   "column": "baseline_daily_revenue",
+   "type": "numeric"
+  },
+  {
+   "column": "est_lost_revenue_oos_90",
+   "type": "numeric"
+  },
+  {
+   "column": "est_lost_revenue_suppressed_90_max",
+   "type": "numeric"
+  },
+  {
+   "column": "est_lost_revenue_oos_365",
+   "type": "numeric"
+  },
+  {
+   "column": "est_lost_revenue_suppressed_365_max",
+   "type": "numeric"
+  }
+ ],
+ "public.canvas_listing_sales_loss_v2": [
+  {
+   "column": "asin",
+   "type": "character varying"
+  },
+  {
+   "column": "title",
+   "type": "text"
+  },
+  {
+   "column": "is_bundle",
+   "type": "boolean"
+  },
+  {
+   "column": "current_price",
+   "type": "numeric(10,2)"
+  },
+  {
+   "column": "featured_offer_state",
+   "type": "text"
+  },
+  {
+   "column": "featured_offer_checked_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "history_from",
+   "type": "date"
+  },
+  {
+   "column": "history_through",
+   "type": "date"
+  },
+  {
+   "column": "last_in_stock_day",
+   "type": "date"
+  },
+  {
+   "column": "offline_now",
+   "type": "boolean"
+  },
+  {
+   "column": "current_oos_days",
+   "type": "bigint"
+  },
+  {
+   "column": "observed_days_30",
+   "type": "bigint"
+  },
+  {
+   "column": "in_stock_days_30",
+   "type": "bigint"
+  },
+  {
+   "column": "oos_days_30",
+   "type": "bigint"
+  },
+  {
+   "column": "no_buy_box_days_30",
+   "type": "bigint"
+  },
+  {
+   "column": "observed_days_90",
+   "type": "bigint"
+  },
+  {
+   "column": "oos_days_90",
+   "type": "bigint"
+  },
+  {
+   "column": "no_buy_box_days_90",
+   "type": "bigint"
+  },
+  {
+   "column": "observed_days_365",
+   "type": "bigint"
+  },
+  {
+   "column": "in_stock_days_365",
+   "type": "bigint"
+  },
+  {
+   "column": "oos_days_365",
+   "type": "bigint"
+  },
+  {
+   "column": "no_buy_box_days_365",
+   "type": "bigint"
+  },
+  {
+   "column": "current_stretch_rank_drops",
+   "type": "bigint"
+  },
+  {
+   "column": "sales_rank_current",
+   "type": "integer"
+  },
+  {
+   "column": "sales_rank_drops_30",
+   "type": "integer"
+  },
+  {
+   "column": "sales_rank_drops_90",
+   "type": "integer"
+  },
+  {
+   "column": "smartscout_snapshot_date",
+   "type": "date"
+  },
+  {
+   "column": "smartscout_monthly_units",
+   "type": "integer"
+  },
+  {
+   "column": "smartscout_monthly_revenue",
+   "type": "numeric(14,2)"
+  },
+  {
+   "column": "smartscout_ttm_revenue",
+   "type": "numeric(14,2)"
+  },
+  {
+   "column": "smartscout_prev_12m_revenue",
+   "type": "numeric(14,2)"
+  },
+  {
+   "column": "revenue_source",
+   "type": "text"
+  },
+  {
+   "column": "baseline_method",
+   "type": "text"
+  },
+  {
+   "column": "currency",
+   "type": "text"
+  },
+  {
+   "column": "revenue_window_start",
+   "type": "date"
+  },
+  {
+   "column": "revenue_window_end",
+   "type": "date"
+  },
+  {
+   "column": "in_stock_days_used",
+   "type": "bigint"
+  },
+  {
+   "column": "baseline_daily_revenue",
+   "type": "numeric"
+  },
+  {
+   "column": "est_lost_revenue_oos_30",
+   "type": "numeric"
+  },
+  {
+   "column": "est_lost_revenue_oos_90",
+   "type": "numeric"
+  },
+  {
+   "column": "est_lost_revenue_oos_365",
+   "type": "numeric"
+  },
+  {
+   "column": "estimate_label",
+   "type": "text"
+  },
+  {
+   "column": "awaiting_inputs_reason",
+   "type": "text"
+  },
+  {
+   "column": "keepa_checked_at",
+   "type": "timestamp with time zone"
+  }
+ ],
+ "public.canvas_listing_stock_episodes": [
+  {
+   "column": "asin",
+   "type": "text"
+  },
+  {
+   "column": "state",
+   "type": "text"
+  },
+  {
+   "column": "start_day",
+   "type": "date"
+  },
+  {
+   "column": "end_day",
+   "type": "date"
+  },
+  {
+   "column": "days",
+   "type": "integer"
+  },
+  {
+   "column": "ongoing",
+   "type": "boolean"
+  }
+ ],
+ "public.canvas_metrics": [
+  {
+   "column": "kpi_audit_run_id",
+   "type": "uuid"
+  },
+  {
+   "column": "kpi_computed_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "kpi",
+   "type": "jsonb"
+  },
+  {
+   "column": "catalog_skus",
+   "type": "bigint"
+  },
+  {
+   "column": "catalog_bundles",
+   "type": "bigint"
+  },
+  {
+   "column": "seller_harvested",
+   "type": "bigint"
+  },
+  {
+   "column": "seller_harvested_pct",
+   "type": "numeric"
+  },
+  {
+   "column": "division_count",
+   "type": "bigint"
+  },
+  {
+   "column": "bb_total",
+   "type": "bigint"
+  },
+  {
+   "column": "bb_1p",
+   "type": "bigint"
+  },
+  {
+   "column": "bb_3p",
+   "type": "bigint"
+  },
+  {
+   "column": "bb_unharvested",
+   "type": "bigint"
+  },
+  {
+   "column": "bb_no_offer",
+   "type": "bigint"
+  },
+  {
+   "column": "bb_1p_pct",
+   "type": "numeric"
+  },
+  {
+   "column": "bb_3p_pct",
+   "type": "numeric"
+  },
+  {
+   "column": "bb_unharvested_pct",
+   "type": "numeric"
+  },
+  {
+   "column": "active_offer_coverage_pct",
+   "type": "numeric"
+  },
+  {
+   "column": "amz_below_map",
+   "type": "bigint"
+  },
+  {
+   "column": "amz_avg_drift",
+   "type": "numeric"
+  },
+  {
+   "column": "wmt_checked",
+   "type": "bigint"
+  },
+  {
+   "column": "wmt_priced",
+   "type": "bigint"
+  },
+  {
+   "column": "wmt_leaks",
+   "type": "bigint"
+  },
+  {
+   "column": "mf_checked",
+   "type": "bigint"
+  },
+  {
+   "column": "mf_priced",
+   "type": "bigint"
+  },
+  {
+   "column": "mf_leaks",
+   "type": "bigint"
+  },
+  {
+   "column": "offamz_avg_leak",
+   "type": "numeric"
+  },
+  {
+   "column": "map_violation_skus",
+   "type": "bigint"
+  },
+  {
+   "column": "bundle_reviews",
+   "type": "bigint"
+  },
+  {
+   "column": "spec_checked",
+   "type": "bigint"
+  },
+  {
+   "column": "spec_avg_amazon_pct",
+   "type": "numeric"
+  },
+  {
+   "column": "spec_fender_found",
+   "type": "bigint"
+  },
+  {
+   "column": "spec_fender_found_pct",
+   "type": "numeric"
+  },
+  {
+   "column": "spec_avg_fender_pct",
+   "type": "numeric"
+  },
+  {
+   "column": "spec_missing_additional_property",
+   "type": "bigint"
+  },
+  {
+   "column": "spec_missing_field_types",
+   "type": "bigint"
+  },
+  {
+   "column": "sim_total",
+   "type": "bigint"
+  },
+  {
+   "column": "sim_runs",
+   "type": "bigint"
+  },
+  {
+   "column": "sim_resolved",
+   "type": "bigint"
+  },
+  {
+   "column": "sim_wins",
+   "type": "bigint"
+  },
+  {
+   "column": "sim_win_pct",
+   "type": "numeric"
+  },
+  {
+   "column": "sim_unclear",
+   "type": "bigint"
+  },
+  {
+   "column": "sim_errors",
+   "type": "bigint"
+  },
+  {
+   "column": "sim_hallucinations",
+   "type": "bigint"
+  },
+  {
+   "column": "sim_hallucination_risk",
+   "type": "bigint"
+  },
+  {
+   "column": "sim_last_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "weakest_category",
+   "type": "character varying(60)"
+  },
+  {
+   "column": "weakest_win_pct",
+   "type": "numeric"
+  },
+  {
+   "column": "weakest_top_competitor",
+   "type": "character varying(100)"
+  },
+  {
+   "column": "weakest_competitor_pct",
+   "type": "numeric"
+  },
+  {
+   "column": "weakest_sov_gap_pts",
+   "type": "numeric"
+  },
+  {
+   "column": "strongest_category",
+   "type": "character varying(60)"
+  },
+  {
+   "column": "strongest_win_pct",
+   "type": "numeric"
+  },
+  {
+   "column": "strongest_wins",
+   "type": "bigint"
+  },
+  {
+   "column": "strongest_resolved",
+   "type": "bigint"
+  },
+  {
+   "column": "served_at",
+   "type": "timestamp with time zone"
+  }
+ ],
+ "public.canvas_retail_listings": [
+  {
+   "column": "asin",
+   "type": "character varying(12)"
+  },
+  {
+   "column": "model_name",
+   "type": "character varying(150)"
+  },
+  {
+   "column": "title",
+   "type": "text"
+  },
+  {
+   "column": "category",
+   "type": "character varying"
+  },
+  {
+   "column": "is_bundle",
+   "type": "boolean"
+  },
+  {
+   "column": "parent_asin",
+   "type": "character varying"
+  },
+  {
+   "column": "product_url",
+   "type": "text"
+  },
+  {
+   "column": "map_price",
+   "type": "numeric(10,2)"
+  },
+  {
+   "column": "offer_price",
+   "type": "numeric(10,2)"
+  },
+  {
+   "column": "amz_leakage",
+   "type": "numeric(10,2)"
+  },
+  {
+   "column": "buybox_status",
+   "type": "character varying(50)"
+  },
+  {
+   "column": "buybox_winner",
+   "type": "character varying(100)"
+  },
+  {
+   "column": "buybox_seller_id",
+   "type": "character varying"
+  },
+  {
+   "column": "buybox_seller_name",
+   "type": "text"
+  },
+  {
+   "column": "buybox_is_fba",
+   "type": "boolean"
+  },
+  {
+   "column": "offer_count_new",
+   "type": "integer"
+  },
+  {
+   "column": "sales_rank",
+   "type": "integer"
+  },
+  {
+   "column": "monthly_sold",
+   "type": "integer"
+  },
+  {
+   "column": "reviews_count",
+   "type": "integer"
+  },
+  {
+   "column": "channels",
+   "type": "character varying(50)"
+  },
+  {
+   "column": "bundle_name",
+   "type": "character varying(255)"
+  },
+  {
+   "column": "wmt_price",
+   "type": "numeric(10,2)"
+  },
+  {
+   "column": "wmt_leakage",
+   "type": "numeric"
+  },
+  {
+   "column": "wmt_url",
+   "type": "text"
+  },
+  {
+   "column": "wmt_seller",
+   "type": "text"
+  },
+  {
+   "column": "wmt_match_conf",
+   "type": "numeric"
+  },
+  {
+   "column": "wmt_checked_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "mf_price",
+   "type": "numeric(10,2)"
+  },
+  {
+   "column": "mf_leakage",
+   "type": "numeric(11,2)"
+  },
+  {
+   "column": "mf_checked_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "worst_leakage",
+   "type": "numeric"
+  },
+  {
+   "column": "is_map_violation",
+   "type": "boolean"
+  },
+  {
+   "column": "updated_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "competitive_price_threshold_cents",
+   "type": "integer"
+  },
+  {
+   "column": "featured_offer_withheld",
+   "type": "boolean"
+  },
+  {
+   "column": "competitive_offer_suppressed",
+   "type": "boolean"
+  },
+  {
+   "column": "featured_offer_state",
+   "type": "text"
+  },
+  {
+   "column": "featured_offer_source",
+   "type": "text"
+  },
+  {
+   "column": "featured_offer_checked_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "featured_offer_attempted_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "featured_offer_last_error",
+   "type": "text"
+  },
+  {
+   "column": "competitive_external_price_state",
+   "type": "text"
+  },
+  {
+   "column": "featured_offer_observed_price_cents",
+   "type": "integer"
+  },
+  {
+   "column": "featured_offer_observed_shipping_cents",
+   "type": "integer"
+  },
+  {
+   "column": "featured_offer_observed_seller",
+   "type": "text"
+  },
+  {
+   "column": "catalog_checked_at",
+   "type": "timestamp with time zone"
+  }
+ ],
+ "public.canvas_set_aside_events": [
+  {
+   "column": "event_id",
+   "type": "bigint"
+  },
+  {
+   "column": "set_aside_id",
+   "type": "uuid"
+  },
+  {
+   "column": "occurred_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "client_key",
+   "type": "text"
+  },
+  {
+   "column": "check_key",
+   "type": "text"
+  },
+  {
+   "column": "entity_key",
+   "type": "text"
+  },
+  {
+   "column": "status",
+   "type": "text"
+  },
+  {
+   "column": "actor_name",
+   "type": "text"
+  },
+  {
+   "column": "reason_code",
+   "type": "text"
+  },
+  {
+   "column": "note",
+   "type": "text"
+  },
+  {
+   "column": "outcome",
+   "type": "text"
+  }
+ ],
+ "public.canvas_set_aside_reasons": [
+  {
+   "column": "reason_code",
+   "type": "text"
+  },
+  {
+   "column": "label",
+   "type": "text"
+  },
+  {
+   "column": "description",
+   "type": "text"
+  },
+  {
+   "column": "check_keys",
+   "type": "text[]"
+  },
+  {
+   "column": "requires_note",
+   "type": "boolean"
+  },
+  {
+   "column": "sort_order",
+   "type": "integer"
+  }
+ ],
+ "public.canvas_site_types": [
+  {
+   "column": "client_key",
+   "type": "text"
+  },
+  {
+   "column": "domain",
+   "type": "text"
+  },
+  {
+   "column": "site_type",
+   "type": "text"
+  },
+  {
+   "column": "source",
+   "type": "text"
+  },
+  {
+   "column": "confidence",
+   "type": "numeric"
+  },
+  {
+   "column": "model",
+   "type": "text"
+  },
+  {
+   "column": "classified_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "needs_review",
+   "type": "boolean"
+  }
+ ],
+ "public.canvas_spec_findability": [
+  {
+   "column": "asin",
+   "type": "character varying"
+  },
+  {
+   "column": "title",
+   "type": "text"
+  },
+  {
+   "column": "category",
+   "type": "text"
+  },
+  {
+   "column": "latest_state",
+   "type": "text"
+  },
+  {
+   "column": "latest_attempt_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "latest_canonical_url",
+   "type": "text"
+  },
+  {
+   "column": "latest_variant_sku",
+   "type": "text"
+  },
+  {
+   "column": "last_success_state",
+   "type": "text"
+  },
+  {
+   "column": "last_success_url",
+   "type": "text"
+  },
+  {
+   "column": "last_success_variant_sku",
+   "type": "text"
+  },
+  {
+   "column": "last_success_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "last_success_explanation",
+   "type": "text"
+  },
+  {
+   "column": "last_success_schema_profile",
+   "type": "text"
+  },
+  {
+   "column": "last_success_present_fields",
+   "type": "jsonb"
+  },
+  {
+   "column": "last_success_missing_applicable_fields",
+   "type": "jsonb"
+  },
+  {
+   "column": "product_kind",
+   "type": "text"
+  },
+  {
+   "column": "confidence",
+   "type": "text"
+  },
+  {
+   "column": "explanation",
+   "type": "text"
+  },
+  {
+   "column": "source_method",
+   "type": "text"
+  },
+  {
+   "column": "latest_failure",
+   "type": "text"
+  },
+  {
+   "column": "schema_profile",
+   "type": "text"
+  },
+  {
+   "column": "present_fields",
+   "type": "jsonb"
+  },
+  {
+   "column": "missing_applicable_fields",
+   "type": "jsonb"
+  },
+  {
+   "column": "catalog_identity_hash",
+   "type": "text"
+  },
+  {
+   "column": "last_success_identity_hash",
+   "type": "text"
+  },
+  {
+   "column": "collector_version",
+   "type": "text"
+  },
+  {
+   "column": "http_status",
+   "type": "integer"
+  },
+  {
+   "column": "success_needs_review",
+   "type": "boolean"
+  },
+  {
+   "column": "counts_as_confirmed",
+   "type": "boolean"
+  },
+  {
+   "column": "counts_as_finished_search",
+   "type": "boolean"
+  },
+  {
+   "column": "counts_as_ambiguous",
+   "type": "boolean"
+  },
+  {
+   "column": "counts_as_blocked",
+   "type": "boolean"
+  },
+  {
+   "column": "counts_as_timeout",
+   "type": "boolean"
+  },
+  {
+   "column": "counts_as_parse_failure",
+   "type": "boolean"
+  },
+  {
+   "column": "counts_as_unchecked",
+   "type": "boolean"
+  },
+  {
+   "column": "prior_success_latest_failed",
+   "type": "boolean"
+  },
+  {
+   "column": "prior_success_latest_completed_not_found",
+   "type": "boolean"
+  },
+  {
+   "column": "prior_success_latest_ambiguous",
+   "type": "boolean"
+  },
+  {
+   "column": "jsonld_status",
+   "type": "text"
+  },
+  {
+   "column": "counts_as_eligible",
+   "type": "boolean"
+  },
+  {
+   "column": "counts_as_attempted",
+   "type": "boolean"
+  },
+  {
+   "column": "counts_as_completed_not_found",
+   "type": "boolean"
+  },
+  {
+   "column": "counts_as_unsupported",
+   "type": "boolean"
+  }
+ ],
+ "public.canvas_spec_missing_fields": [
+  {
+   "column": "source",
+   "type": "text"
+  },
+  {
+   "column": "field",
+   "type": "text"
+  },
+  {
+   "column": "sku_count",
+   "type": "bigint"
+  }
+ ],
+ "public.canvas_spec_readiness": [
+  {
+   "column": "asin",
+   "type": "character varying"
+  },
+  {
+   "column": "title",
+   "type": "text"
+  },
+  {
+   "column": "category",
+   "type": "character varying"
+  },
+  {
+   "column": "amazon_checked",
+   "type": "boolean"
+  },
+  {
+   "column": "amazon_fields_found",
+   "type": "integer"
+  },
+  {
+   "column": "amazon_fields_expected",
+   "type": "integer"
+  },
+  {
+   "column": "amazon_completeness_pct",
+   "type": "double precision"
+  },
+  {
+   "column": "amazon_missing_fields",
+   "type": "text"
+  },
+  {
+   "column": "fender_url",
+   "type": "text"
+  },
+  {
+   "column": "fender_found",
+   "type": "boolean"
+  },
+  {
+   "column": "fender_fields_found",
+   "type": "integer"
+  },
+  {
+   "column": "fender_fields_expected",
+   "type": "integer"
+  },
+  {
+   "column": "fender_completeness_pct",
+   "type": "double precision"
+  },
+  {
+   "column": "fender_missing_fields",
+   "type": "text"
+  },
+  {
+   "column": "checked_at",
+   "type": "timestamp with time zone"
+  },
+  {
+   "column": "collector_version",
+   "type": "text"
+  },
+  {
+   "column": "fender_page_source",
+   "type": "text"
+  },
+  {
+   "column": "fender_identity_match",
+   "type": "text"
+  },
+  {
+   "column": "fender_variant_sku",
+   "type": "text"
+  },
+  {
+   "column": "fender_spec_values",
+   "type": "jsonb"
+  },
+  {
+   "column": "fender_rating_markup",
+   "type": "boolean"
+  },
+  {
+   "column": "amazon_spec_values",
+   "type": "jsonb"
+  },
+  {
+   "column": "amazon_gtin",
+   "type": "text"
+  },
+  {
+   "column": "amazon_mpn",
+   "type": "text"
+  },
+  {
+   "column": "amazon_aplus_state",
+   "type": "text"
+  },
+  {
+   "column": "amazon_aplus_image_count",
+   "type": "integer"
+  },
+  {
+   "column": "amazon_video_state",
+   "type": "text"
+  },
+  {
+   "column": "amazon_bullet_count",
+   "type": "integer"
+  },
+  {
+   "column": "amazon_image_count",
+   "type": "integer"
+  }
+ ]
+}
