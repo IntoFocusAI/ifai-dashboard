@@ -1,0 +1,4 @@
+# Files loaded before the tests, in order (paths from the repo root).
+supabase/tests/fixtures/00_supabase_roles.sql
+supabase/tests/fixtures/10_write_rpcs.sql
+supabase/migrations/20261118190000_write_rpcs_no_anon.sql

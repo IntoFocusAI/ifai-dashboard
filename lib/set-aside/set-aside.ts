@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useSyncExternalStore } from "react";
 import { getPublicCanvasSupabase } from "@/lib/supabase/canvas-client";
+import { getSessionSupabase } from "@/lib/supabase/session-client";
 
 /* Server-side Done and Set aside (worker 18.5).
 
@@ -15,8 +16,10 @@ import { getPublicCanvasSupabase } from "@/lib/supabase/canvas-client";
    again flips it back. Writes go through two SECURITY DEFINER functions that
    check every input and write public.audit_log, so this file only calls them.
 
-   There is no login on the dashboard yet. The person types a name once and it
-   is remembered in this browser. */
+   The write functions run with the signed-in session: they are not callable
+   with the anon key (migration 20261118190000). Reads stay on the public
+   client until the dashboard moves to signed-in reads. The person types a
+   name once and it is remembered in this browser. */
 
 export type SetAsideStatus = "active" | "reopened";
 
@@ -157,17 +160,23 @@ export function outcomeLabel(row: Pick<SetAsideRow, "outcome" | "reason_label">)
 export const UNKNOWN_CLIENT_MESSAGE =
   "This client is not set up for set-asides yet, so nothing was saved. Ask IntoFocus to add it.";
 
+/** Shown when a signed-out visitor tries to save: the write functions need a signed-in session. */
+export const SIGN_IN_TO_SAVE_MESSAGE = "Sign in to mark issues Done or set them aside. Nothing was saved.";
+
 /** The message a person reads for a failed set-aside call. Never blank, never the raw database code. */
-export function errorText(error: { message?: string } | null | undefined): string {
+export function errorText(error: { message?: string; code?: string } | null | undefined): string {
   const message = error?.message?.trim();
   if (message && /^unknown client\.?$/i.test(message)) return UNKNOWN_CLIENT_MESSAGE;
+  if (error?.code === "42501" || (message && /^permission denied for function/i.test(message))) {
+    return SIGN_IN_TO_SAVE_MESSAGE;
+  }
   return message ? message : "The set-aside could not be saved. Try again.";
 }
 
 /** An RPC that throws (network loss, a bad response) is a failed save with a visible message, not a stuck form. */
 async function callRpc(fn: string, args: Record<string, unknown>): Promise<SetAsideResult> {
   try {
-    const { error } = await getPublicCanvasSupabase().rpc(fn, args);
+    const { error } = await getSessionSupabase().rpc(fn, args);
     return error ? { ok: false, error: errorText(error) } : { ok: true };
   } catch (error) {
     return { ok: false, error: errorText(error as { message?: string }) };
