@@ -11,6 +11,8 @@ export type CanvasMetricsRow = {
   seller_harvested_pct: number | null;
   division_count: number | null;
   bb_total: number | null;
+  /** Brand-led clients only: listings whose Buy Box seller is one of the brand's own seller accounts. */
+  bb_brand?: number | null;
   bb_1p: number | null;
   bb_3p: number | null;
   bb_unharvested: number | null;

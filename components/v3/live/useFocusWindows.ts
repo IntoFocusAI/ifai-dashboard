@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useAiHistory } from "@/components/v3/live/ai-search/AiHistoryContext";
+import { useEngineGroupRead } from "@/components/v3/live/ai-search/EngineGroupScope";
 import { catalogLoadState, useApiRunCatalog, useApiSnapshots } from "@/components/v3/live/ai-search/useApiEngineLoad";
 import { afterSiteTypes } from "@/lib/ai-search/site-types";
 import { loadHistorySnapshot, type HistorySnapshotResult } from "@/lib/ai-search/history-queries";
@@ -65,6 +66,9 @@ function useBatteryRuns(ids: string[] | null, published: AiSearchSnapshot | null
  * The 21d windows: the last 30 days ending on the published run, and the 30 days before, each
  * read as the AI Search tabs read the last 30 days with the API runs in it (decision 7). The
  * labeled sample copy has no catalog of earlier runs, so it reads the published run alone.
+ * The current window is the tabs' own read (date pill, API runs, engine switch; decision 83), so
+ * an engine or question figure on Action Items and the Roadmap matches Engine Comparison and Run
+ * Summary (PM29 item 7). The previous window stays the 30 days before.
  */
 export function useFocusWindows(): FocusWindowsRead {
   const history = useAiHistory();
@@ -94,8 +98,9 @@ export function useFocusWindows(): FocusWindowsRead {
   const currentApi = useApiSnapshots(apiRuns.current);
   const previousApi = useApiSnapshots(apiRuns.previous);
   const pending = catalogLoadState(catalog);
+  const { read: tabRead } = useEngineGroupRead();
 
-  return useMemo<FocusWindowsRead>(() => {
+  const pooled = useMemo<FocusWindowsRead>(() => {
     if (history.source === "fixture") {
       if (!published) return { phase: "loading" };
       const empty = { engines: [], questions: [], runs: [] };
@@ -106,4 +111,10 @@ export function useFocusWindows(): FocusWindowsRead {
     if (battery.error) return { phase: "error", message: battery.error };
     return focusWindowsReady(split, pending, currentApi, previousApi);
   }, [battery, currentApi, history.catalog, history.source, pending, previousApi, published, split]);
+
+  return useMemo<FocusWindowsRead>(() => {
+    if (pooled.phase !== "ready" || history.source === "fixture") return pooled;
+    if (tabRead.phase !== "ready") return tabRead.phase === "loading" ? { phase: "loading" } : pooled;
+    return { ...pooled, windows: { ...pooled.windows, current: tabRead.snapshot } };
+  }, [history.source, pooled, tabRead]);
 }

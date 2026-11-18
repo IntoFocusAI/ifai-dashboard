@@ -51,16 +51,16 @@ function readings(counts: FeaturedOfferCounts): Reading[] {
       note: "The catalog has no current offer for this listing, so no Amazon check is needed.",
     },
     {
-      label: "Competitive External Price available",
+      label: "Amazon's reference price available",
       value: counts.benchmarkPresent,
       denominator: counts.keepaClassified,
-      note: "Of the listings Amazon checked, this many have a published outside price. Amazon does not name the retailer.",
+      note: "Of the listings Amazon checked, this many have a published reference price. Amazon does not name the retailer.",
     },
     {
-      label: "Confirmed withheld above outside price",
+      label: "Confirmed withheld above Amazon's reference price",
       value: counts.confirmedHighPrice,
       denominator: counts.withheld,
-      note: "Withheld listings whose offer and outside price came from one check, with the offer above that price.",
+      note: "Withheld listings whose offer and Amazon's reference price came from one check, with the offer above that price.",
     },
   ];
 }

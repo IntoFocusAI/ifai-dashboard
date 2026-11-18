@@ -9,7 +9,7 @@ import { ExternalLink } from "@/components/v3/live/ai-search/ExternalLink";
 import { FactCheckLead } from "@/components/v3/live/ai-search/FactCheckLead";
 import { FactCheckTable } from "@/components/v3/live/ai-search/FactCheckTable";
 import { StatusMark } from "@/components/v3/live/StatusMark";
-import { PROBE_STATE_LABELS, driftRead } from "@/lib/ai-search/drift";
+import { PROBE_STATE_LABELS, driftRead, evidenceQuote } from "@/lib/ai-search/drift";
 import {
   unverifiedFlagTip,
   amazonMismatchNote,
@@ -53,7 +53,7 @@ function FactChecks({ snapshot }: { snapshot: AiSearchSnapshot }) {
               </div>
               <div className="action-details">
                 {engineLabel(row.engine)} · {modelLabel(row.model)}. {brandName()} publishes: {sentence(row.claim)} The answer said:{" "}
-                {row.evidence}
+                {evidenceQuote(row.evidence)}
                 {row.catalog && row.sourceUrl ? (
                   <>
                     {" "}

@@ -202,7 +202,7 @@ function combinedHeadlineStat(headline: RetailHeadline): string {
 
   if (headline.findingId === "suppressed_listings") {
     if (headline.reading.headlineLabel === CONFIRMED_HIGH_PRICE_LABEL) {
-      return `${countNoun(count, "listing")} withheld above outside price`;
+      return `${countNoun(count, "listing")} withheld above Amazon's reference price`;
     }
     if (headline.reading.headlineLabel === WITHHELD_LABEL) {
       return `${countNoun(count, "Buy Box", "Buy Boxes")} withheld`;

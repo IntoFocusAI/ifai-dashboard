@@ -17,7 +17,7 @@ export function leadBrandOr(): string {
   return activeClientSettings().lead_brand_phrase;
 }
 
-/** The brand's own website as copy names it: "fender.com", "ledlenser.com". */
+/** The brand's own website as copy names it: "fender.com", "ledlenserusa.com". */
 export function brandSite(): string {
   return activeClientSettings().brand_site_label;
 }

@@ -4,7 +4,7 @@
  */
 
 import { competitorTallies, joinBrands, largestCompetitorGap } from "@/lib/ai-search/competitors";
-import { driftRead } from "@/lib/ai-search/drift";
+import { driftRead, evidenceQuote, FACT_CHECK_VERDICTS_IN_DECK } from "@/lib/ai-search/drift";
 import { factCheckAccuracyLead, factCheckAccuracyStatus } from "@/lib/ai-search/fact-check-copy";
 import { competitorCategoryLine, competitorEngineLine } from "@/lib/ai-search/radar-tables";
 import { categoryLabel, engineLabel } from "@/lib/ai-search/run-metrics";
@@ -200,7 +200,8 @@ export function rivalTableSlide(input: DeckInput, snapshot: AiSearchSnapshot | n
 
 /** b5: the answers that contradicted a fact the brand publishes. */
 export function contradictionSlide(input: DeckInput, snapshot: AiSearchSnapshot | null): DeckSlide | null {
-  if (!snapshot) return null;
+  // Slides read as finished findings, so unreviewed checker verdicts stay out of the deck (FACT_CHECK_VERDICTS_IN_DECK).
+  if (!snapshot || !FACT_CHECK_VERDICTS_IN_DECK) return null;
   const drift = driftRead(snapshot.calls, snapshot.probes);
   const confirmed = drift.probes.filter((row) => row.state === "confirmed");
   if (confirmed.length === 0) return null;
@@ -215,7 +216,7 @@ export function contradictionSlide(input: DeckInput, snapshot: AiSearchSnapshot 
     figures: [],
     table: {
       columns: ["Question", "Engine", `${input.brand} publishes`, "The answer said"],
-      rows: shown.map((row) => [clip(row.prompt), engineLabel(row.engine), clip(row.claim ?? ""), clip(row.evidence ?? "")]),
+      rows: shown.map((row) => [clip(row.prompt), engineLabel(row.engine), clip(row.claim ?? ""), clip(evidenceQuote(row.evidence))]),
       caption: `${formatInt(shown.length)} of ${formatInt(confirmed.length)} contradicting answers.`,
     },
     sources: [SOURCES.factChecks],

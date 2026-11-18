@@ -32,6 +32,8 @@ function pick(bundle: WithEstimates, which: "phase1" | "enterprise" | "mapLeakag
   const read = bundle?.estimates;
   if (!read || read.phase === "loading") return ESTIMATE_LOADING;
   if (read.phase === "error") return NO_ANALYST_ESTIMATE;
+  // Enterprise Potential waits for its AI part (lines 8 and 9) while the AI read loads.
+  if (which === "enterprise" && read.estimates.ai?.phase === "loading") return ESTIMATE_LOADING;
   return shortFigure(read.estimates[which]);
 }
 

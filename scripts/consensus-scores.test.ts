@@ -152,6 +152,7 @@ test("a saved list replaces the placeholder set and Amazon Retail still counts",
   const census = buyBoxSellerCensus(rows);
   assert.deepEqual(census, {
     amazonRetail: 1,
+    brandStore: 0,
     sellers: [
       { name: "Austin Bazaar", listings: 1 },
       { name: "Crazy Dave's Music", listings: 1 },

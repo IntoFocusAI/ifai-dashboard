@@ -14,6 +14,7 @@ import {
   withheldListings,
   type FeaturedOfferRow,
 } from "@/lib/fender-canvas/featured-offer";
+import { lowerPricesElsewhere, type WithheldCauseRow } from "@/lib/fender-canvas/buy-box-cause";
 import { confirmedSuppressionSentence, formatCheckedAt } from "@/lib/fender-canvas/featured-offer-copy";
 import { formatUsd } from "@/lib/fender-canvas/format";
 import { loadPortfolioRetailSnapshot } from "@/lib/fender-canvas/portfolio-retail-queries";
@@ -47,8 +48,14 @@ function benchmarkCell(row: FeaturedOfferRow): string {
   return "Not checked";
 }
 
+function lowerPriceCell(row: WithheldCauseRow): string {
+  const prices = lowerPricesElsewhere(row);
+  if (prices.length === 0) return "None on file";
+  return prices.map((p) => `${p.channel} ${formatUsd(p.price)}${p.url ? ` (${p.url})` : ""}`).join("; ");
+}
+
 /** The same cell text the Suppressed Listings table shows for one withheld row. */
-export function suppressedListingCells(row: FeaturedOfferRow): string[] {
+export function suppressedListingCells(row: WithheldCauseRow): string[] {
   const offer = observedOfferDollars(row);
   const gap = aboveBenchmarkDollars(row);
   return [
@@ -57,6 +64,7 @@ export function suppressedListingCells(row: FeaturedOfferRow): string[] {
     offer != null ? formatUsd(offer) : "Not observed",
     benchmarkCell(row),
     gap != null ? formatUsd(gap, { signed: true }) : "No comparable pair",
+    lowerPriceCell(row),
     formatCheckedAt(row.featured_offer_checked_at) ?? "Never",
   ];
 }
@@ -74,13 +82,13 @@ export async function loadSuppressedSource(): Promise<SourceRead> {
       ok: true,
       source: {
         table: "suppressed-listings",
-        header: ["Listing", "ASIN", "Observed offer", "Competitive External Price", "Above benchmark", "Checked"],
+        header: ["Listing", "ASIN", "Observed offer", "Amazon's reference price", "Above Amazon's reference price", "Lower price elsewhere", "Checked"],
         rows: rows.map((row) => ({
           key: typeof row.asin === "string" ? row.asin : "",
           cells: suppressedListingCells(row),
         })),
         filter: "Featured Offer state is withheld.",
-        sort: "Above benchmark, highest first, then ASIN.",
+        sort: "Above Amazon's reference price, highest first, then ASIN.",
         population: counts ? confirmedSuppressionSentence(counts) : (reading?.missingMessage ?? READ_NOT_AVAILABLE),
         asOf: counts ? (formatCheckedAt(counts.newestCheckedAt) ?? READ_NOT_AVAILABLE) : READ_NOT_AVAILABLE,
         setAsideCheck: SET_ASIDE_CHECKS.buyboxSuppression,

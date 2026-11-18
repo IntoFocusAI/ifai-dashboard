@@ -23,6 +23,7 @@ import { specPageCounts } from "@/lib/fender-canvas/machine-readability";
 import { buildHubSlots } from "@/lib/fender-canvas/hub-slots";
 import { headlineSentence, headlineSurface } from "@/lib/fender-canvas/portfolio-retail-display";
 import { buildLiveMetrics } from "@/lib/fender-canvas/metrics-from-live";
+import { withAiEstimates } from "@/lib/estimates/ai-gap-read";
 import type { AmazonFieldTotals } from "@/lib/fender-canvas/ai-readiness-lead";
 import { buildMinimalMetrics, type StockLossRead } from "@/lib/fender-canvas/minimal-metrics";
 import { buildLiveNodes } from "@/lib/fender-canvas/nodes-from-live";
@@ -35,7 +36,7 @@ import { bindCopy } from "@/lib/fender-canvas/template-vars";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
 
 /** Documentation version shown beside the product name in the canvas header. */
-export const DOCUMENTATION_VERSION = "29.16";
+export const DOCUMENTATION_VERSION = "29.28";
 
 const FOCUS_TARGETS = withPrimaryFocusTargets(
   graphLayout.focusTargets as Record<string, { x: number; y: number }>,
@@ -80,11 +81,13 @@ function minimalViewKeys(scope: string) {
 }
 
 export function buildFenderCanvasSpec(
-  bundle: CanvasBundle | null,
+  readBundle: CanvasBundle | null,
   options: BuildCanvasSpecOptions = {},
 ): CanvasSpecWithViews {
   const retail = options.retail ?? { phase: "loading" as const };
   const aiSearch = options.aiSearch ?? { phase: "loading" as const };
+  // Lines 8 and 9 and Enterprise Potential's AI part follow the date-pill window's AI read.
+  const bundle = readBundle?.estimates ? { ...readBundle, estimates: withAiEstimates(readBundle.estimates, aiSearch) } : readBundle;
   const findability = options.findability ?? { phase: "loading" as const };
   const live = bundle ? buildLiveMetrics(bundle, retail, findability, aiSearch) : null;
   const metrics = live ? (Object.assign({}, live, aiMetrics(aiSearch)) as typeof live) : FENDER_METRICS;
