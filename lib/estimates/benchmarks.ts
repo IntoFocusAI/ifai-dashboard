@@ -5,7 +5,9 @@
 // (docs/benchmark-verification.md). A source is verified: true only where the quote was read on the
 // page or a faithful reproduction of it; `quote` holds those words and `checked` says how. Sources
 // still verified: false could not be opened. Do not put a quote on screen from an unverified source.
-// Numeric low, mid and high values are unchanged here; proposed changes wait for Brian's approval.
+// Rule (Brian, 18 Nov 2026): use the most recent credible estimate; document and cite it.
+// Changes 2 and 4 of docs/benchmark-verification.md were approved on 18 Nov 2026 and applied below.
+// Changes 1 and 3 still wait for Brian, so those values are unchanged.
 
 import type { RankCurve } from "./rank-curve";
 import type { Benchmark, BenchmarkSource } from "./types";
@@ -296,6 +298,51 @@ export const SOURCES = {
       checked: `${CHECKED}: the page refused automated readers. 39.7% matches eMarketer's forecast for 2021; its 2025 forecast is 40.5%, and Marketplace Pulse estimates 35.7% for 2025.`,
     },
   ),
+  marketplacePulseShare: source(
+    "marketplacePulseShare",
+    'Marketplace Pulse, "Amazon and Shopify Are Now Half of US E-Commerce"',
+    "https://www.marketplacepulse.com/articles/amazon-and-shopify-are-now-half-of-us-e-commerce",
+    "2026",
+    "Amazon is a measured 35.7% of US e-commerce in 2025",
+    "Medium; Marketplace Pulse estimate for 2025, more recent than eMarketer's 2021 forecast",
+    { verified: false, checked: `${CHECKED}: the verification doc records the figure (35.7%) but not a quote from the page, so it is not marked verified here.` },
+  ),
+  similarweb2026: source(
+    "similarweb2026",
+    "Similarweb, State of Ecommerce 2026",
+    "https://www.similarweb.com/corp/reports/state-of-ecommerce-2026/",
+    "2026",
+    "Gen AI sends 0.4% of retail e-commerce visits, up 203% in a year",
+    "Medium; panel data",
+    { verified: true, checked: CHECKED, quote: "Gen AI sends just 0.4% of retail ecommerce visits today" },
+  ),
+  morganStanley2025: source(
+    "morganStanley2025",
+    "Morgan Stanley AlphaWise (Dec 2025), via Digital Commerce 360",
+    "https://www.digitalcommerce360.com/2025/12/09/morgan-stanley-ai-agentic-shoppers-385-billion-online-sales/",
+    "Dec 2025",
+    "Nearly 23% of Americans made an AI-assisted purchase in the past month; AI is forecast at 10% to 20% of US e-commerce by 2030",
+    "Medium; survey and forecast",
+    { verified: true, checked: CHECKED, quote: "Nearly 23% of Americans made at least one AI-assisted purchase in the past month" },
+  ),
+  bain2026: source(
+    "bain2026",
+    'Bain, "Your next customer will find you using AI. Now what?"',
+    "https://www.bain.com/insights/your-next-customer-will-find-you-using-ai-now-what/",
+    "Apr 2026",
+    "44% of online buyers mostly start in an LLM or split their search (n = 1,500)",
+    "Medium; survey",
+    { verified: true, checked: CHECKED, quote: "44% of online buyers ... mostly start their journey in an LLM or split their search" },
+  ),
+  brightEdgeBranded: source(
+    "brightEdgeBranded",
+    "BrightEdge, AI auto purchase journey: branded vs non-branded prompts",
+    "https://help.brightedge.com/resources/weekly-ai-search-insights/ai-auto-purchase-journey-branded-vs-non-branded-prompts",
+    "Apr 2026",
+    "Branded prompts are 30% to 66% of AI prompt volume, about 51% on average, supporting the 50/50 branded split",
+    "Low to medium; one vendor, one category (auto)",
+    { verified: false, checked: `${CHECKED}: the verification doc records the finding but not a quote from the page, so it is not marked verified here.` },
+  ),
   chevalierGoolsbee2003: source(
     "chevalierGoolsbee2003",
     'Chevalier and Goolsbee, "Measuring Prices and Price Competition Online: Amazon.com and BarnesandNoble.com", Quantitative Marketing and Economics 1(2)',
@@ -530,15 +577,15 @@ export const RANK_CURVES: Record<string, RankCurve> = {
 // Lines 8 to 11 and Enterprise Potential (built in chunks E5 and E6; values approved with the proposal)
 // ---------------------------------------------------------------------------------------------
 
-const AI_SHARE_SOURCES = [SOURCES.kaiserSchulze, SOURCES.amazonQ3Call, SOURCES.marketplacePulseGmv, SOURCES.salesforceHoliday, SOURCES.pymnts2026, SOURCES.mckinseyAiSearch, SOURCES.adobeAiTraffic];
+const AI_SHARE_SOURCES = [SOURCES.kaiserSchulze, SOURCES.amazonQ3Call, SOURCES.marketplacePulseGmv, SOURCES.salesforceHoliday, SOURCES.pymnts2026, SOURCES.mckinseyAiSearch, SOURCES.adobeAiTraffic, SOURCES.similarweb2026, SOURCES.bain2026, SOURCES.morganStanley2025, SOURCES.brightEdgeBranded];
 const AI_SHARE_CREDIBILITY =
   "The widest range in the estimates. Low sits at measured clicks from AI assistants (under 1% of store visits), high at broad influence (20% of holiday sales). Half of the AI-shaped share is assigned to unbranded questions and half to branded; that split is an IntoFocus assumption.";
 
 /** Share of brand sales shaped by an AI answer to a question that names no brand. */
-export const AI_UNBRANDED_SHARE: Benchmark = { id: "ai_unbranded_share", label: "Share of sales shaped by an unbranded AI answer", unit: "share", low: 0.01, mid: 0.04, high: 0.1, basis: "approved_assumption", credibility: AI_SHARE_CREDIBILITY, sources: AI_SHARE_SOURCES };
+export const AI_UNBRANDED_SHARE: Benchmark = { id: "ai_unbranded_share", label: "Share of sales shaped by an unbranded AI answer", unit: "share", low: 0.015, mid: 0.04, high: 0.1, basis: "approved_assumption", credibility: AI_SHARE_CREDIBILITY, sources: AI_SHARE_SOURCES };
 
 /** Share of brand sales shaped by an AI answer to a question that names or compares the brand. */
-export const AI_BRANDED_SHARE: Benchmark = { id: "ai_branded_share", label: "Share of sales shaped by a branded AI answer", unit: "share", low: 0.01, mid: 0.04, high: 0.1, basis: "approved_assumption", credibility: AI_SHARE_CREDIBILITY, sources: AI_SHARE_SOURCES };
+export const AI_BRANDED_SHARE: Benchmark = { id: "ai_branded_share", label: "Share of sales shaped by a branded AI answer", unit: "share", low: 0.015, mid: 0.04, high: 0.1, basis: "approved_assumption", credibility: AI_SHARE_CREDIBILITY, sources: AI_SHARE_SOURCES };
 
 /** Share of added AI recommendations that become purchases. */
 export const AI_RECOMMENDATION_CONVERSION: Benchmark = {
@@ -588,12 +635,12 @@ export const ONLINE_SALES_SHARE: Benchmark = {
   id: "online_sales_share",
   label: "Share of the brand's sales made online",
   unit: "share",
-  low: 0.068,
+  low: 0.061,
   mid: 0.171,
   high: 0.3,
   basis: "published",
-  credibility: "Low is Amazon only (39.7% of the 17.1% of US retail sold online). Mid is all e-commerce, 17.1%. High, 30%, is an IntoFocus assumption.",
-  sources: [SOURCES.censusEcommerce, SOURCES.emarketerAmazonShare],
+  credibility: "Low is Amazon only (35.7% of the 17.1% of US retail sold online, Marketplace Pulse 2025). Mid is all e-commerce, 17.1%. High, 30%, is an IntoFocus assumption.",
+  sources: [SOURCES.censusEcommerce, SOURCES.marketplacePulseShare, SOURCES.emarketerAmazonShare],
 };
 
 /** Every benchmark, for listing and for tests. */

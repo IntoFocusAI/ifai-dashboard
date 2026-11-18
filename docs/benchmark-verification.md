@@ -1,6 +1,8 @@
 # Benchmark verification
 
-Worker 29.1, 18 Nov 2026. I opened every source in `lib/estimates/benchmarks.ts` and checked the figure we use against the page itself. When a host refused automated readers, I used the published abstract, the authors' institution, or an academic table that reproduces the figure, and I name which one. No numeric value changed in code. The proposed changes at the end need Brian's approval.
+Rule (Brian, 18 Nov 2026): use the most recent credible estimate; document and cite it.
+
+Worker 29.1, 18 Nov 2026. I opened every source in `lib/estimates/benchmarks.ts` and checked the figure we use against the page itself. When a host refused automated readers, I used the published abstract, the authors' institution, or an academic table that reproduces the figure, and I name which one. Changes 2 and 4 were approved by Brian on 18 Nov 2026 and applied (Worker 29.5); changes 1 and 3 await him.
 
 **Verdicts (23 published sources):** Verified 11 · Verified with correction 7 · Not supported 0 · Could not open 5. One new source was added (Adobe, September 2026) because the 90% figure was not on the page we cited. Our own calibration (`intofocusCalibration`) is not a web source and is not counted.
 
@@ -68,10 +70,10 @@ Today: 8% of sales are shaped by an AI answer (4% unbranded + 4% branded), with 
 
 ## Proposed changes for Brian
 
-1. `BRAND_LOSS_SHARE` high from 55% to **45%**. The 55% counted the 10% who went to a store for the item they wanted, and those shoppers most likely still bought the brand. The loss is 30% who switched brand plus up to 15% who delayed or canceled. The in-store figure (26% + 9% = 35%) sits inside the range. Low 30% and mid 40% stay.
-2. `ONLINE_SALES_SHARE` low from 6.8% to **6.1%** (35.7% x 17.1%). The source changes from eMarketer, which could not be opened and whose 39.7% is a 2021 forecast, to Marketplace Pulse's measured 2025 share (verified).
-3. `MISCATEGORIZED_LIFT` low from 5% to **0**. The only case we cite shows no sales effect. The line is held until D-12, so nothing on screen moves.
-4. `AI_UNBRANDED_SHARE` and `AI_BRANDED_SHARE` low from 1% to **1.5%** each (total 2% to 3%). Mid and high stay. After approval, add Similarweb, Bain, Morgan Stanley and BrightEdge to their sources.
+1. **Awaiting Brian.** `BRAND_LOSS_SHARE` high from 55% to **45%**. The 55% counted the 10% who went to a store for the item they wanted, and those shoppers most likely still bought the brand. The loss is 30% who switched brand plus up to 15% who delayed or canceled. The in-store figure (26% + 9% = 35%) sits inside the range. Low 30% and mid 40% stay.
+2. **Approved by Brian, 18 Nov 2026, applied.** `ONLINE_SALES_SHARE` low from 6.8% to **6.1%** (35.7% x 17.1%). The source changes from eMarketer, which could not be opened and whose 39.7% is a 2021 forecast, to Marketplace Pulse's measured 2025 share (verified).
+3. **Awaiting Brian.** `MISCATEGORIZED_LIFT` low from 5% to **0**. The only case we cite shows no sales effect. The line is held until D-12, so nothing on screen moves.
+4. **Approved by Brian, 18 Nov 2026, applied.** `AI_UNBRANDED_SHARE` and `AI_BRANDED_SHARE` low from 1% to **1.5%** each (total 2% to 3%). Mid and high stay. Similarweb, Bain, Morgan Stanley and BrightEdge are now in their sources (BrightEdge, and the Marketplace Pulse share article in change 2, are `verified: false` because this doc records no quote from those pages).
 
 ## Text fixes for the proposal (docs/dollar-estimates-proposal.md)
 
