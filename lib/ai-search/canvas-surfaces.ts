@@ -1,5 +1,6 @@
 import type { CanvasMetric, CanvasNode, NodeStatus, PriorityItem } from "@/lib/canvas-sdk/types";
 import { citationEvidence, groupCitations } from "@/lib/ai-search/citations";
+import { FACT_CHECK_VERDICTS_RAISED } from "@/lib/ai-search/drift";
 import {
   battleSentence,
   joinBrands,
@@ -261,7 +262,8 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
         if (lead?.topRival && lead.resolved > 0) {
           return {
             value: pct(lead.topRival.wins, lead.resolved),
-            label: rivalLeadsLabel(lead.topRival.brand, lead.key),
+            // The figure is the rival's share, so the label says so after the decided "Taylor leads Acoustics" wording.
+            label: `${rivalLeadsLabel(lead.topRival.brand, lead.key)} (rival share)`,
           };
         }
         if (s.topCompetitor) {
@@ -450,7 +452,8 @@ export function aiPriorityItems(read: AiSearchRead): PriorityItem[] {
   const s = summarizeRun(read.snapshot);
   const items: PriorityItem[] = [];
 
-  if (s.drift.totalConfirmed > 0) {
+  // Unreviewed checker verdicts stay on Product Fact Checks (FACT_CHECK_VERDICTS_RAISED).
+  if (FACT_CHECK_VERDICTS_RAISED && s.drift.totalConfirmed > 0) {
     items.push({
       id: "ai-confirmed-contradiction",
       title: `${s.drift.totalConfirmed} AI answers contradict a verified ${brandName()} fact`,

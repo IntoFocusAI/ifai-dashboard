@@ -110,7 +110,8 @@ for (const client of CLIENTS) {
       await page.goto(url(client, "spoke=competitors"));
       const label = page.locator("[data-graph-node-id='spoke-competitors'] .node-hero-label");
       await expect(label).toHaveText(/^\S.*leads\s?\S/, { timeout: 120_000 });
-      const bubble = ((await label.textContent()) ?? "").replace(/\s+/g, " ");
+      // The bubble adds "(rival share)" after the decided wording, since its figure is the rival's share.
+      const bubble = ((await label.textContent()) ?? "").replace(/\s+/g, " ").replace(" (rival share)", "");
       await page.goto(url(client, "spoke=competitors&tab=category-battlecards"));
       const body = page.locator(".drilldown-body");
       const behind = body.locator("[data-ai-on-track-status='behind'] [data-ai-battle-leader]").first();

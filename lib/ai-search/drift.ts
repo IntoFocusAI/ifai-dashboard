@@ -58,6 +58,50 @@ export type ProbeEvidence = {
   verifiedAt: string | null;
 };
 
+/**
+ * Whether a contradiction verdict is raised outside Product Fact Checks (Priorities, Action Items cards, the deck).
+ * Verdicts come from the automatic checker and no human review of a verdict is stored. On 18 Nov 2026, 2 of the 4
+ * Fender verdicts in the 30-day window were answers that agree with the published fact (Grok API on the Player II
+ * radius, ChatGPT on the Mustang Micro tubes), so verdicts stay on their own tab until a reviewed flag exists.
+ */
+export const FACT_CHECK_VERDICTS_RAISED = false;
+
+/**
+ * The stored "answer said" text is a window cut from the answer, so it can start or end mid-word. Shown text starts
+ * at a sentence (or, failing that, the first whole word) and ends on a sentence end (or the last whole word), with
+ * "..." where text was cut. Markdown bold marks, emoji and line breaks are dropped.
+ */
+export function evidenceQuote(text: string | null | undefined): string {
+  let out = (text ?? "")
+    .replace(/\*\*/g, "")
+    .replace(/\p{Extended_Pictographic}️?/gu, "")
+    .replace(/\s+/g, " ")
+    .replace(/ ([,.;:!?])/g, "$1")
+    .trim();
+  if (!out) return "";
+  let cutStart = false;
+  if (/^[a-z]/.test(out)) {
+    const sentence = out.search(/[.!?] (?=[A-Z0-9"“(])/);
+    if (sentence >= 0 && out.length - sentence > 24) out = out.slice(sentence + 2);
+    else {
+      const space = out.indexOf(" ");
+      out = space > 0 ? out.slice(space + 1) : out;
+      cutStart = true;
+    }
+  }
+  let cutEnd = false;
+  if (!/[.!?)"”]$/.test(out)) {
+    const last = Math.max(out.lastIndexOf(". "), out.lastIndexOf("! "), out.lastIndexOf("? "));
+    if (last > 24) out = out.slice(0, last + 1);
+    else {
+      const space = out.lastIndexOf(" ");
+      out = (space > 0 ? out.slice(0, space) : out).replace(/[\s,;:(-]+$/, "");
+      cutEnd = true;
+    }
+  }
+  return `${cutStart ? "..." : ""}${out}${cutEnd ? "..." : ""}`;
+}
+
 export type DriftRead = {
   probes: ProbeEvidence[];
   answered: number;

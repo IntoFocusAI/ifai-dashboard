@@ -63,7 +63,7 @@ test("C1: profiles match the values the code hard-coded before the settings file
   const l = clientProfile("ledlenser");
   assert.deepEqual(
     [l.brandName, l.schema, l.setAsideKey, l.logoSrc, l.brandSiteLabel, l.promptsEditable, l.sellerModel, l.roadmapFocusCategory],
-    ["Ledlenser", "ledlenser", "ledlenser", "/ledlenser-logo-white.png", "ledlenser.com", false, "Brand-led", null],
+    ["Ledlenser", "ledlenser", "ledlenser", "/ledlenser-logo-white.png", "ledlenserusa.com", false, "Brand-led", null],
   );
   assert.deepEqual(l.brandSiteDomains, ["ledlenser.com", "ledlenserusa.com"]);
   assert.deepEqual([...l.defaultBuyBoxPartners], []);
@@ -118,7 +118,7 @@ test("C1: brand copy reads the settings record per call", async () => {
     resetActiveClientForTests("fender");
     assert.deepEqual([leadBrand(), leadBrandOr(), brandSite(), brandOwned()], ["Fender/Squier", "Fender or Squier", "fender.com", "Fender-owned"]);
     resetActiveClientForTests("ledlenser");
-    assert.deepEqual([leadBrand(), leadBrandOr(), brandSite(), brandOwned()], ["Ledlenser", "Ledlenser", "ledlenser.com", "Ledlenser-owned"]);
+    assert.deepEqual([leadBrand(), leadBrandOr(), brandSite(), brandOwned()], ["Ledlenser", "Ledlenser", "ledlenserusa.com", "Ledlenser-owned"]);
     resetActiveClientForTests();
     assert.equal(activeClient().key, "fender");
     assert.equal(await runWithClient("ledlenser", async () => leadBrand()), "Ledlenser");

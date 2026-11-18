@@ -286,8 +286,9 @@ test("AI freshness is the run's completion time, and partial runs say so", () =>
 
 test("client priorities come from run evidence, never pipeline work", () => {
   const items = aiPriorityItems(ready);
-  assert.deepEqual(items.map((i) => i.id), ["ai-confirmed-contradiction", "ai-competitor-gap"]);
-  const gap = items[1];
+  // Unreviewed fact-check verdicts stay on Product Fact Checks (FACT_CHECK_VERDICTS_RAISED, PM29 item 3).
+  assert.deepEqual(items.map((i) => i.id), ["ai-competitor-gap"]);
+  const gap = items[0];
   assert.match(
     gap.title,
     /Taylor out-mention Fender\/Squier in 1 of 1 resolved Unbranded Discovery acoustics answers/,

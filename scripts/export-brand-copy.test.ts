@@ -70,15 +70,15 @@ function inClient<T>(key: ClientKey, fn: () => T): Promise<T> {
   return runWithClient(key, async () => fn());
 }
 
-test("a Ledlenser fix-list download names Ledlenser and ledlenser.com, never Fender", async () => {
+test("a Ledlenser fix-list download names Ledlenser and ledlenserusa.com, never Fender", async () => {
   const text = await inClient("ledlenser", exportText);
   assert.match(text, /When someone asks what to buy without naming Ledlenser, assistants name Ledlenser this often\./);
-  assert.match(text, /Publish one ledlenser\.com page for each exact product that does not have one\./);
+  assert.match(text, /Publish one ledlenserusa\.com page for each exact product that does not have one\./);
   assert.doesNotMatch(text, /fender/i);
 
   const actions = await inClient("ledlenser", () => storedFindings().map(findingAction).join(" "));
   assert.match(actions, /Ledlenser/);
-  assert.match(actions, /ledlenser\.com/);
+  assert.match(actions, /ledlenserusa\.com/);
   assert.doesNotMatch(actions, /fender/i);
 });
 
@@ -105,7 +105,7 @@ test("brand copy reachable from the export loaders follows the request's client"
   const fender = await inClient("fender", brandCopy);
   for (const [name, text] of Object.entries(ledlenser)) {
     assert.doesNotMatch(text, /fender|squier/i, `${name} names Fender in a Ledlenser request`);
-    assert.match(text, /Ledlenser|ledlenser\.com/, `${name} names the brand`);
+    assert.match(text, /Ledlenser|ledlenserusa\.com/, `${name} names the brand`);
   }
   for (const [name, text] of Object.entries(fender)) {
     assert.doesNotMatch(text, /ledlenser/i, `${name} names Ledlenser in a Fender request`);

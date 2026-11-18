@@ -37,7 +37,7 @@ for (const client of CLIENTS) {
       await page.goto(url(client, "spoke=competitors&tab=category-battlecards"));
       const label = page.locator("[data-graph-node-id='spoke-competitors'] .node-hero-label");
       await expect(label).toHaveText(/^\S.*leads\s?\S/, { timeout: 120_000 });
-      const bubble = ((await label.textContent()) ?? "").replace(/\s/g, "");
+      const bubble = ((await label.textContent()) ?? "").replace(/\s/g, "").replace("(rivalshare)", "");
       const caption = page.locator("[data-ai-on-track-caption]");
       await expect(caption).toContainText(" leads ", { timeout: 120_000 });
       await expect(caption).not.toContainText("Behind in");

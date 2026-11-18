@@ -1,4 +1,4 @@
-import { activeClient } from "@/lib/client/active-client";
+import { activeClient, activeClientSettings } from "@/lib/client/active-client";
 import { placeholderSpecFieldSet, placeholderSpecTooltip } from "@/lib/findability/placeholder-spec-fields";
 import { leadBrand } from "@/lib/brand-copy";
 import type { ActuationScore } from "@/lib/fender-canvas/actuation-score";
@@ -228,16 +228,27 @@ export function isAuthorizedBuyBoxPartner(
   return partnerNames(partners).some((name) => name.trim().toLowerCase() === seller);
 }
 
-/** Controlled = Amazon Retail or a named authorized partner. Amazon Retail still counts when the saved list is empty. */
+/**
+ * The brand's own store holds this Buy Box: the collector's "Brand Seller" status, or a Buy Box seller id
+ * in the client's brand_seller_ids setting. Never true for a partner-led client, whose list is empty.
+ */
+export function isBrandBuyBoxSeller(row: { buybox_status?: string | null; buybox_seller_id?: string | null }): boolean {
+  if (text(row.buybox_status) === "Brand Seller") return true;
+  const id = text(row.buybox_seller_id);
+  return id != null && activeClientSettings().brand_seller_ids.includes(id);
+}
+
+/** Controlled = the brand's own store, Amazon Retail, or a named authorized partner. Amazon Retail still counts when the saved list is empty. */
 export function isControlledBuyBoxSeller(
   row: {
     buybox_status?: string | null;
     buybox_seller_name?: string | null;
+    buybox_seller_id?: string | null;
   },
   partners?: readonly string[] | null,
 ): boolean {
-  // Brand-led clients: the brand's own seller accounts (client_config.brand_seller_ids) hold it.
-  if (text(row.buybox_status) === "Brand Seller") return true;
+  // Brand-led clients: the brand's own seller accounts (brand_seller_ids) hold it.
+  if (isBrandBuyBoxSeller(row)) return true;
   return isAmazonRetailSeller(row) || isAuthorizedBuyBoxPartner(row, partners);
 }
 
@@ -264,6 +275,7 @@ export function controlledBuyBoxFinding(
   rows: Array<{
     buybox_status?: string | null;
     buybox_seller_name?: string | null;
+    buybox_seller_id?: string | null;
   }> | null,
   partners?: readonly string[] | null,
 ): ControlledBuyBoxDetail | null {
@@ -290,6 +302,8 @@ export type BuyBoxSellerChoice = {
  */
 export type BuyBoxSellerCensus = {
   amazonRetail: number;
+  /** Listings the brand's own store holds (brand-led clients). Like Amazon Retail, a count, not a checkbox name. */
+  brandStore?: number;
   sellers: BuyBoxSellerChoice[];
   known: number;
   population: number;
@@ -300,15 +314,21 @@ export function buyBoxSellerCensus(
   rows: Array<{
     buybox_status?: string | null;
     buybox_seller_name?: string | null;
+    buybox_seller_id?: string | null;
   }> | null,
 ): BuyBoxSellerCensus | null {
   if (rows == null) return null;
   const byKey = new Map<string, BuyBoxSellerChoice>();
   let amazonRetail = 0;
+  let brandStore = 0;
   let known = 0;
   for (const row of rows) {
     if (!hasKnownBuyBoxSeller(row)) continue;
     known += 1;
+    if (isBrandBuyBoxSeller(row)) {
+      brandStore += 1;
+      continue;
+    }
     if (isAmazonRetailSeller(row)) {
       amazonRetail += 1;
       continue;
@@ -322,6 +342,7 @@ export function buyBoxSellerCensus(
   }
   return {
     amazonRetail,
+    brandStore,
     sellers: [...byKey.values()].sort((a, b) => a.name.localeCompare(b.name)),
     known,
     population: rows.length,
@@ -339,7 +360,7 @@ export function controlledBuyBoxFromCensus(
     if (allowed.has(seller.name.toLowerCase())) partnerListings += seller.listings;
   }
   return {
-    controlled: census.amazonRetail + partnerListings,
+    controlled: (census.brandStore ?? 0) + census.amazonRetail + partnerListings,
     known: census.known,
     population: census.population,
   };
