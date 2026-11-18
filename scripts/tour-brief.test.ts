@@ -211,8 +211,9 @@ test("the short lines keep the live figures", () => {
   assert.match(step("specs"), /^82 exact official product pages, 1,544 family pages$/m);
   assert.match(step("specs"), /^333 No Defensible Pages, 8 ambiguous, 74 unchecked$/m);
   assert.match(step("specs"), /^14 missing-field rows are on Amazon Specs$/m);
-  assert.match(step("suggestions"), /Phase 1: .*est\./);
-  assert.match(step("suggestions"), /Enterprise: .*est\./);
+  // No estimates read in this bundle: the formula figures read Loading until it lands (H-09).
+  assert.match(step("suggestions"), /^Phase 1: Loading$/m);
+  assert.match(step("suggestions"), /^Enterprise: Loading$/m);
 });
 
 test("a failed missing-field read still says Not available* and names its source", () => {

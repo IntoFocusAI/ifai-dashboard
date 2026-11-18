@@ -53,23 +53,16 @@
   "collector_version_pin": "v11",
   "prompts_editable": true,
   "roadmap_focus_category": null,
-  "analyst_estimates": {
-    "phase_one": "+$680K",
-    "enterprise": "+$38M to $62M",
-    "phase_one_lines": [
-      { "label": "Earlier analyst estimate", "value": "+$380,000 / yr" },
-      { "label": "Conversational AI Assisted DTC Conversions", "value": "+$190,000 / yr" },
-      { "label": "Reduced Return Rates via Precise Technical Schemas", "value": "+$65,000 / yr" },
-      { "label": "Consolidated Review Synergy, Overall Pick Badges", "value": "+$45,000 / yr" }
-    ],
-    "enterprise_lines": [
-      { "label": "Earlier analyst estimate", "value": "+$25,000,000 / yr" },
-      { "label": "Generative AI Search Conversion Lift, Zero-Click & Chat Referral", "value": "+$16,500,000 / yr" },
-      { "label": "Elimination of Return Costs from Spec Hallucinations", "value": "+$5,000,000 / yr" },
-      { "label": "Cross-Marketplace MAP Governance, Amazon and Walmart", "value": "+$3,500,000 / yr" }
-    ]
+  "revenue_inputs": {
+    "annual_sales_usd": 1000000000,
+    "basis": "public_placeholder",
+    "source_title": "Fortune, Fender CEO interview",
+    "source_url": "https://fortune.com/2022/10/21/guitar-industry-fender-ceo-credits-diversity-players-pandemic-revival/",
+    "source_date": "21 Oct 2022",
+    "scope": "about $1B a year, global, all channels"
   },
   "catalog_rotation_rule": "about 90 catalog models per run, each asked once per engine, all 180 in-scope guitar and bass models every 2 runs, plus anchors p17 and p33",
+  "amazon_rank_category": "Musical Instruments",
   "category_short_labels": {
     "Electric Guitar Kits": "Kits",
     "Hollow & Semi-Hollow Body": "Hollow"

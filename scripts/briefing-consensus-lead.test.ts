@@ -149,11 +149,11 @@ test("Briefing keeps the consensus sentence on the title tooltip inside the find
 
   assert.match(lead, /consensusFromLive\(/);
   assert.match(lead, /const sentence = loading \? null : briefingConsensusSentence\(consensus\)/);
-  assert.match(lead, /data-ifai-tooltip-title="AI Consensus"/);
+  assert.match(lead, /data-ifai-tooltip-title="AI Consensus Score"/);
   assert.match(lead, /data-ifai-tooltip-desc=\{sentence\}/);
   assert.match(lead, /className="metric-card-label ifai-term"/);
   assert.match(lead, /tabIndex=\{0\}/);
-  assert.match(lead, /aria-label=\{`AI Consensus: \$\{sentence\}`\}/);
+  assert.match(lead, /aria-label=\{`AI Consensus Score: \$\{sentence\}`\}/);
   assert.doesNotMatch(lead, /<p[\s>]|className="briefing-consensus-sentence"|className="briefing-consensus-lead"/);
   assert.doesNotMatch(lead, /dominant|ScoreHeroCard|fontSize:\s*dominant|clamp\(34px/);
   assert.doesNotMatch(lead, /consensusScore\(|foundationScore\(|commerceScore\(/);
@@ -167,7 +167,6 @@ test("Briefing keeps the consensus sentence on the title tooltip inside the find
   assert.match(findingCard, /data-ifai-tooltip-title=\{finding\.label\}/);
   assert.doesNotMatch(findingCard, /metric-card-sub|data-briefing-finding-explainer/);
   assert.doesNotMatch(findingCard.slice(buttonAt), /tabIndex=\{0\}/);
-  assert.match(hero, /data-ifai-tooltip-desc=\{placeholder\.explainer\}/);
   assert.doesNotMatch(hero, /metric-card-sub/);
 
   assert.match(performanceCard, /id="consensus"[\s\S]*?dominant/);

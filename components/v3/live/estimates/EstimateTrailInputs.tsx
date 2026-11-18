@@ -70,10 +70,11 @@ export function EstimateTrailInputs({ trail }: { trail: EstimateTrail }) {
   );
 }
 
-/** Listings and annual sales by where each listing's sales figure comes from (approval 10). */
+/** Listings, annual sales and the part of the estimate by where each listing's sales figure comes from (approval 10, decision 112). */
 export function EstimateTrailSalesSplit({ trail }: { trail: EstimateTrail }) {
   const rows = salesSourceRows(trail);
   if (rows.length === 0) return null;
+  const showEstimate = rows.some((row) => row.estimate != null);
   return (
     <table className="table-sm estimate-trail-split" data-estimate-split={rows.length}>
       <thead>
@@ -81,6 +82,7 @@ export function EstimateTrailSalesSplit({ trail }: { trail: EstimateTrail }) {
           <th scope="col">Sales figure</th>
           <th scope="col" className="money">Listings</th>
           <th scope="col" className="money">Sales</th>
+          {showEstimate ? <th scope="col" className="money">Estimate</th> : null}
         </tr>
       </thead>
       <tbody>
@@ -91,6 +93,11 @@ export function EstimateTrailSalesSplit({ trail }: { trail: EstimateTrail }) {
             <td className="money">
               {row.annualSales === READ_NOT_AVAILABLE ? <NotAvailable testId="estimate-split-na" /> : row.annualSales}
             </td>
+            {showEstimate ? (
+              <td className="money" data-estimate-split-estimate="">
+                {row.estimate ?? ""}
+              </td>
+            ) : null}
           </tr>
         ))}
       </tbody>

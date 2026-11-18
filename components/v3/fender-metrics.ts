@@ -174,7 +174,7 @@ export const FENDER_METRICS = {
     get value() {
       return phaseOneLiftEstimate();
     },
-    detail: "Phase 1 annual · 14 pilot ASINs",
+    detail: "Phase 1 annual estimate",
     tone: "success",
     subTab: "Revenue Estimates",
     provenance: "estimate",

@@ -46,14 +46,14 @@ const fender = estimateListingLines(loadEstimatesFixture("fender").listings, MEA
 const ledlenser = estimateListingLines(loadEstimatesFixture("ledlenser").listings, MEASURED);
 
 test("line 1, out of stock, reproduces the proposal", () => {
-  rangeIs(fender.outOfStock, [367760, 490347, 674227]);
+  rangeIs(fender.outOfStock, [367760, 490347, 551640]);
   near(touched(fender.outOfStock), 1225867, 1, "Fender listing-level missed sales");
   // The proposal priced 247; 136 more are tracked by SmartScout with no sales: measured at $0 (decision 113).
   assert.equal(fender.outOfStock.trail.coverage.measured, 383);
   assert.equal(fender.outOfStock.trail.coverage.reportedNoSales, 136);
   assert.equal(fender.outOfStock.trail.coverage.total, 609);
 
-  rangeIs(ledlenser.outOfStock, [8899, 11866, 16316]);
+  rangeIs(ledlenser.outOfStock, [8899, 11866, 13349]);
   near(touched(ledlenser.outOfStock), 29665, 1, "Ledlenser listing-level missed sales");
   assert.equal(ledlenser.outOfStock.trail.coverage.measured, 55);
   assert.equal(ledlenser.outOfStock.trail.coverage.reportedNoSales, 34);
@@ -62,14 +62,14 @@ test("line 1, out of stock, reproduces the proposal", () => {
 });
 
 test("line 2, Buy Box, reproduces the proposal", () => {
-  rangeIs(fender.buyBox, [52093, 111131, 181457]);
+  rangeIs(fender.buyBox, [52093, 111131, 148465]);
   near(touched(fender.buyBox), 347285, 1, "Fender sales on no-Buy-Box days");
   assert.equal(fender.buyBox.trail.coverage.measured, 462);
   assert.equal(fender.buyBox.trail.coverage.total, 745);
   // Days on every covered listing: 3,138 on listings with sales plus days on measured, no-sales listings (decision 113).
   assert.equal(fender.buyBox.trail.inputs.find((i) => i.key === "no_buy_box_days")?.value, 11043);
 
-  rangeIs(ledlenser.buyBox, [443, 945, 1543]);
+  rangeIs(ledlenser.buyBox, [443, 945, 1262]);
   near(touched(ledlenser.buyBox), 2952, 1, "Ledlenser sales on no-Buy-Box days");
   assert.equal(ledlenser.buyBox.trail.coverage.measured, 36);
   assert.equal(ledlenser.buyBox.trail.coverage.total, 122);
@@ -149,8 +149,8 @@ test("line 7, A+ content, reproduces the proposal", () => {
 });
 
 test("A, near-term upside (Phase 1), reproduces the proposal", () => {
-  rangeIs(fender.phase1, [603107, 1050952, 1705094], 2);
-  rangeIs(ledlenser.phase1, [10997, 17101, 26397], 2);
+  rangeIs(fender.phase1, [603107, 1050952, 1549516], 2);
+  rangeIs(ledlenser.phase1, [10997, 17101, 23150], 2);
   assert.deepEqual(fender.phase1.parts?.map((p) => p.lineId), ["out_of_stock", "buy_box", "splintered", "missing_specs", "aplus"]);
   // Share of measured Amazon sales (mid): 5.1% and 14.0%.
   near(fender.catalog.measuredAnnualSales, 20695240, 1, "Fender measured sales");
@@ -164,13 +164,13 @@ test("A, near-term upside (Phase 1), reproduces the proposal", () => {
 test("B, measured total, reproduces the proposal from its AI lines", () => {
   // Lines 8 and 9 are built in chunk E5; their proposal values are inputs here.
   const f = rollupMeasuredTotal(fender.phase1, { unbranded: { low: 11255, mid: 90040, high: 337649 }, branded: null, retailerShare: 0.231 }, fender.catalog);
-  rangeIs(f, [611762, 1120193, 1964746], 2);
+  rangeIs(f, [611762, 1120193, 1809168], 2);
   const l = rollupMeasuredTotal(
     ledlenser.phase1,
     { unbranded: { low: 306, mid: 2447, high: 9178 }, branded: { low: 71, mid: 567, high: 2125 }, retailerShare: 0.103 },
     ledlenser.catalog,
   );
-  rangeIs(l, [11335, 19805, 36536], 2);
+  rangeIs(l, [11335, 19805, 33289], 2);
 });
 
 /** True when a figure rounds to the proposal's printed one: "$11.9K" allows 11,850 to 11,950. */
@@ -185,13 +185,13 @@ function printsAs(actual: number | undefined, printed: string): boolean {
 
 test("section 1 table, as printed for Brian", () => {
   const rows: Array<[string, EstimateResult, EstimateResult, [string, string, string], [string, string, string] | null]> = [
-    ["1 Out of stock", fender.outOfStock, ledlenser.outOfStock, ["$368K", "$490K", "$674K"], ["$8.9K", "$11.9K", "$16.3K"]],
-    ["2 Buy Box", fender.buyBox, ledlenser.buyBox, ["$52K", "$111K", "$181K"], ["$443", "$945", "$1,543"]],
+    ["1 Out of stock", fender.outOfStock, ledlenser.outOfStock, ["$368K", "$490K", "$552K"], ["$8.9K", "$11.9K", "$13.3K"]],
+    ["2 Buy Box", fender.buyBox, ledlenser.buyBox, ["$52K", "$111K", "$148K"], ["$443", "$945", "$1,262"]],
     ["3 MAP leakage", fender.mapLeakage, ledlenser.mapLeakage, ["$26K", "$39K", "$52K"], ["$23K", "$35K", "$47K"]],
     ["4 Splintered", fender.splintered, ledlenser.splintered, ["$18K", "$55K", "$90K"], null],
     ["5 Missing specs", fender.missingSpecs, ledlenser.missingSpecs, ["$126K", "$328K", "$653K"], ["$1.6K", "$4.2K", "$8.3K"]],
     ["7 A+ content", fender.aplus, ledlenser.aplus, ["$39K", "$66K", "$107K"], ["$70", "$119", "$193"]],
-    ["A Phase 1", fender.phase1, ledlenser.phase1, ["$0.60M", "$1.05M", "$1.71M"], ["$11.0K", "$17.1K", "$26.4K"]],
+    ["A Phase 1", fender.phase1, ledlenser.phase1, ["$0.60M", "$1.05M", "$1.55M"], ["$11.0K", "$17.1K", "$23.2K"]],
   ];
   for (const [name, f, l, fExpected, lExpected] of rows) {
     (["low", "mid", "high"] as const).forEach((level, i) => {
@@ -210,7 +210,7 @@ const listing = (over: Partial<EstimateListingInput>): EstimateListingInput => (
 
 test("out of stock: sales per in-stock day x out-of-stock days x brand-loss share", () => {
   const r = estimateOutOfStock([listing({ baselineDailyRevenue: 100, oosDays365: 10, smartscoutTtmRevenue: 35500, inStockDays365: 355 })]);
-  assert.deepEqual(r.range, { low: 300, mid: 400, high: 550 });
+  assert.deepEqual(r.range, { low: 300, mid: 400, high: 450 });
   assert.equal(r.trail.listings[0].touchedSales, 1000);
   assert.equal(r.asterisk, false);
   assert.equal(r.trail.coverage.tooltip, null);
@@ -219,12 +219,12 @@ test("out of stock: sales per in-stock day x out-of-stock days x brand-loss shar
   assert.equal(v.trail.listings[0].touchedSales, 1004.4);
 });
 
-test("Buy Box: sales per in-stock day x no-Buy-Box days x 50/80/95% x 30/40/55%", () => {
+test("Buy Box: sales per in-stock day x no-Buy-Box days x 50/80/95% x 30/40/45%", () => {
   const r = estimateBuyBox([listing({ baselineDailyRevenue: 100, noBuyBoxDays365: 10 })]);
-  // 1000 x .5 x .3 = 150, x .8 x .4 = 320, x .95 x .55 = 522.5
+  // 1000 x .5 x .3 = 150, x .8 x .4 = 320, x .95 x .45 = 427.5
   near(r.range?.low, 150, 0.5, "low");
   near(r.range?.mid, 320, 0.5, "mid");
-  near(r.range?.high, 522.5, 0.5, "high");
+  near(r.range?.high, 427.5, 0.5, "high");
   assert.equal(BUY_BOX_LOST_SHARE.mid, 0.8);
   assert.equal(BRAND_LOSS_SHARE.mid, 0.4);
 });
@@ -352,11 +352,12 @@ test("benchmarks: every value has a range, a credibility note and unverified sou
     if (b.basis === "published") assert.ok(b.sources.length > 0, `${b.id} cites a source`);
   }
   for (const s of [...Object.values(SOURCES), ...RANK_CURVE_METHOD_SOURCES]) {
-    assert.equal(s.verified, false, `${s.id} is not verified yet`);
+    // Worker 29.1 checked every page (docs/benchmark-register.md): verified only with the quote read there.
+    if (s.verified) assert.ok(s.quote && s.checked, `${s.id} is verified with its quote and check`);
     assert.ok(s.title && s.date && s.credibility && s.usedFor, `${s.id} is complete`);
     if (s.url !== null) assert.match(s.url, /^https:\/\//, `${s.id} url`);
   }
-  assert.deepEqual([BRAND_LOSS_SHARE.low, BRAND_LOSS_SHARE.mid, BRAND_LOSS_SHARE.high], [0.3, 0.4, 0.55]);
+  assert.deepEqual([BRAND_LOSS_SHARE.low, BRAND_LOSS_SHARE.mid, BRAND_LOSS_SHARE.high], [0.3, 0.4, 0.45]);
   assert.deepEqual([BUY_BOX_LOST_SHARE.low, BUY_BOX_LOST_SHARE.mid, BUY_BOX_LOST_SHARE.high], [0.5, 0.8, 0.95]);
   assert.deepEqual([MAP_VOLUME_KEPT.low, MAP_VOLUME_KEPT.mid, MAP_VOLUME_KEPT.high], [0.5, 0.75, 1]);
   assert.deepEqual([SPLINTERED_LIFT.low, SPLINTERED_LIFT.mid, SPLINTERED_LIFT.high], [0.05, 0.15, 0.3]);

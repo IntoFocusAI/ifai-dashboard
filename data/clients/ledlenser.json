@@ -49,7 +49,15 @@
   "collector_version_pin": null,
   "prompts_editable": false,
   "roadmap_focus_category": null,
-  "analyst_estimates": null,
+  "revenue_inputs": {
+    "annual_sales_usd": 75000000,
+    "basis": "public_placeholder",
+    "source_title": "Implisense, Ledlenser GmbH & Co. KG",
+    "source_url": "https://implisense.com/en/companies/ledlenser-gmbh-co-kg-solingen-DE5F681JSF26",
+    "source_date": "Read Nov 2026",
+    "scope": "about EUR 65M to 68M from published accounts, global, year unclear"
+  },
   "catalog_rotation_rule": null,
+  "amazon_rank_category": "Tools & Home Improvement and Sports & Outdoors",
   "category_short_labels": {}
 }

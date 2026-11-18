@@ -23,6 +23,7 @@ export type EstimateLineId =
   | "brand_site_pages" // 10 (chunk E5)
   | "ai_actuation" // 11 (chunk E5)
   | "phase_1" // A: near-term upside
+  | "monthly_potential" // Phase 1 divided by 12 (Briefing card)
   | "measured_total" // B
   | "enterprise_potential"; // C (chunk E6)
 
@@ -51,6 +52,10 @@ export type BenchmarkSource = {
   usedFor: string;
   credibility: string;
   verified: boolean;
+  /** The words on the page that support the figure, when verified. Not rendered on screen. */
+  quote?: string;
+  /** When and how the page was checked, and any correction. Not rendered on screen. */
+  checked?: string;
 };
 
 /** One benchmark value with its low, mid and high and where they come from. */

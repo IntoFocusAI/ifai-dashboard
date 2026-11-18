@@ -47,8 +47,9 @@ test("H-07: each score reads against target 70 as whole points", () => {
   assert.equal(CONSENSUS_SCORE_TARGET, 70);
   assert.equal(scoreFigure(41.4), "41");
   assert.equal(scoreFigure(null), "Not available");
-  assert.equal(scoreTargetLabel(), "vs target 70");
-  assert.equal(scoreAgainstTarget(41.4), "41 vs target 70");
+  // Worker 29.10 (Brian, 18 Nov 2026): the score reads out of 100, with "Target 70" below it.
+  assert.equal(scoreTargetLabel(), "Target 70");
+  assert.equal(scoreAgainstTarget(41.4), "41/100, target 70");
   assert.equal(scoreAgainstTarget(null), null);
 });
 
