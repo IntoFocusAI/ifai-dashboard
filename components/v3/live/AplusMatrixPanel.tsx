@@ -4,6 +4,7 @@ import { useState } from "react";
 import { HeroBand } from "@/components/v3/live/HeroBand";
 import { ListingContentTable } from "@/components/v3/live/ListingContentTable";
 import { ShareHeroCard } from "@/components/v3/live/ShareHeroCard";
+import { EstimateLineCard } from "@/components/v3/live/estimates/EstimateLineFigure";
 import {
   listingContentHeroes,
   type ContentHeroId,
@@ -41,16 +42,21 @@ export function AplusMatrixPanel({ summary }: { summary: ListingContentSummary |
     <div className="readiness-surface" data-aplus-matrix="">
       <HeroBand
         bandAttrs={{ "data-aplus-matrix-lead": "" }}
-        heroes={heroes.map((hero) => (
-          <ShareHeroCard
-            key={hero.id}
-            hero={hero}
-            dataAttr="data-content-hero"
-            open={openTable === hero.id}
-            onToggle={() => toggle(hero.id as ContentHeroId)}
-            controls={CONTENT_TABLE_ID}
-          />
-        ))}
+        heroes={
+          <>
+            {heroes.map((hero) => (
+              <ShareHeroCard
+                key={hero.id}
+                hero={hero}
+                dataAttr="data-content-hero"
+                open={openTable === hero.id}
+                onToggle={() => toggle(hero.id as ContentHeroId)}
+                controls={CONTENT_TABLE_ID}
+              />
+            ))}
+            <EstimateLineCard lineId="aplus" />
+          </>
+        }
         notes={<AplusNotes />}
       />
 

@@ -4,7 +4,10 @@ import { useCallback } from "react";
 import { ResizableTable, type RetailColumn } from "@/components/v3/live/ResizableTable";
 import { useAiExportScope } from "@/components/v3/live/ai-search/useAiExport";
 import { PlanAction, PlanEvidence, PlanFigure, PlanStatus } from "@/components/v3/live/RoadmapPlanParts";
+import { FixRowEstimate } from "@/components/v3/live/estimates/EstimateLineFigure";
+import { useClientEstimates } from "@/components/v3/live/estimates/useClientEstimates";
 import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
+import { fixRowEstimate } from "@/lib/fender-canvas/action-items-fix-list";
 import { phaseWindow } from "@/lib/fender-canvas/roadmap-dates";
 import { PLAN_PHASES, phaseLabel, type PlanItem } from "@/lib/fender-canvas/roadmap-plan";
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
@@ -15,6 +18,7 @@ const COLUMNS: RetailColumn[] = [
   { id: "rank", name: "#", label: "#", width: 48, minWidth: 48, sort: "number" },
   { id: "action", name: "What to fix", label: "What to fix", width: 420, minWidth: 240, sort: "text" },
   { id: "finding", name: "Finding", label: "Finding", width: 220, minWidth: 170, sort: "number" },
+  { id: "estimate", name: "Estimate", label: "Estimate", width: 116, minWidth: 104, sort: "number" },
   { id: "status", name: "Status", label: "Status", width: 120, minWidth: 104, sort: "text" },
   { id: "phase", name: "Phase", label: "Phase", width: 104, minWidth: 104, sort: "number" },
   { id: "evidence", name: "Evidence", label: "Evidence", width: 220, minWidth: 180, sort: "text" },
@@ -36,10 +40,16 @@ const rowKey = (item: PlanItem) => item.id;
  * the toolbar searches and counts rows. Rows are not clickable; the evidence button opens the tab.
  */
 export function ActionItemsFixTable({ plan, today }: { plan: readonly PlanItem[]; today: Date }) {
+  // The shared per-listing estimates (one read per page load); each row adds its line's listings.
+  const estimates = useClientEstimates();
   const sortValue = useCallback((item: PlanItem, columnId: string): SortInput => {
     if (columnId === "rank") return item.rank;
     if (columnId === "action") return `${item.kind === "finding" ? "" : `${item.fact} `}${item.action}`;
     if (columnId === "finding") return shareOf(item);
+    if (columnId === "estimate") {
+      const figure = estimates.phase === "ready" ? fixRowEstimate(item.id, estimates.estimates) : null;
+      return figure?.range ? figure.range.mid : null;
+    }
     if (columnId === "status") return item.statusLabel;
     if (columnId === "phase") {
       const index = PLAN_PHASES.findIndex((phase) => phase.id === item.phase);
@@ -47,7 +57,7 @@ export function ActionItemsFixTable({ plan, today }: { plan: readonly PlanItem[]
     }
     if (columnId === "evidence") return item.open.tab;
     return null;
-  }, []);
+  }, [estimates]);
   const sorted = useClientTableSort(plan, COLUMNS, sortValue, rowKey);
   // The date pill and engine switch, so the download reads the window the screen reads.
   const exportScope = useAiExportScope() ?? undefined;
@@ -76,6 +86,9 @@ export function ActionItemsFixTable({ plan, today }: { plan: readonly PlanItem[]
               <div className="plan-cell-label">{item.label}</div>
               {item.siteType ? <div className="plan-cell-sub">{item.siteType}</div> : null}
               <PlanFigure item={item} />
+            </td>
+            <td className="money" data-fix-estimate-cell="">
+              <FixRowEstimate itemId={item.id} read={estimates} />
             </td>
             <td>
               <PlanStatus item={item} />

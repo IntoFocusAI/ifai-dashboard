@@ -5,6 +5,7 @@ import { AmazonSpecsLastChecked } from "@/components/v3/live/AmazonSpecsLastChec
 import { AmazonSpecsRequiredFields } from "@/components/v3/live/AmazonSpecsRequiredFields";
 import { FenderSpecPanel, MissingFieldList, useAmazonSpecRows } from "@/components/v3/live/FenderSpecPanel";
 import { HeroBand } from "@/components/v3/live/HeroBand";
+import { EstimateLineCard } from "@/components/v3/live/estimates/EstimateLineFigure";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
 
 /**
@@ -20,7 +21,12 @@ export function CatalogReadinessSpec({ bundle }: { bundle: CanvasBundle }) {
       <HeroBand
         bandAttrs={{ "data-amazon-specs-band": "" }}
         heroesAttrs={{ "data-amazon-specs-hero-col": "" }}
-        heroes={<AiReadinessLead bundle={bundle} specRows={specRows} />}
+        heroes={
+          <>
+            <AiReadinessLead bundle={bundle} specRows={specRows} />
+            <EstimateLineCard lineId="missing_specs" />
+          </>
+        }
         notes={
           <>
             <AmazonSpecsLastChecked read={specRows} />
