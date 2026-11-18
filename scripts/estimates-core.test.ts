@@ -352,7 +352,8 @@ test("benchmarks: every value has a range, a credibility note and unverified sou
     if (b.basis === "published") assert.ok(b.sources.length > 0, `${b.id} cites a source`);
   }
   for (const s of [...Object.values(SOURCES), ...RANK_CURVE_METHOD_SOURCES]) {
-    assert.equal(s.verified, false, `${s.id} is not verified yet`);
+    // Worker 29.1 checked every page (docs/benchmark-verification.md): verified only with the quote read there.
+    if (s.verified) assert.ok(s.quote && s.checked, `${s.id} is verified with its quote and check`);
     assert.ok(s.title && s.date && s.credibility && s.usedFor, `${s.id} is complete`);
     if (s.url !== null) assert.match(s.url, /^https:\/\//, `${s.id} url`);
   }
