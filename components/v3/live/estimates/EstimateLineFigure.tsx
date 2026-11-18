@@ -92,10 +92,16 @@ export function FixRowEstimate({ itemId, read }: { itemId: string; read: ClientE
   const figure = read.phase === "ready" ? fixRowEstimate(itemId, read.estimates) : null;
   if (read.phase === "ready" && !figure) return null;
   return (
-    <span className="estimate-row-figure" data-fix-estimate={figure?.status ?? read.phase}>
+    <span
+      className="estimate-row-figure"
+      data-fix-estimate={figure?.status ?? read.phase}
+      style={{ display: "inline-flex", flexDirection: "column", alignItems: "flex-start", gap: 2, maxWidth: "100%" }}
+    >
       {figure?.status === "estimated" && figure.range ? (
         <>
-          <MidButton line={figure.line} range={figure.range} />
+          <span style={{ whiteSpace: "nowrap" }}>
+            <MidButton line={figure.line} range={figure.range} />
+          </span>
           <span className="estimate-trail-trigger-label">{FIX_ESTIMATE_LABEL}</span>
         </>
       ) : (

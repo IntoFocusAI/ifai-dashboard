@@ -87,7 +87,7 @@ export function ActionItemsFixTable({ plan, today }: { plan: readonly PlanItem[]
               {item.siteType ? <div className="plan-cell-sub">{item.siteType}</div> : null}
               <PlanFigure item={item} />
             </td>
-            <td className="money" data-fix-estimate-cell="">
+            <td data-fix-estimate-cell="">
               <FixRowEstimate itemId={item.id} read={estimates} />
             </td>
             <td>

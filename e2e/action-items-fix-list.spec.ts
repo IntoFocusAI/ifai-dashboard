@@ -66,7 +66,8 @@ test.describe("Action Items opens on the prioritized fix list", () => {
     await openUrgentInterventions(page, baseURL);
     const list = page.locator(".drilldown-panel [data-fix-list]");
     await expect(list.locator('[data-table-toolbar="action-items-fixes"]')).toBeVisible();
-    await expect(list.locator("th .ifai-sort-btn")).toHaveCount(6);
+    // #, What to fix, Finding, Estimate (E4), Status, Phase, Evidence.
+    await expect(list.locator("th .ifai-sort-btn")).toHaveCount(7);
     await expect(list).toHaveAttribute("data-fix-sources", "ready", { timeout: 90_000 });
     const extra = list.locator('[data-fix-row]:not([data-fix-kind="finding"])');
     for (const row of await extra.all()) {
