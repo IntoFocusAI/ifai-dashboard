@@ -182,10 +182,12 @@ test("findability and AI slots keep their denominators", () => {
   assert.equal(exact.figure, "2");
   assert.equal(exact.chart?.total, 6);
   assert.equal(pagesGap.chart?.part, 4);
+  assert.equal(pagesGap.chart?.unit, undefined);
   assert.match(exact.detail, /1 family page/);
   const [aiGap, branded] = feeds["spoke-aeo"].slots;
   assert.equal(aiGap.chart?.total, 2);
   assert.equal(aiGap.chart?.part, 1);
+  assert.equal(aiGap.chart?.unit, "answers");
   assert.match(aiGap.detail, /1 of 2/);
   assert.equal(branded.chart?.part, 2);
   assert.equal(branded.chart?.total, 2);

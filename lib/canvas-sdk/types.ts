@@ -177,6 +177,8 @@ export type HubSlotChart = {
   total: number;
   partLabel: string;
   restLabel: string;
+  /** Plural noun for the total, shown as "of {total} {unit}". Defaults to "listings". */
+  unit?: string;
 };
 
 export type HubSlot = {

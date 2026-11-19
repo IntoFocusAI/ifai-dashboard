@@ -41,10 +41,16 @@ function statusWord(tone: NodeStatus): string {
   return "Recorded";
 }
 
-function share(part: number, total: number, partLabel: string, restLabel: string): HubSlotChart | null {
+function share(
+  part: number,
+  total: number,
+  partLabel: string,
+  restLabel: string,
+  unit?: string,
+): HubSlotChart | null {
   if (!Number.isInteger(part) || !Number.isInteger(total)) return null;
   if (total <= 0 || part < 0 || part > total) return null;
-  return { part, total, partLabel, restLabel };
+  return unit ? { part, total, partLabel, restLabel, unit } : { part, total, partLabel, restLabel };
 }
 
 function slot(input: Omit<HubSlot, "statusWord">): HubSlot {
@@ -212,6 +218,7 @@ function rateSlot(
       resolved,
       role === "gap" ? `${brandName()} did not lead` : `${brandName()} led`,
       role === "gap" ? `${brandName()} led` : `${brandName()} did not lead`,
+      "answers",
     ),
     spokeId,
     subTab,

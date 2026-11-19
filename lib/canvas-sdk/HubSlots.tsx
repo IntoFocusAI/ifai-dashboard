@@ -36,7 +36,7 @@ function SlotChart({ chart }: { chart: HubSlotChart }) {
         role="img"
         aria-label={`${chart.part} ${chart.partLabel}. ${rest} ${chart.restLabel}. Total ${chart.total}.`}
       />
-      <span>of {formatInt(chart.total)} listings</span>
+      <span>of {formatInt(chart.total)} {chart.unit ?? "listings"}</span>
     </div>
   );
 }
