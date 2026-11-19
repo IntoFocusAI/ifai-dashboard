@@ -1,7 +1,7 @@
 import type { HubSlot, HubSlotChart, HubSlotFeed, HubSlotRole, NodeStatus, PriorityItem } from "@/lib/canvas-sdk/types";
 import { strongestCategory } from "@/lib/ai-search/canvas-surfaces";
 import { categoryBattles } from "@/lib/ai-search/competitors";
-import { pct, summarizeRun } from "@/lib/ai-search/summary";
+import { pct, summarizeRun, UNBRANDED_RATE_BANDS } from "@/lib/ai-search/summary";
 import type { AiSearchRead } from "@/lib/ai-search/types";
 import { categoryLabel } from "@/lib/ai-search/run-metrics";
 import { findabilityWidgetCopy, type FindabilityRead } from "@/lib/findability/copy";
@@ -242,8 +242,20 @@ function aiPair(ai: AiSearchRead): [HubSlot, HubSlot] {
   }
   const summary = summarizeRun(ai.snapshot);
   const note = `Published run · ${summary.completedAt}`;
+  // Both cards take the AI Search Visibility bubble's tone: the unbranded wins share against the same bands.
+  const { fenderWins, resolved } = summary.roles.unbranded;
+  const winsPct = resolved > 0 ? (100 * fenderWins) / resolved : null;
+  const bandTone: NodeStatus | null =
+    winsPct == null
+      ? null
+      : winsPct < UNBRANDED_RATE_BANDS.redBelow
+        ? "danger"
+        : winsPct > UNBRANDED_RATE_BANDS.greenAbove
+          ? "success"
+          : "warning";
+  const withBand = (card: HubSlot): HubSlot => (bandTone && card.tone !== "neutral" ? { ...card, tone: bandTone } : card);
   return [
-    rateSlot(
+    withBand(rateSlot(
       "gap",
       `Unbranded answers ${brandName()} did not lead`,
       summary.roles.unbranded.fenderWins,
@@ -251,8 +263,8 @@ function aiPair(ai: AiSearchRead): [HubSlot, HubSlot] {
       note,
       "aeo",
       "Run Summary",
-    ),
-    rateSlot(
+    )),
+    withBand(rateSlot(
       "opportunity",
       "Branded Consideration",
       summary.roles.branded.fenderWins,
@@ -260,7 +272,7 @@ function aiPair(ai: AiSearchRead): [HubSlot, HubSlot] {
       note,
       "aeo",
       "Run Summary",
-    ),
+    )),
   ];
 }
 

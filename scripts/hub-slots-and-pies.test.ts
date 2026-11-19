@@ -196,6 +196,39 @@ test("findability and AI slots keep their denominators", () => {
   assert.equal(aiAction.spokeId, "aeo");
 });
 
+test("AI Search cards follow the unbranded bubble bands", () => {
+  const withWins = (wins: number, total: number): AiSearchRead => {
+    const ai = readyAi();
+    if (ai.phase !== "ready") throw new Error("ready read expected");
+    const branded = call({ id: "b1", sim_id: 3, prompt: "Is the Fender Stratocaster a good first guitar", outcome: "fender_win" });
+    const calls = Array.from({ length: total }, (_, i) =>
+      call({
+        id: `x${i}`,
+        sim_id: 100 + i,
+        prompt: `Best guitar number ${i}`,
+        outcome: i < wins ? "fender_win" : "competitor_win",
+        primary_brand: i < wins ? "Fender/Squier" : "Yamaha",
+      }),
+    );
+    return { ...ai, snapshot: { ...ai.snapshot, calls: [...calls, branded] } };
+  };
+  const tones = (wins: number, total: number) => {
+    const feeds = buildHubSlots({
+      suppressed: "loading",
+      ai: withWins(wins, total),
+      findability: { phase: "loading" },
+      missingSpecPages: 0,
+      phaseOneValue: "+$680K",
+      phaseOneDetail: "Phase 1 annual estimate",
+      commandItems: [],
+    });
+    return feeds["spoke-aeo"].slots.slice(0, 2).map((s) => s.tone);
+  };
+  assert.deepEqual(tones(1, 5), ["danger", "danger"]);
+  assert.deepEqual(tones(1, 2), ["warning", "warning"]);
+  assert.deepEqual(tones(4, 5), ["success", "success"]);
+});
+
 test("citation pies use the same totals as the tables", () => {
   const calls = [
     call({ id: "u1", sim_id: 1 }),
