@@ -62,7 +62,7 @@ function MidButton({ line, range, className }: { line: EstimateResult; range: Es
         data-estimate-trigger={line.lineId}
         data-estimate-mid={Math.round(range.mid)}
       >
-        <span className="estimate-trail-trigger-figure">{formatMoneyShort(range.mid)}</span>
+        <span className="estimate-trail-trigger-figure estimate-trail-trigger-figure-gain">{formatMoneyShort(range.mid)}</span>
       </button>
       {line.asterisk ? (
         <span {...figureTipAttrs("Partial coverage", coverageShortText(line.trail), "estimate-line-partial")} className="ifai-term partial-figure-mark">
