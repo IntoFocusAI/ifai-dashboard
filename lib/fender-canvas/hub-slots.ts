@@ -5,6 +5,7 @@ import { pct, summarizeRun } from "@/lib/ai-search/summary";
 import type { AiSearchRead } from "@/lib/ai-search/types";
 import { categoryLabel } from "@/lib/ai-search/run-metrics";
 import { findabilityWidgetCopy, type FindabilityRead } from "@/lib/findability/copy";
+import { EXACT_PAGE_SHARE_BANDS, outcomeSharePct } from "@/lib/findability/lead";
 import { countFindability } from "@/lib/findability/outcomes";
 import { formatInt } from "@/lib/fender-canvas/format";
 import type { SuppressionDetail } from "@/lib/fender-canvas/portfolio-retail";
@@ -280,7 +281,7 @@ function findabilityPair(read: FindabilityRead): [HubSlot, HubSlot] {
         chart: null,
         ...base,
       });
-    return [make("gap", "Listings without an exact official page"), make("opportunity", "Exact official product pages")];
+    return [make("gap", "Listings not matched to an exact official page"), make("opportunity", "Listings matched to an exact official page")];
   }
   const counts = countFindability(read.rows);
   if (counts.total === 0) {
@@ -295,29 +296,36 @@ function findabilityPair(read: FindabilityRead): [HubSlot, HubSlot] {
         chart: null,
         ...base,
       });
-    return [make("gap", "Listings without an exact official page"), make("opportunity", "Exact official product pages")];
+    return [make("gap", "Listings not matched to an exact official page"), make("opportunity", "Listings matched to an exact official page")];
   }
   const exact = counts.exact_official_product;
   const other = counts.total - exact;
+  const sharePct = outcomeSharePct(counts, "exact_official_product") ?? 0;
+  const tone: NodeStatus =
+    sharePct < EXACT_PAGE_SHARE_BANDS.redBelow
+      ? "danger"
+      : sharePct > EXACT_PAGE_SHARE_BANDS.greenAbove
+        ? "success"
+        : "warning";
   return [
     slot({
       role: "gap",
       figure: formatInt(other),
-      label: "Listings without an exact official page",
+      label: "Listings not matched to an exact official page",
       detail: `${formatInt(other)} of ${formatInt(counts.total)} listings in the official-page read`,
       note: "A family page is not an exact product page.",
-      tone: other > 0 ? "warning" : "success",
-      chart: share(other, counts.total, "Not an exact page", "Exact official page"),
+      tone,
+      chart: share(other, counts.total, "Not matched", "Matched"),
       ...base,
     }),
     slot({
       role: "opportunity",
       figure: formatInt(exact),
-      label: "Exact official product pages",
+      label: "Listings matched to an exact official page",
       detail: findabilityWidgetCopy(read).detail,
       note: "Official-page read. A family page is not an exact page.",
-      tone: exact > 0 ? "success" : "warning",
-      chart: share(exact, counts.total, "Exact official page", "Other outcomes"),
+      tone,
+      chart: share(exact, counts.total, "Matched", "Not matched"),
       ...base,
     }),
   ];
