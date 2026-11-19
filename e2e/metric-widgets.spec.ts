@@ -7,8 +7,11 @@ test.describe("bubble signal slots", () => {
     await expect(page.getByRole("dialog", { name: /Choose metric/ })).toHaveCount(0);
 
     await page.locator("[data-graph-node-id='hub']").focus();
+    await expect(page.locator("[data-hub-slot]")).toHaveCount(0);
+
+    await page.locator("[data-graph-node-id='spoke-specs']").focus();
     await expect(page.locator("[data-hub-slot]")).toHaveCount(3);
-    await expect(page.locator("[data-hub-slot-source]")).toHaveText("Summary");
+    await expect(page.locator("[data-hub-slot-source]")).toHaveText("AI Readiness");
 
     for (const viewport of [
       { width: 1600, height: 950 },

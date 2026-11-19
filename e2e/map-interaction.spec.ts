@@ -44,6 +44,9 @@ async function parkingSpot(page: Page) {
   });
 }
 
+// Only the four data bubbles open side cards.
+const CARD_BUBBLES = ["spoke-retail", "spoke-aeo", "spoke-specs", "spoke-competitors"];
+
 test.describe("map hover", () => {
   test("pointing at a bubble opens its signal slots in the same frame", { tag: "@1440" }, async ({ canvas, page }) => {
     const park = await parkingSpot(page);
@@ -75,6 +78,10 @@ test.describe("map hover", () => {
     const arrivals = await page.evaluate(() => (window as unknown as { __arrivals: { id: string; source: string | null }[] }).__arrivals);
     expect(arrivals.map((arrival) => arrival.id)).toEqual(MAIN_BUBBLES);
     for (const [index, arrival] of arrivals.entries()) {
+      if (!CARD_BUBBLES.includes(arrival.id)) {
+        expect(arrival.source, `${arrival.id} should show no cards`).toBeNull();
+        continue;
+      }
       expect(arrival.source, `${arrival.id} had no slots in its first frame`).not.toBeNull();
       if (index > 0) expect(arrival.source, `${arrival.id} still showed the last bubble's slots`).not.toBe(arrivals[index - 1].source);
     }
@@ -235,7 +242,7 @@ test.describe.skip("custom cursor", () => {
   });
 
   test("only one cursor shows, and the reticle stacks above every overlay", async ({ canvas, page }) => {
-    const points = [await center(canvas, "hub"), await center(canvas, "spoke-retail"), { x: 1100, y: 20 }];
+    const points = [await center(canvas, "spoke-retail"), await center(canvas, "spoke-aeo"), { x: 1100, y: 20 }];
     await page.mouse.move(points[0].x, points[0].y);
     await expect(page.locator("[data-hub-slots]")).toBeVisible();
     const slot = (await page.locator(".hub-slot").first().boundingBox())!;
