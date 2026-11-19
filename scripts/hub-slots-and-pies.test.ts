@@ -137,6 +137,37 @@ test("retail slots use one population and name a danger in words", () => {
   assert.equal(feeds.hub.title, "Summary");
 });
 
+function specsSlots(rows: FindabilityRow[]) {
+  const feeds = buildHubSlots({
+    suppressed: "loading",
+    ai: { phase: "loading" },
+    findability: { phase: "ready", rows, dealerBundleLoaded: true },
+    missingSpecPages: 4,
+    phaseOneValue: "+$680K",
+    phaseOneDetail: "Phase 1 annual estimate",
+    commandItems: [],
+  });
+  return feeds["spoke-specs"].slots;
+}
+
+test("findability cards follow the exact-page share bands", () => {
+  const rows = (exact: number, total: number) =>
+    Array.from({ length: total }, (_, i) => ({
+      latest_state: i < exact ? "exact_official_product" : "completed_not_found",
+    })) as FindabilityRow[];
+  const [lowGap, lowExact] = specsSlots(rows(1, 12));
+  assert.equal(lowGap.tone, "danger");
+  assert.equal(lowExact.tone, "danger");
+  const [midGap, midExact] = specsSlots(rows(4, 12));
+  assert.equal(midGap.tone, "warning");
+  assert.equal(midExact.tone, "warning");
+  const [highGap, highExact] = specsSlots(rows(10, 12));
+  assert.equal(highGap.tone, "success");
+  assert.equal(highExact.tone, "success");
+  assert.equal(lowGap.label, "Listings not matched to an exact official page");
+  assert.equal(lowExact.label, "Listings matched to an exact official page");
+});
+
 test("findability and AI slots keep their denominators", () => {
   const feeds = buildHubSlots({
     suppressed: "loading",
