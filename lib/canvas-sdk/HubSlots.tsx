@@ -1,5 +1,8 @@
 "use client";
 
+import { StatusGlyph } from "@/components/v3/live/StatusMark";
+import { dataStatusFromNode } from "@/lib/canvas-sdk/data-status";
+import { formatInt } from "@/lib/fender-canvas/format";
 import type { HubSlot, HubSlotChart, HubSlotFeed, HubSlotRole } from "@/lib/canvas-sdk/types";
 
 const ROLE_LABEL: Record<HubSlotRole, string> = {
@@ -33,16 +36,13 @@ function SlotChart({ chart }: { chart: HubSlotChart }) {
         role="img"
         aria-label={`${chart.part} ${chart.partLabel}. ${rest} ${chart.restLabel}. Total ${chart.total}.`}
       />
-      <span>
-        {chart.part} {chart.partLabel}
-        <br />
-        {rest} {chart.restLabel}
-      </span>
+      <span>of {formatInt(chart.total)} listings</span>
     </div>
   );
 }
 
 function SlotCard({ slot, onOpen }: { slot: HubSlot; onOpen: Props["onOpen"] }) {
+  const mark = dataStatusFromNode(slot.tone);
   return (
     <button
       type="button"
@@ -52,16 +52,22 @@ function SlotCard({ slot, onOpen }: { slot: HubSlot; onOpen: Props["onOpen"] }) 
       onClick={() => onOpen(slot.spokeId, slot.subTab)}
     >
       <span className="hub-slot-role">{ROLE_LABEL[slot.role]}</span>
-      <span className="hub-slot-status" data-hub-slot-status>
-        {slot.statusWord}
-      </span>
-      <span className="hub-slot-figure" data-hub-slot-figure>
-        {slot.figure}
+      <span className="hub-slot-figure-row">
+        <span className="hub-slot-figure" data-hub-slot-figure>
+          {slot.figure}
+        </span>
+        {mark ? (
+          <span className="hub-slot-glyph">
+            <StatusGlyph status={mark} />
+          </span>
+        ) : null}
+        <span className="hub-slot-status" data-hub-slot-status>
+          {slot.statusWord}
+        </span>
       </span>
       <span className="hub-slot-label">{slot.label}</span>
-      <span className="hub-slot-detail">{slot.detail}</span>
-      {slot.chart ? <SlotChart chart={slot.chart} /> : null}
-      {slot.note ? <span className="hub-slot-note">{slot.note}</span> : null}
+      {slot.chart ? <SlotChart chart={slot.chart} /> : <span className="hub-slot-detail">{slot.detail}</span>}
+      {slot.note?.startsWith("Analyst estimate") ? <span className="hub-slot-note">{slot.note}</span> : null}
     </button>
   );
 }
