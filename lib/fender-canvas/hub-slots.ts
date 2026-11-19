@@ -440,34 +440,6 @@ function aiBubbleAction(input: HubSlotInput, aiGap: HubSlot): HubSlot {
   });
 }
 
-function estimateOpportunity(input: HubSlotInput): HubSlot {
-  return slot({
-    role: "opportunity",
-    figure: input.phaseOneValue,
-    label: "Recoverable Revenue",
-    detail: input.phaseOneDetail,
-    note: "Analyst estimate.",
-    tone: "success",
-    chart: null,
-    spokeId: "suggestions",
-    subTab: "Revenue Estimates",
-  });
-}
-
-function exampleGap(): HubSlot {
-  return slot({
-    role: "gap",
-    figure: "Example",
-    label: "No live gap on this bubble",
-    detail: "Strategy Roadmap is a visual example until a live plan is stored.",
-    note: "Not a live reading.",
-    tone: "neutral",
-    chart: null,
-    spokeId: "roadmap",
-    subTab: "30-60-90 Days",
-  });
-}
-
 function feed(bubbleId: string, title: string, slots: [HubSlot, HubSlot, HubSlot]): HubSlotFeed {
   return { bubbleId, title, slots };
 }
@@ -498,46 +470,11 @@ export function buildHubSlots(input: HubSlotInput): Record<string, HubSlotFeed> 
     label: "Open Category Battlecards",
     detail: "Unbranded Discovery only.",
   });
-  const queueAction = actionSlot(input.commandItems[0], "Open", openAction);
-  const secondAction = actionSlot(input.commandItems[1], "Next", queueAction);
-  const roadmapAction = actionSlot(undefined, "Open", {
-    ...openAction,
-    spokeId: "roadmap",
-    subTab: "30-60-90 Days",
-    label: "30-60-90 Day Milestones",
-    detail: "The phases are a plan, not a measured result.",
-    note: "Not a live reading.",
-  });
 
   return {
-    hub: feed("hub", "Summary", [retailGap, aiLead, queueAction]),
     "spoke-retail": feed("spoke-retail", "Catalog Health", [retailGap, retailOutside, retailAction]),
     "spoke-aeo": feed("spoke-aeo", "AI Search Visibility", [aiGap, aiLead, aiAction]),
     "spoke-specs": feed("spoke-specs", "AI Readiness", [pagesGap, exactPages, specAction(input, openAction)]),
     "spoke-competitors": feed("spoke-competitors", "Competitive Radar", [categoryGap, categoryLead, radarAction]),
-    "spoke-fixes": feed("spoke-fixes", "Action Items", [
-      {
-        ...queueAction,
-        role: "gap",
-        note: "Dollar figures are analyst estimates.",
-      },
-      estimateOpportunity(input),
-      secondAction,
-    ]),
-    "spoke-roadmap": feed("spoke-roadmap", "Strategy Roadmap", [
-      exampleGap(),
-      slot({
-        role: "opportunity",
-        figure: "3 phases",
-        label: "90-day plan",
-        detail: "MAP, catalog nesting, and estimated lift.",
-        note: "The phases are a plan, not a measured result.",
-        tone: "neutral",
-        chart: null,
-        spokeId: "roadmap",
-        subTab: "30-60-90 Days",
-      }),
-      { ...roadmapAction, role: "action" },
-    ]),
   };
 }

@@ -73,7 +73,7 @@ function SlotCard({ slot, onOpen }: { slot: HubSlot; onOpen: Props["onOpen"] }) 
 }
 
 export function HubSlots({ feeds, bubbleId, onOpen }: Props) {
-  const feed = feeds[bubbleId] ?? feeds.hub;
+  const feed = feeds[bubbleId];
   if (!feed) return null;
   return (
     <section className="hub-slots" aria-label="Bubble signals" data-hub-slots>

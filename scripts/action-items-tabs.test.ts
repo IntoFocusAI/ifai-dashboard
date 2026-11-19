@@ -64,10 +64,11 @@ test("links that opened Interactive ROI now open Revenue Estimates", () => {
   const canvas = read("lib/fender-canvas/build-canvas-spec.tsx");
   const destinations = read("scripts/metric-widget-destinations.test.ts");
 
-  for (const source of [metrics, live, slots]) {
+  for (const source of [metrics, live]) {
     assert.doesNotMatch(source, /Interactive ROI Model/);
     assert.match(source, /subTab:\s*"Revenue Estimates"/);
   }
+  assert.doesNotMatch(slots, /Interactive ROI Model/);
   assert.match(canvas, /subTab:\s*"Revenue Estimates"/);
   assert.doesNotMatch(canvas, /subTab:\s*"roi"/);
   assert.match(destinations, /"phase-one-lift": "Revenue Estimates"/);
