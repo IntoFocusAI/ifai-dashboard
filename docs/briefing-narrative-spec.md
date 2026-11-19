@@ -1,0 +1,127 @@
+# Briefing narrative: "What this means for {brand}"
+
+PM30 proposal for Brian Magazu, 19 Nov 2026. Replaces the Briefing box "What is
+changing what AI assistants recommend for {brand}?" (`components/v3/live/BriefingAiLead.tsx`,
+decision 110, FDD H-09). Ships only after Brian approves the sentence table below.
+
+## Purpose
+
+Tell an executive who knows nothing about ecommerce or AI search what the dashboard's
+figures mean for the business, in four short paragraphs. Every sentence is chosen from
+live data by rule, so the box changes when the client's numbers change. No hand-written
+prose per client, no code that branches on a client name (X-35).
+
+## Placement and shape
+
+Summary › Briefing, below the hero cards, where the current box sits. Title:
+**What this means for {brand}**. Four blocks, each one bold lead sentence and at most two
+plain sentences. One "→ Action Items" link at the end. Dollar figures keep "analyst
+estimate" and open to their inputs. Caveats live in tooltips (standing rule).
+
+The active-offers paragraph and the selling-model line leave the Briefing. The selling
+model becomes the tooltip on the Buy Box Withheld hero card. Active offers stays in
+Catalog Health, where it already appears.
+
+## Inputs (all already computed)
+
+| Input | Source | Fender today |
+| --- | --- | --- |
+| Unbranded wins / resolved | `summarizeRun(ai).roles.unbranded` | 2,998 of 4,978 (60.2%) |
+| Branded wins / resolved | `summarizeRun(ai).roles.branded` | 3,012 of 3,211 (93.8%) |
+| Owned cited links / all cited links | `citationOwnedLinksLead` | 6,404 of 36,289 (17.6%) |
+| Exact official pages / listings | `countFindability` | 92 of 1,091 (8.4%) |
+| Listings missing Amazon specs | estimate line `missingSpecs` coverage | 519 |
+| Buy Box withheld / listings | retail read | 60 of 1,173 (5.1%) |
+| Splintered bundles / bundles | retail read | 38 of 330 (11.5%) |
+| MAP leakage offers / offers | retail read | 187 of 633 (29.5%) |
+| Monthly estimate and range | Phase 1 ÷ 12 (`lib/estimates/monthly.ts`) | $102K, $55.7K to $158K |
+| Top action | `commandItems[0]` (Priorities order) | Publish one fender.com page per exact product |
+| Bands | `UNBRANDED_RATE_BANDS` 30/65, `BRANDED_RATE_BANDS` 70/90, `EXACT_PAGE_SHARE_BANDS` 25/60, `AMAZON_SPEC_BANDS` 95/98 | |
+
+## Sentence table
+
+`N in 10` is the wins share rounded to the nearest tenth; "{brand}" is the brand name.
+
+### Block 1: the answer shoppers get
+
+| State | Lead sentence |
+| --- | --- |
+| Unbranded share above 65 | **When a shopper asks an AI assistant what to buy, {brand} is usually the answer: {N} times in 10.** |
+| 30 to 65 | **When a shopper asks an AI assistant what to buy, {brand} is the answer {N} times in 10.** The other {10−N} times, a rival is named first. |
+| Below 30 | **When a shopper asks an AI assistant what to buy, {brand} is rarely the answer: {N} times in 10.** A rival is named first the rest of the time. |
+| No resolved answers | **No AI answers in this window yet.** (figure Not available*) |
+
+Second sentence, from the branded share:
+
+| Branded state | Sentence |
+| --- | --- |
+| Branded above 90 and unbranded below 65 | Shoppers who already ask about {brand} get confirmed {B}% of the time. The gap is being found, not being trusted. |
+| Branded below 70 and unbranded above 65 | {brand} is found, but shoppers who ask about it directly get confirmed only {B}% of the time. The gap is trust, not discovery. |
+| Both low | Shoppers who ask about {brand} directly get confirmed {B}% of the time, and unbranded shoppers hear a rival first. Both need work. |
+| Both high | Shoppers who ask about {brand} directly get confirmed {B}% of the time. Discovery and trust are both in good shape. |
+
+### Block 2: what assistants rely on
+
+Lead sentence is fixed: **Assistants decide by reading product pages, retailer listings and reviews.**
+Then the owned-link share: *For {brand}, 1 page in {K} they read is {brand}'s own* (K = round(all ÷ owned)); below 10% owned: *Almost none of the pages they read ({pct}%) are {brand}'s own.*
+Then the two largest listing gaps, chosen by the same severity order the Priorities use, each in plain words:
+
+| Gap | Plain sentence (status Poor or Fair only) |
+| --- | --- |
+| Exact official pages | {X} in 10 Amazon listings have no matching page on {site}. |
+| Missing specs | {M} listings are missing the specs assistants compare. |
+| Buy Box withheld | {M} listings are not showing {brand}'s price at the moment of purchase. |
+| Splintered bundles | {M} bundles split their reviews across separate listings. |
+| MAP leakage | {M} offers are advertised below the agreed floor price. |
+
+If no gap is Poor or Fair: *{brand}'s listings on those pages are in good shape.*
+
+### Block 3: what it is worth
+
+| State | Sentence |
+| --- | --- |
+| Estimate prepared | **Fixing those listings is worth about {monthly} a month,** an analyst estimate (range {low} to {high}) from the Amazon sales those listings already make. |
+| Not prepared or failed | **A dollar estimate is not available yet.** (Not available*, with the existing tooltip) |
+
+### Block 4: the first move
+
+**The first move:** {top action title}. → Action Items. If the queue is empty: *No open action; the queue is clear.*
+
+## Tooltips (plain phrase on screen, term in the tooltip)
+
+| On screen | Tooltip title | Tooltip text |
+| --- | --- | --- |
+| "what to buy" answers | Unbranded Discovery | Shopping questions that do not name a brand, asked of ChatGPT, Gemini and Perplexity three times each in the date-pill window. |
+| "ask about {brand}" | Branded Consideration | Shopping questions that name {brand}. |
+| "pages they read" | Cited pages | The links the assistants cited in their answers. Cited pages are associations, not proof of cause. |
+| "price at the moment of purchase" | Buy Box | Amazon's buy button, also called the Featured Offer. |
+| "agreed floor price" | MAP | Minimum advertised price. |
+| "specs assistants compare" | Amazon required fields | The detail fields on the approved list for the product type. |
+
+## Tests
+
+One unit test per row of each table (state → sentence), the missing-data row for every
+block, the two-gap selection order, and a Ledlenser fixture that proves no client name is
+in the code. A snapshot test guards the Fender and Ledlenser outputs so wording changes
+are deliberate.
+
+## Not in this change
+
+- An AI-written paragraph on top of the facts (later, constrained to these inputs).
+- Trend sentences ("up from 54% last month"); needs the history read wired to the Briefing.
+- Any change to the hero cards, the deck, or the Summary template sentence.
+
+## Decisions for Brian
+
+1. Title: "What this means for {brand}" or "Where {brand} stands with AI assistants, and why".
+2. Block 1 repeats the Unbranded Discovery figure as "N times in 10". Keep (card gives the figure, paragraph gives the meaning) or drop.
+3. Two gaps in block 2, or three.
+4. Move the selling model to the Buy Box card tooltip, or keep a one-line version in the box.
+
+## Build plan
+
+One worker on Opus 5.5 (sentence selection and fallbacks are judgment work), one PR.
+Files: `components/v3/live/BriefingAiLead.tsx`, a new `lib/fender-canvas/briefing-narrative.ts`
+(pure functions, no React), its test under `scripts/`, and the Buy Box card tooltip in
+`lib/fender-canvas/briefing-retail-lead.ts`. Projected cost about $45. FDD: H-09 Evidence
+gains this PR; no status change.
