@@ -4570,7 +4570,7 @@
       gap: 2px;
       width: 100%;
       min-height: 0;
-      padding: 10px 12px 10px 14px;
+      padding: 8px 12px 8px 14px;
       border: 1px solid var(--border-dark);
       border-radius: 14px;
       background:
@@ -4602,16 +4602,42 @@
       outline-offset: 3px;
     }
 
-    .hub-slot-role,
-    .hub-slot-status {
+    .hub-slot-role {
+      color: var(--text-muted);
       font-size: 11px;
       font-weight: 600;
       letter-spacing: 0.04em;
       text-transform: uppercase;
     }
 
-    .hub-slot-role { color: var(--text-muted); }
-    .hub-slot-status { color: var(--text-main); }
+    .hub-slot-figure-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      max-width: 100%;
+    }
+
+    .hub-slot-glyph {
+      display: inline-flex;
+      flex: none;
+      align-items: center;
+      color: var(--text-main);
+    }
+
+    .hub-slot-glyph svg { width: 14px; height: 14px; }
+    .hub-slot.tone-danger .hub-slot-glyph { color: var(--danger-text); }
+    .hub-slot.tone-warning .hub-slot-glyph { color: var(--warning-text); }
+    .hub-slot.tone-success .hub-slot-glyph { color: var(--success-text); }
+
+    .hub-slot-status {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+    }
 
     .hub-slot-figure {
       max-width: 100%;
@@ -4637,6 +4663,10 @@
     }
 
     .hub-slot-label {
+      display: -webkit-box;
+      overflow: hidden;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
       color: var(--text-main);
       font-size: 13px;
       font-weight: 600;
@@ -4654,15 +4684,17 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      margin-top: 4px;
+      margin-top: 2px;
       color: var(--text-muted);
       font-size: 11px;
       line-height: 1.25;
     }
 
     .hub-slot-pie {
-      width: 40px;
-      height: 40px;
+      width: 28px;
+      height: 28px;
+      flex: none;
+      border-radius: 50%;
     }
 
     .citation-pie-disc {
