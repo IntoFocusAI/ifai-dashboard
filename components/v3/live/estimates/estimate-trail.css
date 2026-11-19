@@ -274,6 +274,7 @@
   white-space: normal;
   overflow-wrap: anywhere;
   word-break: normal;
+  font-variant-numeric: normal;
 }
 
 .estimate-trail-inputs td.money {
