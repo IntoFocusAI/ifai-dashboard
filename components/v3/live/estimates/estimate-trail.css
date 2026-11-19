@@ -17,6 +17,11 @@
   border-bottom: 1px dotted var(--accent);
 }
 
+/* Money the brand can gain shows in the status green; "Not available*" keeps the base colour. */
+.estimate-trail-trigger-figure-gain {
+  color: var(--success-text, var(--status-good));
+}
+
 .estimate-trail-trigger-label {
   font-family: var(--font-mono);
   font-size: 11px;

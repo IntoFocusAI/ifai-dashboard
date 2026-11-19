@@ -21,7 +21,7 @@ type BubbleProps = {
   titleSize?: number;
   stats: string[];
   meta?: string;
-  heroValue?: { value: string; label: string; explainer?: boolean };
+  heroValue?: { value: string; label: string; explainer?: boolean; tone?: "good" };
   centered?: boolean;
   logoSrc?: string;
   emphasis?: boolean;
@@ -171,7 +171,7 @@ export function GraphHub({
     <>
       <CurvedHeader id={id} radius={faceR} title={title} fontSize={headerSize} className="node-title hub-title" />
       {heroValue ? (
-        <HeroValue value={heroValue.value} label={heroValue.label} explainer={heroValue.explainer} status={status} radius={faceR} startY={12} />
+        <HeroValue value={heroValue.value} label={heroValue.label} explainer={heroValue.explainer} tone={heroValue.tone} status={status} radius={faceR} startY={12} />
       ) : (
         <CenteredStack radius={faceR} stats={stats} meta={meta} pillSize={statPillFont} status={status} />
       )}
