@@ -1,7 +1,8 @@
 "use client";
 
 import "@/components/v3/live/estimates/estimate-trail.css";
-import { useEffect, useId, useRef, type ReactNode } from "react";
+import { useEffect, useId, useRef, useSyncExternalStore, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { figureTipAttrs } from "@/components/v3/live/FigureTip";
 import { StatusMark } from "@/components/v3/live/StatusMark";
@@ -20,6 +21,8 @@ import {
 } from "@/components/v3/live/estimates/trail-copy";
 import { PARTIAL_MARK, READ_NOT_AVAILABLE } from "@/lib/fender-canvas/canvas-reads";
 import type { EstimateResult, EstimateTrail as EstimateTrailData } from "@/lib/estimates/types";
+
+const subscribeNever = () => () => {};
 
 /** Every count: "Based on 182 of 214 listings: 62 measured, 120 estimated from sales rank, 32 Not available*" */
 function CoverageLine({ trail }: { trail: EstimateTrailData }) {
@@ -81,18 +84,24 @@ export function EstimateTrail({ result, onClose }: { result: EstimateResult; onC
   const titleId = useId();
   const closeRef = useRef<HTMLButtonElement>(null);
   const { trail } = result;
+  // Rendered in a portal on document.body so the dialog never inherits text layout (nowrap, etc.)
+  // from the trigger it was opened from; null until mounted keeps server rendering safe.
+  const mounted = useSyncExternalStore(subscribeNever, () => true, () => false);
   const improvedBy = trail.mostImprovedBy?.trim() || null;
 
   useEffect(() => {
+    if (!mounted) return;
     closeRef.current?.focus();
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") onClose();
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  }, [onClose, mounted]);
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <div className="estimate-trail-layer" data-estimate-trail-layer="">
       <button type="button" className="estimate-trail-backdrop" aria-label="Close" tabIndex={-1} onClick={onClose} />
       <aside
@@ -166,6 +175,7 @@ export function EstimateTrail({ result, onClose }: { result: EstimateResult; onC
           ) : null}
         </div>
       </aside>
-    </div>
+    </div>,
+    document.body,
   );
 }

@@ -268,3 +268,18 @@
   font-size: 11px;
   color: var(--text-subtle);
 }
+
+/* Worker 30.6: the dialog never inherits text layout from where it was opened (e.g. .table-sm .money nowrap). */
+.estimate-trail {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+.estimate-trail-inputs td.money {
+  white-space: normal;
+}
+
+.estimate-trail-split td.money {
+  white-space: nowrap;
+}
