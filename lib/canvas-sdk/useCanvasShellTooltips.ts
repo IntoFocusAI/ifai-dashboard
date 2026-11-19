@@ -88,12 +88,13 @@ export function useCanvasShellTooltips({ spec, iom, s, graphColumnLayout, pan, p
 
   const inspectBubble = useCallback((nodeId: string) => {
     // Hover updates otherwise wait for the next task, a frame after the pointer arrived.
+    const hasSlots = !spec.hubSlots || Boolean(spec.hubSlots[nodeId]);
     flushSync(() => {
       setInspectedBubbleId(nodeId);
-      setHubSlotsVisible(true);
+      setHubSlotsVisible(hasSlots);
     });
-    frameHoveredBubble(nodeId);
-  }, [frameHoveredBubble, setHubSlotsVisible, setInspectedBubbleId]);
+    if (hasSlots) frameHoveredBubble(nodeId);
+  }, [frameHoveredBubble, setHubSlotsVisible, setInspectedBubbleId, spec]);
 
   // Opening a spoke panel, or returning from one, leaves no bubble hovered or focused.
   useEffect(() => {
