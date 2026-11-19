@@ -19,11 +19,14 @@ export function HeroValue({
   startY,
   minText = BUBBLE_TEXT_MIN,
   explainer = false,
+  tone,
 }: {
   value: string;
   label: string;
   /** Reads as a clarifying line under the title: label size, label grey. */
   explainer?: boolean;
+  /** "good" draws the figure green with no mark; the ring and status class stay as the node status sets them. */
+  tone?: "good";
   status: NodeStatus;
   radius: number;
   startY: number;
@@ -34,15 +37,23 @@ export function HeroValue({
   const fit = fitMainHero(value, label, radius, startY, minText, explainer, marked);
   const statusClass = shown ? ` status-${status}` : "";
 
+  const toned = tone === "good" && !explainer && !marked && /\d/.test(value);
+
   return (
     <g className="node-hero">
-      <HeroFigureText
-        value={value}
-        status={marked ? shown : null}
-        className={explainer ? "node-hero-label" : `node-hero-value${statusClass}`}
-        y={fit.valueY}
-        fontSize={fit.valueSize}
-      />
+      {toned ? (
+        <text className="node-hero-value" data-hero-status="good" y={fit.valueY} textAnchor="middle" fontSize={fit.valueSize}>
+          {value}
+        </text>
+      ) : (
+        <HeroFigureText
+          value={value}
+          status={marked ? shown : null}
+          className={explainer ? "node-hero-label" : `node-hero-value${statusClass}`}
+          y={fit.valueY}
+          fontSize={fit.valueSize}
+        />
+      )}
       {fit.labelLines.length ? (
         <text className="node-hero-label" y={fit.labelY} textAnchor="middle" fontSize={fit.labelSize}>
           {fit.labelLines.map((line, index) => (
