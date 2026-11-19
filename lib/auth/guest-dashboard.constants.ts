@@ -1,8 +1,9 @@
 /**
- * When false, the dashboard opens straight onto Fender's canvas.
- * Login, signup, and Skip Login stay in the repo; set this to true to require them again.
+ * When true, /dashboard opens on the Log in modal (with Skip Login for the guest Fender view),
+ * as it did from 6 Oct 2026 until 0ecb58b turned it off on 7 Oct. Set false to open the canvas
+ * straight away again.
  */
-export const DASHBOARD_LOGIN_REQUIRED: boolean = false;
+export const DASHBOARD_LOGIN_REQUIRED: boolean = true;
 
 /** Marks a browser as allowed to view the Fender demo canvas without signing in. */
 export const GUEST_DASHBOARD_COOKIE = "ifai_guest_fender";
