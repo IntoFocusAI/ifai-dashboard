@@ -198,6 +198,50 @@ test("findability and AI slots keep their denominators", () => {
   assert.equal(aiAction.spokeId, "aeo");
 });
 
+test("AI Search cards follow their own role's bubble bands", () => {
+  const withWins = (wins: number, total: number, bWins: number, bTotal: number): AiSearchRead => {
+    const ai = readyAi();
+    if (ai.phase !== "ready") throw new Error("ready read expected");
+    const branded = Array.from({ length: bTotal }, (_, i) =>
+      call({
+        id: `b${i}`,
+        sim_id: 300 + i,
+        prompt: "Is the Fender Stratocaster a good first guitar",
+        outcome: i < bWins ? "fender_win" : "competitor_win",
+        primary_brand: i < bWins ? "Fender/Squier" : "Yamaha",
+      }),
+    );
+    const calls = Array.from({ length: total }, (_, i) =>
+      call({
+        id: `x${i}`,
+        sim_id: 100 + i,
+        prompt: `Best guitar number ${i}`,
+        outcome: i < wins ? "fender_win" : "competitor_win",
+        primary_brand: i < wins ? "Fender/Squier" : "Yamaha",
+      }),
+    );
+    return { ...ai, snapshot: { ...ai.snapshot, calls: [...calls, ...branded] } };
+  };
+  const tones = (wins: number, total: number, bWins: number, bTotal: number) => {
+    const feeds = buildHubSlots({
+      suppressed: "loading",
+      ai: withWins(wins, total, bWins, bTotal),
+      findability: { phase: "loading" },
+      missingSpecPages: 0,
+      phaseOneValue: "+$680K",
+      phaseOneDetail: "Phase 1 annual estimate",
+      commandItems: [],
+    });
+    return feeds["spoke-aeo"].slots.slice(0, 2).map((s) => s.tone);
+  };
+  // Gap card: unbranded share (20% danger, 50% warning, 80% success). Opportunity card: branded share (60% danger, 80% warning, 95% success).
+  assert.deepEqual(tones(1, 5, 3, 5), ["danger", "danger"]);
+  assert.deepEqual(tones(1, 2, 4, 5), ["warning", "warning"]);
+  assert.deepEqual(tones(4, 5, 19, 20), ["success", "success"]);
+  assert.deepEqual(tones(4, 5, 3, 5), ["success", "danger"]);
+  assert.deepEqual(tones(1, 5, 19, 20), ["danger", "success"]);
+});
+
 test("citation pies use the same totals as the tables", () => {
   const calls = [
     call({ id: "u1", sim_id: 1 }),

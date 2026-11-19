@@ -1,7 +1,7 @@
 import type { HubSlot, HubSlotChart, HubSlotFeed, HubSlotRole, NodeStatus, PriorityItem } from "@/lib/canvas-sdk/types";
 import { strongestCategory } from "@/lib/ai-search/canvas-surfaces";
 import { categoryBattles } from "@/lib/ai-search/competitors";
-import { pct, summarizeRun } from "@/lib/ai-search/summary";
+import { BRANDED_RATE_BANDS, pct, summarizeRun, UNBRANDED_RATE_BANDS } from "@/lib/ai-search/summary";
 import type { AiSearchRead } from "@/lib/ai-search/types";
 import { categoryLabel } from "@/lib/ai-search/run-metrics";
 import { findabilityWidgetCopy, type FindabilityRead } from "@/lib/findability/copy";
@@ -249,24 +249,39 @@ function aiPair(ai: AiSearchRead): [HubSlot, HubSlot] {
   }
   const summary = summarizeRun(ai.snapshot);
   const note = `Published run · ${summary.completedAt}`;
+  // Each card takes its tone from its own role's wins share: the gap card from the unbranded bands, Branded Consideration from the branded bands.
+  const bandToneFor = (wins: number, resolved: number, bands: { redBelow: number; greenAbove: number }): NodeStatus | null => {
+    if (resolved <= 0) return null;
+    const pct = (100 * wins) / resolved;
+    return pct < bands.redBelow ? "danger" : pct > bands.greenAbove ? "success" : "warning";
+  };
+  const withBand = (card: HubSlot, tone: NodeStatus | null): HubSlot =>
+    tone && card.tone !== "neutral" ? { ...card, tone } : card;
+  const { unbranded, branded } = summary.roles;
   return [
-    rateSlot(
-      "gap",
-      `Unbranded answers ${brandName()} did not lead`,
-      summary.roles.unbranded.fenderWins,
-      summary.roles.unbranded.resolved,
-      note,
-      "aeo",
-      "Run Summary",
+    withBand(
+      rateSlot(
+        "gap",
+        `Unbranded answers ${brandName()} did not lead`,
+        unbranded.fenderWins,
+        unbranded.resolved,
+        note,
+        "aeo",
+        "Run Summary",
+      ),
+      bandToneFor(unbranded.fenderWins, unbranded.resolved, UNBRANDED_RATE_BANDS),
     ),
-    rateSlot(
-      "opportunity",
-      "Branded Consideration",
-      summary.roles.branded.fenderWins,
-      summary.roles.branded.resolved,
-      note,
-      "aeo",
-      "Run Summary",
+    withBand(
+      rateSlot(
+        "opportunity",
+        "Branded Consideration",
+        branded.fenderWins,
+        branded.resolved,
+        note,
+        "aeo",
+        "Run Summary",
+      ),
+      bandToneFor(branded.fenderWins, branded.resolved, BRANDED_RATE_BANDS),
     ),
   ];
 }
