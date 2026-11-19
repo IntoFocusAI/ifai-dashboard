@@ -131,10 +131,10 @@ test("retail slots use one population and name a danger in words", () => {
   assert.equal(aiAction.spokeId, "aeo");
   assert.equal(aiAction.figure, "Open");
   assert.doesNotMatch(aiAction.label, /Suppressed|Buy Box|price match/);
-  assert.equal(feeds["spoke-fixes"].slots[1].chart, null);
-  assert.match(feeds["spoke-fixes"].slots[1].note, /Analyst estimate/);
-  assert.equal(feeds["spoke-roadmap"].slots[0].figure, "Example");
-  assert.equal(feeds.hub.title, "Summary");
+  assert.equal(feeds.hub, undefined);
+  assert.equal(feeds["spoke-fixes"], undefined);
+  assert.equal(feeds["spoke-roadmap"], undefined);
+  assert.deepEqual(Object.keys(feeds).sort(), ["spoke-aeo", "spoke-competitors", "spoke-retail", "spoke-specs"]);
 });
 
 function specsSlots(rows: FindabilityRow[]) {

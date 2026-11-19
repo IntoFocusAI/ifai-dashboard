@@ -3,13 +3,10 @@ import { Canvas } from "./fixtures";
 import { mockCanvasRead } from "./spec-read-mock";
 
 const BUBBLES = [
-  "hub",
   "spoke-retail",
   "spoke-aeo",
   "spoke-specs",
   "spoke-competitors",
-  "spoke-fixes",
-  "spoke-roadmap",
 ];
 
 test("every bubble slot opens its evidence tab", async ({ page }) => {
