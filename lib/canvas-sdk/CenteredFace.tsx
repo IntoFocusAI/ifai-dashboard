@@ -117,7 +117,7 @@ export function CenteredFace({
   plate?: boolean;
   titleSize?: number;
   statPillSize?: number;
-  heroValue?: { value: string; label: string; explainer?: boolean };
+  heroValue?: { value: string; label: string; explainer?: boolean; tone?: "good" };
   /** Smallest text in this face's units that renders at 11px at 1280x720. */
   minText?: number;
 }) {
@@ -161,6 +161,7 @@ export function CenteredFace({
             value={heroValue.value}
             label={heroValue.label}
             explainer={heroValue.explainer}
+            tone={heroValue.tone}
             status={status}
             radius={radius}
             startY={stackStartY}
@@ -227,6 +228,7 @@ export function CenteredFace({
           value={heroValue.value}
           label={heroValue.label}
           explainer={heroValue.explainer}
+          tone={heroValue.tone}
           status={status}
           radius={radius}
           startY={stackStartY}

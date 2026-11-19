@@ -30,7 +30,7 @@ export function EstimateTrailTrigger({ result, className, hero }: { result: Esti
         aria-expanded={open}
         data-estimate-trigger={result.lineId}
       >
-        <span className="estimate-trail-trigger-figure">
+        <span className={`estimate-trail-trigger-figure${result.status === "estimated" ? " estimate-trail-trigger-figure-gain" : ""}`}>
           {heroText ? heroText.figure : resultFigureText(result)}
           {result.asterisk && result.status === "estimated" ? "*" : null}
         </span>
