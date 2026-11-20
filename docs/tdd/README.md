@@ -178,7 +178,7 @@ Deterministic: counts, joins, freshness, publication, score arithmetic, suppress
 >
 > • One intentional public key; service role server-only.
 >
-> • Writes before login (Done and set-aside, N-08) go through SECURITY DEFINER functions that validate every input. The tables stay closed to the public key. Require a session once auth is on (X-15). Every new public view revokes all from anon and authenticated, then grants SELECT (20261104145317, 20261104152213, 20261104160000); the set-aside views were writable until Brian Watson applied 20261104152213 on 4 Nov 2026.
+> • Writes before login (Done and set-aside, N-08) go through SECURITY DEFINER functions that validate every input. The tables stay closed to the public key. Require a session once auth is on (X-15). 1.6 Step 0a (20261118190000, not applied): EXECUTE on the three set-aside functions and the two prompt functions is revoked from PUBLIC and anon and kept for authenticated and service_role; the dashboard calls them with the signed-in session (lib/supabase/session-client.ts), and a signed-out save shows a sign-in message. Every new public view revokes all from anon and authenticated, then grants SELECT (20261104145317, 20261104152213, 20261104160000); the set-aside views were writable until Brian Watson applied 20261104152213 on 4 Nov 2026.
 >
 > • Audit: prompt edits, publication, MAP exceptions, Done, set-aside, and reopen (N-08), uploads, exports, Need help? requests.
 >

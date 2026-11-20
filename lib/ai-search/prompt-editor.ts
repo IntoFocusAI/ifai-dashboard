@@ -1,23 +1,12 @@
-import { createBrowserClient } from "@supabase/ssr";
-import type { SupabaseClient } from "@supabase/supabase-js";
 import { getPublicCanvasSupabase } from "@/lib/supabase/canvas-client";
-
-let sessionClient: SupabaseClient | null = null;
+import { getSessionSupabase } from "@/lib/supabase/session-client";
 
 /**
  * Prompt edits run as the signed-in staff member: ai_prompt_save and ai_prompt_set_active check
  * command.is_intofocus_admin() and are not callable with the anon key
  * (migration 20261118160000). Reads stay on the public client.
  */
-function staffSessionSupabase(): SupabaseClient {
-  if (!sessionClient) {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    if (!url || !key) throw new Error("Supabase is not configured.");
-    sessionClient = createBrowserClient(url, key);
-  }
-  return sessionClient;
-}
+const staffSessionSupabase = getSessionSupabase;
 
 /** One row of command.fmic_ai_prompts, as returned by public.ai_prompts_list(). */
 export type EditablePrompt = {
