@@ -6,16 +6,21 @@
  *   node --experimental-strip-types --import ./scripts/register-alias.mjs \
  *     --import ./scripts/register-ts-extensions.mjs scripts/save-score-snapshots.ts [--dry-run]
  *
- * Reads use NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY. Since the 23 Nov login lockdown
- * the workflow sets that variable to the server key, because the publishable key reads no client data.
+ * Reads use NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY, signed in as the read-only
+ * review-bot (IFAI_REVIEW_EMAIL / IFAI_REVIEW_PASSWORD, PR 273), so row-level security treats the save
+ * exactly like an Org User on each client's dashboard. Since the 23 Nov login lockdown a read without
+ * that login returns no client data.
+ * A client is saved only when every read loaded; a partial read would save a wrong score.
  * The save uses SCORE_SNAPSHOT_DB_URL. Without it the script prints why and ends without saving.
  * --dry-run prints each client's scores and the SQL, and writes nothing.
  */
 import { spawnSync } from "node:child_process";
+import { createClient } from "@supabase/supabase-js";
 import { clientProfile, listClientKeys } from "../lib/client/active-client.ts";
 import { runWithClient } from "../lib/client/server-client.ts";
 import { scoreSnapshotFromReads, snapshotSaveSql, weekStartUtc } from "../lib/fender-canvas/score-snapshot.ts";
 import { loadScoreSnapshotReads } from "../lib/fender-canvas/score-snapshot-reads.ts";
+import { runWithViewerToken } from "../lib/supabase/server-viewer-token.ts";
 
 const dryRun = process.argv.includes("--dry-run");
 const dbUrl = process.env.SCORE_SNAPSHOT_DB_URL?.trim() ?? "";
@@ -29,6 +34,27 @@ if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !(process.env.NEXT_PUBLIC_SUPABASE_
   process.exit(dryRun ? 0 : 1);
 }
 
+const reviewEmail = process.env.IFAI_REVIEW_EMAIL?.trim() ?? "";
+const reviewPassword = process.env.IFAI_REVIEW_PASSWORD ?? "";
+if (!reviewEmail || !reviewPassword) {
+  console.log("IFAI_REVIEW_EMAIL or IFAI_REVIEW_PASSWORD is not set. Since the login lockdown the reads need the review-bot login, so no scores were saved.");
+  process.exit(dryRun ? 0 : 1);
+}
+const authClient = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY)!,
+  { auth: { persistSession: false, autoRefreshToken: false } },
+);
+const { data: signIn, error: signInError } = await authClient.auth.signInWithPassword({
+  email: reviewEmail,
+  password: reviewPassword,
+});
+const viewerToken = signIn.session?.access_token ?? null;
+if (signInError || !viewerToken) {
+  console.log(`The review-bot sign-in failed (${signInError?.message ?? "no session"}), so no scores were saved.`);
+  process.exit(1);
+}
+
 const weekStart = weekStartUtc(new Date());
 const commit = process.env.GITHUB_SHA ?? null;
 const statements: string[] = [];
@@ -38,11 +64,20 @@ for (const key of listClientKeys()) {
   const client = clientProfile(key);
   // Read and score inside the client's scope: the brand name and the required spec fields the
   // formula uses come from the active client, as on that client's dashboard.
-  const snapshot = await runWithClient(key, async () =>
-    scoreSnapshotFromReads(client, weekStart, await loadScoreSnapshotReads(), { commit }),
+  const snapshot = await runWithViewerToken(viewerToken, () =>
+    runWithClient(key, async () =>
+      scoreSnapshotFromReads(client, weekStart, await loadScoreSnapshotReads(), { commit }),
+    ),
   );
   if (!snapshot) {
     skipped.push(`${client.brandName}: the retail read did not load, so there is no score to save.`);
+    continue;
+  }
+  const notLoaded = Object.entries(snapshot.inputs.reads as Record<string, string>).filter(([, phase]) => phase !== "ready");
+  if (notLoaded.length > 0) {
+    skipped.push(
+      `${client.brandName}: ${notLoaded.map(([name, phase]) => `${name} ${phase}`).join(", ")}, so nothing was saved (a partial read would save a wrong score).`,
+    );
     continue;
   }
   console.log(
