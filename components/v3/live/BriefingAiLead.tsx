@@ -20,6 +20,7 @@ import {
   answerBlock,
   firstMoveBlock,
   narrativeGaps,
+  rankedKindOfPriorityId,
   relyBlock,
   sellingModelLine,
   TERM_TIPS,
@@ -176,13 +177,15 @@ export function BriefingAiLead({
   const input: NarrativeInput = {
     brand,
     site: brandSite(),
+    sellerModel: activeClient().sellerModel,
     unbranded: summary ? { wins: summary.roles.unbranded.fenderWins, resolved: summary.roles.unbranded.resolved } : null,
     branded: summary ? { wins: summary.roles.branded.fenderWins, resolved: summary.roles.branded.resolved } : null,
     cited: summary ? { owned: summary.citations.fenderOwnedRows, total: summary.citations.rows } : null,
     gaps: narrativeGaps(findings, retail.phase === "ready" ? specHero(retail.snapshot) : null),
   };
-  const selling = sellingModelLine(activeClient().sellerModel, brand);
-  const firstMove = firstMoveBlock(commandItems[0]?.title ?? null);
+  const selling = sellingModelLine(input.sellerModel, brand);
+  const top = commandItems[0];
+  const firstMove = firstMoveBlock(top?.title ?? null, top ? rankedKindOfPriorityId(top.id) : null, brand, input.sellerModel);
 
   return (
     <>

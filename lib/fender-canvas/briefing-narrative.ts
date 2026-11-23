@@ -8,6 +8,7 @@
 import { UNBRANDED_RATE_BANDS } from "@/lib/ai-search/summary";
 import type { BriefingFinding } from "@/lib/fender-canvas/briefing-retail-lead";
 import { formatInt, formatMoneyShort, formatMoneySpan, formatPct } from "@/lib/fender-canvas/format";
+import { GAP_KINDS, gapKindOf } from "@/lib/fender-canvas/priority-list";
 import type { RetailOverviewHeroModel } from "@/lib/fender-canvas/retail-overview-lead";
 
 /** The plain phrases that open a custom tooltip naming the term (spec "Tooltips" table). */
@@ -41,9 +42,13 @@ export type GapReading = {
   tone: "danger" | "warning" | "success";
 };
 
+/** The client's selling model (settings seller_type): partner-led or brand-led. */
+export type SellerModel = "Partner-led" | "Brand-led";
+
 export type NarrativeInput = {
   brand: string;
   site: string;
+  sellerModel: SellerModel;
   /** null while the AI read is not ready. */
   unbranded: RoleCount | null;
   branded: RoleCount | null;
@@ -74,25 +79,74 @@ export const TERM_TIPS: Record<NarrativeTerm, { title: string; desc: (brand: str
  * Proposed for Brian's approval (decision 129): why each gap changes what assistants recommend.
  * `one` is true when the gap counts a single listing, bundle or offer.
  */
-export const GAP_CLAUSES: Record<GapId, (brand: string, one: boolean) => string> = {
+export const GAP_CLAUSES: Record<GapId, (brand: string, one: boolean, model: SellerModel) => string> = {
   exact_pages: (brand) => `so assistants describe those products from retailer and rival pages instead of ${brand}'s`,
   missing_specs: (_brand, one) => `so assistants struggle to match ${one ? "it" : "them"} to shoppers' questions`,
   buy_box: (_brand, one) =>
     `so assistants rarely point shoppers to ${one ? "it" : "them"}, and the sales and reviews ${one ? "it" : "they"} would earn often go to a competitor`,
   splintered: (_brand, one) => `so assistants see fewer reviews behind ${one ? "it" : "each one"} and recommend it less`,
-  map_leakage: (brand) => `so assistants can repeat a price below the one ${brand} sets, and the discounting erodes ${brand}'s revenue`,
+  // Partner-led: discounting by partners erodes the brand's retail value; brand-led: its own revenue (Brian, 23 Nov).
+  map_leakage: (brand, _one, model) =>
+    `so assistants can repeat a price below the one ${brand} sets, and the discounting erodes ${brand}'s ${model === "Partner-led" ? "retail value" : "revenue"}`,
 };
 
 /**
- * Branded share bands for the trust sentence (Brian, 23 Nov): at or below 70 is the low state,
- * above 70 and at or below 90 is "room to build trust", above 90 is the high state.
+ * The AI consequence for every kind of item the central ranking can put first (GAP_KINDS in
+ * priority-list.ts). The five kinds that are Block 2 gaps reuse GAP_CLAUSES; the rest are
+ * proposed for Brian's approval (23 Nov). A test fails when a ranked kind has no clause.
  */
-export const BRANDED_TRUST_BANDS = { lowAtOrBelow: 70, highAbove: 90 } as const;
+const RANKED_KIND_CLAUSES: Record<string, (brand: string, one: boolean, model: SellerModel) => string> = {
+  exact_official_product: GAP_CLAUSES.exact_pages,
+  map_leakage: GAP_CLAUSES.map_leakage,
+  splintered_bundles: GAP_CLAUSES.splintered,
+  buy_box: GAP_CLAUSES.buy_box,
+  missing_specs: GAP_CLAUSES.missing_specs,
+  unbranded_discovery: (brand) => `so assistants name a rival before ${brand} when shoppers ask what to buy`,
+  out_of_stock: (_brand, one) => `so assistants stop recommending ${one ? "it" : "them"}, and the sales go to a competitor's listing`,
+  fact_contradictions: (brand) => `so assistants give shoppers conflicting facts about ${brand}'s products`,
+  rival: (brand) => `so assistants keep naming that rival ahead of ${brand}`,
+  aplus: () => "so assistants have less product detail to read and compare",
+  amazon_bullets: () => "so assistants have less product detail to read and compare",
+  source: (brand) => `so assistants keep relying on pages ${brand} does not control`,
+  own_pages: (brand) => `so assistants have fewer of ${brand}'s own pages to read and cite`,
+  own_wording: (brand) => `so assistants do not find the words shoppers use on ${brand}'s own pages`,
+  engine: (brand) => `so one assistant recommends ${brand} less often than the others`,
+  question: (brand) => `so assistants answer that shopper question without naming ${brand}`,
+  questions: (brand) => `so assistants answer those shopper questions without naming ${brand}`,
+  site: (brand) => `so assistants find fewer outside pages that mention ${brand}`,
+  actuation_activity: (brand) => `so assistants find fewer independent mentions of ${brand} to rely on`,
+  actuation_confirm: (brand) => `so assistants find fewer independent mentions of ${brand} to rely on`,
+  actuation_renew: (brand) => `so assistants stop counting those independent mentions of ${brand}`,
+};
+
+/** Kinds in GAP_KINDS that have no clause (a test requires this to be empty). */
+export function kindsWithoutClause(): string[] {
+  return Object.keys(GAP_KINDS).filter((kind) => !(kind in RANKED_KIND_CLAUSES));
+}
+
+/** Priorities keep the saved ids of the Buy Box and MAP cards (command-center-from-live.ts KEPT_IDS). */
+const KEPT_PRIORITY_KINDS: Readonly<Record<string, string>> = { "buybox-suppression": "buy_box", "map-leakage": "map_leakage" };
+
+/** The ranked kind of a Priorities card id (a plan id, or a kept id). */
+export function rankedKindOfPriorityId(id: string): string {
+  return KEPT_PRIORITY_KINDS[id] ?? gapKindOf(id);
+}
+
+/** The AI consequence clause for a ranked kind, or null for a kind with none. The count is unknown, so plural. */
+export function rankedKindClause(kind: string, brand: string, model: SellerModel): string | null {
+  return RANKED_KIND_CLAUSES[kind]?.(brand, false, model) ?? null;
+}
+
+/**
+ * Branded share bands for the trust sentence (Brian, 23 Nov, final): below 70 is the low state,
+ * 70 up to but not including 90 is "room to build trust", 90 and above is the high state.
+ */
+export const BRANDED_TRUST_BANDS = { lowBelow: 70, highAtOrAbove: 90 } as const;
 export type BrandedTrustBand = "low" | "room" | "high";
 
 export function brandedTrustBand(share: number): BrandedTrustBand {
-  if (share > BRANDED_TRUST_BANDS.highAbove) return "high";
-  if (share > BRANDED_TRUST_BANDS.lowAtOrBelow) return "room";
+  if (share >= BRANDED_TRUST_BANDS.highAtOrAbove) return "high";
+  if (share >= BRANDED_TRUST_BANDS.lowBelow) return "room";
   return "low";
 }
 
@@ -134,7 +188,7 @@ function brandedSentence(brand: string, u: number, branded: RoleCount | null): N
   const highBranded = band === "high";
   const highUnbranded = u > UNBRANDED_RATE_BANDS.greenAbove;
   if (highBranded && !highUnbranded) {
-    return ["Shoppers who already ", { text: `ask about ${brand}`, term: "branded" }, ` get confirmed ${pct}. The gap is being found, not being trusted.`];
+    return ["Shoppers who already ", { text: `ask about ${brand}`, term: "branded" }, ` get confirmed ${pct}. The gap is being found; once found, ${brand} is trusted.`];
   }
   if (!highBranded && highUnbranded) {
     return [`${brand} is found, but shoppers who `, { text: "ask about it directly", term: "branded" }, ` get confirmed only ${pct}. The gap is trust, not discovery.`];
@@ -163,10 +217,10 @@ export function selectGaps(gaps: readonly GapReading[], limit = 3): GapReading[]
 }
 
 /** One gap in plain words, ending with why it changes what assistants recommend (decision 129). */
-export function gapSentence(gap: GapReading, brand: string, site: string): NarrativeSentence {
+export function gapSentence(gap: GapReading, brand: string, site: string, model: SellerModel = "Brand-led"): NarrativeSentence {
   const m = formatInt(gap.affected);
   const one = gap.affected === 1;
-  const why = `, ${GAP_CLAUSES[gap.id](brand, one)}.`;
+  const why = `, ${GAP_CLAUSES[gap.id](brand, one, model)}.`;
   const listings = one ? "listing is" : "listings are";
   switch (gap.id) {
     case "exact_pages":
@@ -183,8 +237,8 @@ export function gapSentence(gap: GapReading, brand: string, site: string): Narra
 }
 
 /** Block 2: what assistants rely on, the owned-page share, then the three largest listing gaps. */
-export function relyBlock(input: Pick<NarrativeInput, "brand" | "site" | "cited" | "gaps">): NarrativeBlock {
-  const { brand, site, cited, gaps } = input;
+export function relyBlock(input: Pick<NarrativeInput, "brand" | "site" | "sellerModel" | "cited" | "gaps">): NarrativeBlock {
+  const { brand, site, sellerModel, cited, gaps } = input;
   const body: NarrativeSentence[] = [];
   if (cited && cited.total > 0) {
     const pct = (100 * cited.owned) / cited.total;
@@ -196,7 +250,7 @@ export function relyBlock(input: Pick<NarrativeInput, "brand" | "site" | "cited"
     }
   }
   const chosen = selectGaps(gaps);
-  if (chosen.length) body.push(...chosen.map((gap) => gapSentence(gap, brand, site)));
+  if (chosen.length) body.push(...chosen.map((gap) => gapSentence(gap, brand, site, sellerModel)));
   else if (gaps.length) body.push([`${brand}'s listings on those pages are in good shape.`]);
   return { id: "rely", lead: ["Assistants decide by reading product pages, retailer listings and reviews."], body };
 }
@@ -211,23 +265,37 @@ export function worthBlock(monthly: MonthlyRange | null): NarrativeBlock {
   };
 }
 
-/** Block 4: the first move, the top Priorities item. */
-export function firstMoveBlock(title: string | null | undefined): NarrativeBlock {
+/**
+ * Block 4: the first move, central ranking #1, with its AI-search consequence (Brian, 23 Nov) so it
+ * is never only a revenue line. `kind` is the item's ranked kind (rankedKindOfPriorityId).
+ */
+export function firstMoveBlock(
+  title: string | null | undefined,
+  kind: string | null = null,
+  brand = "",
+  model: SellerModel = "Brand-led",
+): NarrativeBlock {
   const action = title?.trim().replace(/\.+$/, "");
   if (!action) return { id: "first_move", lead: [], body: [["No open action; the queue is clear."]] };
-  return { id: "first_move", lead: ["The first move:"], body: [[`${action}.`]] };
+  const clause = kind ? rankedKindClause(kind, brand, model) : null;
+  return { id: "first_move", lead: ["The first move:"], body: [[clause ? `${action}, ${clause}.` : `${action}.`]] };
 }
 
 /** The selling-model line (decision 128): one line, no seller names. */
-export function sellingModelLine(model: "Partner-led" | "Brand-led", brand: string): { label: string; text: string } {
+export function sellingModelLine(model: SellerModel, brand: string): { label: string; text: string } {
   return model === "Brand-led"
     ? { label: "Brand-led:", text: `${brand}'s own seller accounts are meant to hold the Buy Box.` }
     : { label: "Partner-led:", text: "authorized sellers are meant to hold the Buy Box." };
 }
 
 /** Blocks 1 and 2 from the reads; blocks 3 and 4 take their own inputs. */
-export function briefingNarrative(input: NarrativeInput, monthly: MonthlyRange | null, firstMove: string | null | undefined): NarrativeBlock[] {
-  return [answerBlock(input), relyBlock(input), worthBlock(monthly), firstMoveBlock(firstMove)];
+export function briefingNarrative(
+  input: NarrativeInput,
+  monthly: MonthlyRange | null,
+  firstMove: string | null | undefined,
+  firstMoveKind: string | null = null,
+): NarrativeBlock[] {
+  return [answerBlock(input), relyBlock(input), worthBlock(monthly), firstMoveBlock(firstMove, firstMoveKind, input.brand, input.sellerModel)];
 }
 
 /**

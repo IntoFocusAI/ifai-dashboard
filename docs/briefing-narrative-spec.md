@@ -54,9 +54,9 @@ Second sentence, from the branded share:
 
 | Branded state | Sentence |
 | --- | --- |
-| Branded above 90 and unbranded below 65 | Shoppers who already ask about {brand} get confirmed {B}% of the time. The gap is being found, not being trusted. |
-| Branded at or below 70 and unbranded above 65 | {brand} is found, but shoppers who ask about it directly get confirmed only {B}% of the time. The gap is trust, not discovery. |
-| Branded above 70 and at or below 90 (any unbranded state) | Shoppers who already ask about {brand} get confirmed {B}% of the time: room to build trust. |
+| Branded 90 or above and unbranded not above 65 | Shoppers who already ask about {brand} get confirmed {B}% of the time. The gap is being found; once found, {brand} is trusted. |
+| Branded below 70 and unbranded above 65 | {brand} is found, but shoppers who ask about it directly get confirmed only {B}% of the time. The gap is trust, not discovery. |
+| Branded 70 up to but not including 90 (any unbranded state) | Shoppers who already ask about {brand} get confirmed {B}% of the time: room to build trust. |
 | Both low | Shoppers who ask about {brand} directly get confirmed {B}% of the time, and unbranded shoppers hear a rival first. Both need work. |
 | Both high | Shoppers who ask about {brand} directly get confirmed {B}% of the time. Discovery and trust are both in good shape. |
 
@@ -72,7 +72,7 @@ Then the three largest listing gaps, chosen by the same severity order the Prior
 | Missing specs | {M} listings are missing the specs assistants compare, so assistants struggle to match them to shoppers' questions. |
 | Buy Box withheld | {M} listings are not showing {brand}'s price at the moment of purchase, so assistants rarely point shoppers to them, and the sales and reviews they would earn often go to a competitor. |
 | Splintered bundles | {M} bundles split their reviews across separate listings. |
-| MAP leakage | {M} offers are advertised below the agreed floor price, so assistants can repeat a price below the one {brand} sets, and the discounting erodes {brand}'s revenue. |
+| MAP leakage | {M} offers are advertised below the agreed floor price, so assistants can repeat a price below the one {brand} sets, and the discounting erodes {brand}'s retail value (partner-led) or revenue (brand-led), by the client's `seller_type`. |
 
 If no gap is Poor or Fair: *{brand}'s listings on those pages are in good shape.*
 
@@ -85,7 +85,7 @@ If no gap is Poor or Fair: *{brand}'s listings on those pages are in good shape.
 
 ### Block 4: the first move
 
-**The first move:** {top action title}. → Action Items. If the queue is empty: *No open action; the queue is clear.*
+**The first move:** {top action title}, {AI consequence clause}. → Action Items. The clause is chosen by the item's ranked kind (`RANKED_KIND_CLAUSES` in `briefing-narrative.ts`, one per `GAP_KINDS` entry; a test fails when a kind has none). If the queue is empty: *No open action; the queue is clear.*
 
 ## Tooltips (plain phrase on screen, term in the tooltip)
 

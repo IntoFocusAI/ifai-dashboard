@@ -14,7 +14,10 @@ import {
   briefingNarrative,
   firstMoveBlock,
   gapSentence,
+  kindsWithoutClause,
   narrativeGaps,
+  rankedKindClause,
+  rankedKindOfPriorityId,
   relyBlock,
   selectGaps,
   sellingModelLine,
@@ -25,13 +28,15 @@ import {
 } from "../lib/fender-canvas/briefing-narrative.ts";
 import type { BriefingFinding } from "../lib/fender-canvas/briefing-retail-lead.ts";
 import { amazonSpecGapsFinding, selectRetailHeadline, type PortfolioRetailSnapshot } from "../lib/fender-canvas/portfolio-retail.ts";
+import { priorityId } from "../lib/fender-canvas/command-center-from-live.ts";
+import { GAP_KINDS } from "../lib/fender-canvas/priority-list.ts";
 import { specHero } from "../lib/fender-canvas/retail-overview-lead.ts";
 import { signalActions } from "../lib/fender-canvas/roadmap-signals.ts";
 
 const root = new URL("..", import.meta.url).pathname;
 const read = (path: string) => readFileSync(join(root, path), "utf8");
 
-const base = { brand: "Acme", site: "acme.com" };
+const base = { brand: "Acme", site: "acme.com", sellerModel: "Brand-led" as const };
 const answer = (u: [number, number] | null, b: [number, number] | null = null) =>
   blockText(
     answerBlock({
@@ -70,7 +75,7 @@ test("Block 1: no resolved answers is the missing-data row", () => {
 });
 
 test("Block 1: branded above 90 and unbranded not above 65 is a finding gap", () => {
-  assert.match(answer([50, 100], [95, 100]), /Shoppers who already ask about Acme get confirmed 95\.0% of the time\. The gap is being found, not being trusted\.$/);
+  assert.match(answer([50, 100], [95, 100]), /Shoppers who already ask about Acme get confirmed 95\.0% of the time\. The gap is being found; once found, Acme is trusted\.$/);
 });
 
 test("Block 1: branded below 70 and unbranded above 65 is a trust gap", () => {
@@ -86,30 +91,35 @@ test("Block 1: both high", () => {
 });
 
 test("Block 1: branded trust bands are explicit constants", () => {
-  assert.deepEqual({ ...BRANDED_TRUST_BANDS }, { lowAtOrBelow: 70, highAbove: 90 });
+  assert.deepEqual({ ...BRANDED_TRUST_BANDS }, { lowBelow: 70, highAtOrAbove: 90 });
 });
 
-test("Block 1: branded 69.9, 70, 70.1, 90, 90.1 fall in the stated bands", () => {
+test("Block 1: branded 69.9, 70, 89.9, 90, 90.1 fall in the stated bands", () => {
   assert.equal(brandedTrustBand(69.9), "low");
-  assert.equal(brandedTrustBand(70), "low");
-  assert.equal(brandedTrustBand(70.1), "room");
-  assert.equal(brandedTrustBand(90), "room");
+  assert.equal(brandedTrustBand(70), "room");
+  assert.equal(brandedTrustBand(89.9), "room");
+  assert.equal(brandedTrustBand(90), "high");
   assert.equal(brandedTrustBand(90.1), "high");
 });
 
-test("Block 1: branded above 70 and at or below 90 reads room to build trust, for any unbranded state", () => {
-  for (const [wins, pct] of [[701, "70.1%"], [900, "90.0%"]] as const) {
+test("Block 1: branded 70 up to but not including 90 reads room to build trust, for any unbranded state", () => {
+  for (const [wins, pct] of [[700, "70.0%"], [899, "89.9%"]] as const) {
     for (const u of [[80, 100], [50, 100], [20, 100]] as [number, number][]) {
       assert.match(answer(u, [wins, 1000]), new RegExp(`Shoppers who already ask about Acme get confirmed ${pct.replace(".", "\\.")} of the time: room to build trust\\.$`));
     }
   }
 });
 
-test("Block 1: branded 69.9 and 70 keep the low states; 90.1 keeps the high state", () => {
+test("Block 1: branded 69.9 keeps the low states; 90 and 90.1 take the high states", () => {
   assert.match(answer([50, 100], [699, 1000]), /Both need work\.$/);
-  assert.match(answer([50, 100], [700, 1000]), /Both need work\.$/);
   assert.match(answer([80, 100], [699, 1000]), /The gap is trust, not discovery\.$/);
-  assert.match(answer([50, 100], [901, 1000]), /The gap is being found, not being trusted\.$/);
+  assert.match(answer([50, 100], [900, 1000]), /The gap is being found; once found, Acme is trusted\.$/);
+  assert.match(answer([50, 100], [901, 1000]), /The gap is being found; once found, Acme is trusted\.$/);
+  assert.match(answer([80, 100], [900, 1000]), /Discovery and trust are both in good shape\.$/);
+});
+
+test("Block 1: the old high-band wording is gone", () => {
+  assert.doesNotMatch(read("lib/fender-canvas/briefing-narrative.ts"), /not being trusted/);
 });
 
 test("Block 1: no branded answers leaves the second sentence out", () => {
@@ -151,6 +161,15 @@ test("Block 2: each gap reads in plain words and ends with why it changes what a
   assert.equal(say(gap("buy_box", 60, 1173)), "60 listings are not showing Acme's price at the moment of purchase, so assistants rarely point shoppers to them, and the sales and reviews they would earn often go to a competitor.");
   assert.equal(say(gap("splintered", 38, 330)), "38 bundles split their reviews across separate listings, so assistants see fewer reviews behind each one and recommend it less.");
   assert.equal(say(gap("map_leakage", 187, 633)), "187 offers are advertised below the agreed floor price, so assistants can repeat a price below the one Acme sets, and the discounting erodes Acme's revenue.");
+});
+
+test("Block 2: the MAP clause follows the selling model: retail value when partner-led, revenue when brand-led", () => {
+  const say = (model: "Partner-led" | "Brand-led") => sentenceText(gapSentence(gap("map_leakage", 187, 633), "Acme", "acme.com", model));
+  assert.equal(say("Partner-led"), "187 offers are advertised below the agreed floor price, so assistants can repeat a price below the one Acme sets, and the discounting erodes Acme's retail value.");
+  assert.equal(say("Brand-led"), "187 offers are advertised below the agreed floor price, so assistants can repeat a price below the one Acme sets, and the discounting erodes Acme's revenue.");
+  const input = { ...base, cited: null, gaps: [gap("map_leakage", 5, 10)] };
+  assert.match(blockText(relyBlock({ ...input, sellerModel: "Partner-led" })), /erodes Acme's retail value\.$/);
+  assert.match(blockText(relyBlock({ ...input, sellerModel: "Brand-led" })), /erodes Acme's revenue\.$/);
 });
 
 test("Block 2: a gap of one reads singular", () => {
@@ -229,10 +248,67 @@ test("Block 3: no estimate is the missing-data row", () => {
 
 // Block 4 and the selling-model line.
 
-test("Block 4: the first move is the top Priorities item; an empty queue says so", () => {
-  assert.equal(blockText(firstMoveBlock("Publish one acme.com page per exact product.")), "The first move: Publish one acme.com page per exact product.");
-  assert.equal(blockText(firstMoveBlock(null)), "No open action; the queue is clear.");
-  assert.equal(firstMoveBlock("  ").lead.length, 0);
+const move = (title: string | null, kind: string | null, model: "Partner-led" | "Brand-led" = "Brand-led") =>
+  blockText(firstMoveBlock(title, kind, "Acme", model));
+
+test("Block 4: the first move is the top Priorities item, with its AI consequence; an empty queue says so", () => {
+  assert.equal(
+    move("Publish one acme.com page per exact product.", "exact_official_product"),
+    "The first move: Publish one acme.com page per exact product, so assistants describe those products from retailer and rival pages instead of Acme's.",
+  );
+  assert.equal(move(null, "buy_box"), "No open action; the queue is clear.");
+  assert.equal(firstMoveBlock("  ", "buy_box", "Acme").lead.length, 0);
+});
+
+test("Block 4: the first move ends with its AI consequence, the MAP clause by selling model", () => {
+  assert.equal(
+    move("Raise the offers below the floor price", "map_leakage", "Partner-led"),
+    "The first move: Raise the offers below the floor price, so assistants can repeat a price below the one Acme sets, and the discounting erodes Acme's retail value.",
+  );
+  assert.equal(
+    move("Raise the offers below the floor price", "map_leakage", "Brand-led"),
+    "The first move: Raise the offers below the floor price, so assistants can repeat a price below the one Acme sets, and the discounting erodes Acme's revenue.",
+  );
+  assert.match(move("Win back the Buy Box", "buy_box"), /, so assistants rarely point shoppers to them, and the sales and reviews they would earn often go to a competitor\.$/);
+  assert.match(move("Fill the missing Amazon spec fields", "missing_specs"), /, so assistants struggle to match them to shoppers' questions\.$/);
+  assert.match(move("Merge the splintered bundles", "splintered_bundles"), /, so assistants see fewer reviews behind each one and recommend it less\.$/);
+  assert.doesNotMatch(move("Restock the out-of-stock listings", "out_of_stock"), /^The first move: Restock the out-of-stock listings\.$/);
+});
+
+test("Block 4: every ranked item kind (GAP_KINDS) has an AI consequence clause", () => {
+  assert.deepEqual(kindsWithoutClause(), []);
+  for (const kind of Object.keys(GAP_KINDS)) {
+    for (const model of ["Partner-led", "Brand-led"] as const) {
+      const clause = rankedKindClause(kind, "Acme", model);
+      assert.ok(clause && clause.startsWith("so "), `${kind} has a clause that begins "so"`);
+      assert.doesNotMatch(clause, /—|\p{Extended_Pictographic}/u);
+    }
+  }
+});
+
+test("Block 4: a Priorities card id maps to its ranked kind, including the kept Buy Box and MAP ids", () => {
+  assert.equal(rankedKindOfPriorityId(priorityId("finding:buy_box")), "buy_box");
+  assert.equal(rankedKindOfPriorityId(priorityId("finding:map_leakage")), "map_leakage");
+  const ids: Record<string, string> = {
+    "finding:splintered_bundles": "splintered_bundles",
+    "finding:exact_official_product": "exact_official_product",
+    "signal:out_of_stock": "out_of_stock",
+    "signal:missing_specs": "missing_specs",
+    "signal:rival:abc": "rival",
+    "estimate:aplus": "aplus",
+    "source:example.com": "source",
+    "own:pages": "own_pages",
+    "own:wording": "own_wording",
+    "focus:engine:chatgpt": "engine",
+    "focus:site:example.com": "site",
+    "actuation:E2:activity": "actuation_activity",
+    "actuation:P1:confirm": "actuation_confirm",
+    "actuation:P2:renew": "actuation_renew",
+  };
+  for (const [id, kind] of Object.entries(ids)) {
+    assert.equal(rankedKindOfPriorityId(priorityId(id)), kind, id);
+    assert.ok(kind in GAP_KINDS, `${kind} is a ranked kind`);
+  }
 });
 
 test("the selling-model line names no seller", () => {
@@ -245,6 +321,7 @@ test("the selling-model line names no seller", () => {
 const FENDER: NarrativeInput = {
   brand: "Fender",
   site: "fender.com",
+  sellerModel: "Partner-led",
   unbranded: { wins: 2998, resolved: 4978 },
   branded: { wins: 3012, resolved: 3211 },
   cited: { owned: 6404, total: 36289 },
@@ -254,6 +331,7 @@ const FENDER: NarrativeInput = {
 const LEDLENSER: NarrativeInput = {
   brand: "Ledlenser",
   site: "ledlenserusa.com",
+  sellerModel: "Brand-led",
   unbranded: { wins: 120, resolved: 800 },
   branded: { wins: 410, resolved: 650 },
   cited: { owned: 90, total: 2400 },
@@ -261,12 +339,12 @@ const LEDLENSER: NarrativeInput = {
 };
 
 test("snapshot: Fender", () => {
-  const text = briefingNarrative(FENDER, { low: 55_700, mid: 102_000, high: 158_000 }, "Publish one fender.com page per exact product").map(blockText);
+  const text = briefingNarrative(FENDER, { low: 55_700, mid: 102_000, high: 158_000 }, "Publish one fender.com page per exact product", "exact_official_product").map(blockText);
   assert.deepEqual(text, [
-    "When a shopper asks an AI assistant what to buy, Fender is the answer 6 times in 10. The other 4 times, a rival is named first. Shoppers who already ask about Fender get confirmed 93.8% of the time. The gap is being found, not being trusted.",
-    "Assistants decide by reading product pages, retailer listings and reviews. For Fender, 1 page in 6 they read is Fender's own. 9 in 10 Amazon listings have no matching page on fender.com, so assistants describe those products from retailer and rival pages instead of Fender's. 524 listings are missing the specs assistants compare, so assistants struggle to match them to shoppers' questions. 187 offers are advertised below the agreed floor price, so assistants can repeat a price below the one Fender sets, and the discounting erodes Fender's revenue.",
+    "When a shopper asks an AI assistant what to buy, Fender is the answer 6 times in 10. The other 4 times, a rival is named first. Shoppers who already ask about Fender get confirmed 93.8% of the time. The gap is being found; once found, Fender is trusted.",
+    "Assistants decide by reading product pages, retailer listings and reviews. For Fender, 1 page in 6 they read is Fender's own. 9 in 10 Amazon listings have no matching page on fender.com, so assistants describe those products from retailer and rival pages instead of Fender's. 524 listings are missing the specs assistants compare, so assistants struggle to match them to shoppers' questions. 187 offers are advertised below the agreed floor price, so assistants can repeat a price below the one Fender sets, and the discounting erodes Fender's retail value.",
     "Fixing those listings is worth about $102K a month, an analyst estimate (range $55.7K to $158K) from the Amazon sales those listings already make.",
-    "The first move: Publish one fender.com page per exact product.",
+    "The first move: Publish one fender.com page per exact product, so assistants describe those products from retailer and rival pages instead of Fender's.",
   ]);
 });
 
