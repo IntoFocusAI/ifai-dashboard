@@ -15,7 +15,6 @@ import {
   RETAIL_FINDING_LABELS,
   type PortfolioRetailSnapshot,
   type RetailFindingId,
-  type RetailReading,
 } from "@/lib/fender-canvas/portfolio-retail";
 import { readingLabel } from "@/lib/fender-canvas/portfolio-retail-display";
 import { approvedExceptionsSentence } from "@/lib/fender-canvas/map-approved-exceptions";
@@ -65,17 +64,46 @@ export function heroFigureColor(
   return heroFigureTone(hero) ? hero.color : "var(--text-muted)";
 }
 
-function toneForShare(
+/**
+ * Buy Box, MAP and splintered listings: a check is Poor (danger) at or above this share of all
+ * monitored listings (Brian Magazu, 23 Nov 2026, final). Above 0 and under it is Fair (warning);
+ * 0 is Good (success). Every client and check uses this one constant.
+ */
+export const RETAIL_POOR_SHARE = 0.05;
+
+/** All monitored listings for the client: the one common base the three checks are graded on. */
+export function monitoredListingsTotal(snapshot: PortfolioRetailSnapshot): number | null {
+  const candidates = [snapshot.suppressedListings.detail?.counts.population, snapshot.mapLeakage.detail?.population];
+  for (const value of candidates) if (value != null && value > 0) return value;
+  return null;
+}
+
+/** The band in one plain sentence, for the hero's tooltip. Null when the base is unknown. */
+export function retailBandSentence(monitored: number | null): string | null {
+  if (monitored == null || monitored <= 0) return null;
+  const pct = `${RETAIL_POOR_SHARE * 100}%`;
+  return `Good at 0; Fair under ${pct} of all ${formatInt(monitored)} monitored listings; Poor at ${pct} or more.`;
+}
+
+/**
+ * Grades a count against all monitored listings, never the check's own base. A missing count or
+ * base keeps the warning it had before.
+ */
+export function toneForShare(
   numerator: number | null,
   denominator: number | null,
-  reading: RetailReading<unknown>,
+  monitored: number | null,
 ): Exclude<NodeStatus, "neutral"> {
-  if (numerator == null || denominator == null || denominator <= 0) {
-    if (reading.status === "unavailable") return "warning";
-    return "warning";
-  }
-  if (numerator === 0) return "success";
-  return "danger";
+  if (numerator == null || denominator == null || denominator <= 0) return "warning";
+  if (monitored == null || monitored <= 0) return "warning";
+  if (numerator <= 0) return "success";
+  return numerator / monitored >= RETAIL_POOR_SHARE ? "danger" : "warning";
+}
+
+function withBand(tip: string | null, monitored: number | null): string | null {
+  const band = retailBandSentence(monitored);
+  if (tip == null) return null;
+  return band ? `${tip} ${band}` : tip;
 }
 
 /**
@@ -116,7 +144,8 @@ export function buyBoxHero(snapshot: PortfolioRetailSnapshot): RetailOverviewHer
   const label = readingLabel(reading, RETAIL_FINDING_LABELS.suppressed_listings);
   const numerator = counts?.withheld ?? null;
   const denominator = counts != null && counts.current > 0 ? counts.current : null;
-  const tone = toneForShare(numerator, denominator, reading);
+  const monitored = monitoredListingsTotal(snapshot);
+  const tone = toneForShare(numerator, denominator, monitored);
   const ready = numerator != null && denominator != null;
 
   return {
@@ -128,7 +157,7 @@ export function buyBoxHero(snapshot: PortfolioRetailSnapshot): RetailOverviewHer
     color: TONE_COLOR[tone],
     tone,
     pie: ready ? sharePie("retail-buy-box", label, "Buy Box Withheld", numerator!, denominator!) : null,
-    tip: ready ? `${formatInt(numerator)} of ${formatInt(denominator)} current Buy Box readings.` : null,
+    tip: ready ? withBand(`${formatInt(numerator)} of ${formatInt(denominator)} current Buy Box readings.`, monitored) : null,
     explainer: ready
       ? "The Buy Box is withheld, so there is no one-click offer."
       : reading.missingMessage?.split(". ")[0] ?? "Buy Box reading not stored.",
@@ -179,7 +208,8 @@ export function mapHero(snapshot: PortfolioRetailSnapshot): RetailOverviewHeroMo
   const label = "MAP Leakage";
   const numerator = reading.issueCount;
   const denominator = detail != null && detail.decided > 0 ? detail.decided : null;
-  const tone = toneForShare(numerator, denominator, reading);
+  const monitored = monitoredListingsTotal(snapshot);
+  const tone = toneForShare(numerator, denominator, monitored);
   const ready = numerator != null && denominator != null;
   const filtered = (detail?.approvedExceptions ?? 0) > 0;
 
@@ -192,7 +222,7 @@ export function mapHero(snapshot: PortfolioRetailSnapshot): RetailOverviewHeroMo
     color: TONE_COLOR[tone],
     tone,
     pie: ready ? sharePie("retail-map", label, "Below MAP", numerator!, denominator!) : null,
-    tip: ready ? mapLeakageTip(snapshot) : null,
+    tip: ready ? withBand(mapLeakageTip(snapshot), monitored) : null,
     explainer: ready ? "Priced below MAP." : reading.missingMessage?.split(". ")[0] ?? "MAP reading not stored.",
     numerator,
     denominator,
@@ -210,7 +240,8 @@ export function catalogHero(snapshot: PortfolioRetailSnapshot): RetailOverviewHe
   const label = RETAIL_FINDING_LABELS.unnested_bundles;
   const numerator = reading.issueCount;
   const denominator = detail != null && detail.bundlesInRead > 0 ? detail.bundlesInRead : null;
-  const tone = toneForShare(numerator, denominator, reading);
+  const monitored = monitoredListingsTotal(snapshot);
+  const tone = toneForShare(numerator, denominator, monitored);
   const ready = numerator != null && denominator != null;
 
   return {
@@ -224,7 +255,7 @@ export function catalogHero(snapshot: PortfolioRetailSnapshot): RetailOverviewHe
     pie: ready
       ? sharePie("retail-catalog", label, "Splintered listing", numerator!, denominator!)
       : null,
-    tip: ready ? bundlePopulationTip(reading) : null,
+    tip: ready ? withBand(bundlePopulationTip(reading), monitored) : null,
     explainer: ready
       ? "No parent listing, so the reviews stay split."
       : reading.missingMessage?.split(". ")[0] ?? "Catalog reading not stored.",

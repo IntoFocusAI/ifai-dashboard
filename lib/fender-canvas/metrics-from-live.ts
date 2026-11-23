@@ -3,7 +3,8 @@ import type { AiSearchRead } from "@/lib/ai-search/types";
 import type { CanvasMetric } from "@/lib/canvas-sdk/types";
 import { enterprisePotentialEstimate, phaseOneLiftEstimate } from "@/lib/fender-canvas/analyst-estimates";
 import { failedReadTip, READ_NOT_AVAILABLE } from "@/lib/fender-canvas/canvas-reads";
-import { mapPricesNotStored } from "@/lib/fender-canvas/portfolio-retail";
+import { mapPricesNotStored, type PortfolioRetailSnapshot } from "@/lib/fender-canvas/portfolio-retail";
+import { monitoredListingsTotal, toneForShare } from "@/lib/fender-canvas/retail-overview-lead";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
 import { roadmapMetric } from "@/lib/fender-canvas/roadmap-bubble";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
@@ -62,7 +63,7 @@ function suppressedListingsMetric(retail: RetailCanvasRead): CanvasMetric {
       ...base,
       value: formatInt(reading.issueCount),
       detail: "Suppressed listings in this partial listing read. This is not a final count.",
-      tone: reading.issueCount > 0 ? "danger" : "warning",
+      tone: reading.issueCount > 0 ? shareTone(retail.snapshot, reading.issueCount) : "warning",
     };
   }
   return {
@@ -72,8 +73,15 @@ function suppressedListingsMetric(retail: RetailCanvasRead): CanvasMetric {
       reading.issueCount > 0
         ? "Suppressed listings in this listing read"
         : "No suppressed listings in this listing read",
-    tone: reading.issueCount > 0 ? "danger" : "success",
+    tone: shareTone(retail.snapshot, reading.issueCount),
   };
+}
+
+/** Same bands as the Retail Overview heroes: share of all monitored listings. */
+function shareTone(snapshot: PortfolioRetailSnapshot, count: number): "danger" | "warning" | "success" {
+  if (count <= 0) return "success";
+  const monitored = monitoredListingsTotal(snapshot);
+  return toneForShare(count, monitored, monitored);
 }
 
 function mapViolationsMetric(retail: RetailCanvasRead): CanvasMetric {
@@ -116,7 +124,7 @@ function mapViolationsMetric(retail: RetailCanvasRead): CanvasMetric {
       reading.status === "incomplete"
         ? "Listings below MAP in this partial listing read. This is not a final count."
         : "Listings below MAP in this listing read",
-    tone: reading.issueCount > 0 ? "danger" : "success",
+    tone: shareTone(retail.snapshot, reading.issueCount),
   };
 }
 

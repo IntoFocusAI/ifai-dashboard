@@ -21,7 +21,7 @@ import {
 } from "./portfolio-retail";
 import { approvedExceptionsSentence } from "./map-approved-exceptions";
 import { PARTIAL_TITLE, READ_NOT_AVAILABLE } from "./canvas-reads";
-import { buyBoxHero } from "./retail-overview-lead";
+import { buyBoxHero, catalogHero, heroFigureTone, mapHero } from "./retail-overview-lead";
 
 export const RETAIL_OVERVIEW_TAB = "Retail Overview";
 
@@ -391,6 +391,12 @@ export function catalogHealthMainFace(read: RetailCanvasRead): RetailBubbleFace 
   };
 }
 
+/** A satellite takes the status its check's hero grades (share of all monitored listings), not any-nonzero. */
+function graded(face: RetailBubbleFace, hero: Parameters<typeof heroFigureTone>[0]): RetailBubbleFace {
+  const status = heroFigureTone(hero);
+  return status ? { ...face, status } : face;
+}
+
 export function retailBubbleFaces(read: RetailCanvasRead): {
   main: RetailBubbleFace;
   suppressed: RetailBubbleFace;
@@ -424,8 +430,8 @@ export function retailBubbleFaces(read: RetailCanvasRead): {
   const snapshot = read.snapshot;
   return {
     main: catalogHealthMainFace(read),
-    suppressed: suppressedBubble(snapshot.suppressedListings),
-    map: mapBubble(snapshot.mapLeakage),
-    catalog: catalogBubble(snapshot.unnestedBundles),
+    suppressed: graded(suppressedBubble(snapshot.suppressedListings), buyBoxHero(snapshot)),
+    map: graded(mapBubble(snapshot.mapLeakage), mapHero(snapshot)),
+    catalog: graded(catalogBubble(snapshot.unnestedBundles), catalogHero(snapshot)),
   };
 }
