@@ -51,3 +51,5 @@ next-env.d.ts
 /blob-report/
 /playwright/.cache/
 /e2e-parity-out/
+# review-account browser state (e2e/review-login.ts)
+/e2e/.auth/
