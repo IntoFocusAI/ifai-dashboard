@@ -8,11 +8,13 @@ import type { ClientEstimates } from "@/lib/estimates/live-inputs";
 import { PHASE_1_LINES } from "@/lib/estimates/rollup";
 import type { EstimateLineId, EstimateRange, EstimateResult } from "@/lib/estimates/types";
 import type { BriefingFinding, BriefingFindingId } from "@/lib/fender-canvas/briefing-retail-lead";
+import { compareRankInputs, type Effort, type RankInputs } from "@/lib/fender-canvas/priority-rank";
+import { MONTHS_PER_YEAR } from "@/lib/estimates/monthly";
 
 export const FIX_LIST_TITLE = "Fixes in priority order";
 
 export const FIX_LIST_PRIORITY_RULE =
-  "Critical findings come first, then at risk, then on track, then findings with no stored reading. Within a status, the finding that affects the larger share of its listings or answers comes first. For exact official product pages and Unbranded Discovery a higher share is better, so the share affected is the rest: listings without an exact page, and answers that do not lead with the brand. After the five findings come out-of-stock listings and missing Amazon spec fields, then the brand's own pages and listings when one of their factors is below Good, then the source, competitor, and fact-check actions, by the share of answers each affects. Then come the weakest engine and the weakest Unbranded Discovery questions that trail the best by 10 points or more, and the cited sites whose share moved by 10% or more against the 30 days before, each counted over the last 30 days with at least 30 answers behind the figure. Wording the brand's pages to match shopper questions comes next. Watch lines come last: the weakest engine and questions when they trail the best by less than 10 points.";
+  "One ranking for every list: Priorities, this table, the Roadmap, the deck, and the map. First by how much of its own base each gap touches: listings affected of the listings counted, or answers affected of the answers counted, compared in whole percentage points. Ties go to the larger monthly analyst estimate, then to the quicker fix (a listing or offer fix, then catalog and site content, then an outreach program). Items with no single count follow the counted ones. Watch lines and findings on track follow the items that need action. Unbranded Discovery is the result every fix moves, so it is tracked last rather than ranked.";
 
 /** The A+ content row id (action-items-aplus-row.ts builds the row). */
 export const APLUS_ROW_ID = "estimate:aplus";
@@ -90,6 +92,13 @@ export function fixRowEstimate(itemId: string, est: ClientEstimates): LineListin
   return lineId ? lineFromListings(est, lineId) : null;
 }
 
+/** Rule 2: the row's estimate line, its yearly mid divided by 12. Null when no line covers the row or it has no range. */
+export function fixRowMonthly(itemId: string, est: ClientEstimates | null): number | null {
+  if (!est) return null;
+  const figure = fixRowEstimate(itemId, est);
+  return figure?.range ? figure.range.mid / MONTHS_PER_YEAR : null;
+}
+
 /** Findings whose figure counts what is going well; the gap is the rest of the population. */
 const HIGHER_IS_BETTER: ReadonlySet<BriefingFindingId> = new Set([
   "exact_official_product",
@@ -113,6 +122,8 @@ export type FixListInput = {
 
 export type FixListRow = FixListInput & {
   rank: number;
+  /** The central rank's inputs (priority-rank.ts). */
+  inputs: RankInputs;
   status: FixStatus;
   statusLabel: string;
   /** Share of the population the problem touches, 0 to 1. Orders rows; never shown. */
@@ -128,6 +139,32 @@ function statusOf(input: FixListInput): FixStatus {
   return "on_track";
 }
 
+/** Effort (rule 3) from 21g's work type: offer fixes are S, the official-page content is M. */
+const FINDING_EFFORT: Record<BriefingFindingId, Effort> = {
+  buy_box: "S",
+  map_leakage: "S",
+  splintered_bundles: "S",
+  exact_official_product: "M",
+  unbranded_discovery: "M",
+};
+
+/** A finding's rank inputs: the listings its gap touches, its estimate, its effort, its tier. */
+export function findingRankInputs(input: FixListInput, status: FixStatus, est: ClientEstimates | null): RankInputs {
+  const { finding, stored } = input;
+  const { numerator, denominator } = finding;
+  const counted = stored && numerator != null && denominator != null && denominator > 0;
+  const affected = counted ? (HIGHER_IS_BETTER.has(finding.id) ? denominator - numerator : numerator) : null;
+  return {
+    affected,
+    base: counted ? denominator : null,
+    unit: counted ? (finding.id === "unbranded_discovery" ? "answers" : "listings") : null,
+    monthly: fixRowMonthly(`finding:${finding.id}`, est),
+    effort: FINDING_EFFORT[finding.id],
+    dependsOn: [],
+    tier: finding.id === "unbranded_discovery" ? "outcome" : status === "on_track" ? "on_track" : "action",
+  };
+}
+
 function affectedShare({ finding, stored }: FixListInput): number | null {
   const { numerator, denominator } = finding;
   if (!stored || numerator == null || denominator == null || denominator <= 0) return null;
@@ -135,9 +172,10 @@ function affectedShare({ finding, stored }: FixListInput): number | null {
   return HIGHER_IS_BETTER.has(finding.id) ? 1 - share : share;
 }
 
-/** Ranks by status, then by the larger share affected. Ties keep the briefing order. */
+/** The findings in the central order (priority-rank.ts). Ties keep the briefing order. */
 export function rankFixList(
   inputs: readonly FixListInput[],
+  est: ClientEstimates | null = null,
   estimates: Partial<Record<BriefingFindingId, string>> = {},
 ): FixListRow[] {
   return inputs
@@ -146,6 +184,7 @@ export function rankFixList(
       const row = {
         ...input,
         rank: 0,
+        inputs: findingRankInputs(input, status, est),
         status,
         statusLabel: STATUS[status].label,
         affectedShare: affectedShare(input),
@@ -153,11 +192,6 @@ export function rankFixList(
       };
       return { row, order };
     })
-    .sort(
-      (a, b) =>
-        STATUS[a.row.status].rank - STATUS[b.row.status].rank ||
-        (b.row.affectedShare ?? -1) - (a.row.affectedShare ?? -1) ||
-        a.order - b.order,
-    )
+    .sort((a, b) => compareRankInputs(a.row.inputs, b.row.inputs) || a.order - b.order)
     .map(({ row }, index) => ({ ...row, rank: index + 1 }));
 }

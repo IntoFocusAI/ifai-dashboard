@@ -1,24 +1,34 @@
 /**
- * The plan Action Items and the Roadmap share (decision 21, FDD S-02, N-01, N-04).
- *
- * Order (21f): the five findings keep the fix-list order, then the ecommerce signals and the
- * brand's own pages when a page factor is below Good (21c), then the source, competitor, and
- * fact-check actions by the share of answers they affect, then the focus items (21d: weakest
- * engine, weakest questions, cited sites that moved most), then rewording the brand's pages,
- * then the 21d watch lines (a weakest engine or question less than 10 points behind the best).
- * Phases (21g): Days 1 to 30 listing fixes, 31 to 60 catalog and site content, 61 to 90
- * outreach programs. The plan is rebuilt from each read and dated from today (rolling 90 days),
- * so an action leaves when its trigger clears (21h) and a new one enters when its trigger is met.
+ * The plan Action Items and the Roadmap share (decision 21, FDD S-02, N-01, N-04), in the one
+ * central order (priority-rank.ts, Brian Magazu, 23 Nov 2026): first by the share of its own base
+ * each gap touches, then by monthly analyst-estimate dollars, then by effort. Priorities, the
+ * deck's fix slide, the map's action cards, and the Briefing's first move read the same list.
+ * Roadmap columns follow the rank and each item's prerequisites (placeByRank), not the item type;
+ * 21g's work types now set the effort only. The plan is rebuilt from each read and dated from
+ * today (rolling 90 days), so an action leaves when its trigger clears (21h) and a new one enters
+ * when its trigger is met.
  */
 
 import type { PieDiscData } from "@/lib/ai-search/citation-pies";
 import type { FactCheckReviewAnswer } from "@/lib/ai-search/drift";
 import type { EvidenceFocus } from "@/lib/ai-search/evidence-focus";
 import type { NodeStatus } from "@/lib/canvas-sdk/types";
-import { rankFixList, type FixListRow } from "@/lib/fender-canvas/action-items-fix-list";
-import type { BriefingFinding, BriefingFindingId } from "@/lib/fender-canvas/briefing-retail-lead";
+import { brandSite } from "@/lib/brand-copy";
+import type { ClientEstimates } from "@/lib/estimates/live-inputs";
+import {
+  fixRowMonthly,
+  rankFixList,
+  type FixListRow,
+} from "@/lib/fender-canvas/action-items-fix-list";
+import type { BriefingFinding } from "@/lib/fender-canvas/briefing-retail-lead";
 import type { PartialFigure } from "@/lib/fender-canvas/canvas-reads";
 import { formatPct, formatRatio } from "@/lib/fender-canvas/format";
+import {
+  placeByRank,
+  rankPriorities,
+  type Effort,
+  type RankInputs,
+} from "@/lib/fender-canvas/priority-rank";
 import {
   SITE_TYPE_LABELS,
   type CitedPage,
@@ -27,30 +37,28 @@ import {
 } from "@/lib/fender-canvas/roadmap-sources";
 import type { ActuationAction, SuggestedTarget } from "@/lib/fender-canvas/roadmap-actuation";
 import type { FocusAction, PlanFocus } from "@/lib/fender-canvas/roadmap-focus";
-import type { OwnPageAction } from "@/lib/fender-canvas/roadmap-own-pages";
+import { OWN_SITE_CITED_THRESHOLD, type OwnPageAction } from "@/lib/fender-canvas/roadmap-own-pages";
 import type { SignalAction } from "@/lib/fender-canvas/roadmap-signals";
 import { findingAction, hasStoredReading } from "@/lib/fender-canvas/urgent-interventions-rows";
 
 export type PlanPhase = "days_1_30" | "days_31_60" | "days_61_90";
 
 export const PLAN_PHASES: ReadonlyArray<{ id: PlanPhase; label: string; focus: string }> = [
-  { id: "days_1_30", label: "Days 1 to 30", focus: "Listing fixes" },
-  { id: "days_31_60", label: "Days 31 to 60", focus: "Catalog and site content" },
-  { id: "days_61_90", label: "Days 61 to 90", focus: "Outreach programs" },
+  { id: "days_1_30", label: "Days 1 to 30", focus: "Highest ranked first" },
+  { id: "days_31_60", label: "Days 31 to 60", focus: "Next by rank" },
+  { id: "days_61_90", label: "Days 61 to 90", focus: "Then by rank" },
 ];
 
 /** Shown where an item has no dated phase: Unbranded Discovery moves with the fixes before it. */
 export const ALL_PHASES_LABEL = "All phases";
 
-const FINDING_PHASE: Record<BriefingFindingId, PlanPhase | null> = {
-  buy_box: "days_1_30",
-  map_leakage: "days_1_30",
-  splintered_bundles: "days_1_30",
-  exact_official_product: "days_31_60",
-  unbranded_discovery: null,
-};
+/**
+ * Effort (rule 3) from the work type 21g already assigns: a listing or offer fix is S, catalog and
+ * site content is M, an outreach program is L. The type no longer sets the Roadmap column.
+ */
+const EFFORT_OF_WORK: Record<PlanPhase, Effort> = { days_1_30: "S", days_31_60: "M", days_61_90: "L" };
 
-const SOURCE_PHASE: Partial<Record<SiteType, PlanPhase>> = {
+const SOURCE_WORK: Partial<Record<SiteType, PlanPhase>> = {
   retailer: "days_1_30",
   competitor_brand: "days_31_60",
   reference: "days_31_60",
@@ -59,24 +67,39 @@ const SOURCE_PHASE: Partial<Record<SiteType, PlanPhase>> = {
   video: "days_61_90",
 };
 
-const SIGNAL_PHASE: Record<string, PlanPhase> = {
+const SIGNAL_WORK: Record<string, PlanPhase> = {
   "signal:out_of_stock": "days_1_30",
   "signal:missing_specs": "days_31_60",
   "signal:fact_contradictions": "days_31_60",
 };
 
-/** 21d: the weakest engine and questions are site content; a moving site keeps its type's phase. */
-const FOCUS_PHASE: Record<"engine" | "question", PlanPhase> = {
-  engine: "days_31_60",
-  question: "days_31_60",
-};
+/**
+ * Prerequisites (proposed): content published on the brand's site waits on the exact official
+ * product pages it sits on. Fact corrections start on those pages, comparison content and the
+ * rewording of the brand's pages are published there. An item is placed in a later Roadmap
+ * column than each prerequisite that is in the list.
+ */
+export const OFFICIAL_PAGES_ID = "finding:exact_official_product";
+
+function prerequisitesOf(id: string): string[] {
+  if (id === "signal:fact_contradictions" || id.startsWith("signal:rival:") || id === "own:wording") {
+    return [OFFICIAL_PAGES_ID];
+  }
+  return [];
+}
+
+function effortOf(work: PlanPhase | null | undefined): Effort {
+  return work ? EFFORT_OF_WORK[work] : "M";
+}
 
 export type PlanKind = "finding" | "signal" | "source" | "own_page" | "focus" | "actuation";
 
 export type PlanItem = {
   id: string;
   kind: PlanKind;
+  /** The central rank, 1 = do this first (priority-rank.ts). */
   rank: number;
+  /** The Roadmap column, by rank and prerequisites; null for an item the Roadmap does not show. */
   phase: PlanPhase | null;
   label: string;
   /** The figure, as its home tab shows it. */
@@ -106,19 +129,57 @@ export type PlanItem = {
   targets?: { label: string; sites: SuggestedTarget[] } | null;
   /** The fact-check review task's flagged answers, each linking to its quote and source fact. */
   reviews?: FactCheckReviewAnswer[];
+  /** The central rank's inputs (priority-rank.ts). */
+  inputs: RankInputs;
+  /** affected / base, 0 to 1; null when the item has no count. */
+  share: number | null;
+  /** One plain line naming the rank inputs. */
+  reason: string;
+  /** The item as a task ("Publish one brand-site page for each exact product"), never a finding label. */
+  title: string;
 };
+
+/** An item before rankPlan gives it a rank, a share, a reason, a task title, and a column. */
+export type UnrankedPlanItem = Omit<PlanItem, "rank" | "phase" | "share" | "reason" | "title">;
+
+/** The five findings as tasks (the deck outline's short actions). */
+function findingTask(id: string): string | null {
+  const tasks: Record<string, string> = {
+    "finding:exact_official_product": `Publish one ${brandSite()} page for each exact product`,
+    "finding:map_leakage": "Raise offers below MAP back to the floor",
+    "finding:splintered_bundles": "Nest each bundle under the official parent listing",
+    "finding:buy_box": "Correct each offer so the Buy Box returns",
+    "finding:unbranded_discovery": "Track Unbranded Discovery as the result",
+  };
+  return tasks[id] ?? null;
+}
+
+const SIGNAL_TASK: Record<string, string> = {
+  "signal:out_of_stock": "Restock or correct the out-of-stock listings",
+  "signal:missing_specs": "Fill the missing Amazon spec fields",
+  "signal:fact_contradictions": "Review the answers the fact check flagged",
+};
+
+/**
+ * The item as a task. Findings and the listing signals have a short task; every other item's
+ * action already opens on its verb, so its title is that first sentence or clause.
+ */
+export function actionTitle(item: Pick<PlanItem, "id" | "action">): string {
+  const fixed = findingTask(item.id) ?? SIGNAL_TASK[item.id];
+  if (fixed) return fixed;
+  const first = item.action.split(/(?<=\.)\s|:\s/)[0] ?? item.action;
+  return first.replace(/\.$/, "").trim();
+}
 
 export const RECOMMENDED_LABEL = "Recommended";
 /** 21d: a weakest engine or question less than 10 points behind the best, shown so the client sees it. */
 export const WATCH_LABEL = "Watch";
 
-function findingItem(row: FixListRow): PlanItem {
+function findingItem(row: FixListRow): UnrankedPlanItem {
   const { finding } = row;
   return {
     id: `finding:${finding.id}`,
     kind: "finding",
-    rank: row.rank,
-    phase: FINDING_PHASE[finding.id],
     label: finding.label,
     percent: finding.percent,
     ratio: finding.ratio,
@@ -135,16 +196,15 @@ function findingItem(row: FixListRow): PlanItem {
     pages: [],
     evidence: null,
     categories: [],
+    inputs: row.inputs,
   };
 }
 
-function signalItem(signal: SignalAction): PlanItem {
+function signalItem(signal: SignalAction, est: ClientEstimates | null): UnrankedPlanItem {
   const rival = signal.id.startsWith("signal:rival:");
   return {
     id: signal.id,
     kind: "signal",
-    rank: 0,
-    phase: rival ? "days_31_60" : (SIGNAL_PHASE[signal.id] ?? null),
     label: signal.label,
     percent: formatPct(100 * (signal.denominator ? signal.numerator / signal.denominator : signal.share)),
     ratio: signal.denominator != null ? formatRatio(signal.numerator, signal.denominator) : null,
@@ -162,15 +222,22 @@ function signalItem(signal: SignalAction): PlanItem {
     evidence: null,
     categories: signal.categories ?? [],
     ...(signal.reviews ? { reviews: signal.reviews } : {}),
+    inputs: {
+      affected: signal.denominator != null ? signal.numerator : null,
+      base: signal.denominator,
+      unit: signal.group === "ecommerce" ? "listings" : "answers",
+      monthly: fixRowMonthly(signal.id, est),
+      effort: effortOf(rival ? "days_31_60" : SIGNAL_WORK[signal.id]),
+      dependsOn: prerequisitesOf(signal.id),
+      tier: "action",
+    },
   };
 }
 
-function sourceItem(source: SourceAction): PlanItem {
+function sourceItem(source: SourceAction): UnrankedPlanItem {
   return {
     id: `source:${source.domain}`,
     kind: "source",
-    rank: 0,
-    phase: SOURCE_PHASE[source.type] ?? null,
     label: source.domain,
     percent: formatPct(100 * source.share),
     ratio: formatRatio(source.answers, source.answersWithSources),
@@ -187,15 +254,40 @@ function sourceItem(source: SourceAction): PlanItem {
     pages: source.pages,
     evidence: { field: "domain", value: source.domain },
     categories: source.categoryKeys,
+    inputs: {
+      affected: source.answers,
+      base: source.answersWithSources,
+      unit: "answers",
+      monthly: null,
+      effort: effortOf(SOURCE_WORK[source.type]),
+      dependsOn: [],
+      tier: "action",
+    },
   };
 }
 
-function ownPageItem(own: OwnPageAction): PlanItem {
+/**
+ * The brand's own pages. The urgent row joins up to five factors, each over its own base, so it
+ * has no single count. The wording row counts the answers short of 21c's 30% target.
+ */
+function ownPageInputs(own: OwnPageAction): RankInputs {
+  const counted = own.id === "own:wording" && own.cited ? own.cited : null;
+  const short = counted ? Math.max(0, Math.ceil(OWN_SITE_CITED_THRESHOLD * counted.total) - counted.answers) : null;
+  return {
+    affected: short,
+    base: counted ? counted.total : null,
+    unit: counted ? "answers" : null,
+    monthly: null,
+    effort: effortOf(own.phase),
+    dependsOn: prerequisitesOf(own.id),
+    tier: "action",
+  };
+}
+
+function ownPageItem(own: OwnPageAction): UnrankedPlanItem {
   return {
     id: own.id,
     kind: "own_page",
-    rank: 0,
-    phase: own.phase,
     label: own.label,
     percent: own.percent,
     ratio: own.ratio,
@@ -212,20 +304,33 @@ function ownPageItem(own: OwnPageAction): PlanItem {
     pages: [],
     evidence: own.id === "own:wording" ? { field: "class", value: "fender_owned" } : null,
     categories: [],
+    inputs: ownPageInputs(own),
   };
 }
 
-function focusItem(focus: FocusAction): PlanItem {
+/**
+ * A weakest engine or question counts the answers it is short of the best comparable (its gap in
+ * points times its resolved answers), out of its own resolved answers (approved 23 Nov 2026:
+ * each item's own base). A moving site counts the answers that cite it.
+ */
+function focusInputs(focus: FocusAction): RankInputs {
+  const site = focus.focus === "site";
+  const affected = site ? focus.numerator : Math.round((focus.gap / 100) * focus.denominator);
+  return {
+    affected: focus.denominator > 0 ? affected : null,
+    base: focus.denominator > 0 ? focus.denominator : null,
+    unit: "answers",
+    monthly: null,
+    effort: focus.tier === "watch" ? "L" : effortOf(focus.siteType ? SOURCE_WORK[focus.siteType] : "days_31_60"),
+    dependsOn: [],
+    tier: focus.tier === "watch" ? "watch" : "action",
+  };
+}
+
+function focusItem(focus: FocusAction): UnrankedPlanItem {
   return {
     id: focus.id,
     kind: "focus",
-    rank: 0,
-    phase:
-      focus.tier === "watch"
-        ? "days_61_90"
-        : focus.siteType
-          ? (SOURCE_PHASE[focus.siteType] ?? null)
-          : FOCUS_PHASE[focus.focus as "engine" | "question"],
     label: focus.label,
     percent: formatPct(focus.denominator > 0 ? (100 * focus.numerator) / focus.denominator : 0),
     ratio: formatRatio(focus.numerator, focus.denominator),
@@ -242,15 +347,28 @@ function focusItem(focus: FocusAction): PlanItem {
     pages: focus.pages,
     evidence: focus.evidence,
     categories: focus.categories,
+    inputs: focusInputs(focus),
   };
 }
 
-function actuationItem(item: ActuationAction): PlanItem {
+/** A confirm or renew item has no count; an activity item counts the verified links short of its target. */
+function actuationInputs(item: ActuationAction): RankInputs {
+  const activity = item.rule === "activity" && item.counts ? item.counts : null;
+  return {
+    affected: activity ? Math.max(0, activity.target - activity.count) : null,
+    base: activity ? activity.target : null,
+    unit: activity ? "links" : null,
+    monthly: null,
+    effort: effortOf(item.phase),
+    dependsOn: [],
+    tier: "action",
+  };
+}
+
+function actuationItem(item: ActuationAction): UnrankedPlanItem {
   return {
     id: item.id,
     kind: "actuation",
-    rank: 0,
-    phase: item.phase,
     label: item.label,
     percent: item.percent,
     ratio: item.ratio,
@@ -268,13 +386,15 @@ function actuationItem(item: ActuationAction): PlanItem {
     evidence: null,
     categories: [],
     targets: item.targets,
+    inputs: actuationInputs(item),
   };
 }
 
-/** The five findings as the fix list ranks them, with their action lines. */
-export function rankedFindings(findings: readonly BriefingFinding[]): FixListRow[] {
+/** The five findings in the central order, with their action lines and rank inputs. */
+export function rankedFindings(findings: readonly BriefingFinding[], est: ClientEstimates | null = null): FixListRow[] {
   return rankFixList(
     findings.map((finding) => ({ finding, action: findingAction(finding), stored: hasStoredReading(finding) })),
+    est,
   );
 }
 
@@ -288,6 +408,8 @@ export type PlanInput = {
   focus?: readonly FocusAction[];
   /** SC-03: confirm, post against the target, or renew each Actuation program (roadmap-actuation). */
   actuation?: readonly ActuationAction[];
+  /** The analyst estimates, for rule 2's monthly dollars. Null while they read. */
+  estimates?: ClientEstimates | null;
 };
 
 /**
@@ -306,62 +428,54 @@ function mergeMovement(sources: readonly SourceAction[], focus: readonly FocusAc
   return { merged, rest };
 }
 
-/** Every item in Action Items order, ranked 1 to N. */
+/** True for an item the Roadmap shows in a column. Unbranded Discovery, the outcome, is never placed. */
+export function onRoadmap(item: Pick<PlanItem, "needsAction" | "noReading" | "inputs">): boolean {
+  return item.inputs.tier !== "outcome" && (item.needsAction || item.noReading);
+}
+
+/**
+ * The one ordered list: every item ranked by priority-rank's rule, then placed in a Roadmap
+ * column by rank and prerequisites. Items the Roadmap does not show have no column.
+ */
+export function rankPlan(items: readonly (UnrankedPlanItem | PlanItem)[]): PlanItem[] {
+  const ranked = rankPriorities(items.map((item) => ({ ...item, rank: 0, phase: null })));
+  const columns = placeByRank(ranked.filter(onRoadmap));
+  return ranked.map((item) => {
+    const column = columns.get(item.id);
+    return { ...item, title: actionTitle(item), phase: column == null ? null : PLAN_PHASES[column]!.id } as PlanItem;
+  });
+}
+
+/** Every item in the central order, ranked 1 to N. */
 export function buildPlan(input: PlanInput): PlanItem[] {
-  const findings = rankedFindings(input.findings).map(findingItem);
-  const ecommerce = input.signals.filter((signal) => signal.group === "ecommerce").map(signalItem);
-  const own = input.ownPages ? ownPageItem(input.ownPages) : null;
+  const est = input.estimates ?? null;
   const { merged, rest } = mergeMovement(input.sources, input.focus ?? []);
-  const shares = new Map<string, number>();
-  const answers = [
-    ...input.signals.filter((signal) => signal.group === "answers").map((signal) => {
-      shares.set(signal.id, signal.share);
-      return signalItem(signal);
-    }),
+  return rankPlan([
+    ...rankedFindings(input.findings, est).map(findingItem),
+    ...input.signals.map((signal) => signalItem(signal, est)),
+    ...(input.ownPages ? [ownPageItem(input.ownPages)] : []),
     ...input.sources.map((source) => {
-      shares.set(`source:${source.domain}`, source.share);
       const item = sourceItem(source);
       const trend = merged.get(item.id);
       return trend ? { ...item, fact: `${item.fact} ${trend}` } : item;
     }),
-  ].sort((a, b) => (shares.get(b.id) ?? 0) - (shares.get(a.id) ?? 0) || a.label.localeCompare(b.label));
-  const urgentOwn = own && input.ownPages?.urgent ? [own] : [];
-  const laterOwn = own && !input.ownPages?.urgent ? [own] : [];
-  const priority = rest.filter((item) => item.tier === "priority").map(focusItem);
-  const watch = rest.filter((item) => item.tier === "watch").map(focusItem);
-  const actuation = (input.actuation ?? []).map(actuationItem);
-  // The two "Confirm your program" items rank right after the Critical findings, so they sit in the
-  // top 10 rows (Brian Magazu, 18 Nov 2026). Activity and renew items keep their place after the focus items.
-  const confirm = actuation.filter((item) => item.id.endsWith(":confirm"));
-  const laterActuation = actuation.filter((item) => !item.id.endsWith(":confirm"));
-  const critical = findings.filter((item) => item.statusLabel === "Critical");
-  const otherFindings = findings.filter((item) => item.statusLabel !== "Critical");
-  return [
-    ...critical,
-    ...confirm,
-    ...otherFindings,
-    ...ecommerce,
-    ...urgentOwn,
-    ...answers,
-    ...priority,
-    ...laterActuation,
-    ...laterOwn,
-    ...watch,
-  ].map((item, index) => ({
-    ...item,
-    rank: index + 1,
-  }));
+    ...rest.map(focusItem),
+    ...(input.actuation ?? []).map(actuationItem),
+  ]);
+}
+
+/** The first move: the top of the central list, or null when nothing needs action. */
+export function firstMove(plan: readonly PlanItem[]): PlanItem | null {
+  return plan.find((item) => item.inputs.tier === "action" && item.needsAction) ?? null;
 }
 
 /**
  * The plan for a client focus: brand-wide items stay, and an item tied to categories stays when
- * one of them is the focus. Ranks are renumbered. The brand focus returns the plan unchanged.
+ * one of them is the focus. Ranks and columns are recomputed. The brand focus returns the plan unchanged.
  */
 export function focusPlan(plan: readonly PlanItem[], focus: PlanFocus): PlanItem[] {
   if (focus.kind === "brand") return [...plan];
-  return plan
-    .filter((item) => item.categories.length === 0 || item.categories.includes(focus.key))
-    .map((item, index) => ({ ...item, rank: index + 1 }));
+  return rankPlan(plan.filter((item) => item.categories.length === 0 || item.categories.includes(focus.key)));
 }
 
 /** Items in one phase, in plan order: those that need action, then findings with no reading. */

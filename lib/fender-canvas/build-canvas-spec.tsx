@@ -34,6 +34,7 @@ import { enterprisePotentialEstimate, phaseOneLiftEstimate } from "@/lib/fender-
 import { bindBrandTokens } from "@/lib/fender-canvas/spoke-narrative";
 import { bindCopy } from "@/lib/fender-canvas/template-vars";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
+import type { PlanItem } from "@/lib/fender-canvas/roadmap-plan";
 
 /** Documentation version shown beside the product name in the canvas header. */
 export const DOCUMENTATION_VERSION = "30.10";
@@ -64,6 +65,8 @@ export type BuildCanvasSpecOptions = {
   authorizedPartners?: readonly string[] | null;
   stockLoss?: StockLossRead;
   amazonFieldTotals?: AmazonFieldTotals | null;
+  /** The one central ranking (the Action Items plan). Priorities and the map action cards read it. */
+  plan?: readonly PlanItem[] | null;
 };
 
 /** Static fallback when Supabase is unavailable on first paint. */
@@ -94,7 +97,7 @@ export function buildFenderCanvasSpec(
 
   const ai = metrics.overallAiWinRate;
   const headline = headlineSurface(retail);
-  const commandCenter = bundle ? buildLiveCommandCenter(bundle, retail, aiSearch) : {
+  const commandCenter = bundle ? buildLiveCommandCenter(bundle, retail, aiSearch, options.plan ?? null) : {
         ...fenderCommandCenter,
         // The offline fallback reads the set-asides and owner chips of the brand on screen.
         storageKey: clientStorageKey(fenderCommandCenter.storageKey ?? "ifai:fender:command-center"),

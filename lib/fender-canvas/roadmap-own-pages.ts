@@ -53,6 +53,8 @@ export type OwnPageAction = {
   open: { spokeId: string; tab: string };
   /** Share of the population the figure covers, 0 to 1, for ranking. */
   share: number;
+  /** The wording row's count: shopping answers with sources that cite the brand's site, of all of them. */
+  cited?: { answers: number; total: number };
 };
 
 export type OwnPagesRead = {
@@ -185,6 +187,7 @@ export function ownPagesAction(bundle: CanvasBundle | null, snapshot: AiSearchSn
       action: `Word the ${brandSite()} product pages to match the questions shoppers ask.`,
       open: { spokeId: "aeo", tab: "Citation Ecosystem" },
       share,
+      cited,
     },
   };
 }

@@ -1,9 +1,11 @@
 import { clientStorageKey } from "@/lib/client/active-client";
 import { activeSetAsideClientKey } from "@/lib/set-aside/keys";
-import type { CommandCenterSpec } from "@/lib/canvas-sdk/types";
+import type { CommandCenterSpec, PriorityItem, PriorityOwner } from "@/lib/canvas-sdk/types";
 import { aiCommandSummary, aiPriorityItems } from "@/lib/ai-search/canvas-surfaces";
 import type { AiSearchRead } from "@/lib/ai-search/types";
+import { markPartial } from "@/lib/fender-canvas/canvas-reads";
 import { formatInt } from "@/lib/fender-canvas/format";
+import type { PlanItem } from "@/lib/fender-canvas/roadmap-plan";
 import { bulletCounts } from "@/lib/fender-canvas/listing-content";
 import { specPageCounts } from "@/lib/fender-canvas/machine-readability";
 import {
@@ -50,11 +52,54 @@ function mapPriority(retail: RetailCanvasRead): { title: string; why: string } {
   return { title, why: mapMissingSentence(retail) ?? mapChannelWhy() };
 }
 
-/** Command center copy from the canvas reads. Unsourced counts are omitted. */
+/**
+ * Plan items that keep the id Priorities stored their set-asides and owners under, and their
+ * default owner, so a saved set-aside still applies.
+ */
+const KEPT_IDS: Readonly<Record<string, { id: string; owner: PriorityOwner }>> = {
+  "finding:buy_box": { id: "buybox-suppression", owner: "intofocus" },
+  "finding:map_leakage": { id: "map-leakage", owner: "client" },
+};
+
+/** The Priorities id for a plan item (the hub slots and the Briefing read the same ids). */
+export function priorityId(planId: string): string {
+  return KEPT_IDS[planId]?.id ?? planId;
+}
+
+/** True for a plan item Priorities lists: it needs action now, or its reading is not stored yet. */
+export function inPriorities(item: PlanItem): boolean {
+  return item.inputs.tier === "action" && (item.needsAction || item.noReading);
+}
+
+/** One Priorities card from a plan item: the task, why it ranks where it does, and the finding behind it. */
+export function priorityFromPlan(item: PlanItem): PriorityItem {
+  const figure = item.ratio ? markPartial(item.ratio, item.partial) : null;
+  const kept = KEPT_IDS[item.id];
+  return {
+    id: priorityId(item.id),
+    title: item.title,
+    why: item.reason,
+    impact: figure ? `${item.label}: ${figure}` : item.label,
+    severity: item.tone === "danger" ? "critical" : item.tone === "warning" ? "high" : "moderate",
+    spokeId: item.open.spokeId,
+    subTab: item.open.tab,
+    ...(kept ? { defaultOwner: kept.owner } : {}),
+  };
+}
+
+export const PRIORITIES_DESC =
+  "Every fix in one order: the share of answers or listings each gap touches, then the monthly analyst estimate, then the quicker fix. Action Items, the Roadmap, the deck, and the map read the same order.";
+
+/**
+ * Command center copy from the canvas reads. With the plan (the one central ranking), the queue is
+ * the plan's items that need action, in rank order. Without it (first paint, server tests), the
+ * queue falls back to the reads it has. Unsourced counts are omitted.
+ */
 export function buildLiveCommandCenter(
   bundle: CanvasBundle,
   retail: RetailCanvasRead = { phase: "loading" },
   ai: AiSearchRead = { phase: "loading" },
+  plan: readonly PlanItem[] | null = null,
 ): CommandCenterSpec {
   const schemaPages = specPageCounts(bundle.specPages);
   const bullets = bulletCounts(bundle.listingContent);
@@ -68,7 +113,7 @@ export function buildLiveCommandCenter(
   const aiLine = aiCommandSummary(ai);
   if (aiLine) summaryParts.push(aiLine);
 
-  return {
+  const base = {
     badge: "COMMAND CENTER · TODAY",
     title: "What do I need to worry about?",
     desc: "The highest-value moves across the monitored electric catalog, ranked by what they cost you while they sit open.",
@@ -76,6 +121,12 @@ export function buildLiveCommandCenter(
     openByDefault: true,
     storageKey: clientStorageKey("ifai:fender:command-center"),
     setAsideClientKey: activeSetAsideClientKey(),
+  };
+  if (plan?.length) {
+    return { ...base, desc: PRIORITIES_DESC, items: plan.filter(inPriorities).map(priorityFromPlan) };
+  }
+  return {
+    ...base,
     items: [
       {
         id: "buybox-suppression",

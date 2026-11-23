@@ -191,14 +191,16 @@ test("E1 joins the existing brand-pages row when under its 15% target, and never
   assert.equal(withOwnedAnswersGap(null, { withOwned: 0, resolved: 60 }), null, "no row, none added");
 });
 
-test("the plan: Actuation items join the existing phases and add at most two per program", () => {
+test("the plan: Actuation items join the one ranking and add at most two per program", () => {
   const actuation = actuationActions({ basis: NONE, asOf: ASOF, targets: suggestedTargets(snapshot()) });
   const plan = buildPlan({ findings: [], signals: [], sources: [], actuation });
   assert.deepEqual(plan.map((item) => [item.rank, item.id, item.kind]), [
     [1, "actuation:P1:confirm", "actuation"],
     [2, "actuation:P2:confirm", "actuation"],
   ]);
-  assert.equal(phaseItems(plan, "days_1_30").length, 2);
+  // Two items: one column each, by rank (placeByRank).
+  assert.deepEqual(phaseItems(plan, "days_1_30").map((item) => item.id), ["actuation:P1:confirm"]);
+  assert.deepEqual(phaseItems(plan, "days_31_60").map((item) => item.id), ["actuation:P2:confirm"]);
   assert.equal(plan[0]!.open.tab, "Citation Ecosystem");
   const cells = fixListCells(plan[0]!, new Date("2026-11-18T12:00:00Z"));
   assert.match(cells[1]!, /Suggested communities: reddit\.com \(6 of 40 answers\), /);
@@ -225,7 +227,7 @@ function finding(id: BriefingFindingId, tone: BriefingFinding["tone"], n: number
   };
 }
 
-test("the Confirm items rank right after the Critical findings, inside the top 10, in both phases' lists", () => {
+test("the Confirm items have no count, so they follow every counted item that needs action (central rank, 23 Nov 2026)", () => {
   const findings = [
     finding("buy_box", "danger", 57, 1088),
     finding("map_leakage", "danger", 121, 633),
@@ -240,20 +242,20 @@ test("the Confirm items rank right after the Critical findings, inside the top 1
   const actuation = actuationActions({ basis: NONE, asOf: ASOF, targets: suggestedTargets(snapshot()) });
   const plan = buildPlan({ findings, signals, sources: [], actuation });
   const ids = plan.map((item) => item.id);
-  const critical = plan.filter((item) => item.statusLabel === "Critical").length;
-  assert.ok(critical >= 1);
-  assert.deepEqual(ids.slice(critical, critical + 2), ["actuation:P1:confirm", "actuation:P2:confirm"]);
-  assert.ok(ids.indexOf("actuation:P2:confirm") < 10, "Confirm rows are inside the top 10");
-  assert.ok(plan.slice(0, critical).every((item) => item.statusLabel === "Critical"));
-  const days = phaseItems(plan, "days_1_30").map((item) => item.id);
-  assert.ok(days.indexOf("actuation:P2:confirm") >= 0 && days.indexOf("actuation:P2:confirm") < 10, "and inside the top 10 of Days 1 to 30");
+  const counted = plan.filter((item) => item.inputs.tier === "action" && item.share != null).length;
+  assert.deepEqual(ids.slice(counted, counted + 2), ["actuation:P1:confirm", "actuation:P2:confirm"]);
+  assert.ok(plan.slice(0, counted).every((item) => item.share != null));
+  assert.equal(ids.at(-1), "finding:unbranded_discovery", "the outcome is tracked last");
   assert.deepEqual(plan.map((item) => item.rank), plan.map((_, i) => i + 1));
 });
 
-test("activity and renew items keep their place after the focus items", () => {
+test("an activity item counts the verified links short of its target; confirm and renew have no count", () => {
   const basis: ClientBasis = { programs: [inPlace("P1", addDays(ASOF, -80))], items: { E2: 5, E3: 0 } };
   const plan = buildPlan({ findings: [], signals: [], sources: [], actuation: actuationActions({ basis, asOf: ASOF }) });
-  assert.deepEqual(plan.map((item) => item.id), ["actuation:P2:confirm", "actuation:E2:activity", "actuation:P1:renew"]);
+  assert.deepEqual(plan.map((item) => item.id), ["actuation:E2:activity", "actuation:P1:renew", "actuation:P2:confirm"]);
+  const activity = plan[0]!;
+  assert.equal(activity.inputs.unit, "links");
+  assert.equal(activity.inputs.affected, activity.inputs.base! - 5);
 });
 
 test("the plan read takes the records from the bundle and the targets from the date-pill window", () => {

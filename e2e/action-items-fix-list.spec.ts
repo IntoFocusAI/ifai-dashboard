@@ -3,8 +3,6 @@ import { LIVE_READ_TIMEOUT, openSpokeTab } from "./figure-first-page";
 
 let pageErrors: string[] = [];
 
-const STATUS_RANK: Record<string, number> = { Critical: 0, "At risk": 1, "On track": 2, "No reading": 3 };
-
 async function openUrgentInterventions(page: Page, baseURL: string | undefined) {
   pageErrors = await openSpokeTab(page, baseURL, "suggestions", "urgent-interventions");
   const findings = page.locator('.drilldown-panel [data-fix-list] [data-fix-kind="finding"]');
@@ -42,20 +40,16 @@ test.describe("Action Items opens on the prioritized fix list", () => {
     await expect(rows.first()).toBeInViewport();
     expect(listTop).toBeLessThan(page.viewportSize()!.height / 2);
 
-    // Worker 29.20: the two Confirm program rows rank right after the Critical findings, so the
-    // finding numbers rise in order but are not always consecutive. PR 245 splits Buy Box into
-    // three cause rows, so there are seven findings.
+    // One central ranking (Brian Magazu, 23 Nov 2026): every row's rank rises down the table (the
+    // Buy Box cause rows share one rank), and each rank names its inputs in its tooltip.
     await expect(rows.locator("[data-fix-rank]")).toHaveCount(7);
-    const findingRanks = (await rows.locator("[data-fix-rank]").allTextContents()).map(Number);
-    expect(findingRanks[0]).toBe(1);
-    expect([...findingRanks].sort((a, b) => a - b)).toEqual(findingRanks);
-    expect(findingRanks[6]).toBeLessThanOrEqual(9);
-    const statuses = await rows.locator("[data-fix-status-label]").evaluateAll((nodes) =>
-      nodes.map((node) => node.getAttribute("data-fix-status-word") ?? ""),
-    );
-    const ranks = statuses.map((status) => STATUS_RANK[status.trim()]);
-    expect(ranks.every((rank) => rank != null), statuses.join(", ")).toBe(true);
-    expect([...ranks].sort((a, b) => a! - b!)).toEqual(ranks);
+    const all = page.locator(".drilldown-panel [data-fix-row] [data-fix-rank]");
+    const ranks = (await all.allTextContents()).map(Number);
+    expect(ranks[0]).toBe(1);
+    expect([...ranks].sort((a, b) => a - b)).toEqual(ranks);
+    for (const reason of await all.evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-fix-reason") ?? ""))) {
+      expect(reason).toMatch(/Effort [SML], /);
+    }
 
     // The AI finding reads the map's population, which can arrive after the retail rows.
     await expect(rows.locator("[data-fix-percent]", { hasText: "Loading" })).toHaveCount(0, { timeout: LIVE_READ_TIMEOUT });
@@ -105,7 +99,7 @@ test.describe("Action Items opens on the prioritized fix list", () => {
     await expect(term).toHaveText("Fixes in priority order");
     await expect(term).not.toHaveAttribute("title");
     await term.hover();
-    await expect(page.locator(".node-tooltip-definition")).toContainText("Critical findings come first");
+    await expect(page.locator(".node-tooltip-definition")).toContainText("One ranking for every list");
   });
 
   test("an old Current findings link lands on Urgent Interventions", async ({ page, baseURL }) => {

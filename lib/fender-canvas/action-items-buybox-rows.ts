@@ -152,8 +152,9 @@ export function buyBoxCauseItems(
 }
 
 /**
- * The plan with the Buy Box row replaced by its rows in place, ranks renumbered; the earlier-days
- * row ranks just below the two withheld rows. Unchanged while the split is loading or failed, or
+ * The plan with the Buy Box row replaced by its rows in place. Each row keeps the Buy Box row's rank, so
+ * every other item keeps the number the one central ranking gives it; the earlier-days
+ * row sits just below the two withheld rows. Unchanged while the split is loading or failed, or
  * while the row has no reading.
  */
 export function planWithBuyBoxCauses(
@@ -167,6 +168,5 @@ export function planWithBuyBoxCauses(
   if (!base || base.loading || base.noReading) return plan;
   const rows = buyBoxCauseItems(base, split, est);
   if (rows.length === 0) return plan;
-  const next = [...plan.slice(0, at), ...rows, ...plan.slice(at + 1)];
-  return next.map((item, index) => ({ ...item, rank: index + 1 }));
+  return [...plan.slice(0, at), ...rows, ...plan.slice(at + 1)];
 }

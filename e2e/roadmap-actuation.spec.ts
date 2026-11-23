@@ -3,17 +3,13 @@ import { LIVE_READ_TIMEOUT } from "./figure-first-page";
 
 /* Worker 29.15 (SC-03 in the shared plan): the AI Actuation items in Action Items and the
    Roadmap, for each client reached through the client switcher. Each item comes from the stored
-   Actuation basis; a program not in place asks to be confirmed in Days 1 to 30 and lists the
-   community or publication sites AI already cites. Screenshots at 1280x720 go to E2E_SHOTS_DIR
+   Actuation basis; a program not in place asks to be confirmed and lists the community or
+   publication sites AI already cites. Since the one central ranking (23 Nov 2026), each item's
+   column comes from its rank, so the Roadmap column must match the Action Items phase. Screenshots at 1280x720 go to E2E_SHOTS_DIR
    when it is set, and each is checked by script for sideways scroll. */
 
 const SHOTS = process.env.E2E_SHOTS_DIR;
-const PHASE: Record<string, string> = {
-  confirm: "Days 1 to 30",
-  renew: "Days 1 to 30",
-  "E2:activity": "Days 31 to 60",
-  "E3:activity": "Days 61 to 90",
-};
+const PHASES = ["Days 1 to 30", "Days 31 to 60", "Days 61 to 90"];
 
 async function openAs(page: Page, client: string, path: string) {
   await page.goto("/dashboard?spoke=hub");
@@ -35,11 +31,6 @@ async function fits(page: Page, name: string) {
   if (SHOTS) await page.screenshot({ path: `${SHOTS}/${name}.png` });
 }
 
-function phaseOf(id: string): string {
-  const rule = id.split(":").slice(1).join(":");
-  return PHASE[rule] ?? PHASE[rule.split(":").at(-1) ?? ""] ?? "";
-}
-
 for (const client of ["fender", "ledlenser"]) {
   test.describe(`AI Actuation items in the plan (${client})`, () => {
     test.describe.configure({ timeout: 180_000 });
@@ -54,12 +45,6 @@ for (const client of ["fender", "ledlenser"]) {
       await openAs(page, client, "spoke=suggestions&tab=urgent-interventions");
       const list = page.locator(".drilldown-panel [data-fix-list]");
       await expect(list).toHaveAttribute("data-fix-sources", "ready", { timeout: 150_000 });
-      // Worker 29.20: both Confirm rows rank in the top 10, visible without "Show all".
-      const topIds = await list.locator("[data-fix-row]").evaluateAll((nodes) => nodes.slice(0, 10).map((node) => node.getAttribute("data-fix-row") ?? ""));
-      for (const id of ["actuation:P1:confirm", "actuation:P2:confirm"]) {
-        expect(topIds, `${id} is in the top 10 rows`).toContain(id);
-        await expect(list.locator(`[data-fix-row="${id}"]`)).toBeVisible();
-      }
       // The table draws 25 rows at first; lower-ranked items sit behind "Show all".
       const showAll = list.locator("[data-table-show-all]");
       if (await showAll.count()) await showAll.click();
@@ -69,7 +54,7 @@ for (const client of ["fender", "ledlenser"]) {
       expect(ids.length).toBeLessThanOrEqual(4);
       for (const id of ids) {
         const row = list.locator(`[data-fix-row="${id}"]`);
-        await expect(row.locator("[data-fix-phase]")).toContainText(phaseOf(id));
+        await expect(row.locator("[data-fix-phase]")).toContainText(/^Days (1 to 30|31 to 60|61 to 90)/);
         await expect(row.locator("[data-fix-action]")).not.toBeEmpty();
         await expect(row.locator("[data-fix-open]")).toHaveText("Open Citation Ecosystem →");
         if (id.endsWith(":confirm")) {
@@ -89,19 +74,12 @@ for (const client of ["fender", "ledlenser"]) {
       const plan = page.locator(".drilldown-panel [data-roadmap-plan]");
       await expect(plan).toHaveAttribute("data-roadmap-sources", "ready", { timeout: 150_000 });
       const items = plan.locator('[data-roadmap-kind="actuation"]');
-      // Worker 29.20: both Confirm items sit in the top 10 of Days 1 to 30.
-      const days = plan.locator('[data-roadmap-phase]:has(.roadmap-phase-days:text-is("Days 1 to 30")) [data-roadmap-item]');
-      const dayIds = await days.evaluateAll((nodes) => nodes.slice(0, 10).map((node) => node.getAttribute("data-roadmap-item") ?? ""));
-      for (const id of ["actuation:P1:confirm", "actuation:P2:confirm"]) {
-        expect(dayIds, `${id} is in the top 10 of Days 1 to 30`).toContain(id);
-        await expect(plan.locator(`[data-roadmap-item="${id}"]`)).toBeVisible();
-      }
       const count = await items.count();
       expect(count).toBeLessThanOrEqual(4);
       for (const item of await items.all()) {
         const id = (await item.getAttribute("data-roadmap-item")) ?? "";
         const phase = item.locator("xpath=ancestor::section[@data-roadmap-phase]");
-        await expect(phase.locator(".roadmap-phase-days")).toHaveText(phaseOf(id));
+        expect(PHASES, id).toContain((await phase.locator(".roadmap-phase-days").textContent())?.trim());
       }
       if (count) await items.first().scrollIntoViewIfNeeded();
       await fits(page, `${client}-roadmap-actuation`);

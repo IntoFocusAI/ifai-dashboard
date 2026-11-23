@@ -89,24 +89,34 @@ test("a row whose listings all lack a sales figure reads Not available*, never $
   assert.equal(lineFromListings(est, "map_leakage")!.status, "none");
 });
 
-test("A+ row wording is singular for one listing and is placed after the other e-commerce rows", () => {
+test("A+ row wording is singular for one listing and takes the place the central rank gives it", () => {
   assert.equal(aplusActionText(1), "Add A+ content to 1 listing.");
   assert.equal(aplusActionText(12), "Add A+ content to 12 listings.");
   const est = buildClientEstimates(
     [{ asin: "A1", aplusState: "absent" }, { asin: "A2", aplusState: "present" }],
     { rankCategory: null, dataAsOf: "2026-11-18" },
   );
+  const row = (id: string, kind: string, affected: number | null, base: number | null) => ({
+    id,
+    kind,
+    action: `Fix ${id}.`,
+    needsAction: true,
+    noReading: false,
+    inputs: { affected, base, unit: affected == null ? null : "listings", monthly: null, effort: "S", dependsOn: [], tier: "action" },
+  });
   const base = [
-    { id: "finding:buy_box", kind: "finding" },
-    { id: "signal:missing_specs", kind: "signal" },
-    { id: "own:pages", kind: "own_page" },
+    row("finding:buy_box", "finding", 5, 100),
+    row("signal:missing_specs", "signal", 60, 100),
+    row("own:pages", "own_page", null, null),
   ] as never[];
   const item = aplusPlanItem(est);
   assert.ok(item, "an unpriced A+ listing gets a row");
   assert.equal(item.action, "Add A+ content to 1 listing.");
+  assert.deepEqual([item.inputs.affected, item.inputs.base, item.inputs.unit], [1, 1, "listings"]);
   const plan = planWithAplus(base, est);
-  assert.deepEqual(plan.map((row) => row.id), ["finding:buy_box", "signal:missing_specs", APLUS_ROW_ID, "own:pages"]);
-  assert.deepEqual(plan.map((row) => row.rank), [1, 2, 3, 4]);
+  // A+ at 1 of 1 estimated listing (100%), then 60%, then 5%, then the row with no count.
+  assert.deepEqual(plan.map((entry) => entry.id), [APLUS_ROW_ID, "signal:missing_specs", "finding:buy_box", "own:pages"]);
+  assert.deepEqual(plan.map((entry) => entry.rank), [1, 2, 3, 4]);
   assert.equal(planWithAplus(base, null), base);
 });
 

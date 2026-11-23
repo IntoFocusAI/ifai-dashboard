@@ -8,6 +8,8 @@ import {
   briefingFindingsLead,
   type BriefingFindingId,
 } from "@/lib/fender-canvas/briefing-retail-lead";
+import { FACT_CHECK_VERDICTS_IN_DECK } from "@/lib/ai-search/drift";
+import { inPriorities } from "@/lib/fender-canvas/command-center-from-live";
 import { rankedFindings } from "@/lib/fender-canvas/roadmap-plan";
 import { contradictionSlide, openingSlides, rivalSlide, rivalTableSlide } from "@/lib/deck/deck-ai";
 import { brandSiteSlide, buyBoxDetailSlide, listingSlides, stockDetailSlide, stockLossFigure } from "@/lib/deck/deck-retail";
@@ -52,8 +54,27 @@ function fixAction(id: BriefingFindingId, input: DeckInput): string {
 
 const FIX_STATUS = { critical: "bad", at_risk: "okay", on_track: "good" } as const;
 
-/** The fix list rows as Action Items ranks them, on the date-pill window every AI figure reads. */
+const TONE_STATUS = { danger: "bad", warning: "okay", success: "good" } as const;
+
+/**
+ * The first five fixes of the one central ranking (the Action Items plan), each with the rank
+ * Action Items shows. Fact-check review tasks stay out of the deck (FACT_CHECK_VERDICTS_IN_DECK).
+ * Without the plan, the five findings in the central order.
+ */
 export function deckFixes(input: DeckInput): DeckFix[] {
+  if (input.plan?.length) {
+    return input.plan
+      .filter((item) => inPriorities(item) && !item.noReading)
+      .filter((item) => FACT_CHECK_VERDICTS_IN_DECK || item.id !== "signal:fact_contradictions")
+      .slice(0, 5)
+      .map((item) => ({
+        rank: item.rank,
+        action: item.title,
+        ratio: `${item.ratio ?? item.percent}${item.partial ? "*" : ""}`.trim(),
+        status: item.tone ? TONE_STATUS[item.tone] : null,
+        statusWord: item.statusLabel,
+      }));
+  }
   const ai = input.tabAi ? ({ phase: "ready", snapshot: input.tabAi } as const) : ({ phase: "error", message: "" } as const);
   const { findings } = briefingFindingsLead(input.retail, input.findability, ai, { aiStale: input.aiStale ?? null });
   return rankedFindings(findings)

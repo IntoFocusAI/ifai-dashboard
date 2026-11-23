@@ -13,6 +13,7 @@ import { markPartial, type PartialFigure } from "@/lib/fender-canvas/canvas-read
 import type { StockLossRead } from "@/lib/fender-canvas/minimal-metric-kit";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
 import { ownedAnswersFromAi } from "@/lib/fender-canvas/actuation-e1";
+import { planWithAplus } from "@/lib/fender-canvas/action-items-aplus-row";
 import { isoDay } from "@/lib/fender-canvas/actuation-score";
 import { actuationActions, suggestedTargets, targetAnswers, withOwnedAnswersGap } from "@/lib/fender-canvas/roadmap-actuation";
 import { phaseWindow } from "@/lib/fender-canvas/roadmap-dates";
@@ -159,6 +160,7 @@ export function assembleRoadmapPlan(input: RoadmapPlanInput): RoadmapPlanRead {
       ? [{ id: "focus:window", label: "The last 30 days", guardrail: "data", detail: windows.message }, ...focused.held]
       : focused.held;
   const signals = signalActions({ retail, ai, stock });
+  const estimates = bundle?.estimates?.phase === "ready" ? bundle.estimates.estimates : null;
   const built = buildPlan({
     findings,
     signals,
@@ -166,8 +168,10 @@ export function assembleRoadmapPlan(input: RoadmapPlanInput): RoadmapPlanRead {
     ownPages: ownAction,
     focus: focused.actions,
     actuation,
+    estimates,
   });
-  const plan = withLatestRunTips(built, sources.phase === "ready" ? (sources.snapshots[0] ?? null) : null, signals);
+  // The A+ row joins the one ranking here, so Priorities, the map, and the deck see it too.
+  const plan = withLatestRunTips(planWithAplus(built, estimates),sources.phase === "ready" ? (sources.snapshots[0] ?? null) : null, signals);
   const window = windows.phase === "ready" ? windows.summary : null;
   const waiting: SourceRunsRead = windows.phase === "loading" ? { phase: "loading" } : sources;
   return { plan: focusPlan(plan, focus), findings, sources: waiting, ai, held, window, ownPagesReason: own.reason };

@@ -85,8 +85,17 @@ export function ActionItemsFixTable({ plan: basePlan, today }: { plan: readonly 
       <tbody data-fix-table="">
         {sorted.rows.map((item) => (
           <tr key={item.id} data-fix-row={item.id} data-fix-kind={item.kind}>
-            <td className="money" data-fix-rank="">
-              {item.rank}
+            <td className="money" data-fix-rank="" data-fix-reason={item.reason} data-fix-title={item.title}>
+              {/* Why the item ranks here: its rank inputs in one line (central ranking, 23 Nov 2026). */}
+              <span
+                className="ifai-term"
+                data-ifai-tooltip-title={`Rank ${item.rank}`}
+                data-ifai-tooltip-desc={item.reason}
+                tabIndex={0}
+                aria-label={`Rank ${item.rank}: ${item.reason}`}
+              >
+                {item.rank}
+              </span>
             </td>
             <td>
               <PlanAction item={item} />
