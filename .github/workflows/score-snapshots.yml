@@ -28,10 +28,10 @@ jobs:
     env:
       SCORE_SNAPSHOT_DB_URL: ${{ secrets.SCORE_SNAPSHOT_DB_URL }}
       NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
-      # Since the 23 Nov login lockdown the publishable key reads no client data, so the reads use the
-      # server key (repository secret SUPABASE_SERVICE_ROLE_KEY, same value as in Netlify). The script
-      # only reads with it; the save still goes through SCORE_SNAPSHOT_DB_URL.
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      # Since the 23 Nov login lockdown the reads sign in as the read-only review-bot (PR 273).
+      IFAI_REVIEW_EMAIL: ${{ secrets.IFAI_REVIEW_EMAIL }}
+      IFAI_REVIEW_PASSWORD: ${{ secrets.IFAI_REVIEW_PASSWORD }}
     steps:
       - name: Check the database secret
         id: secret
