@@ -51,3 +51,15 @@ test("with no stored population the ranking falls back to the largest item base"
   assert.equal(monitoredListingsTotal(snapshot(null, null)), null);
   assert.equal(commonReach(items, { listings: null }).listings, 220);
 });
+
+test("a row added after the first rank, with a larger own base, does not change the common base", async () => {
+  const { rankPlan } = await import("../lib/fender-canvas/roadmap-plan.ts");
+  const base = {
+    kind: "signal", label: "x", percent: "1%", ratio: "1 of 2", tone: "warning", statusLabel: "x", fact: "x", action: "x",
+    needsAction: true, noReading: false, loading: false, partial: null, open: { spokeId: "x", tab: "x" }, siteType: null,
+    pages: [], evidence: null, categories: [],
+  };
+  const first = rankPlan([{ ...base, id: "a", inputs: inputs(208, 10) }] as never, { listings: 208 });
+  const again = rankPlan([...first, { ...base, id: "b", inputs: inputs(220, 192) }] as never);
+  assert.deepEqual(again.map((item) => item.inputs.reach), [208, 208]);
+});
