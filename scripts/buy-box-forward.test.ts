@@ -284,6 +284,9 @@ test("the headline reads Not available*, never $0, when no priced listing has sa
     figure.tip,
     "1 of 3 withheld listings could be priced, and SmartScout reports no sales for it, so the figure is not known rather than $0. Of the rest, 2 have no SmartScout sales record.",
   );
+  // A row where nothing could be priced says so, with the reasons.
+  const none = buyBoxRowEstimate(estimateBuyBox(listings.slice(1), {}, 30));
+  assert.equal(none.tip, "None of the 2 withheld listings could be priced: 2 have no SmartScout sales record.");
   // Priorities, the map and rank ties get no dollar, not "$0 a month"; Phase 1 leaves the line out.
   const est = buildClientEstimates(listings, { rankCategory: null, dataAsOf: "2026-11-23", salesSources: "measured_only" });
   assert.equal(fixRowMonthly(BUY_BOX_ROW_ID, est), null);

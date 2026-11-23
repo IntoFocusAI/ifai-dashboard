@@ -267,7 +267,8 @@ export function buyBoxUnknownText(line: EstimateResult): string {
     reasons.too_few_buy_box_days ? `${plural(reasons.too_few_buy_box_days, "held", "held")} the Buy Box on too few days (${MIN_BUY_BOX_DAYS_30} of the last 30 or ${MIN_BUY_BOX_DAYS_365} of the last 365 are needed)` : null,
     reasons.no_keepa_days ? `${plural(reasons.no_keepa_days, "has", "have")} no Keepa day history` : null,
   ].filter((part): part is string => part != null);
-  return rest.length ? `${lead} Of the rest, ${rest.join("; ")}.` : lead;
+  if (rest.length === 0) return lead;
+  return priced === 0 ? `${lead.slice(0, -1)}: ${rest.join("; ")}.` : `${lead} Of the rest, ${rest.join("; ")}.`;
 }
 
 const periodCache = new WeakMap<ClientEstimates, Map<number, EstimateResult>>();
