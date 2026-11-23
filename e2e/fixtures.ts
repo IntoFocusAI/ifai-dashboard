@@ -38,6 +38,8 @@ export class Canvas {
   async open() {
     // Login is required. The Playwright dev server runs with E2E_AUTH_BYPASS=1, so the server
     // treats the run as an Org User on every client (lib/command/session.ts) and opens the map.
+    // With IFAI_REVIEW_EMAIL/IFAI_REVIEW_PASSWORD set the bypass is off and the global setup has
+    // signed in as the review account (e2e/review-login.ts), so this same goto opens the map.
     await this.page.goto("/dashboard");
     await expect(this.page.locator(".ifai-canvas.panel-hidden")).toHaveCount(1);
   }
