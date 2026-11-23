@@ -1,5 +1,6 @@
 // node --experimental-strip-types --import ./scripts/register-alias.mjs --import ./scripts/register-ts-extensions.mjs --test scripts/thousands-separators.test.ts
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { contradictionCount, factCheckAccuracyLead, factCheckHeadline, factCheckMethodLine } from "../lib/ai-search/fact-check-copy.ts";
 import type { FactCheckCoverage } from "../lib/ai-search/drift.ts";
@@ -25,4 +26,11 @@ test("fact-check copy shows thousands separators", () => {
   assert.equal(factCheckAccuracyLead(coverage).population, "2,502 of 2,506 answers matched.");
   assert.match(factCheckMethodLine(coverage)?.tip ?? "", /1,234 of 2,301/);
   assert.equal(contradictionCount(1200), "1,200 contradictions");
+});
+
+test("citation ecosystem cards format visible counts", () => {
+  const gaps = readFileSync("components/v3/live/ai-search/CitationGapsCard.tsx", "utf8");
+  assert.match(gaps, /citation-gap-count">\{formatInt\(gap\.count\)\}/);
+  const disc = readFileSync("components/v3/live/ai-search/CitationPieDisc.tsx", "utf8");
+  assert.match(disc, /\{slice\.label\}: \{formatInt\(slice\.count\)\}/);
 });

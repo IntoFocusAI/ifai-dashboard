@@ -71,7 +71,7 @@ export function CitationPieLegend({ pie }: { pie: PieDiscData }) {
         >
           <span className="citation-pie-swatch" style={{ background: colors[index] }} />
           <span>
-            {slice.label}: {slice.count}
+            {slice.label}: {formatInt(slice.count)}
           </span>
         </li>
       ))}

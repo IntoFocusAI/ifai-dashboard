@@ -67,7 +67,7 @@ export function GapsCard({
                   aria-label={`${formatInt(gap.count)} ${gap.categoryLabel} answers: ${gap.competitor} led and no ${brandOwned()} page was cited. ${domains}. Opens their cited links.`}
                   onClick={() => onPickGap(gap)}
                 >
-                  <span className="citation-gap-count">{gap.count}</span>
+                  <span className="citation-gap-count">{formatInt(gap.count)}</span>
                   <span className="citation-gap-body">
                     <span>
                       <strong>{gap.categoryLabel}</strong> · {gap.competitor} led
