@@ -71,14 +71,19 @@ for (const client of ["fender", "ledlenser"]) {
       await expect(row.locator("[data-briefing-consensus-target]")).toHaveText("Target 70");
       await expect(page.getByText("Portfolio at a glance")).toHaveCount(0);
       const lead = page.locator("[data-briefing-lead]");
-      await expect(lead).toContainText(`What is changing what AI assistants recommend for ${BRAND[client]}?`);
-      await expect(lead.locator("[data-briefing-lead-ai]")).toContainText(/Unbranded Discovery: .+ named most in [\d,]+ of [\d,]+ resolved answers/, { timeout: AI_READ_MS });
-      await expect(lead.locator("[data-briefing-lead-controls] li").first()).toContainText(/Out of stock: [\d,]+ listings/, { timeout: ESTIMATE_MS });
-      await expect(lead).toContainText(`${BRAND[client]}'s selling model on Amazon:`);
+      // Worker 31.1 (decisions 128, 129): "What this means for {brand}", four blocks and the selling-model line.
+      await expect(lead).toContainText(`What this means for ${BRAND[client]}`);
+      await expect(lead.locator('[data-briefing-block="answer"]')).toContainText(
+        new RegExp(`When a shopper asks an AI assistant what to buy, ${BRAND[client]} is .*\\d+ times in 10\\.`),
+        { timeout: AI_READ_MS },
+      );
+      await expect(lead.locator('[data-briefing-block="rely"]')).toContainText("Assistants decide by reading product pages, retailer listings and reviews.");
+      await expect(lead.locator("[data-briefing-selling-model]")).toContainText(/^(Partner-led|Brand-led): /);
+      await expect(lead.locator('[data-briefing-block="worth"]')).not.toContainText("Loading", { timeout: ESTIMATE_MS });
+      await expect(lead.locator("[data-briefing-action-items]")).toHaveText("→ Action Items");
+      await expect(lead).not.toContainText("Active offers");
       // Worker 29.4: every number in the generated lead carries thousands separators.
-      await expect(lead.locator("[data-briefing-lead-ai]")).toContainText(/[\d,]+ of [\d,]+ cited links/);
-      expect(await lead.locator("[data-briefing-lead-ai]").innerText()).not.toMatch(/\d{4,}/);
-      expect(await lead.locator("[data-briefing-lead-controls]").innerText()).not.toMatch(/\d{4,}/);
+      expect(await lead.innerText()).not.toMatch(/\d{4,}/);
       await checkFit(page, `${client}-briefing`);
     });
 

@@ -28,6 +28,7 @@ import type { SpokeDefinition, SpokeId } from "@/components/v3/spoke-data-types"
 import { spokeData } from "@/components/v3/spoke-data";
 import { aiSpokeDesc, competitorsSpokeDesc } from "@/lib/ai-search/canvas-surfaces";
 import type { AiSearchRead } from "@/lib/ai-search/types";
+import type { PriorityItem } from "@/lib/canvas-sdk/types";
 import type { FindabilityRead } from "@/lib/findability/copy";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
 import {
@@ -48,6 +49,7 @@ type TabOverride = (
   bundle: CanvasBundle,
   vars: Record<string, string>,
   retail: RetailCanvasRead,
+  commandItems: readonly PriorityItem[],
 ) => ReactNode | null;
 
 const TAB_OVERRIDES: Partial<
@@ -55,10 +57,10 @@ const TAB_OVERRIDES: Partial<
 > = {
   hub: {
     // Briefing, Opportunity and Revenue Estimates: generated from each client's settings and data (H-09).
-    0: (bundle, _vars, retail) => (
+    0: (bundle, _vars, retail, commandItems) => (
       <>
         <BriefingRetailHero bundle={bundle} read={retail} />
-        <BriefingAiLead bundle={bundle} />
+        <BriefingAiLead bundle={bundle} retail={retail} commandItems={commandItems} />
       </>
     ),
     1: (bundle, _vars, retail) => <ConsensusScoresPanel bundle={bundle} retail={retail} />,
@@ -130,6 +132,7 @@ function wrapSpoke(
   retail: RetailCanvasRead,
   ai: AiSearchRead,
   _findability: FindabilityRead,
+  commandItems: readonly PriorityItem[],
 ): SpokeDefinition {
   const bound = bindNarrativeSpoke(spokeData[id], vars);
   const overrides = TAB_OVERRIDES[id] ?? {};
@@ -167,7 +170,7 @@ function wrapSpoke(
     // The Roadmap opens on its owner sentence and plan; no retail-headline preface.
     ...(id === "roadmap" ? { desc: "" } : {}),
     render: (tabIdx) => {
-      const custom = overrides[tabIdx]?.(bundle, vars, retail);
+      const custom = overrides[tabIdx]?.(bundle, vars, retail, commandItems);
       if (custom) return custom;
       const content = bound.render(tabIdx);
       if (typeof content === "string") return htmlBlock(content);
@@ -181,6 +184,8 @@ export function buildLiveSpokes(
   retail: RetailCanvasRead = { phase: "loading" },
   ai: AiSearchRead = { phase: "loading" },
   findability: FindabilityRead = { phase: "loading" },
+  /** The Priorities queue, in order; the Briefing's first move reads the first item. */
+  commandItems: readonly PriorityItem[] = [],
 ): Record<SpokeId, SpokeDefinition> {
   const vars = {
     ...buildTemplateVars(bundle),
@@ -188,6 +193,6 @@ export function buildLiveSpokes(
   };
   const ids = Object.keys(spokeData) as SpokeId[];
   const out = {} as Record<SpokeId, SpokeDefinition>;
-  for (const id of ids) out[id] = wrapSpoke(id, bundle, vars, retail, ai, findability);
+  for (const id of ids) out[id] = wrapSpoke(id, bundle, vars, retail, ai, findability, commandItems);
   return out;
 }

@@ -47,7 +47,7 @@ test("no per-client hand-written Briefing: the narrative template names no brand
 
 test("Briefing, Opportunity and Revenue Estimates are the same components for every client", () => {
   const spokes = read("components/v3/build-live-spokes.tsx");
-  assert.match(spokes, /<BriefingRetailHero bundle=\{bundle\} read=\{retail\} \/>\s*<BriefingAiLead bundle=\{bundle\} \/>/);
+  assert.match(spokes, /<BriefingRetailHero bundle=\{bundle\} read=\{retail\} \/>\s*<BriefingAiLead bundle=\{bundle\} retail=\{retail\} commandItems=\{commandItems\} \/>/);
   assert.match(spokes, /2: \(bundle\) => <OpportunityEstimates read=\{bundle\.estimates\} \/>/);
   assert.match(spokes, /1: \(bundle\) => <OpportunityEstimates read=\{bundle\.estimates\} \/>/);
   assert.equal(/clientNarrative|HUB_BRIEFING_HTML/.test(spokes), false);
@@ -194,7 +194,8 @@ test("monthly potential lost brand revenue is Phase 1 divided by 12 with the sam
 });
 
 test("a listing count reads singular for one listing", () => {
-  assert.match(read("components/v3/live/BriefingAiLead.tsx"), /total === 1 \? "listing" : "listings"/);
+  // Worker 31.1: the Briefing's gap sentences (lib/fender-canvas/briefing-narrative.ts) read singular too.
+  assert.match(read("lib/fender-canvas/briefing-narrative.ts"), /one \? "listing is" : "listings are"/);
   assert.match(read("lib/estimates/line.ts"), /=== 1 \? "listing has" : "listings have"/);
 });
 

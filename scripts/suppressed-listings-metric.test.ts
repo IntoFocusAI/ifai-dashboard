@@ -73,7 +73,7 @@ test("Suppressed Listings keeps every read state and does not invent a zero", ()
   ).suppressedListings;
   assert.equal(incomplete.value, "12");
   assert.match(incomplete.detail, /not a final count/);
-  assert.equal(incomplete.tone, "danger");
+  assert.equal(incomplete.tone, "warning", "no monitored-listings base stored: the warning stays");
 
   const incompleteZero = buildLiveMetrics(
     bundle(),
@@ -97,7 +97,7 @@ test("Suppressed Listings keeps every read state and does not invent a zero", ()
     ready(reading("available_with_issues", 42, null)),
   ).suppressedListings;
   assert.equal(positive.value, "42");
-  assert.equal(positive.tone, "danger");
+  assert.equal(positive.tone, "warning", "no monitored-listings base stored: the warning stays");
   assert.equal(positive.subTab, "Suppressed Listings");
   assert.doesNotMatch(`${positive.value} ${positive.detail}`, /\$|35%|month|quarter|annual/i);
 });
