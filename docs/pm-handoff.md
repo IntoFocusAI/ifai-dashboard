@@ -174,34 +174,43 @@ code may branch on a client name (X-35, decision 105).
 
 Replace this whole section on handoff. Keep it under 40 lines. The FDD wins.
 
-- PM30 handed off 23 Nov 2026; next is PM31. Docs and header badge 30.10 (PR 262). Launch
-  CURRENT 77 of 102. Decisions 125 to 129 are PM30's (changelog 19 and 23 Nov rows).
-- 19 Nov pre-meeting tweaks, all merged and verified live: 255 compact hover cards; 256
-  Findability card bands and "not matched" labels; 257 cards on the four data bubbles only;
-  258 upside dollars in green; 259 estimate dialog wraps; 260 AI Search card bands; 261
-  "answers" on AI and Radar cards. Merge gate used: Unit tests green on the current head,
-  re-tested whenever main moved. Previews: deploy-preview-<PR>--ifai-dashboard.netlify.app.
-- Brian presented to Fender's former CMO and Ledlenser USA's owners on 19 Nov. He is
-  awaiting consensus on the feedback; nothing has reached the queue yet.
-- Leadership doc to watch (ArtifactComments): https://claude.ai/artifact/TXZ217nzUhNQFiuJyJEAUm
-- Queue, in order:
-  1. Brian's meeting feedback when it arrives.
-  2. Briefing narrative build: docs/briefing-narrative-spec.md, approved 23 Nov (decisions
-     128, 129). One Opus 5.5 worker, one PR; the worker proposes the AI-consequence clause
-     for each of the three gaps in its PR body for Brian's approval. Replaces BriefingAiLead.
-  3. Demo sweep leftovers (docs/demo-readiness.md, 18 Nov): one "fix first" order across
-     Priorities, Action Items, Roadmap and deck; active offers 1,004/1,005/1,006; missing
-     specs 524 vs 519; separators on fact-check and map hover.
-  4. Roadmap gap audit recs 4 to 8 (docs/roadmap-gap-audit.md); decision 123.
-  5. "No MAP" client setting (decision 122) and remaining lint:clients hits; C9 runbook.
-  6. Full E5 (lines 10, 11, source split, Roadmap dollars; Fable for allocation), E6
-     onboarding inputs, E7 value achieved (additive migration).
-  7. Open FDD rows buildable now: X-22 (confirm each card is the largest gap, opportunity
-     and top action; run time in a tooltip), X-36, X-11, X-29, SC-03, R-07, R-09, D-02,
-     D-09, D-12 (strings-as-guitar), S-05. Blocked on Watson or data: X-15, X-16, X-35,
-     R-10, R-15, A-02, D-05. Held by Brian: A-06, R-06, R-11, A-04, N-07; R-19 until launch.
-  8. 19 Nov leftovers: deck slides and the Summary template sentence still show dollars
-     uncoloured; Action Items CSV lacks the Buy Box cause rows, A+ row and dollars.
-- Open PRs not ours: Marc 253, 251, 249; Watson 244, 238, 223, 219, 214, 200; old 42.
-- Map vs tabs (worker 29.29): no mismatch; FDD A-02 text stale; map's Branded Consideration
-  lacks the tab's stale asterisk. Minor, unchanged.
+- PM31 handed off 23 Nov 2026; next is PM32. Main has Watson's 264 (client isolation) and 265
+  (login). Badge still 30.10. Merge gate unchanged: Brian's "merge <n>", Unit tests green on the
+  current head, clean merge with main, re-test when main moves.
+- Signed-in review: read-only account review-bot (Org User, Fender and Ledlenser; Watson's
+  migration 20261123150000). Env vars IFAI_REVIEW_EMAIL / IFAI_REVIEW_PASSWORD (set 23 Nov).
+  Helper and screenshot CLI are in PR 272 (unmerged; sign-in verified by PM31 on preview 268).
+  Evidence must come from a signed-in session. Never print the password. New clients: re-run
+  Watson's migration. After Watson's PR 249, set-aside/done e2e fail as review-bot (read-only).
+- Decisions to record at close-out (Brian, 23 Nov; number from 130): one central ranking for every
+  prioritized list (AI-answer reach, then monthly estimate dollars, then effort); narrative uses the
+  live Action Items missing-specs count; plain AI-consequence clauses now, share-of-voice estimate
+  later; Roadmap: no column over half at 6+ items; R-06 hold released, forward-looking (current
+  suppressed listings: sales per day in last 30 days with Buy Box x R-07 period x 80%), replacing the
+  backward Buy Box dollar so one figure exists; buy_box_lost_share range 70% to 90%, mid 80%.
+- Open PRs, PM31's (all draft, Unit tests green on last check):
+  1. 268 (31.3, shared ranking). Brian's review FAILED: single Unbranded questions rank #1 (share of
+     own base makes 0 of 112 = 100%); deck slide 9 repeats one title 5 times; Priorities is the header
+     button, not a tab. PM31 proposed, awaiting Brian's "go": rank on a common base (all resolved
+     answers / all monitored listings), group repeated actions (5 weakest questions = 1 item), 5 distinct
+     actions on slide 9, Priorities panel matches. Brian wants workers to screenshot their own work first.
+     Also open: own-pages by worst factor, bullets as ranked item, Priorities cap 10, Actuation
+     confirm items now rank after counted items (reverses 18 Nov rule). Fresh Opus worker.
+  2. 266 (31.1, Briefing narrative). Awaits Brian: 5 AI-consequence clauses (PR body), Branded 70-90
+     sentence (PM rec: "room to build trust"), empty-window tooltip. Then a follow-up reads three gaps
+     and the first move from 268's priorityList/firstMove. Fix spec's 519 line. Merge after 268.
+  3. 269 (31.2, separators). Needs signed-in scan (Fender "1613" on Citation Ecosystem untraced;
+     Ledlenser not re-scanned). Conflicts with 268 in hub-slots.ts. Roadmap raw counts
+     (roadmap-plan.ts 381/422/423/427, roadmap-focus 282, roadmap-plan-read 200, roadmap-signals 56)
+     go to 268's fix worker.
+  4. 272 (31.4, review login). Merge first once Brian approves; send the link to Watson (he asked).
+- Queue after these: R-06/R-07 worker (forward Buy Box dollar, period switch, 70-90 range in
+  benchmarks.ts + docs/benchmark-register.md); count alignment (active offers 1,004/1,005/1,006,
+  tour step 4); 19 Nov leftovers (deck/Summary dollars green, Action Items CSV rows); X-36 layout
+  (alone, last); X-11 audit; D-12 needs a rule spec; then gap-audit recs 4-8, "No MAP" setting,
+  E5-E7. Brian's 19 Nov meeting feedback still pending (top of queue when it arrives).
+- Not buildable: X-29 (Ryan/Watson review), SC-03 (Watson sign-in, Marc webhook), D-02/D-09
+  (collector), R-07 (after R-06).
+  Blocked: X-15, X-16, X-35, R-10, R-15, A-02, D-05. Held: A-06, R-11, A-04, N-07; R-19 to launch.
+- Not ours: Marc 253, 251, 249; Watson 244, 238, 223, 219, 214, 200; old 42. Leadership doc:
+  https://claude.ai/artifact/TXZ217nzUhNQFiuJyJEAUm

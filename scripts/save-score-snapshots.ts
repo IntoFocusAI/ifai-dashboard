@@ -6,7 +6,8 @@
  *   node --experimental-strip-types --import ./scripts/register-alias.mjs \
  *     --import ./scripts/register-ts-extensions.mjs scripts/save-score-snapshots.ts [--dry-run]
  *
- * Reads use NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY, as the dashboard does.
+ * Reads use NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY. Since the 23 Nov login lockdown
+ * the workflow sets that variable to the server key, because the publishable key reads no client data.
  * The save uses SCORE_SNAPSHOT_DB_URL. Without it the script prints why and ends without saving.
  * --dry-run prints each client's scores and the SQL, and writes nothing.
  */
