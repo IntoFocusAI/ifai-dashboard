@@ -27,8 +27,8 @@ if [ "$(id -u)" = "0" ]; then
   run_as=(runuser -u pgtest --)
 fi
 
-"${run_as[@]}" initdb -D "$work/data" -U postgres -A trust >/dev/null
-"${run_as[@]}" pg_ctl -D "$work/data" -o "-p $port -k $work -c listen_addresses=''" -l "$work/log" -w start >/dev/null
+${run_as[@]+"${run_as[@]}"} initdb -D "$work/data" -U postgres -A trust >/dev/null
+${run_as[@]+"${run_as[@]}"} pg_ctl -D "$work/data" -o "-p $port -k $work -c listen_addresses=''" -l "$work/log" -w start >/dev/null
 
 psql_q() { psql -h "$work" -p "$port" -U postgres -d postgres -v ON_ERROR_STOP=1 -q -X "$@"; }
 

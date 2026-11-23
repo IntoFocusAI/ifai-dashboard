@@ -13,14 +13,15 @@ with recursive base as (
     and c.relkind in ('r', 'p', 'v', 'm')
     -- array_remove: a missing table must not turn the whole test into NULL (which excludes all).
     and c.oid <> all (array_remove(array[to_regclass('command.organizations'), to_regclass('command.user_profiles'),
-      to_regclass('command.organization_memberships'), to_regclass('sandbox.seller'),
+      to_regclass('command.organization_memberships'), to_regclass('command.client_organizations'),
+      to_regclass('sandbox.seller'),
       to_regclass('sandbox.seller_type')]::oid[], null))
   union
   select c.oid from pg_class c
   where c.oid = any (array_remove(array[
     to_regclass('public.issue_set_asides'), to_regclass('public.set_aside_clients'),
     to_regclass('public.canvas_score_snapshots'), to_regclass('public.site_type_classifications'),
-    to_regclass('public.site_type_overrides'), to_regclass('public.audit_log'),
+    to_regclass('public.site_type_overrides'),
     to_regclass('public.actuation_programs'), to_regclass('public.actuation_items'),
     to_regclass('public.actuation_expiry_reminders_sent')]::oid[], null))
   union
@@ -68,7 +69,7 @@ begin
   select string_agg(name, ', ' order by name) into bad from client_relation r
   where relkind in ('r', 'p') and not exists (
     select 1 from pg_policy p where p.polrelid = r.oid and p.polcmd in ('r', '*')
-      and pg_get_expr(p.polqual, p.polrelid) ~ 'private\.(can_read_schema|can_read_client|readable_client_ids|client_org_readable|can_read_set_aside_client)\(');
+      and pg_get_expr(p.polqual, p.polrelid) ~ 'private\.(can_read_client|readable_client_ids|can_read_set_aside_client)\(|command\.(can_read_client_key|can_read_schema|can_read_organization)\(');
   if bad is not null then raise exception 'client tables without a membership read policy: %', bad; end if;
 
   select string_agg(format('%s.%s', r.name, p.polname), ', ') into bad
@@ -112,14 +113,14 @@ begin
     and p.prorettype <> 'trigger'::regtype
     and has_function_privilege('authenticated', p.oid, 'execute')
     and p.prosrc ~* '\m(command|canvas_private|ledlenser|ledlenser_private|sandbox)\.|\mpublic\.(issue_set_asides|audit_log|set_aside_clients|actuation_|canvas_)'
-    -- Membership checks: the 1.6 helpers, staff checks, and the dashboard's older command org
-    -- model (command.user_has_org_role and the prompt workflow's wrappers of it; retired in 1.2).
-    and p.prosrc !~* 'private\.(can_read_schema|can_read_client|readable_client_ids|client_org_readable|can_read_set_aside_client|is_staff|check_issue_input|has_org_role|is_active_org_member)\(|command\.(is_intofocus_admin|user_has_org_role|fmic_ai_prompt_require|fmic_ai_prompt_actor_ok)\('
+    -- Membership checks: the 1.6 helpers, the command sign-in checks (staff, org role, client
+    -- key), and the prompt workflow's wrappers of command.user_has_org_role.
+    and p.prosrc !~* 'private\.(can_read_client|readable_client_ids|can_read_set_aside_client|check_issue_input)\(|command\.(is_intofocus_admin|user_has_org_role|can_read_organization|can_read_client_key|can_read_schema|fmic_ai_prompt_require|fmic_ai_prompt_actor_ok)\('
     -- The dashboard sign-in functions read only the sign-in tables.
     and p.oid <> all (array_remove(array[to_regprocedure('command.is_intofocus_admin()'),
       to_regprocedure('command.user_has_org_role(uuid,command.organization_role)'),
       to_regprocedure('command.role_rank(command.organization_role)')]::oid[], null))
-    and not (n.nspname = 'private' and p.proname in ('is_backend_caller', 'staff_entitled', 'client_org_readable', 'can_read_schema',
+    and not (n.nspname = 'private' and p.proname in ('is_backend_caller',
       'can_read_client', 'readable_client_ids', 'can_read_set_aside_client'));
   if bad is not null then raise exception 'SECURITY DEFINER functions over client data without a membership check: %', bad; end if;
 
@@ -128,10 +129,19 @@ begin
   from pg_proc p where p.pronamespace = 'private'::regnamespace
     and has_function_privilege('authenticated', p.oid, 'execute')
     and p.proname not in ('is_staff', 'module_access', 'has_org_role', 'is_active_org_member',
-      'is_backend_caller', 'staff_entitled', 'client_org_readable', 'can_read_schema',
-      'can_read_client', 'readable_client_ids', 'can_read_set_aside_client')
+      'is_backend_caller', 'can_read_client', 'readable_client_ids', 'can_read_set_aside_client')
     and p.proname !~ '^mv__';
   if bad is not null then raise exception 'private functions callable by signed-in users: %', bad; end if;
+end $$;
+
+-- 5b. The client mapping is closed: read only through the SECURITY DEFINER helpers.
+do $$ begin
+  if to_regclass('command.client_organizations') is not null and (
+       has_table_privilege('anon', 'command.client_organizations', 'select')
+       or has_table_privilege('authenticated', 'command.client_organizations', 'select')
+       or not (select relrowsecurity from pg_class where oid = 'command.client_organizations'::regclass)) then
+    raise exception 'command.client_organizations is readable by anon or authenticated, or has no RLS';
+  end if;
 end $$;
 
 -- 6. Objects created later in the client schemas are not granted to anon by default.

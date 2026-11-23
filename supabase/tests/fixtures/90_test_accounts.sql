@@ -1,8 +1,10 @@
 -- Test accounts and made-up rows, loaded after the migrations (as the table owner).
--- Org A owns command (FMIC), sandbox client cl_fender and set-aside client fmic; org B owns
--- ledlenser, cl_ledlenser and set-aside client ledlenser. Staff (platform_admin) has no
--- membership in either. The client_schema_org rows are what Brian Watson inserts at apply time.
--- Every row is made up; no client data.
+-- Command sign-in model only. Org A is the command organization "fender" (client_key fender:
+-- schemas command and canvas_private, sandbox client cl_fender, set-aside client fmic); org B is
+-- "ledlenser" (ledlenser, ledlenser_private, cl_ledlenser, ledlenser). Both orgs, the platform
+-- org and the client mapping come from fixtures/40_command_accounts.sql and
+-- 20261123120000_client_organizations.sql. Staff (intofocus_admin on the platform org) has no
+-- membership in either client org. Every row is made up; no client data.
 
 -- One row in p_rel: p_values sets named columns; other columns take their default, or a made-up
 -- value when they are NOT NULL without a default (the first value a CHECK allows, when it lists
@@ -87,37 +89,20 @@ insert into auth.users (id) values
   ('00000000-0000-0000-0000-0000000000a3'), ('00000000-0000-0000-0000-0000000000b1'),
   ('00000000-0000-0000-0000-0000000000c1'), ('00000000-0000-0000-0000-0000000000d1');
 
--- Accounts (portal model).
-select pg_temp.fill('public.organizations', jsonb_build_object('id', '00000000-0000-0000-0000-00000000000a', 'name', 'Org A', 'slug', 'org-a'));
-select pg_temp.fill('public.organizations', jsonb_build_object('id', '00000000-0000-0000-0000-00000000000b', 'name', 'Org B', 'slug', 'org-b'));
-select pg_temp.fill('public.organizations', jsonb_build_object('id', '00000000-0000-0000-0000-0000000000f0', 'name', 'IntoFocus', 'slug', 'intofocus-ai'));
--- a1 (A admin), a2 (A member), a3 (A, removed), b1 (B admin), c1 (staff), d1: signed in, no account.
-select pg_temp.fill('public.organization_memberships', jsonb_build_object('organization_id', '00000000-0000-0000-0000-00000000000a', 'user_id', '00000000-0000-0000-0000-0000000000a1', 'role', 'org_admin', 'status', 'active'));
-select pg_temp.fill('public.organization_memberships', jsonb_build_object('organization_id', '00000000-0000-0000-0000-00000000000a', 'user_id', '00000000-0000-0000-0000-0000000000a2', 'role', 'member', 'status', 'active'));
-select pg_temp.fill('public.organization_memberships', jsonb_build_object('organization_id', '00000000-0000-0000-0000-00000000000a', 'user_id', '00000000-0000-0000-0000-0000000000a3', 'role', 'member', 'status', 'removed'));
-select pg_temp.fill('public.organization_memberships', jsonb_build_object('organization_id', '00000000-0000-0000-0000-00000000000b', 'user_id', '00000000-0000-0000-0000-0000000000b1', 'role', 'org_admin', 'status', 'active'));
-select pg_temp.fill('public.organization_memberships', jsonb_build_object('organization_id', '00000000-0000-0000-0000-0000000000f0', 'user_id', '00000000-0000-0000-0000-0000000000c1', 'role', 'platform_admin', 'status', 'active'));
+-- a1 (A Lead), a2 (A User), a3 (A, removed), b1 (B Lead), c1 (staff), d1: signed in, no org.
+select pg_temp.fill('command.organization_memberships', jsonb_build_object('organization_id', '00000000-0000-0000-0000-00000000c0f1', 'user_id', '00000000-0000-0000-0000-0000000000a1', 'role', 'org_admin', 'status', 'active'));
+select pg_temp.fill('command.organization_memberships', jsonb_build_object('organization_id', '00000000-0000-0000-0000-00000000c0f1', 'user_id', '00000000-0000-0000-0000-0000000000a2', 'role', 'org_viewer', 'status', 'active'));
+select pg_temp.fill('command.organization_memberships', jsonb_build_object('organization_id', '00000000-0000-0000-0000-00000000c0f1', 'user_id', '00000000-0000-0000-0000-0000000000a3', 'role', 'org_viewer', 'status', 'removed'));
+select pg_temp.fill('command.organization_memberships', jsonb_build_object('organization_id', '00000000-0000-0000-0000-00000000c0b1', 'user_id', '00000000-0000-0000-0000-0000000000b1', 'role', 'org_admin', 'status', 'active'));
+select pg_temp.fill('command.organization_memberships', jsonb_build_object('organization_id', '00000000-0000-0000-0000-00000000c0a1', 'user_id', '00000000-0000-0000-0000-0000000000c1', 'role', 'intofocus_admin', 'status', 'active'));
 
--- Dashboard staff (command model): c1 is intofocus_admin in the platform org.
-select pg_temp.fill('command.organizations', jsonb_build_object('id', '00000000-0000-0000-0000-0000000001f0', 'name', 'IntoFocus', 'slug', 'intofocus-ai', 'is_platform_org', true));
-select pg_temp.fill('command.organization_memberships', jsonb_build_object('organization_id', '00000000-0000-0000-0000-0000000001f0', 'user_id', '00000000-0000-0000-0000-0000000000c1', 'role', 'intofocus_admin', 'status', 'active'));
-
--- What Brian Watson inserts at apply time.
--- (Skipped when 1.6 is not loaded, so the guard tests can be run against the structure alone.)
-do $$ begin
-  if to_regclass('private.client_schema_org') is not null then
-    insert into private.client_schema_org (schema_name, organization_id, note) values
-      ('command', '00000000-0000-0000-0000-00000000000a', 'test: org A'),
-      ('ledlenser', '00000000-0000-0000-0000-00000000000b', 'test: org B');
-  end if;
-end $$;
-select pg_temp.fill('public.set_aside_clients', jsonb_build_object('client_key', 'fmic', 'label', 'Test FMIC', 'organization_id', '00000000-0000-0000-0000-00000000000a'));
-select pg_temp.fill('public.set_aside_clients', jsonb_build_object('client_key', 'ledlenser', 'label', 'Test Ledlenser', 'organization_id', '00000000-0000-0000-0000-00000000000b'));
+select pg_temp.fill('public.set_aside_clients', jsonb_build_object('client_key', 'fmic', 'label', 'Test FMIC'));
+select pg_temp.fill('public.set_aside_clients', jsonb_build_object('client_key', 'ledlenser', 'label', 'Test Ledlenser'));
 select pg_temp.fill('public.set_aside_checks', jsonb_build_object('check_key', 'amazon_specs', 'label', 'Test check', 'entity_type', 'asin'));
 
 -- Sandbox clients.
-select pg_temp.fill('sandbox.client', jsonb_build_object('client_id', 'cl_fender', 'name', 'Test Fender', 'slug', 'test-fender', 'organization_id', '00000000-0000-0000-0000-00000000000a'));
-select pg_temp.fill('sandbox.client', jsonb_build_object('client_id', 'cl_ledlenser', 'name', 'Test Ledlenser', 'slug', 'test-ledlenser', 'organization_id', '00000000-0000-0000-0000-00000000000b'));
+select pg_temp.fill('sandbox.client', jsonb_build_object('client_id', 'cl_fender', 'name', 'Test Fender', 'slug', 'test-fender', 'organization_id', '00000000-0000-0000-0000-00000000c0f1'));
+select pg_temp.fill('sandbox.client', jsonb_build_object('client_id', 'cl_ledlenser', 'name', 'Test Ledlenser', 'slug', 'test-ledlenser', 'organization_id', '00000000-0000-0000-0000-00000000c0b1'));
 
 -- One made-up row in every other client table (sandbox and public: one per client).
 do $$
@@ -133,9 +118,10 @@ begin
       and (n.nspname in ('command', 'ledlenser', 'sandbox')
            or c.oid in ('public.issue_set_asides'::regclass, 'public.canvas_score_snapshots'::regclass,
                         'public.site_type_classifications'::regclass, 'public.site_type_overrides'::regclass,
-                        'public.audit_log'::regclass, 'public.actuation_programs'::regclass,
+                        'public.actuation_programs'::regclass,
                         'public.actuation_items'::regclass, 'public.actuation_expiry_reminders_sent'::regclass))
       and c.oid not in ('command.organizations'::regclass, 'command.organization_memberships'::regclass,
+                        'command.client_organizations'::regclass, 'command.user_profiles'::regclass,
                         'sandbox.client'::regclass)
     order by 1::text
   loop
@@ -147,9 +133,6 @@ begin
     elsif r.has_client_key then
       if not pg_temp.fill(r.rel, '{"client_key": "fmic"}') then missing := missing || r.rel::text; end if;
       perform pg_temp.fill(r.rel, '{"client_key": "ledlenser"}');
-    elsif r.nspname = 'public' and r.has_org then
-      perform pg_temp.fill(r.rel, '{"organization_id": "00000000-0000-0000-0000-00000000000a", "entity_table": "issue_set_asides"}');
-      perform pg_temp.fill(r.rel, '{"organization_id": "00000000-0000-0000-0000-00000000000b", "entity_table": "issue_set_asides"}');
     else
       if not pg_temp.fill(r.rel) then missing := missing || r.rel::text; end if;
     end if;

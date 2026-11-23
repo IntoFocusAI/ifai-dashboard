@@ -1,21 +1,26 @@
--- 1.6 Step 0b: client data is readable only by signed-in members of the owning account
--- (and IntoFocus staff for entitled accounts). Anonymous callers read nothing.
+-- 1.6 Step 0b: client data is readable only by IntoFocus staff and signed-in members of the
+-- command organization that owns the client. Anonymous callers read nothing.
 --
--- Alters existing permissions, policies, views and functions, so Brian Watson applies it, staging
--- first, after 20261118200000 and after inserting the private.client_schema_org rows. The dashboard
--- switch to signed-in reads ("Open the dashboard from the portal") must ship at the same time.
+-- ALTERING: changes existing permissions, policies, views and functions, so Brian Watson applies
+-- it, staging first, after 20261123120000 (client mapping) and 20261123130000 (helpers). The
+-- dashboard switch to signed-in reads must ship at the same time.
 --
--- Scope. "Client schemas" and the account each belongs to:
---   command, canvas_private      -> private.can_read_schema('command')    (FMIC)
---   ledlenser, ledlenser_private -> private.can_read_schema('ledlenser')  (Ledlenser)
+-- Rule: staff (command.is_intofocus_admin()) read every client; an active org_admin or
+-- org_viewer of the command organization mapped in command.client_organizations reads that client.
+-- Scope. "Client schemas" and the client each belongs to:
+--   command, canvas_private      -> command.can_read_client_key('fender')
+--   ledlenser, ledlenser_private -> command.can_read_client_key('ledlenser')
 --   sandbox                      -> per row, client_id in private.readable_client_ids()
 -- Not client data, left as they are: command.organizations, command.user_profiles,
 -- command.organization_memberships (dashboard sign-in tables with their own policies),
+-- command.client_organizations (the client mapping: RLS on, no grants, read through the helpers),
 -- sandbox.seller and sandbox.seller_type (marketplace reference lists, readable when signed in).
--- Public tables with client data, scoped by the account that owns the client_key
--- (public.set_aside_clients.organization_id) or by organization_id:
+-- public.audit_log belongs to the portal (its policy uses the portal's public.* roles), so it is
+-- not given a client policy here; it only loses anon.
+-- Public tables with client data, scoped by their set-aside client_key (fmic, ledlenser) through
+-- command.client_organizations.set_aside_key (private.can_read_set_aside_client):
 --   read by the dashboard: issue_set_asides, set_aside_clients, canvas_score_snapshots,
---     site_type_classifications, site_type_overrides, audit_log;
+--     site_type_classifications, site_type_overrides;
 --   staff only (read through their staff functions, no SELECT grant): actuation_programs,
 --     actuation_items, actuation_expiry_reminders_sent.
 -- Registries the client views join (same for every client): set_aside_checks, set_aside_reasons,
@@ -29,7 +34,7 @@
 --      on canvas_private and ledlenser_private (views now run as the caller and read through them).
 --   2. Every client table: REVOKE ALL from anon and PUBLIC; RLS on; every policy for anon,
 --      authenticated or PUBLIC that is a literal true is dropped, as is every policy for anon;
---      a SELECT policy "client_read" for authenticated with the membership check is added;
+--      a SELECT policy "client_read" for authenticated with the staff-or-member check is added;
 --      SELECT granted to authenticated.
 --   3. Every materialized view in a client schema (they cannot have RLS): REVOKE ALL from anon,
 --      authenticated and PUBLIC. A SECURITY DEFINER reader private.mv__<schema>__<name>() returns
@@ -71,7 +76,7 @@ set local search_path = '';
 
 create temporary table lockdown_schema (schema_name text primary key, read_as text) on commit drop;
 insert into lockdown_schema values
-  ('command', 'command'), ('canvas_private', 'command'),
+  ('command', 'fender'), ('canvas_private', 'fender'),
   ('ledlenser', 'ledlenser'), ('ledlenser_private', 'ledlenser'),
   ('sandbox', null);
 
@@ -83,6 +88,8 @@ begin
       ('command.organizations', 'dashboard sign-in table'),
       ('command.user_profiles', 'dashboard sign-in table'),
       ('command.organization_memberships', 'dashboard sign-in table'),
+      ('command.client_organizations', 'client mapping, read through the helpers'),
+      ('public.audit_log', 'portal table with its own policy'),
       ('sandbox.seller', 'marketplace reference list'),
       ('sandbox.seller_type', 'marketplace reference list')) v(name, why)
   loop
@@ -105,7 +112,6 @@ begin
       ('public.canvas_score_snapshots', '(private.can_read_set_aside_client(client_key))', true),
       ('public.site_type_classifications', '(private.can_read_set_aside_client(client_key))', true),
       ('public.site_type_overrides', '(private.can_read_set_aside_client(client_key))', true),
-      ('public.audit_log', '(private.client_org_readable(organization_id))', true),
       ('public.actuation_programs', '(private.can_read_set_aside_client(client_key))', false),
       ('public.actuation_items', '(private.can_read_set_aside_client(client_key))', false),
       ('public.actuation_expiry_reminders_sent', '(private.can_read_set_aside_client(client_key))', false)
@@ -120,7 +126,7 @@ end $$;
 -- Row check for one client table (null when the table needs a decision).
 create function pg_temp.lockdown_check(p_rel regclass) returns text language sql stable as $$
   select case
-    when s.read_as is not null then format('(select private.can_read_schema(%L))', s.read_as)
+    when s.read_as is not null then format('(select command.can_read_client_key(%L))', s.read_as)
     when c.oid = to_regclass('sandbox.fender_dealer_catalog')
       then $c$(select private.can_read_client('cl_fender'))$c$
     when exists (select 1 from pg_attribute a where a.attrelid = c.oid and a.attname = 'client_id'
@@ -256,7 +262,7 @@ begin
       raise exception '1.6: materialized view % in sandbox needs a reader decision', r.mv;
     end if;
     reader := format('private.%I', 'mv__' || r.nspname || '__' || r.relname);
-    chk := format('(private.can_read_schema(%L) or private.is_backend_caller())', r.read_as);
+    chk := format('(command.can_read_client_key(%L) or private.is_backend_caller())', r.read_as);
     execute format('revoke all on table %s from anon, authenticated, public', r.mv);
     execute format(
       'create or replace function %s() returns setof %s language sql stable security definer '

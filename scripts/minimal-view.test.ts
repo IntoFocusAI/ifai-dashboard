@@ -596,7 +596,7 @@ test("Phase 1 stays an analyst estimate and nothing mentions fees", () => {
   const phaseOne = slots.find((slot) => slot.id === "spoke-fixes");
   assert.ok(phaseOne);
   assert.match(phaseOneLiftEstimate(b), /^\+\$1\.05M\*? est\.$/);
-  assert.deepEqual(nodeById(nodes, "spoke-fixes").heroValue, { value: phaseOneLiftEstimate(b), label: "Phase 1 lift" });
+  assert.deepEqual(nodeById(nodes, "spoke-fixes").heroValue, { value: phaseOneLiftEstimate(b), label: "Phase 1 lift", tone: "good" });
   assert.equal(phaseOne.value, phaseOneLiftEstimate(b));
   assert.equal(slotById(slots, "enterprise-potential").value, enterprisePotentialEstimate(b));
   assert.equal(phaseOne.provenance, "estimate");

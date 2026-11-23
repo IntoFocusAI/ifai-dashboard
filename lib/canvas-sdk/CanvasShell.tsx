@@ -211,7 +211,7 @@ export function CanvasShell({ spec, children }: Props) {
     tourCategory: currentTour?.category ?? "",
     focusNode,
     inspectBubble,
-    heldGroupId: hubSlotsVisible && panelLayout === "hidden" ? inspectedBubbleId : null,
+    heldGroupId: hubSlotsVisible && panelLayout === "hidden" && spec.hubSlots?.[inspectedBubbleId] ? inspectedBubbleId : null,
     resetView: resetCanvasView,
     overviewNonce,
     focusedSpokeId: activeSpoke,

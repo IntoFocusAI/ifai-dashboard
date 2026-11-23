@@ -2,12 +2,16 @@
 supabase/tests/fixtures/00_supabase_roles.sql
 # The hosted structure, generated from the 2026-11-18 catalog snapshot (build_hosted_fixture.py)
 supabase/tests/fixtures/30_hosted_structure.sql
-# Repo migrations not yet on hosted
+# Repo migrations not yet in the 2026-11-18 snapshot
 supabase/migrations/20261118160000_prompt_rpcs_staff_only.sql
+# Command sign-in rows shaped like production (before the login-roles migrations)
+supabase/tests/fixtures/40_command_accounts.sql
 # Under test
 supabase/migrations/20261118190000_write_rpcs_no_anon.sql
-supabase/migrations/20261118200000_client_access_helpers.sql
-supabase/migrations/20261118200100_client_data_lockdown.sql
-supabase/migrations/20261118200200_client_read_functions.sql
-# Rows (as owner, after the migrations; includes what Watson inserts at apply time)
+supabase/migrations/20261123120000_client_organizations.sql
+supabase/migrations/20261123120100_org_lead_membership_limits.sql
+supabase/migrations/20261123130000_client_access_helpers.sql
+supabase/migrations/20261123130100_client_data_lockdown.sql
+supabase/migrations/20261123130200_client_read_functions.sql
+# Rows (as owner, after the migrations)
 supabase/tests/fixtures/90_test_accounts.sql

@@ -1,17 +1,17 @@
 -- 1.6 Step 1: read functions that return client data check the caller's membership first.
 --
--- Alters existing functions and permissions, so Brian Watson applies it, with 20261118200100.
+-- ALTERING: changes existing functions and permissions, so Brian Watson applies it, with 20261123130100.
 -- Each body is unchanged from its last migration except for the membership condition marked
 -- "1.6"; a caller who may not read the client gets no rows (or null), not an error, so pages show
 -- their usual empty state.
---   public.ai_prompts_list()             (20261027183846)  FMIC prompts: can_read_schema('command')
+--   public.ai_prompts_list()             (20261027183846)  FMIC prompts: command.can_read_client_key('fender')
 --   public.ai_prompts_status()           (20261027183846)  same
 --   public.ai_prompt_edits_list(text)    (20261109233000)  same
 --   public.actuation_basis(text)         (20261116220000)  can_read_set_aside_client(p_client_key)
 -- EXECUTE on these and on public.canvas_ai_history_run_rows(uuid) (SECURITY INVOKER: it reads
--- the canvas_ai_history_* views as the caller, which 20261118200100 already filters) is revoked
+-- the canvas_ai_history_* views as the caller, which 20261123130100 already filters) is revoked
 -- from anon and PUBLIC and kept for authenticated and service_role.
--- Staff keep the prompt list through can_read_schema (staff and FMIC entitled), and the prompt
+-- Staff keep the prompt list through command.can_read_client_key (staff read every client), and the prompt
 -- write functions still require command.is_intofocus_admin().
 --
 -- Check after applying (as anon: permission denied; as a signed-in non-member: zero rows):
@@ -40,7 +40,7 @@ language sql stable security definer set search_path to ''
 as $$
   select p.prompt_key, p.prompt_text, p.category::text, p.prompt_kind, p.active, p.created_at, p.updated_at
   from command.fmic_ai_prompts p
-  where private.can_read_schema('command')  -- 1.6
+  where command.can_read_client_key('fender')  -- 1.6
   order by p.prompt_key;
 $$;
 
@@ -61,7 +61,7 @@ as $$
     'categories', (select coalesce(jsonb_agg(distinct category order by category), '[]'::jsonb) from command.fmic_ai_prompts)
   )
   from command.fmic_ai_prompt_lock() l
-  where private.can_read_schema('command');  -- 1.6
+  where command.can_read_client_key('fender');  -- 1.6
 $$;
 
 create or replace function public.ai_prompt_edits_list(p_prompt_key text)
@@ -81,7 +81,7 @@ as $$
   select e.id, e.edited_at, e.action, e.prompt_key, e.before, e.after
   from command.fmic_ai_prompt_edits e
   where (p_prompt_key is null or e.prompt_key = p_prompt_key)
-    and private.can_read_schema('command')  -- 1.6
+    and command.can_read_client_key('fender')  -- 1.6
   order by e.edited_at desc, e.id desc;
 $$;
 

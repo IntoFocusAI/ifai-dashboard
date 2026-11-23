@@ -15,8 +15,9 @@ not on `PATH`.
 | --- | --- |
 | `write_rpcs_no_anon.test.sql` | 1.6 Step 0a: anon and PUBLIC cannot execute the five write functions; signed-in users reach the function body. |
 | `catalog_guard.test.sql` | 1.6: nothing with client data is selectable by anon; every view over client data has `security_invoker`; every client table has RLS and a membership policy and no literal `true` policy; materialized views are not selectable by signed-in users; every SECURITY DEFINER function over client data that signed-in users can call checks membership; signed-in users reach only the listed `private` helpers; no default privileges for anon in client schemas. Read-only, so it can also be run against staging after applying. |
-| `client_isolation.test.sql` | 1.6: every relation with client data (189 on the hosted structure, found from the catalog) for 7 actors: anon is refused; org A members see exactly org A's data and none of org B's, and the reverse; a removed member and a signed-in user with no account see nothing; backend-only relations are refused to every signed-in user. Run twice: as the database is today (staff read every account with dashboard data) and with the portal's `private.is_staff()` / `private.module_access()` present (staff read entitled accounts only). Also materialized view readers, and set-aside write and reopen across accounts. |
-| `read_functions.test.sql` | 1.6: the read functions that return client data give rows to members and entitled staff only, and refuse anon; the three unchecked `command.fmic_ai_*` functions are refused to signed-in users. |
+| `client_isolation.test.sql` | 1.6: every relation with client data (found from the catalog) for 7 actors in the command sign-in model: anon is refused; org A (fender) Leads and Users see exactly org A's data and none of org B's (ledlenser), and the reverse; staff (`intofocus_admin`) see both; a removed member and a signed-in user with no org see nothing; backend-only relations are refused to every signed-in user. Also materialized view readers, `canvas_score_snapshots` by name, and set-aside write and reopen across orgs. |
+| `read_functions.test.sql` | 1.6: the read functions that return client data give rows to members and staff only, and refuse anon; the three unchecked `command.fmic_ai_*` functions are refused to signed-in users. |
+| `login_roles.test.sql` | Login roles: `command.client_organizations` is seeded from `data/clients/*.json` (client_key = org slug) and closed to anon and signed-in users; `command.my_clients()` and the `can_read_*` helpers give staff every client and Org Leads / Org Users only their org's client (removed members, inactive orgs and users with no org get nothing); Org Leads can add, edit and remove only `org_viewer` rows in their own org; staff `org_admin` rows on client orgs are removed; the guarded Brian Magazu staff insert works once his auth user exists. |
 
 Each actor runs the way PostgREST runs a request: session user `authenticator`, then
 `SET ROLE anon` or `authenticated`, with `request.jwt.claims` set.
@@ -41,13 +42,21 @@ Each actor runs the way PostgREST runs a request: session user `authenticator`, 
   are added `NOT VALID`, schema comments are not copied, Postgres 16 prints some view definitions
   differently, Supabase platform roles are plain roles, extensions other than pgcrypto and
   uuid-ossp are left out, and pg_cron jobs are listed as comments only.
-- `90_test_accounts.sql`: made-up accounts and rows, loaded after the migrations. Org A owns
-  `command`, sandbox client `cl_fender` and set-aside client `fmic`; org B owns `ledlenser`,
-  `cl_ledlenser` and `ledlenser`; a staff user (`platform_admin`) belongs to neither. It inserts
-  the `private.client_schema_org` rows Brian Watson inserts at apply time, puts at least one row in
+- `40_command_accounts.sql`: made-up command sign-in rows shaped like production on 2026-11-23
+  (platform org with two staff who also hold `org_admin` on fender and ledlenser, plus Leads,
+  Users and a removed member). Loaded before the login-roles migrations so their seed and
+  clean-up run against realistic rows.
+- `90_test_accounts.sql`: made-up memberships and rows, loaded after the migrations. Org A is the
+  command org `fender` (`command`, sandbox client `cl_fender`, set-aside client `fmic`); org B is
+  `ledlenser` (`ledlenser`, `cl_ledlenser`, `ledlenser`); a staff user (`intofocus_admin` on the
+  platform org) belongs to neither. It puts at least one row in
   every client table (a generic filler that reads column types and defaults), and drops CHECK
   constraints on the tables it fills so made-up values need not match URL patterns (checks do not
   affect grants, policies or views).
 
-`load-order.txt` also loads `20261118160000_prompt_rpcs_staff_only.sql`, which is in the repo but
-not yet on hosted.
+
+`load-order.txt` also loads `20261118160000_prompt_rpcs_staff_only.sql`, which predates the 2026-11-18
+snapshot's structure.
+
+On macOS, set `PG_BIN` to a Homebrew Postgres, for example
+`PG_BIN=/opt/homebrew/opt/postgresql@17/bin bash supabase/tests/run.sh`.

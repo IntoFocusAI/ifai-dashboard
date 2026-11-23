@@ -1,12 +1,9 @@
 -- 1.6 isolation: for every relation with client data (found from the catalog of the hosted
 -- structure), each actor sees only what their account membership allows.
--- Accounts and rows come from fixtures/90_test_accounts.sql: org A owns command (FMIC), sandbox
--- client cl_fender and set-aside client fmic; org B owns ledlenser, cl_ledlenser and ledlenser.
--- Staff (platform_admin) is a member of neither. Run twice:
---   1. as the database is today (no portal entitlement functions): staff read every account that
---      has dashboard data;
---   2. with the portal's private.is_staff() and private.module_access() present and org A the only
---      entitled account: staff read org A only.
+-- Accounts and rows come from fixtures/40_command_accounts.sql and 90_test_accounts.sql (command
+-- sign-in model): org A is the command org "fender" (command, canvas_private, sandbox client
+-- cl_fender, set-aside client fmic); org B is "ledlenser" (ledlenser, cl_ledlenser, ledlenser).
+-- Staff (intofocus_admin on the platform org) is a member of neither and reads both.
 \set ON_ERROR_STOP 1
 
 create temporary table actor (who text primary key, role text, uid uuid);
@@ -60,14 +57,15 @@ with recursive base as (
   where n.nspname in ('command', 'canvas_private', 'ledlenser', 'ledlenser_private', 'sandbox')
     and c.relkind in ('r', 'p', 'v', 'm')
     and c.oid <> all (array_remove(array[to_regclass('command.organizations'), to_regclass('command.user_profiles'),
-      to_regclass('command.organization_memberships'), to_regclass('sandbox.seller'),
+      to_regclass('command.organization_memberships'), to_regclass('command.client_organizations'),
+      to_regclass('sandbox.seller'),
       to_regclass('sandbox.seller_type')]::oid[], null))
   union all
   select c.oid, 'rows' from pg_class c
   where c.oid = any (array_remove(array[
     to_regclass('public.issue_set_asides'), to_regclass('public.set_aside_clients'),
     to_regclass('public.canvas_score_snapshots'), to_regclass('public.site_type_classifications'),
-    to_regclass('public.site_type_overrides'), to_regclass('public.audit_log'),
+    to_regclass('public.site_type_overrides'),
     to_regclass('public.actuation_programs'), to_regclass('public.actuation_items'),
     to_regclass('public.actuation_expiry_reminders_sent')]::oid[], null))
   union
@@ -92,15 +90,15 @@ create function pg_temp.rows_of(p_org text, p_key_col text) returns text languag
     when 'client_id' then format('client_id = %L', case p_org when 'A' then 'cl_fender' else 'cl_ledlenser' end)
     when 'client_key' then format('client_key = %L', case p_org when 'A' then 'fmic' else 'ledlenser' end)
     when 'organization_id' then format('organization_id = %L',
-      case p_org when 'A' then '00000000-0000-0000-0000-00000000000a' else '00000000-0000-0000-0000-00000000000b' end)
+      case p_org when 'A' then '00000000-0000-0000-0000-00000000c0f1' else '00000000-0000-0000-0000-00000000c0b1' end)
   end
 $$;
 
--- Which accounts an actor may read. Staff: A and B today; A only once entitlements exist.
+-- Which accounts an actor may read. Staff read every client.
 create function pg_temp.reads(p_who text, p_mode text) returns text[] language sql as $$
   select case p_who
     when 'a_admin' then array['A'] when 'a_member' then array['A'] when 'b_admin' then array['B']
-    when 'staff' then case p_mode when 'fallback' then array['A', 'B'] else array['A'] end
+    when 'staff' then array['A', 'B']
     else array[]::text[] end
 $$;
 
@@ -200,43 +198,28 @@ begin
   return errors;
 end $$;
 
--- 1. The database as it is today.
 do $$
 declare errors text[];
 begin
-  errors := pg_temp.check_all('fallback');
+  errors := pg_temp.check_all('command');
   if array_length(errors, 1) > 0 then
-    raise exception E'isolation failures (today):\n%', array_to_string(errors, E'\n');
+    raise exception E'isolation failures:\n%', array_to_string(errors, E'\n');
   end if;
 end $$;
 
--- 2. With the portal's staff and entitlement functions present; org A entitled, org B not.
-create table private.test_entitlements (organization_id uuid primary key);
-insert into private.test_entitlements values ('00000000-0000-0000-0000-00000000000a');
-create function private.is_staff() returns boolean language sql stable security definer set search_path = '' as $$
-  select exists (select 1 from public.organization_memberships m
-                 where m.user_id = auth.uid() and m.status = 'active' and m.role = 'platform_admin')
-$$;
-create function private.module_access(p_organization_id uuid, p_module_key text) returns boolean
-language sql stable security definer set search_path = '' as $$
-  select p_module_key = 'consensus_control'
-     and exists (select 1 from private.test_entitlements e where e.organization_id = p_organization_id)
-$$;
-grant execute on function private.is_staff(), private.module_access(uuid, text) to authenticated;
-
-do $$
-declare errors text[];
-begin
-  errors := pg_temp.check_all('entitled');
-  if array_length(errors, 1) > 0 then
-    raise exception E'isolation failures (with entitlements):\n%', array_to_string(errors, E'\n');
+-- canvas_score_snapshots is covered by the loop above; check it by name too, so a change to the
+-- catalog scope cannot drop it silently.
+do $$ begin
+  if not exists (select 1 from pg_temp.subject where rel = 'public.canvas_score_snapshots'::regclass and key_col = 'client_key') then
+    raise exception 'canvas_score_snapshots is not in the isolation scope';
+  end if;
+  if pg_temp.query_as('anon', 'select count(*) from public.canvas_score_snapshots') is not null
+     or pg_temp.query_as('a_member', $q$select count(*) from public.canvas_score_snapshots where client_key <> 'fmic'$q$) <> '0'
+     or pg_temp.query_as('a_member', $q$select count(*) from public.canvas_score_snapshots where client_key = 'fmic'$q$) = '0'
+     or pg_temp.query_as('staff', 'select count(distinct client_key) from public.canvas_score_snapshots') <> '2' then
+    raise exception 'canvas_score_snapshots isolation';
   end if;
 end $$;
-
--- Back to the database as it is today, for the tests that follow.
-drop function private.is_staff();
-drop function private.module_access(uuid, text);
-drop table private.test_entitlements;
 
 -- Set-aside writes: a member writes for their own client only; reopen only their own rows.
 do $$
