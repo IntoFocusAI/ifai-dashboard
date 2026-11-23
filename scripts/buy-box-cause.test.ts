@@ -207,6 +207,11 @@ for (const client of ["fender", "ledlenser"] as const) {
     const plan = planWithBuyBoxCauses([item(BUY_BOX_ROW_ID, 1)], split, est);
     assert.deepEqual(plan.map((i) => i.id), GROUPS.map((group) => BUY_BOX_CAUSE_ROW_IDS[group]), "the earlier row ranks below the other two");
     assert.equal(plan[2]!.action, buyBoxRowAction("earlier", earlier));
+    // Each row's rank reason carries its own 30-day part; the earlier-days row carries no dollar.
+    assert.equal(plan[0]!.inputs.monthly, fixRowFigure(BUY_BOX_CAUSE_ROW_IDS.price, est, split, 30)!.range?.mid ?? null);
+    assert.equal(plan[1]!.inputs.monthly, fixRowFigure(BUY_BOX_CAUSE_ROW_IDS.other, est, split, 30)!.range?.mid ?? null);
+    assert.equal(plan[2]!.inputs.monthly, null);
+    assert.ok(!/a month/.test(plan[2]!.reason), plan[2]!.reason);
     // The yearly lines still add up to Phase 1, with the Buy Box at 365 days.
     const rows = Object.keys(FIX_ROW_LINES).map((id) => fixRowEstimate(id, est)).filter((r) => r?.inPhase1);
     const mid = rows.reduce((total, r) => total + (r!.range?.mid ?? 0), 0);

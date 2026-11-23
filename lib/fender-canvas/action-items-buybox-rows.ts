@@ -173,8 +173,10 @@ export function buyBoxCauseItems(
   return GROUPS.filter((group) => counts[group] > 0).map((group) => {
     const listings = counts[group];
     // Each row's one count is its own listings, so its figure and its rank reason show one N. The
-    // row keeps the Buy Box row's rank.
-    const inputs = { ...base.inputs, affected: listings, base: total };
+    // row keeps the Buy Box row's rank. Its monthly dollar is its own part of the Buy Box figure
+    // over 30 days (R-06); the earlier-days row has none.
+    const own = est ? { monthly: group === "earlier" ? null : (buyBoxCauseLine(est, group, split).range?.mid ?? null) } : {};
+    const inputs = { ...base.inputs, affected: listings, base: total, ...own };
     return {
       ...base,
       inputs,
