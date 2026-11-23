@@ -110,6 +110,47 @@ Order matters: the collectors write outside this repo, so we add the new path, r
 - Until step 4, the old columns are still written, so a read can switch back.
 - Each migration file carries its own undo.
 
+## Step 2 shipped (23 Nov 2026)
+
+The three price checkers now write one observation row per check, and the old columns are still written as before. MAP history starts on 23 Nov 2026.
+
+| Checker | Toolbelt wrench | Live version | Rollback | Writes rows to |
+| --- | --- | --- | --- | --- |
+| Fender Walmart | `fender_retail_buybox_map_audit` (1ecc6b76) | v15 → **v16** | resave v15 | `command.retail_price_observations`, retailer `walmart` |
+| Fender Musician's Friend | `fender_map_checker_musiciansfriend` (a4c64ed0) | v18 → **v19** | resave v18 | `command.retail_price_observations`, retailer `musicians-friend` |
+| Ledlenser Walmart | `ledlenser_walmart_price_audit` (c9e882ff) | v7 → **v8** | resave v7 | `ledlenser_private.retail_price_observations`, retailer `walmart` |
+
+Toolbelt can't re-activate an old version, so a rollback means saving the old code as a new version. The old code is in git: `git show 1780f25^:docs/toolbelt-wrenches/<wrench>.v15.js` (or `.v18.js` or `.v7.js`).
+
+**What each check writes**
+- **Status:**
+  - `priced`: a listing matched. The row has the price in cents, URL, title, seller (Walmart), MSRP (Musician's Friend) and match confidence.
+  - `no_match`: the search found brand results, but none matched this listing.
+  - `check_failed`: the check didn't finish. That covers a search or page error, an unreadable page, an empty search, an off-topic search, or no model code or title to search with.
+- **Labels:** `source = 'retailer_checker'`. `collector` names the wrench and its version. `run_id` is shared by every row from the same run. `observed_at` equals the `wmt_checked_at` / `mf_checked_at` written in the same run.
+- **Production only:** the Fender sandbox, mirror and claude copies don't have the table, so they get only the column writes, as before.
+- **Separate writes:** rows are inserted in a separate call after the column update. If either write fails, the other still goes through and the run reports the failure.
+- **Old columns unchanged:** the `wmt_*` / `mf_*` columns and PR 244's `*_last_matched_at` / `*_miss_streak` are written exactly as before.
+
+**False-miss fix (in the same versions)**
+
+On 23 Nov, Ledlenser P6 (B076CS82MV) lost its Walmart price ($119.99, walmart.com/ip/20338301502) even though Walmart still sold it. Walmart's search for "Ledlenser P6" twice returned 20 unrelated products, and each search counted as a miss.
+- **Off-topic search:** if no result is from the brand, the search is treated like an empty one. Only the check time is stamped, the row is `check_failed`, and the miss streak doesn't move.
+  - Ledlenser counts a Ledlenser / LED Lenser title or the seller River City Tools.
+  - Fender counts Fender, Squier, Gretsch, Jackson, Charvel or EVH.
+- **Re-check before dropping:** before a second miss in a row drops a stored price, the checker re-reads the stored product page. If the page is still the same brand's product with a price, the price stays, from that page, and the streak resets.
+  - Ledlenser uses the normal match rules for the re-read.
+  - Fender Walmart and Musician's Friend check identity only: brand, used, bundle, Squier, shape, part number or configuration, and price band. Line, color and title-overlap rules are skipped because full page titles differ from the shortened search titles.
+  - Musician's Friend only: if the page can't be read, the price is kept for one more pass and dropped on the third miss in a row.
+
+**Tests**
+- Each change was dry-run on a temporary copy, then run live on a few listings.
+- After the runs, `canvas_retailer_metrics` equalled `canvas_metrics` for both clients.
+
+**Note for step 3**
+- **The two counts can drift apart.** After a first miss, the column keeps its price under the two-miss rule, but the newest row is `no_match`.
+- **Fix in step 3:** count a price as current until two `no_match` rows in a row, or read the streak from the rows.
+
 ## What this unblocks
 
 - **R-09:** violation duration, from the observation history. Nothing extra to collect; it starts the day step 2 ships.
