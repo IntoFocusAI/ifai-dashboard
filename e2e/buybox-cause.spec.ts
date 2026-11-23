@@ -123,8 +123,10 @@ for (const client of CLIENTS) {
         `Watch ${earlier} ${noun(earlier)} that lost the Buy Box earlier this year.`,
       );
       const figures: Record<string, string> = {};
-      const trailText = { price: "priced above Amazon's reference price", other: "other or unknown cause", earlier: "Buy Box lost earlier this year" };
-      for (const [id, row] of [["price", priceRow], ["other", otherRow], ["earlier", earlierRow]] as const) {
+      const trailText = { price: "priced above Amazon's reference price", other: "other or unknown cause" };
+      // R-06 (23 Nov 2026): the backward-looking figure is retired, so the earlier-days row has no dollar.
+      await expect(earlierRow.locator("[data-fix-estimate]")).toHaveCount(0);
+      for (const [id, row] of [["price", priceRow], ["other", otherRow]] as const) {
         if ((await row.count()) === 0) continue;
         const cell = row.locator("[data-fix-estimate]");
         const status = await cell.getAttribute("data-fix-estimate");

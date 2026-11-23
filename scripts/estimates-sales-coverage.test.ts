@@ -274,12 +274,14 @@ test("Ledlenser: sales coverage before and after", () => {
     return [x.measured, x.estimated, x.notAvailable, x.total];
   };
   assert.deepEqual(cov(e.outOfStock), [53, 52, 61, 166]);
-  assert.deepEqual(cov(e.buyBox), [34, 47, 41, 122]);
+  // The 17 Nov read stored no Buy Box state, so the forward Buy Box line (R-06) prices no listing.
+  // The backward line it replaced covered [34, 47, 41, 122] and added $524 / $3,115 / $7,442.
+  assert.deepEqual(cov(e.buyBox), [0, 0, 0, 0]);
   assert.deepEqual(cov(e.mapLeakage), [21, 12, 0, 33]);
   assert.deepEqual(cov(e.missingSpecs), [53, 60, 73, 186]);
   assert.deepEqual(cov(e.aplus), [16, 34, 69, 119]);
   // Measured, no sales adds listings at $0: the dollars do not move.
-  assert.deepEqual(e.phase1.range, { low: 23110, mid: 55248, high: 104546 });
+  assert.deepEqual(e.phase1.range, { low: 22586, mid: 52133, high: 97104 });
   assert.equal(e.phase1.asterisk, true);
   assert.equal(e.mapLeakage.asterisk, false);
   // Measured listings are untouched: the measured part of each line is the proposal's figure.
@@ -303,7 +305,8 @@ test("Fender: sales coverage before and after", () => {
   near(c.annualSales.mid, 21997511, 1, "measured plus estimated sales");
 
   const e = estimateListingLines(loadEstimatesFixture("fender").listings);
-  assert.deepEqual(e.phase1.range, { low: 668826, mid: 1218490, high: 1884102 });
+  // Less the backward Buy Box line R-06 retired on 23 Nov 2026 (was 668,826 / 1,218,490 / 1,884,102).
+  assert.deepEqual(e.phase1.range, { low: 603651, mid: 1065353, high: 1659692 });
   assert.equal(e.outOfStock.trail.coverage.sentence, "383 of 609 listings measured (136 with no sales), 144 estimated, 82 Not available*");
   assert.equal(e.outOfStock.trail.confidence, "high");
 });

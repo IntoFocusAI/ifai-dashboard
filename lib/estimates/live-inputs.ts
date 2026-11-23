@@ -33,9 +33,11 @@ export type SalesLossInputRow = {
   smartscout_snapshot_date?: string | null;
   smartscout_ttm_revenue?: number | string | null;
   smartscout_monthly_units?: number | string | null;
+  smartscout_monthly_revenue?: number | string | null;
   baseline_daily_revenue?: number | string | null;
   est_lost_revenue_oos_365?: number | string | null;
   in_stock_days_30?: number | string | null;
+  no_buy_box_days_30?: number | string | null;
   in_stock_days_365?: number | string | null;
   oos_days_365?: number | string | null;
   no_buy_box_days_365?: number | string | null;
@@ -52,6 +54,8 @@ export type RetailInputRow = {
   amz_leakage?: number | string | null;
   is_bundle?: boolean | null;
   parent_asin?: string | null;
+  /** 'withheld' when Amazon withholds the Buy Box today (the Suppressed Listings read). */
+  featured_offer_state?: string | null;
 };
 
 /** canvas_spec_readiness: Amazon spec completeness. */
@@ -77,8 +81,8 @@ export type EstimateViewRows = {
 /** The columns each view is read with. Kept to what the formulas use. */
 export const ESTIMATE_VIEW_COLUMNS = {
   canvas_listing_sales_loss_v2:
-    "asin,title,current_price,sales_rank_current,smartscout_snapshot_date,smartscout_ttm_revenue,smartscout_monthly_units,baseline_daily_revenue,est_lost_revenue_oos_365,in_stock_days_30,in_stock_days_365,oos_days_365,no_buy_box_days_365,observed_days_365",
-  canvas_retail_listings: "asin,title,offer_price,sales_rank,monthly_sold,amz_leakage,is_bundle,parent_asin",
+    "asin,title,current_price,sales_rank_current,smartscout_snapshot_date,smartscout_ttm_revenue,smartscout_monthly_units,smartscout_monthly_revenue,baseline_daily_revenue,est_lost_revenue_oos_365,in_stock_days_30,no_buy_box_days_30,in_stock_days_365,oos_days_365,no_buy_box_days_365,observed_days_365",
+  canvas_retail_listings: "asin,title,offer_price,sales_rank,monthly_sold,amz_leakage,is_bundle,parent_asin,featured_offer_state",
   canvas_spec_readiness: "asin,amazon_checked,amazon_completeness_pct",
   canvas_listing_content: "asin,aplus_state",
 } as const;
@@ -110,6 +114,8 @@ export function joinEstimateListings(rows: EstimateViewRows, rankCategory: strin
     l.smartscoutHasRecord = Boolean(r.smartscout_snapshot_date);
     l.smartscoutTtmRevenue = num(r.smartscout_ttm_revenue);
     l.smartscoutMonthlyUnits = num(r.smartscout_monthly_units);
+    l.smartscoutMonthlyRevenue = num(r.smartscout_monthly_revenue);
+    l.noBuyBoxDays30 = num(r.no_buy_box_days_30);
     l.baselineDailyRevenue = num(r.baseline_daily_revenue);
     l.missedSalesOos365 = num(r.est_lost_revenue_oos_365);
     l.inStockDays30 = num(r.in_stock_days_30);
@@ -128,6 +134,7 @@ export function joinEstimateListings(rows: EstimateViewRows, rankCategory: strin
     l.amzLeakage = num(r.amz_leakage);
     if (r.is_bundle != null) l.isBundle = r.is_bundle;
     l.parentAsin = r.parent_asin ?? null;
+    l.buyBoxWithheld = r.featured_offer_state === "withheld";
   }
   for (const r of rows.spec) {
     const l = byAsin.get(r.asin);

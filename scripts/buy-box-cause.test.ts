@@ -1,13 +1,16 @@
 // node --experimental-strip-types --import ./scripts/register-alias.mjs --import ./scripts/register-ts-extensions.mjs --test scripts/buy-box-cause.test.ts
 //
 // Audit recommendation 3: Buy Box withheld split by its stored cause. The split rules, the lower
-// outside price for price-caused listings, and the two fix-list rows: they replace the Buy Box row,
-// add up to line 2, and keep the fix list adding up to Phase 1 for both fixture clients.
+// outside price for price-caused listings, and the fix-list rows: they replace the Buy Box row, the
+// two withheld rows add up to the one Buy Box figure (R-06, over the date pill's days), and the
+// yearly lines still add up to Phase 1 for both fixture clients.
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
+import { buyBoxForPeriod } from "../lib/estimates/buy-box.ts";
 import { buildClientEstimates } from "../lib/estimates/live-inputs.ts";
 import { PHASE_1_LINES } from "../lib/estimates/rollup.ts";
+import type { EstimateListingInput } from "../lib/estimates/types.ts";
 import {
   BUY_BOX_CAUSE_ROW_IDS,
   BUY_BOX_ROW_ID,
@@ -17,7 +20,7 @@ import {
   fixRowFigure,
   planWithBuyBoxCauses,
 } from "../lib/fender-canvas/action-items-buybox-rows.ts";
-import { FIX_ROW_LINES } from "../lib/fender-canvas/action-items-fix-list.ts";
+import { FIX_ROW_LINES, fixRowEstimate } from "../lib/fender-canvas/action-items-fix-list.ts";
 import {
   WITHHELD_CAUSE_COLUMNS,
   buyBoxCause,
@@ -170,43 +173,59 @@ test("the plan stays as it is while the split is missing or the row has no readi
 
 for (const client of ["fender", "ledlenser"] as const) {
   const fx = loadEstimatesFixture(client);
-  const est = buildClientEstimates(fx.listings, { rankCategory: fx.rankCategory, dataAsOf: fx.readOn });
-  // Every third listing of line 2 priced above the reference price; one listing outside line 2 withheld for another cause.
-  const line2 = [...est.byListing.values()].filter((entry) => "buy_box" in entry.lines).map((entry) => entry.asin);
-  const split = splitOf(line2.filter((_, i) => i % 3 === 0), [...line2.filter((_, i) => i % 3 === 1), "NOT-IN-LINE-2"]);
+  // The 17 Nov read stored no Buy Box state, so every fifth sales-view listing is marked withheld
+  // here with a 30-day sales read; every third of those has too few Buy Box days for a rate.
+  let n = 0;
+  const listings: EstimateListingInput[] = fx.listings.map((l) => {
+    if (!l.inSalesView || !l.smartscoutHasRecord) return l;
+    n += 1;
+    if (n % 5 !== 0) return l;
+    return { ...l, buyBoxWithheld: true, smartscoutMonthlyRevenue: 150 + n, inStockDays30: 30, noBuyBoxDays30: n % 3 === 0 ? 27 : 10 };
+  });
+  const est = buildClientEstimates(listings, { rankCategory: fx.rankCategory, dataAsOf: fx.readOn });
+  const withheld = listings.filter((l) => l.buyBoxWithheld).map((l) => l.asin);
+  const split = splitOf(withheld.filter((_, i) => i % 3 === 0), [...withheld.filter((_, i) => i % 3 !== 0), "NOT-IN-THE-READ"]);
 
-  test(`${client}: the three Buy Box rows add up to line 2, and the fix list still adds up to Phase 1`, () => {
-    assert.ok(line2.length > 2, "the fixture has line 2 listings");
-    const whole = fixRowFigure(BUY_BOX_ROW_ID, est, split)!;
-    const parts = GROUPS.map((group) => fixRowFigure(BUY_BOX_CAUSE_ROW_IDS[group], est, split)!);
-    assert.equal(parts.reduce((n, p) => n + p.listings, 0), whole.listings);
-    assert.equal(parts[2]!.listings, earlierBuyBoxListings(est, split));
-    assert.equal(parts[1]!.listings, split.other - 1, "the listing outside line 2 adds no dollar");
-    for (const key of ["low", "mid", "high"] as const) {
-      const sum = parts.reduce((total, p) => total + (p.range?.[key] ?? 0), 0);
-      assert.ok(Math.abs(sum - (whole.range?.[key] ?? 0)) < 0.01, `${key}: ${sum} vs ${whole.range?.[key]}`);
+  test(`${client}: the two withheld rows add up to the one Buy Box figure for the period; the earlier row has no dollar`, () => {
+    assert.ok(withheld.length > 2, "the fixture has withheld listings");
+    for (const days of [30, 90]) {
+      const whole = fixRowFigure(BUY_BOX_ROW_ID, est, split, days)!;
+      const panel = buyBoxForPeriod(est, days);
+      assert.deepEqual(whole.range, panel.range, "Action Items and Suppressed Listings show one figure");
+      const parts = (["price", "other"] as const).map((group) => fixRowFigure(BUY_BOX_CAUSE_ROW_IDS[group], est, split, days)!);
+      assert.equal(parts.reduce((total, p) => total + p.listings, 0), whole.listings);
+      assert.equal(parts[1]!.listings, split.other - 1, "the listing outside the read adds no dollar");
+      for (const key of ["low", "mid", "high"] as const) {
+        const sum = parts.reduce((total, p) => total + (p.range?.[key] ?? 0), 0);
+        assert.ok(Math.abs(sum - (whole.range?.[key] ?? 0)) <= 2, `${days} days ${key}: ${sum} vs ${whole.range?.[key]}`);
+      }
     }
+    // The backward-looking figure is retired: the earlier-days row keeps its count and has no dollar.
+    assert.equal(fixRowFigure(BUY_BOX_CAUSE_ROW_IDS.earlier, est, split, 30), null);
+    const earlier = earlierBuyBoxListings(est, split);
+    assert.ok(earlier > 0, "listings lost the Buy Box on earlier days");
     const plan = planWithBuyBoxCauses([item(BUY_BOX_ROW_ID, 1)], split, est);
     assert.deepEqual(plan.map((i) => i.id), GROUPS.map((group) => BUY_BOX_CAUSE_ROW_IDS[group]), "the earlier row ranks below the other two");
-    assert.equal(plan[2]!.action, buyBoxRowAction("earlier", parts[2]!.listings));
-    const ids = [...Object.keys(FIX_ROW_LINES).filter((id) => id !== BUY_BOX_ROW_ID), ...GROUPS.map((group) => BUY_BOX_CAUSE_ROW_IDS[group])];
-    const rows = ids.map((id) => fixRowFigure(id, est, split)).filter((r) => r?.inPhase1);
+    assert.equal(plan[2]!.action, buyBoxRowAction("earlier", earlier));
+    // The yearly lines still add up to Phase 1, with the Buy Box at 365 days.
+    const rows = Object.keys(FIX_ROW_LINES).map((id) => fixRowEstimate(id, est)).filter((r) => r?.inPhase1);
     const mid = rows.reduce((total, r) => total + (r!.range?.mid ?? 0), 0);
     assert.ok(est.phase1.range, "Phase 1 is priced");
     assert.ok(Math.abs(mid - est.phase1.range!.mid) <= PHASE_1_LINES.length, `${mid} vs ${est.phase1.range!.mid}`);
+    assert.deepEqual(est.buyBox.range, buyBoxForPeriod(est, 365).range);
   });
 
-  test(`${client}: each Buy Box row's trail lists exactly its own listings`, () => {
-    const groupOf = (asin: string) => (split.priceAsins.has(asin) ? "price" : split.otherAsins.has(asin) ? "other" : "earlier");
-    for (const cause of GROUPS) {
-      const figure = fixRowFigure(BUY_BOX_CAUSE_ROW_IDS[cause], est, split)!;
-      const line = buyBoxCauseLine(est, cause, split);
+  test(`${client}: each withheld row's trail counts exactly its own listings`, () => {
+    for (const cause of ["price", "other"] as const) {
+      const figure = fixRowFigure(BUY_BOX_CAUSE_ROW_IDS[cause], est, split, 30)!;
+      const line = buyBoxCauseLine(est, cause, split, 30);
       assert.equal(figure.line, line, "cached");
       assert.equal(line.lineId, "buy_box");
       assert.equal(line.trail.coverage.total, figure.listings);
+      const own = cause === "price" ? split.priceAsins : split.otherAsins;
       const asins = line.trail.listings.map((l) => l.asin);
-      assert.ok(asins.length > 0 && asins.every((asin) => groupOf(asin) === cause), cause);
-      if (figure.range && line.range) assert.ok(Math.abs(figure.range.mid - line.range.mid) <= 1);
+      assert.ok(asins.length > 0 && asins.every((asin) => own.has(asin)), cause);
+      assert.ok(line.trail.formula.includes("30 days, the period in the date pill"));
     }
   });
 }

@@ -77,19 +77,22 @@ test("the short figures read Loading, the Phase 1 mid, or Not available*", () =>
   assert.equal(phaseOneLiftEstimate({ estimates: { phase: "error", message: "x" } }), NO_ANALYST_ESTIMATE);
   const est = measured("fender");
   const ready: ClientEstimatesRead = { phase: "ready", estimates: est };
-  assert.match(phaseOneLiftEstimate({ estimates: ready }), /^\+\$1\.05M\*? est\.$/);
-  assert.match(enterprisePotentialEstimate({ estimates: ready }), /^\+\$8\.\d{1,2}M\*? est\.$/);
+  // Phase 1 less the retired backward Buy Box line (R-06, 23 Nov 2026); the 17 Nov read has no Buy Box state.
+  assert.match(phaseOneLiftEstimate({ estimates: ready }), /^\+\$940K\*? est\.$/);
+  assert.match(enterprisePotentialEstimate({ estimates: ready }), /^\+\$7\.\d{1,2}M\*? est\.$/);
 });
 
-test("Enterprise Potential, listing-fix part, reproduces the proposal's section 5 on the public placeholders, with the 18 Nov benchmarks", () => {
+test("Enterprise Potential, listing-fix part, reproduces the proposal's section 5 on the public placeholders, less the retired Buy Box line", () => {
+  // The proposal printed Fender $1.78M / $8.68M / $22.46M and Ledlenser $0.41M / $1.79M / $4.26M with
+  // the backward Buy Box line in Phase 1. R-06 replaced it on 23 Nov 2026.
   const fender = measured("fender").enterprise;
-  near(fender.range?.low, 1.78e6, 0.05e6, "Fender low");
-  near(fender.range?.mid, 8.68e6, 0.05e6, "Fender mid");
-  near(fender.range?.high, 22.46e6, 0.1e6, "Fender high");
+  near(fender.range?.low, 1.62e6, 0.05e6, "Fender low");
+  near(fender.range?.mid, 7.77e6, 0.05e6, "Fender mid");
+  near(fender.range?.high, 20.31e6, 0.1e6, "Fender high");
   const ledlenser = measured("ledlenser").enterprise;
-  near(ledlenser.range?.low, 0.41e6, 0.05e6, "Ledlenser low");
-  near(ledlenser.range?.mid, 1.79e6, 0.05e6, "Ledlenser mid");
-  near(ledlenser.range?.high, 4.26e6, 0.1e6, "Ledlenser high");
+  near(ledlenser.range?.low, 0.39e6, 0.05e6, "Ledlenser low");
+  near(ledlenser.range?.mid, 1.69e6, 0.05e6, "Ledlenser mid");
+  near(ledlenser.range?.high, 4.02e6, 0.1e6, "Ledlenser high");
   for (const e of [fender, ledlenser]) {
     assert.equal(e.countsInTotal, false);
     assert.equal(e.label, "analyst estimate");

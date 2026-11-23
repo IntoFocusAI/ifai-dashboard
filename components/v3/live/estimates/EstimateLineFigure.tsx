@@ -7,6 +7,7 @@ import { EstimateTrail } from "@/components/v3/live/estimates/EstimateTrail";
 import { ESTIMATES_READ_FAILED } from "@/components/v3/live/estimates/OpportunityEstimates";
 import { coverageShortText, NOT_AVAILABLE_LISTINGS_TIP, resultHeroText } from "@/components/v3/live/estimates/trail-copy";
 import { useClientEstimates, type ClientEstimatesRead } from "@/components/v3/live/estimates/useClientEstimates";
+import { useEstimatePeriodDays } from "@/components/v3/live/estimates/useEstimatePeriod";
 import { estimateListingLines } from "@/lib/estimates/rollup";
 import type { EstimateLineId, EstimateRange, EstimateResult } from "@/lib/estimates/types";
 import { fixRowFigure } from "@/lib/fender-canvas/action-items-buybox-rows";
@@ -43,7 +44,7 @@ function NotAvailable({ desc, testId }: { desc: string; testId: string }) {
 }
 
 /** The mid as a button that opens the line's trail; the asterisk keeps its own coverage tooltip. */
-function MidButton({ line, range, className }: { line: EstimateResult; range: EstimateRange; className?: string }) {
+export function MidButton({ line, range, className }: { line: EstimateResult; range: EstimateRange; className?: string }) {
   const [open, setOpen] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const close = useCallback(() => {
@@ -75,7 +76,7 @@ function MidButton({ line, range, className }: { line: EstimateResult; range: Es
 }
 
 /** Loading, a failed read, Not available*, or nothing when the line touches no listing. */
-function Placeholder({ read, figure }: { read: ClientEstimatesRead; figure: LineListingsEstimate | null }) {
+export function Placeholder({ read, figure }: { read: ClientEstimatesRead; figure: LineListingsEstimate | null }) {
   if (read.phase === "loading") return <span data-estimate-loading="">{BRIEFING_LOADING}</span>;
   if (read.phase === "error") return <NotAvailable desc={ESTIMATES_READ_FAILED} testId="estimate-read-failed" />;
   if (figure?.status === "not_available") return <NotAvailable desc={NOT_AVAILABLE_LISTINGS_TIP} testId="estimate-no-sales-figure" />;
@@ -96,7 +97,8 @@ export function FixRowEstimate({
   /** The Buy Box cause split, for the two cause rows. */
   split?: BuyBoxCauseSplit | null;
 }) {
-  const figure = read.phase === "ready" ? fixRowFigure(itemId, read.estimates, split) : null;
+  const periodDays = useEstimatePeriodDays();
+  const figure = read.phase === "ready" ? fixRowFigure(itemId, read.estimates, split, periodDays) : null;
   if (read.phase === "ready" && !figure) return null;
   return (
     <span

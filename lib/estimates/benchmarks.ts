@@ -393,17 +393,20 @@ export const BRAND_LOSS_SHARE: Benchmark = {
   sources: [SOURCES.corstenGruenOnlineUnh, SOURCES.corstenGruenOnlineRetailDive, SOURCES.corstenGruenInStore],
 };
 
-/** Share of a listing's sales lost on a day with stock and no Buy Box. The 80% is the R-06 assumption. */
+/**
+ * Share of a withheld listing's sales lost while Amazon withholds its Buy Box (R-06). Range set by
+ * Brian Magazu on 23 Nov 2026: 70% to 90%, mid 80%.
+ */
 export const BUY_BOX_LOST_SHARE: Benchmark = {
   id: "buy_box_lost_share",
-  label: "Share of sales lost on a day without a Buy Box",
+  label: "Share of sales lost while the Buy Box is withheld",
   unit: "share",
-  low: 0.5,
+  low: 0.7,
   mid: 0.8,
-  high: 0.95,
+  high: 0.9,
   basis: "approved_assumption",
   credibility:
-    "The direction is well supported by a peer-reviewed study. The exact share is not published by anyone independent: industry estimates put 80% to 82% of Amazon sales through the Buy Box, which is why the range is wide.",
+    "IntoFocus analyst assumption, Brian Magazu 23 Nov 2026. The direction is well supported by a peer-reviewed study. The exact share is not published by anyone independent: industry estimates put 80% to 82% of Amazon sales through the Buy Box, so the range runs 70% to 90% around an 80% mid.",
   sources: [SOURCES.gleason2026, SOURCES.feedvisorBuyBox],
 };
 

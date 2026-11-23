@@ -142,8 +142,12 @@ function wrapSpoke(
           desc: "Suppressed Buy Boxes, MAP Leakage, Splintered Listings, and out-of-stock days, and how those catalog and retail issues change what AI search can recommend.",
           tabs: [...RETAIL_PANEL_TABS],
           newTabs: [STOCK_LOSS_TAB],
+          // R-07: the Buy Box dollar counts the days in the shared date pill, so the pill sits here too.
+          headerAccessory: <RunHistoryControl />,
         }
       : {}),
+    // Action Items' Buy Box dollar follows the same pill (R-07).
+    ...(id === "suggestions" ? { headerAccessory: <RunHistoryControl /> } : {}),
     ...(id === "aeo"
       ? {
           desc: aiSpokeDesc(ai),
