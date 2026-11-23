@@ -75,6 +75,8 @@ export type ActuationAction = {
   action: string;
   /** Suggested target sites, on a confirm item. */
   targets: { label: string; sites: SuggestedTarget[] } | null;
+  /** An activity item's verified count and target, for the central rank. */
+  counts?: { count: number; target: number };
 };
 
 const PROGRAM = {
@@ -146,6 +148,7 @@ export function actuationActions(input: {
         fact: `${formatRatio(count, target)} ${copy.activity} verified in the last 90 days.`,
         action: copy.post(goal),
         targets: null,
+        counts: { count, target },
       });
     }
     const expiry = score.expiries.find((due) => due.factor === factor);

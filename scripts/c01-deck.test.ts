@@ -20,6 +20,7 @@ import {
   type SuppressionSupportRow,
 } from "../lib/fender-canvas/portfolio-retail.ts";
 import { buyBoxHero, catalogHero, mapHero } from "../lib/fender-canvas/retail-overview-lead.ts";
+import { countRatio } from "../lib/fender-canvas/priority-rank.ts";
 import { rankedFindings } from "../lib/fender-canvas/roadmap-plan.ts";
 import { sumLostSales, type StockLossRow } from "../lib/fender-canvas/stock-loss.ts";
 import { outcomeRatioFigure, outcomeShareFigure } from "../lib/findability/lead.ts";
@@ -233,7 +234,8 @@ test("the fix list is Action Items' order on Summary's read", async () => {
   const fixes = deckFixes(input);
   assert.deepEqual(
     fixes.map((fix) => [fix.ratio, fix.statusWord]),
-    ranked.slice(0, 5).map((row) => [`${row.finding.ratio ?? ""}${row.finding.partial ? "*" : ""}`, row.statusLabel]),
+    // Slide 9 shows each row's one count (the problem count), as Action Items does.
+    ranked.slice(0, 5).map((row) => [row.count ? countRatio(row.count) : `${row.finding.ratio ?? ""}${row.finding.partial ? "*" : ""}`, row.statusLabel]),
   );
   const s9 = buildDeck(input).slides.find((slide) => slide.id === "s9");
   assert.equal(s9?.meta?.value, "+$680K est. a year");
