@@ -2,7 +2,7 @@
 
 PM30 proposal for Brian Magazu, 19 Nov 2026. Replaces the Briefing box "What is
 changing what AI assistants recommend for {brand}?" (`components/v3/live/BriefingAiLead.tsx`,
-decision 110, FDD H-09). Ships only after Brian approves the sentence table below.
+decision 110, FDD H-09). Brian approved the sentence table with the decisions recorded below on 23 Nov 2026.
 
 ## Purpose
 
@@ -18,9 +18,8 @@ Summary › Briefing, below the hero cards, where the current box sits. Title:
 plain sentences. One "→ Action Items" link at the end. Dollar figures keep "analyst
 estimate" and open to their inputs. Caveats live in tooltips (standing rule).
 
-The active-offers paragraph and the selling-model line leave the Briefing. The selling
-model becomes the tooltip on the Buy Box Withheld hero card. Active offers stays in
-Catalog Health, where it already appears.
+The active-offers paragraph leaves the Briefing (it stays in Catalog Health). The selling-model
+line stays in the box, one line, without naming sellers (decision 128).
 
 ## Inputs (all already computed)
 
@@ -64,7 +63,7 @@ Second sentence, from the branded share:
 
 Lead sentence is fixed: **Assistants decide by reading product pages, retailer listings and reviews.**
 Then the owned-link share: *For {brand}, 1 page in {K} they read is {brand}'s own* (K = round(all ÷ owned)); below 10% owned: *Almost none of the pages they read ({pct}%) are {brand}'s own.*
-Then the two largest listing gaps, chosen by the same severity order the Priorities use, each in plain words:
+Then the three largest listing gaps, chosen by the same severity order the Priorities use, each in plain words and each ending with why it changes what assistants recommend (decision 129):
 
 | Gap | Plain sentence (status Poor or Fair only) |
 | --- | --- |
@@ -111,17 +110,17 @@ are deliberate.
 - Trend sentences ("up from 54% last month"); needs the history read wired to the Briefing.
 - Any change to the hero cards, the deck, or the Summary template sentence.
 
-## Decisions for Brian
+## Decisions (Brian Magazu, 23 Nov 2026; decisions 128 and 129)
 
-1. Title: "What this means for {brand}" or "Where {brand} stands with AI assistants, and why".
-2. Block 1 repeats the Unbranded Discovery figure as "N times in 10". Keep (card gives the figure, paragraph gives the meaning) or drop.
-3. Two gaps in block 2, or three.
-4. Move the selling model to the Buy Box card tooltip, or keep a one-line version in the box.
+1. Title: **What this means for {brand}**.
+2. Block 1 keeps the "N times in 10" line beside the hero card's figure. A little duplication is fine when the paragraph derives it from the values and phrases it plainly.
+3. Block 2 names **three** gaps.
+4. The selling-model line stays in the box, one line, and never lists sellers: *Partner-led: authorized sellers are meant to hold the Buy Box.* / *Brand-led: {brand}'s own seller accounts are meant to hold the Buy Box.*
+5. **Amazon rule (decision 129).** The narrative must not be Amazon-centric. Any Amazon gap it names must say why that gap changes what AI assistants recommend, in the same sentence or the next; it may not simply restate a figure the brand already gets from a SmartScout-type subscription. Block 2's gap sentences therefore each carry an AI consequence, e.g. "{M} listings are missing the specs assistants compare, so assistants cannot match them to shoppers' questions" and "{M} listings are not showing {brand}'s price at the moment of purchase, so the page assistants cite sends shoppers elsewhere." The worker proposes the consequence clause per gap in the PR body for approval.
 
 ## Build plan
 
 One worker on Opus 5.5 (sentence selection and fallbacks are judgment work), one PR.
 Files: `components/v3/live/BriefingAiLead.tsx`, a new `lib/fender-canvas/briefing-narrative.ts`
-(pure functions, no React), its test under `scripts/`, and the Buy Box card tooltip in
-`lib/fender-canvas/briefing-retail-lead.ts`. Projected cost about $45. FDD: H-09 Evidence
+(pure functions, no React), its test under `scripts/`, and the selling-model line in `BriefingAiLead.tsx` (no seller names). Projected cost about $45. FDD: H-09 Evidence
 gains this PR; no status change.
