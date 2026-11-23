@@ -20,6 +20,7 @@ import {
 } from "../lib/fender-canvas/roadmap-focus.ts";
 import { ownPagesAction } from "../lib/fender-canvas/roadmap-own-pages.ts";
 import { focusWindowRuns, poolFocusWindow, previousWindowEnd, windowSummary } from "../lib/fender-canvas/roadmap-window.ts";
+import { brandSite } from "../lib/brand-copy.ts";
 import { buildPlan, focusPlan, phaseItems, PLAN_PHASES } from "../lib/fender-canvas/roadmap-plan.ts";
 
 const root = new URL("..", import.meta.url);
@@ -348,15 +349,17 @@ test("plan order: one ranking on the common base; own pages by their worst facto
   const engine = weakestEngine(snapshot([...answers("chatgpt", "best electric guitar", 30, 40), ...answers("gemini", "best electric guitar", 10, 40)])).actions;
   const signal = { id: "signal:out_of_stock", group: "ecommerce" as const, label: "Out of stock", share: 0.2, numerator: 2, denominator: 10, fact: "f", action: "a", open: { spokeId: "ecommerce", tab: "Out of Stock" }, partial: null };
   const plan = buildPlan({ findings: [], signals: [signal], sources: [], ownPages: ownUrgent, focus: engine });
-  // Gemini is 50 points short on its 40 answers (20 of 40 resolved AI answers, 50%). Own pages rank
-  // by their worst factor, page found: 20 of 100 listings without a page (20%). Out of stock: 2 of
-  // the same 100 monitored listings (2%).
-  assert.deepEqual(plan.map((item) => item.id), ["focus:engine:gemini", "own:pages", "signal:out_of_stock"]);
-  assert.equal(plan[1]!.statusLabel, "Critical");
-  assert.deepEqual([plan[1]!.inputs.affected, plan[1]!.inputs.base, plan[1]!.inputs.unit, plan[1]!.inputs.reach], [20, 100, "listings", 100]);
+  // Own pages are Critical, so they lead (fix round 2: severity first). They rank by their worst
+  // factor, page found: 20 of 100 listings without a page (20%). Then the ungraded items by reach:
+  // Gemini is 50 points short on its 40 answers (20 of 40 resolved AI answers, 50%); out of stock is
+  // 2 of the same 100 monitored listings (2%).
+  assert.deepEqual(plan.map((item) => item.id), ["own:pages", "focus:engine:gemini", "signal:out_of_stock"]);
+  assert.equal(plan[0]!.statusLabel, "Critical");
+  assert.deepEqual([plan[0]!.inputs.affected, plan[0]!.inputs.base, plan[0]!.inputs.unit, plan[0]!.inputs.reach], [20, 100, "listings", 100]);
+  assert.equal(plan[0]!.count!.label, `Listings without a ${brandSite()} page`);
   assert.deepEqual(
     PLAN_PHASES.map((phase) => phaseItems(plan, phase.id).map((item) => item.id)),
-    [["focus:engine:gemini"], ["own:pages"], ["signal:out_of_stock"]],
+    [["own:pages"], ["focus:engine:gemini"], ["signal:out_of_stock"]],
   );
 
   const watch = weakestQuestions(snapshot([...answers("chatgpt", "best electric guitar", 36, 40), ...answers("chatgpt", "best guitar amp", 33, 40)])).actions;
@@ -414,7 +417,8 @@ test("client focus: the model narrows to one category and keeps brand-wide items
   assert.deepEqual(group.members!.map((member) => member.label), ['"best acoustic guitar"', '"best bass guitar"']);
   assert.match(group.fact, /resolved answers to these 2 questions: "best acoustic guitar" \(8 of 40\) and "best bass guitar" \(10 of 40\)\.$/);
   const bass = focusPlan(plan, { kind: "category", key: "bass" });
-  assert.deepEqual(bass.map((item) => item.id), ["focus:questions:priority", "own:pages"]);
+  // Own pages carry a grade (below Good), so they lead the ungraded question group.
+  assert.deepEqual(bass.map((item) => item.id), ["own:pages", "focus:questions:priority"]);
   assert.deepEqual(bass.map((item) => item.rank), [1, 2]);
   // On screen the focus narrows the read first, so a bass focus has one bass question, not a group.
   const bassOnly = focusActions({ windows: { current: run, previous: null }, focus: { kind: "category", key: "bass" } });

@@ -1,6 +1,7 @@
 /**
  * The plan Action Items and the Roadmap share (decision 21, FDD S-02, N-01, N-04), in the one
- * central order (priority-rank.ts, Brian Magazu, 23 Nov 2026): first by reach, the share of all
+ * central order (priority-rank.ts, Brian Magazu, 23 Nov 2026): Critical items first, then At risk,
+ * then the rest (fix round 2); within each, first by reach, the share of all
  * resolved AI answers or all monitored listings each gap touches, then by monthly
  * analyst-estimate dollars, then by effort. Priorities, the
  * deck's fix slide, the map's action cards, and the Briefing's first move read the same list.
@@ -27,7 +28,11 @@ import { formatInt, formatPct, formatRatio } from "@/lib/fender-canvas/format";
 import {
   placeByRank,
   rankPriorities,
+  countPercent,
+  countRatio,
+  severityOf,
   type Effort,
+  type ItemCount,
   type RankInputs,
   type ReachTotals,
 } from "@/lib/fender-canvas/priority-rank";
@@ -39,7 +44,13 @@ import {
 } from "@/lib/fender-canvas/roadmap-sources";
 import type { ActuationAction, SuggestedTarget } from "@/lib/fender-canvas/roadmap-actuation";
 import type { FocusAction, PlanFocus } from "@/lib/fender-canvas/roadmap-focus";
-import { OWN_SITE_CITED_THRESHOLD, type OwnPageAction } from "@/lib/fender-canvas/roadmap-own-pages";
+import {
+  FACTOR_COVERED_BY,
+  OWN_SITE_CITED_THRESHOLD,
+  urgentOwnPagesAction,
+  type OwnPageAction,
+  type OwnPageFactor,
+} from "@/lib/fender-canvas/roadmap-own-pages";
 import type { SignalAction } from "@/lib/fender-canvas/roadmap-signals";
 import { findingAction, hasStoredReading } from "@/lib/fender-canvas/urgent-interventions-rows";
 
@@ -137,6 +148,13 @@ export type PlanItem = {
   share: number | null;
   /** One plain line naming the rank inputs. */
   reason: string;
+  /**
+   * The item's one count (priority-rank.ts): the problem count N of its own base M, and the common
+   * base rule 1 used. Every surface shows the figure and the rank reason from it.
+   */
+  count: ItemCount | null;
+  /** The own-pages item's factors below Good, worst first, so rankPlan can skip one another item fixes. */
+  ownFactors?: OwnPageFactor[];
   /** The item as a task ("Publish one brand-site page for each exact product"), never a finding label. */
   title: string;
   /** A grouped item's members (the questions that share its action), each with its own figure. */
@@ -144,7 +162,7 @@ export type PlanItem = {
 };
 
 /** An item before rankPlan gives it a rank, a share, a reason, a task title, and a column. */
-export type UnrankedPlanItem = Omit<PlanItem, "rank" | "phase" | "share" | "reason" | "title">;
+export type UnrankedPlanItem = Omit<PlanItem, "rank" | "phase" | "share" | "reason" | "title" | "count">;
 
 /** The five findings as tasks (the deck outline's short actions). */
 function findingTask(id: string): string | null {
@@ -279,10 +297,16 @@ function ownPageInputs(own: OwnPageAction): RankInputs {
   const counted = own.id === "own:wording" && own.cited ? own.cited : null;
   const short = counted ? Math.max(0, Math.ceil(OWN_SITE_CITED_THRESHOLD * counted.total) - counted.answers) : null;
   const worst = own.id === "own:pages" ? (own.worst ?? null) : null;
+  const counts = worst
+    ? worst.short
+    : counted
+      ? `Answers with sources short of ${brandSite()}'s ${Math.round(100 * OWN_SITE_CITED_THRESHOLD)}% citation target`
+      : null;
   return {
     affected: worst ? worst.affected : short,
     base: worst ? worst.base : counted ? counted.total : null,
     unit: worst ? "listings" : counted ? "answers" : null,
+    ...(counts ? { counts } : {}),
     monthly: null,
     effort: effortOf(own.phase),
     dependsOn: prerequisitesOf(own.id),
@@ -311,6 +335,7 @@ function ownPageItem(own: OwnPageAction): UnrankedPlanItem {
     evidence: own.id === "own:wording" ? { field: "class", value: "fender_owned" } : null,
     categories: [],
     inputs: ownPageInputs(own),
+    ...(own.below ? { ownFactors: own.below } : {}),
   };
 }
 
@@ -331,10 +356,16 @@ function focusInputs(focus: FocusAction): RankInputs {
     : focus.members
       ? focus.members.reduce((sum, member) => sum + shortOfBest(member), 0)
       : shortOfBest(focus);
+  const counts = site
+    ? null
+    : focus.focus === "engine"
+      ? `Answers behind the best engine on ${focus.label}`
+      : "Answers behind the best question";
   return {
     affected: focus.denominator > 0 ? affected : null,
     base: focus.denominator > 0 ? focus.denominator : null,
     unit: "answers",
+    ...(counts ? { counts } : {}),
     monthly: null,
     effort: focus.tier === "watch" ? "L" : effortOf(focus.siteType ? SOURCE_WORK[focus.siteType] : "days_31_60"),
     dependsOn: [],
@@ -364,7 +395,7 @@ function focusItem(focus: FocusAction): UnrankedPlanItem {
     categories: focus.categories,
     inputs: focusInputs(focus),
     ...(focus.members
-      ? { members: focus.members.map((member) => ({ id: member.id, label: member.label, ratio: formatRatio(member.numerator, member.denominator) })) }
+      ? { members: focus.members.map((member) => ({ id: member.id, label: member.label, ratio: formatRatio(shortOfBest(member), member.denominator) })) }
       : {}),
   };
 }
@@ -376,6 +407,7 @@ function actuationInputs(item: ActuationAction): RankInputs {
     affected: activity ? Math.max(0, activity.target - activity.count) : null,
     base: activity ? activity.target : null,
     unit: activity ? "links" : null,
+    ...(activity ? { counts: "Verified links short of the target" } : {}),
     monthly: null,
     effort: effortOf(item.phase),
     dependsOn: [],
@@ -460,11 +492,48 @@ export function onRoadmap(item: Pick<PlanItem, "needsAction" | "noReading" | "in
  * column by rank and prerequisites. Items the Roadmap does not show have no column.
  */
 export function rankPlan(items: readonly (UnrankedPlanItem | PlanItem)[], reach: ReachTotals = {}): PlanItem[] {
-  const ranked = rankPriorities(items.map((item) => ({ ...item, rank: 0, phase: null })), reach);
+  const graded = withoutCoveredFactors(items).map((item) => ({
+    ...item,
+    rank: 0,
+    phase: null,
+    // Severity first (fix round 2), from the item's own status: one mapping for every list.
+    inputs: { ...item.inputs, severity: severityOf(item.inputs.tier === "action" ? item.tone : "low") },
+  }));
+  const ranked = rankPriorities(graded, reach);
   const columns = placeByRank(ranked.filter(onRoadmap));
   return ranked.map((item) => {
     const column = columns.get(item.id);
     return { ...item, title: actionTitle(item), phase: column == null ? null : PLAN_PHASES[column]!.id } as PlanItem;
+  });
+}
+
+/** True for a ranked item that needs action now: it can cover an own-pages factor. */
+function fixesNow(item: Pick<PlanItem, "inputs" | "needsAction">): boolean {
+  return item.inputs.tier === "action" && item.needsAction;
+}
+
+/**
+ * No duplicate fixes (Brian Magazu, 23 Nov 2026 fix round 2): the own-pages item skips each factor
+ * another item in the list already fixes (FACTOR_COVERED_BY) and starts on its worst remaining
+ * factor. With no factor left, it drops. It is rebuilt from its full factor list each time, so a
+ * factor returns when the item covering it leaves the list.
+ */
+function withoutCoveredFactors<T extends UnrankedPlanItem | PlanItem>(items: readonly T[]): T[] {
+  const fixing = new Set(items.filter(fixesNow).map((item) => item.id));
+  return items.flatMap((item) => {
+    if (item.id !== "own:pages" || !item.ownFactors?.length) return [item];
+    const all = urgentOwnPagesAction(item.ownFactors);
+    const left = urgentOwnPagesAction(
+      item.ownFactors.filter((factor) => {
+        const by = FACTOR_COVERED_BY[factor.id];
+        return !(by && fixing.has(by));
+      }),
+    );
+    if (!left || !all) return [];
+    // Keep any sentence added after the factor list (the AI Actuation gap).
+    const added = item.fact.startsWith(all.fact) ? item.fact.slice(all.fact.length) : "";
+    const rebuilt = ownPageItem({ ...left, fact: `${left.fact}${added}` });
+    return [{ ...item, ...rebuilt, ownFactors: item.ownFactors } as T];
   });
 }
 
@@ -487,9 +556,28 @@ export function buildPlan(input: PlanInput): PlanItem[] {
   ], input.reach);
 }
 
-/** The first move: the top of the central list, or null when nothing needs action. */
+/**
+ * The figure every surface shows for an item (Action Items, the Roadmap, the CSV): from its one
+ * count when it has one, so the label names the problem and N matches the rank reason. The ratio
+ * carries no asterisk; the screens mark the percent, and the CSV marks it with markPartial.
+ */
+export function planFigure(item: Pick<PlanItem, "count" | "label" | "percent" | "ratio">): { label: string; percent: string; ratio: string | null } {
+  if (item.count) return { label: item.count.label, percent: countPercent(item.count), ratio: countRatio({ ...item.count, partial: false }) };
+  return { label: item.label, percent: item.percent, ratio: item.ratio };
+}
+
+/** True for a plan item Priorities lists: it needs action now, or its reading is not stored yet. */
+export function inPriorities(item: Pick<PlanItem, "inputs" | "needsAction" | "noReading">): boolean {
+  return item.inputs.tier === "action" && (item.needsAction || item.noReading);
+}
+
+/**
+ * The first move: central #1, the first item Priorities lists (so Priorities' first card, the
+ * command-center items' first entry, TODAY'S READ and the Briefing's first move are one item).
+ * Null when nothing needs action.
+ */
 export function firstMove(plan: readonly PlanItem[]): PlanItem | null {
-  return plan.find((item) => item.inputs.tier === "action" && item.needsAction) ?? null;
+  return plan.find(inPriorities) ?? null;
 }
 
 /**

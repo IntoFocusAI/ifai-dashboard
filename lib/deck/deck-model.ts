@@ -9,8 +9,8 @@ import {
   type BriefingFindingId,
 } from "@/lib/fender-canvas/briefing-retail-lead";
 import { FACT_CHECK_VERDICTS_IN_DECK } from "@/lib/ai-search/drift";
-import { inPriorities } from "@/lib/fender-canvas/command-center-from-live";
-import { rankedFindings } from "@/lib/fender-canvas/roadmap-plan";
+import { countRatio } from "@/lib/fender-canvas/priority-rank";
+import { inPriorities, rankedFindings } from "@/lib/fender-canvas/roadmap-plan";
 import { contradictionSlide, openingSlides, rivalSlide, rivalTableSlide } from "@/lib/deck/deck-ai";
 import { brandSiteSlide, buyBoxDetailSlide, listingSlides, stockDetailSlide, stockLossFigure } from "@/lib/deck/deck-retail";
 import {
@@ -70,7 +70,9 @@ export function deckFixes(input: DeckInput): DeckFix[] {
       .map((item) => ({
         rank: item.rank,
         action: item.title,
-        ratio: `${item.ratio ?? item.percent}${item.partial ? "*" : ""}`.trim(),
+        // The one count (priority-rank.ts), so slide 9 shows the N Priorities and Action Items show.
+        ratio: item.count ? countRatio(item.count) : `${item.ratio ?? item.percent}${item.partial ? "*" : ""}`.trim(),
+        figureLabel: item.count?.label ?? null,
         status: item.tone ? TONE_STATUS[item.tone] : null,
         statusWord: item.statusLabel,
       }));
@@ -83,7 +85,8 @@ export function deckFixes(input: DeckInput): DeckFix[] {
     .map((row, index) => ({
       rank: index + 1,
       action: fixAction(row.finding.id, input),
-      ratio: `${row.finding.ratio ?? ""}${row.finding.partial ? "*" : ""}`.trim(),
+      ratio: row.count ? countRatio(row.count) : `${row.finding.ratio ?? ""}${row.finding.partial ? "*" : ""}`.trim(),
+      figureLabel: row.count?.label ?? null,
       status: row.status === "no_reading" ? null : FIX_STATUS[row.status],
       statusWord: row.statusLabel,
     }));

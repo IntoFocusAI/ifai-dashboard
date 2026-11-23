@@ -22,6 +22,7 @@ import {
   type BuyBoxCauseSplit,
 } from "@/lib/fender-canvas/buy-box-cause";
 import { formatPct, formatRatio } from "@/lib/fender-canvas/format";
+import { itemCount, rankReason } from "@/lib/fender-canvas/priority-rank";
 import type { PlanItem } from "@/lib/fender-canvas/roadmap-plan";
 
 export const BUY_BOX_ROW_ID = "finding:buy_box";
@@ -132,7 +133,7 @@ export function buyBoxCauseItems(
   split: BuyBoxCauseSplit,
   est: ClientEstimates | null = null,
 ): PlanItem[] {
-  const total = denominatorOf(base.ratio) ?? split.withheld;
+  const total = base.count?.base ?? denominatorOf(base.ratio) ?? split.withheld;
   const counts: Record<BuyBoxRowGroup, number> = {
     price: split.price,
     other: split.other,
@@ -140,8 +141,14 @@ export function buyBoxCauseItems(
   };
   return GROUPS.filter((group) => counts[group] > 0).map((group) => {
     const listings = counts[group];
+    // Each row's one count is its own listings, so its figure and its rank reason show one N. The
+    // row keeps the Buy Box row's rank.
+    const inputs = { ...base.inputs, affected: listings, base: total };
     return {
       ...base,
+      inputs,
+      count: itemCount(inputs, base.count?.label ?? base.label, base.partial != null),
+      reason: rankReason(inputs),
       id: BUY_BOX_CAUSE_ROW_IDS[group],
       siteType: group === "earlier" ? BUY_BOX_EARLIER_LABEL : BUY_BOX_CAUSE_LABELS[group],
       percent: formatPct((100 * listings) / total),

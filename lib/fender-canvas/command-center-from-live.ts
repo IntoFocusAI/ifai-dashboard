@@ -5,7 +5,8 @@ import { aiCommandSummary, aiPriorityItems } from "@/lib/ai-search/canvas-surfac
 import type { AiSearchRead } from "@/lib/ai-search/types";
 import { markPartial } from "@/lib/fender-canvas/canvas-reads";
 import { formatInt } from "@/lib/fender-canvas/format";
-import type { PlanItem } from "@/lib/fender-canvas/roadmap-plan";
+import { countFigure, severityOf, type Severity } from "@/lib/fender-canvas/priority-rank";
+import { emptyPlanLine, firstMove, inPriorities, type PlanItem } from "@/lib/fender-canvas/roadmap-plan";
 import { bulletCounts } from "@/lib/fender-canvas/listing-content";
 import { specPageCounts } from "@/lib/fender-canvas/machine-readability";
 import {
@@ -66,9 +67,24 @@ export function priorityId(planId: string): string {
   return KEPT_IDS[planId]?.id ?? planId;
 }
 
-/** True for a plan item Priorities lists: it needs action now, or its reading is not stored yet. */
-export function inPriorities(item: PlanItem): boolean {
-  return item.inputs.tier === "action" && (item.needsAction || item.noReading);
+export { inPriorities };
+
+/** The Priorities card's word for each level of the one severity order (priority-rank.ts). */
+const PRIORITY_SEVERITY: Record<Severity, PriorityItem["severity"]> = {
+  critical: "critical",
+  at_risk: "high",
+  moderate: "moderate",
+  low: "moderate",
+};
+
+/**
+ * The item's figure line from its one count (priority-rank.ts countFigure), so the card shows the
+ * same N as its rank reason. An item with no single count shows its label and its own figure.
+ */
+export function planFigureLine(item: PlanItem): string {
+  if (item.count) return countFigure(item.count);
+  const figure = item.ratio ? markPartial(item.ratio, item.partial) : null;
+  return figure ? `${item.label}: ${figure}` : item.label;
 }
 
 /**
@@ -76,16 +92,15 @@ export function inPriorities(item: PlanItem): boolean {
  * behind it. A grouped item lists its members after its figure.
  */
 export function priorityFromPlan(item: PlanItem): PriorityItem {
-  const figure = item.ratio ? markPartial(item.ratio, item.partial) : null;
   const kept = KEPT_IDS[item.id];
-  const lead = figure ? `${item.label}: ${figure}` : item.label;
+  const lead = planFigureLine(item);
   const members = item.members?.length ? `. ${item.members.map((member) => `${member.label} (${member.ratio})`).join("; ")}` : "";
   return {
     id: priorityId(item.id),
     title: item.title,
     why: item.reason,
     impact: `${lead}${members}`,
-    severity: item.tone === "danger" ? "critical" : item.tone === "warning" ? "high" : "moderate",
+    severity: PRIORITY_SEVERITY[item.inputs.severity ?? severityOf(item.tone)],
     spokeId: item.open.spokeId,
     subTab: item.open.tab,
     ...(kept ? { defaultOwner: kept.owner } : {}),
@@ -93,7 +108,7 @@ export function priorityFromPlan(item: PlanItem): PriorityItem {
 }
 
 export const PRIORITIES_DESC =
-  "Every fix in one order: the share of all resolved AI answers or all monitored listings each gap touches, then the monthly analyst estimate, then the quicker fix. Action Items, the Roadmap, the deck, and the map read the same order.";
+  "Every fix in one order: Critical items first, then At risk, then the rest. Within each, the share of all resolved AI answers or all monitored listings each gap touches, then the monthly analyst estimate, then the quicker fix. Action Items, the Roadmap, the deck, and the map read the same order.";
 
 /** Priorities lists the first 10 items of the central order (Brian Magazu, 23 Nov 2026 fix round). */
 export const PRIORITIES_CAP = 10;
@@ -105,6 +120,16 @@ export const PRIORITIES_CAP = 10;
  */
 export function priorityItems(plan: readonly PlanItem[]): PriorityItem[] {
   return plan.filter(inPriorities).map(priorityFromPlan);
+}
+
+/**
+ * TODAY'S READ opens on central #1 (firstMove), the first card below it: "First move: Publish one
+ * fender.com page for each exact product. Listings without an exact official product page: 1,018 of 1,109."
+ */
+export function firstMoveLine(plan: readonly PlanItem[]): string | null {
+  const first = firstMove(plan);
+  if (!first) return null;
+  return `First move: ${first.title}. ${planFigureLine(first)}.`;
 }
 
 /**
@@ -140,7 +165,10 @@ export function buildLiveCommandCenter(
     setAsideClientKey: activeSetAsideClientKey(),
   };
   if (plan?.length) {
-    return { ...base, desc: PRIORITIES_DESC, items: priorityItems(plan).slice(0, PRIORITIES_CAP) };
+    // The read leads with the list's first item, then the AI run line.
+    const lead = firstMoveLine(plan);
+    const summary = [lead ?? emptyPlanLine(plan), aiLine].filter(Boolean).join(" ");
+    return { ...base, summary, desc: PRIORITIES_DESC, items: priorityItems(plan).slice(0, PRIORITIES_CAP) };
   }
   return {
     ...base,

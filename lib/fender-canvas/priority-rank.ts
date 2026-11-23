@@ -4,6 +4,9 @@
  * fix slide, the map's action cards, the Briefing's first move, and Roadmap > 30-60-90 Days.
  *
  * The rule, approved:
+ *   0. Severity first (Brian Magazu, 23 Nov 2026 fix round 2): Critical, then At risk, then
+ *      every ungraded item (Recommended, No reading), then lower (Watch, On track). SEVERITY_ORDER
+ *      is the one order; severityOf maps every severity word the dashboard uses onto it.
  *   1. Reach in AI answers: the share of a common base the gap touches. An item that counts
  *      answers is measured against all resolved AI answers; an item that counts listings against
  *      all monitored listings (Brian Magazu, 23 Nov 2026 fix round: never its own base, so a
@@ -42,12 +45,63 @@ export type Effort = "S" | "M" | "L";
  */
 export type RankTier = "action" | "watch" | "on_track" | "outcome";
 
+/**
+ * The one severity order (Brian Magazu, 23 Nov 2026 fix round 2): Critical > At risk (High) >
+ * Moderate (Recommended, No reading: no grade) > lower (Watch, On track, the outcome).
+ */
+export type Severity = "critical" | "at_risk" | "moderate" | "low";
+
+export const SEVERITY_ORDER: Readonly<Record<Severity, number>> = { critical: 0, at_risk: 1, moderate: 2, low: 3 };
+
+/**
+ * Every severity word the dashboard uses, mapped once onto the order: node tones (danger,
+ * warning, success), the fix list's statuses (critical, at_risk, on_track, no_reading), the
+ * Priorities words (critical, high, moderate), data statuses (bad, okay, good) and the status
+ * labels (Critical, At risk, Recommended, Watch, On track, No reading). Anything else is moderate.
+ */
+const SEVERITY_WORDS: Readonly<Record<string, Severity>> = {
+  danger: "critical",
+  critical: "critical",
+  bad: "critical",
+  warning: "at_risk",
+  at_risk: "at_risk",
+  "at risk": "at_risk",
+  high: "at_risk",
+  okay: "at_risk",
+  moderate: "moderate",
+  recommended: "moderate",
+  no_reading: "moderate",
+  "no reading": "moderate",
+  neutral: "moderate",
+  success: "low",
+  good: "low",
+  on_track: "low",
+  "on track": "low",
+  watch: "low",
+  low: "low",
+};
+
+export function severityOf(word: string | null | undefined): Severity {
+  return (word && SEVERITY_WORDS[word.trim().toLowerCase()]) || "moderate";
+}
+
 export type RankInputs = {
+  /**
+   * Critical, At risk, moderate, or lower (SEVERITY_ORDER). Absent reads as moderate. rankPlan
+   * sets it from each item's status, so every list orders the same.
+   */
+  severity?: Severity;
   /** Answers, listings, or links the gap touches. Null when the item has no single count. */
   affected: number | null;
   /** The population that count is out of, as the item's own figure shows it. */
   base: number | null;
   unit: RankUnit | null;
+  /**
+   * What the count counts, as the problem, when the item's own label names something else:
+   * "Listings without an exact official product page" for a finding whose label counts the pages
+   * found. The item's label otherwise.
+   */
+  counts?: string;
   /**
    * The common base rule 1 measures against: all resolved AI answers for an answers item, all
    * monitored listings for a listings item. Null for a unit with no common base. rankPriorities
@@ -62,6 +116,25 @@ export type RankInputs = {
   tier: RankTier;
 };
 
+/**
+ * The one count an item carries (Brian Magazu, 23 Nov 2026 fix round 2). Every surface renders an
+ * item's figure and its rank reason from this field through countRatio, countFigure and
+ * countReach, so the figure and the reason always show the same N.
+ */
+export type ItemCount = {
+  /** What is counted, as the problem: "Listings without an exact official product page". */
+  label: string;
+  /** The problem count N. */
+  affected: number;
+  /** The item's own measured base M. */
+  base: number;
+  unit: RankUnit;
+  /** The common base rule 1 measured N against; null for a unit with none (verified links). */
+  common: number | null;
+  /** True when the own base is a partial or filtered figure (it shows with an asterisk). */
+  partial: boolean;
+};
+
 export type RankFields = {
   /** 1 = do this first. */
   rank: number;
@@ -69,6 +142,8 @@ export type RankFields = {
   share: number | null;
   /** One plain line naming the rank inputs. */
   reason: string;
+  /** The item's one count; null when it has no single count. */
+  count: ItemCount | null;
 };
 
 export const EFFORT_LABEL: Record<Effort, string> = {
@@ -133,6 +208,7 @@ function descending(a: number | null, b: number | null): number {
 export function compareRankInputs(a: RankInputs, b: RankInputs): number {
   return (
     TIER_ORDER[a.tier] - TIER_ORDER[b.tier] ||
+    SEVERITY_ORDER[a.severity ?? "moderate"] - SEVERITY_ORDER[b.severity ?? "moderate"] ||
     descending(sharePoints(rankShare(a)), sharePoints(rankShare(b))) ||
     descending(a.monthly, b.monthly) ||
     EFFORT_ORDER[a.effort] - EFFORT_ORDER[b.effort]
@@ -151,18 +227,53 @@ const REACH_WORD: Record<ReachUnit, [string, string]> = {
   listings: ["monitored listing", "monitored listings"],
 };
 
+/** The item's one count from its rank inputs, or null when it has no single count. */
+export function itemCount(inputs: RankInputs, label: string, partial = false): ItemCount | null {
+  const { affected, base, unit } = inputs;
+  if (affected == null || base == null || base <= 0 || affected < 0 || !unit) return null;
+  const common = isReachUnit(unit) ? (inputs.reach === undefined ? null : inputs.reach) : null;
+  return { label: inputs.counts ?? label, affected, base, unit, common, partial };
+}
+
+/** "1,018 of 1,109", with the asterisk when the own base is partial. */
+export function countRatio(count: ItemCount): string {
+  return `${formatInt(count.affected)} of ${formatInt(count.base)}${count.partial ? "*" : ""}`;
+}
+
+/** N as a share of its own base: "91.8%". */
+export function countPercent(count: ItemCount): string {
+  return formatPct(count.base > 0 ? (100 * count.affected) / count.base : 0);
+}
+
+/** The figure line: "Listings without an exact official product page: 1,018 of 1,109". */
+export function countFigure(count: ItemCount): string {
+  return `${count.label}: ${countRatio(count)}`;
+}
+
+/**
+ * Rule 1's sentence, from the same count: "Touches 1,018 of 1,198 monitored listings (85.0%)."
+ * Measured on the common base when there is one, on the own base otherwise.
+ */
+export function countReach(count: ItemCount): string {
+  const common = count.common != null && count.common > 0 && isReachUnit(count.unit);
+  const base = common ? count.common! : count.base;
+  const word = (common ? REACH_WORD[count.unit as ReachUnit] : UNIT_WORD[count.unit])[base === 1 ? 0 : 1];
+  const share = Math.min(1, count.affected / base);
+  return `Touches ${formatInt(count.affected)} of ${formatInt(base)} ${word} (${formatPct(100 * share)}).`;
+}
+
 /** "Touches 524 of 1,170 monitored listings (44.8%). $12.3K a month, analyst estimate. Effort M, catalog and site content." */
 export function rankReason(inputs: RankInputs): string {
   const parts: string[] = [];
   if (inputs.tier === "outcome") parts.push("The result every fix moves, tracked rather than ranked.");
   else if (inputs.tier === "on_track") parts.push("On track, so it follows the items that need action.");
   else if (inputs.tier === "watch") parts.push("A watch line, so it follows the items that need action.");
-  const share = rankShare(inputs);
-  if (share != null && inputs.unit) {
-    const common = inputs.reach != null && isReachUnit(inputs.unit);
-    const base = common ? inputs.reach : inputs.base;
-    const word = (common ? REACH_WORD[inputs.unit as ReachUnit] : UNIT_WORD[inputs.unit])[base === 1 ? 0 : 1];
-    parts.push(`Touches ${formatInt(inputs.affected)} of ${formatInt(base)} ${word} (${formatPct(100 * share)}).`);
+  else if (inputs.severity === "critical") parts.push("Critical, so it leads the items that need action.");
+  else if (inputs.severity === "at_risk") parts.push("At risk, so it follows the Critical items.");
+  const count = itemCount(inputs, "");
+  if (count) {
+    parts.push(countReach(count));
+    if (inputs.tier === "action" && rankShare(inputs) == null) parts.push("This count has no common base, so it follows the counted items.");
   } else if (inputs.tier === "action") {
     parts.push("Has no single answer or listing count, so it follows the counted items.");
   }
@@ -176,7 +287,10 @@ export function rankReason(inputs: RankInputs): string {
  * keeping input order. Ranks run 1 to N over every item; each item keeps its fields and gains
  * rank, share, and reason.
  */
-export function rankPriorities<T extends { inputs: RankInputs }>(items: readonly T[], totals: ReachTotals = {}): Array<T & RankFields> {
+export function rankPriorities<T extends { inputs: RankInputs; label?: string; partial?: unknown }>(
+  items: readonly T[],
+  totals: ReachTotals = {},
+): Array<T & RankFields> {
   return withCommonReach(items, totals)
     .map((item, order) => ({ item, order }))
     .sort((a, b) => compareRankInputs(a.item.inputs, b.item.inputs) || a.order - b.order)
@@ -185,6 +299,7 @@ export function rankPriorities<T extends { inputs: RankInputs }>(items: readonly
       rank: index + 1,
       share: rankShare(item.inputs),
       reason: rankReason(item.inputs),
+      count: itemCount(item.inputs, item.label ?? "", item.partial != null),
     }));
 }
 

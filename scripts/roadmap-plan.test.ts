@@ -178,7 +178,7 @@ test("one ranking: share of the common base, ties to dollars then effort; column
     "finding:unbranded_discovery",
   ]);
   assert.deepEqual(plan.map((item) => item.rank), [1, 2, 3, 4, 5, 6, 7, 8]);
-  assert.match(plan[0]!.reason, /^Touches 959 of 1,088 monitored listings \(88\.1%\)\. Effort M, catalog and site content\.$/);
+  assert.match(plan[0]!.reason, /^Critical, so it leads the items that need action\. Touches 959 of 1,088 monitored listings \(88\.1%\)\. Effort M, catalog and site content\.$/);
   // Seven items on the Roadmap: a third each (3, 3, 1), best rank first. The fact check waits on
   // the official pages (Days 1 to 30) and fits in Days 31 to 60.
   assert.deepEqual(phaseItems(plan, "days_1_30").map((item) => item.id), [

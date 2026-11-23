@@ -49,6 +49,8 @@ export type DeckFix = {
   rank: number;
   action: string;
   ratio: string;
+  /** What the ratio counts, as the problem (the item's one count label); null for an item with no count. */
+  figureLabel: string | null;
   status: DataStatus | null;
   statusWord: string;
 };

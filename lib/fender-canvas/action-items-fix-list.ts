@@ -8,13 +8,14 @@ import type { ClientEstimates } from "@/lib/estimates/live-inputs";
 import { PHASE_1_LINES } from "@/lib/estimates/rollup";
 import type { EstimateLineId, EstimateRange, EstimateResult } from "@/lib/estimates/types";
 import type { BriefingFinding, BriefingFindingId } from "@/lib/fender-canvas/briefing-retail-lead";
-import { compareRankInputs, withCommonReach, type Effort, type RankInputs } from "@/lib/fender-canvas/priority-rank";
+import { brandName } from "@/lib/brand-copy";
+import { rankPriorities, severityOf, type Effort, type ItemCount, type RankInputs } from "@/lib/fender-canvas/priority-rank";
 import { MONTHS_PER_YEAR } from "@/lib/estimates/monthly";
 
 export const FIX_LIST_TITLE = "Fixes in priority order";
 
 export const FIX_LIST_PRIORITY_RULE =
-  "One ranking for every list: Priorities, this table, the Roadmap, the deck, and the map. First by reach: the share of all resolved AI answers, or of all monitored listings, each gap touches, compared in whole percentage points. Ties go to the larger monthly analyst estimate, then to the quicker fix (a listing or offer fix, then catalog and site content, then an outreach program). Items with no answer or listing count follow the counted ones. Watch lines and findings on track follow the items that need action. Unbranded Discovery is the result every fix moves, so it is tracked last rather than ranked.";
+  "One ranking for every list: Priorities, this table, the Roadmap, the deck, and the map. Critical items come first, then At risk, then the rest. Within each, first by reach: the share of all resolved AI answers, or of all monitored listings, each gap touches, compared in whole percentage points. Ties go to the larger monthly analyst estimate, then to the quicker fix (a listing or offer fix, then catalog and site content, then an outreach program). Items with no answer or listing count follow the counted ones. Watch lines and findings on track follow the items that need action. Unbranded Discovery is the result every fix moves, so it is tracked last rather than ranked.";
 
 /** The A+ content row id (action-items-aplus-row.ts builds the row). */
 export const APLUS_ROW_ID = "estimate:aplus";
@@ -105,6 +106,16 @@ const HIGHER_IS_BETTER: ReadonlySet<BriefingFindingId> = new Set([
   "unbranded_discovery",
 ]);
 
+/**
+ * What a higher-is-better finding's count counts, as the problem (its label counts what is going
+ * well). Read per call, so the brand is the request's client.
+ */
+function problemLabel(id: BriefingFindingId): string | undefined {
+  if (id === "exact_official_product") return "Listings without an exact official product page";
+  if (id === "unbranded_discovery") return `Unbranded answers ${brandName()} did not lead`;
+  return undefined;
+}
+
 export type FixStatus = "critical" | "at_risk" | "on_track" | "no_reading";
 
 const STATUS: Record<FixStatus, { label: string; rank: number }> = {
@@ -130,6 +141,8 @@ export type FixListRow = FixListInput & {
   affectedShare: number | null;
   /** An analyst-estimate dollar the dashboard already computes for this finding, if any. */
   estimate: string | null;
+  /** The row's one count (priority-rank.ts), the problem count its figure and reason show. */
+  count: ItemCount | null;
 };
 
 function statusOf(input: FixListInput): FixStatus {
@@ -154,10 +167,13 @@ export function findingRankInputs(input: FixListInput, status: FixStatus, est: C
   const { numerator, denominator } = finding;
   const counted = stored && numerator != null && denominator != null && denominator > 0;
   const affected = counted ? (HIGHER_IS_BETTER.has(finding.id) ? denominator - numerator : numerator) : null;
+  const counts = problemLabel(finding.id);
   return {
+    severity: severityOf(status),
     affected,
     base: counted ? denominator : null,
     unit: counted ? (finding.id === "unbranded_discovery" ? "answers" : "listings") : null,
+    ...(counts ? { counts } : {}),
     monthly: fixRowMonthly(`finding:${finding.id}`, est),
     effort: FINDING_EFFORT[finding.id],
     dependsOn: [],
@@ -190,8 +206,6 @@ export function rankFixList(
       estimate: estimates[input.finding.id] ?? null,
     };
   });
-  return withCommonReach(rows)
-    .map((row, order) => ({ row, order }))
-    .sort((a, b) => compareRankInputs(a.row.inputs, b.row.inputs) || a.order - b.order)
-    .map(({ row }, index) => ({ ...row, rank: index + 1 }));
+  // The same ranking every list reads; each row gains its one count (label and partial from the finding).
+  return rankPriorities(rows.map((row) => ({ ...row, label: row.finding.label, partial: row.finding.partial })));
 }

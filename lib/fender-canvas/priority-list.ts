@@ -4,7 +4,7 @@
  * nothing to the order and drops nothing but the fields a reader does not need.
  */
 
-import type { RankFields, RankInputs } from "@/lib/fender-canvas/priority-rank";
+import { countRatio, type RankFields, type RankInputs } from "@/lib/fender-canvas/priority-rank";
 import type { PlanItem, PlanKind } from "@/lib/fender-canvas/roadmap-plan";
 
 /**
@@ -15,14 +15,45 @@ import type { PlanItem, PlanKind } from "@/lib/fender-canvas/roadmap-plan";
  */
 export type GapKind = string;
 
+/**
+ * Every item kind the plan can produce, and whether it carries the one count (priority-rank.ts
+ * ItemCount). A counted kind shows its figure and its rank reason from that count. The test
+ * builds a synthetic plan with every kind and fails on a kind missing here or a counted kind
+ * without its count (Brian Magazu, 23 Nov 2026 fix round 2).
+ */
+export const GAP_KINDS: Readonly<Record<string, "counted" | "uncounted">> = {
+  exact_official_product: "counted",
+  map_leakage: "counted",
+  splintered_bundles: "counted",
+  buy_box: "counted",
+  unbranded_discovery: "counted",
+  out_of_stock: "counted",
+  missing_specs: "counted",
+  fact_contradictions: "counted",
+  rival: "counted",
+  aplus: "counted",
+  amazon_bullets: "counted",
+  source: "counted",
+  own_pages: "counted",
+  own_wording: "counted",
+  engine: "counted",
+  question: "counted",
+  questions: "counted",
+  site: "counted",
+  actuation_activity: "counted",
+  actuation_confirm: "uncounted",
+  actuation_renew: "uncounted",
+};
+
 export type RankedPriority = RankFields & {
   id: string;
   kind: PlanKind;
   gapKind: GapKind;
   /** The task, phrased as an action. */
   actionTitle: string;
-  /** The finding or signal label and its figure, as its home tab shows them. */
+  /** The finding or signal label, as its home tab shows it. */
   label: string;
+  /** The figure: the one count's N of M (countRatio), or the own figure for an item with no count. */
   figure: string | null;
   /** True when the figure is partial (it shows with an asterisk). */
   partial: boolean;
@@ -50,12 +81,13 @@ export function priorityList(plan: readonly PlanItem[]): RankedPriority[] {
     gapKind: gapKindOf(item.id),
     actionTitle: item.title,
     label: item.label,
-    figure: item.ratio ?? item.percent,
+    figure: item.count ? countRatio(item.count) : (item.ratio ?? item.percent),
     partial: item.partial != null,
     inputs: item.inputs,
     rank: item.rank,
     share: item.share,
     reason: item.reason,
+    count: item.count,
     needsAction: item.inputs.tier === "action" && (item.needsAction || item.noReading),
     open: item.open,
   }));

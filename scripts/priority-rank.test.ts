@@ -17,6 +17,7 @@ import {
   commonReach,
   rankShare,
   sharePoints,
+  countRatio,
   type RankInputs,
 } from "../lib/fender-canvas/priority-rank.ts";
 import { planWithBuyBoxCauses } from "../lib/fender-canvas/action-items-buybox-rows.ts";
@@ -184,30 +185,37 @@ function livePlan(): PlanItem[] {
 test("one list drives every view: Priorities, Urgent Interventions, deck, map cards, Briefing first move, Roadmap", () => {
   const plan = livePlan();
   const top = plan.slice(0, 5).map((item) => item.id);
-  // Common bases: 1,170 monitored listings, 4,978 resolved AI answers (the largest own bases here).
+  // Critical first (exact pages, MAP, Buy Box), then At risk (splintered bundles), then the rest by
+  // reach. Common bases: 1,170 monitored listings, 4,978 resolved AI answers (the largest own bases here).
   assert.deepEqual(top, [
     "finding:exact_official_product",
-    "signal:missing_specs",
-    "signal:out_of_stock",
-    "signal:rival:acoustics",
     "finding:map_leakage",
+    "finding:buy_box",
+    "finding:splintered_bundles",
+    "signal:missing_specs",
   ]);
   // Priorities (the command center) and the Briefing's first move.
   const priorities = buildLiveCommandCenter({} as CanvasBundle, { phase: "loading" }, { phase: "loading" }, plan).items;
   assert.deepEqual(priorities.slice(0, 5).map((item) => item.id), top.map(priorityId));
   assert.equal(firstMove(plan)?.id, top[0]);
   assert.equal(priorities[0]!.id, priorityId(firstMove(plan)!.id));
-  assert.match(priorities[0]!.why, /^Touches 959 of 1,170 monitored listings/);
+  assert.match(priorities[0]!.why, /^Critical, so it leads the items that need action\. Touches 959 of 1,170 monitored listings/);
+  assert.equal(priorities[0]!.severity, "critical");
   // Urgent Interventions: the table shows the plan, with the Buy Box row split in place, same ranks.
   const split = { withheld: 60, price: 50, other: 10, priceAsins: new Set<string>(), otherAsins: new Set<string>() };
   const table = planWithBuyBoxCauses(plan, split);
-  assert.deepEqual(table.slice(0, 5).map((item) => [item.rank, item.id]), plan.slice(0, 5).map((item) => [item.rank, item.id]));
+  const rest = (items: readonly PlanItem[]) => items.filter((item) => !item.id.startsWith("finding:buy_box")).map((item) => [item.rank, item.id]);
+  assert.deepEqual(rest(table), rest(plan));
+  // Each Buy Box row shows its own listings as its one count, in its figure and its reason alike.
+  for (const row of table.filter((item) => item.id.startsWith("finding:buy_box:"))) {
+    assert.match(row.reason, new RegExp(`Touches ${countRatio({ ...row.count!, partial: false }).split(" of ")[0]} of `), row.id);
+  }
   const buyBoxRank = plan.find((item) => item.id === "finding:buy_box")!.rank;
   assert.deepEqual(table.filter((item) => item.id.startsWith("finding:buy_box")).map((item) => item.rank), [buyBoxRank, buyBoxRank]);
   // Deck slide 9.
   const deck = deckFixes({ brandSite: "brand.test", plan } as unknown as DeckInput);
   assert.deepEqual(deck.map((fix) => fix.rank), [1, 2, 3, 4, 5]);
-  assert.deepEqual(deck.map((fix) => fix.ratio), plan.slice(0, 5).map((item) => item.ratio));
+  assert.deepEqual(deck.map((fix) => fix.ratio), plan.slice(0, 5).map((item) => countRatio(item.count!)));
   // Map action cards: each card names its bubble's best-ranked item at that item's rank.
   const feeds = buildHubSlots({
     suppressed: "loading",
@@ -222,8 +230,8 @@ test("one list drives every view: Priorities, Urgent Interventions, deck, map ca
   assert.equal(specs.figure, "#1");
   assert.equal(specs.label, priorities[0]!.title);
   const retail = feeds["spoke-retail"]!.slots[2];
-  assert.equal(retail.figure, "#3");
-  assert.equal(retail.label, priorities[2]!.title);
+  assert.equal(retail.figure, "#2");
+  assert.equal(retail.label, priorities[1]!.title);
   for (const feed of Object.values(feeds)) {
     const action = feed.slots[2];
     const rank = /^#(\d+)$/.exec(action.figure)?.[1];
@@ -340,7 +348,8 @@ test("repeated actions: the weakest questions with one action are one item that 
   assert.equal(group.id, "focus:questions:priority");
   assert.equal(group.title, `Word the ${brandSite()} product pages to answer these questions`);
   assert.equal(group.label, "The 5 weakest questions");
-  assert.deepEqual(group.members!.map((member) => member.ratio), ["0 of 112", "2 of 90", "5 of 120", "6 of 100", "8 of 80"]);
+  // Each member shows its own answers behind the best question, so they add up to the item's one count.
+  assert.deepEqual(group.members!.map((member) => member.ratio), ["45 of 112", "34 of 90", "43 of 120", "34 of 100", "24 of 80"]);
   assert.match(group.fact, /"best-amp" \(0 of 112\), "best-pedal" \(2 of 90\),/);
   // Reach: the answers each question is short of the best, added, out of all 5,000 resolved AI answers.
   assert.equal(group.inputs.affected, 45 + 34 + 43 + 34 + 24);

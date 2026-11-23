@@ -24,7 +24,7 @@ import { phaseWindow } from "@/lib/fender-canvas/roadmap-dates";
 import { withLatestRunTips } from "@/lib/fender-canvas/roadmap-latest";
 import { focusActions, type FocusWindows, type HeldItem, type PlanFocus } from "@/lib/fender-canvas/roadmap-focus";
 import { ownPagesAction } from "@/lib/fender-canvas/roadmap-own-pages";
-import { buildPlan, focusPlan, phaseLabel, type PlanItem } from "@/lib/fender-canvas/roadmap-plan";
+import { buildPlan, focusPlan, phaseLabel, planFigure, type PlanItem } from "@/lib/fender-canvas/roadmap-plan";
 import { signalActions } from "@/lib/fender-canvas/roadmap-signals";
 import { SOURCE_RUNS_WINDOW, sourceActions } from "@/lib/fender-canvas/roadmap-sources";
 import { poolFocusWindow, previousWindowEnd, windowSummary, type WindowSummary } from "@/lib/fender-canvas/roadmap-window";
@@ -210,11 +210,12 @@ export function targetsLine(item: PlanItem): string | null {
 
 /** One fix-list row as the screen reads it; stacked lines are joined with " · ". */
 export function fixListCells(item: PlanItem, today: Date): string[] {
-  const figure = markPartial(item.loading ? BRIEFING_LOADING : item.percent, item.partial);
+  const shown = planFigure(item);
+  const figure = markPartial(item.loading ? BRIEFING_LOADING : shown.percent, item.partial);
   return [
     String(item.rank),
     joined(item.kind === "finding" ? null : item.fact, item.action, targetsLine(item)),
-    joined(item.label, item.siteType, item.ratio ? `${figure} ${item.ratio}` : figure),
+    joined(shown.label, item.siteType, shown.ratio ? `${figure} ${shown.ratio}` : figure),
     item.statusLabel,
     joined(phaseLabel(item.phase), item.phase ? phaseWindow(item.phase, today).label : null),
     `${item.open.tab} tab`,
