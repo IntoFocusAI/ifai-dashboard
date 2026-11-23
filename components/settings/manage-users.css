@@ -1,0 +1,101 @@
+/* Manage users. Page shell and buttons come from sites-to-review.css; tokens from canvas-sdk.css. */
+.manage-users-card {
+  width: min(880px, 100%);
+}
+
+.manage-users-orgs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 16px 0 0;
+}
+
+.ifai-canvas a.manage-users-org {
+  padding: 6px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.ifai-canvas a.manage-users-org.selected {
+  border-color: var(--border-dark);
+  background: var(--bg-surface);
+  color: var(--text-main);
+  font-weight: 600;
+}
+
+.manage-users-org-title {
+  margin: 20px 0 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.manage-users-invite {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 8px 12px;
+  margin: 0 0 16px;
+}
+
+.manage-users-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--text-subtle);
+}
+
+.manage-users-input {
+  height: 28px;
+  min-width: 240px;
+  padding: 0 8px;
+  font-size: 12px;
+  color: var(--text-main);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-dark);
+  border-radius: 6px;
+}
+
+.manage-users-invite .sites-review-error,
+.manage-users-notice {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 12px;
+}
+
+.manage-users-notice {
+  color: var(--text-main);
+}
+
+.manage-users-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  color: var(--text-main);
+}
+
+.manage-users-table th {
+  padding: 8px 8px 8px 0;
+  font-size: 11px;
+  font-weight: 500;
+  text-align: left;
+  color: var(--text-subtle);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.manage-users-table td {
+  padding: 8px 8px 8px 0;
+  border-bottom: 1px solid var(--border-color);
+  overflow-wrap: anywhere;
+}
+
+.manage-users-actions {
+  text-align: right;
+}
+
+.manage-users-empty {
+  color: var(--text-muted);
+}
