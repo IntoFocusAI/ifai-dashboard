@@ -7,7 +7,11 @@ import { DefinedCopy } from "@/components/v3/live/DefinedTerm";
 import { figureTipAttrs, PartialFigureMark } from "@/components/v3/live/FigureTip";
 import { RetailShareDisc, RetailStatusMark } from "@/components/v3/live/RetailOverviewFigure";
 import { CATALOG_GOVERNANCE_EXPLAINER } from "@/lib/fender-canvas/catalog-governance-copy";
-import type { PortfolioRetailSnapshot, RetailReading } from "@/lib/fender-canvas/portfolio-retail";
+import {
+  SPLINTERED_LISTINGS_LABEL,
+  type PortfolioRetailSnapshot,
+  type RetailReading,
+} from "@/lib/fender-canvas/portfolio-retail";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
 import {
   catalogHero,
@@ -18,7 +22,6 @@ import {
 import { LoadingMark } from "@/components/v3/live/LoadingMark";
 
 /** One name for the figure everywhere (X-18): splintering may cover more than bundles. */
-const SPLINTERED_LISTINGS_LABEL = "Splintered Listings";
 const SPECS_COMPLETE_LABEL = "Specs Complete";
 const SPLINTERED_TABLE_ID = "catalog-governance-splintered-table";
 const SPECS_TABLE_ID = "catalog-governance-specs-table";

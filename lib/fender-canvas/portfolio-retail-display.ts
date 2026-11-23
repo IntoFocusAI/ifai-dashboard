@@ -10,6 +10,7 @@ import {
   bundlePopulationTip,
   LIVE_OFFER_BUNDLES,
   RETAIL_FINDING_LABELS,
+  SPLINTERED_LISTINGS_LABEL,
   type SuppressionDetail,
   selectRetailHeadline,
   type MapLeakageDetail,
@@ -21,7 +22,7 @@ import {
 } from "./portfolio-retail";
 import { approvedExceptionsSentence } from "./map-approved-exceptions";
 import { PARTIAL_TITLE, READ_NOT_AVAILABLE } from "./canvas-reads";
-import { buyBoxHero } from "./retail-overview-lead";
+import { buyBoxHero, catalogHero, heroFigureTone, mapHero } from "./retail-overview-lead";
 
 export const RETAIL_OVERVIEW_TAB = "Retail Overview";
 
@@ -317,17 +318,17 @@ export function catalogBubble(
       : countPhrase(reading, "bundle");
   const coverage = coveragePill(reading);
   const face = satelliteFace(
-    "Catalog Governance",
+    SPLINTERED_LISTINGS_LABEL,
     reading,
     {
       value: shareHeroValue(reading, numerator, denominator),
-      label: "Splintered Listings",
+      label: SPLINTERED_LISTINGS_LABEL,
     },
     [...(count ? [count] : []), ...(coverage ? [coverage] : [])],
     "Catalog Governance",
   );
   const tip = bundlePopulationTip(reading);
-  if (tip) face.tooltip = { title: "Splintered Listings", desc: tip };
+  if (tip) face.tooltip = { title: SPLINTERED_LISTINGS_LABEL, desc: tip };
   return face;
 }
 
@@ -391,6 +392,12 @@ export function catalogHealthMainFace(read: RetailCanvasRead): RetailBubbleFace 
   };
 }
 
+/** A satellite takes the status its check's hero grades (share of all monitored listings), not any-nonzero. */
+function graded(face: RetailBubbleFace, hero: Parameters<typeof heroFigureTone>[0]): RetailBubbleFace {
+  const status = heroFigureTone(hero);
+  return status ? { ...face, status } : face;
+}
+
 export function retailBubbleFaces(read: RetailCanvasRead): {
   main: RetailBubbleFace;
   suppressed: RetailBubbleFace;
@@ -403,7 +410,7 @@ export function retailBubbleFaces(read: RetailCanvasRead): {
       main: catalogHealthMainFace(read),
       suppressed: waitingFace("Suppressed Listings", "Suppressed Listings", ["Loading"], desc, "confirmed high-price"),
       map: waitingFace("MAP Leakage", RETAIL_FINDING_LABELS.map_leakage, ["Loading"], desc, ""),
-      catalog: waitingFace("Catalog Governance", "Catalog Governance", ["Loading"], desc, "Splintered Listings"),
+      catalog: waitingFace(SPLINTERED_LISTINGS_LABEL, "Catalog Governance", ["Loading"], desc, SPLINTERED_LISTINGS_LABEL),
     };
   }
 
@@ -417,15 +424,15 @@ export function retailBubbleFaces(read: RetailCanvasRead): {
       main: catalogHealthMainFace(read),
       suppressed: failed(waitingFace("Suppressed Listings", "Suppressed Listings", [READ_NOT_AVAILABLE], RETAIL_READ_FAILED, "confirmed high-price")),
       map: failed(waitingFace("MAP Leakage", RETAIL_FINDING_LABELS.map_leakage, [READ_NOT_AVAILABLE], RETAIL_READ_FAILED, "")),
-      catalog: failed(waitingFace("Catalog Governance", "Catalog Governance", [READ_NOT_AVAILABLE], RETAIL_READ_FAILED, "Splintered Listings")),
+      catalog: failed(waitingFace(SPLINTERED_LISTINGS_LABEL, "Catalog Governance", [READ_NOT_AVAILABLE], RETAIL_READ_FAILED, SPLINTERED_LISTINGS_LABEL)),
     };
   }
 
   const snapshot = read.snapshot;
   return {
     main: catalogHealthMainFace(read),
-    suppressed: suppressedBubble(snapshot.suppressedListings),
-    map: mapBubble(snapshot.mapLeakage),
-    catalog: catalogBubble(snapshot.unnestedBundles),
+    suppressed: graded(suppressedBubble(snapshot.suppressedListings), buyBoxHero(snapshot)),
+    map: graded(mapBubble(snapshot.mapLeakage), mapHero(snapshot)),
+    catalog: graded(catalogBubble(snapshot.unnestedBundles), catalogHero(snapshot)),
   };
 }

@@ -190,7 +190,7 @@ export function buildFenderCanvasSpec(
     badges: [],
     edges: fenderCanvasEdges(),
     nodes,
-    spokes: bundle ? buildLiveSpokes(bundle, retail, aiSearch, findability) : spokeData,
+    spokes: bundle ? buildLiveSpokes(bundle, retail, aiSearch, findability, commandCenter.items) : spokeData,
     focusTargets: FOCUS_TARGETS,
     tour: bundle ? buildLiveTourSteps(bundle, retail, aiSearch, findability) : staticTour(),
     ...(options.userMenu

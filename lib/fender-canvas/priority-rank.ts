@@ -191,14 +191,16 @@ function isReachUnit(unit: RankUnit | null): unit is ReachUnit {
 }
 
 /**
- * The common base per unit: the largest of the read's total (all resolved AI answers, all
- * monitored listings), any common base an item already carries, and every item's own base, so
- * no item touches more than its common base.
+ * The common base per unit. For listings, the read's total (monitoredListingsTotal) is the base
+ * when there is one, the same number the retail heroes grade on; items never widen it. Otherwise
+ * (and always for answers) the base is the largest of the read's total, any common base an item
+ * already carries and every item's own base, so no item touches more than its common base.
  */
 export function commonReach(items: readonly { inputs: RankInputs }[], totals: ReachTotals = {}): Record<ReachUnit, number | null> {
   const reach: Record<ReachUnit, number | null> = { answers: totals.answers ?? null, listings: totals.listings ?? null };
+  const fixed = { answers: false, listings: reach.listings != null };
   for (const { inputs } of items) {
-    if (!isReachUnit(inputs.unit)) continue;
+    if (!isReachUnit(inputs.unit) || fixed[inputs.unit]) continue;
     for (const value of [inputs.base, inputs.reach]) {
       if (value != null && value > 0) reach[inputs.unit] = Math.max(reach[inputs.unit] ?? 0, value);
     }
