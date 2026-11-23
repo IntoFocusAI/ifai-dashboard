@@ -3,7 +3,6 @@
 import { useActionState, useState } from "react";
 import Link from "next/link";
 import { login, signUp, type AuthState } from "@/app/auth/actions";
-import { enterGuestDashboard } from "@/app/auth/guest-actions";
 
 /** Set true to show “New here? Sign up” on the login form. `/signup` and `signUp` stay wired. */
 const SHOW_LOGIN_SIGNUP_LINK = false;
@@ -81,14 +80,6 @@ function AuthFormFields({
           {pending ? "Please wait…" : title}
         </button>
       </form>
-
-      {mode === "login" ? (
-        <form action={enterGuestDashboard} className="auth-form-skip-form">
-          <button type="submit" className="auth-form-skip">
-            Skip Login
-          </button>
-        </form>
-      ) : null}
 
       {mode === "login" && SHOW_LOGIN_SIGNUP_LINK ? (
         <p className="auth-form-footer">

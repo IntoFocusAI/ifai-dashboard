@@ -18,11 +18,9 @@ export async function openSpokeTab(
   page.on("console", (message) => {
     if (message.type() === "error") errors.push(`console: ${message.text()}`);
   });
-  const host = new URL(baseURL ?? "http://localhost").hostname;
-  await page.context().addCookies([{ name: "ifai_guest_fender", value: "1", domain: host, path: "/" }]);
+  // E2E_AUTH_BYPASS signs the run in on the server; no guest cookie or Skip Login any more.
+  void baseURL;
   await page.goto(`/dashboard?spoke=${spoke}&tab=${tabSlug}`);
-  const skipLogin = page.getByRole("button", { name: "Skip Login" });
-  if (await skipLogin.isVisible().catch(() => false)) await skipLogin.click();
   await expect(page.locator(".drilldown-panel")).toBeVisible({ timeout: LIVE_READ_TIMEOUT });
   return errors;
 }

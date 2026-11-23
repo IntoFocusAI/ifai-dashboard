@@ -215,6 +215,8 @@ export type CanvasUserMenu = {
   roleLabel?: string | null;
   organizations?: CanvasUserMenuOrganization[];
   activeOrganizationId?: string | null;
+  /** IntoFocus Staff and Org Leads: show the Manage users link. */
+  canManageUsers?: boolean;
 };
 
 export type CanvasFilter = {
