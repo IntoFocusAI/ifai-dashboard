@@ -139,6 +139,12 @@ begin
   end loop;
   -- A general domain label (no client), readable by any signed-in user.
   perform pg_temp.fill('public.site_type_classifications', '{"client_key": null}');
+  -- R-10: ledlenser_private holds one table (the rest are views); fill it with a valid row.
+  if to_regclass('ledlenser_private.retail_price_observations') is not null
+     and not pg_temp.fill('ledlenser_private.retail_price_observations',
+       '{"asin": "L000000001", "retailer": "walmart", "observed_at": "2026-11-20 00:00:00+00", "status": "priced", "item_cents": "1999", "source": "backfill"}') then
+    missing := missing || 'ledlenser_private.retail_price_observations'::text;
+  end if;
   if array_length(missing, 1) > 0 then
     raise notice 'fixture: tables without rows: %', missing;
   end if;
