@@ -84,8 +84,8 @@ function retailReady(): RetailCanvasRead {
   const findings = {
     suppressedListings: suppressedListingsFinding([buyBoxRow("B0A", true), buyBoxRow("B0B", false), buyBoxRow("B0C", false)]),
     mapLeakage: mapLeakageFinding([
-      { map_price: 100, offer_price: 80, amz_leakage: -20, wmt_leakage: null, mf_leakage: null, featured_offer_checked_at: CHECKED_AT },
-      { map_price: 100, offer_price: 100, amz_leakage: 0, wmt_leakage: null, mf_leakage: null, featured_offer_checked_at: CHECKED_AT },
+      { map_price: 100, offer_price: 80, amz_leakage: -20, featured_offer_checked_at: CHECKED_AT },
+      { map_price: 100, offer_price: 100, amz_leakage: 0, featured_offer_checked_at: CHECKED_AT },
     ]),
     unnestedBundles: unnestedBundlesFinding([
       {

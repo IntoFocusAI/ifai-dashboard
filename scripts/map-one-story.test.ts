@@ -34,10 +34,10 @@ test("channel caveats sit in the figure's tooltip, not in prose", () => {
 
 test("the N of M tooltip says which listings were counted and what the read could not compare", async () => {
   const rows: MapLeakageRow[] = [
-    { asin: "B000000001", map_price: 100, offer_price: 80, amz_leakage: -20, wmt_leakage: null, mf_leakage: null },
-    { asin: "B000000002", map_price: 100, offer_price: 100, amz_leakage: 0, wmt_leakage: null, mf_leakage: null },
-    { asin: "B000000003", map_price: 100, offer_price: 90, amz_leakage: null, wmt_leakage: null, mf_leakage: null },
-    { asin: "B000000004", map_price: null, offer_price: 90, amz_leakage: null, wmt_leakage: null, mf_leakage: null },
+    { asin: "B000000001", map_price: 100, offer_price: 80, amz_leakage: -20 },
+    { asin: "B000000002", map_price: 100, offer_price: 100, amz_leakage: 0 },
+    { asin: "B000000003", map_price: 100, offer_price: 90, amz_leakage: null },
+    { asin: "B000000004", map_price: null, offer_price: 90, amz_leakage: null },
   ];
   const snapshot = await loadPortfolioRetailSnapshot({
     suppressionRows: async () => ({ ok: false }),

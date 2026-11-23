@@ -81,8 +81,6 @@ function mapRow(leak: number | null): MapLeakageRow {
     map_price: 100,
     offer_price: 80,
     amz_leakage: leak,
-    wmt_leakage: null,
-    mf_leakage: null,
   };
 }
 
@@ -343,7 +341,7 @@ test("loading and error faces do not invent a count", () => {
   }
 });
 
-test("channel price cells use a stored Musician's Friend URL or Not available*", async () => {
+test("channel price cells use the retailer row's stored URL or Not available*", async () => {
   const { readFileSync } = await import("node:fs");
   const mapTable = readFileSync(
     new URL("../components/v3/live/MapListingsTable.tsx", import.meta.url),
@@ -353,38 +351,32 @@ test("channel price cells use a stored Musician's Friend URL or Not available*",
     new URL("../components/v3/live/FenderListingsTable.tsx", import.meta.url),
     "utf8",
   );
-  const {
-    MISSING_CHECKED_PAGE_DESC,
-    MISSING_CHECKED_PAGE_LABEL,
-    musiciansFriendCheckedPageUrl,
-    channelPriceLookup,
-    missingCheckedPageLabel,
-  } = await import("../lib/fender-canvas/map-channels.ts");
+  const { MISSING_CHECKED_PAGE_DESC, MISSING_CHECKED_PAGE_LABEL, listingChannelFacts, missingCheckedPageLabel } =
+    await import("../lib/fender-canvas/map-channels.ts");
+  const { cells } = await import("./fixtures/retailer-rows.ts");
 
-  // Decision 82: the empty other-retailer price table is not read on screen, so a shown
-  // Musician's Friend price keeps its Not available* mark until a page URL is stored.
+  // R-10: a retailer price links to the page its price-check row stored, and keeps its
+  // Not available* mark when no page is stored. No retailer is named in either table.
   for (const table of [mapTable, exploreTable]) {
     assert.match(table, /requireCheckedPage/);
-    assert.doesNotMatch(table, /listingChannelPricesQuery|channelPriceLookup|loadChannelPrices/);
+    assert.match(table, /fact\?\.url/);
+    assert.doesNotMatch(table, /wmt_|mf_|listingChannelPricesQuery|channelPriceLookup|loadChannelPrices/);
   }
   assert.doesNotMatch(mapTable, /musiciansfriend\.com\/search/i);
   assert.doesNotMatch(exploreTable, /musiciansfriend\.com\/search/i);
 
   const stored =
     "https://www.musiciansfriend.com/guitars/fender-player-ii/m11513000002000";
-  const withUrl = channelPriceLookup([
-    {
-      asin: "B0D2LP2PRQ",
-      channel: "musicians-friend",
-      price: 714.99,
-      url: stored,
-      checked_at: "2026-10-07T00:00:00Z",
-    },
-  ]);
-  assert.equal(musiciansFriendCheckedPageUrl(withUrl, "B0D2LP2PRQ"), stored);
+  const factFor = (asin: string, url: string | null) =>
+    listingChannelFacts({
+      offer_price: null,
+      map_price: 800,
+      retailers: cells(asin, { "musicians-friend": { price: 714.99, url } }, 800),
+    }).find((fact) => fact.key === "musicians-friend");
+  assert.equal(factFor("B0D2LP2PRQ", stored)?.url, stored);
   assert.equal(missingCheckedPageLabel(true, stored, 714.99), null);
 
-  const missing = musiciansFriendCheckedPageUrl(channelPriceLookup([]), "B0HJDFP2XS");
+  const missing = factFor("B0HJDFP2XS", null)?.url ?? null;
   assert.equal(missing, null);
   assert.equal(missingCheckedPageLabel(true, missing, 599.99), MISSING_CHECKED_PAGE_LABEL);
   assert.equal(MISSING_CHECKED_PAGE_LABEL, "Not available*");

@@ -21,6 +21,7 @@ import {
   type MapUnitsRow,
 } from "../lib/fender-canvas/map-exposure.ts";
 import { withoutApprovedExceptions } from "../lib/fender-canvas/map-approved-exceptions.ts";
+import { cells } from "./fixtures/retailer-rows.ts";
 
 const read = (path: string) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 
@@ -37,11 +38,6 @@ function row(asin: string, overrides: Partial<MapSourceRow> = {}): MapSourceRow 
     offer_price: 80,
     amz_leakage: -20,
     worst_leakage: -20,
-    wmt_price: null,
-    wmt_leakage: null,
-    wmt_url: null,
-    mf_price: null,
-    mf_leakage: null,
     ...overrides,
   };
 }
@@ -57,7 +53,12 @@ const ROWS: MapSourceRow[] = [
   row("B000000004"), // SmartScout record, no unit estimate
   row("B000000005"), // zero units
   // Below MAP at Walmart only: Amazon sells at MAP.
-  row("B000000006", { offer_price: 100, amz_leakage: 0, wmt_price: 70, wmt_leakage: -30, worst_leakage: -30 }),
+  row("B000000006", {
+    offer_price: 100,
+    amz_leakage: 0,
+    retailers: cells("B000000006", { walmart: { price: 70 } }, 100),
+    worst_leakage: -30,
+  }),
 ];
 
 const LOOKUP = mapUnitsLookup([

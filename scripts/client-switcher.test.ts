@@ -1,5 +1,6 @@
 // node --experimental-strip-types --import ./scripts/register-alias.mjs --import ./scripts/register-ts-extensions.mjs --test scripts/client-switcher.test.ts
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import {
   activeClient,
@@ -52,9 +53,10 @@ test("requests rename dashboard columns and outcome values to Ledlenser's", () =
   assert.equal(url.searchParams.get("or"), "(brand_site_found.eq.true,spec_brand_site_found.gt.0)");
 });
 
-test("requests drop Fender-only Musician's Friend columns from select lists", () => {
-  const url = new URL(toClientUrl(`${REST}/canvas_retail_listings?select=asin,mf_price,wmt_price,mf_leakage`));
-  assert.equal(url.searchParams.get("select"), "asin,wmt_price");
+test("R-10: retailer rows read the same view names in both schemas, so no column is dropped", () => {
+  const url = new URL(toClientUrl(`${REST}/canvas_retail_prices?select=asin,retailer,status,price,url,leakage`));
+  assert.equal(url.searchParams.get("select"), "asin,retailer,status,price,url,leakage");
+  assert.doesNotMatch(readFileSync(new URL("../lib/client/column-aliases.ts", import.meta.url), "utf8"), /FENDER_ONLY_COLUMNS/);
 });
 
 test("non-REST URLs pass through untouched", () => {

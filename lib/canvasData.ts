@@ -12,7 +12,16 @@ import { loadActuationBasis } from "@/lib/fender-canvas/actuation-basis-read";
 import { WITHHELD_CAUSE_COLUMNS } from "@/lib/fender-canvas/buy-box-cause";
 import { loadListingContent, type ListingContentClient } from "@/lib/fender-canvas/listing-content";
 import { loadSpecPages, type SpecPageClient } from "@/lib/fender-canvas/machine-readability";
-import type { CanvasBundle } from "@/lib/fender-canvas/types";
+import { loadFilteredPages } from "@/lib/fender-canvas/full-result-sort";
+import { loadRetailerPrices } from "@/lib/fender-canvas/retailer-prices-read";
+import {
+  byWorstLeakage,
+  withRetailerPrices,
+  type Retailer,
+  type RetailerCell,
+  type WithRetailerPrices,
+} from "@/lib/fender-canvas/retailer-prices";
+import type { CanvasBundle, CanvasRetailListingRow } from "@/lib/fender-canvas/types";
 
 /**
  * Each read settles on its own, so one failed or hung view leaves the rest of the
@@ -57,47 +66,65 @@ export async function loadCanvas(
   };
 }
 
-export function listingsQuery(
+export type RetailListingFilter = { status?: string; violationsOnly?: boolean; bundlesOnly?: boolean };
+
+/**
+ * One page of the retail listing read, in ASIN order. Only listing-level filters run here; the MAP
+ * violation filter needs the retailer rows, so {@link loadRetailListings} applies it.
+ */
+export function retailListingsPageQuery(
   page = 0,
-  size = 50,
-  filter?: { status?: string; violationsOnly?: boolean; bundlesOnly?: boolean },
+  size = 1000,
+  filter?: Pick<RetailListingFilter, "status" | "bundlesOnly">,
 ) {
   const supabase = getCanvasSupabase();
   let q = supabase
     .from("canvas_retail_listings")
     .select("*", { count: "exact" })
-    .order("worst_leakage", { ascending: true, nullsFirst: false })
+    .order("asin")
     .range(page * size, page * size + size - 1);
   if (filter?.status) q = q.eq("buybox_status", filter.status);
-  if (filter?.violationsOnly) q = q.eq("is_map_violation", true);
   if (filter?.bundlesOnly) q = q.eq("is_bundle", true);
   return q;
 }
 
-/** A retailer the MAP channel lines count carried listings for. */
-export type RetailCarryChannel = "amazon" | "walmart" | "musiciansfriend";
+export type RetailListingsRead = {
+  rows: Array<CanvasRetailListingRow & WithRetailerPrices>;
+  /** The client's active retailers, in screen order. */
+  retailers: Retailer[];
+};
 
 /**
- * Head count of the retail listing read.
- * No options: every listing in the read.
- * `carriedBy` keeps the listings that retailer carries: Walmart has a stored page URL or a price
- * above zero; Musician's Friend has a price above zero (no page is stored); every listing is an
- * Amazon listing.
- * `priced` keeps rows whose price at that retailer is greater than zero. A null or non-positive
- * price is not in that count.
+ * Every retail listing with its retailer prices attached (R-10 rows), worst leakage first. The
+ * violation flag and worst leakage are computed from Amazon's leakage and each MAP channel's row.
+ * Throws when either read fails.
  */
-export function retailListingHeadCountQuery(options?: {
-  carriedBy?: RetailCarryChannel;
-  priced?: RetailCarryChannel;
-}) {
+export async function loadRetailListings(filter?: RetailListingFilter): Promise<RetailListingsRead> {
+  const [listings, index] = await Promise.all([
+    loadFilteredPages(async (page, size) => {
+      const { data, error, count } = await retailListingsPageQuery(page, size, filter);
+      return { data: (data ?? []) as CanvasRetailListingRow[], error, count };
+    }),
+    loadRetailerPrices(),
+  ]);
+  if (listings.error) throw new Error(listings.error);
+  const rows = withRetailerPrices(listings.rows, index)
+    .filter((row) => !filter?.violationsOnly || row.is_map_violation)
+    .sort(byWorstLeakage);
+  return { rows, retailers: index.retailers };
+}
+
+/**
+ * Head count of the retail listing read: every listing, or with `amazonPriced` the listings whose
+ * Amazon price is greater than zero. Other retailers are counted from their rows
+ * (map-channel-carry.ts).
+ */
+export function retailListingHeadCountQuery(options?: { amazonPriced?: boolean }) {
   const supabase = getCanvasSupabase();
   let query = supabase
     .from("canvas_retail_listings")
     .select("asin", { count: "exact", head: true });
-  const priceColumn = { amazon: "offer_price", walmart: "wmt_price", musiciansfriend: "mf_price" } as const;
-  if (options?.carriedBy === "walmart") query = query.or("wmt_price.gt.0,wmt_url.like.http%");
-  else if (options?.carriedBy === "musiciansfriend") query = query.gt("mf_price", 0);
-  if (options?.priced) query = query.gt(priceColumn[options.priced], 0);
+  if (options?.amazonPriced) query = query.gt("offer_price", 0);
   return query;
 }
 
@@ -130,6 +157,18 @@ export function suppressedListingsQuery(page = 0, size = 1000) {
     .eq("featured_offer_state", "withheld")
     .order("asin")
     .range(page * size, page * size + size - 1);
+}
+
+/**
+ * Attaches each listing's retailer cells (R-10 rows), for the outside prices the Suppressed
+ * Listings table shows. Throws when the retailer read fails, so the table reads as unavailable
+ * rather than "None on file".
+ */
+export async function withRetailerCells<T extends { asin?: string | null }>(
+  rows: readonly T[],
+): Promise<Array<T & { retailers: RetailerCell[] }>> {
+  const index = await loadRetailerPrices();
+  return rows.map((row) => ({ ...row, retailers: index.byAsin.get(row.asin?.trim() ?? "") ?? [] }));
 }
 
 /** Listings the Featured Offer collector has classified. Zero means no reading is stored yet. */

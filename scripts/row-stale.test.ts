@@ -12,6 +12,7 @@ import {
   suppressedListingsFinding,
   unnestedBundlesFinding,
 } from "../lib/fender-canvas/portfolio-retail.ts";
+import { cells, LEDLENSER_RETAILERS } from "./fixtures/retailer-rows.ts";
 import { combineStale, mergePartial, RECHECK_DAYS, rowCoverage, rowsStale } from "../lib/fender-canvas/row-stale.ts";
 import { lostSalesPartial, lostSalesStale, sumLostSales, type StockLossRow } from "../lib/fender-canvas/stock-loss.ts";
 
@@ -89,16 +90,15 @@ test("Buy Box and suppression: featured_offer_checked_at, stale after 2 days", (
 });
 
 test("MAP Leakage: Amazon 1 day, Walmart 1 day for Fender and 2 days for Ledlenser, Musician's Friend 3 days", () => {
-  const row = (wmtAge: number) => ({
+  const row = (wmtAge: number, withMusiciansFriend = true) => ({
     asin: "A",
     map_price: 100,
     offer_price: 90,
     amz_leakage: -10,
-    wmt_leakage: -5,
-    mf_leakage: -2,
     featured_offer_checked_at: ago(0.1),
-    wmt_checked_at: ago(wmtAge),
-    mf_checked_at: ago(34),
+    retailers: withMusiciansFriend
+      ? cells("A", { walmart: { price: 95, checkedAt: ago(wmtAge) }, "musicians-friend": { price: 98, checkedAt: ago(34) } }, 100)
+      : cells("A", { walmart: { price: 95, checkedAt: ago(wmtAge) } }, 100, LEDLENSER_RETAILERS),
   });
   try {
     resetActiveClientForTests("fender");
@@ -108,9 +108,9 @@ test("MAP Leakage: Amazon 1 day, Walmart 1 day for Fender and 2 days for Ledlens
     assert.doesNotMatch(fender?.missing ?? "", /Amazon/);
 
     resetActiveClientForTests("ledlenser");
-    const ledlenser = mapLeakageFinding([{ ...row(3), mf_leakage: null, mf_checked_at: null }], { now: NOW }).stale;
+    const ledlenser = mapLeakageFinding([row(3, false)], { now: NOW }).stale;
     assert.equal(ledlenser ?? null, null, "3 days is inside Ledlenser's 4-day Walmart window and it has no Musician's Friend");
-    const old = mapLeakageFinding([{ ...row(5), mf_leakage: null, mf_checked_at: null }], { now: NOW }).stale;
+    const old = mapLeakageFinding([row(5, false)], { now: NOW }).stale;
     assert.match(old?.missing ?? "", /1 of 1 listing has no Walmart price check in 4 days/);
   } finally {
     resetActiveClientForTests(null);
@@ -121,8 +121,18 @@ test("channel lines carry a per-channel note from each channel's own listings", 
   try {
     resetActiveClientForTests("fender");
     const rows = [
-      { asin: "A", offer_price: 90, wmt_price: 80, mf_price: 85, featured_offer_checked_at: ago(0.1), wmt_checked_at: ago(0.1), mf_checked_at: ago(34) },
-      { asin: "B", offer_price: 90, wmt_price: null, mf_price: 85, featured_offer_checked_at: ago(0.1), wmt_checked_at: null, mf_checked_at: ago(1) },
+      {
+        asin: "A",
+        offer_price: 90,
+        featured_offer_checked_at: ago(0.1),
+        retailers: cells("A", { walmart: { price: 80, checkedAt: ago(0.1) }, "musicians-friend": { price: 85, checkedAt: ago(34) } }),
+      },
+      {
+        asin: "B",
+        offer_price: 90,
+        featured_offer_checked_at: ago(0.1),
+        retailers: cells("B", { walmart: { checkedAt: ago(0.1) }, "musicians-friend": { price: 85, checkedAt: ago(1) } }),
+      },
     ] as Parameters<typeof mapChannelStale>[0];
     const stale = mapChannelStale(rows, NOW);
     assert.equal(stale.Amazon, null);

@@ -32,11 +32,6 @@ function listing(partial: Partial<CanvasRetailListingRow> & { asin: string }): C
     buybox_status: null,
     is_map_violation: true,
     is_bundle: false,
-    wmt_price: null,
-    wmt_leakage: null,
-    wmt_url: null,
-    mf_price: null,
-    mf_leakage: null,
     ...partial,
   };
 }
@@ -50,11 +45,7 @@ function asMapRow(row: CanvasRetailListingRow): MapSourceRow {
     offer_price: row.offer_price,
     amz_leakage: row.amz_leakage ?? null,
     worst_leakage: row.worst_leakage,
-    wmt_price: row.wmt_price,
-    wmt_leakage: row.wmt_leakage,
-    wmt_url: row.wmt_url,
-    mf_price: row.mf_price,
-    mf_leakage: row.mf_leakage,
+    retailers: row.retailers,
   };
 }
 
@@ -247,7 +238,7 @@ test("sticky headers and column resizing stay in place while the full population
     assert.match(source, new RegExp(`tableId="${tableId}"`));
     assert.match(source, /freezeHeader/);
     assert.match(source, height);
-    assert.match(source, /loadFilteredPages/);
+    assert.match(source, /loadFilteredPages|loadRetailListings/);
     assert.doesNotMatch(source, /useClientTableSort/);
   }
   assert.match(read("components/v3/live/FenderSpecPanel.tsx"), /SPEC_TABLE_MAX_HEIGHT = 420/);
@@ -261,8 +252,10 @@ test("sticky headers and column resizing stay in place while the full population
   assert.match(resize, /aria-sort/);
   assert.match(resize, /columnWidthStorageKey/);
   const queries = read("lib/canvasData.ts");
-  assert.match(queries, /export function listingsQuery\(\s*page = 0,\s*size = 50,/);
-  assert.match(queries, /\.order\("worst_leakage", \{ ascending: true, nullsFirst: false \}\)/);
+  // R-10: the listing read pages in ASIN order; worst leakage comes from the retailer rows.
+  assert.match(queries, /export function retailListingsPageQuery\(/);
+  assert.match(queries, /loadFilteredPages\(/);
+  assert.match(queries, /\.sort\(byWorstLeakage\)/);
   assert.match(queries, /\.order\("amazon_completeness_pct", \{ ascending: true \}\)/);
   assert.match(read("lib/fender-canvas/machine-readability.ts"), /\.order\("asin", \{ ascending: true \}\)/);
   const css = read("lib/canvas-sdk/canvas-sdk.css");

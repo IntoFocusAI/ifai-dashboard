@@ -2,6 +2,7 @@ import {
   featuredOfferColumnProbe,
   featuredOfferReadingCountQuery,
   suppressedListingsQuery,
+  withRetailerCells,
 } from "@/lib/canvasData";
 import type { SourceRead } from "@/lib/export/types";
 import { READ_NOT_AVAILABLE } from "@/lib/fender-canvas/canvas-reads";
@@ -34,7 +35,10 @@ async function loadWithheldRows(): Promise<FeaturedOfferRow[] | null> {
     const { data, error, count } = await suppressedListingsQuery(page, PAGE_SIZE);
     if (error) return null;
     rows.push(...((data ?? []) as FeaturedOfferRow[]));
-    if (rows.length >= (count ?? rows.length) || (data ?? []).length < PAGE_SIZE) return withheldListings(rows);
+    if (rows.length >= (count ?? rows.length) || (data ?? []).length < PAGE_SIZE) {
+      // R-10: the outside prices come from the retailer rows, as on the table.
+      return withRetailerCells(withheldListings(rows));
+    }
   }
   return null;
 }

@@ -64,7 +64,7 @@ function snapshot(): PortfolioRetailSnapshot {
   return {
     suppressedListings: suppressedListingsFinding([withheld(), notChecked()]),
     mapLeakage: mapLeakageFinding([
-      { map_price: null, offer_price: 433.06, amz_leakage: null, wmt_leakage: null, mf_leakage: null },
+      { map_price: null, offer_price: 433.06, amz_leakage: null },
     ]),
     unnestedBundles: unnestedBundlesFinding([
       {

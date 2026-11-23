@@ -53,8 +53,6 @@ const mapRow = (asin: string, leak: number | null): MapLeakageRow => ({
   map_price: 100,
   offer_price: 80,
   amz_leakage: leak,
-  wmt_leakage: null,
-  mf_leakage: null,
 });
 
 const bundle = (asin: string, parent: string | null): CatalogBundleRow => ({

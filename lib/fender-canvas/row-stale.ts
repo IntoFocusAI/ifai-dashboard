@@ -27,8 +27,9 @@ export const RECHECK_DAYS = {
 
 /**
  * A retailer's recheck interval in days, from the client settings record (retailers[].recheck_days,
- * P-14): Walmart wmt_checked_at, Musician's Friend mf_checked_at. Null when the client on screen
- * does not check that retailer.
+ * P-14), keyed by the retailer slug without hyphens (retailerSettingKey: musicians-friend →
+ * musiciansfriend). Each price's own check time is on its R-10 price-check row. Null when the
+ * client on screen does not check that retailer.
  */
 export function retailerRecheckDays(key: string): number | null {
   return activeClientSettings().retailers.find((retailer) => retailer.key === key)?.recheck_days ?? null;

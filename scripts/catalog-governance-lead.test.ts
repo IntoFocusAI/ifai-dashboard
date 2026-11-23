@@ -60,8 +60,6 @@ function mapRow(overrides: Partial<MapLeakageRow> = {}): MapLeakageRow {
     map_price: 100,
     offer_price: 100,
     amz_leakage: 0,
-    wmt_leakage: null,
-    mf_leakage: null,
     ...overrides,
   };
 }

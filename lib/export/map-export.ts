@@ -1,4 +1,4 @@
-import { listingsQuery } from "@/lib/canvasData";
+import { loadRetailListings } from "@/lib/canvasData";
 import { loadDashboardAsOf } from "@/lib/export/as-of";
 import type { SourceRead } from "@/lib/export/types";
 import { formatUsd, pendingLabel } from "@/lib/fender-canvas/format";
@@ -7,7 +7,6 @@ import {
   listingLabel,
   missingCheckedPageLabel,
   shownChannelGap,
-  storedHttpUrl,
   type MapSourceRow,
   mapTabModel,
 } from "@/lib/fender-canvas/map-channels";
@@ -40,19 +39,12 @@ import { mapHero, mapLeakageTip } from "@/lib/fender-canvas/retail-overview-lead
 import { activeSetAsideClientKey, SET_ASIDE_CHECKS } from "@/lib/set-aside/keys";
 import { getPublicCanvasSupabase } from "@/lib/supabase/canvas-client";
 
-const PAGE_SIZE = 1000;
 const FAILED = "Below-MAP rows are not available.";
 
-async function loadRows(violationsOnly: boolean): Promise<MapSourceRow[]> {
-  const rows: MapSourceRow[] = [];
-  for (let page = 0; page < 20; page += 1) {
-    const { data, error } = await listingsQuery(page, PAGE_SIZE, violationsOnly ? { violationsOnly: true } : undefined);
-    if (error) throw error;
-    const batch = (data ?? []) as MapSourceRow[];
-    rows.push(...batch);
-    if (batch.length < PAGE_SIZE) return rows;
-  }
-  throw new Error(FAILED);
+/** The tab's rows: listings with their retailer rows attached (R-10), worst leakage first. */
+async function loadRows(violationsOnly: boolean): Promise<{ rows: MapSourceRow[]; retailerKeys: string[] }> {
+  const read = await loadRetailListings(violationsOnly ? { violationsOnly: true } : undefined);
+  return { rows: read.rows, retailerKeys: read.retailers.map((retailer) => retailer.key) };
 }
 
 /** The approved MAP exceptions, read as the screen's set-aside store reads them. */
@@ -89,8 +81,7 @@ export async function loadMapSource(): Promise<SourceRead> {
   try {
     const snapshot = await loadPortfolioRetailSnapshot();
     const pricesNotStored = snapshot.mapLeakage.missingMessage === mapPricesNotStored();
-    // Decision 82: the empty other-retailer price table is no longer read, as on the tab.
-    const [readRows, exceptions, asOf] = await Promise.all([
+    const [{ rows: readRows, retailerKeys }, exceptions, asOf] = await Promise.all([
       loadRows(!pricesNotStored),
       loadExceptions(),
       loadDashboardAsOf(),
@@ -101,7 +92,8 @@ export async function loadMapSource(): Promise<SourceRead> {
     const rows = units ? mapExposureOrder(readRows, units) : readRows;
     const counted = withMapApprovedExceptions(snapshot, exceptions.asins, { failed: exceptions.failed });
     const hero = mapHero(counted);
-    const model = mapTabModel(rows);
+    const model = mapTabModel(rows, retailerKeys);
+    const retailerColumns = model.columns.filter((column) => column.key !== "amazon");
     const header = ["Listing", "ASIN", "MAP"];
     if (model.showAmazon) header.push("Amazon");
     if (units) {
@@ -110,8 +102,7 @@ export async function loadMapSource(): Promise<SourceRead> {
         `${MAP_EXPOSURE_LABEL} a month (${ANALYST_ESTIMATE_LABEL})`,
       );
     }
-    if (model.showWalmart) header.push("Walmart");
-    if (model.showMusiciansFriend) header.push("Musician's Friend");
+    for (const column of retailerColumns) header.push(column.name);
 
     const body = rows.map((row) => {
       const facts = new Map(listingChannelFacts(row).map((fact) => [fact.key, fact]));
@@ -130,8 +121,7 @@ export async function loadMapSource(): Promise<SourceRead> {
         const exposure = mapExposure(row, units);
         line.push(exposure.units != null ? String(exposure.units) : "", exposureText(exposure));
       }
-      if (model.showWalmart) push("walmart", storedHttpUrl(row.wmt_url), true);
-      if (model.showMusiciansFriend) push("musicians-friend", null, true);
+      for (const column of retailerColumns) push(column.key, facts.get(column.key)?.url ?? null, true);
       return { key: row.asin, cells: line };
     });
 

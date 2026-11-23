@@ -1,4 +1,10 @@
-/** MAP tab model from `public.canvas_retail_listings` and `public.canvas_listing_channel_price`. */
+/**
+ * MAP tab model. Amazon comes from `canvas_retail_listings`; every other retailer comes from the
+ * client's retailer list and its price-check rows (R-10: `canvas_retailers`, `canvas_retail_prices`,
+ * attached by retailer-prices.ts). No retailer is named in code.
+ */
+
+import type { RetailerCell } from "@/lib/fender-canvas/retailer-prices";
 
 export type MapSourceRow = {
   asin: string;
@@ -8,16 +14,12 @@ export type MapSourceRow = {
   offer_price: number | null;
   /** Stored Amazon leakage. The worst gap across channels is not this number. */
   amz_leakage?: number | null;
+  /** Lowest of Amazon's leakage and every MAP-channel gap (retailer-prices.ts). */
   worst_leakage: number | null;
-  wmt_price: number | null;
-  wmt_leakage?: number | null;
-  wmt_url: string | null;
-  mf_price: number | null;
-  mf_leakage: number | null;
-  /** Per-row check times (X-25). The Amazon price check is the Featured Offer read. */
+  /** This listing's checked retailers, in the client's order. */
+  retailers?: RetailerCell[];
+  /** Amazon price check time, the Featured Offer read (X-25). Retailer check times are on the cells. */
   featured_offer_checked_at?: string | null;
-  wmt_checked_at?: string | null;
-  mf_checked_at?: string | null;
 };
 
 /** One channel's stored price and the gap that price produced. */
@@ -26,43 +28,31 @@ export type ChannelFact = {
   name: string;
   price: number | null;
   gap: number | null;
+  /** The checked retailer page. Amazon has none here; its link is the ASIN. */
+  url?: string | null;
+  /** A retailer price shows Not available* when no checked page is stored. Amazon does not. */
+  requireCheckedPage?: boolean;
 };
 
-/** One stored retailer price from `public.canvas_listing_channel_price`. */
-export type ChannelPriceRow = {
-  asin: string;
-  channel: string;
-  price: number | string | null;
-  url: string | null;
-  checked_at: string | null;
-};
-
+/** A channel line: listings below MAP on that channel. */
 export type MapChannelSummary = {
-  name: "Amazon" | "Walmart" | "Musician's Friend";
-  count: number;
-};
-
-/** A retailer added by inserting rows, not by adding a column. */
-export type MapExtraChannel = {
-  channel: string;
+  key: string;
   name: string;
   count: number;
 };
+
+/** A price column: Amazon, then each retailer with a stored price or gap, in the client's order. */
+export type ChannelColumn = { key: string; name: string };
 
 export type MapTabModel = {
   count: number;
   averageGap: number | null;
   combinedGap: number | null;
+  /** Channels with at least one listing below MAP, in column order. */
   channels: MapChannelSummary[];
-  extraChannels: MapExtraChannel[];
+  /** Channels with a stored price or gap on a returned listing, in column order. */
+  columns: ChannelColumn[];
   showAmazon: boolean;
-  showWalmart: boolean;
-  showMusiciansFriend: boolean;
-};
-
-export type PricedChannelCell = {
-  price: number;
-  url: string | null;
 };
 
 /** Shown beside a price when no checked retailer page was stored. */
@@ -71,13 +61,6 @@ export const MISSING_CHECKED_PAGE_LABEL = "Not available*";
 /** Plain-language reason for {@link MISSING_CHECKED_PAGE_LABEL}. */
 export const MISSING_CHECKED_PAGE_DESC =
   "No checked page was stored for this price.";
-
-const PREFERRED_CHANNELS = ["sweetwater", "reverb"];
-
-const CHANNEL_NAMES: Record<string, string> = {
-  sweetwater: "Sweetwater",
-  reverb: "Reverb",
-};
 
 function finite(value: unknown): number | null {
   if (typeof value === "string" && value.trim() === "") return null;
@@ -91,33 +74,6 @@ function storedPrice(value: unknown): number | null {
   const price = finite(value);
   if (price == null || price <= 0) return null;
   return price;
-}
-
-/** Lowercase slug. The first values are sweetwater and reverb. */
-export function channelSlug(value: string | null | undefined): string | null {
-  if (!value) return null;
-  const slug = value.trim().toLowerCase();
-  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) return null;
-  return slug;
-}
-
-export function channelDisplayName(channel: string): string {
-  return (
-    CHANNEL_NAMES[channel] ??
-    channel
-      .split("-")
-      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-      .join(" ")
-  );
-}
-
-function channelSort(a: MapExtraChannel, b: MapExtraChannel): number {
-  const ai = PREFERRED_CHANNELS.indexOf(a.channel);
-  const bi = PREFERRED_CHANNELS.indexOf(b.channel);
-  const ao = ai === -1 ? PREFERRED_CHANNELS.length : ai;
-  const bo = bi === -1 ? PREFERRED_CHANNELS.length : bi;
-  if (ao !== bo) return ao - bo;
-  return a.channel.localeCompare(b.channel);
 }
 
 function roundMoney(value: number): number {
@@ -146,54 +102,7 @@ function belowMap(gap: number | null): boolean {
   return gap != null && gap < 0;
 }
 
-const FIXED_CHANNELS = [
-  { key: "amazon", name: "Amazon" },
-  { key: "walmart", name: "Walmart" },
-  { key: "musicians-friend", name: "Musician's Friend" },
-] as const;
-
-/**
- * Stored price and gap for each channel on one listing.
- * A channel with no stored price and no stored leakage is omitted.
- */
-export function listingChannelFacts(
-  row: MapSourceRow,
-  extras?: Map<string, PricedChannelCell>,
-): ChannelFact[] {
-  const facts: ChannelFact[] = [];
-  const amazonPrice = storedPrice(row.offer_price);
-  const amazonGap = channelGap(row.amz_leakage, row.offer_price, row.map_price);
-  if (amazonPrice != null || amazonGap != null) {
-    facts.push({ key: "amazon", name: "Amazon", price: amazonPrice, gap: amazonGap });
-  }
-  const walmartPrice = storedPrice(row.wmt_price);
-  const walmartGap = channelGap(row.wmt_leakage, row.wmt_price, row.map_price);
-  if (walmartPrice != null || walmartGap != null) {
-    facts.push({ key: "walmart", name: "Walmart", price: walmartPrice, gap: walmartGap });
-  }
-  const musiciansFriendPrice = storedPrice(row.mf_price);
-  const musiciansFriendGap = channelGap(row.mf_leakage, row.mf_price, row.map_price);
-  if (musiciansFriendPrice != null || musiciansFriendGap != null) {
-    facts.push({
-      key: "musicians-friend",
-      name: "Musician's Friend",
-      price: musiciansFriendPrice,
-      gap: musiciansFriendGap,
-    });
-  }
-  if (extras) {
-    for (const [channel, cell] of extras) {
-      if (FIXED_CHANNELS.some((fixed) => fixed.key === channel)) continue;
-      facts.push({
-        key: channel,
-        name: channelDisplayName(channel),
-        price: cell.price,
-        gap: channelGap(null, cell.price, row.map_price),
-      });
-    }
-  }
-  return facts;
-}
+const AMAZON = { key: "amazon", name: "Amazon" } as const;
 
 /** Trimmed http(s) URL, or null. Never builds a retailer search page. */
 export function storedHttpUrl(value: string | null | undefined): string | null {
@@ -210,24 +119,28 @@ export function storedHttpUrl(value: string | null | undefined): string | null {
 }
 
 /**
- * Checked-page URL for a price cell. Prefers the channel-price row, then an
- * existing listing field. Does not invent a retailer page from an ASIN or name.
+ * Stored price and gap for each channel on one listing: Amazon, then each checked retailer.
+ * A channel with no stored price and no stored gap is omitted.
  */
-export function checkedPageUrl(
-  channelCellUrl: string | null | undefined,
-  listingFieldUrl?: string | null,
-): string | null {
-  return storedHttpUrl(channelCellUrl) ?? storedHttpUrl(listingFieldUrl ?? null);
-}
-
-/** Musician's Friend checked page from the loaded channel-price map, or a listing field. */
-export function musiciansFriendCheckedPageUrl(
-  prices: Map<string, Map<string, PricedChannelCell>>,
-  asin: string,
-  listingFieldUrl?: string | null,
-): string | null {
-  const cell = prices.get(asin.trim())?.get("musicians-friend");
-  return checkedPageUrl(cell?.url, listingFieldUrl);
+export function listingChannelFacts(row: Pick<MapSourceRow, "offer_price" | "amz_leakage" | "map_price" | "retailers">): ChannelFact[] {
+  const facts: ChannelFact[] = [];
+  const amazonPrice = storedPrice(row.offer_price);
+  const amazonGap = channelGap(row.amz_leakage, row.offer_price, row.map_price);
+  if (amazonPrice != null || amazonGap != null) {
+    facts.push({ key: AMAZON.key, name: AMAZON.name, price: amazonPrice, gap: amazonGap });
+  }
+  for (const cell of row.retailers ?? []) {
+    if (cell.price == null && cell.gap == null) continue;
+    facts.push({
+      key: cell.key,
+      name: cell.name,
+      price: cell.price,
+      gap: cell.gap,
+      url: storedHttpUrl(cell.url),
+      requireCheckedPage: true,
+    });
+  }
+  return facts;
 }
 
 /**
@@ -245,25 +158,17 @@ export function missingCheckedPageLabel(
   return MISSING_CHECKED_PAGE_LABEL;
 }
 
-/** Price and URL keyed by ASIN, then channel slug. Rows without a price are dropped. */
-export function channelPriceLookup(
-  prices: ChannelPriceRow[],
-): Map<string, Map<string, PricedChannelCell>> {
-  const byAsin = new Map<string, Map<string, PricedChannelCell>>();
-  for (const row of prices) {
-    const channel = channelSlug(row.channel);
-    const price = storedPrice(row.price);
-    const asin = row.asin?.trim();
-    if (!channel || price == null || !asin) continue;
-    let byChannel = byAsin.get(asin);
-    if (!byChannel) {
-      byChannel = new Map();
-      byAsin.set(asin, byChannel);
-    }
-    const url = typeof row.url === "string" && row.url.trim() ? row.url.trim() : null;
-    byChannel.set(channel, { price, url });
+/** Channels with a stored price or gap, Amazon first, then retailers in first-seen order. */
+function channelColumns(rows: readonly Pick<MapSourceRow, "offer_price" | "amz_leakage" | "map_price" | "retailers">[]): ChannelColumn[] {
+  const seen = new Map<string, string>();
+  for (const row of rows) {
+    for (const fact of listingChannelFacts(row)) if (!seen.has(fact.key)) seen.set(fact.key, fact.name);
   }
-  return byAsin;
+  const columns = [...seen.entries()].map(([key, name]) => ({ key, name }));
+  return [
+    ...columns.filter((column) => column.key === AMAZON.key),
+    ...columns.filter((column) => column.key !== AMAZON.key),
+  ];
 }
 
 /**
@@ -271,36 +176,17 @@ export function channelPriceLookup(
  * A stored price that is at or above MAP is not a count.
  * A channel with no stored price on a returned listing is omitted.
  */
-export function mapTabModel(rows: MapSourceRow[], channelPrices: ChannelPriceRow[] = []): MapTabModel {
-  const prices = channelPriceLookup(channelPrices);
+export function mapTabModel(rows: MapSourceRow[], retailerOrderKeys?: readonly string[]): MapTabModel {
   const below = new Map<string, number>();
-  const present = new Set<string>();
-  const extraOrder: string[] = [];
-
   for (const row of rows) {
-    const facts = listingChannelFacts(row, prices.get(row.asin.trim()));
-    for (const fact of facts) {
-      if (!present.has(fact.key) && !FIXED_CHANNELS.some((channel) => channel.key === fact.key)) {
-        extraOrder.push(fact.key);
-      }
-      present.add(fact.key);
+    for (const fact of listingChannelFacts(row)) {
       if (belowMap(fact.gap)) below.set(fact.key, (below.get(fact.key) ?? 0) + 1);
     }
   }
-
-  const channels: MapChannelSummary[] = [];
-  for (const channel of FIXED_CHANNELS) {
-    const count = below.get(channel.key) ?? 0;
-    if (count > 0) channels.push({ name: channel.name, count });
-  }
-
-  const extraChannels = extraOrder
-    .map((channel) => ({
-      channel,
-      name: channelDisplayName(channel),
-      count: below.get(channel) ?? 0,
-    }))
-    .sort(channelSort);
+  const columns = orderedColumns(rows, retailerOrderKeys);
+  const channels = columns
+    .map((column) => ({ key: column.key, name: column.name, count: below.get(column.key) ?? 0 }))
+    .filter((channel) => channel.count > 0);
 
   const gaps = rows
     .map((row) => finite(row.worst_leakage))
@@ -312,77 +198,43 @@ export function mapTabModel(rows: MapSourceRow[], channelPrices: ChannelPriceRow
     averageGap: gaps.length ? combinedGap / gaps.length : null,
     combinedGap: gaps.length ? combinedGap : null,
     channels,
-    extraChannels,
-    showAmazon: present.has("amazon"),
-    showWalmart: present.has("walmart"),
-    showMusiciansFriend: present.has("musicians-friend"),
+    columns,
+    showAmazon: columns.some((column) => column.key === AMAZON.key),
   };
+}
+
+/** Amazon first, then retailers in the client's list order when given, else first-seen order. */
+function orderedColumns(
+  rows: readonly Pick<MapSourceRow, "offer_price" | "amz_leakage" | "map_price" | "retailers">[],
+  retailerOrderKeys?: readonly string[],
+): ChannelColumn[] {
+  const columns = channelColumns(rows);
+  if (!retailerOrderKeys) return columns;
+  const rank = (key: string) => {
+    if (key === AMAZON.key) return -1;
+    const index = retailerOrderKeys.indexOf(key);
+    return index < 0 ? retailerOrderKeys.length : index;
+  };
+  return columns.slice().sort((a, b) => rank(a.key) - rank(b.key));
 }
 
 /** The fields of a retail listing row the channel facts read. */
-export type ChannelSourceRow = {
-  asin: string;
-  model_name: string | null;
-  title: string | null;
-  map_price: number | null;
-  offer_price: number | null;
-  amz_leakage?: number | null;
-  worst_leakage: number | null;
-  wmt_price: number | null;
-  wmt_leakage?: number | null;
-  wmt_url: string | null;
-  mf_price?: number | null;
-  mf_leakage?: number | null;
-};
-
-export function mapSourceRow(row: ChannelSourceRow): MapSourceRow {
-  return {
-    asin: row.asin,
-    model_name: row.model_name,
-    title: row.title,
-    map_price: row.map_price,
-    offer_price: row.offer_price,
-    amz_leakage: row.amz_leakage ?? null,
-    worst_leakage: row.worst_leakage,
-    wmt_price: row.wmt_price,
-    wmt_leakage: row.wmt_leakage,
-    wmt_url: row.wmt_url,
-    mf_price: row.mf_price ?? null,
-    mf_leakage: row.mf_leakage ?? null,
-  };
-}
-
-export type ExploreChannelColumn = { key: string; name: string };
+export type ChannelSourceRow = Pick<
+  MapSourceRow,
+  "asin" | "model_name" | "title" | "map_price" | "offer_price" | "amz_leakage" | "worst_leakage" | "retailers"
+>;
 
 /**
- * The retailer columns Explore all listings shows: a fixed retailer only when at least one
- * listing stores a price or gap for it, then the extra retailers in their preferred order.
- * A client with no Musician's Friend data gets no Musician's Friend column.
+ * The price columns Explore all listings shows: Amazon and each retailer only when at least one
+ * listing stores a price or gap for it. A retailer with no checks gets no column.
  */
 export function exploreChannelColumns(
   rows: readonly ChannelSourceRow[],
-  prices: Map<string, Map<string, PricedChannelCell>>,
-): ExploreChannelColumn[] {
-  const present = new Set<string>();
-  const extras = new Set<string>();
-  for (const row of rows) {
-    for (const fact of listingChannelFacts(mapSourceRow(row), prices.get(row.asin.trim()))) {
-      if (FIXED_CHANNELS.some((channel) => channel.key === fact.key)) present.add(fact.key);
-      else extras.add(fact.key);
-    }
-  }
-  return [
-    ...FIXED_CHANNELS.filter((channel) => present.has(channel.key)).map((channel) => ({
-      key: channel.key as string,
-      name: channel.name as string,
-    })),
-    ...[...extras]
-      .map((channel) => ({ channel, name: channelDisplayName(channel), count: 0 }))
-      .sort(channelSort)
-      .map((channel) => ({ key: channel.channel, name: channel.name })),
-  ];
+  retailerOrderKeys?: readonly string[],
+): ChannelColumn[] {
+  return orderedColumns(rows, retailerOrderKeys);
 }
 
-export function listingLabel(row: MapSourceRow): string {
+export function listingLabel(row: Pick<MapSourceRow, "model_name" | "title">): string {
   return row.model_name?.trim() || row.title?.trim() || "Listing";
 }

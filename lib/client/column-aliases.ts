@@ -4,8 +4,8 @@
    screen reads Ledlenser rows in the shape it already knows.
 
    Requests: column names and outcome values in the query string are renamed to
-   Ledlenser's, and columns that only Fender has (Musician's Friend) are dropped
-   from select lists. Responses: Ledlenser names are renamed back. */
+   Ledlenser's. Responses: Ledlenser names are renamed back. Retailer prices are
+   rows in both schemas (R-10), so no column is Fender-only any more. */
 
 /** Dashboard (Fender) name -> Ledlenser name. Longest names first. */
 const COLUMN_PAIRS: Array<[string, string]> = [
@@ -30,16 +30,6 @@ const COLUMN_PAIRS: Array<[string, string]> = [
   ["fender_variant_sku", "brand_site_variant_sku"],
 ];
 
-/** Columns Fender's views have and Ledlenser's do not. Dropped from select lists. */
-const FENDER_ONLY_COLUMNS = new Set([
-  "mf_checked",
-  "mf_leaks",
-  "mf_priced",
-  "mf_price",
-  "mf_leakage",
-  "mf_checked_at",
-]);
-
 const TO_CLIENT = new Map(COLUMN_PAIRS);
 const TO_DASHBOARD = new Map(COLUMN_PAIRS.map(([a, b]) => [b, a]));
 
@@ -55,13 +45,6 @@ function renameIdentifiers(text: string): string {
   return text.replace(IDENT, (word) => TO_CLIENT.get(word) ?? word);
 }
 
-function dropFenderOnly(select: string): string {
-  return select
-    .split(",")
-    .filter((part) => !FENDER_ONLY_COLUMNS.has(part.trim()))
-    .join(",");
-}
-
 /** Rewrites a PostgREST URL from dashboard names to Ledlenser names. */
 export function toClientUrl(input: string): string {
   const url = new URL(input);
@@ -69,7 +52,6 @@ export function toClientUrl(input: string): string {
   const next = new URLSearchParams();
   for (const [key, value] of url.searchParams) {
     let v = value;
-    if (key === "select") v = dropFenderOnly(v);
     // `source=eq.fender` style filters on the spec missing-fields view.
     if (key === "source") v = v.replace(/\.fender$/, ".brand_site");
     next.append(renameIdentifiers(key), renameIdentifiers(v));

@@ -2,6 +2,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { tabSlug } from "../lib/canvas-sdk/canvas-url-state.ts";
+import { cells } from "./fixtures/retailer-rows.ts";
 import {
   amazonSpecGapsFinding,
   FENDER_RETAIL_HEADLINE_RANK,
@@ -73,14 +74,20 @@ function notChecked(overrides: Partial<SuppressionSupportRow> = {}): Suppression
   });
 }
 
-function mapRow(overrides: Partial<MapLeakageRow> = {}): MapLeakageRow {
+/** A MAP row. `walmart` and `musiciansFriend` are that retailer's gap (price − MAP) on its price-check row. */
+function mapRow(
+  overrides: Partial<MapLeakageRow> & { walmart?: number | null; musiciansFriend?: number | null } = {},
+): MapLeakageRow {
+  const { walmart, musiciansFriend, ...rest } = overrides;
+  const specs: Record<string, { price: number; map: number }> = {};
+  if (walmart != null) specs.walmart = { price: 100 + walmart, map: 100 };
+  if (musiciansFriend != null) specs["musicians-friend"] = { price: 100 + musiciansFriend, map: 100 };
   return {
     map_price: 100,
     offer_price: 80,
     amz_leakage: -20,
-    wmt_leakage: null,
-    mf_leakage: null,
-    ...overrides,
+    ...rest,
+    retailers: cells("A", specs),
   };
 }
 
@@ -204,10 +211,10 @@ test("a withheld listing with no benchmark keeps the plain withheld headline", (
 
 test("MAP violations are stored leakage below zero, and a missing price is not zero", () => {
   const reading = mapLeakageFinding([
-    mapRow({ amz_leakage: -20, wmt_leakage: -30, mf_leakage: null }),
-    mapRow({ amz_leakage: 5, wmt_leakage: null, mf_leakage: null }),
-    mapRow({ map_price: null, offer_price: 40, amz_leakage: null, wmt_leakage: null, mf_leakage: null }),
-    mapRow({ amz_leakage: "0", wmt_leakage: null }),
+    mapRow({ amz_leakage: -20, walmart: -30 }),
+    mapRow({ amz_leakage: 5 }),
+    mapRow({ map_price: null, offer_price: 40, amz_leakage: null }),
+    mapRow({ amz_leakage: "0" }),
   ]);
 
   assert.equal(reading.status, "incomplete");
@@ -222,7 +229,7 @@ test("MAP violations are stored leakage below zero, and a missing price is not z
 test("MAP average leakage is omitted when no violation stores a leakage", () => {
   const reading = mapLeakageFinding([
     mapRow({ amz_leakage: 0, offer_price: 100, map_price: 100 }),
-    mapRow({ amz_leakage: 4, wmt_leakage: 2, mf_leakage: null }),
+    mapRow({ amz_leakage: 4, walmart: 2 }),
   ]);
   assert.equal(reading.status, "available_with_zero");
   assert.equal(reading.issueCount, 0);
@@ -231,7 +238,7 @@ test("MAP average leakage is omitted when no violation stores a leakage", () => 
 
 test("MAP ignores bundle membership and does not invent an impact", () => {
   const withBundleFlag = mapLeakageFinding([
-    mapRow({ amz_leakage: -10, wmt_leakage: -4 }),
+    mapRow({ amz_leakage: -10, walmart: -4 }),
     mapRow({ amz_leakage: -2 }),
   ]);
   assert.equal(withBundleFlag.status, "available_with_issues");
@@ -244,7 +251,7 @@ test("MAP ignores bundle membership and does not invent an impact", () => {
   assert.equal(absent.detail, null);
 
   const neverStored = mapLeakageFinding([
-    mapRow({ map_price: null, offer_price: null, amz_leakage: null, wmt_leakage: null, mf_leakage: null }),
+    mapRow({ map_price: null, offer_price: null, amz_leakage: null }),
   ]);
   assert.equal(neverStored.status, "unavailable");
   assert.equal(neverStored.issueCount, null);
@@ -257,17 +264,13 @@ test("an empty MAP price is not zero listings below MAP", () => {
       map_price: null,
       offer_price: 599.99,
       amz_leakage: null,
-      wmt_leakage: null,
-      mf_leakage: null,
     }),
     mapRow({
       map_price: null,
       offer_price: 287.93,
       amz_leakage: null,
-      wmt_leakage: null,
-      mf_leakage: null,
     }),
-    mapRow({ map_price: 0, offer_price: 10, amz_leakage: -10, wmt_leakage: null, mf_leakage: null }),
+    mapRow({ map_price: 0, offer_price: 10, amz_leakage: -10 }),
   ]);
 
   assert.equal(reading.status, "unavailable");

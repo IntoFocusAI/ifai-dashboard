@@ -7,7 +7,7 @@ import { MapExposureCard, type MapExposureState } from "@/components/v3/live/Map
 import { MapListingsTable } from "@/components/v3/live/MapListingsTable";
 import { EstimateLineCard } from "@/components/v3/live/estimates/EstimateLineFigure";
 import { RetailShareDisc, RetailStatusMark } from "@/components/v3/live/RetailOverviewFigure";
-import { listingsQuery } from "@/lib/canvasData";
+import { loadRetailListings } from "@/lib/canvasData";
 import { loadChannelCarry } from "@/lib/fender-canvas/map-channel-carry";
 import { formatUsd } from "@/lib/fender-canvas/format";
 import { mapTabModel, type MapSourceRow } from "@/lib/fender-canvas/map-channels";
@@ -38,24 +38,14 @@ import type { CanvasFreshnessRow } from "@/lib/fender-canvas/types";
 import { SET_ASIDE_CHECKS, activeSetAsideClientKey } from "@/lib/set-aside/keys";
 import { useSetAsides } from "@/lib/set-aside/set-aside";
 
-const PAGE_SIZE = 1000;
-
 type MapChannelLine = { key: string; name: string; count: number };
 
-async function loadMapRows(violationsOnly: boolean): Promise<MapSourceRow[]> {
-  const rows: MapSourceRow[] = [];
-  for (let page = 0; page < 20; page += 1) {
-    const { data, error } = await listingsQuery(
-      page,
-      PAGE_SIZE,
-      violationsOnly ? { violationsOnly: true } : undefined,
-    );
-    if (error) throw error;
-    const batch = (data ?? []) as MapSourceRow[];
-    rows.push(...batch);
-    if (batch.length < PAGE_SIZE) return rows;
-  }
-  throw new Error("Below-MAP rows are not available.");
+type MapRows = { rows: MapSourceRow[]; retailerKeys: string[] };
+
+/** Listings with their retailer rows attached (R-10); below MAP only once MAP prices are stored. */
+async function loadMapRows(violationsOnly: boolean): Promise<MapRows> {
+  const read = await loadRetailListings(violationsOnly ? { violationsOnly: true } : undefined);
+  return { rows: read.rows, retailerKeys: read.retailers.map((retailer) => retailer.key) };
 }
 
 /**
@@ -239,6 +229,7 @@ export function MapChannelPanel({
   musiciansFriendFreshness?: CanvasFreshnessRow | null;
 }) {
   const [rows, setRows] = useState<MapSourceRow[] | null>(null);
+  const [retailerKeys, setRetailerKeys] = useState<string[]>([]);
   const [carry, setCarry] = useState<ChannelCarryMap>({});
   const [failed, setFailed] = useState(false);
   /** Undefined while loading, null when the unit read failed. */
@@ -251,15 +242,16 @@ export function MapChannelPanel({
   useEffect(() => {
     if (read.phase === "loading") return;
     let cancelled = false;
-    // Decision 82: the empty other-retailer price table is no longer read on screen.
+    // R-10: retailer prices come from the client's retailer list and its price-check rows.
     Promise.all([loadMapRows(!pricesNotStored), loadChannelCarry()])
       .then(([nextRows, nextCarry]) => {
         if (cancelled) return;
-        setRows(nextRows);
+        setRows(nextRows.rows);
+        setRetailerKeys(nextRows.retailerKeys);
         setCarry(nextCarry);
         if (pricesNotStored) return;
         // R-09: the unit estimates behind discounted retail value, for the listings below MAP only.
-        void loadMapUnits(nextRows.map((row) => row.asin)).then((unitRows) => {
+        void loadMapUnits(nextRows.rows.map((row) => row.asin)).then((unitRows) => {
           if (!cancelled) setUnits(unitRows ? mapUnitsLookup(unitRows) : null);
         });
       })
@@ -292,8 +284,8 @@ export function MapChannelPanel({
   // The table waits for the unit read, so its rows do not reorder once the estimates arrive.
   const unitsSettled = pricesNotStored || units !== undefined;
   const tableRows = useMemo(() => (rows && units ? mapExposureOrder(rows, units) : rows), [rows, units]);
-  const model = rows ? mapTabModel(rows) : null;
-  const counted = rows ? mapTabModel(countedRows) : null;
+  const model = rows ? mapTabModel(rows, retailerKeys) : null;
+  const counted = rows ? mapTabModel(countedRows, retailerKeys) : null;
   const summaryChannels: MapChannelLine[] =
     !counted || pricesNotStored
       ? []

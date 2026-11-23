@@ -1,18 +1,14 @@
-import { listingsQuery } from "@/lib/canvasData";
+import { loadRetailListings } from "@/lib/canvasData";
 import { loadDashboardAsOf } from "@/lib/export/as-of";
 import type { SourceRead } from "@/lib/export/types";
 import { formatInt, formatUsd, pendingLabel } from "@/lib/fender-canvas/format";
-import { loadFilteredPages } from "@/lib/fender-canvas/full-result-sort";
 import { anyListingReviewCount, listingReviewLabel } from "@/lib/fender-canvas/listing-reviews";
 import {
   exploreChannelColumns,
   listingChannelFacts,
-  mapSourceRow,
   missingCheckedPageLabel,
   shownChannelGap,
-  storedHttpUrl,
 } from "@/lib/fender-canvas/map-channels";
-import type { CanvasRetailListingRow } from "@/lib/fender-canvas/types";
 
 const FAILED = "The listing read could not be loaded.";
 
@@ -31,17 +27,13 @@ function cellText(price: number | null, gap: number | null, note: string | null)
  */
 export async function loadExploreListingsSource(): Promise<SourceRead> {
   try {
-    // Decision 82: the empty other-retailer price table is no longer read, as on the screen.
-    const [loaded, asOf] = await Promise.all([
-      loadFilteredPages(async (page, size) => {
-        const { data, error, count } = await listingsQuery(page, size);
-        return { data: (data ?? []) as CanvasRetailListingRow[], error, count };
-      }),
-      loadDashboardAsOf(),
-    ]);
-    if (loaded.error) return { ok: false, message: FAILED };
+    // R-10: retailer prices come from the client's retailer list and its price-check rows.
+    const [loaded, asOf] = await Promise.all([loadRetailListings(), loadDashboardAsOf()]);
     const rows = loaded.rows;
-    const channels = exploreChannelColumns(rows, new Map());
+    const channels = exploreChannelColumns(
+      rows,
+      loaded.retailers.map((retailer) => retailer.key),
+    );
     const showReviews = anyListingReviewCount(rows);
     const header = [
       "Listing",
@@ -53,12 +45,9 @@ export async function loadExploreListingsSource(): Promise<SourceRead> {
       "Channels",
     ];
     const body = rows.map((row) => {
-      const facts = new Map(listingChannelFacts(mapSourceRow(row)).map((fact) => [fact.key, fact]));
-      const hrefFor = (key: string): { href: string | null; requirePage: boolean } => {
-        if (key === "amazon") return { href: null, requirePage: false };
-        if (key === "walmart") return { href: storedHttpUrl(row.wmt_url), requirePage: true };
-        return { href: null, requirePage: true };
-      };
+      const facts = new Map(listingChannelFacts(row).map((fact) => [fact.key, fact]));
+      const hrefFor = (key: string): { href: string | null; requirePage: boolean } =>
+        key === "amazon" ? { href: null, requirePage: false } : { href: facts.get(key)?.url ?? null, requirePage: true };
       return {
         key: row.asin,
         cells: [
