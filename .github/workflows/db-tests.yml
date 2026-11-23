@@ -1,0 +1,21 @@
+name: Database tests
+
+on:
+  pull_request:
+    branches: [main]
+    paths: ["supabase/**", ".github/workflows/db-tests.yml"]
+  push:
+    branches: [main]
+    paths: ["supabase/**", ".github/workflows/db-tests.yml"]
+
+permissions:
+  contents: read
+
+jobs:
+  db-tests:
+    name: Database tests (local Postgres, never hosted)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run supabase/tests against a throwaway local cluster
+        run: bash supabase/tests/run.sh
