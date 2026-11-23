@@ -1,4 +1,5 @@
--- Login roles, part 2 of 2: Org Leads manage only Org Users; staff rows tidied.
+-- Login roles, part 2 of 2: Org Leads manage only Org Users; only staff edit organizations;
+-- staff rows tidied.
 --
 -- ALTERING. Replaces three existing policies and deletes existing membership rows, so Brian
 -- Watson applies it himself (AGENTS.md). Apply after 20261123120000_client_organizations.sql.
@@ -17,6 +18,11 @@
 --          intofocus_admin rows. Only staff manage Leads.
 --      memberships_select is unchanged. The trigger organization_memberships_enforce_intofocus_admin
 --      stays: intofocus_admin is still allowed only on the platform organization.
+--   1b. Policy organizations_update on command.organizations (from 20260330180000) is replaced.
+--      Before: staff or any org_admin of the organization could update it (name, slug,
+--      is_active). After: staff only (command.is_intofocus_admin()), so an Org Lead cannot
+--      rename their organization or change its slug (the dashboard client_key) or is_active.
+--      organizations_select and organizations_insert are unchanged.
 --   2. Deletes Brian Watson's (brian.w@intofocus.ai) and Marc's (marc.s@intofocus.ai) org_admin
 --      rows on fender and ledlenser. They are staff (intofocus_admin on intofocus-ai), and staff
 --      see every client, so these rows are redundant. Their intofocus_admin rows are not touched.
@@ -27,6 +33,9 @@
 -- Check after applying:
 --   select polname, pg_get_expr(polqual, polrelid), pg_get_expr(polwithcheck, polrelid)
 --     from pg_policy where polrelid = 'command.organization_memberships'::regclass order by 1;
+--   select polname, pg_get_expr(polqual, polrelid), pg_get_expr(polwithcheck, polrelid)
+--     from pg_policy where polrelid = 'command.organizations'::regclass and polname = 'organizations_update';
+--     -- command.is_intofocus_admin() for both
 --   select o.slug, u.email, m.role, m.status from command.organization_memberships m
 --     join command.organizations o on o.id = m.organization_id join auth.users u on u.id = m.user_id
 --     order by 1, 2;   -- staff rows only on intofocus-ai
@@ -43,6 +52,11 @@
 --        with check (command.is_intofocus_admin() or command.user_has_org_role(organization_id, 'org_admin'));
 --      create policy memberships_delete on command.organization_memberships for delete to authenticated
 --        using (command.is_intofocus_admin() or command.user_has_org_role(organization_id, 'org_admin'));
+--   1b. Restore the original organizations policy:
+--      drop policy organizations_update on command.organizations;
+--      create policy organizations_update on command.organizations for update to authenticated
+--        using (command.is_intofocus_admin() or command.user_has_org_role(id, 'org_admin'))
+--        with check (command.is_intofocus_admin() or command.user_has_org_role(id, 'org_admin'));
 --   2. Re-create the deleted rows:
 --      insert into command.organization_memberships (organization_id, user_id, role, status)
 --      select o.id, u.id, 'org_admin', 'active' from command.organizations o cross join auth.users u
@@ -87,6 +101,15 @@ create policy memberships_delete on command.organization_memberships
     command.is_intofocus_admin()
     or (role = 'org_viewer' and command.user_has_org_role(organization_id, 'org_admin'))
   );
+
+-- 1b. Only staff update organizations --------------------------------------------------------
+
+drop policy if exists organizations_update on command.organizations;
+
+create policy organizations_update on command.organizations
+  for update to authenticated
+  using (command.is_intofocus_admin())
+  with check (command.is_intofocus_admin());
 
 -- 2. Staff no longer need org_admin rows on client organizations ------------------------------
 

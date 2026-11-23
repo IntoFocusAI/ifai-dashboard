@@ -189,6 +189,22 @@ select pg_temp.lead_try('00000000-0000-0000-0000-000000000c11',
 select pg_temp.lead_try('00000000-0000-0000-0000-000000000c11',
   $q$update command.organization_memberships set organization_id = '00000000-0000-0000-0000-00000000c0b1'
      where user_id = '00000000-0000-0000-0000-000000000c12'$q$, false);
+-- Only staff update organizations: a Lead cannot rename theirs or change its slug or is_active.
+select pg_temp.lead_try('00000000-0000-0000-0000-000000000c11',
+  $q$update command.organizations set name = 'Renamed' where slug = 'fender'$q$, false);
+select pg_temp.lead_try('00000000-0000-0000-0000-000000000c11',
+  $q$update command.organizations set slug = 'fender2' where id = '00000000-0000-0000-0000-00000000c0f1'$q$, false);
+select pg_temp.lead_try('00000000-0000-0000-0000-000000000c11',
+  $q$update command.organizations set is_active = false where id = '00000000-0000-0000-0000-00000000c0f1'$q$, false);
+select pg_temp.lead_try('00000000-0000-0000-0000-000000000c12',
+  $q$update command.organizations set name = 'Renamed' where id = '00000000-0000-0000-0000-00000000c0f1'$q$, false);
+select pg_temp.lead_try('00000000-0000-0000-0000-000000000c01',
+  $q$update command.organizations set name = 'Fender Musical Instruments' where id = '00000000-0000-0000-0000-00000000c0f1'$q$, true);
+do $$ begin
+  if (select name from command.organizations where id = '00000000-0000-0000-0000-00000000c0f1') <> 'Fender Musical Instruments' then
+    raise exception 'staff rename did not apply';
+  end if;
+end $$;
 -- Org Users manage nothing.
 select pg_temp.lead_try('00000000-0000-0000-0000-000000000c12',
   $q$insert into command.organization_memberships (organization_id, user_id, role, status)
