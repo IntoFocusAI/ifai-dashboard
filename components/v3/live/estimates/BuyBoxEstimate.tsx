@@ -20,14 +20,19 @@ import { formatInt, formatMoneyShort, formatMoneySpan, formatUsd } from "@/lib/f
 /** The one Buy Box dollar (R-06), named without a period: the shared date pill names the period (R-07). */
 export const BUY_BOX_ESTIMATE_LABEL = "Sales to win back with the Buy Box";
 
+/** The table column, kept narrow so the Suppressed Listings table still fits at 1280 wide. */
 export const BUY_BOX_ESTIMATE_COLUMN: RetailColumn = {
   id: "estimate",
-  name: "Sales to win back",
-  label: "Sales to win back",
-  width: 120,
-  minWidth: 104,
+  name: "Estimate",
+  label: "Estimate",
+  width: 88,
+  minWidth: 76,
   className: "money",
   sort: "number",
+  headerTooltip: {
+    title: BUY_BOX_ESTIMATE_LABEL,
+    description: "Each listing's sales to win back once the Buy Box returns, over the period in the date pill. Analyst estimate.",
+  },
 };
 
 const share = BUY_BOX_LOST_SHARE;

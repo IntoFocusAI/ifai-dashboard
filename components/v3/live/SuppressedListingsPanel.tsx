@@ -53,7 +53,12 @@ import { buyBoxHero, heroFigureColor, heroFigureTone } from "@/lib/fender-canvas
 import type { CanvasFreshnessRow } from "@/lib/fender-canvas/types";
 
 
-const TABLE_COLUMNS = [...SUPPRESSED_LISTINGS_TABLE_COLUMNS, BUY_BOX_ESTIMATE_COLUMN, SET_ASIDE_SORT_COLUMN];
+// The outside-price column wraps a little sooner here, so the estimate column fits at 1280 wide.
+const TABLE_COLUMNS = [
+  ...SUPPRESSED_LISTINGS_TABLE_COLUMNS.map((column) => (column.id === "lower" ? { ...column, width: 128, minWidth: 104 } : column)),
+  BUY_BOX_ESTIMATE_COLUMN,
+  SET_ASIDE_SORT_COLUMN,
+];
 
 const TOP_ROW_STYLE = {
   display: "flex",
