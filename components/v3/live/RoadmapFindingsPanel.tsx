@@ -1,5 +1,6 @@
 "use client";
 
+import { formatInt } from "@/lib/fender-canvas/format";
 import "@/components/v3/live/roadmap-plan.css";
 import { useState } from "react";
 import { FigureTip, PartialFigureMark } from "@/components/v3/live/FigureTip";
@@ -88,7 +89,7 @@ export function RoadmapFindingsPanel({ read, bundle }: { read: RetailCanvasRead;
           {pie ? (
             <CitationPieDisc
               pie={pie}
-              tip={`${pie.slices[0]?.key === "measured" ? pie.slices[0].count : 0} of ${pie.total} current findings with a stored reading need action.`}
+              tip={`${formatInt(pie.slices[0]?.key === "measured" ? pie.slices[0].count : 0)} of ${formatInt(pie.total)} current findings with a stored reading need action.`}
             />
           ) : null}
         </div>

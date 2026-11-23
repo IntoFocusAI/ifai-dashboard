@@ -34,7 +34,7 @@ function SlotChart({ chart }: { chart: HubSlotChart }) {
         className="hub-slot-pie"
         style={{ background: pieStyle(chart) }}
         role="img"
-        aria-label={`${chart.part} ${chart.partLabel}. ${rest} ${chart.restLabel}. Total ${chart.total}.`}
+        aria-label={`${formatInt(chart.part)} ${chart.partLabel}. ${formatInt(rest)} ${chart.restLabel}. Total ${formatInt(chart.total)}.`}
       />
       <span>of {formatInt(chart.total)} {chart.unit ?? "listings"}</span>
     </div>

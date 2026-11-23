@@ -1,5 +1,6 @@
 "use client";
 
+import { formatInt } from "@/lib/fender-canvas/format";
 import type { CitationGap } from "@/lib/ai-search/citation-insights";
 import { brandOwned } from "@/lib/brand-copy";
 
@@ -54,7 +55,7 @@ export function GapsCard({
         <ol className="citation-gap-list">
           {visible.map((gap) => {
             const domains = gap.topDomains.length
-              ? `Top cited: ${gap.topDomains.map((d) => `${d.domain} (${d.links})`).join(", ")}`
+              ? `Top cited: ${gap.topDomains.map((d) => `${d.domain} (${formatInt(d.links)})`).join(", ")}`
               : "No third-party links recorded in those answers";
             return (
               <li key={gap.category}>
@@ -63,10 +64,10 @@ export function GapsCard({
                   className="citation-gap-btn"
                   data-citation-gap={gap.category}
                   data-ai-pick={`gap:${gap.category}`}
-                  aria-label={`${gap.count} ${gap.categoryLabel} answers: ${gap.competitor} led and no ${brandOwned()} page was cited. ${domains}. Opens their cited links.`}
+                  aria-label={`${formatInt(gap.count)} ${gap.categoryLabel} answers: ${gap.competitor} led and no ${brandOwned()} page was cited. ${domains}. Opens their cited links.`}
                   onClick={() => onPickGap(gap)}
                 >
-                  <span className="citation-gap-count">{gap.count}</span>
+                  <span className="citation-gap-count">{formatInt(gap.count)}</span>
                   <span className="citation-gap-body">
                     <span>
                       <strong>{gap.categoryLabel}</strong> · {gap.competitor} led

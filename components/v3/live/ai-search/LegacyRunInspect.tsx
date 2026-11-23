@@ -1,5 +1,6 @@
 "use client";
 
+import { formatInt } from "@/lib/fender-canvas/format";
 import { useAiHistory } from "@/components/v3/live/ai-search/AiHistoryContext";
 import { historyFixtureSnapshot } from "@/lib/ai-search/history-fixtures";
 import { cleanPrompt, engineLabel } from "@/lib/ai-search/run-metrics";
@@ -23,7 +24,7 @@ export function LegacyRunInspect() {
             <tbody>
               <tr><td>State</td><td>{run.run_state ? runStateLabel(run.run_state) : "Not recorded"}</td></tr>
               <tr><td>Collector</td><td>{run.collector_version ?? "Not recorded"}</td></tr>
-              <tr><td>Answered of expected</td><td>{run.answered_calls == null || run.expected_calls == null ? "Not recorded" : `${run.answered_calls} of ${run.expected_calls}`}</td></tr>
+              <tr><td>Answered of expected</td><td>{run.answered_calls == null || run.expected_calls == null ? "Not recorded" : `${formatInt(run.answered_calls)} of ${formatInt(run.expected_calls)}`}</td></tr>
               <tr><td>Provider errors</td><td>{run.error_calls == null ? "Not recorded" : run.error_calls}</td></tr>
               <tr><td>Prompt set</td><td>{run.prompt_set_hash ?? "Not recorded"}</td></tr>
             </tbody>
