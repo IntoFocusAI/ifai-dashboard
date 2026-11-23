@@ -33,7 +33,7 @@ Implementation guide for the Functional Design Document.
 
 > • Next.js App Router canvas at /dashboard; browser reads public.canvas\_\* via anon/publishable key; service role never in browser.
 >
-> • Guest dashboard path exists; DASHBOARD_LOGIN_REQUIRED can be false (X-15 TARGET before external clients).
+> • Login required (X-15 CURRENT, 23 Nov 2026, PR 265 main a17b271). The guest path and Skip Login are removed. Roles come only from command.organization_memberships: Staff (active intofocus_admin on the platform org), Org Lead (org_admin), Org User (org_viewer). Canvas reads send the signed-in user's access token so RLS applies; the CSV export route requires a login and serves only a client that login may open.
 >
 > • Hard-coded retailer channels remain (amazon/walmart/musicians-friend).
 >
@@ -81,7 +81,7 @@ Implementation guide for the Functional Design Document.
 >
 > • Catalog Health spoke with seller-type label (R-01/R-02).
 >
-> Actuation records (SC-03) stay TARGET. The Partner-led authorized-seller list saved in this browser is R-18 CURRENT. A per-client database list is R-19 TARGET, before a second client, and takes precedence when it is stored.
+> Actuation records (SC-03) are CURRENT from 23 Nov 2026: staff sign-in is live (PR 265) and the #operations webhook is set. The Partner-led authorized-seller list saved in this browser is R-18 CURRENT. A per-client database list is R-19 TARGET, before a second client, and takes precedence when it is stored.
 >
 > • Observation rows for retailers (R-10); calculation container for R-06/R-09.
 >
@@ -172,15 +172,15 @@ Deterministic: counts, joins, freshness, publication, score arithmetic, suppress
 
 # 13. Auth, tenancy, secrets, audit
 
-> • Auth on before non-IntoFocus users (X-15).
+> • Auth on before non-IntoFocus users (X-15 CURRENT, live 23 Nov 2026).
 >
-> • Tenant predicate in views or signed requests (X-16).
+> • Tenant predicate in views or signed requests (X-16 CURRENT, live 23 Nov 2026).
 >
-> • Client data isolation (1.6, migrations 20261123130000, 20261123130100 and 20261123130200, after the login-roles migrations 20261123120000 and 20261123120100; not applied, Brian Watson applies them with the dashboard's switch to signed-in reads). Roles live only in the command sign-in tables: staff (active intofocus_admin on the platform org, command.is_intofocus_admin()) read every client; an active org_admin (Org Lead) or org_viewer (Org User) reads the client mapped to their org in command.client_organizations (client_key = org slug = data/clients client_key). The rule lives in command.can_read_organization; command.can_read_client_key, command.can_read_schema, command.my_clients() and the private sandbox and set-aside helpers build on it. Client data lives in command and canvas_private (fender), ledlenser and ledlenser_private (ledlenser), sandbox (per row, sandbox.client.organization_id is a command org id) and eight public tables keyed by the set-aside client_key (command.client_organizations.set_aside_key). Never from an id in a request. Every client table has RLS with a client_read policy calling command.can_read_client_key, private.readable_client_ids or private.can_read_set_aside_client; every view over client data runs with security_invoker; materialized views are read through SECURITY DEFINER readers private.mv__<schema>__<name>() that apply the same check (service_role and direct database sessions bypass it, as they bypass RLS); anon reads and executes nothing in the client schemas. Read and write functions over client data check membership first. supabase/tests/catalog_guard.test.sql fails the build on any regression; the full list of changed objects is docs/tdd/1.6-lockdown-inventory.md.
+> • Client data isolation (1.6, migrations 20261123130000, 20261123130100 and 20261123130200, after the login-roles migrations 20261123120000 and 20261123120100; all applied to production on 23 Nov 2026 by Brian Watson together with the dashboard's switch to signed-in reads, PRs 263 and 264; follow-up 20261123140000 closes public.canvas_set_aside_events to anon, PR 267, applied 23 Nov). After apply, anon reads 0 of 156 client relations (61 before); the only public canvas_* view anon can still read is canvas_set_aside_reasons (reason labels, open on purpose). Roles live only in the command sign-in tables: staff (active intofocus_admin on the platform org, command.is_intofocus_admin()) read every client; an active org_admin (Org Lead) or org_viewer (Org User) reads the client mapped to their org in command.client_organizations (client_key = org slug = data/clients client_key). The rule lives in command.can_read_organization; command.can_read_client_key, command.can_read_schema, command.my_clients() and the private sandbox and set-aside helpers build on it. Client data lives in command and canvas_private (fender), ledlenser and ledlenser_private (ledlenser), sandbox (per row, sandbox.client.organization_id is a command org id) and eight public tables keyed by the set-aside client_key (command.client_organizations.set_aside_key). Never from an id in a request. Every client table has RLS with a client_read policy calling command.can_read_client_key, private.readable_client_ids or private.can_read_set_aside_client; every view over client data runs with security_invoker; materialized views are read through SECURITY DEFINER readers private.mv__<schema>__<name>() that apply the same check (service_role and direct database sessions bypass it, as they bypass RLS); anon reads and executes nothing in the client schemas. Read and write functions over client data check membership first. supabase/tests/catalog_guard.test.sql fails the build on any regression; the full list of changed objects is docs/tdd/1.6-lockdown-inventory.md.
 >
 > • One intentional public key; service role server-only.
 >
-> • Writes before login (Done and set-aside, N-08) go through SECURITY DEFINER functions that validate every input. The tables stay closed to the public key. Require a session once auth is on (X-15). 1.6 Step 0a (20261118190000, not applied): EXECUTE on the three set-aside functions and the two prompt functions is revoked from PUBLIC and anon and kept for authenticated and service_role; the dashboard calls them with the signed-in session (lib/supabase/session-client.ts), and a signed-out save shows a sign-in message. Every new public view revokes all from anon and authenticated, then grants SELECT (20261104145317, 20261104152213, 20261104160000); the set-aside views were writable until Brian Watson applied 20261104152213 on 4 Nov 2026.
+> • Writes before login (Done and set-aside, N-08) go through SECURITY DEFINER functions that validate every input. The tables stay closed to the public key. Require a session once auth is on (X-15). 1.6 Step 0a (20261118190000, applied 23 Nov 2026): EXECUTE on the three set-aside functions and the two prompt functions is revoked from PUBLIC and anon and kept for authenticated and service_role; the dashboard calls them with the signed-in session (lib/supabase/session-client.ts), and a signed-out save shows a sign-in message. Every new public view revokes all from anon and authenticated, then grants SELECT (20261104145317, 20261104152213, 20261104160000); the set-aside views were writable until Brian Watson applied 20261104152213 on 4 Nov 2026.
 >
 > • Audit: prompt edits, publication, MAP exceptions, Done, set-aside, and reopen (N-08), uploads, exports, Need help? requests.
 >
@@ -249,7 +249,7 @@ Server-side from the same published query as the screen; CSV for rows at launch,
 |---|---|
 | X-21/X-22/X-23 | Canvas shells + hub slot feed + tooltip removal |
 | H-06/H-07/H-05 | Summary IA + Opportunity drill-downs. H-03 is CURRENT: Summary Briefing shows the AI Consensus score in the findings row, and the result sentence is the tooltip on that title. H-07 stays REFINE. |
-| SC-01 / SC-02 / SC-04 / SC-03 / R-18 | Score service is live for Foundation, Commerce, and Consensus. Actuation records stay TARGET. The Partner-led authorized-seller control saved in this browser is R-18 CURRENT. A per-client database list is R-19 TARGET. |
+| SC-01 / SC-02 / SC-04 / SC-03 / R-18 | Score service is live for Foundation, Commerce, and Consensus. Actuation records are CURRENT (staff sign-in live 23 Nov 2026). The Partner-led authorized-seller control saved in this browser is R-18 CURRENT. A per-client database list is R-19 TARGET. |
 | R-01/R-06/R-09/R-15/R-16/R-17 | Catalog Health + calc + assistant + uploads + out-of-stock estimate |
 | A-02/A-03/A-05/A-09/A-10 | Run pipeline + API engine views and switch + Run Details + fact-check method + alerts + citation rank |
 | D-07/D-08/D-01/D-02 | Amazon Specs and Brand-Site Specs are live. Findability last-checked is X-12 CURRENT. The Amazon Specs hero share uses stored field totals. D-04 is CURRENT. The findability schedule stays D-02 TARGET. D-10 and D-11 are CURRENT. D-09 is REFINE: the Unchecked table leads with a stored reason, and the count is not generally zero. |

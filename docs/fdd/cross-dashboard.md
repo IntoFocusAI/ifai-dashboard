@@ -345,26 +345,26 @@ None. Status words are Poor, Fair, and Good where a figure has no word of its ow
 - **Evidence:** Verified.
 - **Open decision:** None.
 
-**X-15 TARGET** · Launch
+**X-15 CURRENT** · Launch
 
 **Status source:** Explicit
 
-- **Current:** Guest/login gate can be off.
+- **Current:** Login is required on the live dashboard (23 Nov 2026). Signed out, every dashboard link shows the Log in card; Skip Login and the guest Fender link are gone. Three roles: IntoFocus Staff (sees every client and picks one from a dropdown), Org Lead (sees their own brand and adds Org Users) and Org User (sees their own brand only). Downloads also need a login.
 - **Desired:** Watson’s access plan: required auth before non-IntoFocus users. Not a deploy blocker for internal pilots.
 - **User value:** Client data is not casually open.
 - **Acceptance:** Unsigned access disabled for external client tenants.
-- **Evidence:** Verified current guest path.
+- **Evidence:** Live on 23 Nov 2026. Roles: PR 263, applied to production 23 Nov by Brian Watson. Login screens, Manage users and invite flow: PR 265 (main a17b271), with the earlier login work from PR 200 and PR 249 folded in. Checked on the live site by signing in as staff, as a Fender Org Lead test login and as a Ledlenser Org User test login: each saw only what its role allows.
 - **Open decision:** None.
 
-**X-16 TARGET** · Launch
+**X-16 CURRENT** · Launch
 
 **Status source:** Explicit
 
-- **Current:** Single-brand pilot.
+- **Current:** Fender and Ledlenser are separated in the database (23 Nov 2026). Each login reads only the brand its org is linked to; staff read every brand. Someone not signed in can read none of the 156 client tables and views (61 were open before). A link that names another brand sends the user back to their own. General site-type labels (facts about public websites, no client data) are readable by any signed-in user.
 - **Desired:** Tenant partition before the first real client.
 - **User value:** Client data stays isolated.
 - **Acceptance:** No cross-tenant rows in browser-selectable views. Shared reference data (for example site-type labels) holds only facts about the public site, never anything drawn from another client's answers, listings or prompts. Every per-client list, count and export, staff screens included, filters to that client's own data. An automated test loads each client and checks that no other client's domains, ASINs or prompts appear (added by Brian Magazu, 12 Nov 2026, decision 84).
-- **Evidence:** Verified single brand. On 4 Nov 2026 Brian Magazu confirmed Fender and Ledlenser are beta dashboards on real catalogs, not clients yet, so separation waits for the first real client and the dashboards stay open without a login. Hold lifted by Brian Magazu on 17 Nov 2026 (decision 105); Watson is building logins and separation, with shared tables and a client column.
+- **Evidence:** Verified single brand. On 4 Nov 2026 Brian Magazu confirmed Fender and Ledlenser are beta dashboards on real catalogs, not clients yet, so separation waits for the first real client and the dashboards stay open without a login. Hold lifted by Brian Magazu on 17 Nov 2026 (decision 105); Watson is building logins and separation, with shared tables and a client column. Built and live on 23 Nov 2026: client data lockdown PR 264 (main e09c037) and the set-aside history fix PR 267 (main 8389a26), both applied to production 23 Nov by Brian Watson; PR 249 landed through PR 264. Automated database test supabase/tests/client_isolation.test.sql signs in as staff, a Fender Lead, a Fender User, a removed member, a Ledlenser Lead, a user with no brand and a visitor, and checks every client table and view returns only the rows that login may see. The live site was checked as staff, a Fender Org Lead test login and a Ledlenser Org User test login: each saw only its own brand.
 - **Open decision:** None.
 
 **X-17 CURRENT** · Launch

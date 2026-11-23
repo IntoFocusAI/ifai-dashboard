@@ -127,15 +127,15 @@ These are approved design formulas. AI Foundation, AI Commerce, and AI Consensus
 - **Evidence:** Approved by Brian Magazu on 29 Oct 2026. Pull request 92, commits 7bf55cf and b5c6ce2. Published on main at 65e2c79. Who counts as an authorized partner when the brand is Partner-led is R-18 TARGET. Worker 24.3, pull request 152 (main ca22e8a): the seller-type label opens a plain definition and the Controlled Buy Box rule (R-02).
 - **Open decision:** None.
 
-**SC-03 TARGET** · Launch
+**SC-03 CURRENT** · Launch
 
 **Status source:** Explicit meeting
 
-- **Current:** AI Actuation is on Summary → Performance as Not included. The reason on screen is that there is no owner, evidence, or dated record yet. It is not scored as zero, and its weight is left out of AI Consensus.
+- **Current:** AI Actuation is scored on Summary → Performance and its basis shows on Citation Ecosystem. IntoFocus staff, signed in, keep the records (owner, evidence, dates) on the staff-only Actuation records page; clients see the score and its basis. Owned answers (E1) count from day one; planned work and earned placements count only once a record with owner, evidence and an unexpired date exists. Expiry reminders post to #operations at 30, 14 and 3 days.
 - **Desired:** AI Actuation (decisions 77, 78, 96). Planned work at most 40%: P1 community response program 20% (owner, target communities from Citation Ecosystem, cadence); P2 publication and reviewer outreach program 20% (owner, target list). Measured results at least 60%: E1 owned answers 30% (brand pages cited in unbranded discovery); E2 community responses posted 15% and E3 placements earned 15% (links and dates verified by IntoFocus staff, last 90 days). Points require owner, evidence, verification date, and an unexpired date (90 days); reminders at 30, 14 and 3 days; a lapsed factor looks like one never in place. No double counting with Foundation or Commerce. IntoFocus sees record controls; client sees score and basis. Show on Citation Ecosystem and Summary → Performance.
 - **User value:** Actuation is evidenced work, not vibes.
 - **Acceptance:** No points without owner + evidence + dates.
-- **Evidence:** Phase 1 PR 204 (main dffe0b4): records tables and functions applied 16 Nov by PM27, staff Actuation records page. Phase 2 PR 207 (main cd202ab): Actuation card, 40/40/20 weights, E1 from day one at a 15% target, basis on Citation Ecosystem, chart marker. Reminders PR 211 (main 71a61c3, decision 103): daily job posts P1/P2 expiry and E2/E3 lapse reminders at 30, 14 and 3 days to #operations; sent-log applied 17 Nov by PM28, grant applied by Watson. Remaining: staff sign-in (Watson) and the webhook secret from Marc.
+- **Evidence:** Phase 1 PR 204 (main dffe0b4): records tables and functions applied 16 Nov by PM27, staff Actuation records page. Phase 2 PR 207 (main cd202ab): Actuation card, 40/40/20 weights, E1 from day one at a 15% target, basis on Citation Ecosystem, chart marker. Reminders PR 211 (main 71a61c3, decision 103): daily job posts P1/P2 expiry and E2/E3 lapse reminders at 30, 14 and 3 days to #operations; sent-log applied 17 Nov by PM28, grant applied by Watson. The #operations webhook (SLACK_OPERATIONS_WEBHOOK_URL) was set by Marc on 16 Nov. Staff sign-in went live on 23 Nov 2026 with PR 265 (main a17b271) and the roles in PR 263, so staff can now open the Actuation records page and save records.
 - **Open decision:** None.
 
 **SC-04 CURRENT** · Launch
