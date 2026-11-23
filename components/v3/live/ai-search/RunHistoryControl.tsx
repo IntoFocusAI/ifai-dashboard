@@ -294,8 +294,9 @@ export function RunHistoryControl({ mode = "runs" }: { mode?: "runs" | "dates" }
               .
             </p>
           ) : null}
-          {history.catalog.phase === "ready" ? (
+          {datesOnly || history.catalog.phase === "ready" ? (
             <RunHistoryCalendar
+              anyDay={datesOnly}
               runs={visible}
               month={month}
               onMonth={setMonth}

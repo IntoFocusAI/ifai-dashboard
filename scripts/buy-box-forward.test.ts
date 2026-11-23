@@ -22,6 +22,7 @@ import {
 } from "../lib/estimates/buy-box.ts";
 import { buildClientEstimates, joinEstimateListings } from "../lib/estimates/live-inputs.ts";
 import { DEFAULT_PERIOD_DAYS, daysInclusive, periodDaysFor } from "../lib/estimates/period.ts";
+import type { RankCurve } from "../lib/estimates/rank-curve.ts";
 import type { EstimateListingInput } from "../lib/estimates/types.ts";
 import { BUY_BOX_CAUSE_ROW_IDS, BUY_BOX_ROW_ID, buyBoxRowEstimate, fixRowFigure } from "../lib/fender-canvas/action-items-buybox-rows.ts";
 import { fixRowMonthly } from "../lib/fender-canvas/action-items-fix-list.ts";
@@ -230,7 +231,7 @@ test("the 12-month rate is used only when the 30-day rate is not available", () 
   assert.equal(r.trail.inputs.find((i) => i.key === "sales_last_12_months")?.value, 44500);
   assert.equal(r.trail.inputs.find((i) => i.key === "buy_box_days_365")?.value, 170);
   assert.match(r.trail.formula, /fewer than 7 of those days, take its sales in the last 12 months and divide by the days in the last 365/);
-  assert.equal(buyBoxRateSplitText(r), "1 priced on their last 30 days, 3 on their last 12 months, 2 Not available*.");
+  assert.equal(buyBoxRateSplitText(r), "1 priced on their last 30 days, 3 on their last 12 months, 0 estimated from Amazon sales rank, 2 Not available*.");
 });
 
 test("the 12-month rate needs 30 days with the Buy Box in the last 365", () => {
@@ -282,11 +283,11 @@ test("the headline reads Not available*, never $0, when no priced listing has sa
   assert.deepEqual([figure.priced, figure.listings], [1, 3]);
   assert.equal(
     figure.tip,
-    "1 of 3 withheld listings could be priced, and SmartScout reports no sales for it, so the figure is not known rather than $0. Of the rest, 2 have no SmartScout sales record.",
+    "1 of 3 withheld listings could be priced, and SmartScout reports no sales for it, so the figure is not known rather than $0. Of the rest, 2 have no SmartScout sales record and no sales rank estimate.",
   );
   // A row where nothing could be priced says so, with the reasons.
   const none = buyBoxRowEstimate(estimateBuyBox(listings.slice(1), {}, 30));
-  assert.equal(none.tip, "None of the 2 withheld listings could be priced: 2 have no SmartScout sales record.");
+  assert.equal(none.tip, "None of the 2 withheld listings could be priced: 2 have no SmartScout sales record and no sales rank estimate.");
   // Priorities, the map and rank ties get no dollar, not "$0 a month"; Phase 1 leaves the line out.
   const est = buildClientEstimates(listings, { rankCategory: null, dataAsOf: "2026-11-23", salesSources: "measured_only" });
   assert.equal(fixRowMonthly(BUY_BOX_ROW_ID, est), null);
@@ -316,4 +317,124 @@ test("Catalog Health and Action Items: the pill offers date ranges only; the AI 
   const retail = spokes.slice(spokes.indexOf('id === "ecommerce"'), spokes.indexOf('id === "aeo"'));
   assert.equal(retail.match(/<RunHistoryControl mode="dates" \/>/g)?.length, 2);
   assert.ok(!/<RunHistoryControl \/>/.test(retail), "no run pill on Catalog Health or Action Items");
+});
+
+// Round 3 (Brian Magazu, 23 Nov 2026, final): a blank SmartScout revenue is unknown, not $0 (overriding
+// decision 113 for this figure); the Keepa estimate the other lines use is the third rate; the retail
+// pill's calendar allows any day.
+
+const CURVE: RankCurve = {
+  category: "Test",
+  calibratedOn: "2026-11-23",
+  listings: 40,
+  basis: "40 test listings",
+  maxCalibratedRank: 50000,
+  bands: [
+    { maxRank: 10000, listings: 20, low: 3, mid: 6, high: 9 },
+    { maxRank: 50000, listings: 20, low: 0, mid: 0, high: 0 },
+  ],
+};
+const CTX = { rankCurves: { Test: CURVE } };
+const ranked = { price: 100, salesRank: 5000, rankCategory: "Test" };
+
+/**
+ * T: SmartScout $600 over 20 Buy Box days in the last 30: the 30-day rate, though it has a rank.
+ * U: blank 30-day revenue, $6,000 over 300 Buy Box days in the last 365: the 12-month rate.
+ * R: SmartScout's 30-day revenue is a real 0 over 20 Buy Box days: a measured $0.
+ * P: SmartScout record with blank revenue in both windows, rank 5,000: estimated from sales rank,
+ *    3 / 6 / 9 units per 30 days in stock at $100 = $10 / $20 / $30 a day.
+ * S: no SmartScout record, Amazon shows 10 bought in the past month at $50, in stock all 30 days.
+ * Q: like P with no sales rank: Not available*, never $0.
+ * V: SmartScout real 0s, 6 and 29 Buy Box days: too few days, Not available*.
+ */
+const ROUND3: EstimateListingInput[] = [
+  withheld("T", { ...ranked, smartscoutMonthlyRevenue: 600, keepaMonthlySold: 99 }),
+  withheld("U", { ...ranked, smartscoutMonthlyRevenue: null, inStockDays365: 300, noBuyBoxDays365: 0, smartscoutTtmRevenue: 6000 }),
+  withheld("R", { ...ranked, smartscoutMonthlyRevenue: 0 }),
+  withheld("P", { ...ranked, smartscoutMonthlyRevenue: null, smartscoutTtmRevenue: null }),
+  withheld("S", { smartscoutHasRecord: false, keepaMonthlySold: 10, price: 50, inStockDays30: 30, noBuyBoxDays30: 30 }),
+  withheld("Q", { smartscoutMonthlyRevenue: null, smartscoutTtmRevenue: null, price: 100 }),
+  withheld("V", { ...ranked, smartscoutMonthlyRevenue: 0, inStockDays30: 26, noBuyBoxDays30: 20, inStockDays365: 200, noBuyBoxDays365: 171, smartscoutTtmRevenue: 0 }),
+];
+
+test("a blank SmartScout revenue is unknown: the Keepa estimate prices it, else Not available*, never $0", () => {
+  const r = estimateBuyBox(ROUND3, CTX, 30);
+  // P: $10 / $20 / $30 a day x 30 days x 70% / 80% / 90%.
+  assert.deepEqual(row(r, "P")!.range, { low: 210, mid: 480, high: 810 });
+  assert.equal(row(r, "P")!.salesSource, "sales_rank_curve");
+  assert.equal(row(r, "Q")!.range, null);
+  assert.equal(row(r, "Q")!.salesSource, "none");
+  assert.equal(row(r, "Q")!.detail.notAvailableReason, "blank_revenue");
+  assert.match(String(row(r, "Q")!.detail.notAvailable), /^SmartScout has no revenue figure for this listing/);
+  // With estimates off, a blank revenue is Not available*, where round 2 counted it a measured $0.
+  const measuredOnly = estimateBuyBox(ROUND3, { salesSources: "measured_only" }, 30);
+  assert.equal(row(measuredOnly, "P")!.range, null);
+  assert.equal(row(measuredOnly, "P")!.detail.notAvailable, "SmartScout has no revenue figure for this listing, so its sales are not known.");
+  const blank30 = withheld("W", { smartscoutMonthlyRevenue: null });
+  assert.equal(buyBoxRate(blank30).ok, false, "20 Buy Box days and a blank revenue is not a measured $0");
+  // A real 0 stays a measured $0 (decision 113 holds there).
+  assert.deepEqual(row(r, "R")!.range, { low: 0, mid: 0, high: 0 });
+  assert.equal(row(r, "R")!.salesBasis, "measured");
+  assert.equal(r.trail.coverage.reportedNoSales, 1);
+});
+
+test("rate order per listing: last 30 days, then last 12 months, then the Keepa estimate, then Not available*", () => {
+  const rate = (asin: string) => buyBoxRate(ROUND3.find((l) => l.asin === asin)!, CTX);
+  const source = (asin: string) => {
+    const x = rate(asin);
+    return x.ok ? (x.window === "amazon_estimate" ? x.estimate.source : x.window) : `none:${x.reason}`;
+  };
+  assert.deepEqual(
+    ROUND3.map((l) => source(l.asin)),
+    ["last_30_days", "last_12_months", "last_30_days", "sales_rank_curve", "keepa_monthly_sold", "none:blank_revenue", "none:too_few_buy_box_days"],
+  );
+  const r = estimateBuyBox(ROUND3, CTX, 30);
+  // S: 10 x 1 / 1.5 / 2 units at $50 over 30 days in stock = $16.67 / $25 / $33.33 a day; x 30 = $500 / $750 / $1,000.
+  const s = row(r, "S")!.range!;
+  assert.deepEqual([s.low, s.mid, s.high].map(Math.round), [350, 600, 900]);
+  // T $720, U $20 a day x 30 = $600 -> 420 / 480 / 540, R $0, P $480, S $600.
+  assert.deepEqual(r.range, { low: 1610, mid: 2280, high: 3060 });
+  assert.equal(r.trail.coverage.tooltip, "Based on 5 of 7 listings (3 measured, 2 estimated)");
+  assert.equal(r.trail.inputs.find((i) => i.key === "listings_rate_sales_rank")?.value, 1);
+  assert.equal(r.trail.inputs.find((i) => i.key === "listings_rate_monthly_sold")?.value, 1);
+  assert.ok(r.trail.benchmarks.some((b) => b.id === "keepa_monthly_sold_multiplier"), "the estimate's own benchmark is in the trail");
+  assert.match(r.trail.formula, /estimate what it sells on a day in stock from its Amazon sales rank/);
+  assert.ok(r.trail.notes.some((n) => /its low uses the estimate's low and 70%, its high the estimate's high and 90%/.test(n)));
+  // The headline's N of M tooltip splits the priced listings by source.
+  assert.equal(
+    buyBoxRateSplitText(r),
+    "2 priced on their last 30 days, 1 on their last 12 months, 1 estimated from Amazon sales rank, 1 estimated from Amazon's bought-in-past-month figure, 2 Not available*.",
+  );
+  // The same function the other lines use: no copy of the rank curve or the multiplier.
+  const src = readFileSync(new URL("../lib/estimates/buy-box.ts", import.meta.url), "utf8");
+  assert.match(src, /estimatedSalesPerInStockDay\(l, ctx, \{ blankSmartscoutIsUnknown: true \}\)/);
+  assert.ok(!/rankCurveBand|RANK_CURVES\b/.test(src), "no copy of the rank curve lookup");
+});
+
+test("each row's tooltip names its source in plain words", () => {
+  const r = estimateBuyBox(ROUND3, CTX, 30);
+  const tip = (asin: string) => buyBoxListingMath(row(r, asin)!);
+  assert.match(tip("T"), /^Rate from the last 30 days\. /);
+  assert.match(tip("U"), /^Rate from the last 12 months\. /);
+  assert.equal(
+    tip("P"),
+    "Estimated from Amazon sales rank. Listings SmartScout tracks with a similar sales rank (5,000) sell 3 to 9 units per 30 days in stock, 6 mid. At $100.00 that is $10.00 to $30.00 a day, $20.00 mid. Times 30 days times 80% is $480; the low uses the estimate's low and 70%, the high its high and 90%: $210 to $810.",
+  );
+  assert.match(tip("S"), /^Estimated from Amazon's bought-in-past-month figure\. Amazon shows 10 bought in the past month; at 1 to 2 times that \(1\.5 mid\) over 30 days in stock/);
+  for (const asin of ["T", "U", "P", "S"]) {
+    const text = tip(asin);
+    assert.ok(!/—|–/.test(text) && !/\b\w+'(t|re|ll|ve|d)\b/i.test(text), `${asin}: brand voice`);
+  }
+});
+
+test("the retail pill's calendar allows any day; the AI views keep days with a run", () => {
+  const read = (p: string) => readFileSync(new URL(`../${p}`, import.meta.url), "utf8");
+  const control = read("components/v3/live/ai-search/RunHistoryControl.tsx");
+  assert.match(control, /anyDay=\{datesOnly\}/, "only mode \"dates\" turns it on");
+  assert.match(control, /\{datesOnly \|\| history\.catalog\.phase === "ready" \? \(/, "the retail calendar does not wait for the run list");
+  const calendar = read("components/v3/live/ai-search/RunHistoryCalendar.tsx");
+  assert.match(calendar, /anyDay = false,/, "off by default, so the AI views are unchanged");
+  assert.match(calendar, /const enabledDay = anyDay \|\| present\.length > 0;/);
+  assert.match(calendar, /day != null && \(anyDay \|\| byDay\.has\(day\)\)/, "keyboard moves over every day too");
+  assert.equal(read("components/v3/build-live-spokes.tsx").match(/<RunHistoryControl mode="dates" \/>/g)?.length, 2);
 });

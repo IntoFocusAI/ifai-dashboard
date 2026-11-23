@@ -29,7 +29,13 @@ export function RunHistoryCalendar({
   rangeStart,
   rangeEnd,
   onPick,
+  anyDay = false,
 }: {
+  /**
+   * The retail pill (mode "dates"): every day can be picked, not only days with an AI run (Brian
+   * Magazu, 23 Nov 2026). The AI views leave it off.
+   */
+  anyDay?: boolean;
   runs: readonly HistoryRunSummary[];
   month: { year: number; month: number };
   onMonth: (next: { year: number; month: number }) => void;
@@ -50,7 +56,7 @@ export function RunHistoryCalendar({
     return map;
   }, [runs]);
   const cells = monthCells(month.year, month.month);
-  const enabled = cells.filter((day): day is string => day != null && byDay.has(day));
+  const enabled = cells.filter((day): day is string => day != null && (anyDay || byDay.has(day)));
   const [focusOverride, setFocusOverride] = useState<string | null>(null);
   const focusDay = focusOverride && enabled.includes(focusOverride) ? focusOverride : (enabled[0] ?? null);
 
@@ -85,11 +91,11 @@ export function RunHistoryCalendar({
           <span key={day}>{day}</span>
         ))}
       </div>
-      <div role="grid" aria-label="Runs by date" className="ai-history-grid">
+      <div role="grid" aria-label={anyDay ? "Dates" : "Runs by date"} className="ai-history-grid">
         {cells.map((day, index) => {
           if (!day) return <span key={`empty-${index}`} />;
           const present = byDay.get(day) ?? [];
-          const enabledDay = present.length > 0;
+          const enabledDay = anyDay || present.length > 0;
           const partial = present.some(hasPartialCoverage);
           const inRange = rangeStart && rangeEnd ? day >= rangeStart && day <= rangeEnd : false;
           const selected = day === selectedDay || day === rangeStart || day === rangeEnd;
@@ -102,14 +108,16 @@ export function RunHistoryCalendar({
               tabIndex={enabledDay && (focusDay === day || (!focusDay && day === enabled[0])) ? 0 : -1}
               aria-selected={selected}
               aria-label={
-                enabledDay
-                  ? `${formatDay(day)}, ${present.length} ${present.length === 1 ? "run" : "runs"}${partial ? ", partial coverage" : ""}`
-                  : `${formatDay(day)}, no run`
+                anyDay
+                  ? formatDay(day)
+                  : enabledDay
+                    ? `${formatDay(day)}, ${present.length} ${present.length === 1 ? "run" : "runs"}${partial ? ", partial coverage" : ""}`
+                    : `${formatDay(day)}, no run`
               }
-              className={`ai-history-day${enabledDay ? " has-run" : ""}${partial ? " partial" : ""}${selected ? " selected" : ""}${inRange ? " in-range" : ""}`}
+              className={`ai-history-day${enabledDay ? " has-run" : ""}${partial && !anyDay ? " partial" : ""}${selected ? " selected" : ""}${inRange ? " in-range" : ""}`}
               data-ai-history-day={day}
               data-ai-history-enabled={enabledDay ? "true" : "false"}
-              data-ai-history-coverage={enabledDay ? (partial ? "partial" : "full") : "none"}
+              data-ai-history-coverage={anyDay ? "any" : enabledDay ? (partial ? "partial" : "full") : "none"}
               onClick={() => {
                 if (!enabledDay) return;
                 setFocusOverride(day);
@@ -128,7 +136,7 @@ export function RunHistoryCalendar({
           );
         })}
       </div>
-      {enabled.length === 0 ? <p className="ai-history-note">No eligible runs in this month.</p> : null}
+      {enabled.length === 0 && !anyDay ? <p className="ai-history-note">No eligible runs in this month.</p> : null}
     </div>
   );
 }
