@@ -1,5 +1,6 @@
 import { defineConfig, devices } from "@playwright/test";
 import { productionNotice, resolveDbTarget, resolveWorkers } from "./e2e/db-target";
+import { REVIEW_STORAGE_STATE, reviewLoginEnabled } from "./e2e/review-login";
 
 const PORT = Number(process.env.E2E_PORT ?? 3111);
 const BASE_URL = process.env.E2E_BASE_URL ?? `http://localhost:${PORT}`;
@@ -23,6 +24,12 @@ const notice = productionNotice(dbTarget);
 if (notice && !process.env.TEST_WORKER_INDEX) console.warn(notice);
 const overridesDb = Object.keys(dbTarget.serverEnv).length > 0;
 
+/* Signed-in review (docs/worker-briefs.md, "Signed-in review"): with IFAI_REVIEW_EMAIL and
+   IFAI_REVIEW_PASSWORD set, a global setup signs in through the real login form and every test reuses
+   that session against real data. The spawned dev server then runs WITHOUT E2E_AUTH_BYPASS, because
+   the bypass skips the login form. Unset, nothing changes: the bypass session is used. */
+const signedIn = reviewLoginEnabled(process.env);
+
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: true,
@@ -30,6 +37,7 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   workers: resolveWorkers(process.env),
   reporter: process.env.CI ? [["github"], ["html", { open: "never" }]] : [["list"]],
+  globalSetup: signedIn ? "./e2e/review-global-setup.ts" : undefined,
   timeout: 45_000,
   expect: { timeout: 10_000 },
 
@@ -37,6 +45,7 @@ export default defineConfig({
     baseURL: BASE_URL,
     trace: "on-first-retry",
     screenshot: "only-on-failure",
+    storageState: signedIn ? REVIEW_STORAGE_STATE : undefined,
   },
 
   /* A project's viewport wins over the top-level one, so each project sets its own
@@ -78,7 +87,7 @@ export default defineConfig({
            run pointed at a copy always spawns its own and fails if the port is taken.
            Choose a free E2E_PORT. */
         reuseExistingServer: !process.env.CI && !overridesDb,
-        env: { E2E_AUTH_BYPASS: "1", ...dbTarget.serverEnv },
+        env: { ...(signedIn ? {} : { E2E_AUTH_BYPASS: "1" }), ...dbTarget.serverEnv },
         timeout: 120_000,
         stdout: "ignore",
         stderr: "pipe",

@@ -64,7 +64,7 @@ test("critical first, then at risk; within a status the larger share affected le
   assert.ok(Math.abs(rows[0]!.affectedShare! - (1 - 82 / 1041)) < 1e-9, "exact pages: share without an exact page");
 });
 
-test("on track comes after at risk, and a finding with no reading goes last", () => {
+test("a finding with no reading follows the counted ones, and a finding on track follows every item that needs action", () => {
   const rows = rankFixList(
     [
       finding("buy_box", "success", 1, 100),
@@ -78,23 +78,23 @@ test("on track comes after at risk, and a finding with no reading goes last", ()
     [
       ["exact_official_product", "critical"],
       ["map_leakage", "at_risk"],
-      ["buy_box", "on_track"],
       ["splintered_bundles", "no_reading"],
+      ["buy_box", "on_track"],
     ],
   );
 });
 
-test("the priority rule names the order, including the decision 21 actions after the findings", () => {
+test("the priority rule names the one central order (Brian Magazu, 23 Nov 2026)", () => {
   assert.equal(FIX_LIST_TITLE, "Fixes in priority order");
-  assert.match(FIX_LIST_PRIORITY_RULE, /Critical findings come first, then at risk, then on track/);
-  assert.match(FIX_LIST_PRIORITY_RULE, /out-of-stock listings and missing Amazon spec fields, then the brand.s own pages and listings when one of their factors is below Good, then the source, competitor, and fact-check actions/);
-  assert.match(FIX_LIST_PRIORITY_RULE, /weakest engine and the weakest Unbranded Discovery questions that trail the best by 10 points or more, and the cited sites whose share moved by 10% or more/);
-  assert.match(FIX_LIST_PRIORITY_RULE, /counted over the last 30 days with at least 30 answers behind the figure\. Wording the brand.s pages to match shopper questions comes next\. Watch lines come last/);
-  assert.doesNotMatch(FIX_LIST_PRIORITY_RULE, /\u2014/);
+  assert.match(FIX_LIST_PRIORITY_RULE, /One ranking for every list: Priorities, this table, the Roadmap, the deck, and the map/);
+  assert.match(FIX_LIST_PRIORITY_RULE, /Critical items come first, then At risk, then the rest\. A Critical or At risk item that touches under 5% of all monitored listings, or of all resolved AI answers, ranks with the rest and keeps its tag\. Within each, first by reach: the share of all resolved AI answers, or of all monitored listings, each gap touches, compared in whole percentage points/);
+  assert.match(FIX_LIST_PRIORITY_RULE, /Ties go to the larger monthly analyst estimate, then to the smaller effort \(small: a listing or offer fix; medium: catalog and site content; large: an outreach program\)/);
+  assert.match(FIX_LIST_PRIORITY_RULE, /Unbranded Discovery is the result every fix moves/);
+  assert.doesNotMatch(FIX_LIST_PRIORITY_RULE, /\u2014|n't/);
 });
 
 test("an estimate passed to the ranking is kept for its row", () => {
-  const rows = rankFixList(LIVE.map(input), { map_leakage: "+$1K est." });
+  const rows = rankFixList(LIVE.map(input), null, { map_leakage: "+$1K est." });
   assert.equal(rows.find((row) => row.finding.id === "map_leakage")?.estimate, "+$1K est.");
   assert.equal(rows.filter((row) => row.estimate).length, 1);
   assert.equal(FIX_ESTIMATE_LABEL, "analyst estimate");

@@ -13,13 +13,18 @@ import { markPartial, type PartialFigure } from "@/lib/fender-canvas/canvas-read
 import type { StockLossRead } from "@/lib/fender-canvas/minimal-metric-kit";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
 import { ownedAnswersFromAi } from "@/lib/fender-canvas/actuation-e1";
+import { planWithAplus } from "@/lib/fender-canvas/action-items-aplus-row";
+import { bulletsFromBundle } from "@/lib/fender-canvas/action-items-bullets-row";
+import { tallyCommercial } from "@/lib/ai-search/run-metrics";
+import { formatInt } from "@/lib/fender-canvas/format";
+import type { ReachTotals } from "@/lib/fender-canvas/priority-rank";
 import { isoDay } from "@/lib/fender-canvas/actuation-score";
 import { actuationActions, suggestedTargets, targetAnswers, withOwnedAnswersGap } from "@/lib/fender-canvas/roadmap-actuation";
 import { phaseWindow } from "@/lib/fender-canvas/roadmap-dates";
 import { withLatestRunTips } from "@/lib/fender-canvas/roadmap-latest";
 import { focusActions, type FocusWindows, type HeldItem, type PlanFocus } from "@/lib/fender-canvas/roadmap-focus";
 import { ownPagesAction } from "@/lib/fender-canvas/roadmap-own-pages";
-import { buildPlan, focusPlan, phaseLabel, type PlanItem } from "@/lib/fender-canvas/roadmap-plan";
+import { buildPlan, focusPlan, phaseLabel, planFigure, type PlanItem } from "@/lib/fender-canvas/roadmap-plan";
 import { signalActions } from "@/lib/fender-canvas/roadmap-signals";
 import { SOURCE_RUNS_WINDOW, sourceActions } from "@/lib/fender-canvas/roadmap-sources";
 import { poolFocusWindow, previousWindowEnd, windowSummary, type WindowSummary } from "@/lib/fender-canvas/roadmap-window";
@@ -142,6 +147,17 @@ export type RoadmapPlanInput = {
  * rebuilt on every read, so actions whose trigger clears drop off and new ones enter. Each AI row
  * names the newest run's count in its tooltip. The staff focus narrows it to one category.
  */
+/**
+ * Rule 1's common bases: all resolved AI answers in the date-pill read, and all monitored
+ * listings (the retail population the Buy Box reading counts). The rank takes the larger of each
+ * and every item's own base.
+ */
+export function reachTotals(retail: RetailCanvasRead, ai: AiSearchRead): ReachTotals {
+  const answers = ai.phase === "ready" ? tallyCommercial(ai.snapshot.calls).resolved : null;
+  const listings = retail.phase === "ready" ? (retail.snapshot.suppressedListings.detail?.population ?? null) : null;
+  return { answers: answers || null, listings: listings || null };
+}
+
 export function assembleRoadmapPlan(input: RoadmapPlanInput): RoadmapPlanRead {
   const { retail, bundle, findability, ai, aiStale, stock, sources, windows, focus } = input;
   const { findings } = briefingFindingsLead(retail, findability, ai, { aiStale });
@@ -159,6 +175,7 @@ export function assembleRoadmapPlan(input: RoadmapPlanInput): RoadmapPlanRead {
       ? [{ id: "focus:window", label: "The last 30 days", guardrail: "data", detail: windows.message }, ...focused.held]
       : focused.held;
   const signals = signalActions({ retail, ai, stock });
+  const estimates = bundle?.estimates?.phase === "ready" ? bundle.estimates.estimates : null;
   const built = buildPlan({
     findings,
     signals,
@@ -166,8 +183,12 @@ export function assembleRoadmapPlan(input: RoadmapPlanInput): RoadmapPlanRead {
     ownPages: ownAction,
     focus: focused.actions,
     actuation,
+    estimates,
+    reach: reachTotals(retail, ai),
+    extra: [bulletsFromBundle(bundle)].filter((item) => item != null),
   });
-  const plan = withLatestRunTips(built, sources.phase === "ready" ? (sources.snapshots[0] ?? null) : null, signals);
+  // The A+ row joins the one ranking here, so Priorities, the map, and the deck see it too.
+  const plan = withLatestRunTips(planWithAplus(built, estimates),sources.phase === "ready" ? (sources.snapshots[0] ?? null) : null, signals);
   const window = windows.phase === "ready" ? windows.summary : null;
   const waiting: SourceRunsRead = windows.phase === "loading" ? { phase: "loading" } : sources;
   return { plan: focusPlan(plan, focus), findings, sources: waiting, ai, held, window, ownPagesReason: own.reason };
@@ -189,14 +210,15 @@ export function targetsLine(item: PlanItem): string | null {
 
 /** One fix-list row as the screen reads it; stacked lines are joined with " · ". */
 export function fixListCells(item: PlanItem, today: Date): string[] {
-  const figure = markPartial(item.loading ? BRIEFING_LOADING : item.percent, item.partial);
+  const shown = planFigure(item);
+  const figure = markPartial(item.loading ? BRIEFING_LOADING : shown.percent, item.partial);
   return [
     String(item.rank),
     joined(item.kind === "finding" ? null : item.fact, item.action, targetsLine(item)),
-    joined(item.label, item.siteType, item.ratio ? `${figure} ${item.ratio}` : figure),
+    joined(shown.label, item.siteType, shown.ratio ? `${figure} ${shown.ratio}` : figure),
     item.statusLabel,
     joined(phaseLabel(item.phase), item.phase ? phaseWindow(item.phase, today).label : null),
     `${item.open.tab} tab`,
-    item.pages.map((page) => `${page.url} (${page.answers} ${page.answers === 1 ? "answer" : "answers"})`).join("; "),
+    item.pages.map((page) => `${page.url} (${formatInt(page.answers)} ${page.answers === 1 ? "answer" : "answers"})`).join("; "),
   ];
 }

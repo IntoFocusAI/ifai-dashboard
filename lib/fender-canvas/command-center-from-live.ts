@@ -1,9 +1,12 @@
 import { clientStorageKey } from "@/lib/client/active-client";
 import { activeSetAsideClientKey } from "@/lib/set-aside/keys";
-import type { CommandCenterSpec } from "@/lib/canvas-sdk/types";
+import type { CommandCenterSpec, PriorityItem, PriorityOwner } from "@/lib/canvas-sdk/types";
 import { aiCommandSummary, aiPriorityItems } from "@/lib/ai-search/canvas-surfaces";
 import type { AiSearchRead } from "@/lib/ai-search/types";
+import { markPartial } from "@/lib/fender-canvas/canvas-reads";
 import { formatInt } from "@/lib/fender-canvas/format";
+import { countFigure, severityOf, SEVERITY_FLOOR_SENTENCE, type Severity } from "@/lib/fender-canvas/priority-rank";
+import { emptyPlanLine, firstMove, inPriorities, type PlanItem } from "@/lib/fender-canvas/roadmap-plan";
 import { bulletCounts } from "@/lib/fender-canvas/listing-content";
 import { specPageCounts } from "@/lib/fender-canvas/machine-readability";
 import {
@@ -50,11 +53,94 @@ function mapPriority(retail: RetailCanvasRead): { title: string; why: string } {
   return { title, why: mapMissingSentence(retail) ?? mapChannelWhy() };
 }
 
-/** Command center copy from the canvas reads. Unsourced counts are omitted. */
+/**
+ * Plan items that keep the id Priorities stored their set-asides and owners under, and their
+ * default owner, so a saved set-aside still applies.
+ */
+const KEPT_IDS: Readonly<Record<string, { id: string; owner: PriorityOwner }>> = {
+  "finding:buy_box": { id: "buybox-suppression", owner: "intofocus" },
+  "finding:map_leakage": { id: "map-leakage", owner: "client" },
+};
+
+/** The Priorities id for a plan item (the hub slots and the Briefing read the same ids). */
+export function priorityId(planId: string): string {
+  return KEPT_IDS[planId]?.id ?? planId;
+}
+
+export { inPriorities };
+
+/** The Priorities card's word for each level of the one severity order (priority-rank.ts). */
+const PRIORITY_SEVERITY: Record<Severity, PriorityItem["severity"]> = {
+  critical: "critical",
+  at_risk: "high",
+  moderate: "moderate",
+  low: "moderate",
+};
+
+/**
+ * The item's figure line from its one count (priority-rank.ts countFigure), so the card shows the
+ * same N as its rank reason. An item with no single count shows its label and its own figure.
+ */
+export function planFigureLine(item: PlanItem): string {
+  if (item.count) return countFigure(item.count);
+  const figure = item.ratio ? markPartial(item.ratio, item.partial) : null;
+  return figure ? `${item.label}: ${figure}` : item.label;
+}
+
+/**
+ * One Priorities card from a plan item: the task, why it ranks where it does, and the finding
+ * behind it. A grouped item lists its members after its figure.
+ */
+export function priorityFromPlan(item: PlanItem): PriorityItem {
+  const kept = KEPT_IDS[item.id];
+  const lead = planFigureLine(item);
+  const members = item.members?.length ? `. ${item.members.map((member) => `${member.label} (${member.ratio})`).join("; ")}` : "";
+  return {
+    id: priorityId(item.id),
+    title: item.title,
+    why: item.reason,
+    impact: `${lead}${members}`,
+    severity: PRIORITY_SEVERITY[item.inputs.severity ?? severityOf(item.tone)],
+    spokeId: item.open.spokeId,
+    subTab: item.open.tab,
+    ...(kept ? { defaultOwner: kept.owner } : {}),
+  };
+}
+
+export const PRIORITIES_DESC = `Every fix in one order: Critical items first, then At risk, then the rest. ${SEVERITY_FLOOR_SENTENCE} Within each, the share of all resolved AI answers or all monitored listings each gap touches, then the monthly analyst estimate, then the smaller effort. Action Items, the Roadmap, the deck, and the map read the same order.`;
+
+/** Priorities lists the first 10 items of the central order (Brian Magazu, 23 Nov 2026 fix round). */
+export const PRIORITIES_CAP = 10;
+
+/**
+ * Every plan item that needs action, in the central order, as Priorities cards. Its positions
+ * are the plan's ranks, so the map cards read their rank from it. Priorities shows the first
+ * PRIORITIES_CAP; the deck's fix slide shows the first five with a stored reading.
+ */
+export function priorityItems(plan: readonly PlanItem[]): PriorityItem[] {
+  return plan.filter(inPriorities).map(priorityFromPlan);
+}
+
+/**
+ * TODAY'S READ opens on central #1 (firstMove), the first card below it: "First move: Publish one
+ * fender.com page for each exact product. Listings without an exact official product page: 1,018 of 1,109."
+ */
+export function firstMoveLine(plan: readonly PlanItem[]): string | null {
+  const first = firstMove(plan);
+  if (!first) return null;
+  return `First move: ${first.title}. ${planFigureLine(first)}.`;
+}
+
+/**
+ * Command center copy from the canvas reads. With the plan (the one central ranking), the queue is
+ * the plan's items that need action, in rank order. Without it (first paint, server tests), the
+ * queue falls back to the reads it has. Unsourced counts are omitted.
+ */
 export function buildLiveCommandCenter(
   bundle: CanvasBundle,
   retail: RetailCanvasRead = { phase: "loading" },
   ai: AiSearchRead = { phase: "loading" },
+  plan: readonly PlanItem[] | null = null,
 ): CommandCenterSpec {
   const schemaPages = specPageCounts(bundle.specPages);
   const bullets = bulletCounts(bundle.listingContent);
@@ -68,7 +154,7 @@ export function buildLiveCommandCenter(
   const aiLine = aiCommandSummary(ai);
   if (aiLine) summaryParts.push(aiLine);
 
-  return {
+  const base = {
     badge: "COMMAND CENTER · TODAY",
     title: "What do I need to worry about?",
     desc: "The highest-value moves across the monitored electric catalog, ranked by what they cost you while they sit open.",
@@ -76,6 +162,15 @@ export function buildLiveCommandCenter(
     openByDefault: true,
     storageKey: clientStorageKey("ifai:fender:command-center"),
     setAsideClientKey: activeSetAsideClientKey(),
+  };
+  if (plan?.length) {
+    // The read leads with the list's first item, then the AI run line.
+    const lead = firstMoveLine(plan);
+    const summary = [lead ?? emptyPlanLine(plan), aiLine].filter(Boolean).join(" ");
+    return { ...base, summary, desc: PRIORITIES_DESC, items: priorityItems(plan).slice(0, PRIORITIES_CAP) };
+  }
+  return {
+    ...base,
     items: [
       {
         id: "buybox-suppression",

@@ -5,6 +5,7 @@ import { useAiHistory } from "@/components/v3/live/ai-search/AiHistoryContext";
 import { useEngineGroupRead } from "@/components/v3/live/ai-search/EngineGroupScope";
 import { useFindability } from "@/components/v3/live/findability/FindabilityContext";
 import { useStockLossRead } from "@/components/v3/live/useMinimalMetricReads";
+import { useRoadmapPlan } from "@/components/v3/live/RoadmapPlanData";
 import { useSummaryAiStale } from "@/components/v3/live/useSummaryAiRead";
 import { brandName, brandSite, leadBrand } from "@/lib/brand-copy";
 import { buildDeck } from "@/lib/deck/deck-model";
@@ -57,9 +58,11 @@ export function useDeckModel(bundle: CanvasBundle, retail: RetailCanvasRead): De
   const aiStale = useSummaryAiStale(tabRead);
   const findability = useFindability();
   const stock = useStockLossRead();
+  // Slide s9 lists the first five fixes of the one central ranking Action Items shows.
+  const { plan, sources: planSources } = useRoadmapPlan(retail, bundle);
 
   return useMemo<DeckLoad>(() => {
-    const pending = [tabRead.phase, retail.phase, findability.phase, stock.phase].includes("loading");
+    const pending = [tabRead.phase, retail.phase, findability.phase, stock.phase, planSources.phase].includes("loading");
     if (pending) return { phase: "loading" };
     const model = buildDeck({
       brand: brandName(),
@@ -76,7 +79,8 @@ export function useDeckModel(bundle: CanvasBundle, retail: RetailCanvasRead): De
       outOfStockLine: outOfStockLine(bundle),
       phaseOneLift: estimate(phaseOneLiftEstimate(bundle)),
       enterprisePotential: estimate(enterprisePotentialEstimate(bundle)),
+      plan,
     });
     return { phase: "ready", model };
-  }, [aiStale, bundle, findability, history.controlLabel, retail, stock, tabRead]);
+  }, [aiStale, bundle, findability, history.controlLabel, plan, planSources.phase, retail, stock, tabRead]);
 }

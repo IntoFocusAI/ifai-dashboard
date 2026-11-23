@@ -65,6 +65,30 @@ propose status changes in the pull request body.
   Download CSV); weights at or under 600; Geist Mono only for labels and
   table numbers.
 
+### Signed-in review
+
+Since the client isolation and login-role changes, data reads need a real
+signed-in user; the `E2E_AUTH_BYPASS` session passes the login gate but reads
+fail ("permission denied for view canvas_metrics"). Every screenshot, top-10
+read, e2e result and preview check you report as evidence must come from a
+session signed in as the read-only review account (Org User on every client,
+not staff). Its credentials are the environment variables `IFAI_REVIEW_EMAIL`
+and `IFAI_REVIEW_PASSWORD`. Never commit, print or log them. If they are not
+set, the helpers stop with "IFAI_REVIEW_EMAIL/IFAI_REVIEW_PASSWORD not set;
+ask the PM"; report that rather than using bypass evidence.
+
+- Screenshot (local dev server started without `E2E_AUTH_BYPASS`, or a
+  preview such as `https://deploy-preview-<PR>--ifai-dashboard.netlify.app`):
+  `node scripts/review-screenshot.mjs <baseUrl> "/dashboard?client=ledlenser" out.png --width 1920 --height 1080`
+  It signs in through the real form, waits for content, prints the visible
+  text length and saves the image. Default size is 1280x720.
+- E2E signed in: with the two variables set, `npx playwright test` signs in
+  once (`e2e/review-login.ts`, state saved to the git-ignored `e2e/.auth/`),
+  starts the dev server without the bypass, and runs against real data.
+  `E2E_BASE_URL=<preview URL> npx playwright test <spec>` does the same
+  against a preview. With the variables unset the suite keeps the bypass
+  session as before.
+
 ### Cost rules
 
 - Read files by range (`grep -n`, `sed -n`), never `cat` a whole large
