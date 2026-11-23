@@ -1,20 +1,30 @@
 /* Which client brand the dashboard shows.
 
-   Testing switcher until login ships: the `client` query parameter picks the
-   brand (`?client=ledlenser`). No parameter means Fender. Each client's data
-   lives in its own database schema, so a page only ever reads one brand.
+   The client list comes from the settings files in data/clients/ (lib/client/registry.ts).
+   Testing switcher until login ships: the `client` query parameter picks the brand
+   (`?client=ledlenser`). No parameter means the client whose settings set is_default.
+   Each client's data lives in its own database schema, so a page only ever reads one brand.
 
-   The choice is read once per page load and then fixed. Switching brands is a
-   full page load (see clientHref), so no screen can mix two brands' data. */
+   The choice is read once per page load and then fixed. Switching brands is a full page load
+   (see clientHref), so no screen can mix two brands' data. Every accessor reads the client per
+   call, never at import, so a server export can set the client per request. */
 
-export type ClientKey = "fender" | "ledlenser";
+import { clientRegistry } from "./registry";
+import type { ClientSettings } from "./settings-schema";
 
+/**
+ * A client_key from data/clients/. Any string typed as ClientKey must come from isClientKey,
+ * parseClientKey, listClientKeys or activeClientKey, which check it against the settings files.
+ */
+export type ClientKey = string;
+
+/** The settings record in the camelCase shape the screens already read. */
 export type ClientProfile = {
   key: ClientKey;
   /** Brand name as it reads in copy: "Fender", "Ledlenser". */
   brandName: string;
   /** Database schema that holds this client's canvas_* views. */
-  schema: "public" | "ledlenser";
+  schema: string;
   /** client_key in public.issue_set_asides. */
   setAsideKey: string;
   /** White logo for the dark Summary bubble. Null shows the brand name. */
@@ -23,7 +33,7 @@ export type ClientProfile = {
   brandSiteDomains: string[];
   /** Short label for the brand's own website: "fender.com". */
   brandSiteLabel: string;
-  /** Staff can write this client's list from Build prompts (Fender only today). The Prompts screen is view-only for every client (decision 99). */
+  /** Staff can write this client's list from Build prompts. The Prompts screen is view-only for every client (decision 99). */
   promptsEditable: boolean;
   /** Who is meant to hold the Amazon Buy Box. Partner-led: Amazon and named dealers. Brand-led: the brand's own seller accounts. */
   sellerModel: "Partner-led" | "Brand-led";
@@ -35,48 +45,72 @@ export type ClientProfile = {
    * calls, e.g. "acoustics") narrows the plan to that category plus the brand-wide items.
    */
   roadmapFocusCategory: string | null;
+  /** The full settings record. */
+  settings: ClientSettings;
 };
 
 export const CLIENT_PARAM = "client";
 
-export const CLIENTS: Record<ClientKey, ClientProfile> = {
-  fender: {
-    key: "fender",
-    brandName: "Fender",
-    schema: "public",
-    setAsideKey: "fmic",
-    logoSrc: "/image.png",
-    brandSiteDomains: ["fender.com", "shop.fender.com"],
-    brandSiteLabel: "fender.com",
-    promptsEditable: true,
-    sellerModel: "Partner-led",
-    defaultBuyBoxPartners: ["Austin Bazaar", "GearTree"],
-    roadmapFocusCategory: null,
-  },
-  ledlenser: {
-    key: "ledlenser",
-    brandName: "Ledlenser",
-    schema: "ledlenser",
-    setAsideKey: "ledlenser",
-    logoSrc: "/ledlenser-logo-white.png",
-    brandSiteDomains: ["ledlenser.com", "ledlenserusa.com"],
-    brandSiteLabel: "ledlenser.com",
-    promptsEditable: false,
-    sellerModel: "Brand-led",
-    defaultBuyBoxPartners: [],
-    roadmapFocusCategory: null,
-  },
-};
+function profileFrom(settings: ClientSettings): ClientProfile {
+  return {
+    key: settings.client_key,
+    brandName: settings.display_name,
+    schema: settings.data_schema,
+    setAsideKey: settings.set_aside_key,
+    logoSrc: settings.logo_src,
+    brandSiteDomains: settings.owned_domains,
+    brandSiteLabel: settings.brand_site_label,
+    promptsEditable: settings.prompts_editable,
+    sellerModel: settings.seller_type === "partner_led" ? "Partner-led" : "Brand-led",
+    defaultBuyBoxPartners: settings.default_authorized_partners,
+    roadmapFocusCategory: settings.roadmap_focus_category,
+    settings,
+  };
+}
 
-export const CLIENT_KEYS = Object.keys(CLIENTS) as ClientKey[];
+/** Every client's settings record, in switcher order. */
+export function listClients(): readonly ClientSettings[] {
+  return clientRegistry();
+}
+
+/** Every client key, in switcher order. */
+export function listClientKeys(): ClientKey[] {
+  return clientRegistry().map((c) => c.client_key);
+}
 
 export function isClientKey(value: unknown): value is ClientKey {
-  return typeof value === "string" && Object.prototype.hasOwnProperty.call(CLIENTS, value);
+  return typeof value === "string" && clientRegistry().some((c) => c.client_key === value);
+}
+
+/** The client shown with no ?client= parameter. */
+export function defaultClientKey(): ClientKey {
+  return clientRegistry().find((c) => c.is_default)!.client_key;
+}
+
+/** A known client key, or the default client for anything else (missing, misspelled, unknown). */
+export function parseClientKey(value: unknown): ClientKey {
+  return isClientKey(value) ? value : defaultClientKey();
+}
+
+/** One client's settings record. Throws for a key that is not in data/clients/. */
+export function getClientSettings(key: ClientKey): ClientSettings {
+  const settings = clientRegistry().find((c) => c.client_key === key);
+  if (!settings) throw new Error(`Unknown client "${key}". Known clients: ${listClientKeys().join(", ")}.`);
+  return settings;
+}
+
+/** One client's profile. Throws for a key that is not in data/clients/. */
+export function clientProfile(key: ClientKey): ClientProfile {
+  return profileFrom(getClientSettings(key));
+}
+
+/** The client for one set_aside_key ("fmic"), or null. */
+export function clientKeyForSetAsideKey(setAsideKey: string): ClientKey | null {
+  return clientRegistry().find((c) => c.set_aside_key === setAsideKey)?.client_key ?? null;
 }
 
 export function clientKeyFromSearch(search: string): ClientKey {
-  const raw = new URLSearchParams(search).get(CLIENT_PARAM);
-  return isClientKey(raw) ? raw : "fender";
+  return parseClientKey(new URLSearchParams(search).get(CLIENT_PARAM));
 }
 
 let resolved: ClientKey | null = null;
@@ -90,38 +124,43 @@ function serverClientKey(): ClientKey | undefined {
   return isClientKey(key) ? key : undefined;
 }
 
-/** The brand for this page load. Fender on the server and in tests, unless a request set one. */
+/** The brand for this page load. The default client on the server and in tests, unless a request set one. */
 export function activeClientKey(): ClientKey {
   const fromServer = serverClientKey();
   if (fromServer) return fromServer;
   if (resolved) return resolved;
-  if (typeof window === "undefined") return "fender";
+  if (typeof window === "undefined") return defaultClientKey();
   resolved = clientKeyFromSearch(window.location.search);
   return resolved;
 }
 
 export function activeClient(): ClientProfile {
-  return CLIENTS[activeClientKey()];
+  return clientProfile(activeClientKey());
+}
+
+/** The settings record for the brand on screen. */
+export function activeClientSettings(): ClientSettings {
+  return getClientSettings(activeClientKey());
 }
 
 /** Brand name for copy: "Fender" or "Ledlenser". */
 export function brandName(): string {
-  return activeClient().brandName;
+  return activeClientSettings().display_name;
 }
 
 /**
- * Browser storage key for the brand on screen. Fender keeps its existing keys;
- * other brands get their own, so saved choices never cross brands.
+ * Browser storage key for the brand on screen. The default client keeps its existing keys
+ * (written with "fender" in them); other brands get their own, so saved choices never cross brands.
  */
 export function clientStorageKey(fenderKey: string): string {
   const key = activeClientKey();
-  if (key === "fender") return fenderKey;
+  if (key === defaultClientKey()) return fenderKey;
   return fenderKey.includes("fender") ? fenderKey.replace("fender", key) : `${fenderKey}:${key}`;
 }
 
 /** Dashboard URL for another client. Drops open panels, which belong to the old brand. */
 export function clientHref(key: ClientKey, pathname: string): string {
-  if (key === "fender") return pathname;
+  if (key === defaultClientKey()) return pathname;
   const params = new URLSearchParams();
   params.set(CLIENT_PARAM, key);
   return `${pathname}?${params.toString()}`;

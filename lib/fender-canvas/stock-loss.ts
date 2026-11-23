@@ -14,6 +14,24 @@ import type { PartialFigure } from "@/lib/fender-canvas/canvas-reads";
 import { formatInt } from "@/lib/fender-canvas/format";
 import { combineStale, mergePartial, RECHECK_DAYS, rowsStale } from "@/lib/fender-canvas/row-stale";
 import { getCanvasSupabase } from "../supabase/canvas-client";
+import { brandName } from "@/lib/brand-copy";
+import { activeClientSettings } from "@/lib/client/active-client";
+
+/**
+ * The yearly line the Out of Stock tab shows beside its missed-sales hero (E4, decision 112): line 1,
+ * brand-level after the brand-loss share, from the shared estimate read (lib/estimates).
+ */
+export const STOCK_LOSS_ESTIMATE_LINE = "out_of_stock" as const;
+
+/**
+ * Who ran out, for the Out of Stock analyst-estimate tooltip. Keyed on the seller type in the client
+ * settings (P-15): a partner-led brand sells through dealers.
+ */
+export function stockOutSellerTip(): string {
+  return activeClientSettings().seller_type === "partner_led"
+    ? `${brandName()} sells through dealers, so the data shows that a listing ran out but not whether ${brandName()} or the dealer did.`
+    : "The data shows that a listing ran out, not which seller ran out.";
+}
 
 export type RevenueSource = "brand_reported" | "smartscout";
 

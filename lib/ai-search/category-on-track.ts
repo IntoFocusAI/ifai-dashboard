@@ -3,22 +3,23 @@ import { categoryLabel, engineLabel, isCommercial, isError } from "@/lib/ai-sear
 import type { AiCallRow } from "@/lib/ai-search/types";
 import { brandName, leadBrand, leadBrandOr } from "@/lib/brand-copy";
 import { PARTIAL_TITLE, partialFigureTip } from "@/lib/fender-canvas/canvas-reads";
+import { formatInt } from "@/lib/fender-canvas/format";
 
-/** Who leads one category on unbranded discovery. */
+/** Who leads one category on Unbranded Discovery. */
 export type CategoryLeadStatus = "on_track" | "tied" | "behind" | "not_available";
 
 export type CategoryLead = {
   key: string;
   label: string;
   status: CategoryLeadStatus;
-  /** Resolved unbranded discovery answers in this category. Both lead counts use it as the denominator. */
+  /** Resolved Unbranded Discovery answers in this category. Both lead counts use it as the denominator. */
   resolved: number;
   fenderLeads: number;
   otherLeads: number;
   /** Fender/Squier named most with a confirmed product error. Counted in `resolved`, in neither lead. */
   disqualified: number;
   topRival: { brand: string; wins: number } | null;
-  /** Unbranded discovery questions sent in this category, answered or not. */
+  /** Unbranded Discovery questions sent in this category, answered or not. */
   asked: number;
 };
 
@@ -30,19 +31,23 @@ export const LEAD_STATUS_LABELS: Record<CategoryLeadStatus, string> = {
 };
 
 const LEAD_STATUS_DEFINITIONS: Record<Exclude<CategoryLeadStatus, "not_available">, string> = {
-  on_track:
-    `${leadBrandOr()} was named most in more of this category's resolved unbranded discovery answers than any single other brand.`,
-  tied: `${leadBrand()} and the top other brand were each named most in the same number of this category's resolved unbranded discovery answers.`,
-  behind:
-    `One other brand was named most in more of this category's resolved unbranded discovery answers than ${leadBrandOr()}.`,
+  get on_track() {
+    return `${leadBrandOr()} was named most in more of this category's resolved Unbranded Discovery answers than any single other brand.`;
+  },
+  get tied() {
+    return `${leadBrand()} and the top other brand were each named most in the same number of this category's resolved Unbranded Discovery answers.`;
+  },
+  get behind() {
+    return `One other brand was named most in more of this category's resolved Unbranded Discovery answers than ${leadBrandOr()}.`;
+  },
 };
 
 export function leadStatusDefinition(lead: Pick<CategoryLead, "status" | "asked">): string {
   if (lead.status !== "not_available") return LEAD_STATUS_DEFINITIONS[lead.status];
   if (lead.asked <= 0) {
-    return "This category has no unbranded discovery questions, so no brand leads it on that measure. The table below shows its branded consideration rate.";
+    return "This category has no Unbranded Discovery questions, so no brand leads it on that measure. The table below shows its Branded Consideration rate.";
   }
-  return "No unbranded discovery answer in this category had a clear leader, so no brand leads it on that measure.";
+  return "No Unbranded Discovery answer in this category had a clear leader, so no brand leads it on that measure.";
 }
 
 /** Fender/Squier against the single brand named most, not against every other brand together. */
@@ -87,8 +92,9 @@ export function categoryLeads(groups: readonly RoleGroupTally[], calls: readonly
     );
 }
 
-export const ON_TRACK_DEFINITION =
-  `A category is on track when ${leadBrandOr()} is named most in more of its resolved unbranded discovery answers than any single other brand. Level with the top other brand reads Tied. Branded consideration is not part of this test. The pie counts every category, including any the Who leads chip hides.`;
+export function onTrackDefinition(): string {
+  return `A category is on track when ${leadBrandOr()} is named most in more of its resolved Unbranded Discovery answers than any single other brand. Level with the top other brand reads Tied. Branded Consideration is not part of this test. The pie counts every category, including any the Who leads chip hides.`;
+}
 
 /** The two hero rates ignore the Who leads chip, like the on-track pie. */
 export const HERO_RATES_NOTE = "These count every category, including any the Who leads chip hides.";
@@ -96,17 +102,19 @@ export const HERO_RATES_NOTE = "These count every category, including any the Wh
 /** Battlecard table caveats. They sit in each column header's tooltip, not on screen. */
 export const BATTLE_COLUMN_NOTES = {
   competitor:
-    "The other brand named most in the most of this category's resolved unbranded discovery answers, and how many it led. Branded consideration and the questions listed under the table are not counted.",
+    "The other brand named most in the most of this category's resolved Unbranded Discovery answers, and how many it led. Branded Consideration and the questions listed under the table are not counted.",
   leads:
-    "Resolved unbranded discovery answers in this category where another brand was named most. Branded consideration and the questions listed under the table are not counted.",
-  leader:
-    `Unbranded discovery and branded consideration answers in this category where no brand was named most. They stay out of both ${brandName()}-lead rates.`,
-  errors:
-    `Unbranded discovery and branded consideration calls in this category where the AI engine returned no answer. They stay out of both ${brandName()}-lead rates.`,
+    "Resolved Unbranded Discovery answers in this category where another brand was named most. Branded Consideration and the questions listed under the table are not counted.",
+  get leader() {
+    return `Unbranded Discovery and Branded Consideration answers in this category where no brand was named most. They stay out of both ${brandName()}-lead rates.`;
+  },
+  get errors() {
+    return `Unbranded Discovery and Branded Consideration calls in this category where the AI engine returned no answer. They stay out of both ${brandName()}-lead rates.`;
+  },
 } as const;
 
 export type CategoryLeadSummary = {
-  /** Categories with at least one resolved unbranded discovery answer. */
+  /** Categories with at least one resolved Unbranded Discovery answer. */
   measured: number;
   onTrack: number;
   /** Labels in display order. */
@@ -155,8 +163,8 @@ export function restLeads(lead: Pick<CategoryLead, "otherLeads" | "topRival">): 
 export function leadSentence(lead: CategoryLead): string {
   if (lead.status === "not_available") {
     return lead.asked > 0
-      ? "No unbranded discovery answer in this category had a clear leader."
-      : "No unbranded discovery questions in this category.";
+      ? "No Unbranded Discovery answer in this category had a clear leader."
+      : "No Unbranded Discovery questions in this category.";
   }
   const rival = lead.topRival;
   const rest = restLeads(lead);
@@ -164,7 +172,7 @@ export function leadSentence(lead: CategoryLead): string {
   const restPart = rival && rest > 0 ? ` Other brands lead ${rest}.` : "";
   const flagged =
     lead.disqualified > 0 ? ` ${lead.disqualified} more named ${leadBrand()} most with a confirmed product error.` : "";
-  return `${leadBrand()} leads ${lead.fenderLeads} of ${lead.resolved} resolved answers.${rivalPart}${restPart}${flagged}`;
+  return `${leadBrand()} leads ${formatInt(lead.fenderLeads)} of ${formatInt(lead.resolved)} resolved answers.${rivalPart}${restPart}${flagged}`;
 }
 
 /** Same shape CitationPieDisc draws. Slice keys pick the shared slice colors. */
@@ -180,7 +188,7 @@ function pie(id: string, title: string, total: number, totalLabel: string, slice
   return { id, title, total, totalLabel, slices: slices.filter((slice) => slice.count > 0) };
 }
 
-/** On track, tied, and behind out of the categories with a resolved unbranded discovery answer. */
+/** On track, tied, and behind out of the categories with a resolved Unbranded Discovery answer. */
 export function onTrackPie(summary: CategoryLeadSummary): LeadPie | null {
   if (summary.measured <= 0) return null;
   return pie("category-on-track", "Categories on track", summary.measured, "categories with resolved answers", [
@@ -193,7 +201,7 @@ export function onTrackPie(summary: CategoryLeadSummary): LeadPie | null {
 /** Fender/Squier, the top rival, and every other brand, out of the category's resolved unbranded answers. */
 export function categoryLeadPie(lead: CategoryLead): LeadPie | null {
   if (lead.status === "not_available" || lead.resolved <= 0) return null;
-  return pie(`category-${lead.key}`, lead.label, lead.resolved, "resolved unbranded discovery answers", [
+  return pie(`category-${lead.key}`, lead.label, lead.resolved, "resolved Unbranded Discovery answers", [
     { key: "fender", label: `${leadBrand()} leads`, count: lead.fenderLeads },
     { key: "competitor_brand", label: lead.topRival ? `${lead.topRival.brand} leads` : "Top rival leads", count: lead.topRival?.wins ?? 0 },
     { key: "other", label: "Other brands lead", count: restLeads(lead) },
@@ -209,7 +217,9 @@ export const NO_BATTLECARD_FILTER: BattlecardFilter = { engine: "", lead: "all" 
 
 export const LEAD_FILTER_LABELS: Record<LeadFilter, string> = {
   all: "All categories",
-  fender: `${leadBrand()} leads`,
+  get fender() {
+    return `${leadBrand()} leads`;
+  },
   other: "Another brand leads",
 };
 

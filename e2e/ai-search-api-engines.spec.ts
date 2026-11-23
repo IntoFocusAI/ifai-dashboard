@@ -122,17 +122,17 @@ test.describe("API engines beside the search engines", () => {
     await expect(page.locator(".ai-engine-comparison tr[data-engine='openai_api']")).toContainText("ChatGPT API");
     await expect(page.locator(".ai-engine-comparison tr[data-engine='openai_api']")).toHaveAttribute("data-engine-group", "api");
     await expect(page.locator(".ai-engine-comparison tr[data-engine='crescent_api']")).toHaveCount(0);
-    await expect(lead).toContainText("Competitors led 3 of 8 resolved unbranded discovery answers.");
+    await expect(lead).toContainText("Competitors led 3 of 8 resolved Unbranded Discovery answers.");
 
     await choose(page, "search");
     await expect(rows).toHaveCount(2);
     await expect(page.locator(".ai-engine-comparison tr[data-engine-group='api']")).toHaveCount(0);
-    await expect(lead).toContainText("Competitors led 1 of 4 resolved unbranded discovery answers.");
+    await expect(lead).toContainText("Competitors led 1 of 4 resolved Unbranded Discovery answers.");
 
     await choose(page, "api");
     await expect(rows).toHaveCount(2);
     await expect(page.locator(".ai-engine-comparison tr[data-engine='gemini_api']")).toContainText("50.0% (1 of 2)");
-    await expect(lead).toContainText("Competitors led 2 of 4 resolved unbranded discovery answers.");
+    await expect(lead).toContainText("Competitors led 2 of 4 resolved Unbranded Discovery answers.");
 
     // One switch: the choice made here holds on the AI Search tabs.
     await canvas.openSpokeFromMap("AI Search Visibility");

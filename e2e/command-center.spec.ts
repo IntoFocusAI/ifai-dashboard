@@ -53,7 +53,7 @@ test.describe("command center", () => {
     await expect(quadrants.nth(1)).toHaveText(String(total));
     await expect(quadrants.nth(0)).toHaveText(String(critical));
 
-    await setAside(canvas.priority("Buy Box withheld"), "discontinued", "", "Test Person");
+    await setAside(canvas.priority("Buy Box Withheld"), "discontinued", "", "Test Person");
     await expect(canvas.priorities).toHaveCount(total - 1);
     await expect(quadrants.nth(1)).toHaveText(String(total - 1));
     await expect(page.locator(".cc-cleared summary")).toContainText("0 done · 1 set aside");
@@ -62,7 +62,7 @@ test.describe("command center", () => {
   test("set aside needs a reason and a name, and is stored server-side", async ({ canvas, page, setAsides }) => {
     await canvas.openCommandCenter();
     const total = await queueTotal(canvas);
-    const item = canvas.priority("Buy Box withheld");
+    const item = canvas.priority("Buy Box Withheld");
     await item.locator("[data-cc-set-aside]").click();
     const form = item.locator("[data-set-aside-form]");
     await form.locator("[data-set-aside-save]").click();
@@ -96,7 +96,7 @@ test.describe("command center", () => {
   test("done needs only a name and is counted apart from set aside", async ({ canvas, page, setAsides }) => {
     await canvas.openCommandCenter();
     const total = await queueTotal(canvas);
-    const item = canvas.priority("Buy Box withheld");
+    const item = canvas.priority("Buy Box Withheld");
     await item.locator("[data-cc-done]").click();
     const form = item.locator("[data-done-form]");
     await form.locator("[data-set-aside-name]").fill("Test Person");
@@ -135,7 +135,7 @@ test.describe("command center", () => {
 
   test("work can be assigned and survives a reload", async ({ canvas }) => {
     await canvas.openCommandCenter();
-    const item = canvas.priority("Buy Box withheld");
+    const item = canvas.priority("Buy Box Withheld");
     await expect(item.locator(".cc-owner-btn.active")).toHaveText("IntoFocus AI");
 
     await item.locator(".cc-owner-btn", { hasText: "Client team" }).click();
@@ -144,7 +144,7 @@ test.describe("command center", () => {
     await canvas.reload();
     await canvas.openCommandCenter();
     await expect(
-      canvas.priority("Buy Box withheld").locator(".cc-owner-btn.active"),
+      canvas.priority("Buy Box Withheld").locator(".cc-owner-btn.active"),
     ).toHaveText("Client team");
   });
 
@@ -157,7 +157,7 @@ test.describe("command center", () => {
 
   /* Each priority must land on the tab that actually holds its evidence. */
   const routes = [
-    ["Buy Box withheld", "Retail Overview"],
+    ["Buy Box Withheld", "Retail Overview"],
     ["machine-readable spec", "Brand-Site Specs"],
     ["below MAP", "MAP"],
     ["out-mention Fender/Squier", "Competitor Wins"],
@@ -174,7 +174,7 @@ test.describe("command center", () => {
   test("the back control returns to the queue", async ({ canvas }) => {
     await canvas.openCommandCenter();
     const total = await queueTotal(canvas);
-    await canvas.openPriority("Buy Box withheld");
+    await canvas.openPriority("Buy Box Withheld");
     await canvas.backToPriorities();
     await expect(canvas.priorities).toHaveCount(total);
   });

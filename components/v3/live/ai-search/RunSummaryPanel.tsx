@@ -68,7 +68,9 @@ function groupSortValue(
 const SIM = AI_TABS.simulations;
 
 /** Why a lead with a confirmed contradiction sits outside the wins. Lives in the count's tooltip. */
-const DISQUALIFIED_TIP = `These answers named ${leadBrand()} most and contradicted a fact IntoFocus verified on a ${brandName()} page, so they are not counted as wins.`;
+function disqualifiedTip(): string {
+  return `These answers named ${leadBrand()} most and contradicted a fact IntoFocus verified on a ${brandName()} page, so they are not counted as wins.`;
+}
 
 const groupKey = (row: RoleGroupTally) => row.key;
 
@@ -94,7 +96,7 @@ function RoleRate({
   mixed,
 }: {
   tally: RoleTally;
-  term: "unbranded discovery" | "branded consideration";
+  term: "Unbranded Discovery" | "Branded Consideration";
   label: string;
   bands: { redBelow: number; greenAbove: number };
   unit: "run" | "selection";
@@ -154,7 +156,7 @@ function SummaryLead({ snapshot, unit, mixed }: { snapshot: AiSearchSnapshot; un
       <div className="metric-grid-2" data-ai-run-summary-lead="">
         <RoleRate
           tally={roles.unbranded}
-          term="unbranded discovery"
+          term="Unbranded Discovery"
           label="Unbranded Discovery"
           bands={UNBRANDED_RATE_BANDS}
           unit={unit}
@@ -162,7 +164,7 @@ function SummaryLead({ snapshot, unit, mixed }: { snapshot: AiSearchSnapshot; un
         />
         <RoleRate
           tally={roles.branded}
-          term="branded consideration"
+          term="Branded Consideration"
           label="Branded Consideration"
           bands={BRANDED_RATE_BANDS}
           unit={unit}
@@ -217,7 +219,7 @@ function WinCard({ snapshot }: { snapshot: AiSearchSnapshot }) {
         </li>
         {s.commercial.disqualified > 0 ? (
           <li>
-            <CopyTip label="Confirmed contradiction" description={DISQUALIFIED_TIP}>
+            <CopyTip label="Confirmed contradiction" description={disqualifiedTip()}>
               {formatInt(s.commercial.disqualified)} {brandName()} leads
             </CopyTip>{" "}
             with a <AiTerm term="confirmed contradiction" />

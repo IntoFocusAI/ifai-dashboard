@@ -11,7 +11,8 @@ import {
   unnestedBundlesFinding,
   type SuppressionSupportRow,
 } from "../lib/fender-canvas/portfolio-retail.ts";
-import { buildLiveTourSteps, retailTourLines } from "../lib/fender-canvas/tour-from-live.ts";
+import { specHero } from "../lib/fender-canvas/retail-overview-lead.ts";
+import { buildLiveTourSteps, retailTourLines, specTourLine } from "../lib/fender-canvas/tour-from-live.ts";
 import type { CanvasBundle } from "../lib/fender-canvas/types.ts";
 
 /** About one rendered line in the 440px tour card at 12px. The e2e spec checks the real wrap. */
@@ -210,17 +211,21 @@ test("the short lines keep the live figures", () => {
   assert.match(step("specs"), /^184 of 184 fender\.com pages have no spec block$/m);
   assert.match(step("specs"), /^82 exact official product pages, 1,544 family pages$/m);
   assert.match(step("specs"), /^333 No Defensible Pages, 8 ambiguous, 74 unchecked$/m);
-  assert.match(step("specs"), /^14 missing-field rows are on Amazon Specs$/m);
-  assert.match(step("suggestions"), /Phase 1: .*est\./);
-  assert.match(step("suggestions"), /Enterprise: .*est\./);
+  // PM29 item 7: the tour counts the listings the Amazon Specs hero and the Action Items finding count.
+  const specs = PARTIAL_RETAIL.phase === "ready" ? specHero(PARTIAL_RETAIL.snapshot) : null;
+  const specLine = specTourLine(PARTIAL_RETAIL);
+  assert.ok(step("specs").split("\n").includes(specLine));
+  if (specs?.numerator != null && specs.denominator != null) {
+    assert.match(specLine, new RegExp(`^${(specs.denominator - specs.numerator).toLocaleString("en-US")} of ${specs.denominator.toLocaleString("en-US")}\\*? checked listings are missing an Amazon spec field$`));
+  } else {
+    assert.equal(specLine, "Amazon Specs: Not available*");
+  }
+  // No estimates read in this bundle: the formula figures read Loading until it lands (H-09).
+  assert.match(step("suggestions"), /^Phase 1: Loading$/m);
+  assert.match(step("suggestions"), /^Enterprise: Loading$/m);
 });
 
-test("a failed missing-field read still says Not available* and names its source", () => {
-  const failed = bundle({
-    unavailable: { missing: { source: "canvas_spec_missing_fields", message: "x" } },
-  } as Partial<CanvasBundle>);
-  const specs = buildLiveTourSteps(failed).find((s) => s.nodeId === "specs")!;
-  assert.ok(
-    specs.displays.includes("Amazon Specs missing-field rows: Not available* (canvas_spec_missing_fields did not load)"),
-  );
+test("a failed retail read still says Not available* on the tour's Amazon Specs line", () => {
+  assert.equal(specTourLine({ phase: "error", message: "x" } as RetailCanvasRead), "Amazon Specs: Not available* (retail read did not load)");
+  assert.equal(specTourLine({ phase: "loading" }), "Amazon Specs: loading");
 });

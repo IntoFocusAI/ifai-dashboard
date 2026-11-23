@@ -1,6 +1,7 @@
 import type { ListingContentSummary } from "@/lib/fender-canvas/listing-content";
 import type { SpecPageSummary } from "@/lib/fender-canvas/machine-readability";
 import type { ClientBasis } from "@/lib/fender-canvas/actuation-records";
+import type { ClientEstimatesRead } from "@/lib/estimates/live-inputs";
 
 export type CanvasMetricsRow = {
   kpi?: Record<string, unknown> | null;
@@ -10,6 +11,8 @@ export type CanvasMetricsRow = {
   seller_harvested_pct: number | null;
   division_count: number | null;
   bb_total: number | null;
+  /** Brand-led clients only: listings whose Buy Box seller is one of the brand's own seller accounts. */
+  bb_brand?: number | null;
   bb_1p: number | null;
   bb_3p: number | null;
   bb_unharvested: number | null;
@@ -213,4 +216,6 @@ export type CanvasBundle = {
   unavailable?: Partial<Record<CanvasReadKey, CanvasReadFailure>>;
   /** SC-03 Actuation basis (public.actuation_basis). Null when that read failed; absent before it is read. */
   actuation?: ClientBasis | null;
+  /** Dollar estimates (lib/estimates/live-inputs). Read after the bundle; absent until it starts. */
+  estimates?: ClientEstimatesRead;
 };

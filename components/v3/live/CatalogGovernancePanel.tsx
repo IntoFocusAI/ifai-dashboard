@@ -18,7 +18,7 @@ import {
 
 /** One name for the figure everywhere (X-18): splintering may cover more than bundles. */
 const SPLINTERED_LISTINGS_LABEL = "Splintered Listings";
-const SPECS_COMPLETE_LABEL = "Specs complete";
+const SPECS_COMPLETE_LABEL = "Specs Complete";
 const SPLINTERED_TABLE_ID = "catalog-governance-splintered-table";
 const SPECS_TABLE_ID = "catalog-governance-specs-table";
 

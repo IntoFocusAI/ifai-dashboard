@@ -10,7 +10,7 @@ import { EvidenceLink } from "@/components/v3/live/ai-search/EvidenceLink";
 import { ExternalLink } from "@/components/v3/live/ai-search/ExternalLink";
 import { useAiExportScope } from "@/components/v3/live/ai-search/useAiExport";
 import { AI_TABS } from "@/lib/ai-search/canvas-surfaces";
-import { PROBE_STATE_LABELS, type ProbeEvidence, type ProbeState } from "@/lib/ai-search/drift";
+import { PROBE_STATE_LABELS, evidenceQuote, type ProbeEvidence, type ProbeState } from "@/lib/ai-search/drift";
 import { AMAZON_DIFFERS_TITLE, ANCHOR_TIP, ANCHOR_TITLE, amazonDiffersTip } from "@/lib/ai-search/fact-check-copy";
 import { engineLabel, formatRunTime } from "@/lib/ai-search/run-metrics";
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
@@ -115,7 +115,7 @@ export function FactCheckTable({ rows, windowed = false }: { rows: ProbeEvidence
                       </AiStatusTag>
                     </div>
                   ) : null}
-                  {row.evidence ? <div style={mutedText}>Conflicting text: {row.evidence}</div> : null}
+                  {row.evidence ? <div style={mutedText}>Conflicting text: {evidenceQuote(row.evidence)}</div> : null}
                 </td>
                 <td>{formatRunTime(row.checkedAt)}</td>
               </tr>

@@ -11,7 +11,7 @@
  * --dry-run prints each client's scores and the SQL, and writes nothing.
  */
 import { spawnSync } from "node:child_process";
-import { CLIENT_KEYS, CLIENTS } from "../lib/client/active-client.ts";
+import { clientProfile, listClientKeys } from "../lib/client/active-client.ts";
 import { runWithClient } from "../lib/client/server-client.ts";
 import { scoreSnapshotFromReads, snapshotSaveSql, weekStartUtc } from "../lib/fender-canvas/score-snapshot.ts";
 import { loadScoreSnapshotReads } from "../lib/fender-canvas/score-snapshot-reads.ts";
@@ -33,8 +33,8 @@ const commit = process.env.GITHUB_SHA ?? null;
 const statements: string[] = [];
 const skipped: string[] = [];
 
-for (const key of CLIENT_KEYS) {
-  const client = CLIENTS[key];
+for (const key of listClientKeys()) {
+  const client = clientProfile(key);
   // Read and score inside the client's scope: the brand name and the required spec fields the
   // formula uses come from the active client, as on that client's dashboard.
   const snapshot = await runWithClient(key, async () =>
@@ -64,7 +64,7 @@ if (statements.length > 0) {
     console.error(`The save failed: ${result.error?.message ?? result.stderr?.trim() ?? `psql exited ${result.status}`}`);
     process.exit(1);
   }
-  console.log(`Saved ${statements.length} of ${CLIENT_KEYS.length} clients for the week of ${weekStart}.`);
+  console.log(`Saved ${statements.length} of ${listClientKeys().length} clients for the week of ${weekStart}.`);
 }
 
 // A client whose scores could not be read fails the run, so the missed week shows in Actions.

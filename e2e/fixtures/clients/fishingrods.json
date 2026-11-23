@@ -1,0 +1,49 @@
+{
+  "client_key": "fishingrods",
+  "is_default": false,
+  "set_aside_key": "fishingrods",
+  "display_name": "Northline Rods",
+  "legal_name": "Northline Rods Inc.",
+  "data_schema": "fishingrods",
+  "column_naming": "neutral",
+  "logo_src": null,
+  "lead_brand_label": "Northline",
+  "lead_brand_phrase": "Northline",
+  "brand_name_terms": ["northline"],
+  "product_line_terms": [],
+  "portfolio_brands": ["Northline Rods"],
+  "owned_domains": ["northlinerods.example"],
+  "brand_site_label": "northlinerods.example",
+  "regional_site_rule": false,
+  "seller_type": "brand_led",
+  "brand_seller_ids": [],
+  "default_authorized_partners": [],
+  "amazon_brand_names": ["Northline"],
+  "product_types": ["FISHING_ROD"],
+  "vertical": "fishing",
+  "competitors": [
+    { "name": "Shimano", "terms": ["shimano"], "domains": ["shimano.com"] },
+    { "name": "St. Croix", "terms": ["st. croix", "st croix"], "domains": ["stcroixrods.com"] }
+  ],
+  "retailers": [
+    { "key": "walmart", "name": "Walmart", "recheck_days": 2 }
+  ],
+  "data_sources": {
+    "ai_search": false,
+    "ai_api": false,
+    "amazon_offers": false,
+    "keepa_history": false,
+    "walmart": false,
+    "musiciansfriend": false,
+    "amazon_specs": false,
+    "amazon_sales": false,
+    "brand_site": false,
+    "brand_sheet": false
+  },
+  "collector_version_pin": null,
+  "prompts_editable": false,
+  "roadmap_focus_category": null,
+  "revenue_inputs": null,
+  "catalog_rotation_rule": null,
+  "category_short_labels": {}
+}

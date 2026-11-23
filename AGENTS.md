@@ -57,9 +57,11 @@ The live dashboard reads the production Supabase database. In cloud agent enviro
 
 The client portal never discusses IntoFocus fees, retainers, monthly charges, or whether the brand's estimated lift justifies IntoFocus's price. Do not show a service-fee multiple.
 
-## Parked follow-up
+## Dollar estimates (unparked 17 Nov 2026, decision 111)
 
-Phase 1 and full-enterprise dollar figures stay labeled as analyst estimates. Opening each figure to its inputs and formula is a later pass. Do not invent that formula, and do not hold other fixes for it.
+Brian Magazu wants a best-effort brand revenue estimate for as much of the recommended activity as possible. Be bold rather than qualify everything: where data is missing, estimate from the most credible data available, cite sources, and use ranges where honest (say so). Figures stay labeled "analyst estimate", and each opens to its inputs, sources and formula in plain language. Every formula is proposed to Brian and ships only after he approves it; weak estimates can be cut back later. Inputs not yet collected (for example a catalog's total revenue beyond Amazon) can be gathered during client onboarding.
+
+Every value and source the estimates use is in docs/benchmark-register.md, called "the benchmark register"; a test keeps it equal to lib/estimates/benchmarks.ts.
 
 ## Design documents
 

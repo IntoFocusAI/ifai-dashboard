@@ -39,7 +39,8 @@ import { formatInt } from "@/lib/fender-canvas/format";
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
 import { isWindowHistoryKind } from "@/lib/ai-search/window-display";
-import { brandName, isFenderClient, leadBrand, leadBrandOr } from "@/lib/brand-copy";
+import { brandName, leadBrand, leadBrandOr } from "@/lib/brand-copy";
+import { countsWithLeadSentence } from "@/lib/ai-search/brand-words";
 
 function notedColumn(id: keyof typeof BATTLE_COLUMN_NOTES, name: string, sort: "text" | "number", width: number, min: number) {
   return { ...clientColumn(id, name, sort, width, min), headerTooltip: { title: name, description: BATTLE_COLUMN_NOTES[id] } };
@@ -205,14 +206,12 @@ function Battlecards({ snapshot }: { snapshot: AiSearchSnapshot }) {
         </div>
         <div className="ceo-callout-body">
           A category is on track when {leadBrand()} leads more of its resolved{" "}
-          <AiTerm term="unbranded discovery">unbranded discovery</AiTerm> answers than any single other brand, tied when
+          <AiTerm term="Unbranded Discovery">Unbranded Discovery</AiTerm> answers than any single other brand, tied when
           the top other brand leads as many, and behind when one other brand leads more. Each category also shows two{" "}
-          {brandName()}-lead rates, unbranded discovery and{" "}
-          <AiTerm term="branded consideration">branded consideration</AiTerm>. A <AiTerm term="Fender lead" /> means{" "}
+          {brandName()}-lead rates, Unbranded Discovery and{" "}
+          <AiTerm term="Branded Consideration">Branded Consideration</AiTerm>. A <AiTerm term="Fender lead" /> means{" "}
           {leadBrandOr()} was named more than any other brand.
-          {isFenderClient()
-            ? " Squier counts with Fender because it is Fender's entry-level line against Yamaha and Ibanez."
-            : null}
+          {countsWithLeadSentence() ? ` ${countsWithLeadSentence()}` : null}
         </div>
       </div>
     </div>

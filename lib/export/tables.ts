@@ -66,9 +66,14 @@ export function exportHref(tableId: string, clientKey: string): string {
   return clientKey === "fender" ? base : `${base}?client=${encodeURIComponent(clientKey)}`;
 }
 
+/** A saved file named for the figure where the table id keeps an older internal name (X-18). */
+const EXPORT_FILE_STEM: Partial<Record<string, string>> = {
+  "catalog-bundles": "splintered-listings",
+};
+
 /** File name the browser saves: "map-listings-2026-11-09.csv". */
 export function exportFileName(tableId: string, now = new Date()): string {
-  return `${tableId}-${now.toISOString().slice(0, 10)}.csv`;
+  return `${EXPORT_FILE_STEM[tableId] ?? tableId}-${now.toISOString().slice(0, 10)}.csv`;
 }
 
 /** The prompt list in the prompts editor, which is not a ResizableTable. */

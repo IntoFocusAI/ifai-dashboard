@@ -10,7 +10,7 @@ function read(rel: string): string {
   return readFileSync(new URL(rel, root), "utf8");
 }
 
-const spec = JSON.parse(read("data/fender-v3-spec.json")) as {
+const spec = JSON.parse(read("data/canvas-narrative.json")) as {
   spokes: {
     suggestions: { tabs: string[]; tabTemplates: string[] };
   };
@@ -28,11 +28,10 @@ test("Action Items has two tabs: the fix list and Revenue Estimates", () => {
   assert.equal(joined.includes("toggleRoiMode"), false);
   assert.equal(joined.includes("segmented-btn"), false);
 
-  const revenue = spec.spokes.suggestions.tabTemplates[1] ?? "";
-  assert.match(revenue, /\{phase_one_lift\}/);
-  assert.match(revenue, /\{enterprise_potential\}/);
-  assert.match(revenue, /\$50M midpoint/);
-  assert.doesNotMatch(revenue, /Monthly potential lost brand revenue|since last time|what changed/i);
+  // Revenue Estimates is generated from each client's data (H-09): the template is empty and the tab renders OpportunityEstimates.
+  assert.equal(spec.spokes.suggestions.tabTemplates[1], "");
+  assert.match(read("components/v3/build-live-spokes.tsx"), /1: \(bundle\) => <OpportunityEstimates read=\{bundle\.estimates\} \/>/);
+  assert.doesNotMatch(read("components/v3/live/estimates/OpportunityEstimates.tsx"), /Monthly potential lost brand revenue|since last time|what changed/i);
 });
 
 test("an old Current findings link lands on Urgent Interventions, and nothing links to it", () => {
@@ -65,10 +64,11 @@ test("links that opened Interactive ROI now open Revenue Estimates", () => {
   const canvas = read("lib/fender-canvas/build-canvas-spec.tsx");
   const destinations = read("scripts/metric-widget-destinations.test.ts");
 
-  for (const source of [metrics, live, slots]) {
+  for (const source of [metrics, live]) {
     assert.doesNotMatch(source, /Interactive ROI Model/);
     assert.match(source, /subTab:\s*"Revenue Estimates"/);
   }
+  assert.doesNotMatch(slots, /Interactive ROI Model/);
   assert.match(canvas, /subTab:\s*"Revenue Estimates"/);
   assert.doesNotMatch(canvas, /subTab:\s*"roi"/);
   assert.match(destinations, /"phase-one-lift": "Revenue Estimates"/);

@@ -5,6 +5,7 @@ import { useState } from "react";
 import { ConsensusComponentBars, COMPONENTS_ID } from "@/components/v3/live/ConsensusScoreView";
 import { RetailShareDisc, RetailStatusMark } from "@/components/v3/live/RetailOverviewFigure";
 import { RetailOverviewLead } from "@/components/v3/live/RetailOverviewLead";
+import { ScoreOutOf100 } from "@/components/v3/live/ScoreOutOf100";
 import { authorizedPartnersFromSave } from "@/lib/fender-canvas/authorized-sellers";
 import { useAuthorizedSellers } from "@/lib/fender-canvas/authorized-sellers-store";
 import {
@@ -53,14 +54,16 @@ function CommerceCard({
       </span>
       <span className="retail-overview-hero-row">
         <span className="retail-overview-hero-figures">
-          <span
-            className="ai-lead-figure"
-            data-consensus-pillar-score=""
-            data-consensus-pillar-included="true"
-            style={{ color: tone ? scoreToneColor(score) : "var(--text-muted)" }}
-          >
-            {score == null ? "Not available" : scoreFigure(score)}
-          </span>
+          <ScoreOutOf100 show={score != null}>
+            <span
+              className="ai-lead-figure"
+              data-consensus-pillar-score=""
+              data-consensus-pillar-included="true"
+              style={{ color: tone ? scoreToneColor(score) : "var(--text-muted)" }}
+            >
+              {score == null ? "Not available" : scoreFigure(score)}
+            </span>
+          </ScoreOutOf100>
           {score != null ? (
             <span className="retail-overview-hero-ratio" data-consensus-target="">
               {scoreTargetLabel()}

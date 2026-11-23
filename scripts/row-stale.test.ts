@@ -27,8 +27,8 @@ test("a row is stale after twice its recheck interval, not at it", () => {
   assert.ok(read(2.1, 1));
   assert.equal(read(4, 2), null);
   assert.ok(read(4.1, 2));
-  assert.equal(read(6, RECHECK_DAYS.musiciansFriend), null);
-  assert.ok(read(34, RECHECK_DAYS.musiciansFriend));
+  assert.equal(read(6, 3), null);
+  assert.ok(read(34, 3));
   assert.equal(read(14, RECHECK_DAYS.weekly), null);
   assert.ok(read(15, RECHECK_DAYS.weekly));
 });
@@ -88,7 +88,7 @@ test("Buy Box and suppression: featured_offer_checked_at, stale after 2 days", (
   assert.equal(reading.stale?.missing, "1 of 2 listings has no Buy Box check in 2 days");
 });
 
-test("MAP leakage: Amazon 1 day, Walmart 1 day for Fender and 2 days for Ledlenser, Musician's Friend 3 days", () => {
+test("MAP Leakage: Amazon 1 day, Walmart 1 day for Fender and 2 days for Ledlenser, Musician's Friend 3 days", () => {
   const row = (wmtAge: number) => ({
     asin: "A",
     map_price: 100,
@@ -128,8 +128,8 @@ test("channel lines carry a per-channel note from each channel's own listings", 
     assert.equal(stale.Amazon, null);
     assert.equal(stale.Walmart, null);
     assert.equal(stale["Musician's Friend"]?.missing, "1 of 2 listings has no Musician's Friend price check in 6 days");
-    assert.match(channelReadingNote("Musician's Friend", { walmartMissing: 0, channelStale: stale }) ?? "", /^1 of 2 listings has no Musician's Friend price check in 6 days\./);
-    assert.equal(channelReadingNote("Amazon", { walmartMissing: 0, channelStale: stale }), null);
+    assert.match(channelReadingNote("Musician's Friend", { channelStale: stale }) ?? "", /^1 of 2 listings has no Musician's Friend price check in 6 days\./);
+    assert.equal(channelReadingNote("Amazon", { channelStale: stale }), null);
   } finally {
     resetActiveClientForTests(null);
   }

@@ -2,7 +2,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
-  AUTHORIZED_BUY_BOX_PARTNERS,
   buyBoxSellerCensus,
   COMMERCE_COMPONENT_SPECS,
   CONTROLLED_BUY_BOX_PLACEHOLDER_TOOLTIP,
@@ -14,13 +13,16 @@ import {
   isAmazonRetailSeller,
   isAuthorizedBuyBoxPartner,
   isControlledBuyBoxSeller,
-  REQUIRED_MARKETPLACE_SPEC_FIELDS,
-  REQUIRED_MARKETPLACE_SPEC_LABELS,
   requiredMarketplaceSpecShare,
   rescaleComponents,
   shareScore,
   type ScoreComponentInput,
 } from "../lib/fender-canvas/consensus-scores.ts";
+import { getClientSettings } from "../lib/client/index.ts";
+import {
+  GUITAR_PLACEHOLDER_SPEC_FIELDS as REQUIRED_MARKETPLACE_SPEC_FIELDS,
+  GUITAR_PLACEHOLDER_SPEC_LABELS as REQUIRED_MARKETPLACE_SPEC_LABELS,
+} from "../lib/findability/placeholder-spec-fields.ts";
 
 test("rescale: a dropped component does not become zero, and remaining weights sum to 100", () => {
   const components: ScoreComponentInput[] = [
@@ -115,7 +117,7 @@ test("partner matching: Amazon 1P, Austin Bazaar, and GearTree count; unknown dr
   ]);
   assert.deepEqual(detail, { controlled: 3, known: 4, population: 5 });
   assert.equal(shareScore({ numerator: detail!.controlled, denominator: detail!.known }), 75);
-  assert.deepEqual([...AUTHORIZED_BUY_BOX_PARTNERS], ["Austin Bazaar", "GearTree"]);
+  assert.deepEqual(getClientSettings("fender").default_authorized_partners, ["Austin Bazaar", "GearTree"]);
   assert.equal(
     CONTROLLED_BUY_BOX_PLACEHOLDER_TOOLTIP,
     "Placeholder: Amazon Retail, Austin Bazaar, and GearTree are the set used until the authorized-partner list is confirmed.",
@@ -150,6 +152,7 @@ test("a saved list replaces the placeholder set and Amazon Retail still counts",
   const census = buyBoxSellerCensus(rows);
   assert.deepEqual(census, {
     amazonRetail: 1,
+    brandStore: 0,
     sellers: [
       { name: "Austin Bazaar", listings: 1 },
       { name: "Crazy Dave's Music", listings: 1 },

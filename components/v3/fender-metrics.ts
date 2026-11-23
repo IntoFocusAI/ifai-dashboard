@@ -1,5 +1,5 @@
 import type { CanvasMetric } from "@/lib/canvas-sdk";
-import { ENTERPRISE_POTENTIAL_ESTIMATE, PHASE_ONE_LIFT_ESTIMATE } from "@/lib/fender-canvas/analyst-estimates";
+import { enterprisePotentialEstimate, phaseOneLiftEstimate } from "@/lib/fender-canvas/analyst-estimates";
 
 /**
  * Canonical names and display values for the compact dashboard signals.
@@ -80,21 +80,11 @@ export const FENDER_METRICS = {
   overallAiWinRate: {
     id: "overall-ai-win-rate",
     spokeId: "aeo",
-    label: "Unbranded discovery",
+    label: "Unbranded Discovery",
     value: "Loading",
-    detail: "Branded consideration loads with the published run",
+    detail: "Branded Consideration loads with the published run",
     tone: "neutral",
     subTab: "Run Summary",
-    provenance: "live",
-  },
-  beginnerAiWinRate: {
-    id: "beginner-ai-win-rate",
-    spokeId: "aeo",
-    label: "Beginner AI Win Rate",
-    value: "Loading",
-    detail: "Reading the published AI run",
-    tone: "neutral",
-    subTab: "Run Details",
     provenance: "live",
   },
   resolvedSimulations: {
@@ -147,12 +137,12 @@ export const FENDER_METRICS = {
     subTab: "Brand-Site Specs",
     provenance: "live",
   },
-  beginnerSovGap: {
-    id: "beginner-sov-gap",
+  weakestCategoryGap: {
+    id: "weakest-category-gap",
     spokeId: "competitors",
-    label: "Beginner Category SOV Gap",
+    label: "Weakest category: gap to top rival",
     value: "Loading",
-    detail: "Reading the published AI run",
+    detail: "Reading the AI runs in the selected period",
     tone: "neutral",
     subTab: "Category Battlecards",
     provenance: "live",
@@ -160,9 +150,9 @@ export const FENDER_METRICS = {
   strongestCategorySov: {
     id: "strongest-category-sov",
     spokeId: "competitors",
-    label: "Strongest Category SOV",
+    label: "Strongest category for Fender",
     value: "Loading",
-    detail: "Reading the published AI run",
+    detail: "Reading the AI runs in the selected period",
     tone: "neutral",
     subTab: "Category Battlecards",
     provenance: "live",
@@ -181,8 +171,10 @@ export const FENDER_METRICS = {
     id: "phase-one-lift",
     spokeId: "suggestions",
     label: "Recoverable Revenue",
-    value: PHASE_ONE_LIFT_ESTIMATE,
-    detail: "Phase 1 annual · 14 pilot ASINs",
+    get value() {
+      return phaseOneLiftEstimate();
+    },
+    detail: "Phase 1 annual estimate",
     tone: "success",
     subTab: "Revenue Estimates",
     provenance: "estimate",
@@ -191,7 +183,9 @@ export const FENDER_METRICS = {
     id: "enterprise-potential",
     spokeId: "suggestions",
     label: "Enterprise GMV Potential",
-    value: ENTERPRISE_POTENTIAL_ESTIMATE,
+    get value() {
+      return enterprisePotentialEstimate();
+    },
     detail: "Annual · full portfolio",
     tone: "success",
     subTab: "Revenue Estimates",

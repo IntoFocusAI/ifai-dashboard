@@ -9,7 +9,7 @@ function read(rel: string): string {
   return readFileSync(new URL(rel, root), "utf8");
 }
 
-const spec = JSON.parse(read("data/fender-v3-spec.json")) as {
+const spec = JSON.parse(read("data/canvas-narrative.json")) as {
   spokes: {
     roadmap: { tabs: string[]; tabTemplates: string[] };
     suggestions: { tabs: string[] };
@@ -43,8 +43,8 @@ test("Roadmap 30-60-90 Days renders the shared plan in three dated phases (S-02,
   assert.doesNotMatch(panel + data, /lostRevenue|LostRevenue|BRIEFING_LOST_REVENUE|\$680|\$38M|fee|retainer/i);
   assert.doesNotMatch(panel, /\u2014/);
   for (const label of [
-    "Buy Box withheld",
-    "MAP leakage",
+    "Buy Box Withheld",
+    "MAP Leakage",
     "Splintered Listings",
     "Exact official product pages",
     "Unbranded Discovery",

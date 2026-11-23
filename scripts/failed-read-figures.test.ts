@@ -22,7 +22,7 @@ import { buildLiveCommandCenter } from "../lib/fender-canvas/command-center-from
 import { buildLiveMetrics } from "../lib/fender-canvas/metrics-from-live.ts";
 import { buildMinimalMetrics } from "../lib/fender-canvas/minimal-metrics.ts";
 import { buildLiveNodes } from "../lib/fender-canvas/nodes-from-live.ts";
-import { MAP_PRICES_NOT_STORED } from "../lib/fender-canvas/portfolio-retail.ts";
+import { mapPricesNotStored } from "../lib/fender-canvas/portfolio-retail.ts";
 import type { RetailCanvasRead } from "../lib/fender-canvas/portfolio-retail-display.ts";
 import { buildLiveTourSteps } from "../lib/fender-canvas/tour-from-live.ts";
 import type { CanvasBundle, CanvasReadKey } from "../lib/fender-canvas/types.ts";
@@ -112,8 +112,6 @@ const METRICS_ROW_FIGURES = [
   "overallAiWinRate",
   "resolvedSimulations",
   "confirmedHallucinations",
-  "beginnerSovGap",
-  "strongestCategorySov",
 ];
 
 test("a failed metrics read turns every metrics-row figure into Not available* naming canvas_metrics", () => {
@@ -125,7 +123,6 @@ test("a failed metrics read turns every metrics-row figure into Not available* n
     assert.match(failed[key].detail, METRICS_TIP, key);
     assert.doesNotMatch(`${failed[key].value} ${failed[key].detail}`, /Pending data/, key);
   }
-  assert.equal(failed.beginnerAiWinRate.value, loaded.beginnerAiWinRate.value, "the category read still loaded");
   assert.equal(failed.phaseOneLift.value, loaded.phaseOneLift.value, "analyst estimates do not come from the row");
 });
 
@@ -135,29 +132,24 @@ test("Not stored MAP prices keep their own reading when the metrics read also fa
     snapshot: {
       headline: null,
       suppressedListings: { status: "unavailable", issueCount: null, missingMessage: null, detail: null },
-      mapLeakage: { status: "unavailable", issueCount: null, missingMessage: MAP_PRICES_NOT_STORED, detail: null },
+      mapLeakage: { status: "unavailable", issueCount: null, missingMessage: mapPricesNotStored(), detail: null },
       unnestedBundles: { status: "unavailable", issueCount: null, missingMessage: null, detail: null },
       amazonSpecGaps: { status: "unavailable", issueCount: null, missingMessage: null, detail: null },
     },
   };
   const drift = buildLiveMetrics(bundle(["m"]), retail).amazonMapDrift;
   assert.equal(drift.value, "Not stored");
-  assert.equal(drift.detail, MAP_PRICES_NOT_STORED);
+  assert.equal(drift.detail, mapPricesNotStored());
 });
 
-test("a failed category read turns the beginner AI win rate into Not available* naming canvas_ai_category", () => {
-  const metrics = buildLiveMetrics(bundle(["cats"]));
-  assert.equal(metrics.beginnerAiWinRate.value, READ_NOT_AVAILABLE);
-  assert.match(metrics.beginnerAiWinRate.detail, /\(canvas_ai_category\) did not load: forced cats failure\.$/);
-  assert.equal(metrics.overallAiWinRate.value, "82.6%", "the metrics row still loaded");
-});
-
-test("a failed share-of-voice read leaves the beginner gap on the stored metrics row", () => {
-  const loaded = buildLiveMetrics(bundle()).beginnerSovGap;
-  const failed = buildLiveMetrics(bundle(["sov"])).beginnerSovGap;
-  assert.equal(failed.value, loaded.value);
-  assert.equal(failed.detail, "vs Yamaha in beginner");
-  assert.doesNotMatch(failed.detail, /Pending data/);
+test("the category figures follow the date-pill AI read, not the stored metrics row (decisions 83 and 106)", () => {
+  const failed = buildLiveMetrics(bundle(["m", "cats", "sov"]));
+  for (const key of ["weakestCategoryGap", "strongestCategorySov"]) {
+    assert.equal(failed[key].value, "Loading", `${key} waits for the AI read`);
+    assert.doesNotMatch(failed[key].detail, /canvas_metrics|canvas_ai_category|Pending data/, key);
+  }
+  assert.equal(failed.beginnerAiWinRate, undefined, "no fixed beginner figure");
+  assert.equal(failed.beginnerSovGap, undefined, "no fixed beginner figure");
 });
 
 test("the AI Readiness bubble reads Not available* with canvas_metrics in its hover tooltip", () => {
@@ -204,14 +196,13 @@ test("the command center prints no division count, loaded or failed", () => {
   }
 });
 
-test("the tour names a failed missing-field read instead of counting zero rows", () => {
-  const line = (b: CanvasBundle) =>
-    buildLiveTourSteps(b)
+test("the tour names a failed retail read on its Amazon Specs line instead of counting zero rows", () => {
+  const line = (r: RetailCanvasRead) =>
+    buildLiveTourSteps(bundle(), r)
       .find((step) => step.nodeId === "specs")!
-      .displays.find((text) => /missing-field rows/.test(text));
-  assert.equal(line(bundle()), "1 missing-field rows are on Amazon Specs");
-  const failed = line(bundle(["missing"]));
-  assert.equal(failed, "Amazon Specs missing-field rows: Not available* (canvas_spec_missing_fields did not load)");
+      .displays.find((text) => /^Amazon Specs: /.test(text));
+  const failed = line({ phase: "error", message: "forced" } as RetailCanvasRead);
+  assert.equal(failed, "Amazon Specs: Not available* (retail read did not load)");
   assert.doesNotMatch(failed ?? "", /\b0\b/);
 });
 

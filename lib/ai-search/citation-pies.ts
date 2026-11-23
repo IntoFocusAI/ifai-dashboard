@@ -72,9 +72,9 @@ export function unbrandedAnswerPie(byType: OwnedByQuestionType | null): Citation
   if (cited < 0 || missed < 0 || cited + missed !== resolved) return null;
   return {
     id: "unbranded",
-    title: `Unbranded discovery answers that cited a ${brandName()}-owned page`,
+    title: `Unbranded Discovery answers that cited a ${brandName()}-owned page`,
     total: resolved,
-    totalLabel: "unbranded discovery answers",
+    totalLabel: "Unbranded Discovery answers",
     slices: [
       { key: "owned", label: `Cited a ${brandName()}-owned page`, count: cited },
       { key: "other", label: `No ${brandName()}-owned page`, count: missed },
@@ -82,13 +82,13 @@ export function unbrandedAnswerPie(byType: OwnedByQuestionType | null): Citation
   };
 }
 
-/** Brand websites cited in unbranded discovery. Null when the slices do not add up. */
+/** Brand websites cited in Unbranded Discovery. Null when the slices do not add up. */
 export function unbrandedBrandPie(calls: AiCallRow[], read: CitationRead): CitationPie | null {
   const sites = unbrandedBrandSites(calls, read);
   if (!sites?.ok) return null;
   return {
     id: "brands",
-    title: "Brand sites cited in unbranded discovery",
+    title: "Brand sites cited in Unbranded Discovery",
     total: sites.total,
     totalLabel: "brand-site links",
     slices: sites.slices.map((slice) => ({

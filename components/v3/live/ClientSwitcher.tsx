@@ -1,16 +1,19 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { activeClientKey, CLIENTS, CLIENT_KEYS, clientHref, isClientKey } from "@/lib/client/active-client";
+import type { SwitcherClient } from "@/lib/auth/client-access";
+import { activeClientKey, clientHref } from "@/lib/client/active-client";
 
 /**
- * Testing switcher between client brands until login ships. Each brand reads
- * its own database schema; changing it reloads the page so nothing from the
- * previous brand stays on screen.
+ * Switcher between the brands this viewer may open: every client for IntoFocus Staff, only
+ * their own org's brand for anyone else (so they get no switcher). The dashboard page builds
+ * the list on the server and redirects a `?client=` the viewer may not open. Changing brand
+ * reloads the page so nothing from the previous brand stays on screen.
  */
-export function ClientSwitcher() {
+export function ClientSwitcher({ clients }: { clients: readonly SwitcherClient[] }) {
   const pathname = usePathname() ?? "/dashboard";
   const current = activeClientKey();
+  if (clients.length < 2) return null;
 
   return (
     <label
@@ -22,7 +25,7 @@ export function ClientSwitcher() {
         value={current}
         onChange={(event) => {
           const next = event.target.value;
-          if (!isClientKey(next) || next === current) return;
+          if (next === current || !clients.some((c) => c.clientKey === next)) return;
           window.location.assign(clientHref(next, pathname));
         }}
         style={{
@@ -34,9 +37,9 @@ export function ClientSwitcher() {
           color: "var(--text-primary, inherit)",
         }}
       >
-        {CLIENT_KEYS.map((key) => (
-          <option key={key} value={key}>
-            {CLIENTS[key].brandName}
+        {clients.map((client) => (
+          <option key={client.clientKey} value={client.clientKey}>
+            {client.name}
           </option>
         ))}
       </select>

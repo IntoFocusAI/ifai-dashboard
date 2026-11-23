@@ -2,6 +2,10 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
+import { getClientSettings } from "../lib/client/active-client.ts";
+import { buildClientEstimates } from "../lib/estimates/live-inputs.ts";
+import { enterprisePotentialEstimate, phaseOneLiftEstimate } from "../lib/fender-canvas/analyst-estimates.ts";
+import { loadEstimatesFixture } from "./fixtures/estimates/load.ts";
 import { aiMetrics } from "../lib/ai-search/canvas-surfaces.ts";
 import { historyFixtureSnapshots } from "../lib/ai-search/history-fixtures.ts";
 import type { AiSearchRead } from "../lib/ai-search/types.ts";
@@ -34,7 +38,7 @@ import type { CanvasBundle, CanvasMetricsRow } from "../lib/fender-canvas/types.
 
 const root = new URL("..", import.meta.url);
 const read = (path: string) => readFileSync(new URL(path, root), "utf8");
-const spec = JSON.parse(read("data/fender-v3-spec.json")) as { spokes: Record<string, { tabs: string[] }> };
+const spec = JSON.parse(read("data/canvas-narrative.json")) as { spokes: Record<string, { tabs: string[] }> };
 
 /** The substring rule CanvasShell uses to open a tab. */
 function openedTab(spokeId: string, subTab: string | undefined): string | null {
@@ -329,7 +333,7 @@ test("both Suppressed Listings figures and both Run Summary and Run Details rate
   const beginner = slotById(slots, "battlecards-beginner-unbranded");
   assert.equal(beginner.subTab, "Category Battlecards");
   assert.equal(beginner.value, "100.0%");
-  assert.match(beginner.reading.ratio ?? "", /^2 of 2 resolved Beginner unbranded discovery answers · Small sample$/);
+  assert.match(beginner.reading.ratio ?? "", /^2 of 2 resolved Beginner Unbranded Discovery answers · Small sample$/);
 });
 
 // Squier holds branded questions only, so it is no battlecard category (decision 93).
@@ -345,16 +349,16 @@ test("Category Battlecards offers one option per question category, each with it
   for (const slot of options) {
     assert.equal(slot.spokeId, "competitors");
     assert.equal(slot.subTab, "Category Battlecards");
-    assert.match(slot.label, /^[A-Z]\w+: Fender leads in unbranded discovery$/);
+    assert.match(slot.label, /^[A-Z]\w+: Fender leads in Unbranded Discovery$/);
   }
   const electrics = slotById(slots, "battlecards-electrics-unbranded");
   assert.equal(electrics.value, "66.7%");
-  assert.equal(electrics.reading.ratio, "6 of 9 resolved Electrics unbranded discovery answers · Small sample");
-  assert.equal(slotById(slots, "battlecards-basses-unbranded").reading.ratio, "1 of 4 resolved Basses unbranded discovery answers · Small sample");
+  assert.equal(electrics.reading.ratio, "6 of 9 resolved Electrics Unbranded Discovery answers · Small sample");
+  assert.equal(slotById(slots, "battlecards-basses-unbranded").reading.ratio, "1 of 4 resolved Basses Unbranded Discovery answers · Small sample");
   assert.equal(
     slots.some((slot) => slot.id === "battlecards-squier-unbranded"),
     false,
-    "a category with no unbranded discovery questions is not offered (decision 93)",
+    "a category with no Unbranded Discovery questions is not offered (decision 93)",
   );
 
   const ai = aiReady();
@@ -365,7 +369,7 @@ test("Category Battlecards offers one option per question category, each with it
   assert.equal(amps.value, NOT_AVAILABLE, "a battery category the run did not ask stays offered");
   assert.equal(amps.reading.missing, "The selected period asked no Amps questions.");
   const ukuleles = slotById(withExtra, "battlecards-ukuleles-unbranded");
-  assert.equal(ukuleles.label, "Ukuleles: Fender leads in unbranded discovery");
+  assert.equal(ukuleles.label, "Ukuleles: Fender leads in Unbranded Discovery");
   assert.equal(ukuleles.value, "100.0%");
   assert.equal(withExtra.indexOf(ukuleles), withExtra.findIndex((slot) => slot.id === "battlecards-beginner-unbranded") + 1, "live extras follow the battery");
 
@@ -377,7 +381,7 @@ const OTHER: Record<string, [spokeId: string, tab: string]> = {
   "buy-box-retention": ["ecommerce", "Retail Overview"],
   "seller-data-coverage": ["ecommerce", "Retail Overview"],
   "stranded-reviews": ["ecommerce", "Catalog Governance"],
-  "beginner-sov-gap": ["competitors", "Category Battlecards"],
+  "weakest-category-gap": ["competitors", "Category Battlecards"],
   "strongest-category-sov": ["competitors", "Category Battlecards"],
   "resolved-simulations": ["aeo", "Run Summary"],
 };
@@ -416,13 +420,14 @@ test("Other lists the figures no tab shows, last, each opening its closest tab w
   assert.equal(reviews.value, NOT_AVAILABLE);
   assert.equal(reviews.reading.missing, "The catalog metrics row does not store a stranded review count.");
 
-  const gap = slotById(slots, "beginner-sov-gap");
-  assert.equal(gap.value, "+100.0 pts");
-  assert.equal(gap.reading.ratio, "Fender/Squier 2 of 2 resolved Beginner unbranded discovery answers. No competitor led one.");
-  const best = slotById(slots, "strongest-category-sov");
-  assert.equal(best.label, "Strongest category: Amps");
-  assert.equal(best.value, slotById(slots, "battlecards-amps-unbranded").value, "reads the category's own option");
-  assert.equal(best.reading.ratio, slotById(slots, "battlecards-amps-unbranded").reading.ratio);
+  // The fixture run has no category with 10 resolved Unbranded Discovery answers (decision 106).
+  for (const id of ["weakest-category-gap", "strongest-category-sov"]) {
+    const figure = slotById(slots, id);
+    assert.equal(figure.value, NOT_AVAILABLE, id);
+    assert.match(figure.reading.missing ?? "", /^No category has 10 or more resolved Unbranded Discovery answers/, id);
+  }
+  assert.equal(slotById(slots, "strongest-category-sov").label, "Strongest category for Fender");
+  assert.equal(slotById(slots, "weakest-category-gap").label, "Weakest category: gap to top rival");
   const answered = slotById(slots, "resolved-simulations");
   assert.match(answered.value, /^\d[\d,]* of \d[\d,]*$/);
   assert.equal(answered.reading.ratio, "calls answered", "the count is not repeated under the value");
@@ -449,12 +454,12 @@ test("Other lists the figures no tab shows, last, each opening its closest tab w
   assert.equal(plan.area, undefined, "the 30-60-90 Days tab shows it, so it is not an Other figure");
 
   const unstored = build(retailReady(), { phase: "error", message: "down" }).slots;
-  for (const id of ["buy-box-retention", "seller-data-coverage", "beginner-sov-gap", "strongest-category-sov", "resolved-simulations"]) {
+  for (const id of ["buy-box-retention", "seller-data-coverage", "weakest-category-gap", "strongest-category-sov", "resolved-simulations"]) {
     const slot = slotById(unstored, id);
     assert.equal(slot.value, NOT_AVAILABLE, `${id} without its input`);
     assert.ok(slot.reading.missing, `${id} explains the missing input`);
   }
-  assert.equal(slotById(unstored, "strongest-category-sov").label, "Strongest category");
+  assert.equal(slotById(unstored, "strongest-category-sov").label, "Strongest category for Fender");
 
   const picker = read("lib/canvas-sdk/MetricPicker.tsx");
   assert.match(picker, /\.\.\.areas, \.\.\.extra/, "Other follows the map areas");
@@ -515,7 +520,7 @@ test("each live figure says N of M and the larger slots carry the tab's disc", (
     "battlecards-branded", "battlecards-electrics-unbranded", "battlecards-acoustics-unbranded",
     "battlecards-amps-unbranded", "battlecards-basses-unbranded", "battlecards-beginner-unbranded", "sat-taylor", "sat-amps", "engines-unbranded",
     "engines-branded", "summary-ai-consensus", "summary-ai-foundation", "summary-ai-commerce",
-    "beginner-sov-gap", "strongest-category-sov", "resolved-simulations",
+    "resolved-simulations",
   ];
   const averages = ["map-average-gap"];
   for (const slot of slots) {
@@ -547,7 +552,7 @@ test("each live figure says N of M and the larger slots carry the tab's disc", (
   assert.equal(retail?.reading.ratio, "1 of 3 current Buy Box readings");
   const taylor = slots.find((slot) => slot.id === "sat-taylor");
   assert.ok(taylor && /^\d+\.\d%$/.test(taylor.value), "the bubble leads with the competitor-led share");
-  assert.match(taylor.reading.ratio ?? "", /^\d+ of \d+ resolved unbranded discovery answers$/, "the N of M sits under the share");
+  assert.match(taylor.reading.ratio ?? "", /^\d+ of \d+ resolved Unbranded Discovery answers$/, "the N of M sits under the share");
 });
 
 test("a missing input reads Not available* or the bubble's waiting word, with a reason for the tooltip", () => {
@@ -583,12 +588,17 @@ test("a missing input reads Not available* or the bubble's waiting word, with a 
 });
 
 test("Phase 1 stays an analyst estimate and nothing mentions fees", () => {
-  const { nodes, slots } = build(retailReady(), aiReady());
+  // The formula figures from the client's own listings (H-09), here the 17 Nov fixture.
+  const fx = loadEstimatesFixture("fender");
+  const estimates = buildClientEstimates(fx.listings, { rankCategory: fx.rankCategory, dataAsOf: fx.readOn, salesSources: "measured_only", revenue: getClientSettings("fender").revenue_inputs });
+  const b = { ...bundle(), estimates: { phase: "ready" as const, estimates } };
+  const { nodes, slots } = build(retailReady(), aiReady(), findability, { b });
   const phaseOne = slots.find((slot) => slot.id === "spoke-fixes");
   assert.ok(phaseOne);
-  assert.deepEqual(nodeById(nodes, "spoke-fixes").heroValue, { value: "+$680K est.", label: "Phase 1 lift" });
-  assert.equal(phaseOne.value, "+$680K est.");
-  assert.equal(slotById(slots, "enterprise-potential").value, "+$38M to $62M est.");
+  assert.match(phaseOneLiftEstimate(b), /^\+\$1\.05M\*? est\.$/);
+  assert.deepEqual(nodeById(nodes, "spoke-fixes").heroValue, { value: phaseOneLiftEstimate(b), label: "Phase 1 lift", tone: "good" });
+  assert.equal(phaseOne.value, phaseOneLiftEstimate(b));
+  assert.equal(slotById(slots, "enterprise-potential").value, enterprisePotentialEstimate(b));
   assert.equal(phaseOne.provenance, "estimate");
   assert.match(phaseOne.detail, /^Analyst estimate\./);
   assert.equal(phaseOne.subTab, "Revenue Estimates");

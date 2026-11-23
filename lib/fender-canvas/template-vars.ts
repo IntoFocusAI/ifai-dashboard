@@ -1,7 +1,6 @@
-import { ENTERPRISE_POTENTIAL_ESTIMATE, NO_ANALYST_ESTIMATE, PHASE_ONE_LIFT_ESTIMATE } from "@/lib/fender-canvas/analyst-estimates";
-import type { CanvasAiCategoryRow, CanvasBundle, CanvasMetricsRow } from "@/lib/fender-canvas/types";
+import { enterprisePotentialEstimate, phaseOneLiftEstimate } from "@/lib/fender-canvas/analyst-estimates";
+import type { CanvasBundle } from "@/lib/fender-canvas/types";
 import {
-  formatEstimate,
   formatInt,
   formatPct,
   formatRatio,
@@ -11,23 +10,8 @@ import {
   titleCaseCategory,
 } from "@/lib/fender-canvas/format";
 
-function catRow(cats: CanvasAiCategoryRow[], slug: string) {
-  return cats.find((c) => c.category === slug);
-}
-
-function estimateOrNone(figure: string): string {
-  return figure === NO_ANALYST_ESTIMATE ? figure : formatEstimate(figure);
-}
-
-function kpiString(m: CanvasMetricsRow, key: string, fallback: string): string {
-  const raw = m.kpi?.[key];
-  if (raw == null) return fallback;
-  return sanitizeUiText(String(raw));
-}
-
 export function buildTemplateVars(bundle: CanvasBundle): Record<string, string> {
   const { m, cats } = bundle;
-  const beginner = catRow(cats, "beginner");
   const weakestLabel = m.weakest_category ? titleCaseCategory(m.weakest_category) : pendingLabel();
 
   const noOfferPct =
@@ -74,9 +58,6 @@ export function buildTemplateVars(bundle: CanvasBundle): Record<string, string> 
     sim_errors: formatInt(m.sim_errors),
     sim_hallucinations: formatInt(m.sim_hallucinations),
     sim_hallucination_risk: formatInt(m.sim_hallucination_risk),
-    beginner_win_pct: formatPct(beginner?.fender_win_pct ?? null),
-    beginner_top_competitor: beginner?.top_competitor ?? pendingLabel(),
-    beginner_top_competitor_pct: formatPct(beginner?.top_competitor_pct ?? null),
     weakest_category: weakestLabel,
     weakest_win_pct: formatPct(m.weakest_win_pct),
     weakest_top_competitor: m.weakest_top_competitor ?? pendingLabel(),
@@ -90,8 +71,9 @@ export function buildTemplateVars(bundle: CanvasBundle): Record<string, string> 
     bb_1p_detail: `${formatInt(m.bb_1p)} 1P vs ${formatInt(m.bb_3p)} 3P`,
     sim_resolved_detail: `${formatInt(m.sim_resolved)} resolved (${formatInt(m.sim_unclear)} unclear, ${formatInt(m.sim_errors)} errors)`,
     fender_found_ratio: formatRatio(m.spec_fender_found, m.spec_checked),
-    phase_one_lift: estimateOrNone(kpiString(m, "phase1_lift", PHASE_ONE_LIFT_ESTIMATE)),
-    enterprise_potential: estimateOrNone(kpiString(m, "enterprise_potential", ENTERPRISE_POTENTIAL_ESTIMATE)),
+    // The formulas (lib/estimates), never a hand-entered or stored kpi figure (decision 112).
+    phase_one_lift: phaseOneLiftEstimate(bundle),
+    enterprise_potential: enterprisePotentialEstimate(bundle),
   };
 
   for (const row of cats) {

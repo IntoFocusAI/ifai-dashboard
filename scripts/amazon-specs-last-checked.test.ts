@@ -78,7 +78,8 @@ test("Amazon Specs reads its rows once and shows the line beside its heroes", ()
   assert.match(catalog, /<FenderSpecPanel catalogReadiness read=\{specRows\} \/>/);
 
   const lead = read("components/v3/live/AiReadinessLead.tsx");
-  assert.match(lead, /<AmazonSpecsLastChecked read=\{specRows\} \/>/);
+  // X-36: Last checked sits in the hero band's notes, beside the hero.
+  assert.match(catalog, /<AmazonSpecsLastChecked read=\{specRows\} \/>/);
   assert.doesNotMatch(lead, /specRowsQuery|loadFilteredPages/);
 
   const panel = read("components/v3/live/FenderSpecPanel.tsx");

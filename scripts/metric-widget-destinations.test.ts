@@ -12,7 +12,7 @@ import type { CanvasMetric } from "../lib/canvas-sdk/types.ts";
 import type { FindabilityRead } from "../lib/findability/copy.ts";
 
 const root = new URL("..", import.meta.url);
-const spec = JSON.parse(readFileSync(new URL("data/fender-v3-spec.json", root), "utf8")) as {
+const spec = JSON.parse(readFileSync(new URL("data/canvas-narrative.json", root), "utf8")) as {
   spokes: Record<string, { tabs: string[] }>;
 };
 
@@ -32,13 +32,12 @@ const EXPECTED_SUBTAB: Record<string, string> = {
   "stranded-reviews": "Catalog Governance",
   "amazon-map-drift": "MAP Leakage",
   "overall-ai-win-rate": "Run Summary",
-  "beginner-ai-win-rate": "Run Details",
   "resolved-simulations": "Run Summary",
   "confirmed-hallucinations": "Product Fact Checks",
   "fender-findability": "Findability",
   "machine-readable-specs": "Brand-Site Specs",
   "missing-schema-fields": "Brand-Site Specs",
-  "beginner-sov-gap": "Category Battlecards",
+  "weakest-category-gap": "Category Battlecards",
   "strongest-category-sov": "Category Battlecards",
   "prioritized-fixes": "Urgent Interventions",
   "phase-one-lift": "Revenue Estimates",
@@ -175,8 +174,9 @@ test("the fallback catalog opens a current tab for every widget", () => {
   assert.equal(findabilityMetric?.value, "Unavailable");
   assert.match(findabilityMetric?.detail ?? "", /not available/);
   assert.doesNotMatch(`${findabilityMetric?.value} ${findabilityMetric?.detail}`, /%|29\.2|pages found|13\.3/);
-  assert.equal(fenderWidgetMetrics.find((metric) => metric.id === "phase-one-lift")?.value, "+$680K est.");
-  assert.equal(fenderWidgetMetrics.find((metric) => metric.id === "enterprise-potential")?.value, "+$38M to $62M est.");
+  // The fallback catalog has no read yet: the formula figures load with the bundle (H-09).
+  assert.equal(fenderWidgetMetrics.find((metric) => metric.id === "phase-one-lift")?.value, "Loading");
+  assert.equal(fenderWidgetMetrics.find((metric) => metric.id === "enterprise-potential")?.value, "Loading");
   assert.equal(fenderWidgetMetrics.find((metric) => metric.id === "prioritized-fixes")?.provenance, "estimate");
   assert.equal(fenderWidgetMetrics.find((metric) => metric.id === "flagged-asins")?.label, "MAP violations");
 });
@@ -185,12 +185,11 @@ test("the picker list, including live overrides, opens the named tab", () => {
   const live = buildLiveMetrics(bundle(), { phase: "loading" }, findability);
   assert.equal(live.overallAiWinRate.value, "72.4%");
   assert.equal(live.overallAiWinRate.detail, "80 resolved answers");
-  assert.equal(live.beginnerAiWinRate.value, "41.2%");
   assert.equal(live.flaggedAsins.label, "MAP violations");
   assert.equal(live.flaggedAsins.value, "Loading");
-  assert.equal(live.phaseOneLift.value, "+$680K est.");
+  assert.equal(live.phaseOneLift.value, "Loading");
   assert.equal(live.phaseOneLift.provenance, "estimate");
-  assert.equal(live.enterprisePotential.value, "+$38M to $62M est.");
+  assert.equal(live.enterprisePotential.value, "Loading");
   assert.equal(live.enterprisePotential.provenance, "estimate");
   assert.equal(live.prioritizedFixes.value, "Estimates");
   assert.equal(live.prioritizedFixes.provenance, "estimate");

@@ -14,7 +14,7 @@ import { leadBrand } from "@/lib/brand-copy";
 const SIM = AI_TABS.simulations;
 
 /**
- * Unbranded discovery by engine. One mark per engine with resolved answers.
+ * Unbranded Discovery by engine. One mark per engine with resolved answers.
  * Weakest Fender-lead share first. Counts stay visible beside the bar.
  */
 export function EngineUnbrandedGraph({
@@ -31,7 +31,7 @@ export function EngineUnbrandedGraph({
     <div className="ai-engine-unbranded-graph" data-ai-engine-unbranded-graph="">
       <div className="content-box-title" style={{ marginTop: 12 }}>
         <span>
-          <AiTerm term="unbranded discovery">Unbranded discovery</AiTerm> by engine
+          <AiTerm term="Unbranded Discovery">Unbranded Discovery</AiTerm> by engine
         </span>
       </div>
       {marks.length === 0 ? (

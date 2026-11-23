@@ -6,8 +6,7 @@
 
 import type { PieDiscData } from "@/lib/ai-search/citation-pies";
 import {
-  PAGE_FOUND_DEFINITION,
-  PAGE_FOUND_LABEL,
+  pageFoundLabel,
   pageFoundDefinition,
   pageFoundHero,
 } from "@/lib/fender-canvas/ai-readiness-lead";
@@ -24,8 +23,9 @@ export const PAGE_FOUND_ANCHOR = "brand-site-page-found";
 
 export const PAGE_FOUND_UNAVAILABLE = "Not available*";
 
-export const PAGE_FOUND_UNAVAILABLE_TIP =
-  `The ${brandSite()} product check has not reported how many SKUs it checked or how many have a matching ${brandSite()} product page, so this share is not shown.`;
+export function pageFoundUnavailableTip(): string {
+  return `The ${brandSite()} product check has not reported how many SKUs it checked or how many have a matching ${brandSite()} product page, so this share is not shown.`;
+}
 
 export type PageFoundHeroModel = {
   id: typeof PAGE_FOUND_HERO_ID;
@@ -47,7 +47,7 @@ export type PageFoundHeroModel = {
 function pageFoundPie(found: number, checked: number): PieDiscData {
   return {
     id: "brand-site-page-found",
-    title: PAGE_FOUND_LABEL,
+    title: pageFoundLabel(),
     total: checked,
     totalLabel: "checked SKUs",
     slices: [
@@ -57,10 +57,10 @@ function pageFoundPie(found: number, checked: number): PieDiscData {
   };
 }
 
-function unavailableHero(definition: string = PAGE_FOUND_DEFINITION): PageFoundHeroModel {
+function unavailableHero(definition: string = pageFoundDefinition()): PageFoundHeroModel {
   return {
     id: PAGE_FOUND_HERO_ID,
-    label: PAGE_FOUND_LABEL,
+    label: pageFoundLabel(),
     definition,
     percent: PAGE_FOUND_UNAVAILABLE,
     ratio: null,
@@ -70,7 +70,7 @@ function unavailableHero(definition: string = PAGE_FOUND_DEFINITION): PageFoundH
     explainer: "The checked-SKU counts are not available.",
     numerator: null,
     denominator: null,
-    figureTip: PAGE_FOUND_UNAVAILABLE_TIP,
+    figureTip: pageFoundUnavailableTip(),
   };
 }
 
@@ -110,7 +110,7 @@ export function brandSitePageFoundHero(
   const missing = checked - found;
   return {
     id: PAGE_FOUND_HERO_ID,
-    label: PAGE_FOUND_LABEL,
+    label: pageFoundLabel(),
     definition,
     percent: base.percent,
     ratio: base.ratio,

@@ -173,6 +173,7 @@ test("ensureSiteTypes for Ledlenser ignores the brand-schema client and reads th
   }) as typeof fetch;
   try {
     const brand = fakeView({ error: "404 ledlenser.canvas_site_types" });
+    resetActiveClientForTests("ledlenser");
     await ensureSiteTypes(brand.client, "ledlenser");
     assert.equal(brand.asked.length, 0, "the brand-schema client is never asked");
     assert.equal(urls.length, 1);

@@ -3,9 +3,15 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { test } from "node:test";
-import { AMAZON_FIELD_LISTS, amazonFieldList, competitorFillPct } from "../lib/findability/amazon-field-lists.ts";
+import {
+  AMAZON_FIELD_LISTS,
+  AMAZON_NO_LIST_PRODUCT_TYPES,
+  amazonFieldList,
+  competitorFillPct,
+} from "../lib/findability/amazon-field-lists.ts";
 import { loadAmazonProductTypes, productTypeMap } from "../lib/findability/amazon-product-types.ts";
 import {
+  noListTooltip,
   productTypeCoverageLabel,
   productTypeCoveragePartial,
   productTypeListingLabel,
@@ -31,10 +37,13 @@ const IDENTIFIERS = [
   "warranty_description",
 ];
 
-test("each draft list keeps fields at least 30% of competitors fill, with no identifiers (D-05)", () => {
-  assert.match(read("lib/findability/amazon-field-lists.ts"), /Draft, awaiting IntoFocus staff approval/);
+test("each approved list keeps fields at least 30% of competitors fill, with no identifiers (D-05, decision 100)", () => {
+  const source = read("lib/findability/amazon-field-lists.ts");
+  assert.match(source, /Approved 16 Nov 2026 by Brian Magazu \(decision 100\)/);
+  assert.doesNotMatch(source, /draft|placeholder|awaiting/i);
+  assert.deepEqual(Object.keys(AMAZON_FIELD_LISTS).sort(), ["FLASHLIGHT", "GUITARS"]);
   for (const list of Object.values(AMAZON_FIELD_LISTS)) {
-    assert.equal(list.status, "draft");
+    assert.ok(!("status" in list));
     assert.ok(list.sampled >= 10, list.productType);
     assert.equal(list.sourceDate, "2026-11-11");
     for (const field of list.fields) {
@@ -47,6 +56,19 @@ test("each draft list keeps fields at least 30% of competitors fill, with no ide
   assert.equal(amazonFieldList("guitars")?.fields.length, 17);
   assert.equal(amazonFieldList(" FLASHLIGHT ")?.productType, "FLASHLIGHT");
   assert.equal(amazonFieldList("SHIRT"), null);
+  // Decision 100: no list for these two types, and no fallback to the flashlight list.
+  assert.equal(amazonFieldList("ELECTRIC_LIGHT"), null);
+  assert.equal(amazonFieldList("ELECTRIC_LANTERN"), null);
+  assert.deepEqual(Object.keys(AMAZON_NO_LIST_PRODUCT_TYPES), ["ELECTRIC_LIGHT", "ELECTRIC_LANTERN"]);
+  // Brightness and max lumens are one entry; beam distance and variation fields stay off.
+  const flashlight = amazonFieldList("FLASHLIGHT");
+  assert.equal(flashlight?.fields.length, 22);
+  const ids = flashlight?.fields.map((field) => field.field) ?? [];
+  assert.ok(!ids.includes("light_output_maximum"));
+  assert.ok(!ids.some((id) => ["beam_distance", "light_path_distance", "style_name", "size"].includes(id)));
+  assert.deepEqual(flashlight?.fields.find((field) => field.field === "white_brightness")?.alsoCounts, [
+    "light_output_maximum",
+  ]);
   assert.equal(amazonFieldList(null), null);
 });
 
@@ -100,6 +122,57 @@ test("a required field the check does not record is named unchecked, never missi
   assert.match(partial.missing, /does not record 14 of the 17 required fields for guitars, so they are not judged: Back material \(competitors 100\.0%\)/);
 });
 
+test("brightness and max lumens count as one field, filled when either is", () => {
+  const types = productTypeMap([
+    { asin: "F1", product_type: "FLASHLIGHT" },
+    { asin: "F2", product_type: "FLASHLIGHT" },
+    { asin: "F3", product_type: "FLASHLIGHT" },
+    { asin: "F4", product_type: "FLASHLIGHT" },
+  ]);
+  const rows = [
+    row("F1", ["color", "light_output_maximum"], []),
+    row("F2", ["color"], ["light_output_maximum"]),
+    row("F3", ["color", "light_output_maximum"], []),
+    // Both ids recorded: brightness filled, max lumens missing, so the one field is filled.
+    row("F4", ["color", "white_brightness"], ["light_output_maximum"]),
+  ];
+  const flashlights = requiredFieldsByProductType(rows, types).coverage[0];
+  const lumens = flashlights.checked.filter((field) => ["white_brightness", "light_output_maximum"].includes(field.field));
+  assert.deepEqual(lumens.map((field) => [field.field, field.missing]), [["white_brightness", 1]]);
+  // color and the one lumens entry: 2 checked of 22 required.
+  assert.equal(flashlights.checked.length, 2);
+  assert.equal(flashlights.listingsMissing, 1);
+  assert.equal(productTypeCoverageLabel(flashlights), "checks 2 of 22 required fields");
+  assert.doesNotMatch(productTypeRequiredTooltip(flashlights), /Max lumens/);
+  assert.doesNotMatch(productTypeCoveragePartial(flashlights)?.missing ?? "", /Max lumens/);
+});
+
+test("ELECTRIC_LIGHT and ELECTRIC_LANTERN listings read Not available*, with no fallback and no complete count", () => {
+  const rows = [
+    row("L1", ["color", "light_output_maximum"], []),
+    row("L2", ["color"], []),
+    row("N1", ["color"], []),
+    row("L3", ["color"], [], false),
+    row("F1", ["color"], []),
+  ];
+  const types = productTypeMap([
+    { asin: "L1", product_type: "ELECTRIC_LIGHT" },
+    { asin: "L2", product_type: "ELECTRIC_LIGHT" },
+    { asin: "L3", product_type: "ELECTRIC_LIGHT" },
+    { asin: "N1", product_type: "ELECTRIC_LANTERN" },
+    { asin: "F1", product_type: "FLASHLIGHT" },
+  ]);
+  const split = requiredFieldsByProductType(rows, types);
+  assert.deepEqual(split.noList, [
+    { productType: "ELECTRIC_LIGHT", label: "work and utility lights", listings: 2 },
+    { productType: "ELECTRIC_LANTERN", label: "lanterns", listings: 1 },
+  ]);
+  assert.deepEqual(split.coverage.map((entry) => entry.list.productType), ["FLASHLIGHT"]);
+  assert.equal(split.coverage[0].listings, 1);
+  assert.deepEqual(split.unlisted, []);
+  assert.match(noListTooltip(split.noList), /no approved required field list for work and utility lights and lanterns yet/);
+});
+
 test("the product type read falls back to unavailable when the view is missing", async () => {
   const client = (error: { message: string } | null, data: unknown[]) => ({
     from: () => ({
@@ -116,10 +189,11 @@ test("the product type read falls back to unavailable when the view is missing",
   assert.equal(ready.phase === "ready" ? ready.types.get("A1") : null, "GUITARS");
 });
 
-test("Amazon Specs names the product type list and keeps no placeholder wording", () => {
+test("Amazon Specs names the product type list, shows Not available* for types without one, and keeps no placeholder wording", () => {
   const line = read("components/v3/live/AmazonSpecsRequiredFields.tsx");
   assert.match(line, /Required fields by Amazon product type: /);
   assert.match(line, /PartialFigureMark/);
+  assert.match(line, /READ_NOT_AVAILABLE/);
   assert.doesNotMatch(line, /placeholder/i);
   // SC-01 stays on the fields the spec check stores.
   assert.doesNotMatch(read("lib/fender-canvas/ai-readiness-lead.ts"), /amazon-field-lists|product-type-required/);

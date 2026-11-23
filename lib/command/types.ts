@@ -7,6 +7,8 @@ export type CommandOrganization = {
   name: string;
   slug: string;
   isPlatformOrg: boolean;
+  /** command.organizations.is_active. An inactive org gives its members no access. Missing reads as active. */
+  isActive?: boolean;
 };
 
 export type CommandMembership = {

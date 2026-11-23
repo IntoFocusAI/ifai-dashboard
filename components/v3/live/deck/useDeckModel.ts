@@ -8,13 +8,16 @@ import { useStockLossRead } from "@/components/v3/live/useMinimalMetricReads";
 import { useSummaryAiStale } from "@/components/v3/live/useSummaryAiRead";
 import { brandName, brandSite, leadBrand } from "@/lib/brand-copy";
 import { buildDeck } from "@/lib/deck/deck-model";
-import type { DeckModel } from "@/lib/deck/deck-types";
+import type { DeckInput, DeckModel } from "@/lib/deck/deck-types";
 import {
-  ENTERPRISE_POTENTIAL_ESTIMATE,
+  enterprisePotentialEstimate,
+  ESTIMATE_LOADING,
   NO_ANALYST_ESTIMATE,
-  PHASE_ONE_LIFT_ESTIMATE,
+  phaseOneLiftEstimate,
 } from "@/lib/fender-canvas/analyst-estimates";
+import { lineFromListings } from "@/lib/fender-canvas/action-items-fix-list";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
+import { STOCK_LOSS_ESTIMATE_LINE } from "@/lib/fender-canvas/stock-loss";
 import type { CanvasBundle, CanvasFreshnessRow } from "@/lib/fender-canvas/types";
 
 /** The latest job run, as the header's "Data as of" reads it. */
@@ -28,8 +31,17 @@ function asOfLabel(rows: readonly CanvasFreshnessRow[]): string | null {
   return max == null ? null : new Date(max).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
 }
 
+/** Line 1 as the Out of Stock tab's estimate card adds it up, or null until it has a range. */
+function outOfStockLine(bundle: CanvasBundle): DeckInput["outOfStockLine"] {
+  const est = bundle.estimates;
+  if (est?.phase !== "ready") return null;
+  const figure = lineFromListings(est.estimates, STOCK_LOSS_ESTIMATE_LINE);
+  if (!figure || figure.status !== "estimated" || !figure.range) return null;
+  return { range: figure.range, asterisk: figure.line.asterisk, means: figure.line.trail.means };
+}
+
 function estimate(value: string): string | null {
-  return value === NO_ANALYST_ESTIMATE ? null : value;
+  return value === NO_ANALYST_ESTIMATE || value === ESTIMATE_LOADING ? null : value;
 }
 
 export type DeckLoad = { phase: "loading" } | { phase: "ready"; model: DeckModel };
@@ -61,8 +73,9 @@ export function useDeckModel(bundle: CanvasBundle, retail: RetailCanvasRead): De
       stockLoss: stock.phase === "ready" ? { rows: stock.rows, populationCount: stock.populationCount } : null,
       windowLabel: history.controlLabel,
       asOf: asOfLabel(bundle.fresh),
-      phaseOneLift: estimate(PHASE_ONE_LIFT_ESTIMATE),
-      enterprisePotential: estimate(ENTERPRISE_POTENTIAL_ESTIMATE),
+      outOfStockLine: outOfStockLine(bundle),
+      phaseOneLift: estimate(phaseOneLiftEstimate(bundle)),
+      enterprisePotential: estimate(enterprisePotentialEstimate(bundle)),
     });
     return { phase: "ready", model };
   }, [aiStale, bundle, findability, history.controlLabel, retail, stock, tabRead]);

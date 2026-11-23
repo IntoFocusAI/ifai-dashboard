@@ -6,7 +6,7 @@
  * table keeps every stored fact in seven columns:
  * - Listing: the title, then category and product kind.
  * - Official page: the page, then the variant SKU.
- * - Confidence: the identifier that matched, then how the page was found.
+ * - Confidence: the identifier that matched; how the page was found is in its tooltip.
  * - Checked: the check time, then the HTTP status when one is stored.
  * The outcome is the table's title, so it is not repeated on every row.
  *
@@ -71,7 +71,7 @@ export function findabilityTableValue(row: FindabilityRow, columnId: string): So
       return joined(address.kind === "link" ? address.href : address.text, variantSkuLine(row));
     }
     case "confidence":
-      return joined(confidenceLabel(row.confidence), matchMethodLine(row));
+      return confidenceLabel(row.confidence);
     case "bundle":
       return dealerBundleLabel(row.dealer_bundle);
     default:

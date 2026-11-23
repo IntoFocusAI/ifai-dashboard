@@ -1,4 +1,12 @@
 import { getPublicCanvasSupabase } from "@/lib/supabase/canvas-client";
+import { getSessionSupabase } from "@/lib/supabase/session-client";
+
+/**
+ * Prompt edits run as the signed-in staff member: ai_prompt_save and ai_prompt_set_active check
+ * command.is_intofocus_admin() and are not callable with the anon key
+ * (migration 20261118160000). Reads stay on the public client.
+ */
+const staffSessionSupabase = getSessionSupabase;
 
 /** One row of command.fmic_ai_prompts, as returned by public.ai_prompts_list(). */
 export type EditablePrompt = {
@@ -37,7 +45,7 @@ export async function loadPrompts(): Promise<{ prompts: EditablePrompt[]; status
 
 /** Adds a prompt when `promptKey` is null; otherwise edits its text and category. Returns the key. */
 export async function savePrompt(promptKey: string | null, promptText: string, category: string): Promise<string> {
-  const { data, error } = await getPublicCanvasSupabase().rpc("ai_prompt_save", {
+  const { data, error } = await staffSessionSupabase().rpc("ai_prompt_save", {
     p_prompt_key: promptKey,
     p_prompt_text: promptText,
     p_category: category,
@@ -48,7 +56,7 @@ export async function savePrompt(promptKey: string | null, promptText: string, c
 
 /** Remove (false) switches a prompt off; restore (true) switches it back on. */
 export async function setPromptActive(promptKey: string, active: boolean): Promise<void> {
-  const { error } = await getPublicCanvasSupabase().rpc("ai_prompt_set_active", {
+  const { error } = await staffSessionSupabase().rpc("ai_prompt_set_active", {
     p_prompt_key: promptKey,
     p_active: active,
   });

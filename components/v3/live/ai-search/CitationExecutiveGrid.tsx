@@ -14,15 +14,16 @@ import type {
 import type { HeadlineRole } from "@/lib/ai-search/question-role";
 import { SMALL_SAMPLE_LABEL, pct } from "@/lib/ai-search/summary";
 import { brandName, brandOwned } from "@/lib/brand-copy";
+import { formatInt } from "@/lib/fender-canvas/format";
 
 const count = (n: number) => n.toLocaleString("en-US");
 
 /** Caveat on the question-type counts. Shown in their tooltips. */
 export const ROLE_ASSOCIATION_CAVEAT = "An association, not proof of cause.";
 
-const ROLE_TERMS: Partial<Record<HeadlineRole, "unbranded discovery" | "branded consideration">> = {
-  unbranded_discovery: "unbranded discovery",
-  branded_consideration: "branded consideration",
+const ROLE_TERMS: Partial<Record<HeadlineRole, "Unbranded Discovery" | "Branded Consideration">> = {
+  unbranded_discovery: "Unbranded Discovery",
+  branded_consideration: "Branded Consideration",
 };
 
 function RoleName({ role, label }: { role: HeadlineRole; label: string }) {
@@ -34,16 +35,16 @@ function BrandSites({ pie }: { pie: CitationPie | null }) {
   return (
     <div className="citation-tile-follow" data-citation-brands>
       <h4 className="citation-card-kicker">
-        Brand sites in <AiTerm term="unbranded discovery">unbranded discovery</AiTerm>
+        Brand sites in <AiTerm term="Unbranded Discovery">Unbranded Discovery</AiTerm>
       </h4>
       {pie == null ? (
         <p data-citation-reconcile>The brand chart is hidden because its slices do not match the brand-site link total.</p>
       ) : pie.total === 0 ? (
-        <p className="citation-card-note">No brand website was cited in unbranded discovery answers.</p>
+        <p className="citation-card-note">No brand website was cited in Unbranded Discovery answers.</p>
       ) : (
         <BrandStackBar
           pie={pie}
-          tip={`${count(pie.total)} brand-website links in unbranded discovery. ${pie.slices.map((slice) => `${slice.label} ${slice.count}`).join(". ")}. Retail and editorial sites are in the source mix.`}
+          tip={`${count(pie.total)} brand-website links in Unbranded Discovery. ${pie.slices.map((slice) => `${slice.label} ${slice.count}`).join(". ")}. Retail and editorial sites are in the source mix.`}
         />
       )}
     </div>
@@ -64,8 +65,8 @@ function PresenceCard({
   brands: ReactNode;
 }) {
   const ratio = unbranded
-    ? `${unbranded.withOwned} of ${unbranded.resolved}`
-    : `${presence.answersWithOwned} of ${presence.answered}`;
+    ? `${formatInt(unbranded.withOwned)} of ${formatInt(unbranded.resolved)}`
+    : `${formatInt(presence.answersWithOwned)} of ${formatInt(presence.answered)}`;
   const share = unbranded
     ? pct(unbranded.withOwned, unbranded.resolved)
     : presence.answered > 0
@@ -85,7 +86,7 @@ function PresenceCard({
             <span data-citation-hero-value>{ratio}</span>{" "}
             {unbranded ? (
               <>
-                <AiTerm term="unbranded discovery">unbranded discovery</AiTerm> answers cited a {brandOwned()} page
+                <AiTerm term="Unbranded Discovery">Unbranded Discovery</AiTerm> answers cited a {brandOwned()} page
               </>
             ) : (
               `${scopeNoun} cited at least one ${brandOwned()} page`
@@ -99,7 +100,7 @@ function PresenceCard({
           owned={unbranded.withOwned}
           total={unbrandedPie.total}
           name={unbrandedPie.title}
-          tip={`Same ${ratio} answers. ${unbrandedPie.slices.map((slice) => `${slice.count} ${slice.label}`).join(". ")}. Total ${unbrandedPie.total} unbranded discovery answers.`}
+          tip={`Same ${ratio} answers. ${unbrandedPie.slices.map((slice) => `${slice.count} ${slice.label}`).join(". ")}. Total ${unbrandedPie.total} Unbranded Discovery answers.`}
         />
       ) : !unbranded && presence.answered > 0 ? (
         <OwnedShareBar
@@ -120,7 +121,7 @@ function SourceMixCard({ pie, onPickClass }: { pie: CitationPie | null; onPickCl
     <section className="citation-card citation-tile" data-citation-mix>
       <h3 className="citation-card-kicker citation-kicker-row">
         <span>
-          Links by <AiTerm term="source class">source class</AiTerm>
+          Cited links by <AiTerm term="source class">type of site</AiTerm>
         </span>
         {pie && pie.total > 0 ? <span className="citation-kicker-total">{count(pie.total)} links</span> : null}
       </h3>
@@ -147,7 +148,7 @@ function RoleGroupButton({
   onPick: (role: RoleOwnedPresence, group: RoleOwnedGroup) => void;
 }) {
   if (group.resolved <= 0 || share <= 0) return null;
-  const lead = `${brandName()} led ${group.fenderLed} of ${group.resolved}`;
+  const lead = `${brandName()} led ${formatInt(group.fenderLed)} of ${formatInt(group.resolved)}`;
   const sample = group.smallSample ? ` · ${SMALL_SAMPLE_LABEL}` : "";
   return (
     <button
@@ -212,7 +213,7 @@ function RoleOwnedCard({
                   <RoleName role={role.role} label={role.roleLabel} />
                 </strong>
                 <span>
-                  {role.withOwned} of {role.resolved}
+                  {formatInt(role.withOwned)} of {formatInt(role.resolved)}
                 </span>
               </div>
               <div
@@ -220,8 +221,8 @@ function RoleOwnedCard({
                 role="img"
                 tabIndex={0}
                 data-ifai-tooltip-title={role.roleLabel}
-                data-ifai-tooltip-desc={`${role.withOwned} of ${role.resolved} ${role.roleLabel} answers cited a ${brandOwned()} page. ${role.withoutOwned} did not. ${ROLE_ASSOCIATION_CAVEAT}`}
-                aria-label={`${role.roleLabel}: ${role.withOwned} of ${role.resolved} resolved answers cited a ${brandOwned()} page. ${role.withoutOwned} did not. ${ROLE_ASSOCIATION_CAVEAT}`}
+                data-ifai-tooltip-desc={`${formatInt(role.withOwned)} of ${formatInt(role.resolved)} ${role.roleLabel} answers cited a ${brandOwned()} page. ${formatInt(role.withoutOwned)} did not. ${ROLE_ASSOCIATION_CAVEAT}`}
+                aria-label={`${role.roleLabel}: ${formatInt(role.withOwned)} of ${formatInt(role.resolved)} resolved answers cited a ${brandOwned()} page. ${formatInt(role.withoutOwned)} did not. ${ROLE_ASSOCIATION_CAVEAT}`}
               >
                 <RoleGroupButton
                   role={role}
@@ -239,7 +240,7 @@ function RoleOwnedCard({
               <ul className="citation-role-leads">
                 {role.groups.map((group) => {
                   if (group.resolved <= 0) return null;
-                  const led = `${brandName()} led ${group.fenderLed} of ${group.resolved}`;
+                  const led = `${brandName()} led ${formatInt(group.fenderLed)} of ${formatInt(group.resolved)}`;
                   const desc = `${led} ${role.roleLabel.toLowerCase()} answers that ${group.key === "cited_owned" ? "cited a" : "cited no"} ${brandOwned()} page. ${ROLE_ASSOCIATION_CAVEAT}`;
                   return (
                     <li key={group.key} data-citation-role-lead={`${role.role}:${group.key}`}>

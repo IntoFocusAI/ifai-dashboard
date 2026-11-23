@@ -35,15 +35,15 @@ import { brandName, leadBrand } from "@/lib/brand-copy";
 const ROLE = {
   unbranded_discovery: {
     title: "Unbranded Discovery",
-    label: `${brandName()} leads in unbranded discovery`,
-    noun: "resolved unbranded discovery answers",
+    label: `${brandName()} leads in Unbranded Discovery`,
+    noun: "resolved Unbranded Discovery answers",
     bands: UNBRANDED_RATE_BANDS,
     pick: (s: AiRunSummary) => s.roles.unbranded,
   },
   branded_consideration: {
     title: "Branded Consideration",
-    label: `${brandName()} leads in branded consideration`,
-    noun: "resolved branded consideration answers",
+    label: `${brandName()} leads in Branded Consideration`,
+    noun: "resolved Branded Consideration answers",
     bands: BRANDED_RATE_BANDS,
     pick: (s: AiRunSummary) => s.roles.branded,
   },
@@ -100,13 +100,13 @@ function rivalLead(summary: AiRunSummary | null) {
   }
   const top = summary?.topCompetitor;
   if (top && top.resolved > 0) {
-    return { brand: top.brand, wins: top.wins, resolved: top.resolved, scope: "resolved unbranded discovery answers", where: "unbranded discovery" };
+    return { brand: top.brand, wins: top.wins, resolved: top.resolved, scope: "resolved Unbranded Discovery answers", where: "Unbranded Discovery" };
   }
   return null;
 }
 
 /**
- * The client's battery categories that hold unbranded discovery questions (decision 93), in the
+ * The client's battery categories that hold Unbranded Discovery questions (decision 93), in the
  * order it asks them. Each question's role is read the same way as in the run's answers.
  */
 function batteryCategories(): string[] {
@@ -116,7 +116,7 @@ function batteryCategories(): string[] {
   return [...new Set(discovery.map((prompt) => prompt.category))];
 }
 
-/** Battlecard categories in the selected period: only those with unbranded discovery questions (decision 93). */
+/** Battlecard categories in the selected period: only those with Unbranded Discovery questions (decision 93). */
 function categoryRows(ctx: MinimalContext) {
   return cached(ctx, "category-role-tallies", () => (ctx.ai.phase === "ready" ? discoveryCategoryRoleTallies(ctx.ai.snapshot.calls) : []));
 }
@@ -137,9 +137,9 @@ export function categoryUnbrandedFigure(ctx: MinimalContext, category: string): 
     const figure = rateFigure(
       tally,
       UNBRANDED_RATE_BANDS,
-      `resolved ${name} unbranded discovery answers`,
+      `resolved ${name} Unbranded Discovery answers`,
       null,
-      `The selected period has no resolved ${name} unbranded discovery answers.`,
+      `The selected period has no resolved ${name} Unbranded Discovery answers.`,
     );
     const largest = Math.max(0, ...all.map((item) => item.roles.unbranded_discovery.resolved));
     if (!figure.ratio || !isSmallSample(tally.resolved, largest)) return figure;
@@ -152,7 +152,7 @@ function categoryUnbrandedEntry(category: string): MinimalEntry {
     id: categoryId(category),
     spokeId: "competitors",
     tab: "Category Battlecards",
-    label: `${categoryLabel(category)}: ${brandName()} leads in unbranded discovery`,
+    label: `${categoryLabel(category)}: ${brandName()} leads in Unbranded Discovery`,
     read: (ctx) => categoryUnbrandedFigure(ctx, category),
   };
 }
@@ -274,7 +274,7 @@ export const COMPETITIVE_ENTRIES: MinimalListItem[] = [
       aiReading(ctx, (s) => {
         const resolved = s.roles.unbranded.resolved;
         const pie = competitorLeadPie(s.competitorWins, resolved);
-        const tip = pie ? `${s.competitorWins} competitor led. ${resolved - s.competitorWins} ${leadBrand()} led. Total ${resolved} resolved unbranded discovery answers.` : null;
+        const tip = pie ? `${s.competitorWins} competitor led. ${resolved - s.competitorWins} ${leadBrand()} led. Total ${resolved} resolved Unbranded Discovery answers.` : null;
         return counted(resolved > 0 ? `${formatInt(s.competitorWins)} of ${formatInt(resolved)}` : null, ROLE.unbranded_discovery.noun, pie, tip, "This run has no resolved unbranded answers.");
       }),
   }),

@@ -133,34 +133,42 @@ export function lookupSiteType(index: SiteTypeIndex, domain: string): SiteTypeRo
   return null;
 }
 
-let current: SiteTypeIndex | null = null;
+/* One installed index per client (set_aside key), never one for the whole process. A server
+   handles exports for several clients in one process; a single shared index let a later export
+   classify sites with the other client's stored types. Every reader picks the index of the
+   client on screen (or the request's client, inside runWithClient) per call. */
+const indexes = new Map<string, SiteTypeIndex>();
 const loads = new Map<string, Promise<void>>();
 
-/** Tests only: forget which clients have loaded. */
+/** Tests only: forget which clients have loaded and every installed index. */
 export function resetSiteTypeLoadsForTests() {
   loads.clear();
+  indexes.clear();
 }
 
-/** Installs (or clears, with null) the stored types classifySource reads first. */
-export function setSiteTypes(index: SiteTypeIndex | null) {
-  current = index;
+/** Installs (or clears, with null) the stored types classifySource reads first, for one client. */
+export function setSiteTypes(index: SiteTypeIndex | null, clientKey: string = activeSetAsideClientKey()) {
+  if (index) indexes.set(clientKey, index);
+  else indexes.delete(clientKey);
 }
 
-/** The installed index itself, so a cache of classified rows can tell when the stored types changed. */
-export function installedSiteTypes(): SiteTypeIndex | null {
-  return current;
+/** The client's installed index itself, so a cache of classified rows can tell when its stored types changed. */
+export function installedSiteTypes(clientKey: string = activeSetAsideClientKey()): SiteTypeIndex | null {
+  return indexes.get(clientKey) ?? null;
 }
 
 /** The stored source class for a domain, or null when nothing is stored (use the lists in code). */
-export function storedSourceClass(domain: string): SourceClass | null {
-  if (!current) return null;
-  const hit = lookupSiteType(current, domain);
+export function storedSourceClass(domain: string, clientKey: string = activeSetAsideClientKey()): SourceClass | null {
+  const index = installedSiteTypes(clientKey);
+  if (!index) return null;
+  const hit = lookupSiteType(index, domain);
   return hit ? TO_SOURCE_CLASS[hit.site_type] : null;
 }
 
 /** Staff only: the domain's AI type is under the confidence threshold and no staff override covers it. */
-export function siteTypeNeedsReview(domain: string): boolean {
-  return current ? lookupSiteType(current, domain)?.needs_review === true : false;
+export function siteTypeNeedsReview(domain: string, clientKey: string = activeSetAsideClientKey()): boolean {
+  const index = installedSiteTypes(clientKey);
+  return index ? lookupSiteType(index, domain)?.needs_review === true : false;
 }
 
 /** Waits for the stored types, then runs the read. For history reads that start on their own. */
@@ -185,7 +193,7 @@ export function ensureSiteTypes(
     .then(() => loadSiteTypes(readClient ?? (getPublicCanvasSupabase() as unknown as SiteTypeReadClient), clientKey))
     .catch((error): SiteTypeRead => ({ phase: "fallback", reason: String(error) }))
     .then((read) => {
-      setSiteTypes(read.phase === "stored" && read.rows.length ? siteTypeIndex(read.rows) : null);
+      setSiteTypes(read.phase === "stored" && read.rows.length ? siteTypeIndex(read.rows) : null, clientKey);
     });
   loads.set(clientKey, pending);
   return pending;

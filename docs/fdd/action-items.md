@@ -74,7 +74,7 @@
 - **Desired:** Action Items tells the client exactly what to fix, in priority order, later with dollar recovery estimates where they apply.
 - **User value:** Recent change is visible without a fake model.
 - **Acceptance:** No Interactive ROI tab. Current findings shows the five Summary Briefing shares as the current N of M.
-- **Evidence:** Approved by Brian Magazu on 29 Oct 2026. Pull request 80, commit 457f790. Published on main at b2aa735. Rewritten 4 Nov 2026: worker 21.5, pull request 122 (main 9e83004), approved by Brian Magazu. A chart of how much of the estimated gap has closed since tracking began is LATER.
+- **Evidence:** Approved by Brian Magazu on 29 Oct 2026. Pull request 80, commit 457f790. Published on main at b2aa735. Rewritten 4 Nov 2026: worker 21.5, pull request 122 (main 9e83004), approved by Brian Magazu. A chart of how much of the estimated gap has closed since tracking began is LATER. 19 Nov 2026: the Urgent Interventions Estimate column and Revenue Estimates mids show in the status green (worker 30.5, PR 258, main 247e2c3, decision 127); the estimate explanation dialog opened from the Estimate column wraps its inputs table (workers 30.6 and 30.7, PR 259, main 805c9f1).
 - **Open decision:** None.
 
 **N-06 LATER** · After launch

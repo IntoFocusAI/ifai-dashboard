@@ -3,6 +3,7 @@
 import "@/components/v3/live/summary.css";
 import { CitationPieDisc } from "@/components/v3/live/ai-search/CitationPieDisc";
 import { PartialFigureMark } from "@/components/v3/live/FigureTip";
+import { ScoreOutOf100 } from "@/components/v3/live/ScoreOutOf100";
 import { useFindability } from "@/components/v3/live/findability/FindabilityContext";
 import { StatusMark } from "@/components/v3/live/StatusMark";
 import type { AiSearchRead } from "@/lib/ai-search/types";
@@ -77,29 +78,31 @@ export function BriefingConsensusLead({
         <span
           className="metric-card-label ifai-term"
           data-briefing-consensus-title=""
-          data-ifai-tooltip-title="AI Consensus"
+          data-ifai-tooltip-title="AI Consensus Score"
           data-ifai-tooltip-desc={sentence}
           tabIndex={0}
-          aria-label={`AI Consensus: ${sentence}`}
+          aria-label={`AI Consensus Score: ${sentence}`}
         >
-          AI Consensus
+          AI Consensus Score
         </span>
       ) : (
         <span className="metric-card-label" data-briefing-consensus-title="">
-          AI Consensus
+          AI Consensus Score
         </span>
       )}
       <div className="retail-overview-hero-row">
         <span className="retail-overview-hero-figures">
-          <span
-            className="ai-lead-figure"
-            data-briefing-consensus-score=""
-            style={{ color: status ? scoreToneColor(score) : "var(--text-muted)" }}
-          >
-            <PartialFigureMark partial={consensus ? consensusPartial(consensus) : null} testId="briefing-consensus">
-              {figure}
-            </PartialFigureMark>
-          </span>
+          <ScoreOutOf100 show={target != null}>
+            <span
+              className="ai-lead-figure"
+              data-briefing-consensus-score=""
+              style={{ color: status ? scoreToneColor(score) : "var(--text-muted)" }}
+            >
+              <PartialFigureMark partial={consensus ? consensusPartial(consensus) : null} testId="briefing-consensus">
+                {figure}
+              </PartialFigureMark>
+            </span>
+          </ScoreOutOf100>
           {target ? (
             <span className="retail-overview-hero-ratio" data-briefing-consensus-target="">
               {scoreTargetLabel()}

@@ -10,8 +10,6 @@ const ENGINE_LABELS: Record<string, string> = {
   copilot: "Copilot",
 };
 
-export const FENDER_BRAND = "Fender/Squier";
-
 /** Below this many resolved answers, an engine or category is not compared with the others. */
 export const MIN_COMPARABLE_RESOLVED = 10;
 
@@ -144,8 +142,12 @@ export function callOutcome(row: AiCallRow): CallOutcome {
 }
 
 export const OUTCOME_LABELS: Record<CallOutcome, string> = {
-  fender_win: `${leadBrand()} named most`,
-  fender_win_disqualified: `${leadBrand()} named most, with a confirmed error`,
+  get fender_win() {
+    return `${leadBrand()} named most`;
+  },
+  get fender_win_disqualified() {
+    return `${leadBrand()} named most, with a confirmed error`;
+  },
   competitor_win: "Competitor named most",
   unresolved: "No clear leader",
   error: "Provider error",

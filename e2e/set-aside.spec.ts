@@ -43,7 +43,7 @@ test("an Amazon Specs listing can be set aside and reopened", async ({ canvas, p
 });
 
 test("a MAP approved exception needs a note and stays on the MAP check", async ({ canvas, page, setAsides }) => {
-  await canvas.openPriority("Buy Box withheld");
+  await canvas.openPriority("Buy Box Withheld");
   await canvas.openTab("MAP");
   const table = page.locator("table").filter({
     has: page.locator("[data-set-aside-open]"),

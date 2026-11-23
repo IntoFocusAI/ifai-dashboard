@@ -161,7 +161,7 @@ test("Suppressed Listings places one callout body beside the share", () => {
   assert.match(panel, /featuredOfferFreshnessSentence/);
   assert.match(
     panel,
-    /The observed offer and the Competitive External Price come from the same Amazon/,
+    /The observed offer and Amazon's reference price come from the same Amazon/,
   );
 
   const topAt = panel.indexOf("data-suppressed-listings-top");
@@ -186,7 +186,7 @@ test("Suppressed Listings places one callout body beside the share", () => {
   assert.doesNotMatch(panel, /data-suppressed-listings-notes=""[\s\S]*className="content-box"/);
   assert.doesNotMatch(panel, /content-box-title/);
   assert.doesNotMatch(panel, /suppressed-count/);
-  assert.doesNotMatch(panel, /<span>Buy Box withheld<\/span>/);
+  assert.doesNotMatch(panel, /<span>Buy Box Withheld<\/span>/);
   assert.match(panel, /hero\.label/, "one share label comes from buyBoxHero");
 
   assert.doesNotMatch(panel, /data-ifai-open=/);

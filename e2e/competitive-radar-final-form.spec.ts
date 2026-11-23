@@ -37,7 +37,7 @@ for (const client of CLIENTS) {
       await page.goto(url(client, "spoke=competitors&tab=category-battlecards"));
       const label = page.locator("[data-graph-node-id='spoke-competitors'] .node-hero-label");
       await expect(label).toHaveText(/^\S.*leads\s?\S/, { timeout: 120_000 });
-      const bubble = ((await label.textContent()) ?? "").replace(/\s/g, "");
+      const bubble = ((await label.textContent()) ?? "").replace(/\s/g, "").replace("(rivalshare)", "");
       const caption = page.locator("[data-ai-on-track-caption]");
       await expect(caption).toContainText(" leads ", { timeout: 120_000 });
       await expect(caption).not.toContainText("Behind in");
@@ -64,7 +64,7 @@ for (const client of CLIENTS) {
       await expect(engines.first()).toBeVisible({ timeout: 120_000 });
       const shownEngines = await engines.count();
       const comparison = await downloadLines(page, "engine-comparison");
-      expect(comparison[4]).toBe("Engine,Model,Unbranded discovery,Branded consideration,Competitor leads,No leader,Errors");
+      expect(comparison[4]).toBe("Engine,Model,Unbranded Discovery,Branded Consideration,Competitor leads,No leader,Errors");
       expect(comparison.length - 5).toBe(shownEngines);
       const grid = await downloadLines(page, "engine-category");
       expect(grid[4]).toMatch(/^Engine,/);
@@ -82,7 +82,7 @@ for (const client of CLIENTS) {
       const lines = await downloadLines(page, "category-battlecards");
       expect(lines[0]).toContain("Who leads: Another brand leads.");
       expect(lines[4]).toBe(
-        "Category,Status,Unbranded discovery,Branded consideration,Top competitor,Competitor leads,No leader,Errors",
+        "Category,Status,Unbranded Discovery,Branded Consideration,Top competitor,Competitor leads,No leader,Errors",
       );
       expect(lines.length - 5).toBe(shown);
       for (const line of lines.slice(5)) expect(line.split(",")[1]).toBe("Behind");

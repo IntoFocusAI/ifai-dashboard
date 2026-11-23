@@ -10,8 +10,9 @@ import { ActuationItemsSection } from "@/components/staff/ActuationItemsSection"
 import { ActuationProgramCard } from "@/components/staff/ActuationProgramCard";
 import { ActuationScorePanel } from "@/components/staff/ActuationScorePanel";
 import { DASHBOARD_PATH } from "@/lib/auth/dashboard-path";
-import { CLIENT_KEYS, CLIENTS, clientHref, type ClientKey } from "@/lib/client/active-client";
+import { clientHref, clientProfile, listClientKeys, type ClientKey } from "@/lib/client/active-client";
 import type { ActuationRecordsRead } from "@/lib/fender-canvas/actuation-read";
+import type { ActuationTargetsRead } from "@/lib/fender-canvas/actuation-targets-read";
 import {
   ACTUATION_RECORDS_PATH,
   staffItemCounts,
@@ -31,7 +32,7 @@ function withTheme(href: string, light: boolean): string {
 function ClientSwitch({ client, light }: { client: ClientKey; light: boolean }) {
   return (
     <div className="segmented-control" role="group" aria-label="Client">
-      {CLIENT_KEYS.map((key) => (
+      {listClientKeys().map((key) => (
         <a
           key={key}
           href={withTheme(clientHref(key, ACTUATION_RECORDS_PATH), light)}
@@ -39,7 +40,7 @@ function ClientSwitch({ client, light }: { client: ClientKey; light: boolean }) 
           aria-current={key === client ? "page" : undefined}
           data-actuation-client={key}
         >
-          {CLIENTS[key].brandName}
+          {clientProfile(key).brandName}
         </a>
       ))}
     </div>
@@ -50,9 +51,11 @@ function ReadyBody({
   client,
   programs,
   items,
+  targets,
   today,
 }: {
   client: ClientKey;
+  targets: ActuationTargetsRead;
   programs: StaffProgramRow[];
   items: Extract<ActuationRecordsRead, { state: "ready" }>["items"];
   today: string;
@@ -81,6 +84,11 @@ function ReadyBody({
               factor={factor}
               row={programOf(factor)}
               today={today}
+              suggested={
+                targets
+                  ? { sites: factor === "P1" ? targets.targets.community : targets.targets.publication, windowLabel: targets.windowLabel }
+                  : null
+              }
             />
           ))}
         </div>
@@ -93,15 +101,17 @@ function ReadyBody({
 export function ActuationRecordsView({
   client,
   read,
+  targets = null,
   light,
   today,
 }: {
   client: ClientKey;
   read: ActuationRecordsRead;
+  targets?: ActuationTargetsRead;
   light: boolean;
   today: string;
 }) {
-  const brand = CLIENTS[client].brandName;
+  const brand = clientProfile(client).brandName;
   return (
     <main
       className={`ifai-canvas sites-review-page actuation-page${light ? " light-theme" : ""}`}
@@ -128,7 +138,7 @@ export function ActuationRecordsView({
           notes.
         </p>
         {read.state === "ready" ? (
-          <ReadyBody client={client} programs={read.programs} items={read.items} today={today} />
+          <ReadyBody client={client} programs={read.programs} items={read.items} targets={targets} today={today} />
         ) : read.state === "absent" ? (
           <p className="actuation-absent" role="status" data-actuation-absent="">
             Actuation records are not set up in the database yet. They open once {ACTUATION_MIGRATION} is applied.

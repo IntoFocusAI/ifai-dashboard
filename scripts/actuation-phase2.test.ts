@@ -200,7 +200,7 @@ test("E1 reads the Citation Ecosystem data and counts only engines that returned
   assert.deepEqual(joined?.basis, { withOwned: 2, resolved: 10 });
   assert.equal(joined?.leftOut.length, 0);
   const rows = actuationFactorRows(actuationFromLive({ ai: windowRead(true), actuation: clientBasis(LAUNCH_ROWS), asOf: ASOF })!, joined, "Fender");
-  assert.equal(rows[2].basis, "20.0% of unbranded shopping answers cite a Fender page (2 of 10). Target 15%.");
+  assert.equal(rows[2].basis, "20.0% of unbranded shopping answers from engines that cite sources cite a Fender page (2 of 10). Target 15%.");
   assert.equal(rows[2].pointsLabel, "30 of 30 points");
 });
 
@@ -235,8 +235,8 @@ test("Scores over time marks the first week scoring included AI Actuation (decis
   const model = scoreHistoryModel([row("2026-11-09", null), row("2026-11-16", 9), row("2026-11-23", 9)]);
   assert.ok(model);
   assert.equal(model.actuationAdded, "2026-11-16");
-  assert.equal(scorePointTip(model, "2026-11-16", "36 vs target 70"), `36 vs target 70. ${ACTUATION_ADDED_NOTE}`);
-  assert.equal(scorePointTip(model, "2026-11-23", "36 vs target 70"), "36 vs target 70.");
+  assert.equal(scorePointTip(model, "2026-11-16", "36/100, target 70"), `36/100, target 70. ${ACTUATION_ADDED_NOTE}`);
+  assert.equal(scorePointTip(model, "2026-11-23", "36/100, target 70"), "36/100, target 70.");
   assert.equal(ACTUATION_ADDED_NOTE, "Scoring now includes AI Actuation.");
   const chart = readFileSync("components/v3/live/ScoreHistoryChart.tsx", "utf8");
   assert.match(chart, /data-score-history-actuation-marker/);

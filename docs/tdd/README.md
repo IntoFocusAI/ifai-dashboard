@@ -1,4 +1,4 @@
-**Documentation version: 27.9**
+**Documentation version: 30.10**
 
 > **Source of truth.** This TDD moved from Google Docs into the repo on 10 Nov 2026 at version 24.4. History: [changelog.md](changelog.md). FDD: [../fdd/README.md](../fdd/README.md).
 
@@ -176,9 +176,11 @@ Deterministic: counts, joins, freshness, publication, score arithmetic, suppress
 >
 > • Tenant predicate in views or signed requests (X-16).
 >
+> • Client data isolation (1.6, migrations 20261123130000, 20261123130100 and 20261123130200, after the login-roles migrations 20261123120000 and 20261123120100; not applied, Brian Watson applies them with the dashboard's switch to signed-in reads). Roles live only in the command sign-in tables: staff (active intofocus_admin on the platform org, command.is_intofocus_admin()) read every client; an active org_admin (Org Lead) or org_viewer (Org User) reads the client mapped to their org in command.client_organizations (client_key = org slug = data/clients client_key). The rule lives in command.can_read_organization; command.can_read_client_key, command.can_read_schema, command.my_clients() and the private sandbox and set-aside helpers build on it. Client data lives in command and canvas_private (fender), ledlenser and ledlenser_private (ledlenser), sandbox (per row, sandbox.client.organization_id is a command org id) and eight public tables keyed by the set-aside client_key (command.client_organizations.set_aside_key). Never from an id in a request. Every client table has RLS with a client_read policy calling command.can_read_client_key, private.readable_client_ids or private.can_read_set_aside_client; every view over client data runs with security_invoker; materialized views are read through SECURITY DEFINER readers private.mv__<schema>__<name>() that apply the same check (service_role and direct database sessions bypass it, as they bypass RLS); anon reads and executes nothing in the client schemas. Read and write functions over client data check membership first. supabase/tests/catalog_guard.test.sql fails the build on any regression; the full list of changed objects is docs/tdd/1.6-lockdown-inventory.md.
+>
 > • One intentional public key; service role server-only.
 >
-> • Writes before login (Done and set-aside, N-08) go through SECURITY DEFINER functions that validate every input. The tables stay closed to the public key. Require a session once auth is on (X-15). Every new public view revokes all from anon and authenticated, then grants SELECT (20261104145317, 20261104152213, 20261104160000); the set-aside views were writable until Brian Watson applied 20261104152213 on 4 Nov 2026.
+> • Writes before login (Done and set-aside, N-08) go through SECURITY DEFINER functions that validate every input. The tables stay closed to the public key. Require a session once auth is on (X-15). 1.6 Step 0a (20261118190000, not applied): EXECUTE on the three set-aside functions and the two prompt functions is revoked from PUBLIC and anon and kept for authenticated and service_role; the dashboard calls them with the signed-in session (lib/supabase/session-client.ts), and a signed-out save shows a sign-in message. Every new public view revokes all from anon and authenticated, then grants SELECT (20261104145317, 20261104152213, 20261104160000); the set-aside views were writable until Brian Watson applied 20261104152213 on 4 Nov 2026.
 >
 > • Audit: prompt edits, publication, MAP exceptions, Done, set-aside, and reopen (N-08), uploads, exports, Need help? requests.
 >

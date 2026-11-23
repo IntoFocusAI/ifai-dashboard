@@ -58,8 +58,7 @@
 --   Dropping the tables deletes any records staff entered (a data change: Brian Watson).
 --   The staff page then reads as not set up, and no client figure reads the basis yet.
 --
--- Status: NOT APPLIED. Additive; Brian Magazu approved the table (decision 96). The PM dry-runs
--- and applies it, and the pull request records when and by whom.
+-- Status: APPLIED to production 16 Nov 2026 by PM27 (Brian Magazu approved).
 
 create table if not exists public.actuation_programs (
   client_key text not null references public.set_aside_clients(client_key),

@@ -11,7 +11,7 @@ import { useDefinitionTooltips } from "@/lib/canvas-sdk/useDefinitionTooltips";
 import type { SitesToReviewRead } from "@/lib/ai-search/site-review-read";
 import { SITES_TO_REVIEW_PATH } from "@/lib/ai-search/site-review";
 import { DASHBOARD_PATH } from "@/lib/auth/dashboard-path";
-import { CLIENT_KEYS, CLIENTS, clientHref, type ClientKey } from "@/lib/client/active-client";
+import { clientHref, clientProfile, listClientKeys, type ClientKey } from "@/lib/client/active-client";
 import { formatInt } from "@/lib/fender-canvas/format";
 
 const THRESHOLD_TIP =
@@ -26,7 +26,7 @@ function withTheme(href: string, light: boolean): string {
 function ClientSwitch({ client, light }: { client: ClientKey; light: boolean }) {
   return (
     <div className="segmented-control" role="group" aria-label="Client">
-      {CLIENT_KEYS.map((key) => (
+      {listClientKeys().map((key) => (
         <a
           key={key}
           href={withTheme(clientHref(key, SITES_TO_REVIEW_PATH), light)}
@@ -34,7 +34,7 @@ function ClientSwitch({ client, light }: { client: ClientKey; light: boolean }) 
           aria-current={key === client ? "page" : undefined}
           data-sites-review-client={key}
         >
-          {CLIENTS[key].brandName}
+          {clientProfile(key).brandName}
         </a>
       ))}
     </div>
@@ -67,7 +67,7 @@ export function SitesToReviewView({
   const never = useCallback(() => false, []);
   useDefinitionTooltips({ enabled: true, isBlocked: never, onShow: show, onHide: hide });
 
-  const brand = CLIENTS[client].brandName;
+  const brand = clientProfile(client).brandName;
   const count = read.ok ? read.rows.length : null;
 
   return (

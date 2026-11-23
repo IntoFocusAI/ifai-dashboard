@@ -7,7 +7,8 @@ import { ResizableTable, type RetailColumn } from "@/components/v3/live/Resizabl
 import { ListingName, RETAIL_FIT_TABLE, wrapColumnIdsAfterFirst } from "@/components/v3/live/RetailOverviewFigure";
 import { NewTag, SourceTag, type DataSource } from "@/components/v3/live/SourceTag";
 import { StockLossDetail } from "@/components/v3/live/StockLossDetail";
-import { StockLossHero } from "@/components/v3/live/StockLossHero";
+import { EstimateLineCard } from "@/components/v3/live/estimates/EstimateLineFigure";
+import { STOCK_LOSS_ESTIMATE_LINE } from "@/lib/fender-canvas/stock-loss";
 import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
 import { formatInt, formatUsd } from "@/lib/fender-canvas/format";
 import {
@@ -17,6 +18,7 @@ import {
   lostSales,
   noActiveOffer,
   num,
+  stockOutSellerTip,
   type StockLossRow,
 } from "@/lib/fender-canvas/stock-loss";
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
@@ -117,7 +119,8 @@ function Explanation() {
         <DefinedTerm term="SmartScout" />, divides by the days it was in stock according to{" "}
         <DefinedTerm term="Keepa" />, and multiplies by the days it was not, for the last 30 days,
         90 days, and 12 months. Each figure is also what the next period of the same length would
-        miss if the sales rate and the out-of-stock pattern hold. It is an analyst estimate. A
+        miss if the sales rate and the out-of-stock pattern hold. It is an{" "}
+        <span {...figureTipAttrs("analyst estimate", stockOutSellerTip(), "stock-loss-seller")}>analyst estimate</span>. A
         listing with no sales source is awaiting inputs.
       </div>
     </div>
@@ -164,7 +167,7 @@ export function StockLossPanel() {
           data-stock-loss-lead=""
           style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "flex-start" }}
         >
-          <StockLossHero rows={rows} populationCount={state.populationCount} />
+          <EstimateLineCard lineId={STOCK_LOSS_ESTIMATE_LINE} />
           <Explanation />
         </div>
       ) : null}

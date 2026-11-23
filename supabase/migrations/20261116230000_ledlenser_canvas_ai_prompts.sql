@@ -27,9 +27,7 @@
 --   DROP VIEW IF EXISTS ledlenser.canvas_ai_prompts;
 --   NOTIFY pgrst, 'reload schema';
 --
--- Status: NOT APPLIED. Additive; applied to production only after Brian Magazu approves
--- (AGENTS.md, Database changes). Until then the Ledlenser Prompts screen says the prompt list
--- could not be read.
+-- Status: APPLIED to production 16 Nov 2026 by PM27 (Brian Magazu approved).
 
 CREATE VIEW ledlenser.canvas_ai_prompts WITH (security_invoker = false) AS
 SELECT

@@ -21,7 +21,7 @@ import type { AiSelectionScope } from "@/lib/ai-search/selection";
 import { loadAiSelection } from "@/lib/ai-search/selection-load";
 import { SITE_TYPE_VIEW } from "@/lib/ai-search/site-types";
 import { citedReviewRows, type RawReviewRow, type ReviewRow } from "@/lib/ai-search/site-review";
-import { CLIENTS, type ClientKey } from "@/lib/client/active-client";
+import { clientProfile, type ClientKey } from "@/lib/client/active-client";
 import { runWithClient } from "@/lib/client/server-client";
 import { getCanvasSupabase, getPublicCanvasSupabase } from "@/lib/supabase/canvas-client";
 import { createClient } from "@/lib/supabase/server";
@@ -100,7 +100,7 @@ async function citedLinks(client: ClientKey): Promise<CitedLinks | null> {
 }
 
 export async function loadSitesToReview(client: ClientKey): Promise<SitesToReviewRead> {
-  const clientKey = CLIENTS[client].setAsideKey;
+  const clientKey = clientProfile(client).setAsideKey;
   const [staff, cited] = await Promise.all([staffRead(clientKey), citedLinks(client)]);
   if (!cited) return { ok: false, message: WINDOW_FAILED };
   const raw = staff ?? (await viewRead(clientKey));

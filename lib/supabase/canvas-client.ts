@@ -1,9 +1,11 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { activeClient } from "@/lib/client/active-client";
+import { activeClientSettings } from "@/lib/client/active-client";
 import { aliasingFetch } from "@/lib/client/column-aliases";
+import { viewerAccessToken } from "@/lib/supabase/viewer-token";
 
 let publicClient: SupabaseClient | null = null;
-let brandClient: SupabaseClient | null = null;
+/** One client per brand schema, so a server process serving two brands never reuses another's. */
+const brandClients = new Map<string, SupabaseClient>();
 
 function env() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -26,24 +28,28 @@ function env() {
 export function getPublicCanvasSupabase(): SupabaseClient {
   if (publicClient) return publicClient;
   const { url, key } = env();
-  publicClient = createClient(url, key, { auth: { persistSession: false } });
+  // accessToken sends the signed-in viewer's token, so row-level security knows who reads.
+  publicClient = createClient(url, key, { accessToken: viewerAccessToken });
   return publicClient;
 }
 
 /**
- * Browser-safe client for the active brand's read-only canvas_* views.
- * Fender reads `public`. Ledlenser reads the `ledlenser` schema, with its
- * brand-neutral column names translated to the names the dashboard uses.
+ * Browser-safe client for the active brand's read-only canvas_* views, from its settings record.
+ * Fender reads `public` with the dashboard's column names. A brand whose views use brand-neutral
+ * column names (Ledlenser, schema `ledlenser`) has them translated to the names the dashboard uses.
  */
 export function getCanvasSupabase(): SupabaseClient {
-  const client = activeClient();
-  if (client.schema === "public") return getPublicCanvasSupabase();
-  if (brandClient) return brandClient;
+  const { data_schema: schema, column_naming: naming } = activeClientSettings();
+  if (schema === "public" && naming === "fender") return getPublicCanvasSupabase();
+  const cacheKey = `${schema}:${naming}`;
+  const cached = brandClients.get(cacheKey);
+  if (cached) return cached;
   const { url, key } = env();
-  brandClient = createClient(url, key, {
-    auth: { persistSession: false },
-    db: { schema: client.schema },
-    global: { fetch: aliasingFetch() },
+  const client = createClient(url, key, {
+    accessToken: viewerAccessToken,
+    db: { schema },
+    ...(naming === "neutral" ? { global: { fetch: aliasingFetch() } } : {}),
   }) as unknown as SupabaseClient;
-  return brandClient;
+  brandClients.set(cacheKey, client);
+  return client;
 }

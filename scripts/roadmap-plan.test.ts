@@ -11,6 +11,7 @@ import {
   phaseItems,
   planFindingsFigure,
   PLAN_PHASES,
+  RECOMMENDED_LABEL,
 } from "../lib/fender-canvas/roadmap-plan.ts";
 import { signalActions } from "../lib/fender-canvas/roadmap-signals.ts";
 import { siteType, sourceActions } from "../lib/fender-canvas/roadmap-sources.ts";
@@ -131,6 +132,18 @@ test("other signals: rival-led categories and fact-check contradictions come fro
   const ai = { phase: "ready" as const, snapshot: run("r", 0) };
   const signals = signalActions({ retail: { phase: "loading" }, ai, stock: { phase: "ready", rows: [], populationCount: 10 } });
   assert.deepEqual(signals, [], "no rival leads, no contradictions, no out-of-stock rows");
+  const probe = (sim: number, state: string) =>
+    ({ audit_run_id: "r", sim_id: sim, prompt_key: `p${sim}`, prompt: `Question ${sim}`, engine: "chatgpt", model: null, call_status: "answered", material_hallucination: state, hallucination_evidence: state === "confirmed" ? "Said 12 inch radius." : null, verified_claim: "Radius is 9.5 inches.", verified_source_url: "https://example.com/p", verified_at: null, created_at: null }) as never;
+  const flagged = { phase: "ready" as const, snapshot: { ...run("r", 0), probes: [probe(1, "confirmed"), probe(2, "none"), probe(3, "none")] } };
+  const [review] = signalActions({ retail: { phase: "loading" }, ai: flagged, stock: { phase: "loading" } });
+  assert.equal(review!.id, "signal:fact_contradictions");
+  assert.equal(review!.label, "Review 1 AI answer that may contradict your product facts.");
+  assert.equal(review!.fact, "The automatic fact check flagged 1 of 3 checked answers.");
+  assert.deepEqual(review!.reviews!.map((a) => [a.answerFocus, a.quote, a.claim, a.sourceUrl]), [["1", "Said 12 inch radius.", "Radius is 9.5 inches.", "https://example.com/p"]]);
+  const reviewItem = buildPlan({ findings: LIVE, signals: [review!], sources: [] }).find((item) => item.id === review!.id)!;
+  assert.equal(reviewItem.statusLabel, RECOMMENDED_LABEL);
+  assert.equal(reviewItem.phase, "days_31_60");
+  assert.equal(reviewItem.reviews?.length, 1);
   const stock = signalActions({
     retail: { phase: "loading" },
     ai: { phase: "loading" },

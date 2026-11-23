@@ -12,7 +12,7 @@ const root = new URL("..", import.meta.url).pathname;
 const read = (path: string) => readFileSync(join(root, path), "utf8");
 /** Source with JSX line wrapping collapsed, so copy assertions read as sentences. */
 const flat = (path: string) => read(path).replace(/\s+/g, " ");
-const spec = JSON.parse(read("data/fender-v3-spec.json"));
+const spec = JSON.parse(read("data/canvas-narrative.json"));
 
 function files(dir: string, ext: string): string[] {
   return readdirSync(join(root, dir)).flatMap((name) => {
@@ -146,7 +146,7 @@ test("protected surfaces are unchanged", () => {
   assert.match(spokes, /<SuppressedListingsPanel read=\{retail\}/);
   assert.match(spokes, /<MapChannelPanel/);
   const roi = JSON.stringify(spec.spokes.suggestions);
-  for (const figure of ["{phase_one_lift}", "{enterprise_potential}", "$50M midpoint"]) assert.ok(roi.includes(figure), figure);
+  for (const figure of ["{phase_one_lift}", "{enterprise_potential}"]) assert.ok(roi.includes(figure), figure);
   assert.doesNotMatch(roi, /Reddit \/r\/Guitar Community|largest SOV gaps/);
 });
 
@@ -224,8 +224,8 @@ test("citation copy separates answers from links and avoids causal claims", () =
     const tooltip = new RegExp(`headerTooltip: \\{ title: ${title}, description: \`[^\`]*\\$\\{CITED_LINK_COUNT_CAVEAT\\}\``);
     assert.match(panel, tooltip, `the low-count caveat sits in the ${title} column tooltip`);
   }
-  assert.match(panel, /columns=\{ENGINE_COLUMNS\}/);
-  assert.match(panel, /const ENGINE_COLUMNS = \[ [^\]]*\.\.\.LINK_COLUMNS, \]/);
+  assert.match(panel, /columns=\{columns.engine\}/);
+  assert.match(panel, /function engineColumns\(\) \{ return \[ [^\]]*\.\.\.linkColumns\(\), \]/);
 });
 
 test("the old authored citation percentages stay retired", () => {

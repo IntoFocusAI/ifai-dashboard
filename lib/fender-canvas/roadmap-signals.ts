@@ -8,7 +8,7 @@
  */
 
 import { categoryLeads } from "@/lib/ai-search/category-on-track";
-import { driftRead } from "@/lib/ai-search/drift";
+import { driftRead, factCheckReviewAnswers, factCheckReviewTitle, type FactCheckReviewAnswer } from "@/lib/ai-search/drift";
 import { discoveryCategoryRoleTallies } from "@/lib/ai-search/question-role";
 import type { AiSearchRead } from "@/lib/ai-search/types";
 import { brandName, brandSite, leadBrand } from "@/lib/brand-copy";
@@ -36,6 +36,8 @@ export type SignalAction = {
   categories?: string[];
   /** The rival a rival-led category signal names. */
   rival?: string;
+  /** The fact-check review task's flagged answers, each with its quote and source fact. */
+  reviews?: FactCheckReviewAnswer[];
 };
 
 function outOfStock(stock: StockLossRead): SignalAction | null {
@@ -84,19 +86,22 @@ function missingSpecs(retail: RetailCanvasRead): SignalAction | null {
 
 function contradictions(ai: AiSearchRead): SignalAction | null {
   if (ai.phase !== "ready") return null;
-  const { coverage } = driftRead(ai.snapshot.calls, ai.snapshot.probes);
-  if (coverage.answersChecked <= 0 || coverage.contradictions <= 0) return null;
+  const { coverage, probes } = driftRead(ai.snapshot.calls, ai.snapshot.probes);
+  const reviews = factCheckReviewAnswers(probes);
+  if (coverage.answersChecked <= 0 || reviews.length <= 0) return null;
+  // Checker verdicts are unreviewed, so this is a review task, never a finding (Brian Magazu, 18 Nov 2026).
   return {
     id: "signal:fact_contradictions",
     group: "answers",
-    label: "Fact-check contradictions",
-    share: coverage.contradictions / coverage.answersChecked,
-    numerator: coverage.contradictions,
+    label: factCheckReviewTitle(reviews.length),
+    share: reviews.length / coverage.answersChecked,
+    numerator: reviews.length,
     denominator: coverage.answersChecked,
-    fact: `${formatRatio(coverage.contradictions, coverage.answersChecked)} checked answers contradicted a verified ${brandName()} product fact.`,
-    action: `Correct each contradicted fact where ${brandName()} publishes it, starting with ${brandSite()}.`,
+    fact: `The automatic fact check flagged ${formatRatio(reviews.length, coverage.answersChecked)} checked answers.`,
+    action: `Check each flagged answer against the ${brandName()} fact and its source page. Where the answer is wrong, correct the fact where ${brandName()} publishes it, starting with ${brandSite()}.`,
     open: { spokeId: "aeo", tab: "Product Fact Checks" },
     partial: null,
+    reviews,
   };
 }
 
@@ -114,12 +119,12 @@ function rivalLedCategories(ai: AiSearchRead): SignalAction[] {
         id: `signal:rival:${lead.key}`,
         group: "answers" as const,
         label: `${rival.brand} leads ${lead.label}`,
-        // The figure is the share of all resolved unbranded discovery answers the rival leads
+        // The figure is the share of all resolved Unbranded Discovery answers the rival leads
         // here, the same share that ranks it (21f); the fact gives the category's own count.
         share: rival.wins / resolved,
         numerator: rival.wins,
         denominator: resolved,
-        fact: `${rival.brand} is named most in ${formatRatio(rival.wins, lead.resolved)} resolved unbranded discovery answers in ${lead.label} (${formatPct((100 * rival.wins) / lead.resolved)}). ${leadBrand()} is named most in ${formatInt(lead.fenderLeads)}.`,
+        fact: `${rival.brand} is named most in ${formatRatio(rival.wins, lead.resolved)} resolved Unbranded Discovery answers in ${lead.label} (${formatPct((100 * rival.wins) / lead.resolved)}). ${leadBrand()} is named most in ${formatInt(lead.fenderLeads)}.`,
         action: `Publish comparison content on ${brandSite()} for ${lead.label} against ${rival.brand}.`,
         open: { spokeId: "competitors", tab: "Category Battlecards" },
         partial: null,

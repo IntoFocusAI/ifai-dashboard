@@ -7,12 +7,13 @@ import { pct, runStateLabel, summarizeRun } from "@/lib/ai-search/summary";
 import type { AiSearchRead } from "@/lib/ai-search/types";
 import type { FindabilityRead } from "@/lib/findability/copy";
 import { countFindability } from "@/lib/findability/outcomes";
-import { ENTERPRISE_POTENTIAL_ESTIMATE, PHASE_ONE_LIFT_ESTIMATE } from "@/lib/fender-canvas/analyst-estimates";
+import { enterprisePotentialEstimate, phaseOneLiftEstimate } from "@/lib/fender-canvas/analyst-estimates";
 import { READ_NOT_AVAILABLE } from "@/lib/fender-canvas/canvas-reads";
-import { formatInt } from "@/lib/fender-canvas/format";
+import { formatInt, formatRatio } from "@/lib/fender-canvas/format";
 import { specPageCounts } from "@/lib/fender-canvas/machine-readability";
 import { headlineSurface, type RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
 import { frameTourStep } from "@/lib/fender-canvas/primary-spoke-layout";
+import { specHero } from "@/lib/fender-canvas/retail-overview-lead";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
 import { brandName, brandSite, leadBrand } from "@/lib/brand-copy";
 
@@ -43,6 +44,19 @@ export function retailTourLines(retail: RetailCanvasRead): string[] {
   const coverage = coverageSentence(surface.missingMessage);
   const read = coverage.match(N_OF_M)?.[0];
   return read ? [`${surface.label}: ${figure} (${read} read)`] : [`${surface.label}: ${figure}`, `*${coverage}`];
+}
+
+/**
+ * Listings missing an Amazon spec field, from the Amazon Specs hero the Action Items finding reads,
+ * so the tour, the tab and Action Items count the same listings (PM29 item 7).
+ */
+export function specTourLine(retail: RetailCanvasRead): string {
+  if (retail.phase === "loading") return "Amazon Specs: loading";
+  if (retail.phase === "error") return `Amazon Specs: ${READ_NOT_AVAILABLE} (retail read did not load)`;
+  const hero = specHero(retail.snapshot);
+  if (hero.numerator == null || hero.denominator == null) return `Amazon Specs: ${READ_NOT_AVAILABLE}`;
+  const mark = hero.partial ? "*" : "";
+  return `${formatRatio(hero.denominator - hero.numerator, hero.denominator)}${mark} checked listings are missing an Amazon spec field`;
 }
 
 function rateLine(label: string, tally: OutcomeTally): string {
@@ -82,7 +96,7 @@ export function aiTourBullets(ai: AiSearchRead): AiTourBullets {
             ...(leaders.length ? [`${category} leaders: ${joinBrands(leaders)}`] : []),
           ]
         : ["No category gap in this run"]),
-      "Unbranded discovery answers only",
+      "Unbranded Discovery answers only",
     ],
   };
 }
@@ -135,7 +149,7 @@ export function buildLiveTourSteps(
       subtitle: "Buy Box, MAP, and catalog nesting",
       category: "RETAIL HEALTH",
       displays: [
-        "Suppressed Buy Boxes, MAP leakage, and unnested bundles",
+        "Suppressed Buy Boxes, MAP Leakage, and Splintered Listings",
         "A partial reading keeps its count and says what is missing",
       ],
       value: "They change what AI can recommend and shoppers can buy.",
@@ -164,9 +178,7 @@ export function buildLiveTourSteps(
           ? `${formatInt(schemaPages.missingSpecBlock)} of ${formatInt(schemaPages.pages)} ${brandSite()} pages have no spec block`
           : `${brandSite()} page read not available`,
         ...findabilityTourBullets(findability),
-        bundle.unavailable?.missing
-          ? `Amazon Specs missing-field rows: ${READ_NOT_AVAILABLE} (${bundle.unavailable.missing.source} did not load)`
-          : `${formatInt(bundle.missing.length)} missing-field rows are on Amazon Specs`,
+        specTourLine(retail),
       ],
       value: `Make ${brandSite()} the spec source AI trusts.`,
     },
@@ -191,8 +203,8 @@ export function buildLiveTourSteps(
       category: "OPPORTUNITY",
       displays: [
         "Revenue figures on this spoke are estimates",
-        `Phase 1: ${PHASE_ONE_LIFT_ESTIMATE}`,
-        `Enterprise: ${ENTERPRISE_POTENTIAL_ESTIMATE}`,
+        `Phase 1: ${phaseOneLiftEstimate(bundle)}`,
+        `Enterprise: ${enterprisePotentialEstimate(bundle)}`,
       ],
       value: "See what each Action Item is worth, so you know where to start.",
     },

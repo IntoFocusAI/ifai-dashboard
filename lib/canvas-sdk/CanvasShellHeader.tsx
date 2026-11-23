@@ -244,6 +244,7 @@ export function CanvasShellHeader({
                 roleLabel={spec.userMenu?.roleLabel}
                 organizations={spec.userMenu?.organizations}
                 activeOrganizationId={spec.userMenu?.activeOrganizationId}
+                canManageUsers={spec.userMenu?.canManageUsers}
                 variant="canvas"
                 lightTheme={lightTheme}
                 showThemeToggle={showThemeToggle}

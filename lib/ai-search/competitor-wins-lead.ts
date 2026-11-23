@@ -22,19 +22,19 @@ export function competitorWinsCount(competitorWins: number, resolved: number): s
 
 /** Same words as the Competitive Radar spoke sentence for this snapshot. */
 export function competitorWinsFigure(competitorWins: number, resolved: number): string {
-  return `Competitors led ${competitorWinsCount(competitorWins, resolved)} resolved unbranded discovery answers.`;
+  return `Competitors led ${competitorWinsCount(competitorWins, resolved)} resolved Unbranded Discovery answers.`;
 }
 
-/** Disc of competitor-led versus Fender/Squier-led among resolved unbranded discovery. */
+/** Disc of competitor-led versus Fender/Squier-led among resolved Unbranded Discovery. */
 export function competitorLeadPie(competitorWins: number, resolved: number): PieDiscData | null {
   if (resolved <= 0) return null;
   const fenderLed = resolved - competitorWins;
   if (competitorWins < 0 || fenderLed < 0) return null;
   return {
     id: "competitor-wins-lead",
-    title: "Unbranded discovery leads",
+    title: "Unbranded Discovery leads",
     total: resolved,
-    totalLabel: "resolved unbranded discovery answers",
+    totalLabel: "resolved Unbranded Discovery answers",
     slices: [
       { key: "competitor_brand", label: "Competitor led", count: competitorWins },
       { key: "fender", label: `${leadBrand()} led`, count: fenderLed },

@@ -8,8 +8,12 @@ const STATUS_RANK: Record<string, number> = { Critical: 0, "At risk": 1, "On tra
 async function openUrgentInterventions(page: Page, baseURL: string | undefined) {
   pageErrors = await openSpokeTab(page, baseURL, "suggestions", "urgent-interventions");
   const findings = page.locator('.drilldown-panel [data-fix-list] [data-fix-kind="finding"]');
-  await expect(findings).toHaveCount(5);
   await expect(findings.first().locator("[data-fix-ratio]")).toBeVisible({ timeout: LIVE_READ_TIMEOUT });
+  // Five findings; the Buy Box becomes three rows (two causes today, then earlier days) once the
+  // withheld listings and the estimates are read.
+  await expect(page.locator('[data-fix-row="finding:buy_box:price"]')).toHaveCount(1, { timeout: LIVE_READ_TIMEOUT });
+  await expect(page.locator('[data-fix-row="finding:buy_box:earlier"]')).toHaveCount(1, { timeout: LIVE_READ_TIMEOUT });
+  await expect(findings).toHaveCount(7);
   return findings;
 }
 
@@ -38,7 +42,14 @@ test.describe("Action Items opens on the prioritized fix list", () => {
     await expect(rows.first()).toBeInViewport();
     expect(listTop).toBeLessThan(page.viewportSize()!.height / 2);
 
-    await expect(rows.locator("[data-fix-rank]")).toHaveText(["1", "2", "3", "4", "5"]);
+    // Worker 29.20: the two Confirm program rows rank right after the Critical findings, so the
+    // finding numbers rise in order but are not always consecutive. PR 245 splits Buy Box into
+    // three cause rows, so there are seven findings.
+    await expect(rows.locator("[data-fix-rank]")).toHaveCount(7);
+    const findingRanks = (await rows.locator("[data-fix-rank]").allTextContents()).map(Number);
+    expect(findingRanks[0]).toBe(1);
+    expect([...findingRanks].sort((a, b) => a - b)).toEqual(findingRanks);
+    expect(findingRanks[6]).toBeLessThanOrEqual(9);
     const statuses = await rows.locator("[data-fix-status-label]").evaluateAll((nodes) =>
       nodes.map((node) => node.getAttribute("data-fix-status-word") ?? ""),
     );
@@ -53,7 +64,7 @@ test.describe("Action Items opens on the prioritized fix list", () => {
       const percent = row.locator("[data-fix-percent]");
       const ratio = row.locator("[data-fix-ratio]");
       if ((await ratio.count()) > 0) {
-        await expect(percent).toHaveText(/^\d+\.\d%$/);
+        await expect(percent).toHaveText(/^\d+\.\d%\*?$/);
         await expect(ratio).toHaveText(/^[\d,]+ of [\d,]+\b/);
       } else {
         await expect(percent).toHaveText("Not available*");
@@ -66,11 +77,13 @@ test.describe("Action Items opens on the prioritized fix list", () => {
     await openUrgentInterventions(page, baseURL);
     const list = page.locator(".drilldown-panel [data-fix-list]");
     await expect(list.locator('[data-table-toolbar="action-items-fixes"]')).toBeVisible();
-    await expect(list.locator("th .ifai-sort-btn")).toHaveCount(6);
+    // #, What to fix, Finding, Estimate (E4), Status, Phase, Evidence.
+    await expect(list.locator("th .ifai-sort-btn")).toHaveCount(7);
     await expect(list).toHaveAttribute("data-fix-sources", "ready", { timeout: 90_000 });
     const extra = list.locator('[data-fix-row]:not([data-fix-kind="finding"])');
     for (const row of await extra.all()) {
-      await expect(row.locator("[data-plan-fact]")).not.toBeEmpty();
+      // A Confirm row carries its points in the action line and has no fact line.
+      if (!(await row.getAttribute("data-fix-row"))?.endsWith(":confirm")) await expect(row.locator("[data-plan-fact]")).not.toBeEmpty();
       await expect(row.locator("[data-fix-action]")).not.toBeEmpty();
       await expect(row.locator("[data-fix-open]")).toHaveText(/^Open .+ →$/);
     }

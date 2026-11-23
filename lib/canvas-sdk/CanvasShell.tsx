@@ -27,6 +27,8 @@ import { useCanvasUrlApply } from "@/lib/canvas-sdk/useCanvasUrlApply";
 import { useCanvasUrlSync } from "@/lib/canvas-sdk/useCanvasUrlSync";
 import { useIomColumnLayout } from "@/lib/canvas-sdk/useIomColumnLayout";
 import { Route } from "lucide-react";
+import { StatusGlyph } from "@/components/v3/live/StatusMark";
+import { dataStatusFromNode } from "@/lib/canvas-sdk/data-status";
 import {
   useCallback,
   useEffect,
@@ -209,7 +211,7 @@ export function CanvasShell({ spec, children }: Props) {
     tourCategory: currentTour?.category ?? "",
     focusNode,
     inspectBubble,
-    heldGroupId: hubSlotsVisible && panelLayout === "hidden" ? inspectedBubbleId : null,
+    heldGroupId: hubSlotsVisible && panelLayout === "hidden" && spec.hubSlots?.[inspectedBubbleId] ? inspectedBubbleId : null,
     resetView: resetCanvasView,
     overviewNonce,
     focusedSpokeId: activeSpoke,
@@ -226,11 +228,6 @@ export function CanvasShell({ spec, children }: Props) {
   // cannot tell a forwarded ref from a read, and nothing reads .current here.
   // eslint-disable-next-line react-hooks/refs
   const viewport = typeof children === "function" ? children(ctx) : children;
-  const legendColor: Record<(typeof legend)[number]["status"], string> = {
-    danger: "var(--danger-red)",
-    warning: "var(--warning-amber)",
-    success: "var(--success-green)",
-  };
 
   return (
     <div
@@ -326,7 +323,9 @@ export function CanvasShell({ spec, children }: Props) {
           <div className="canvas-hud-legend">
             {legend.map((item) => (
               <div key={item.label} className="legend-item">
-                <span className="legend-dot" style={{ borderColor: legendColor[item.status] }} />
+                <span className={`data-status-${dataStatusFromNode(item.status)}`} style={{ display: "inline-flex" }}>
+                  <StatusGlyph status={dataStatusFromNode(item.status) ?? "okay"} />
+                </span>
                 <span>{item.label}</span>
               </div>
             ))}

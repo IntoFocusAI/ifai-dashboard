@@ -428,3 +428,149 @@ closeout of each view. Open items are marked OPEN and are not built.
     Prompt building ("Build prompts", Watson's prompt-builder) is reached
     only through IntoFocus staff logins. Supersedes the 9 Nov A-08 split
     between Fender (editable) and Ledlenser (read-only).
+100. D-05 field lists approved as recommended (16 Nov): competitor product
+    types judged by title are accepted; white_brightness and
+    light_output_maximum count as one field; beam distance stays off (under
+    30%); variation fields (style_name, size) stay off; ELECTRIC_LIGHT and
+    ELECTRIC_LANTERN get no list yet, so those listings read Not available*
+    for specs complete. The "placeholder" label comes off the approved
+    lists. PR 204 (SC-03 phase 1) merged.
+101. SC-03 launch details (16 Nov): Actuation counts E1 (measured) from day
+    one; P1, P2, E2 and E3 count 0 until staff record them. Expiry
+    reminders at 30, 14 and 3 days post to Slack #operations (private).
+102. X-18 casing and headings (16 Nov): the canonical figure names
+    (Unbranded Discovery, Branded Consideration, MAP Leakage, Splintered
+    Listings, Specs Complete, Buy Box Withheld) use exact title case
+    everywhere: tiles, tables, CSV headers, tooltips, deck. Other text is
+    sentence case. Headings: Portfolio at a glance; "What is changing what
+    AI assistants recommend for <Brand>?"; Enterprise estimate: main
+    drivers; Beginner category: gap to top rival; Strongest category for
+    <Brand>; Cited links by type of site; Site and type. Catalog Governance
+    keeps its name.
+103. SC-03 reminders (16 to 17 Nov): E2 and E3 get lapse reminders when the
+    newest verified item is 30, 14 and 3 days from leaving the score. They
+    post to Slack #operations with no named owner; Brian and Watson own them
+    for now. P1 and P2 reminders name the recorded IntoFocus owner. The job
+    reuses the score_snapshot_writer login. Brian approved the additive
+    sent-log migration (applied 17 Nov by PM28).
+104. Copy fixes (17 Nov): the trend table drops its series column under
+    Overall and calls it "AI engine" under By engine; Findability "Bundle"
+    column with a plain tooltip; Confidence values are short (Same SKU, Same
+    barcode, Same options, No ID match), and longer text lives only in
+    tooltips, never in a table cell; a one-line Findability explanation sits
+    under the tab pills. How-found meanings confirmed by Watson.
+105. Client parity (17 Nov): every client gets the same views from one
+    template; client differences come only from a settings record and the
+    client's data, and a missing input reads Not available*, never another
+    client's answer. Settings live in a repo file now and move to a database
+    table with data separation. The decision 46 hold on X-15 and X-16 is
+    lifted (Watson is building logins). Briefing, Opportunity and Revenue
+    Estimates are generated from settings and data, with an optional short
+    client note. Estimates not yet prepared read Not available* with
+    "Analyst estimate not prepared yet for <Brand>" (an exception to the
+    no-all-Not-available rule, for estimates only). Seller types are built
+    when a signed client needs one. Database: shared tables with a client
+    column (Watson and Brian agree).
+106. Radar categories (17 Nov): category figures come from the categories
+    of each client's own loaded questions (ideally tagged by Watson's
+    question builder), not a fixed "beginner" category. A brand with no
+    beginner questions shows no beginner figure.
+107. D-05 headline (17 Nov): the approved field lists move into one database
+    table shared by all clients (entries may name alternate Amazon field
+    ids); the spec check records every field on each list; the headline
+    Specs Complete and Amazon attribute completeness count against the
+    lists, and product types without a list read Not available*. Watson owns
+    it; D-05 stays REFINE until it lands.
+108. Wording ownership (17 Nov): Brian owns all on-screen wording, including
+    the PR 110 hover panels; Watson does not decide wording.
+109. Map hover panels (17 Nov): PR 110 is closed; the panels are rebuilt
+    after the parity build from the shared template. Each panel: one big
+    figure with a status mark beside it (x Poor, dash Fair, check Good) and
+    no status-word line; a short label; one sentence that does not repeat
+    the figure; the small chart without key lines that repeat numbers.
+    No "Opens <tab>" line; the panel click is enough. No run-time line; the
+    date pill sets the period and the exact run time sits in a tooltip on
+    the panel (decision 87 bans tooltips on main bubbles only). Numbers use
+    thousands separators. The panels must fit a small laptop screen without
+    a vertical scroll.
+110. Notes of 17 Nov (Brian): the Briefing's first hero is AI Consensus
+    Score; its lead section explains from real data how AI refers the brand
+    and what the brand controls; Portfolio at a glance and its Buy Box card
+    go (H-09). Roadmap gets export, set-aside, and phases balanced by effort
+    and impact rather than by type (S-05). A check for listings filed under
+    the wrong Amazon product type or category (D-12). One no-wasted-space
+    layout rule for every tab at small laptop size (X-36, the layout pass,
+    every tab with a gap). Brian wants Enterprise Potential and Opportunity
+    on real inputs soon; the dollar-formula hold stays until he lifts it.
+111. Dollar formulas unparked (17 Nov): a best-effort brand revenue estimate
+    for as much recommended activity as possible. Be bold, not qualified:
+    estimate from the most credible data where data is missing, cite
+    sources, use ranges and say so. Catalog revenue beyond Amazon can be
+    gathered at onboarding. Each formula opens to its inputs and is
+    approved by Brian before it ships; weak ones can be cut later. D-12 is
+    a launch item. Roadmap set-aside works like Action Items' (N-08).
+112. Dollar estimates proposal approved as recommended (17 Nov, PR 224, all
+    13 recommendations): retail sales per year; brand-level headlines; R-06
+    priced on measured no-Buy-Box days; MAP beside the total; lift tables as
+    starting assumptions; AI lines at 8% mid (2% to 20%) shown plainly;
+    page, Actuation and Roadmap dollars are shares, never added; formulas
+    replace the hand-entered Phase 1 and Enterprise figures; totals may mix
+    revenue sources with the split in the trail; public revenue stands in
+    as a labeled placeholder; mid with range, labeled analyst estimate; the
+    miscategorized line waits for D-12. Upside must cover the whole catalog:
+    listings without SmartScout sales are estimated (Keepa monthly-sold or
+    sales rank; later the Amazon Solution Provider Portal), and until then
+    Ledlenser may show its real figure with the n of m asterisk.
+113. Parity details (17 Nov): differences that follow a client's settings
+    are allowed and additive, not parity gaps: seller model (brand-led vs
+    partner-led), retailers (e.g. a Musician's Friend column only where the
+    settings list it), and industry columns keyed to a settings field, never
+    to a client name. Code that names the client uses the settings or a brand
+    helper (brandName()), never a hard-coded client. SmartScout listings with
+    no reported sales count as "measured, no sales" ($0, covered).
+114. Handoff State cap (17 Nov): 40 lines, up from 25. Link to plan docs
+    instead of repeating them; each queue item names where to start and,
+    if blocked, why and on whom.
+115. Benchmarks (18 Nov, PR 234): use the most recent credible estimate,
+    documented and cited. Brand-loss share high 45%; Amazon share of US
+    e-commerce 35.7% (online share low 6.1%); AI share 3% / 8% / 20%;
+    miscategorized lift 5 / 15 / 25% as Brian's own assumption.
+    docs/benchmark-register.md ("the benchmark register") is canonical.
+116. Enterprise Potential (18 Nov): ships on a labeled public-revenue
+    placeholder (Fender $1B, Ledlenser $75M) and, from PR 246, includes the
+    AI Search part (lines 8 and 9, light v1). Lines 10, 11, the source split
+    and Roadmap dollars wait for full E5.
+117. Briefing and estimate cards (18 Nov): AI Consensus Score, then Monthly
+    potential lost brand revenue (Phase 1 / 12), then findings worst first;
+    Brian may later name "always include" cards after Monthly. Ranges sit
+    under the mid in N-of-M type. Scores read "45 /100" with "Target 70".
+    Minimal view scores move to /100 with the X-22 hover rebuild.
+118. Opportunity table keeps the "On measured sales" / "On estimated sales"
+    columns. Where SmartScout reports zero but Amazon shows "bought in past
+    month", Amazon's figure wins.
+119. Action Items (18 Nov): an "Add A+ content to {n} listings." row; Buy
+    Box in three rows (Review pricing / Check other causes / Watch earlier
+    this year); "Amazon's reference price" is the one term, deck included;
+    lower price elsewhere shown for every withheld listing. Two Actuation
+    Confirm items (worth 20 points each) rank in the top 10.
+120. Fact checks (18 Nov): unreviewed contradictions show as one normal-
+    priority review task ("Review {n} AI answers that may contradict your
+    product facts.") in Priorities, Action Items and the Roadmap; kept out
+    of the deck until IntoFocus confirms them.
+121. Brand-led sellers (18 Nov): any brand_led client's own seller ids
+    (settings brand_seller_ids) count as the brand everywhere. River City
+    Tools holds Ledlenser's exclusive US distribution and counts as
+    Ledlenser's own store.
+122. MAP (18 Nov): retailer lines read "{below} of {carried} listings
+    below MAP". A "no MAP" client setting hides MAP views (queue item 3).
+    Price erosion against list price is R-20 LATER. Collectors search every
+    listing each pass; Watson is adding drop-off after 2 no-match passes
+    and searching bundles (or not stamping them checked).
+123. Roadmap breadth (18 Nov): build every recommendation in
+    docs/roadmap-gap-audit.md over time; not all need to show in Action
+    Items or 30-60-90 at once; lower-priority items can sit in later
+    periods but stay in consideration.
+124. Process (18 Nov): up to 5 workers at once. Database approvals stay as
+    in AGENTS.md: Watson may make any database change; Brian approves
+    additive changes only (PR 238 no longer changes this). Always give
+    Brian bubble > tab paths.

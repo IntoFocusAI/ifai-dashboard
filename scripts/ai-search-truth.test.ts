@@ -12,7 +12,7 @@ import {
 } from "../lib/ai-search/canvas-surfaces.ts";
 import { canonicalUrl, citationEvidence, classifySource, groupCitations, isValidCitationUrl } from "../lib/ai-search/citations.ts";
 import { categoryBattles, competitorTallies } from "../lib/ai-search/competitors.ts";
-import { driftRead, PROBE_STATE_LABELS } from "../lib/ai-search/drift.ts";
+import { driftRead, factCheckReviewAnswers, factCheckReviewTitle, PROBE_STATE_LABELS } from "../lib/ai-search/drift.ts";
 import {
   FACT_CHECK_SCOPE,
   FACT_CHECK_SHOPPING_SCOPE,
@@ -195,8 +195,8 @@ test("commercial win rate: exact numerator and denominator, probes and errors ap
   assert.equal(aiSpokeDesc(ready), "How AI assistants name and cite Fender.");
   assert.doesNotMatch(aiSpokeDesc(ready), /Partial/);
   assert.doesNotMatch(aiSpokeDesc(ready), /2 of 5/);
-  assert.match(aiSpokeFullDesc(ready), /Unbranded discovery: Fender\/Squier named most in 0 of 1 resolved answers \(0\.0%\)/);
-  assert.match(aiSpokeFullDesc(ready), /Branded consideration: no resolved answers/);
+  assert.match(aiSpokeFullDesc(ready), /Unbranded Discovery: Fender\/Squier named most in 0 of 1 resolved answers \(0\.0%\)/);
+  assert.match(aiSpokeFullDesc(ready), /Branded Consideration: no resolved answers/);
   const chips = aiSpokeHeaderChips(ready);
   assert.ok(chips.some((chip) => chip.id === "unbranded" && /0 of 1/.test(chip.value)));
   assert.ok(chips.some((chip) => chip.id === "errors" && /provider errors/i.test(chip.value)));
@@ -204,7 +204,7 @@ test("commercial win rate: exact numerator and denominator, probes and errors ap
 
 test("probes never appear as a commercial category or competitor", () => {
   assert.ok(categoryBattles(calls).every((b) => b.category !== "hallucinations"));
-  // Only unbranded discovery competitor wins: c8 (Taylor). c2 Yamaha is not unbranded discovery.
+  // Only Unbranded Discovery competitor wins: c8 (Taylor). c2 Yamaha is not Unbranded Discovery.
   assert.deepEqual(competitorTallies(calls).map((t) => t.brand), ["Taylor"]);
   assert.equal(competitorTallies(calls)[0]?.wins, 1);
   assert.equal(competitorTallies(calls)[0]?.resolved, 1);
@@ -286,13 +286,14 @@ test("AI freshness is the run's completion time, and partial runs say so", () =>
 
 test("client priorities come from run evidence, never pipeline work", () => {
   const items = aiPriorityItems(ready);
-  assert.deepEqual(items.map((i) => i.id), ["ai-confirmed-contradiction", "ai-competitor-gap"]);
-  const gap = items[1];
+  // A commercial answer flagged by the checker has no probe quote, so it raises no fact-check review task.
+  assert.deepEqual(items.map((i) => i.id), ["ai-competitor-gap"]);
+  const gap = items[0];
   assert.match(
     gap.title,
-    /Taylor out-mention Fender\/Squier in 1 of 1 resolved unbranded discovery acoustics answers/,
+    /Taylor out-mention Fender\/Squier in 1 of 1 resolved Unbranded Discovery acoustics answers/,
   );
-  assert.match(gap.why, /unbranded discovery/);
+  assert.match(gap.why, /Unbranded Discovery/);
   assert.doesNotMatch(gap.title + gap.why, /commercial prompts/i);
   assert.equal(gap.subTab, "Competitor Wins");
   const text = items.map((i) => `${i.title} ${i.why} ${i.impact}`).join(" ");
@@ -389,6 +390,25 @@ test("a contradiction changes the headline instead of hiding it", () => {
   assert.match(factCheckHeadline(c), /1 of 8 answers contradicted the verified fact/);
 });
 
+test("a flagged answer is raised in Priorities as a review task, normal priority, after the competitor gap", () => {
+  const flag = (row: AiProbeRow, evidence: string) => ({ ...row, material_hallucination: "confirmed", hallucination_evidence: evidence });
+  const one = { phase: "ready" as const, snapshot: { ...snapshot, probes: [flag(probes[0], "**Yes** — it has a tube preamp.")] } };
+  const items = aiPriorityItems(one);
+  assert.deepEqual(items.map((i) => i.id), ["ai-competitor-gap", "ai-fact-check-review"]);
+  const review = items[1];
+  assert.equal(review.title, "Review 1 AI answer that may contradict your product facts.");
+  assert.equal(review.severity, "moderate");
+  assert.equal(review.subTab, "Product Fact Checks");
+  assert.doesNotMatch(`${review.title} ${review.why}`, /—|n't/);
+  const answers = factCheckReviewAnswers(driftRead(one.snapshot.calls, one.snapshot.probes).probes);
+  assert.deepEqual(answers.map((a) => [a.answerFocus, a.quote, a.claim, a.sourceUrl]), [
+    ["c6", "Yes — it has a tube preamp.", "No tubes.", "https://www.fender.com/products/mustang-micro"],
+  ]);
+  const rows = factCheckRun().map((row) => (row.sim_id === 1161 || row.sim_id === 1163 ? flag(row, "Said 12 inch radius.") : row));
+  assert.equal(factCheckReviewAnswers(driftRead([], rows).probes).length, 2);
+  assert.equal(factCheckReviewTitle(2), "Review 2 AI answers that may contradict your product facts.");
+});
+
 test("provider failures and pending facts are secondary notes", () => {
   const c = driftRead([], factCheckRun()).coverage;
   assert.equal(factCheckCoverageNote(c), "Perplexity did not return answers for 5 fact-check calls.");
@@ -420,7 +440,7 @@ test("the four new client definitions exist with their own wording", () => {
   const expected: Array<[string, RegExp]> = [
     ["shopping answer", /one AI engine to one shopping prompt/],
     ["cited link", /does not prove that the source caused or endorsed/],
-    ["Fender-owned", /controlled by Fender or another FMIC brand/],
+    ["Fender-owned", /controlled by Fender or a brand it owns \(Squier, Jackson, EVH, Gretsch\)/],
     ["source class", /brand-owned, retailer, editorial, community, video, or other/],
   ];
   for (const [term, pattern] of expected) {
@@ -547,7 +567,7 @@ test("shopping questions split into the audited discovery and consideration rate
   const summary = summarizeRun({ ...snapshot, calls: rows });
   assert.equal(
     headlineLine(summary),
-    "Unbranded discovery: Fender/Squier named most in 13 of 23 resolved answers (56.5%). Branded consideration: 22 of 23 resolved answers (95.7%).",
+    "Unbranded Discovery: Fender/Squier named most in 13 of 23 resolved answers (56.5%). Branded Consideration: 22 of 23 resolved answers (95.7%).",
   );
   const opened = applyExplorerFilter(rows, filterFromEvidence({ field: "role", value: "unbranded_discovery/resolved" }));
   assert.equal(opened.length, 23);
@@ -579,7 +599,7 @@ test("shopping questions split into the audited discovery and consideration rate
     ["branded_consideration", "brand_associated_discovery", "shopping_guidance", "product_fact", "other"] as const
   ).reduce((sum, role) => sum + roleTally(rows, role).competitorWins, 0);
   assert.ok(keptOutWins > 0, "a kept-out question has a competitor win");
-  assert.ok(brandedCompetitorWins > 0, "branded consideration still has competitor wins outside the rate");
+  assert.ok(brandedCompetitorWins > 0, "Branded Consideration still has competitor wins outside the rate");
   assert.equal(headlineWins, unbrandedCompetitorWins);
   assert.notEqual(headlineWins, unbrandedCompetitorWins + brandedCompetitorWins);
   assert.equal(headlineWins + keptOutWins, tallyCommercial(rows).competitorWins);

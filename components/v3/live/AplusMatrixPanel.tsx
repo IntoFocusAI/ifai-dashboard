@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { HeroBand } from "@/components/v3/live/HeroBand";
 import { ListingContentTable } from "@/components/v3/live/ListingContentTable";
 import { ShareHeroCard } from "@/components/v3/live/ShareHeroCard";
+import { EstimateLineCard } from "@/components/v3/live/estimates/EstimateLineFigure";
 import {
   listingContentHeroes,
   type ContentHeroId,
@@ -15,7 +17,7 @@ type OpenTable = ContentHeroId | "closed";
 
 function AplusNotes() {
   return (
-    <div className="ceo-callout" style={{ margin: 0 }} data-aplus-notes="">
+    <div className="ceo-callout" data-aplus-notes="">
       <div className="ceo-callout-header">
         <span>Why does Amazon listing content matter to AI?</span>
       </div>
@@ -38,24 +40,25 @@ export function AplusMatrixPanel({ summary }: { summary: ListingContentSummary |
 
   return (
     <div className="readiness-surface" data-aplus-matrix="">
-      <div
-        data-aplus-matrix-lead=""
-        style={{ display: "flex", flexDirection: "column", gap: 12, alignItems: "stretch" }}
-      >
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "stretch" }}>
-          {heroes.map((hero) => (
-            <ShareHeroCard
-              key={hero.id}
-              hero={hero}
-              dataAttr="data-content-hero"
-              open={openTable === hero.id}
-              onToggle={() => toggle(hero.id as ContentHeroId)}
-              controls={CONTENT_TABLE_ID}
-            />
-          ))}
-        </div>
-        <AplusNotes />
-      </div>
+      <HeroBand
+        bandAttrs={{ "data-aplus-matrix-lead": "" }}
+        heroes={
+          <>
+            {heroes.map((hero) => (
+              <ShareHeroCard
+                key={hero.id}
+                hero={hero}
+                dataAttr="data-content-hero"
+                open={openTable === hero.id}
+                onToggle={() => toggle(hero.id as ContentHeroId)}
+                controls={CONTENT_TABLE_ID}
+              />
+            ))}
+            <EstimateLineCard lineId="aplus" />
+          </>
+        }
+        notes={<AplusNotes />}
+      />
 
       {summary && openTable !== "closed" ? (
         <ListingContentTable summary={summary} filter={openTable} tableId={CONTENT_TABLE_ID} />

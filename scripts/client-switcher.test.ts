@@ -171,7 +171,7 @@ test("set-asides, site copy, and API-engine reads follow the brand on screen", a
     assert.equal(activeSetAsideClientKey(), "ledlenser");
     assert.equal(apiEngineViewsEnabled(undefined, {}), true);
     assert.equal(apiEngineViewsEnabled("0", {}), false);
-    assert.equal(pagesCheckedNote({ pagesChecked: 2, pagesCut: false }), "2 ledlenser.com pages checked.");
+    assert.equal(pagesCheckedNote({ pagesChecked: 2, pagesCut: false }), "2 ledlenserusa.com pages checked.");
     assert.match(leadRateTip({ fenderWins: 1, resolved: 2 }), /named Ledlenser most/);
   } finally {
     resetActiveClientForTests();
