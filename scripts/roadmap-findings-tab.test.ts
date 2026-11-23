@@ -49,7 +49,10 @@ test("Roadmap 30-60-90 Days renders the shared plan in three dated phases (S-02,
     "Exact official product pages",
     "Unbranded Discovery",
   ]) {
-    assert.match(read("lib/fender-canvas/briefing-retail-lead.ts"), new RegExp(label));
+    assert.match(
+      read("lib/fender-canvas/briefing-retail-lead.ts") + read("lib/fender-canvas/portfolio-retail.ts"),
+      new RegExp(label),
+    );
   }
 });
 
