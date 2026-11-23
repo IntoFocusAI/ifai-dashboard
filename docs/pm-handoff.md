@@ -209,6 +209,11 @@ Replace this whole section on handoff. Keep it under 40 lines. The FDD wins.
   tour step 4); 19 Nov leftovers (deck/Summary dollars green, Action Items CSV rows); X-36 layout
   (alone, last); X-11 audit; D-12 needs a rule spec; then gap-audit recs 4-8, "No MAP" setting,
   E5-E7. Brian's 19 Nov meeting feedback still pending (top of queue when it arrives).
+- BEFORE LAUNCH (Brian, 23 Nov, PM32): revisit the out-of-stock dollar estimates with Brian. Many
+  rows read $0; e.g. B0F8J9ZH6F shows a 12-month value but $0 for 30 and 90 days. He expects the
+  formula does not match his intent. Start: Action Items → Out of stock tab, lib/estimates, then
+  propose the corrected formula to Brian (dollar formulas ship only after his approval).
+- Review requests always give the preview link, where to click, and what to look for (Brian, 23 Nov).
 - Not buildable: X-29 (Ryan/Watson review), SC-03 (Watson sign-in, Marc webhook), D-02/D-09
   (collector), R-07 (after R-06).
   Blocked: X-15, X-16, X-35, R-10, R-15, A-02, D-05. Held: A-06, R-11, A-04, N-07; R-19 to launch.
