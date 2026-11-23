@@ -1,6 +1,8 @@
 # R-15 plan: price matches for suppressed listings
 
-Written 12 Nov 2026 by Brian Watson (with Claude) for Brian Magazu's review. Nothing here is built or applied yet.
+Written 12 Nov 2026 by Brian Watson (with Claude) for Brian Magazu's review.
+
+**Built 23 Nov 2026** after Brian Magazu approved it with changes (DM reply 1795459311.475879): scope is withheld listings with a benchmark; exact landed or item price only; search on benchmark change plus once a week, no daily search; the next step follows the client's seller_type setting; a per-listing ignore through the existing set-aside functions; links labeled "price match"; unsure checks under their own heading. Two changes from the design below: the search runs on Bing Shopping in Toolbelt's browser (the SerpApi account is out of searches and its Toolbelt tool cannot call Google Shopping; Google blocks the browser), and the same-product check is rules first with Toolbelt's classifier as a second opinion. Details in TDD section 7.
 
 FDD row: **R-15 TARGET** · Launch ([catalog-health.md](fdd/catalog-health.md)). For a listing that lost the Buy Box, search the product at Amazon's benchmark price and link the outside pages that match it. **Acceptance:** links are labeled price matches, never confirmed causes.
 
