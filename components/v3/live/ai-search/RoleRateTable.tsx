@@ -216,7 +216,7 @@ export function KeptOutNote({
       </li>
       <li>
         <EvidenceLink focus={{ field: "kind", value: "probe" }} tab={SIM}>
-          {s.probesAnswered} answered
+          {formatInt(s.probesAnswered)} answered
         </EvidenceLink>{" "}
         <AiTerm term="product fact check">product fact checks</AiTerm> stay on their own tab.
       </li>

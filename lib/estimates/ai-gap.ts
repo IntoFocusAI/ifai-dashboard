@@ -14,6 +14,7 @@
 // retailer share of AI sources is removed, because listing fixes already carry it (rule 7). Neither
 // line is ever added to Phase 1.
 
+import { formatInt } from "@/lib/fender-canvas/format";
 import { AI_BRANDED_SHARE, AI_RECOMMENDATION_CONVERSION, AI_RELATIVE_GAP_CAP, AI_UNBRANDED_SHARE, BRAND_PAGES_SOURCE_SHARE } from "./benchmarks";
 import { benchmarkInput, uniqueSources } from "./line";
 import { emptySalesSplit, type CatalogSalesCoverage } from "./sales-coverage";
@@ -49,7 +50,7 @@ export type AiEstimatesRead =
   | { phase: "ready"; unbranded: EstimateResult; branded: EstimateResult; retailerShare: number | null; rates: { unbranded: EstimateRange | null; branded: EstimateRange | null } };
 
 const pct = (x: number) => `${Math.round(x * 1000) / 10}%`;
-const rateText = (c: AiRateCount) => `${c.wins} of ${c.resolved} resolved answers (${pct(c.wins / c.resolved)})`;
+const rateText = (c: AiRateCount) => `${formatInt(c.wins)} of ${formatInt(c.resolved)} resolved answers (${pct(c.wins / c.resolved)})`;
 
 /** Retailer share of AI sources (overlap rule 7). null when no rival-led answer cited a source. */
 export function retailerShareOf(c: AiGapInputs["rivalLedCitations"]): number | null {
@@ -62,7 +63,7 @@ export function unbrandedTarget(inputs: Pick<AiGapInputs, "unbranded" | "topRiva
   const current = inputs.unbranded.resolved > 0 ? inputs.unbranded.wins / inputs.unbranded.resolved : 0;
   const rival = inputs.topRival && inputs.topRival.resolved > 0 ? inputs.topRival.wins / inputs.topRival.resolved : null;
   if (inputs.topRival && rival != null && rival > current) {
-    return { rate: rival, basis: `${inputs.topRival.brand}, the rival named most: ${inputs.topRival.wins} of ${inputs.topRival.resolved} (${pct(rival)})` };
+    return { rate: rival, basis: `${inputs.topRival.brand}, the rival named most: ${formatInt(inputs.topRival.wins)} of ${formatInt(inputs.topRival.resolved)} (${pct(rival)})` };
   }
   return { rate: UNBRANDED_GOOD_BAND, basis: `The dashboard's Good band, ${pct(UNBRANDED_GOOD_BAND)}` };
 }

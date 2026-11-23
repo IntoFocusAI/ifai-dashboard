@@ -44,7 +44,7 @@ function BrandSites({ pie }: { pie: CitationPie | null }) {
       ) : (
         <BrandStackBar
           pie={pie}
-          tip={`${count(pie.total)} brand-website links in Unbranded Discovery. ${pie.slices.map((slice) => `${slice.label} ${slice.count}`).join(". ")}. Retail and editorial sites are in the source mix.`}
+          tip={`${count(pie.total)} brand-website links in Unbranded Discovery. ${pie.slices.map((slice) => `${slice.label} ${count(slice.count)}`).join(". ")}. Retail and editorial sites are in the source mix.`}
         />
       )}
     </div>
@@ -100,7 +100,7 @@ function PresenceCard({
           owned={unbranded.withOwned}
           total={unbrandedPie.total}
           name={unbrandedPie.title}
-          tip={`Same ${ratio} answers. ${unbrandedPie.slices.map((slice) => `${slice.count} ${slice.label}`).join(". ")}. Total ${unbrandedPie.total} Unbranded Discovery answers.`}
+          tip={`Same ${ratio} answers. ${unbrandedPie.slices.map((slice) => `${count(slice.count)} ${slice.label}`).join(". ")}. Total ${count(unbrandedPie.total)} Unbranded Discovery answers.`}
         />
       ) : !unbranded && presence.answered > 0 ? (
         <OwnedShareBar
@@ -159,9 +159,9 @@ function RoleGroupButton({
       data-role-n={group.resolved}
       data-ai-pick={`role_owned:${role.role}:${group.key}`}
       onClick={() => onPick(role, group)}
-      aria-label={`${role.roleLabel}: ${group.label}, ${group.resolved} resolved answers. ${lead}${sample}.`}
+      aria-label={`${role.roleLabel}: ${group.label}, ${count(group.resolved)} resolved answers. ${lead}${sample}.`}
     >
-      <span className="citation-role-seg-count">{group.resolved}</span>
+      <span className="citation-role-seg-count">{count(group.resolved)}</span>
     </button>
   );
 }
