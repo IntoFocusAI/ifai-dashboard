@@ -20,7 +20,8 @@ import { GAP_KINDS, gapKindOf } from "../lib/fender-canvas/priority-list.ts";
 import { countFigure, countRatio, rankSeverity, SEVERITY_FLOOR, SEVERITY_ORDER, severityOf, type Severity } from "../lib/fender-canvas/priority-rank.ts";
 import type { ActuationAction } from "../lib/fender-canvas/roadmap-actuation.ts";
 import type { FocusAction } from "../lib/fender-canvas/roadmap-focus.ts";
-import { FACTOR_COVERED_BY, urgentOwnPagesAction, type OwnPageAction, type OwnPageFactor } from "../lib/fender-canvas/roadmap-own-pages.ts";
+import { FACTOR_COVERED_BY, ownPagesAction, urgentOwnPagesAction, type OwnPageAction, type OwnPageFactor } from "../lib/fender-canvas/roadmap-own-pages.ts";
+import { brandSite } from "../lib/brand-copy.ts";
 import { fixListCells } from "../lib/fender-canvas/roadmap-plan-read.ts";
 import { buildPlan, firstMove, inPriorities, planFigure, rankPlan, type PlanInput, type PlanItem } from "../lib/fender-canvas/roadmap-plan.ts";
 import type { SignalAction } from "../lib/fender-canvas/roadmap-signals.ts";
@@ -316,7 +317,7 @@ test("no duplicate fixes: the own-pages item skips factors another ranked item f
   const plan = buildPlan(syntheticInput(urgentOwnPagesAction(OWN_FACTORS)));
   const own = plan.find((item) => item.id === "own:pages")!;
   // Page found (exact pages), Amazon completeness (missing specs) and A+ (the A+ row) are covered;
-  // machine specs and completeness remain, both At risk, so the first of them leads. Its title is
+  // completeness remains (machine specs folds into it: one gap, one figure), so it leads. Its title is
   // that factor's short task, and its effort is that factor's (fix round 3).
   assert.equal(own.action, "Work on completeness.");
   assert.equal(own.title, "Work on completeness");
@@ -372,4 +373,55 @@ test("let the data speak: no reason heading, no severity opener, no effort lette
   }
   // The Priorities card has no reason heading.
   assert.doesNotMatch(readFileSync(new URL("../lib/canvas-sdk/CommandCenter.tsx", import.meta.url), "utf8"), /Why it is at the top/i);
+});
+
+test("the brand-site spec item counts listings from the page read: one unit, one count, one item (worker 32.18)", () => {
+  // A synthetic client's page read: 40 pages serve 120 listings with a found page; 36 pages (108
+  // listings) have no spec block, and one listing's own read also misses the description.
+  const pages = Array.from({ length: 40 }, (_, i) => ({
+    url: `https://site.example/products/p${i}`,
+    model: `P${i}`,
+    asins: [0, 1, 2].map((k) => `B${i}-${k}`),
+    missingFields: i < 36 ? ["additionalProperty"] : [],
+    hasSpecBlock: i >= 36,
+    basicsPresent: 7,
+    missingBasics: [],
+    checkedAt: null,
+  }));
+  const foundListings = pages.flatMap((page, i) =>
+    page.asins.map((asin, k) => ({ asin, missingFields: i === 0 && k === 0 ? ["additionalProperty", "description"] : page.missingFields })),
+  );
+  const bundle = {
+    m: { spec_checked: 300, spec_fender_found: 120, spec_fender_found_pct: 40, spec_avg_fender_pct: 80, spec_avg_amazon_pct: 99 },
+    specPages: { pages, foundListings, withSpecBlock: 4, withAllBasics: 40, listings: 120 },
+    listingContent: null,
+  } as unknown as CanvasBundle;
+  const read = ownPagesAction(bundle, null);
+  const completeness = read.factors.find((factor) => factor.id === "completeness")!;
+  const machine = read.factors.find((factor) => factor.id === "machine_specs")!;
+  // Both brand-site page factors count listings, the unit the rank measures against.
+  assert.deepEqual([completeness.affected, completeness.base], [108, 120]);
+  assert.deepEqual([machine.affected, machine.base], [108, 120]);
+  // One gap, one figure: the machine-readable specs factor folds into completeness.
+  assert.deepEqual(read.action!.below!.map((factor) => factor.id), ["page_found", "completeness"]);
+  assert.doesNotMatch(read.action!.fact, /machine-readable/i);
+
+  const plan = buildPlan(syntheticInput(read.action));
+  const own = plan.filter((item) => item.id === "own:pages");
+  assert.equal(own.length, 1, "one own-pages item");
+  const item = own[0]!;
+  // Page found is covered by the exact pages finding, so the item works on completeness.
+  assert.equal(item.title, `Add machine-readable specs to ${brandSite()} product pages`);
+  assert.equal(item.count!.unit, "listings");
+  assert.equal(countFigure(item.count!), `Listings whose ${brandSite()} page lacks machine-readable specs: 108 of 120`);
+  assert.equal(firstN(planFigure(item).ratio ?? ""), reasonN(item.reason));
+  assert.match(item.reason, /^Touches 108 of 1,000 monitored listings /);
+  assert.equal(firstN(priorityFromPlan(item).impact!), "108");
+  assert.equal(firstN(fixListCells(item, new Date(2026, 10, 23))[2]!), "108");
+  assert.equal(item.tip, `${brandSite()} pages without machine-readable specs: 36 of 40 found pages. One page can serve several listings.`);
+  // Exactly one item about brand-site specs on Priorities and the deck's fix slide.
+  const specs = (text: string) => /machine-readable specs|spec block/i.test(text);
+  assert.equal(priorityItems(plan).filter((card) => specs(`${card.title} ${card.impact} ${card.why}`)).length, 1);
+  const fixes = deckFixes({ brandSite: "site.example", plan } as unknown as DeckInput);
+  assert.ok(fixes.filter((fix) => specs(`${fix.action} ${fix.figureLabel ?? ""}`)).length <= 1);
 });

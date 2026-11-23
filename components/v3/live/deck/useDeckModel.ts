@@ -59,11 +59,11 @@ export function useDeckModel(bundle: CanvasBundle, retail: RetailCanvasRead): De
   const findability = useFindability();
   const stock = useStockLossRead();
   // Slide s9 lists the first five fixes of the one central ranking Action Items shows.
-  const { plan, sources: planSources } = useRoadmapPlan(retail, bundle);
+  const { plan, sources: planSources, settled: planSettled } = useRoadmapPlan(retail, bundle);
 
   return useMemo<DeckLoad>(() => {
     const pending = [tabRead.phase, retail.phase, findability.phase, stock.phase, planSources.phase].includes("loading");
-    if (pending) return { phase: "loading" };
+    if (pending || !planSettled) return { phase: "loading" };
     const model = buildDeck({
       brand: brandName(),
       brandSite: brandSite(),
@@ -82,5 +82,5 @@ export function useDeckModel(bundle: CanvasBundle, retail: RetailCanvasRead): De
       plan,
     });
     return { phase: "ready", model };
-  }, [aiStale, bundle, findability, history.controlLabel, plan, planSources.phase, retail, stock, tabRead]);
+  }, [aiStale, bundle, findability, history.controlLabel, plan, planSettled, planSources.phase, retail, stock, tabRead]);
 }

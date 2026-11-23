@@ -24,6 +24,7 @@ import {
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
 import "@/components/v3/live/page-found.css";
 import { brandSite } from "@/lib/brand-copy";
+import { LoadingMark } from "@/components/v3/live/LoadingMark";
 
 const PAGE = 50;
 
@@ -281,7 +282,7 @@ export function PageFoundTable({
         <tbody>
           {read.phase === "loading" ? (
             <tr>
-              <td colSpan={COLUMNS.length}>Loading checked SKUs…</td>
+              <td colSpan={COLUMNS.length}><LoadingMark label="Loading checked SKUs" /></td>
             </tr>
           ) : null}
           {read.phase === "error" ? (

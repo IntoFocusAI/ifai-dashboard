@@ -21,7 +21,7 @@ import {
 } from "@/lib/fender-canvas/ai-readiness-lead";
 import { formatPct, formatRatio } from "@/lib/fender-canvas/format";
 import { listingContentHeroes } from "@/lib/fender-canvas/listing-content";
-import { machineReadabilityHeroes } from "@/lib/fender-canvas/machine-readability";
+import { machineReadabilityHeroes, SPEC_BLOCK_FIELD, plainSpecFieldName, type SpecFoundListing, type SpecPageSummary } from "@/lib/fender-canvas/machine-readability";
 import type { Effort } from "@/lib/fender-canvas/priority-rank";
 import { joinList, runShares } from "@/lib/fender-canvas/roadmap-sources";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
@@ -40,14 +40,17 @@ export type OwnPageFactor = {
   tone: Tone | null;
   open: { spokeId: string; tab: string };
   /**
-   * Listings the factor falls short on, for the central rank: listings without the item, or, for
-   * an average, the listings with empty fields (listings × the missing share). Null without a reading.
+   * What the factor falls short on, for the central rank, in listings: listings without the item,
+   * or, for the brand-site page factors, the listings whose found page has the gap (a count, never
+   * an estimate from an average). Null without a reading.
    */
   affected: number | null;
   /** The listings the factor reads. */
   base: number | null;
   /** What `affected` counts, as the problem: "Listings without a fender.com page". */
   short: string;
+  /** The figure's tooltip when the count has a second reading (the same gap in distinct pages). */
+  tip?: string | null;
   /** The short action title when the own-pages item works on this factor (fix round 3). */
   task: string;
   /** The effort and kind of that work (fix round 3: from the factor, never the phase). */
@@ -66,12 +69,89 @@ export const FACTOR_EFFORT: Readonly<Record<OwnPageFactor["id"], Effort>> = {
   aplus: "M",
 };
 
+/** A field named for the gap must be missing for at least this share of the listings with a gap. */
+export const NAMED_FIELD_SHARE = 0.9;
+
+/**
+ * What the brand-site completeness gap is made of, from the stored page read, counted in LISTINGS
+ * (worker 32.18) so the figure and the central rank share one unit: each listing with a found page
+ * is counted by its own stored read (the rows canvas_metrics counts, so N matches AI Readiness).
+ * Without a named field, `listings` is the listings whose page misses at least one field. When one
+ * field accounts for the gap (missing for at least NAMED_FIELD_SHARE of those listings), it is named
+ * and `listings` counts the listings whose page misses that field, so the label and N agree.
+ * `base` is every listing with a found page. `pages` and `pageBase` count the same gap in distinct
+ * pages, as Brand-Site Specs counts them (several listings can share one page), for the tooltip.
+ * Null without a page read.
+ */
+export type CompletenessGap = { listings: number; base: number; pages: number; pageBase: number; field: string | null };
+
+/** Each listing with a found page and its missing fields; fixtures without them read each page's listings. */
+function foundListings(summary: SpecPageSummary): SpecFoundListing[] {
+  return summary.foundListings ?? summary.pages.flatMap((page) => page.asins.map((asin) => ({ asin, missingFields: page.missingFields })));
+}
+
+/** The gap for one field (null: any field), in listings and in pages. */
+function gapFor(summary: SpecPageSummary, listings: readonly SpecFoundListing[], field: string | null): CompletenessGap {
+  const has = (missing: readonly string[]) => (field ? missing.includes(field) : missing.length > 0);
+  return {
+    listings: listings.filter((listing) => has(listing.missingFields)).length,
+    base: listings.length,
+    pages: summary.pages.filter((page) => has(page.missingFields)).length,
+    pageBase: summary.pages.length,
+    field,
+  };
+}
+
+export function completenessGap(specPages: SpecPageSummary | null | undefined): CompletenessGap | null {
+  if (!specPages || specPages.pages.length === 0) return null;
+  const listings = foundListings(specPages);
+  if (listings.length === 0) return null;
+  const any = gapFor(specPages, listings, null);
+  const missing = new Map<string, number>();
+  for (const listing of listings) for (const field of new Set(listing.missingFields)) missing.set(field, (missing.get(field) ?? 0) + 1);
+  const [top, count] = [...missing.entries()].sort((x, y) => y[1] - x[1] || (x[0] === SPEC_BLOCK_FIELD ? -1 : 1))[0] ?? [null, 0];
+  if (top && any.listings > 0 && count >= NAMED_FIELD_SHARE * any.listings) return gapFor(specPages, listings, top);
+  return any;
+}
+
+/** The listings whose page has no spec block, for the machine-readable specs factor (same unit as the rank). */
+function specBlockGap(specPages: SpecPageSummary | null | undefined): CompletenessGap | null {
+  if (!specPages || specPages.pages.length === 0) return null;
+  const listings = foundListings(specPages);
+  return listings.length ? gapFor(specPages, listings, SPEC_BLOCK_FIELD) : null;
+}
+
+/** What the gap's page has, as a predicate: "lacks machine-readable specs". */
+function gapPredicate(gap: CompletenessGap | null): string {
+  if (gap?.field === SPEC_BLOCK_FIELD) return "lacks machine-readable specs";
+  if (gap?.field) return `is missing ${plainSpecFieldName(gap.field)}`;
+  return "has empty spec fields";
+}
+
+/** The completeness count's label, in listings: names the one missing field when one accounts for the gap. */
+export function completenessShort(gap: CompletenessGap | null): string {
+  return `Listings whose ${brandSite()} page ${gapPredicate(gap)}`;
+}
+
+/** The same gap in distinct pages, for the figure's tooltip: "fender.com pages without machine-readable specs: 197 of 197 found pages." */
+export function completenessPagesTip(gap: CompletenessGap | null): string | null {
+  if (!gap) return null;
+  const what =
+    gap.field === SPEC_BLOCK_FIELD
+      ? `${brandSite()} pages without machine-readable specs`
+      : gap.field
+        ? `${brandSite()} pages missing ${plainSpecFieldName(gap.field)}`
+        : `${brandSite()} pages with empty spec fields`;
+  return `${what}: ${formatRatio(gap.pages, gap.pageBase)} found pages. One page can serve several listings.`;
+}
+
 /** Each factor's short action title, from the client settings (site, brand), never a client name. */
-export function factorTask(id: OwnPageFactor["id"]): string {
+export function factorTask(id: OwnPageFactor["id"], gap?: CompletenessGap | null): string {
   switch (id) {
     case "page_found":
       return `Publish ${brandSite()} pages for listings without one`;
     case "completeness":
+      if (gap?.field === SPEC_BLOCK_FIELD) return `Add machine-readable specs to ${brandSite()} product pages`;
       return `Fill the empty spec fields on ${brandSite()} product pages`;
     case "machine_specs":
       return `Make ${brandSite()} specs machine-readable`;
@@ -83,8 +163,8 @@ export function factorTask(id: OwnPageFactor["id"]): string {
 }
 
 /** The factor's task and effort, set once for every factor. */
-function work(id: OwnPageFactor["id"]): Pick<OwnPageFactor, "task" | "effort"> {
-  return { task: factorTask(id), effort: FACTOR_EFFORT[id] };
+function work(id: OwnPageFactor["id"], gap?: CompletenessGap | null): Pick<OwnPageFactor, "task" | "effort"> {
+  return { task: factorTask(id, gap), effort: FACTOR_EFFORT[id] };
 }
 
 /**
@@ -107,7 +187,7 @@ function shortOf(has: number | null | undefined, base: number | null | undefined
   return has != null && base != null && base > 0 ? { affected: Math.max(0, base - has), base } : { affected: null, base: null };
 }
 
-/** An average's listings' worth of empty fields: round(listings × (100 − average) / 100). */
+/** An average's listings' worth of empty fields: round(listings × (100 − average) / 100), for the Amazon factor. */
 function shortOfAverage(pct: number | null | undefined, base: number | null | undefined): Pick<OwnPageFactor, "affected" | "base"> {
   return pct != null && !Number.isNaN(pct) && base != null && base > 0
     ? { affected: Math.max(0, Math.round((base * (100 - pct)) / 100)), base }
@@ -135,6 +215,8 @@ export type OwnPageAction = {
   below?: OwnPageFactor[];
   /** The urgent row's effort: the worst factor's (fix round 3). The wording row's comes from its phase. */
   effort?: Effort;
+  /** The figure's tooltip from the worst factor (the same gap in pages), when it has one. */
+  tip?: string | null;
 };
 
 export type OwnPagesRead = {
@@ -163,6 +245,8 @@ export function ownPageFactors(bundle: CanvasBundle): OwnPageFactor[] {
   const amazon = amazonCompletenessHero(m);
   const aplus = listingContentHeroes(bundle.listingContent ?? null)[1]!;
   const listingContent = bundle.listingContent ?? null;
+  const gap = completenessGap(bundle.specPages);
+  const specBlock = specBlockGap(bundle.specPages);
   return [
     {
       id: "page_found",
@@ -182,9 +266,11 @@ export function ownPageFactors(bundle: CanvasBundle): OwnPageFactor[] {
       ratio: complete.ratio,
       tone: complete.tone,
       open: SPECS,
-      ...shortOfAverage(m.spec_avg_fender_pct, m.spec_fender_found),
-      short: `Listings with empty ${brandSite()} spec fields`,
-      ...work("completeness"),
+      affected: gap ? gap.listings : null,
+      base: gap ? gap.base : null,
+      short: completenessShort(gap),
+      tip: completenessPagesTip(gap),
+      ...work("completeness", gap),
     },
     {
       id: "machine_specs",
@@ -193,9 +279,10 @@ export function ownPageFactors(bundle: CanvasBundle): OwnPageFactor[] {
       ratio: machine.ratio,
       tone: machine.denominator != null ? colorTone(machine.color) : null,
       open: SPECS,
-      affected: machine.denominator != null ? machine.numerator : null,
-      base: machine.denominator,
-      short: machine.label,
+      affected: machine.denominator != null && specBlock ? specBlock.listings : null,
+      base: machine.denominator != null && specBlock ? specBlock.base : null,
+      short: completenessShort(specBlock),
+      tip: machine.denominator != null ? completenessPagesTip(specBlock) : null,
       ...work("machine_specs"),
     },
     {
@@ -244,11 +331,15 @@ export function ownSiteCited(snapshot: AiSearchSnapshot): { answers: number; tot
   return { answers, total: run.read.answersWithCitation };
 }
 
-/** Red before yellow; ties keep the factors' order. */
+/**
+ * Red before yellow; ties keep the factors' order. One gap, one figure (worker 32.18): the spec
+ * block is one of the fields the completeness factor counts, so while completeness is below Good
+ * the machine-readable specs factor folds into it and never shows as a second figure.
+ */
 function worstFirst(factors: readonly OwnPageFactor[]): OwnPageFactor[] {
-  return factors
-    .filter((factor) => factor.tone === "danger" || factor.tone === "warning")
-    .sort((a, b) => (a.tone === b.tone ? 0 : a.tone === "danger" ? -1 : 1));
+  const below = factors.filter((factor) => factor.tone === "danger" || factor.tone === "warning");
+  const folded = below.some((factor) => factor.id === "completeness") ? below.filter((factor) => factor.id !== "machine_specs") : below;
+  return folded.sort((a, b) => (a.tone === b.tone ? 0 : a.tone === "danger" ? -1 : 1));
 }
 
 /**
@@ -275,6 +366,7 @@ export function urgentOwnPagesAction(factors: readonly OwnPageFactor[]): OwnPage
     worst: worst.affected != null && worst.base != null ? { affected: worst.affected, base: worst.base, short: worst.short } : null,
     below,
     effort: worst.effort,
+    tip: worst.tip ?? null,
   };
 }
 

@@ -22,6 +22,7 @@ import {
 } from "@/lib/ai-search/history-trends";
 import { ROLE_LABELS } from "@/lib/ai-search/question-role";
 import { engineLabel, cleanPrompt } from "@/lib/ai-search/run-metrics";
+import { LoadingMark } from "@/components/v3/live/LoadingMark";
 
 function choiceValue(choice: QueryChoice): string {
   if (choice.kind === "all") return "all";
@@ -64,7 +65,7 @@ export function HistoryTrendsPanel() {
 
   let body: ReactNode = null;
   if (history.catalog.phase === "loading" || trend.phase === "loading") {
-    body = <p className="ai-history-note" data-ai-history-state="loading">Loading run history.</p>;
+    body = <p className="ai-history-note" data-ai-history-state="loading"><LoadingMark label="Loading run history" /></p>;
   } else if (history.catalog.phase === "error") {
     body = (
       <p className="ai-history-note" data-ai-history-state="error">

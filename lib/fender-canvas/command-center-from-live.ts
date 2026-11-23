@@ -1,3 +1,4 @@
+import { isPlanPending } from "@/lib/fender-canvas/plan-settled";
 import { clientStorageKey } from "@/lib/client/active-client";
 import { activeSetAsideClientKey } from "@/lib/set-aside/keys";
 import type { CommandCenterSpec, PriorityItem, PriorityOwner } from "@/lib/canvas-sdk/types";
@@ -163,6 +164,10 @@ export function buildLiveCommandCenter(
     storageKey: clientStorageKey("ifai:fender:command-center"),
     setAsideClientKey: activeSetAsideClientKey(),
   };
+  if (isPlanPending(plan)) {
+    // A read the ranking needs is still loading: no #1 until every source has landed.
+    return { ...base, desc: PRIORITIES_DESC, items: [], loading: true };
+  }
   if (plan?.length) {
     // The read leads with the list's first item, then the AI run line.
     const lead = firstMoveLine(plan);

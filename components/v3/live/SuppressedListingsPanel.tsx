@@ -44,6 +44,7 @@ import {
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
 import { buyBoxHero, heroFigureColor, heroFigureTone } from "@/lib/fender-canvas/retail-overview-lead";
 import type { CanvasFreshnessRow } from "@/lib/fender-canvas/types";
+import { LoadingMark } from "@/components/v3/live/LoadingMark";
 
 
 const TABLE_COLUMNS = [...SUPPRESSED_LISTINGS_TABLE_COLUMNS, SET_ASIDE_SORT_COLUMN];
@@ -94,7 +95,7 @@ function ReadingNotes({
   read: RetailCanvasRead;
   freshness?: CanvasFreshnessRow[] | null;
 }) {
-  if (read.phase === "loading") return <>Loading the Buy Box reading…</>;
+  if (read.phase === "loading") return <><LoadingMark label="Loading the Buy Box reading" /></>;
   if (read.phase === "error") return <>The retail read could not be loaded.</>;
   const counts = read.snapshot.suppressedListings.detail?.counts;
   if (!counts) {
@@ -122,7 +123,7 @@ function SuppressedListingsLead({ read }: { read: RetailCanvasRead }) {
         data-suppressed-listings-lead=""
         style={HERO_CARD_STYLE}
       >
-        <span className="ai-lead-figure">Loading the Buy Box reading…</span>
+        <span className="ai-lead-figure"><LoadingMark label="Loading the Buy Box reading" /></span>
       </div>
     );
   }
@@ -239,7 +240,7 @@ export function SuppressedListingsPanel({
       </div>
       <div data-suppressed-listings-table="" style={TABLE_BLOCK_STYLE}>
         {state === "loading" ? (
-          <p className="retail-missing">Loading withheld listings…</p>
+          <p className="retail-missing"><LoadingMark label="Loading withheld listings" /></p>
         ) : null}
         {state === "unavailable" ? (
           <p className="retail-missing">The withheld listings could not be loaded.</p>

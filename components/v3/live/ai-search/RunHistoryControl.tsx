@@ -31,6 +31,7 @@ import { historyFixtureSnapshot } from "@/lib/ai-search/history-fixtures";
 import { API_NOT_AVAILABLE_TIPS } from "@/lib/ai-search/engine-group-read";
 import { engineLabel } from "@/lib/ai-search/run-metrics";
 import { runStateLabel } from "@/lib/ai-search/summary";
+import { LoadingMark } from "@/components/v3/live/LoadingMark";
 
 function monthOf(day: string | null): { year: number; month: number } {
   if (!day) {
@@ -270,7 +271,7 @@ export function RunHistoryControl() {
             </button>
             <button type="button" onClick={() => { history.viewAll(); setOpen(false); }}>All time</button>
           </div>
-          {history.catalog.phase === "loading" ? <p className="ai-history-note">Loading runs.</p> : null}
+          {history.catalog.phase === "loading" ? <p className="ai-history-note"><LoadingMark label="Loading runs" /></p> : null}
           {history.catalog.phase === "error" ? (
             <p className="ai-history-note">
               Run history{" "}

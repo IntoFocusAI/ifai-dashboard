@@ -5,6 +5,7 @@ import { CopyTip } from "@/components/v3/live/ai-search/CopyTip";
 import { API_ENGINES, API_ENGINE_LABELS, API_QUESTION_RULE, API_REPEAT_RULE, ENGINE_GROUP_CHOICES, type EngineGroupChoice } from "@/lib/ai-search/engine-group";
 import { API_NOT_AVAILABLE_TIPS, type EngineSwitchState } from "@/lib/ai-search/engine-group-read";
 import { formatDay } from "@/lib/ai-search/history-eligibility";
+import { LoadingMark } from "@/components/v3/live/LoadingMark";
 
 const API_ENGINE_LIST = API_ENGINES.map((engine) => API_ENGINE_LABELS[engine]).join(", ");
 
@@ -81,7 +82,7 @@ export function EngineGroupSwitch({
           </CopyTip>
         </span>
       ) : null}
-      {state.kind === "loading" ? <span className="ai-engine-switch-na">Loading API engines</span> : null}
+      {state.kind === "loading" ? <span className="ai-engine-switch-na"><LoadingMark label="Loading API engines" /></span> : null}
       {trailing ? <div className="ai-engine-switch-trailing">{trailing}</div> : null}
     </div>
   );

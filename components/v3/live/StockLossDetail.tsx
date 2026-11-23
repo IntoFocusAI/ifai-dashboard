@@ -26,6 +26,7 @@ import {
   type StockLossRow,
 } from "@/lib/fender-canvas/stock-loss";
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
+import { LoadingMark } from "@/components/v3/live/LoadingMark";
 
 const NO_BUY_BOX_REFERENCE_TIP = "No Buy Box days are not part of this estimate.";
 
@@ -96,7 +97,7 @@ function EpisodeList({ asin }: { asin: string }) {
     };
   }, [asin]);
 
-  if (state === "loading") return <p className="retail-missing">Loading the dated stretches…</p>;
+  if (state === "loading") return <p className="retail-missing"><LoadingMark label="Loading the dated stretches" /></p>;
   if (state === "unavailable") {
     return <p className="retail-missing">The dated stretches could not be loaded.</p>;
   }
