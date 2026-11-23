@@ -51,6 +51,6 @@ test("the N of M tooltip says which listings were counted and what the read coul
   assert.match(tip, /2 other monitored listings have no stored MAP comparison\./);
   assert.match(tip, /0 listings set aside as approved exceptions/);
   assert.equal(mapHero(snapshot).tip?.startsWith(tip), true);
-  assert.match(mapHero(snapshot).tip ?? "", /Good at 0; Fair under 5% of all 4 monitored listings; Poor at 5% or more\.$/);
+  assert.match(mapHero(snapshot).tip ?? "", /Good at 0; Fair under 5% of 2 listings with a MAP price; Poor at 5% or more\.$/);
   assert.match(panel, /<FigureTip title=\{hero\.label\} desc=\{hero\.tip\} testId="map-ratio">/);
 });

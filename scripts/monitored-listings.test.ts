@@ -4,7 +4,6 @@ import test from "node:test";
 import { monitoredListingsTotal } from "../lib/fender-canvas/monitored-listings.ts";
 import { commonReach, countReach, itemCount, type RankInputs } from "../lib/fender-canvas/priority-rank.ts";
 import { reachTotals } from "../lib/fender-canvas/roadmap-plan-read.ts";
-import { retailBandSentence } from "../lib/fender-canvas/retail-overview-lead.ts";
 import type { PortfolioRetailSnapshot } from "../lib/fender-canvas/portfolio-retail.ts";
 import type { RetailCanvasRead } from "../lib/fender-canvas/portfolio-retail-display.ts";
 
@@ -25,7 +24,7 @@ function inputs(base: number, affected: number): RankInputs {
 
 const ai = { phase: "loading" } as unknown as AiArg;
 
-test("the ranking's common base and the hero band base are the same value", () => {
+test("the ranking's common base stays all monitored listings, apart from each card's own base", () => {
   const snap = snapshot(208, 190);
   const retail = { phase: "ready", snapshot: snap } as unknown as RetailCanvasRead;
   // An item whose own base is larger (a catalog-wide read) must not make a second total.
@@ -36,7 +35,6 @@ test("the ranking's common base and the hero band base are the same value", () =
   assert.equal(rankBase, heroBase);
   const count = itemCount({ ...inputs(220, 10), reach: rankBase }, "Listings");
   assert.match(countReach(count!), /of 208 monitored listings/);
-  assert.match(retailBandSentence(heroBase)!, /all 208 monitored listings/);
 });
 
 test("with no Buy Box population the MAP population is the base for both", () => {

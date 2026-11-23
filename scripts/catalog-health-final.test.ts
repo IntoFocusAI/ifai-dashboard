@@ -228,7 +228,8 @@ test("X-18: the tab reads MAP Leakage and the figure reads Splintered Listings",
   const url = read("lib/canvas-sdk/canvas-url-state.ts");
   assert.match(url, /map: "map-leakage"/);
   const governance = read("components/v3/live/CatalogGovernancePanel.tsx");
-  assert.match(governance, /SPLINTERED_LISTINGS_LABEL = "Splintered Listings"/);
+  assert.match(retail, /SPLINTERED_LISTINGS_LABEL = "Splintered Listings"/);
+  assert.match(governance, /SPLINTERED_LISTINGS_LABEL,/);
   assert.doesNotMatch(governance, /Splintered listings/);
 });
 

@@ -10,6 +10,7 @@ import {
   bundlePopulationTip,
   LIVE_OFFER_BUNDLES,
   RETAIL_FINDING_LABELS,
+  SPLINTERED_LISTINGS_LABEL,
   type SuppressionDetail,
   selectRetailHeadline,
   type MapLeakageDetail,
@@ -317,17 +318,17 @@ export function catalogBubble(
       : countPhrase(reading, "bundle");
   const coverage = coveragePill(reading);
   const face = satelliteFace(
-    "Catalog Governance",
+    SPLINTERED_LISTINGS_LABEL,
     reading,
     {
       value: shareHeroValue(reading, numerator, denominator),
-      label: "Splintered Listings",
+      label: SPLINTERED_LISTINGS_LABEL,
     },
     [...(count ? [count] : []), ...(coverage ? [coverage] : [])],
     "Catalog Governance",
   );
   const tip = bundlePopulationTip(reading);
-  if (tip) face.tooltip = { title: "Splintered Listings", desc: tip };
+  if (tip) face.tooltip = { title: SPLINTERED_LISTINGS_LABEL, desc: tip };
   return face;
 }
 
@@ -409,7 +410,7 @@ export function retailBubbleFaces(read: RetailCanvasRead): {
       main: catalogHealthMainFace(read),
       suppressed: waitingFace("Suppressed Listings", "Suppressed Listings", ["Loading"], desc, "confirmed high-price"),
       map: waitingFace("MAP Leakage", RETAIL_FINDING_LABELS.map_leakage, ["Loading"], desc, ""),
-      catalog: waitingFace("Catalog Governance", "Catalog Governance", ["Loading"], desc, "Splintered Listings"),
+      catalog: waitingFace(SPLINTERED_LISTINGS_LABEL, "Catalog Governance", ["Loading"], desc, SPLINTERED_LISTINGS_LABEL),
     };
   }
 
@@ -423,7 +424,7 @@ export function retailBubbleFaces(read: RetailCanvasRead): {
       main: catalogHealthMainFace(read),
       suppressed: failed(waitingFace("Suppressed Listings", "Suppressed Listings", [READ_NOT_AVAILABLE], RETAIL_READ_FAILED, "confirmed high-price")),
       map: failed(waitingFace("MAP Leakage", RETAIL_FINDING_LABELS.map_leakage, [READ_NOT_AVAILABLE], RETAIL_READ_FAILED, "")),
-      catalog: failed(waitingFace("Catalog Governance", "Catalog Governance", [READ_NOT_AVAILABLE], RETAIL_READ_FAILED, "Splintered Listings")),
+      catalog: failed(waitingFace(SPLINTERED_LISTINGS_LABEL, "Catalog Governance", [READ_NOT_AVAILABLE], RETAIL_READ_FAILED, SPLINTERED_LISTINGS_LABEL)),
     };
   }
 

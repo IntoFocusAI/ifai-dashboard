@@ -1,6 +1,7 @@
 /**
  * All monitored listings: the one number every "of all monitored listings" phrase uses (the
- * Buy Box, MAP and splintered hero bands and the central ranking's common base for listings).
+ * central ranking's common base for listings). The Catalog Health cards do not use it: each is
+ * graded on its own shown N of M.
  * It is the monitored retail population from the Buy Box (Featured Offer) read, and the MAP
  * read's population when the Buy Box read has none. Null when neither read is stored.
  */
