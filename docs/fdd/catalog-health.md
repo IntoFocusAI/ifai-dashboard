@@ -109,7 +109,7 @@ Former name: Portfolio Retail / Retail Portfolio. Approved rename: Catalog Healt
 - **Desired:** Retailer observation rows; client retailer list.
 - **User value:** New retailers do not require schema forks.
 - **Acceptance:** No new wmt\_\*/mf\_\* prefixes.
-- **Evidence:** Verified hard-coded today. Plan for review: [r10-retailer-rows-plan.md](../r10-retailer-rows-plan.md) (12 Nov 2026), which also gives R-09 its MAP history.
+- **Evidence:** Plan [r10-retailer-rows-plan.md](../r10-retailer-rows-plan.md), approved by Brian Magazu 23 Nov 2026. Step 1 (PR 280): per-client `retailers` list and append-only `retail_price_observations`, applied to production. Step 2 (PR 281): the Walmart, Musician's Friend and Ledlenser checkers write a row on every check. Step 3 (this change): the MAP tab, Catalog Health MAP Leakage, Explore all listings, Suppressed Listings' lower prices elsewhere and their CSV exports read `canvas_retailers` and `canvas_retail_prices`; worst leakage and the violation flag are computed from Amazon's leakage plus each MAP-channel row; a price stays until the second straight miss (first-miss rule); `FENDER_ONLY_COLUMNS` is gone. Parity on production data, Fender and Ledlenser, with `scripts/r10-parity.ts`. The `wmt_*` / `mf_*` columns are still written and dropped in step 4.
 - **Open decision:** None.
 
 **R-11 REFINE** · Launch

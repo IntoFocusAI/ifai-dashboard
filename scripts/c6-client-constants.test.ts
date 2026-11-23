@@ -14,6 +14,7 @@ import type { MapSourceRow } from "@/lib/fender-canvas/map-channels";
 import { mapChannelStale } from "@/lib/fender-canvas/map-reading-status";
 import { catalogBundleLineLabel } from "@/lib/fender-canvas/portfolio-retail";
 import { retailerRecheckDays } from "@/lib/fender-canvas/row-stale";
+import { cells, LEDLENSER_RETAILERS } from "./fixtures/retailer-rows.ts";
 import { placeholderSpecGroups, specBlockPhrase } from "@/lib/findability/placeholder-spec-fields";
 import { findabilityColumns } from "@/lib/findability/queries";
 
@@ -57,28 +58,30 @@ test("P-14: retailer recheck days come from the retailers setting", () => {
 
   const NOW = Date.parse("2026-11-17T12:00:00Z");
   const at = new Date(NOW - 3 * 86_400_000).toISOString();
-  const row: MapSourceRow = {
+  const base = {
     asin: "B0TEST",
     model_name: null,
     title: null,
     map_price: 100,
     offer_price: 90,
     worst_leakage: 10,
-    wmt_price: 90,
-    wmt_url: null,
-    mf_price: 90,
-    mf_leakage: 10,
     featured_offer_checked_at: at,
-    wmt_checked_at: at,
-    mf_checked_at: at,
+  };
+  const row: MapSourceRow = {
+    ...base,
+    retailers: cells("B0TEST", { walmart: { price: 90, checkedAt: at }, "musicians-friend": { price: 90, checkedAt: at } }, 100),
+  };
+  const ledlenserRow: MapSourceRow = {
+    ...base,
+    retailers: cells("B0TEST", { walmart: { price: 90, checkedAt: at } }, 100, LEDLENSER_RETAILERS),
   };
   // Three days old: stale against Fender's 1-day Walmart rule (2-day window), fresh against Ledlenser's 2-day rule.
   const fender = as("fender", () => mapChannelStale([row], NOW));
-  const ledlenser = as("ledlenser", () => mapChannelStale([row], NOW));
+  const ledlenser = as("ledlenser", () => mapChannelStale([ledlenserRow], NOW));
   assert.ok(fender.Walmart);
   assert.equal(ledlenser.Walmart, null);
   assert.equal(fender["Musician's Friend"], null, "3 days is inside the 6-day Musician's Friend window");
-  assert.equal(ledlenser["Musician's Friend"], null, "Ledlenser has no Musician's Friend check");
+  assert.equal(ledlenser["Musician's Friend"] ?? null, null, "Ledlenser has no Musician's Friend check");
 
   const rows = [
     { job_key: "map_leakage_walmart", last_run_at: at },

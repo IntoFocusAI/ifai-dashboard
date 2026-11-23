@@ -28,6 +28,7 @@ import {
   type WithheldCauseRow,
 } from "../lib/fender-canvas/buy-box-cause.ts";
 import type { PlanItem } from "../lib/fender-canvas/roadmap-plan.ts";
+import { cells } from "./fixtures/retailer-rows.ts";
 import { loadEstimatesFixture } from "./fixtures/estimates/load.ts";
 
 const GROUPS = ["price", "other", "earlier"] as const;
@@ -69,33 +70,47 @@ test("the split counts withheld listings only, and the two causes add up to with
   assert.deepEqual([...split.otherAsins], ["O1"]);
 });
 
-test("the read carries the stored cause and the stored outside prices", () => {
+test("the read carries the stored cause; outside prices come from retailer rows, not columns (R-10)", () => {
   const cols = WITHHELD_CAUSE_COLUMNS.split(",");
-  for (const col of ["competitive_offer_suppressed", "wmt_price", "wmt_url", "mf_price", "featured_offer_state"]) {
+  for (const col of ["competitive_offer_suppressed", "featured_offer_state"]) {
     assert.ok(cols.includes(col), col);
   }
+  assert.equal(cols.some((col) => /^(wmt|mf)_/.test(col)), false);
 });
 
 test("a lower price elsewhere shows for every withheld listing, below the Amazon offer, lowest first", () => {
+  const walmartUrl = "https://www.walmart.com/ip/19311667655";
   const priced = row("P", {
     competitive_offer_suppressed: true,
     featured_offer_observed_price_cents: 86239,
-    wmt_price: 649.99,
-    wmt_url: "https://www.walmart.com/ip/19311667655",
-    mf_price: "879.99",
+    retailers: cells("P", { walmart: { price: 649.99, url: walmartUrl }, "musicians-friend": { price: 879.99 } }),
   });
-  assert.deepEqual(lowerPricesElsewhere(priced), [
-    { channel: "Walmart", price: 649.99, url: "https://www.walmart.com/ip/19311667655" },
-  ]);
-  const both = { ...priced, mf_price: 700 };
+  assert.deepEqual(lowerPricesElsewhere(priced), [{ channel: "Walmart", price: 649.99, url: walmartUrl }]);
+  const both = {
+    ...priced,
+    retailers: cells("P", { walmart: { price: 649.99, url: walmartUrl }, "musicians-friend": { price: 700 } }),
+  };
   assert.deepEqual(lowerPricesElsewhere(both).map((p) => p.channel), ["Walmart", "Musician's Friend"]);
-  assert.equal(lowerPricesElsewhere(both)[1]!.url, null, "no Musician's Friend page is stored");
-  assert.deepEqual(lowerPricesElsewhere({ ...priced, wmt_price: 862.39, mf_price: null }), [], "equal is not lower");
+  assert.equal(lowerPricesElsewhere(both)[1]!.url, null, "no Musician's Friend page is stored on this row");
+  assert.deepEqual(
+    lowerPricesElsewhere({ ...priced, retailers: cells("P", { walmart: { price: 862.39 } }) }),
+    [],
+    "equal is not lower",
+  );
   // Every withheld listing, whatever its cause (e.g. an Amazon offer of $154.95 against Walmart $69.99).
-  const other = row("O", { competitive_offer_suppressed: false, competitive_price_threshold_cents: null, featured_offer_observed_price_cents: 15495, wmt_price: 69.99 });
+  const other = row("O", {
+    competitive_offer_suppressed: false,
+    competitive_price_threshold_cents: null,
+    featured_offer_observed_price_cents: 15495,
+    retailers: cells("O", { walmart: { price: 69.99 } }),
+  });
   assert.deepEqual(lowerPricesElsewhere(other), [{ channel: "Walmart", price: 69.99, url: null }], "other cause");
   assert.deepEqual(lowerPricesElsewhere({ ...priced, featured_offer_state: "present" }), [], "not withheld");
-  assert.equal(lowerPricesElsewhere({ ...priced, wmt_url: "javascript:alert(1)" })[0]!.url, null);
+  assert.equal(
+    lowerPricesElsewhere({ ...priced, retailers: cells("P", { walmart: { price: 649.99, url: "javascript:alert(1)" } }) })[0]!.url,
+    null,
+  );
+  assert.deepEqual(lowerPricesElsewhere({ ...priced, retailers: [] }), [], "a listing no retailer checked");
 });
 
 test("action wording", () => {

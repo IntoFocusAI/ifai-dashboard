@@ -28,8 +28,6 @@ function row(asin: string, leak: number | null, overrides: Partial<MapLeakageRow
     map_price: 100,
     offer_price: leak == null ? 90 : 100 + leak,
     amz_leakage: leak,
-    wmt_leakage: null,
-    mf_leakage: null,
     ...overrides,
   };
 }

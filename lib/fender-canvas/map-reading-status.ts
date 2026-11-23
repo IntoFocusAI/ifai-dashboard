@@ -2,6 +2,7 @@ import { isPastCheckSchedule, partialFigureTip, type PartialFigure } from "@/lib
 import { formatInt } from "@/lib/fender-canvas/format";
 import type { MapSourceRow } from "@/lib/fender-canvas/map-channels";
 import { RECHECK_DAYS, retailerRecheckDays, rowsStale } from "@/lib/fender-canvas/row-stale";
+import { retailerSettingKey, type RetailerCell } from "@/lib/fender-canvas/retailer-prices";
 
 /** Same job the freshness bar labels MF MAP. */
 export const MUSICIANS_FRIEND_FRESHNESS_JOB = "map_parity_musiciansfriend";
@@ -75,9 +76,9 @@ export type ChannelStale = Partial<Record<string, PartialFigure | null>>;
 
 /**
  * Each channel's own listings against its recheck interval (Watson, 11 Nov): Amazon prices carry
- * featured_offer_checked_at (1 day); Walmart wmt_checked_at and Musician's Friend mf_checked_at at the
- * recheck days in the client's retailers setting. A retailer the client does not check reads no
- * stale line. A channel counts the listings with a stored price.
+ * featured_offer_checked_at (1 day); each retailer's prices carry their own check time from its
+ * price-check row (R-10), at the recheck days in the client's retailers setting. A retailer the
+ * client does not check reads no stale line. A channel counts the listings with a stored price.
  */
 export function mapChannelStale(rows: readonly MapSourceRow[], now: number = Date.now()): ChannelStale {
   const rule = (check: string, intervalDays: number) => ({
@@ -86,30 +87,28 @@ export function mapChannelStale(rows: readonly MapSourceRow[], now: number = Dat
     source: "canvas_retail_listings",
     figure: "channel counts",
   });
-  const retailer = (
-    key: string,
-    check: string,
-    priced: (row: MapSourceRow) => boolean,
-    at: (row: MapSourceRow) => string | null | undefined,
-  ): PartialFigure | null => {
-    const days = retailerRecheckDays(key);
-    return days == null ? null : rowsStale(rows.filter(priced), at, rule(check, days), now);
-  };
-  return {
+  const out: ChannelStale = {
     Amazon: rowsStale(
       rows.filter((row) => row.offer_price != null),
       (row) => row.featured_offer_checked_at,
       rule("Amazon", RECHECK_DAYS.buyBox),
       now,
     ),
-    Walmart: retailer("walmart", "Walmart", (row) => (row.wmt_price ?? 0) > 0, (row) => row.wmt_checked_at),
-    "Musician's Friend": retailer(
-      "musiciansfriend",
-      "Musician's Friend",
-      (row) => (row.mf_price ?? 0) > 0,
-      (row) => row.mf_checked_at,
-    ),
   };
+  const names = new Map<string, string>();
+  for (const row of rows) for (const cell of row.retailers ?? []) names.set(cell.key, cell.name);
+  for (const [key, name] of names) {
+    const days = retailerRecheckDays(retailerSettingKey(key));
+    if (days == null) {
+      out[name] = null;
+      continue;
+    }
+    const priced = rows
+      .map((row) => row.retailers?.find((cell) => cell.key === key))
+      .filter((cell): cell is RetailerCell => cell != null && (cell.price ?? 0) > 0);
+    out[name] = rowsStale(priced, (cell) => cell.checkedAt, { ...rule(name, days), source: "canvas_retail_prices" }, now);
+  }
+  return out;
 }
 
 export function channelReadingNote(

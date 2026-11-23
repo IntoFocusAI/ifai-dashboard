@@ -6,6 +6,7 @@
  * client; nothing here names one.
  */
 
+import type { RetailerCell } from "@/lib/fender-canvas/retailer-prices";
 import {
   FEATURED_OFFER_COLUMNS,
   featuredOfferState,
@@ -16,23 +17,15 @@ import {
 
 export type BuyBoxCause = "price" | "other";
 
-/** A withheld row with its stored cause and the outside prices the MAP checks already hold. */
+/** A withheld row with its stored cause and the outside prices the retailer checks already hold. */
 export type WithheldCauseRow = FeaturedOfferRow & {
   competitive_offer_suppressed?: boolean | null;
-  wmt_price?: number | string | null;
-  wmt_url?: string | null;
-  /** Fender only; the Ledlenser read drops it (lib/client/column-aliases). */
-  mf_price?: number | string | null;
+  /** The listing's checked retailers (R-10 rows), attached after the listing read. */
+  retailers?: readonly RetailerCell[];
 };
 
-/** The Featured Offer columns plus the stored cause and the stored outside prices. */
-export const WITHHELD_CAUSE_COLUMNS = [
-  FEATURED_OFFER_COLUMNS,
-  "competitive_offer_suppressed",
-  "wmt_price",
-  "wmt_url",
-  "mf_price",
-].join(",");
+/** The Featured Offer columns plus the stored cause. Outside prices come from the retailer rows. */
+export const WITHHELD_CAUSE_COLUMNS = [FEATURED_OFFER_COLUMNS, "competitive_offer_suppressed"].join(",");
 
 export const BUY_BOX_CAUSE_LABELS: Record<BuyBoxCause, string> = {
   price: "Priced above Amazon's reference price",
@@ -101,18 +94,18 @@ function safeUrl(value: unknown): string | null {
 }
 
 /**
- * For any withheld listing, whatever its cause (Brian Magazu, 18 Nov 2026): the stored Walmart and
- * Musician's Friend prices below the Amazon offer, lowest first, with the page when one is stored.
- * Empty for a listing that is not withheld, and when no stored price is lower.
+ * For any withheld listing, whatever its cause (Brian Magazu, 18 Nov 2026): each checked retailer's
+ * stored price below the Amazon offer, lowest first, with the page when one is stored. Empty for a
+ * listing that is not withheld, and when no stored price is lower.
  */
 export function lowerPricesElsewhere(row: WithheldCauseRow): LowerPriceElsewhere[] {
   if (featuredOfferState(row) !== "withheld") return [];
   const offer = observedOfferDollars(row);
   if (offer == null) return [];
   const found: LowerPriceElsewhere[] = [];
-  const walmart = dollars(row.wmt_price);
-  if (walmart != null && walmart < offer) found.push({ channel: "Walmart", price: walmart, url: safeUrl(row.wmt_url) });
-  const mf = dollars(row.mf_price);
-  if (mf != null && mf < offer) found.push({ channel: "Musician's Friend", price: mf, url: null });
+  for (const cell of row.retailers ?? []) {
+    const price = dollars(cell.price);
+    if (price != null && price < offer) found.push({ channel: cell.name, price, url: safeUrl(cell.url) });
+  }
   return found.sort((a, b) => a.price - b.price);
 }

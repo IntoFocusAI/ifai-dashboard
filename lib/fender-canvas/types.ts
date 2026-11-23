@@ -1,4 +1,5 @@
 import type { ListingContentSummary } from "@/lib/fender-canvas/listing-content";
+import type { RetailerCell } from "@/lib/fender-canvas/retailer-prices";
 import type { SpecPageSummary } from "@/lib/fender-canvas/machine-readability";
 import type { ClientBasis } from "@/lib/fender-canvas/actuation-records";
 import type { ClientEstimatesRead } from "@/lib/estimates/live-inputs";
@@ -23,10 +24,6 @@ export type CanvasMetricsRow = {
   active_offer_coverage_pct: number | null;
   amz_below_map: number | null;
   amz_avg_drift: number | null;
-  wmt_checked: number | null;
-  wmt_leaks: number | null;
-  mf_checked: number | null;
-  mf_leaks: number | null;
   offamz_avg_leak: number | null;
   map_violation_skus: number | null;
   bundle_reviews: number | null;
@@ -114,17 +111,16 @@ export type CanvasRetailListingRow = {
   map_price: number | null;
   offer_price: number | null;
   amz_leakage?: number | null;
+  /** Lowest of Amazon's leakage and every MAP-channel gap, computed from the retailer rows (R-10). */
   worst_leakage: number | null;
   reviews_count: number | null;
   channels: string | null;
   buybox_status: string | null;
+  /** Any of Amazon's leakage or a MAP-channel gap below zero, from the retailer rows (R-10). */
   is_map_violation: boolean | null;
   is_bundle: boolean | null;
-  wmt_price: number | null;
-  wmt_leakage: number | null;
-  wmt_url: string | null;
-  mf_price: number | null;
-  mf_leakage: number | null;
+  /** This listing's checked retailers (R-10 rows), attached by loadRetailListings. */
+  retailers?: RetailerCell[];
   product_url?: string | null;
   competitive_price_threshold_cents?: number | null;
   featured_offer_withheld?: boolean | null;

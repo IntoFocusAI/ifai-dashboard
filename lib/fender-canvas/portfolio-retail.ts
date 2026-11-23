@@ -31,6 +31,7 @@ import { brandName } from "@/lib/brand-copy";
 import { activeClientSettings } from "@/lib/client/active-client";
 import type { PartialFigure } from "./canvas-reads";
 import { combineStale, RECHECK_DAYS, retailerRecheckDays, rowsStale } from "./row-stale";
+import { mapLeakages, retailerSettingKey, type RetailerCell } from "./retailer-prices";
 
 export type RetailReadingStatus =
   | "available_with_issues"
@@ -99,8 +100,8 @@ const SPEC_UNAVAILABLE = "Amazon spec-field readings have not been stored.";
 
 export const RETAIL_SUPPRESSION_COLUMNS = FEATURED_OFFER_COLUMNS;
 
-export const RETAIL_MAP_LEAKAGE_COLUMNS =
-  "asin,map_price,offer_price,amz_leakage,wmt_leakage,mf_leakage,featured_offer_checked_at,wmt_checked_at,mf_checked_at";
+/** Amazon's side of the MAP read. Every other retailer comes from its price-check rows (R-10). */
+export const RETAIL_MAP_LEAKAGE_COLUMNS = "asin,map_price,offer_price,amz_leakage,featured_offer_checked_at";
 
 export const RETAIL_CATALOG_GOVERNANCE_COLUMNS =
   "asin,model_name,title,bundle_name,parent_asin,product_url,is_bundle,category,buybox_seller_name,buybox_seller_id,buybox_status,featured_offer_state,featured_offer_checked_at,catalog_checked_at";
@@ -222,13 +223,10 @@ export type MapLeakageRow = {
   map_price: number | string | null;
   offer_price: number | string | null;
   amz_leakage: number | string | null;
-  wmt_leakage: number | string | null;
-  mf_leakage: number | string | null;
   /** Amazon MAP price check time (the Featured Offer read). Per-row stale rule, X-25. */
   featured_offer_checked_at?: string | null;
-  wmt_checked_at?: string | null;
-  /** Musician's Friend is Fender only; Ledlenser rows never carry it. */
-  mf_checked_at?: string | null;
+  /** This listing's checked retailers (R-10 rows). Only MAP channels count toward a violation. */
+  retailers?: RetailerCell[];
 };
 
 export type MapLeakageDetail = {
@@ -253,9 +251,7 @@ export function mapAsinKey(asin: string | null | undefined): string | null {
 }
 
 function channelLeakages(row: MapLeakageRow): number[] {
-  return [row.amz_leakage, row.wmt_leakage, row.mf_leakage]
-    .map((value) => finite(value))
-    .filter((value): value is number => value != null);
+  return mapLeakages(row.amz_leakage, row.retailers);
 }
 
 function worstStoredLeakage(row: MapLeakageRow): number | null {
@@ -710,9 +706,9 @@ export function suppressedListingsFinding(
 }
 
 /**
- * MAP Leakage: Amazon prices carry featured_offer_checked_at (daily), Walmart wmt_checked_at
- * (daily for Fender, every 2 days for Ledlenser), Musician's Friend mf_checked_at (every 3 days).
- * Each channel counts the listings that have a stored comparison on it.
+ * MAP Leakage: Amazon prices carry featured_offer_checked_at (daily); each MAP-channel retailer's
+ * prices carry their own check time from its price-check row (R-10), at the recheck days in the
+ * client's retailers setting. Each channel counts the listings that have a stored comparison on it.
  */
 export function mapLeakageFinding(
   allRows: MapLeakageRow[] | null,
@@ -727,39 +723,38 @@ export function mapLeakageFinding(
         return key == null || !exceptions.has(key);
       })
     : allRows;
-  const channel = (
-    label: string,
-    leakage: (row: MapLeakageRow) => unknown,
-    at: (row: MapLeakageRow) => string | null | undefined,
-    intervalDays: number | null,
-  ) => ({
-    label,
-    // A retailer the client does not check (no recheck days in its settings) reads no stale line.
-    stale:
-      intervalDays == null
-        ? null
-        : rowsStale(
-            rows.filter((row) => finite(leakage(row)) != null),
-            at,
-            { intervalDays, check: `${label} price check`, source: "canvas_retail_listings", figure: "MAP figures" },
-            options?.now,
-          ),
-  });
-  return withStale(
-    reading,
-    combineStale(
-      [
-        channel("Amazon", (row) => row.amz_leakage, (row) => row.featured_offer_checked_at, RECHECK_DAYS.buyBox),
-        channel("Walmart", (row) => row.wmt_leakage, (row) => row.wmt_checked_at, retailerRecheckDays("walmart")),
-        channel(
-          "Musician's Friend",
-          (row) => row.mf_leakage,
-          (row) => row.mf_checked_at,
-          retailerRecheckDays("musiciansfriend"),
-        ),
-      ],
+  const amazon = {
+    label: "Amazon",
+    stale: rowsStale(
+      rows.filter((row) => finite(row.amz_leakage) != null),
+      (row) => row.featured_offer_checked_at,
+      { intervalDays: RECHECK_DAYS.buyBox, check: "Amazon price check", source: "canvas_retail_listings", figure: "MAP figures" },
+      options?.now,
     ),
-  );
+  };
+  // MAP-channel retailers in the order their cells carry (the client's list order).
+  const retailers = new Map<string, string>();
+  for (const row of rows) for (const cell of row.retailers ?? []) if (cell.mapChannel) retailers.set(cell.key, cell.name);
+  const retailerStale = [...retailers].map(([key, label]) => {
+    const intervalDays = retailerRecheckDays(retailerSettingKey(key));
+    const compared = rows
+      .map((row) => row.retailers?.find((cell) => cell.key === key))
+      .filter((cell): cell is RetailerCell => cell != null && cell.gap != null);
+    return {
+      label,
+      // A retailer the client does not check (no recheck days in its settings) reads no stale line.
+      stale:
+        intervalDays == null
+          ? null
+          : rowsStale(
+              compared,
+              (cell) => cell.checkedAt,
+              { intervalDays, check: `${label} price check`, source: "canvas_retail_prices", figure: "MAP figures" },
+              options?.now,
+            ),
+    };
+  });
+  return withStale(reading, combineStale([amazon, ...retailerStale]));
 }
 
 /**

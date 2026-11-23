@@ -22,7 +22,6 @@ import { mapListingSortValue } from "@/lib/fender-canvas/listing-table-sort";
 import {
   listingChannelFacts,
   listingLabel,
-  storedHttpUrl,
   type MapSourceRow,
   type MapTabModel,
 } from "@/lib/fender-canvas/map-channels";
@@ -105,8 +104,8 @@ function mapColumns(model: MapTabModel, withExposure: boolean): RetailColumn[] {
       sort: "number",
     });
   }
-  if (model.showWalmart) columns.push(money("walmart", "Walmart"));
-  if (model.showMusiciansFriend) columns.push(money("musicians-friend", "Musician's Friend"));
+  // R-10: one column per retailer with a stored price, in the client's retailer order.
+  for (const column of model.columns) if (column.key !== "amazon") columns.push(money(column.key, column.name));
   columns.push({ ...SET_ASIDE_SORT_COLUMN, width: 92, minWidth: 84 });
   return columns;
 }
@@ -188,9 +187,6 @@ export function MapListingsTable({
             const facts = new Map(
               listingChannelFacts(row).map((fact) => [fact.key, fact]),
             );
-            const walmartUrl = storedHttpUrl(row.wmt_url);
-            // No Musician's Friend page URL is stored, so a shown price keeps its Not available* mark.
-            const musiciansFriendUrl = null;
             return (
               <Fragment key={row.asin}>
               <tr>
@@ -209,16 +205,19 @@ export function MapListingsTable({
                 <td className="money">{row.map_price != null ? formatUsd(row.map_price) : pendingLabel()}</td>
                 {model.showAmazon ? <ChannelPriceCell fact={facts.get("amazon")} /> : null}
                 {lookup ? <ExposureCells exposure={mapExposure(row, lookup)} /> : null}
-                {model.showWalmart ? (
-                  <ChannelPriceCell fact={facts.get("walmart")} href={walmartUrl} requireCheckedPage />
-                ) : null}
-                {model.showMusiciansFriend ? (
-                  <ChannelPriceCell
-                    fact={facts.get("musicians-friend")}
-                    href={musiciansFriendUrl}
-                    requireCheckedPage
-                  />
-                ) : null}
+                {model.columns
+                  .filter((column) => column.key !== "amazon")
+                  .map((column) => {
+                    const fact = facts.get(column.key);
+                    return (
+                      <ChannelPriceCell
+                        key={column.key}
+                        fact={fact}
+                        href={fact?.url ?? null}
+                        requireCheckedPage
+                      />
+                    );
+                  })}
                 <SetAsideCell ctl={setAsides} entityKey={row.asin} canSetAside={Boolean(href)} />
               </tr>
               <SetAsideFormRow

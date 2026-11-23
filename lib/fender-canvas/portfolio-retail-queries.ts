@@ -1,5 +1,6 @@
 import { getCanvasSupabase } from "../supabase/canvas-client";
 import { readFailure } from "./canvas-reads";
+import { loadRetailerPrices } from "./retailer-prices-read";
 import {
   loadPortfolioRetailSnapshot as loadFromSource,
   readPages,
@@ -32,7 +33,7 @@ export function retailSuppressionRowsQuery(page = 0, size = PAGE_SIZE) {
     .range(page * size, page * size + size - 1);
 }
 
-/** MAP prices and stored channel leakage. Bundle and seller columns are not selected. */
+/** MAP prices and Amazon's stored leakage. Bundle and seller columns are not selected. */
 export function retailMapLeakageRowsQuery(page = 0, size = PAGE_SIZE) {
   const supabase = getCanvasSupabase();
   return supabase
@@ -80,8 +81,19 @@ export function supabaseRetailQuerySource(): RetailQuerySource {
       readPages((page, size) =>
         retailSuppressionRowsQuery(page, size) as PromiseLike<PageResult<SuppressionSupportRow>>,
       ),
-    mapRows: () =>
-      readPages((page, size) => retailMapLeakageRowsQuery(page, size) as PromiseLike<PageResult<MapLeakageRow>>),
+    // R-10: Amazon from the listing read, every other retailer from its price-check rows.
+    async mapRows() {
+      const [listings, index] = await Promise.all([
+        readPages((page, size) => retailMapLeakageRowsQuery(page, size) as PromiseLike<PageResult<MapLeakageRow>>),
+        loadRetailerPrices().catch(() => null),
+      ]);
+      if (!listings.ok || index == null) return { ok: false } as const;
+      const indexByAsin = (asin: string | null | undefined) => index.byAsin.get(asin?.trim() ?? "") ?? [];
+      return {
+        ...listings,
+        rows: listings.rows.map((row) => ({ ...row, retailers: indexByAsin(row.asin) })),
+      };
+    },
     catalogRows: () =>
       readPages((page, size) =>
         retailCatalogGovernanceRowsQuery(page, size) as PromiseLike<PageResult<CatalogBundleRow>>,

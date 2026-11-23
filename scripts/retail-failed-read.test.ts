@@ -56,7 +56,7 @@ function suppression(asin: string, withheld: boolean): SuppressionSupportRow {
   };
 }
 
-const mapRow = (leak: number): MapLeakageRow => ({ map_price: 100, offer_price: 100 + leak, amz_leakage: leak, wmt_leakage: null, mf_leakage: null });
+const mapRow = (leak: number): MapLeakageRow => ({ map_price: 100, offer_price: 100 + leak, amz_leakage: leak });
 
 function bundleRow(asin: string, parent: string | null): CatalogBundleRow {
   return { asin, model_name: asin, title: null, bundle_name: null, parent_asin: parent, product_url: null, is_bundle: true, featured_offer_state: "present" };

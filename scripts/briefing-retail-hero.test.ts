@@ -79,8 +79,6 @@ function mapRow(leak: number | null): MapLeakageRow {
     map_price: 100,
     offer_price: 80,
     amz_leakage: leak,
-    wmt_leakage: null,
-    mf_leakage: null,
   };
 }
 

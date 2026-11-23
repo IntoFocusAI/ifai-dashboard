@@ -79,9 +79,10 @@ export const CATALOG_ROWS: Row[] = [
   listing("B00PEG0001", "Tuning Pegs", "No Active Offer", null),
 ];
 
-function mapRow(asin: string, map: number | null, amz: number | null, wmt: number | null = null): Row {
-  const leaks = [amz, wmt].filter((value): value is number => value != null);
-  const worst = leaks.length ? Math.min(...leaks) : null;
+/** Walmart's gap (price − MAP) per listing, stored as R-10 price-check rows, not columns. */
+const WALMART_GAPS: Record<string, number> = { B00MAP0002: -80, B00MAP0004: 5 };
+
+function mapRow(asin: string, map: number | null, amz: number | null): Row {
   return {
     asin,
     model_name: `MAP listing ${asin.slice(-2)}`,
@@ -89,27 +90,54 @@ function mapRow(asin: string, map: number | null, amz: number | null, wmt: numbe
     map_price: map,
     offer_price: map != null && amz != null ? map + amz : null,
     amz_leakage: amz,
-    worst_leakage: worst,
-    wmt_price: map != null && wmt != null ? map + wmt : null,
-    wmt_leakage: wmt,
-    wmt_url: wmt != null ? `https://www.walmart.com/ip/${asin}` : null,
-    mf_price: null,
-    mf_leakage: null,
-    is_map_violation: worst != null && worst < 0,
     featured_offer_checked_at: FRESH_AT,
-    wmt_checked_at: FRESH_AT,
-    mf_checked_at: null,
   };
 }
 
 /** Three listings below MAP out of five with a stored comparison; one has no MAP price. */
 export const MAP_ROWS: Row[] = [
   mapRow("B00MAP0001", 1000, -100),
-  mapRow("B00MAP0002", 800, -50, -80),
+  mapRow("B00MAP0002", 800, -50),
   mapRow("B00MAP0003", 600, -20),
-  mapRow("B00MAP0004", 500, 0, 5),
+  mapRow("B00MAP0004", 500, 0),
   mapRow("B00MAP0005", 400, 10),
   mapRow("B00MAP0006", null, null),
+];
+
+/** The client's retailer list (`canvas_retailers`): Walmart is the one MAP channel checked. */
+const RETAILERS: Row[] = [
+  { slug: "walmart", display_name: "Walmart", map_channel: true, active: true, sort_order: 10 },
+  { slug: "musicians-friend", display_name: "Musician's Friend", map_channel: true, active: true, sort_order: 20 },
+];
+
+/**
+ * Latest Walmart check per listing (`canvas_retail_prices`): two priced, and B00MAP0099 matched a
+ * page with no price read, so Walmart carries three listings and one is missing a price.
+ */
+const RETAIL_PRICES: Row[] = [
+  ...MAP_ROWS.filter((row) => WALMART_GAPS[String(row.asin)] != null).map((row) => {
+    const gap = WALMART_GAPS[String(row.asin)];
+    return {
+      asin: row.asin,
+      retailer: "walmart",
+      status: "priced",
+      observed_at: FRESH_AT,
+      price: Number(row.map_price) + gap,
+      url: `https://www.walmart.com/ip/${row.asin}`,
+      map_price: row.map_price,
+      leakage: gap,
+    };
+  }),
+  {
+    asin: "B00MAP0099",
+    retailer: "walmart",
+    status: "no_match",
+    observed_at: FRESH_AT,
+    price: null,
+    url: "https://www.walmart.com/ip/B00MAP0099",
+    map_price: null,
+    leakage: null,
+  },
 ];
 
 /**
@@ -123,14 +151,6 @@ export const MAP_UNIT_ROWS: Row[] = [
 ];
 
 const MAP_UNITS_SELECT = "asin,smartscout_monthly_units,smartscout_snapshot_date";
-
-const CHANNEL_PRICES: Row[] = MAP_ROWS.filter((row) => row.wmt_price != null).map((row) => ({
-  asin: row.asin,
-  channel: "walmart",
-  price: row.wmt_price,
-  url: row.wmt_url,
-  checked_at: "2026-11-03T12:00:00.000Z",
-}));
 
 const CHECKED_AT = FRESH_AT;
 
@@ -168,24 +188,12 @@ function retailRows(url: URL): Row[] {
   if (select.includes("featured_offer_withheld")) return SUPPRESSION_ROWS;
   if (select.includes("buybox_status") && select.includes("category")) return CATALOG_ROWS;
   if (select.startsWith("asin,map_price")) return MAP_ROWS;
-  if (select === "*") {
-    const sorted = [...MAP_ROWS].sort(
-      (a, b) => Number(a.worst_leakage ?? Infinity) - Number(b.worst_leakage ?? Infinity),
-    );
-    if (url.searchParams.get("is_map_violation") === "eq.true") return sorted.filter((row) => row.is_map_violation);
-    return sorted;
-  }
+  // The full listing read; worst leakage and the violation filter come from the retailer rows.
+  if (select === "*") return MAP_ROWS;
   if (select === "asin") {
-    // Carried-listing counts (worker 29.16). Walmart carries the two priced rows plus one matched
-    // listing with no price read; Amazon carries every row.
-    const carriedByWalmart = (url.searchParams.get("or") ?? "").includes("wmt_url.like");
-    let rows = carriedByWalmart
-      ? [...MAP_ROWS.filter((row) => Number(row.wmt_price) > 0), { asin: "B00MAP0099", wmt_price: null }]
-      : MAP_ROWS;
-    for (const column of ["wmt_price", "offer_price", "mf_price"]) {
-      if (url.searchParams.get(column) === "gt.0") rows = rows.filter((row) => Number(row[column]) > 0);
-    }
-    return rows;
+    // Amazon carried-listing counts (worker 29.16): every row, then the ones with a price.
+    if (url.searchParams.get("offer_price") === "gt.0") return MAP_ROWS.filter((row) => Number(row.offer_price) > 0);
+    return MAP_ROWS;
   }
   return [];
 }
@@ -208,7 +216,10 @@ function bodyFor(url: URL, accept: string): unknown[] | Row {
   }
   if (table === "canvas_divisions") return DIVISIONS;
   if (table === "canvas_retail_listings") return retailRows(url);
-  if (table === "canvas_listing_channel_price") return CHANNEL_PRICES;
+  if (table === "canvas_retailers") return RETAILERS;
+  if (table === "canvas_retail_prices") return RETAIL_PRICES;
+  // No priced check before a miss, so the first-miss history read is empty.
+  if (table === "canvas_retail_price_history") return [];
   if (table === "canvas_listing_sales_loss_v2" && url.searchParams.get("select") === MAP_UNITS_SELECT) {
     return MAP_UNIT_ROWS;
   }

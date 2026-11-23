@@ -6,11 +6,11 @@ import { isExportTable, stockEpisodesAsin, stockEpisodesTableId, EXPORT_TABLE_ID
 import { sellerTypeDefinition } from "../lib/fender-canvas/authorized-sellers.ts";
 import { anyListingReviewCount } from "../lib/fender-canvas/listing-reviews.ts";
 import {
-  channelPriceLookup,
   exploreChannelColumns,
   shownChannelGap,
   type ChannelSourceRow,
 } from "../lib/fender-canvas/map-channels.ts";
+import { cells, LEDLENSER_RETAILERS } from "./fixtures/retailer-rows.ts";
 import { heroFigureColor, heroFigureTone } from "../lib/fender-canvas/retail-overview-lead.ts";
 import {
   awaitingInputsBreakdown,
@@ -33,9 +33,6 @@ function listing(asin: string, overrides: Partial<ChannelSourceRow> = {}): Chann
     offer_price: 90,
     amz_leakage: -10,
     worst_leakage: -10,
-    wmt_price: null,
-    wmt_leakage: null,
-    wmt_url: null,
     ...overrides,
   };
 }
@@ -171,22 +168,21 @@ test("X-33 / X-10: Explore all listings has a server CSV", () => {
 });
 
 test("a retailer column appears only when the client stores a price for it", () => {
-  const prices = channelPriceLookup([
-    { asin: "B000000002", channel: "sweetwater", price: 80, url: null, checked_at: null },
-  ]);
-  // Ledlenser shape: Amazon and Walmart, and no Musician's Friend fields at all.
-  const ledlenser = [listing("B000000001", { wmt_price: 95, wmt_leakage: -5 }), listing("B000000002")];
+  // Ledlenser shape: Amazon and Walmart, from Ledlenser's own retailer list.
+  const ledlenser = [
+    listing("B000000001", { retailers: cells("B000000001", { walmart: { price: 95 } }, 100, LEDLENSER_RETAILERS) }),
+    listing("B000000002", { retailers: cells("B000000002", { walmart: {} }, 100, LEDLENSER_RETAILERS) }),
+  ];
+  assert.deepEqual(exploreChannelColumns(ledlenser, ["walmart"]).map((column) => column.key), ["amazon", "walmart"]);
+  // Fender shape: one Musician's Friend price brings the column; Walmart misses bring nothing.
+  const fender = [
+    listing("B000000001", { retailers: cells("B000000001", { walmart: {}, "musicians-friend": { price: 100 } }, 100) }),
+  ];
   assert.deepEqual(
-    exploreChannelColumns(ledlenser, prices).map((column) => column.key),
-    ["amazon", "walmart", "sweetwater"],
-  );
-  // Fender shape: one Musician's Friend price brings the column.
-  const fender = [listing("B000000001", { mf_price: 100, mf_leakage: 0 })];
-  assert.deepEqual(
-    exploreChannelColumns(fender, new Map()).map((column) => column.name),
+    exploreChannelColumns(fender, ["walmart", "musicians-friend"]).map((column) => column.name),
     ["Amazon", "Musician's Friend"],
   );
-  assert.deepEqual(exploreChannelColumns([], new Map()), []);
+  assert.deepEqual(exploreChannelColumns([], ["walmart"]), []);
 });
 
 test("the Reviews column waits for a stored review count", () => {

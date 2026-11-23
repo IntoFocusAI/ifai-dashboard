@@ -5,6 +5,7 @@ import {
   featuredOfferColumnProbe,
   featuredOfferReadingCountQuery,
   suppressedListingsQuery,
+  withRetailerCells,
 } from "@/lib/canvasData";
 import { splitBuyBoxCauses, type BuyBoxCauseSplit, type WithheldCauseRow } from "@/lib/fender-canvas/buy-box-cause";
 import { withheldListings } from "@/lib/fender-canvas/featured-offer";
@@ -27,7 +28,8 @@ async function loadWithheldListings(): Promise<WithheldCauseRow[] | null> {
     rows.push(...((data ?? []) as WithheldCauseRow[]));
     const total = count ?? rows.length;
     if (rows.length >= total || (data ?? []).length < PAGE_SIZE) {
-      return withheldListings(rows) as WithheldCauseRow[];
+      // R-10: the outside prices come from the retailer rows.
+      return withRetailerCells(withheldListings(rows) as WithheldCauseRow[]);
     }
   }
   return null;
