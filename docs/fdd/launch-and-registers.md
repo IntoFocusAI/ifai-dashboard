@@ -3,7 +3,7 @@
 | **Ready to show** | **Say this in the room** |
 |---|---|
 | Hub map and six spokes | Balanced view is the Fender pilot picture. |
-| Buy Box / Featured Offer readings | Withheld split and freshness are live. On the 7.4 build, primary copy says Buy Box and the tooltip says Amazon also calls it the Featured Offer. Published Pages still says Featured Offer until that build deploys. |
+| Buy Box / Featured Offer readings | Withheld split and freshness are live. On the 7.4 build, primary copy says Buy Box and the tooltip says Amazon also calls it the Featured Offer. |
 | MAP price gaps | Exposure today is price gap, not lost revenue. |
 | AI rates on the Oct 18 partial run | Useful directionally; failed engines must not be sold as results (A-09). |
 | +\$680K / +\$38–62M | Analyst estimates until Opportunity trails exist. |
@@ -72,7 +72,7 @@ Feature IDs are shared with the Technical Design Document. Verification reflects
 
 | **ID** | **Status** | **Depends on** | **Verification** |
 |---|---|---|---|
-| X-19 | CURRENT | Copy pass | Desktop-verified on the 7.4 build. Published Pages still cfd45de until deploy. |
+| X-19 | CURRENT | Copy pass | Desktop-verified on the 7.4 build. |
 | H-06 / H-07 | CURRENT / REFINE | Summary IA | H-06 Summary desktop-verified. H-07 score layout is on Performance and stays REFINE until the scores are shown against a target and AI Actuation is included. |
 | R-01 | CURRENT | Catalog Health rename | Catalog Health and Partner-led desktop-verified on the 7.4 build. |
 | R-06 | TARGET | Revenue inputs + 80% trail | Not deployed |

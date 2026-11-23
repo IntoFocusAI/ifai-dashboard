@@ -2,7 +2,6 @@ import { redirect } from "next/navigation";
 import { DashboardAuthView } from "@/components/dashboard/DashboardAuthView";
 import { DashboardOrgPlaceholder } from "@/components/dashboard/DashboardOrgPlaceholder";
 import { HomeCanvasDynamic } from "@/components/v3/HomeCanvasDynamic";
-import { HomeCanvasStatic } from "@/components/v3/HomeCanvasStatic";
 import { DASHBOARD_PATH } from "@/lib/auth/dashboard-path";
 import { resolveDashboardGate } from "@/lib/auth/dashboard-gate";
 
@@ -14,9 +13,6 @@ type SearchParams = Promise<Record<string, string | string[] | undefined>>;
  * `?client=` the user may not open redirects to their own brand.
  */
 export default async function DashboardPage({ searchParams }: { searchParams: SearchParams }) {
-  if (process.env.NEXT_PUBLIC_STATIC_EXPORT === "1") {
-    return <HomeCanvasStatic />;
-  }
   const gate = await resolveDashboardGate(await searchParams);
 
   if (gate.kind === "login") return <DashboardAuthView mode="login" next={gate.next} />;

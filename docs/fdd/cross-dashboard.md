@@ -397,7 +397,7 @@ None. Status words are Poor, Fair, and Good where a figure has no word of its ow
 - **Desired:** Use Buy Box in primary copy. Tooltip: Amazon also calls it the Featured Offer.
 - **User value:** Clients are not asked to translate the same button.
 - **Acceptance:** No primary client headline says only Featured Offer.
-- **Evidence:** Desktop-verified 21 Oct 2026 on local production build commit 1fdbfc0 (PR 43). Published GitHub Pages still serves main cfd45de until that branch deploys. The glossary keeps a secondary Featured Offer alias. It is not a primary headline.
+- **Evidence:** Desktop-verified 21 Oct 2026 on local production build commit 1fdbfc0 (PR 43). The glossary keeps a secondary Featured Offer alias. It is not a primary headline.
 - **Open decision:** None.
 
 **X-26 CURRENT** · Launch
