@@ -17,6 +17,7 @@ import { planWithAplus } from "@/lib/fender-canvas/action-items-aplus-row";
 import { bulletsFromBundle } from "@/lib/fender-canvas/action-items-bullets-row";
 import { tallyCommercial } from "@/lib/ai-search/run-metrics";
 import { formatInt } from "@/lib/fender-canvas/format";
+import { monitoredListingsTotal } from "@/lib/fender-canvas/monitored-listings";
 import type { ReachTotals } from "@/lib/fender-canvas/priority-rank";
 import { isoDay } from "@/lib/fender-canvas/actuation-score";
 import { actuationActions, suggestedTargets, targetAnswers, withOwnedAnswersGap } from "@/lib/fender-canvas/roadmap-actuation";
@@ -154,8 +155,8 @@ export type RoadmapPlanInput = {
  */
 export function reachTotals(retail: RetailCanvasRead, ai: AiSearchRead): ReachTotals {
   const answers = ai.phase === "ready" ? tallyCommercial(ai.snapshot.calls).resolved : null;
-  const listings = retail.phase === "ready" ? (retail.snapshot.suppressedListings.detail?.population ?? null) : null;
-  return { answers: answers || null, listings: listings || null };
+  const listings = retail.phase === "ready" ? monitoredListingsTotal(retail.snapshot) : null;
+  return { answers: answers || null, listings };
 }
 
 export function assembleRoadmapPlan(input: RoadmapPlanInput): RoadmapPlanRead {

@@ -500,7 +500,13 @@ export function rankPlan(items: readonly (UnrankedPlanItem | PlanItem)[], reach:
     // Severity first (fix round 2), from the item's own status: one mapping for every list.
     inputs: { ...item.inputs, severity: severityOf(item.inputs.tier === "action" ? item.tone : "low") },
   }));
-  const ranked = rankPriorities(graded, reach);
+  // A re-rank (an added row, a focus) keeps the common base the first rank set: never a second one.
+  const carried = (unit: "answers" | "listings") =>
+    graded.find((item) => item.inputs.unit === unit && item.inputs.reach != null)?.inputs.reach ?? null;
+  const ranked = rankPriorities(graded, {
+    answers: reach.answers ?? carried("answers"),
+    listings: reach.listings ?? carried("listings"),
+  });
   const columns = placeByRank(ranked.filter(onRoadmap));
   return ranked.map((item) => {
     const column = columns.get(item.id);

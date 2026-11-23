@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { PartialFigureMark } from "@/components/v3/live/FigureTip";
+import { figureTipAttrs, PartialFigureMark } from "@/components/v3/live/FigureTip";
 import { RetailShareDisc, RetailStatusMark } from "@/components/v3/live/RetailOverviewFigure";
 import {
   heroFigureColor,
@@ -24,7 +24,11 @@ function RetailHeroCard({ hero }: { hero: RetailOverviewHeroModel }) {
       data-retail-overview-hero={hero.id}
     >
       <button type="button" className="retail-finding-hit">
-        <span className="metric-card-label" data-retail-hero-label="">
+        <span
+          data-retail-hero-label=""
+          {...figureTipAttrs(hero.label, hero.tip, "retail-hero-title")}
+          className={hero.tip ? "metric-card-label ifai-term" : "metric-card-label"}
+        >
           {hero.label}
         </span>
         <span className="retail-overview-hero-row" data-retail-hero-row="">
@@ -48,7 +52,7 @@ function RetailHeroCard({ hero }: { hero: RetailOverviewHeroModel }) {
             ) : null}
             <RetailStatusMark tone={heroFigureTone(hero)} />
           </span>
-          {hero.pie ? <RetailShareDisc pie={hero.pie} measuredKey="contradicted" tip={hero.tip} /> : null}
+          {hero.pie ? <RetailShareDisc pie={hero.pie} measuredKey="contradicted" /> : null}
         </span>
         <span className="metric-card-sub" data-retail-hero-explainer="">
           {hero.explainer}
@@ -60,7 +64,7 @@ function RetailHeroCard({ hero }: { hero: RetailOverviewHeroModel }) {
 
 /**
  * Retail Overview share heroes in one row. Optional leading slot (AI Commerce)
- * sits in the same band as Buy Box Withheld, MAP Leakage, and Catalog Governance.
+ * sits in the same band as Buy Box Withheld, MAP Leakage, and Splintered Listings.
  */
 export function RetailOverviewLead({
   read,
