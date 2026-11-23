@@ -220,6 +220,10 @@ Replace this whole section on handoff. Keep it under 40 lines. The FDD wins.
   formula does not match his intent. Start: Action Items → Out of stock tab, lib/estimates, then
   propose the corrected formula to Brian (dollar formulas ship only after his approval).
 - Review requests always give the preview link, where to click, and what to look for (Brian, 23 Nov).
+- LATER (Brian, 23 Nov): the all-channel sales base. Estimates use the whole-company placeholders
+  ($1B Fender, $75M Ledlenser) though the tracked catalogs are narrower (Fender/Squier electric and
+  related gear; Ledlenser's US distributor catalog) and the data is US Amazon only. Keep them until
+  Brian picks a better plan; Enterprise Potential has the same issue. See PR 285, item 2 base.
 - Not buildable: X-29 (Ryan/Watson review), SC-03 (Watson sign-in, Marc webhook), D-02/D-09
   (collector), R-07 (after R-06).
   Blocked: X-15, X-16, X-35, R-10, R-15, A-02, D-05. Held: A-06, R-11, A-04, N-07; R-19 to launch.
