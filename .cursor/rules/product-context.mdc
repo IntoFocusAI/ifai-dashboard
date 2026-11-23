@@ -31,7 +31,7 @@ This repo is the IntoFocus AI client dashboard. Treat the following as project t
 2. **Show the ecommerce → AI-search link clearly** — how catalog, retail, pricing, and product-data issues change brand performance in AI search / assistants
 3. **Give clear direction** — concrete next steps that improve overall results
 4. **Drill down to foundational data** — every chart, status, and estimate must open the evidence and assumption chain behind it
-   - External evidence: e.g. if an Amazon listing is suppressed because of low pricing on Walmart, link from that dashboard line to the Walmart listing causing the suppression
+   - External evidence: e.g. if an Amazon listing is suppressed, link from that dashboard line to any outside store selling at Amazon's benchmark price, labeled "price match" (Amazon never names the store it used)
    - IntoFocus measurements: e.g. if we estimate **$680K** in potential retail uplift, the user must reach the inputs, logic, and plain-language explanations so leadership can sniff-test reasonability
 5. **Delegation / paid tiers** — **parked; do not build or redesign this yet** unless explicitly asked. Future model (for awareness only):
    - **DIY** — client (or included agents) takes suggested actions

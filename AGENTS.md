@@ -34,7 +34,7 @@ Keep this section **outside** the Next.js block above. Cursor agents also load `
 1. Show clearly how the brand is performing on ecommerce and AEO
 2. Show clearly how ecommerce issues change brand performance in AI search
 3. Give clear next steps to improve overall results
-4. Drill to foundational data: external listings/pages **and** IntoFocus measurements / assumption chains (e.g. a $680K uplift estimate must open to sniff-testable inputs and plain explanations; a suppressed Amazon listing must link to the Walmart listing causing it when that is the cause)
+4. Drill to foundational data: external listings/pages **and** IntoFocus measurements / assumption chains (e.g. a $680K uplift estimate must open to sniff-testable inputs and plain explanations; a suppressed Amazon listing links to any outside store selling at Amazon's benchmark price, labeled "price match", because Amazon never names the store it used)
 5. **Delegation / paid tiers — parked.** Do not design or build DIY / Done-with-You / Done-for-You workflows unless explicitly asked. Future awareness only: DIY (client/agents act), Done-with-You (shared ownership indicators), Done-for-You (IntoFocus owns actions)
 
 ## Implementation priority
