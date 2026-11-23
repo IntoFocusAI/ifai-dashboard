@@ -2,7 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useAiHistory } from "@/components/v3/live/ai-search/AiHistoryContext";
+import { useHasAiSearchProvider } from "@/components/v3/live/ai-search/AiSearchContext";
 import { useEngineGroupRead } from "@/components/v3/live/ai-search/EngineGroupScope";
+import { useSummaryAiRead } from "@/components/v3/live/useSummaryAiRead";
 import { catalogLoadState, useApiRunCatalog, useApiSnapshots } from "@/components/v3/live/ai-search/useApiEngineLoad";
 import { afterSiteTypes } from "@/lib/ai-search/site-types";
 import { loadHistorySnapshot, type HistorySnapshotResult } from "@/lib/ai-search/history-queries";
@@ -98,7 +100,12 @@ export function useFocusWindows(): FocusWindowsRead {
   const currentApi = useApiSnapshots(apiRuns.current);
   const previousApi = useApiSnapshots(apiRuns.previous);
   const pending = catalogLoadState(catalog);
-  const { read: tabRead } = useEngineGroupRead();
+  // The map builds its plan above the AI provider, where the tab read never arrives: it reads the
+  // date-pill window the Summary reads instead, so its plan settles and matches Action Items.
+  const provided = useHasAiSearchProvider();
+  const { read: engineRead } = useEngineGroupRead();
+  const summaryRead = useSummaryAiRead();
+  const tabRead = provided ? engineRead : summaryRead;
 
   const pooled = useMemo<FocusWindowsRead>(() => {
     if (history.source === "fixture") {

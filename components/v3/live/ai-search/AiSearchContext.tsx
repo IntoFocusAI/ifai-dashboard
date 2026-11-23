@@ -36,12 +36,17 @@ export function useAiSearchRead(): AiSearchRead {
   return read;
 }
 
-const AiSearchContext = createContext<AiSearchRead>({ phase: "loading" });
+const AiSearchContext = createContext<AiSearchRead | null>(null);
 
 export function AiSearchProvider({ read, children }: { read: AiSearchRead; children: ReactNode }) {
   return <AiSearchContext.Provider value={read}>{children}</AiSearchContext.Provider>;
 }
 
 export function useAiSearch(): AiSearchRead {
-  return useContext(AiSearchContext);
+  return useContext(AiSearchContext) ?? { phase: "loading" };
+}
+
+/** True inside an AiSearchProvider. The map builds its plan above the provider, where it is false. */
+export function useHasAiSearchProvider(): boolean {
+  return useContext(AiSearchContext) != null;
 }
