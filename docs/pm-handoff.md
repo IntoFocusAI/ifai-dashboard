@@ -174,34 +174,34 @@ code may branch on a client name (X-35, decision 105).
 
 Replace this whole section on handoff. Keep it under 40 lines. The FDD wins.
 
-- PM29 handed off 18 Nov 2026; next is PM30. Docs and header badge 29.28. Launch
-  CURRENT 76 of 102. Decisions 115 to 124 are PM29's. Up to 5 workers (decision 124).
-- Brian presents to Fender's former CMO and Ledlenser USA's owners on 19 Nov; no
-  building that morning, Watson paused. Freeze held from 4 pm 18 Nov.
-- Merged 18 Nov: 234 benchmarks + register; 235/236 estimate inputs, generated
-  Briefing/Opportunity (H-09 CURRENT); 239 dollars on Action Items and tabs; 242 MAP
-  N of carried; 243 Actuation items; 245 Buy Box by cause; 246 AI lines 8-9 (light
-  E5); 250/252 demo-sweep fixes. Close-out in this handoff PR.
-- Map vs tabs (worker 29.29, 18 Nov): no mismatch on main; map and tabs share
-  useMapAiSearch. FDD A-02 text ("published run plus API run") is stale; map's
-  Branded Consideration lacks the tab's stale asterisk (93.8% vs 93.8%*). Both minor.
+- PM30 handed off 23 Nov 2026; next is PM31. Docs and header badge 30.10 (PR 262). Launch
+  CURRENT 77 of 102. Decisions 125 to 129 are PM30's (changelog 19 and 23 Nov rows).
+- 19 Nov pre-meeting tweaks, all merged and verified live: 255 compact hover cards; 256
+  Findability card bands and "not matched" labels; 257 cards on the four data bubbles only;
+  258 upside dollars in green; 259 estimate dialog wraps; 260 AI Search card bands; 261
+  "answers" on AI and Radar cards. Merge gate used: Unit tests green on the current head,
+  re-tested whenever main moved. Previews: deploy-preview-<PR>--ifai-dashboard.netlify.app.
+- Brian presented to Fender's former CMO and Ledlenser USA's owners on 19 Nov. He is
+  awaiting consensus on the feedback; nothing has reached the queue yet.
+- Leadership doc to watch (ArtifactComments): https://claude.ai/artifact/TXZ217nzUhNQFiuJyJEAUm
 - Queue, in order:
-  1. After the demo: Brian's feedback from the two meetings.
-  2. Demo sweep leftovers: one "fix first" order across Priorities, Action Items,
-     Roadmap and deck (item 5); active offers 1,004/1,005/1,006; missing specs 524 vs
-     519; separators on fact-check and map hover. Report:
-     docs/demo-readiness.md (18 Nov sweep).
-  3. Roadmap gap audit recs 4 to 8 (docs/roadmap-gap-audit.md); decision 123.
-  4. "No MAP" client setting (decision 122) and remaining lint:clients hits; C9 runbook.
-  5. Full E5 (lines 10, 11, source split, Roadmap dollars; Fable for allocation),
-     E6 onboarding inputs, E7 value achieved (additive migration).
-  6. D-12 miscategorized listings (Brian's strings-as-guitar example), S-05, X-22
-     hover panels (with Minimal /100), X-36 residual.
-- Action Items CSV (server route) lacks the Buy Box cause rows, A+ row and dollars.
-- Ledlenser: Unbranded Discovery now reads 31.6% (426 of 1,348) vs 3.8% in the
-  proposal; likely a larger question set; confirm with Watson.
-- Watson: Walmart drop-off and bundle search (decision 122); D-05 field lists;
-  X-15/X-16 logins; staff sign-in (blocks recording Actuation programs).
-- Slack: DM Watson from Brian's account, italics, signed "sent by Claude for Brian"
-  (U0BUPGZ3ADN). Leadership doc TXZ217nzUhNQFiuJyJEAUm: Claude Doc, PM-owned.
-- At most 2 browsers per worker e2e run. Unsubscribe auto-subscribed worker PRs.
+  1. Brian's meeting feedback when it arrives.
+  2. Briefing narrative build: docs/briefing-narrative-spec.md, approved 23 Nov (decisions
+     128, 129). One Opus 5.5 worker, one PR; the worker proposes the AI-consequence clause
+     for each of the three gaps in its PR body for Brian's approval. Replaces BriefingAiLead.
+  3. Demo sweep leftovers (docs/demo-readiness.md, 18 Nov): one "fix first" order across
+     Priorities, Action Items, Roadmap and deck; active offers 1,004/1,005/1,006; missing
+     specs 524 vs 519; separators on fact-check and map hover.
+  4. Roadmap gap audit recs 4 to 8 (docs/roadmap-gap-audit.md); decision 123.
+  5. "No MAP" client setting (decision 122) and remaining lint:clients hits; C9 runbook.
+  6. Full E5 (lines 10, 11, source split, Roadmap dollars; Fable for allocation), E6
+     onboarding inputs, E7 value achieved (additive migration).
+  7. Open FDD rows buildable now: X-22 (confirm each card is the largest gap, opportunity
+     and top action; run time in a tooltip), X-36, X-11, X-29, SC-03, R-07, R-09, D-02,
+     D-09, D-12 (strings-as-guitar), S-05. Blocked on Watson or data: X-15, X-16, X-35,
+     R-10, R-15, A-02, D-05. Held by Brian: A-06, R-06, R-11, A-04, N-07; R-19 until launch.
+  8. 19 Nov leftovers: deck slides and the Summary template sentence still show dollars
+     uncoloured; Action Items CSV lacks the Buy Box cause rows, A+ row and dollars.
+- Open PRs not ours: Marc 253, 251, 249; Watson 244, 238, 223, 219, 214, 200; old 42.
+- Map vs tabs (worker 29.29): no mismatch; FDD A-02 text stale; map's Branded Consideration
+  lacks the tab's stale asterisk. Minor, unchanged.
