@@ -10,6 +10,9 @@ const STASH_FILES = ["app/settings/profile/page.tsx"];
 
 const STASH_PATHS = [
   "app/auth/confirm",
+  "app/auth/set-password",
+  // Manage users: server actions with the service-role key.
+  "app/settings/users",
   "app/login",
   "app/signup",
   "app/portal",
@@ -28,7 +31,6 @@ const PAGE_SWAP = [
 
 const ACTION_SHIMS = [
   ["app/auth/actions.ts", "auth-actions.ts"],
-  ["app/auth/guest-actions.ts", "guest-actions.ts"],
   ["app/auth/organization-actions.ts", "organization-actions.ts"],
 ];
 

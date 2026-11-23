@@ -1,55 +1,44 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
-import { DashboardAuthView } from "@/components/dashboard/DashboardAuthView";
+import { useEffect, useMemo, useState } from "react";
 import { FenderBrandCanvas } from "@/components/v3/FenderBrandCanvas";
+import type { SwitcherClient } from "@/lib/auth/client-access";
+import type { CanvasUserMenu } from "@/lib/canvas-sdk/types";
 import { createClient } from "@/lib/supabase/client";
-import {
-  DASHBOARD_LOGIN_REQUIRED,
-  GUEST_DASHBOARD_COOKIE,
-} from "@/lib/auth/guest-dashboard.constants";
 
-function readGuestCookie(): boolean {
-  if (typeof document === "undefined") return false;
-  return document.cookie.split(";").some((c) => c.trim().startsWith(`${GUEST_DASHBOARD_COOKIE}=1`));
-}
+type Props = {
+  /** From the server session. Null only in the Playwright run, which reads the browser session instead. */
+  userMenu: CanvasUserMenu | null;
+  viewerId?: string;
+  switcherClients: SwitcherClient[];
+};
 
-export function HomeCanvasDynamic() {
-  const searchParams = useSearchParams();
-  const next = searchParams.get("next") ?? undefined;
-  const [ready, setReady] = useState(false);
-  const [guest, setGuest] = useState(false);
-  const [sessionEmail, setSessionEmail] = useState<string | null>(null);
+/** The signed-in canvas. The dashboard page has already checked the login and the brand. */
+export function HomeCanvasDynamic({ userMenu, viewerId, switcherClients }: Props) {
+  const [browserEmail, setBrowserEmail] = useState<string | null>(null);
 
   useEffect(() => {
+    if (userMenu) return;
     let cancelled = false;
-    void (async () => {
-      const supabase = createClient();
-      const { data } = await supabase.auth.getSession();
-      if (cancelled) return;
-      if (data.session?.user?.email) {
-        setSessionEmail(data.session.user.email);
-      } else if (readGuestCookie()) {
-        setGuest(true);
-      }
-      setReady(true);
-    })();
+    void createClient()
+      .auth.getSession()
+      .then(({ data }) => {
+        if (!cancelled) setBrowserEmail(data.session?.user?.email ?? null);
+      });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [userMenu]);
 
-  if (DASHBOARD_LOGIN_REQUIRED && !ready) return null;
-
-  if (!DASHBOARD_LOGIN_REQUIRED || sessionEmail || guest) {
-    return (
-      <FenderBrandCanvas
-        userMenu={sessionEmail ? { email: sessionEmail } : undefined}
-        viewerId={sessionEmail ?? undefined}
-      />
-    );
-  }
-
-  return <DashboardAuthView mode="login" next={next} />;
+  const menu = useMemo(
+    () => userMenu ?? (browserEmail ? { email: browserEmail } : undefined),
+    [browserEmail, userMenu],
+  );
+  return (
+    <FenderBrandCanvas
+      userMenu={menu}
+      viewerId={viewerId ?? browserEmail ?? undefined}
+      switcherClients={switcherClients}
+    />
+  );
 }
