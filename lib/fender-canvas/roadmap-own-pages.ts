@@ -22,6 +22,7 @@ import {
 import { formatPct, formatRatio } from "@/lib/fender-canvas/format";
 import { listingContentHeroes } from "@/lib/fender-canvas/listing-content";
 import { machineReadabilityHeroes } from "@/lib/fender-canvas/machine-readability";
+import type { Effort } from "@/lib/fender-canvas/priority-rank";
 import { joinList, runShares } from "@/lib/fender-canvas/roadmap-sources";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
 
@@ -38,7 +39,80 @@ export type OwnPageFactor = {
   /** Null when the figure has no reading, so it is not judged. */
   tone: Tone | null;
   open: { spokeId: string; tab: string };
+  /**
+   * Listings the factor falls short on, for the central rank: listings without the item, or, for
+   * an average, the listings with empty fields (listings × the missing share). Null without a reading.
+   */
+  affected: number | null;
+  /** The listings the factor reads. */
+  base: number | null;
+  /** What `affected` counts, as the problem: "Listings without a fender.com page". */
+  short: string;
+  /** The short action title when the own-pages item works on this factor (fix round 3). */
+  task: string;
+  /** The effort and kind of that work (fix round 3: from the factor, never the phase). */
+  effort: Effort;
 };
+
+/**
+ * Each factor's effort (Brian Magazu, 23 Nov 2026 fix round 3). Every factor is page or listing
+ * content the brand publishes: catalog and site content, Medium.
+ */
+export const FACTOR_EFFORT: Readonly<Record<OwnPageFactor["id"], Effort>> = {
+  page_found: "M",
+  completeness: "M",
+  machine_specs: "M",
+  amazon_completeness: "M",
+  aplus: "M",
+};
+
+/** Each factor's short action title, from the client settings (site, brand), never a client name. */
+export function factorTask(id: OwnPageFactor["id"]): string {
+  switch (id) {
+    case "page_found":
+      return `Publish ${brandSite()} pages for listings without one`;
+    case "completeness":
+      return `Fill the empty spec fields on ${brandSite()} product pages`;
+    case "machine_specs":
+      return `Make ${brandSite()} specs machine-readable`;
+    case "amazon_completeness":
+      return `Fill the empty spec fields on ${brandName()} Amazon listings`;
+    case "aplus":
+      return `Add A+ content to ${brandName()} Amazon listings without it`;
+  }
+}
+
+/** The factor's task and effort, set once for every factor. */
+function work(id: OwnPageFactor["id"]): Pick<OwnPageFactor, "task" | "effort"> {
+  return { task: factorTask(id), effort: FACTOR_EFFORT[id] };
+}
+
+/**
+ * The ranked item that already fixes a factor, by plan item id (Brian Magazu, 23 Nov 2026 fix
+ * round 2: no duplicate fixes). While that item is in the ranked list needing action, the
+ * own-pages item skips the factor and starts on its worst remaining one; with none left, the
+ * own-pages item drops. Ids are the plan's: the exact official product pages finding, the
+ * missing Amazon spec fields signal, and the A+ content row.
+ */
+export const FACTOR_COVERED_BY: Readonly<Record<OwnPageFactor["id"], string | null>> = {
+  page_found: "finding:exact_official_product",
+  completeness: null,
+  machine_specs: null,
+  amazon_completeness: "signal:missing_specs",
+  aplus: "estimate:aplus",
+};
+
+/** Listings short on a share (base − has), or null without a reading. */
+function shortOf(has: number | null | undefined, base: number | null | undefined): Pick<OwnPageFactor, "affected" | "base"> {
+  return has != null && base != null && base > 0 ? { affected: Math.max(0, base - has), base } : { affected: null, base: null };
+}
+
+/** An average's listings' worth of empty fields: round(listings × (100 − average) / 100). */
+function shortOfAverage(pct: number | null | undefined, base: number | null | undefined): Pick<OwnPageFactor, "affected" | "base"> {
+  return pct != null && !Number.isNaN(pct) && base != null && base > 0
+    ? { affected: Math.max(0, Math.round((base * (100 - pct)) / 100)), base }
+    : { affected: null, base: null };
+}
 
 export type OwnPageAction = {
   id: "own:pages" | "own:wording";
@@ -53,6 +127,14 @@ export type OwnPageAction = {
   open: { spokeId: string; tab: string };
   /** Share of the population the figure covers, 0 to 1, for ranking. */
   share: number;
+  /** The wording row's count: shopping answers with sources that cite the brand's site, of all of them. */
+  cited?: { answers: number; total: number };
+  /** The urgent row's worst factor count, for the central rank (listings), and what it counts. */
+  worst?: { affected: number; base: number; short: string } | null;
+  /** The urgent row's factors below Good, worst first, so the plan can skip one another item fixes. */
+  below?: OwnPageFactor[];
+  /** The urgent row's effort: the worst factor's (fix round 3). The wording row's comes from its phase. */
+  effort?: Effort;
 };
 
 export type OwnPagesRead = {
@@ -80,9 +162,30 @@ export function ownPageFactors(bundle: CanvasBundle): OwnPageFactor[] {
   const machine = machineReadabilityHeroes(bundle.specPages ?? null)[0]!;
   const amazon = amazonCompletenessHero(m);
   const aplus = listingContentHeroes(bundle.listingContent ?? null)[1]!;
+  const listingContent = bundle.listingContent ?? null;
   return [
-    { id: "page_found", label: found.label, percent: found.percent, ratio: found.ratio, tone: found.ratio ? found.tone : null, open: SPECS },
-    { id: "completeness", label: complete.label, percent: complete.percent, ratio: complete.ratio, tone: complete.tone, open: SPECS },
+    {
+      id: "page_found",
+      label: found.label,
+      percent: found.percent,
+      ratio: found.ratio,
+      tone: found.ratio ? found.tone : null,
+      open: SPECS,
+      ...(found.ratio ? shortOf(m.spec_fender_found, m.spec_checked) : shortOf(null, null)),
+      short: `Listings without a ${brandSite()} page`,
+      ...work("page_found"),
+    },
+    {
+      id: "completeness",
+      label: complete.label,
+      percent: complete.percent,
+      ratio: complete.ratio,
+      tone: complete.tone,
+      open: SPECS,
+      ...shortOfAverage(m.spec_avg_fender_pct, m.spec_fender_found),
+      short: `Listings with empty ${brandSite()} spec fields`,
+      ...work("completeness"),
+    },
     {
       id: "machine_specs",
       label: machine.label,
@@ -90,6 +193,10 @@ export function ownPageFactors(bundle: CanvasBundle): OwnPageFactor[] {
       ratio: machine.ratio,
       tone: machine.denominator != null ? colorTone(machine.color) : null,
       open: SPECS,
+      affected: machine.denominator != null ? machine.numerator : null,
+      base: machine.denominator,
+      short: machine.label,
+      ...work("machine_specs"),
     },
     {
       id: "amazon_completeness",
@@ -98,6 +205,9 @@ export function ownPageFactors(bundle: CanvasBundle): OwnPageFactor[] {
       ratio: amazon.ratio,
       tone: amazon.tone,
       open: { spokeId: "specs", tab: "Amazon Specs" },
+      ...shortOfAverage(m.spec_avg_amazon_pct, m.spec_checked),
+      short: "Listings with empty Amazon spec fields",
+      ...work("amazon_completeness"),
     },
     {
       id: "aplus",
@@ -106,6 +216,9 @@ export function ownPageFactors(bundle: CanvasBundle): OwnPageFactor[] {
       ratio: aplus.ratio,
       tone: aplus.denominator != null ? colorTone(aplus.color) : null,
       open: { spokeId: "specs", tab: "Amazon A+ Matrix" },
+      ...(listingContent ? shortOf(aplus.numerator, aplus.denominator) : shortOf(null, null)),
+      short: "Listings without A+ content",
+      ...work("aplus"),
     },
   ];
 }
@@ -131,34 +244,47 @@ export function ownSiteCited(snapshot: AiSearchSnapshot): { answers: number; tot
   return { answers, total: run.read.answersWithCitation };
 }
 
+/** Red before yellow; ties keep the factors' order. */
+function worstFirst(factors: readonly OwnPageFactor[]): OwnPageFactor[] {
+  return factors
+    .filter((factor) => factor.tone === "danger" || factor.tone === "warning")
+    .sort((a, b) => (a.tone === b.tone ? 0 : a.tone === "danger" ? -1 : 1));
+}
+
+/**
+ * The urgent own-pages action from the factors below Good, starting on the worst; null when
+ * none is. The plan calls it again without the factors another ranked item fixes.
+ */
+export function urgentOwnPagesAction(factors: readonly OwnPageFactor[]): OwnPageAction | null {
+  const below = worstFirst(factors);
+  const worst = below[0];
+  if (!worst) return null;
+  const red = worst.tone === "danger";
+  return {
+    id: "own:pages",
+    urgent: true,
+    phase: red ? "days_1_30" : "days_31_60",
+    label: `${brandName()} pages and listings: ${phrase(worst)}`,
+    percent: worst.percent,
+    ratio: worst.ratio,
+    tone: worst.tone,
+    fact: sentence(`${joinList(below.map((factor) => `${phrase(factor)} reads ${factor.percent} (${word(factor.tone!)})`))}.`),
+    action: `${worst.task}.`,
+    open: worst.open,
+    share: 1,
+    worst: worst.affected != null && worst.base != null ? { affected: worst.affected, base: worst.base, short: worst.short } : null,
+    below,
+    effort: worst.effort,
+  };
+}
+
 /** 21c on the read: the own-page action, if any, and the factors behind it. */
 export function ownPagesAction(bundle: CanvasBundle | null, snapshot: AiSearchSnapshot | null): OwnPagesRead {
   if (!bundle) return { factors: [], action: null, reason: "The retail and spec reads are loading." };
   const factors = ownPageFactors(bundle);
-  const below = factors
-    .filter((factor) => factor.tone === "danger" || factor.tone === "warning")
-    .sort((a, b) => (a.tone === b.tone ? 0 : a.tone === "danger" ? -1 : 1));
-  if (below.length) {
-    const worst = below[0]!;
-    const red = worst.tone === "danger";
-    return {
-      factors,
-      reason: `${below.length} of ${factors.length} factors below Good`,
-      action: {
-        id: "own:pages",
-        urgent: true,
-        phase: red ? "days_1_30" : "days_31_60",
-        label: `${brandName()} pages and listings: ${phrase(worst)}`,
-        percent: worst.percent,
-        ratio: worst.ratio,
-        tone: worst.tone,
-        fact: sentence(`${joinList(below.map((factor) => `${phrase(factor)} reads ${factor.percent} (${word(factor.tone!)})`))}.`),
-        action: `Work through the product pages and listings ${brandName()} controls until each of these reads Good, starting with ${phrase(worst)}.`,
-        open: worst.open,
-        share: 1,
-      },
-    };
-  }
+  const below = worstFirst(factors);
+  const action = urgentOwnPagesAction(below);
+  if (action) return { factors, reason: `${below.length} of ${factors.length} factors below Good`, action };
   const unjudged = factors.filter((factor) => factor.tone == null);
   if (unjudged.length) {
     return { factors, action: null, reason: `no reading for ${joinList(unjudged.map((factor) => factor.label))}` };
@@ -185,6 +311,7 @@ export function ownPagesAction(bundle: CanvasBundle | null, snapshot: AiSearchSn
       action: `Word the ${brandSite()} product pages to match the questions shoppers ask.`,
       open: { spokeId: "aeo", tab: "Citation Ecosystem" },
       share,
+      cited,
     },
   };
 }

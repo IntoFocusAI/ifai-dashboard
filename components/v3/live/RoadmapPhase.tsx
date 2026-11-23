@@ -1,7 +1,7 @@
 "use client";
 
 import { PlanAction, PlanEvidence, PlanFigure, PlanStatus } from "@/components/v3/live/RoadmapPlanParts";
-import type { PlanItem, PLAN_PHASES } from "@/lib/fender-canvas/roadmap-plan";
+import { planFigure, type PlanItem, type PLAN_PHASES } from "@/lib/fender-canvas/roadmap-plan";
 
 type Phase = (typeof PLAN_PHASES)[number];
 
@@ -11,7 +11,7 @@ function RoadmapItem({ item }: { item: PlanItem }) {
     <li className="roadmap-item" data-roadmap-item={item.id} data-roadmap-kind={item.kind}>
       <div className="roadmap-item-head">
         <span className="roadmap-item-label" data-roadmap-item-label="">
-          {item.rank}. {item.label}
+          {item.rank}. {planFigure(item).label}
         </span>
         <PlanFigure item={item} />
       </div>

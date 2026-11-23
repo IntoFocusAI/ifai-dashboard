@@ -20,7 +20,8 @@ import {
 } from "../lib/fender-canvas/roadmap-focus.ts";
 import { ownPagesAction } from "../lib/fender-canvas/roadmap-own-pages.ts";
 import { focusWindowRuns, poolFocusWindow, previousWindowEnd, windowSummary } from "../lib/fender-canvas/roadmap-window.ts";
-import { buildPlan, focusPlan, phaseItems } from "../lib/fender-canvas/roadmap-plan.ts";
+import { brandSite } from "../lib/brand-copy.ts";
+import { buildPlan, focusPlan, phaseItems, PLAN_PHASES } from "../lib/fender-canvas/roadmap-plan.ts";
 
 const root = new URL("..", import.meta.url);
 const read = (rel: string) => readFileSync(new URL(rel, root), "utf8");
@@ -157,10 +158,9 @@ test("21c: a red factor puts the own-page action in Days 1 to 30, worst first", 
   assert.equal(own.action?.percent, "80.0%");
   assert.match(own.action!.fact, /^fender\.com page found reads 80\.0% \(Poor\) and A\+ content reads 96\.0% \(Fair\)\.$/);
   assert.equal(own.action!.label, "Fender pages and listings: fender.com page found");
-  assert.equal(
-    own.action!.action,
-    "Work through the product pages and listings Fender controls until each of these reads Good, starting with fender.com page found.",
-  );
+  // Fix round 3: a short action title from the factor it works on, and that factor's effort.
+  assert.equal(own.action!.action, "Publish fender.com pages for listings without one.");
+  assert.equal(own.action!.effort, "M");
   assert.equal(own.action?.open.tab, "Brand-Site Specs");
 });
 
@@ -191,7 +191,7 @@ test("21c: all green and the brand site cited under 30% gives the Days 61 to 90 
 
 const ENGINES = ["chatgpt", "gemini", "perplexity", "claude", "copilot", "grok"];
 
-test("21d weakest engine: a gap of 10 points or more is a Days 31 to 60 priority action in Brian's wording", () => {
+test("21d weakest engine: a gap of 10 points or more is a priority action in Brian's wording, counted as its shortfall to the best", () => {
   const calls = [...answers("chatgpt", "best electric guitar", 30, 40), ...answers("gemini", "best electric guitar", 10, 40)];
   const { actions, held } = weakestEngine(snapshot(calls));
   assert.equal(held.length, 0);
@@ -199,12 +199,13 @@ test("21d weakest engine: a gap of 10 points or more is a Days 31 to 60 priority
   assert.equal(actions[0]!.fact, "Fender/Squier is named most in 10 of 40 resolved Unbranded Discovery answers on Gemini, the lowest of the engines checked.");
   assert.equal(actions[0]!.action, "Review the Gemini answers that name another brand most, and the sources they cite.");
   const plan = buildPlan({ findings: [], signals: [], sources: [], focus: actions });
-  assert.equal(plan[0]!.phase, "days_31_60");
+  assert.equal(plan[0]!.phase, "days_1_30", "the only item takes the first column");
+  assert.deepEqual([plan[0]!.inputs.affected, plan[0]!.inputs.base], [20, 40], "50 points short of the best, of its own 40 answers");
   assert.equal(plan[0]!.statusLabel, "Recommended");
   assert.equal(plan[0]!.evidence?.engine, "gemini");
 });
 
-test("21d weakest engine: under 10 points is a Days 61 to 90 watch line; five engines at 5% and one at 1% still shows the 1%", () => {
+test("21d weakest engine: under 10 points is a watch line; five engines at 5% and one at 1% still shows the 1%", () => {
   const close = weakestEngine(snapshot([...answers("chatgpt", "best electric guitar", 30, 40), ...answers("gemini", "best electric guitar", 27, 40)]));
   assert.equal(close.actions[0]!.tier, "watch", "7.5 points behind");
   assert.equal(close.actions[0]!.action, "Watch Gemini.");
@@ -215,7 +216,7 @@ test("21d weakest engine: under 10 points is a Days 61 to 90 watch line; five en
   assert.equal(actions[0]!.evidence?.engine, "grok");
   assert.match(actions[0]!.fact, /1 of 100 resolved Unbranded Discovery answers on /);
   const plan = buildPlan({ findings: [], signals: [], sources: [], focus: actions });
-  assert.equal(plan[0]!.phase, "days_61_90");
+  assert.equal(plan[0]!.inputs.tier, "watch");
   assert.equal(plan[0]!.statusLabel, "Watch");
 });
 
@@ -342,30 +343,41 @@ test("21d: a moving site with a source action joins it instead of a second row",
   );
 });
 
-test("plan order: ecommerce, urgent own pages, answer actions, focus items, rewording, then watch lines last", () => {
+test("plan order: one ranking on the common base; own pages by their worst factor; watch lines last", () => {
   const ownUrgent = ownPagesAction(bundle({ spec_fender_found_pct: 80, spec_fender_found: 80 }), null).action;
   const engine = weakestEngine(snapshot([...answers("chatgpt", "best electric guitar", 30, 40), ...answers("gemini", "best electric guitar", 10, 40)])).actions;
   const signal = { id: "signal:out_of_stock", group: "ecommerce" as const, label: "Out of stock", share: 0.2, numerator: 2, denominator: 10, fact: "f", action: "a", open: { spokeId: "ecommerce", tab: "Out of Stock" }, partial: null };
   const plan = buildPlan({ findings: [], signals: [signal], sources: [], ownPages: ownUrgent, focus: engine });
-  assert.deepEqual(plan.map((item) => item.id), ["signal:out_of_stock", "own:pages", "focus:engine:gemini"]);
-  assert.equal(plan[1]!.statusLabel, "Critical");
-  assert.deepEqual(phaseItems(plan, "days_1_30").map((item) => item.id), ["signal:out_of_stock", "own:pages"]);
+  // Own pages are Critical, so they lead (fix round 2: severity first). They rank by their worst
+  // factor, page found: 20 of 100 listings without a page (20%). Then the ungraded items by reach:
+  // Gemini is 50 points short on its 40 answers (20 of 40 resolved AI answers, 50%); out of stock is
+  // 2 of the same 100 monitored listings (2%).
+  assert.deepEqual(plan.map((item) => item.id), ["own:pages", "focus:engine:gemini", "signal:out_of_stock"]);
+  assert.equal(plan[0]!.statusLabel, "Critical");
+  assert.deepEqual([plan[0]!.inputs.affected, plan[0]!.inputs.base, plan[0]!.inputs.unit, plan[0]!.inputs.reach], [20, 100, "listings", 100]);
+  assert.equal(plan[0]!.count!.label, `Listings without a ${brandSite()} page`);
+  assert.deepEqual(
+    PLAN_PHASES.map((phase) => phaseItems(plan, phase.id).map((item) => item.id)),
+    [["own:pages"], ["focus:engine:gemini"], ["signal:out_of_stock"]],
+  );
 
   const watch = weakestQuestions(snapshot([...answers("chatgpt", "best electric guitar", 36, 40), ...answers("chatgpt", "best guitar amp", 33, 40)])).actions;
   const wording = ownPagesAction(bundle({}), citedRun(40, { "fender.com": 4 })).action;
   const later = buildPlan({ findings: [], signals: [signal], sources: [], ownPages: wording, focus: [...watch, ...engine] });
+  // Wording: 4 of 40 cite the site, 8 answers short of the 30% target (20%); it ties out of stock
+  // at 20 points and goes after it on effort (L against S).
   assert.deepEqual(later.map((item) => item.id), [
-    "signal:out_of_stock",
     "focus:engine:gemini",
+    "signal:out_of_stock",
     "own:wording",
     "focus:question:best-guitar-amp",
     "focus:question:best-electric-guitar",
   ]);
-  assert.deepEqual(phaseItems(later, "days_61_90").map((item) => item.id), [
-    "own:wording",
-    "focus:question:best-guitar-amp",
-    "focus:question:best-electric-guitar",
-  ]);
+  assert.deepEqual([later[2]!.inputs.affected, later[2]!.inputs.base], [8, 40]);
+  assert.deepEqual(
+    PLAN_PHASES.map((phase) => phaseItems(later, phase.id).map((item) => item.id)),
+    [["focus:engine:gemini", "signal:out_of_stock"], ["own:wording", "focus:question:best-guitar-amp"], ["focus:question:best-electric-guitar"]],
+  );
 });
 
 // ---------- rule 3: rolling 90 days, client focus ----------
@@ -399,9 +411,18 @@ test("client focus: the model narrows to one category and keeps brand-wide items
   const brand = focusActions({ windows: { current: run, previous: null }, focus: BRAND_FOCUS });
   const plan = buildPlan({ findings: [], signals: [], sources: [], ownPages: ownPagesAction(bundle({ spec_avg_amazon_pct: 96 }), null).action, focus: brand.actions });
   assert.deepEqual(focusPlan(plan, BRAND_FOCUS).map((item) => item.id), plan.map((item) => item.id));
+  // Acoustic and bass share one action, so they are one item that lists both questions.
+  const group = plan.find((item) => item.id === "focus:questions:priority")!;
+  assert.deepEqual(group.members!.map((member) => member.label), ['"best acoustic guitar"', '"best bass guitar"']);
+  assert.match(group.fact, /resolved answers to these 2 questions: "best acoustic guitar" \(8 of 40\) and "best bass guitar" \(10 of 40\)\.$/);
   const bass = focusPlan(plan, { kind: "category", key: "bass" });
-  assert.deepEqual(bass.map((item) => item.id), ["own:pages", "focus:question:best-bass-guitar"]);
+  // Own pages are At risk but touch 4 of 100 listings, under the 5% floor (fix round 3), so they
+  // rank with the question group by reach: 18 of 120 answers (15%) leads.
+  assert.deepEqual(bass.map((item) => item.id), ["focus:questions:priority", "own:pages"]);
   assert.deepEqual(bass.map((item) => item.rank), [1, 2]);
+  // On screen the focus narrows the read first, so a bass focus has one bass question, not a group.
+  const bassOnly = focusActions({ windows: { current: run, previous: null }, focus: { kind: "category", key: "bass" } });
+  assert.deepEqual(bassOnly.actions.map((a) => a.id), ["focus:question:best-bass-guitar"]);
   const scoped = focusActions({ windows: { current: run, previous: null }, focus: { kind: "category", key: "acoustics" } });
   assert.deepEqual(scoped.actions.map((a) => `${a.id}:${a.tier}`), ["focus:question:best-acoustic-guitar:watch"], "one question in a focus is its own best");
 });

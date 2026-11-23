@@ -93,12 +93,13 @@ test("the mixed mark is the X-25 asterisk with its reason in a custom tooltip, n
 test("Action Items names the newest run's count on each AI row", () => {
   const latest = snapshot("c", "2026-11-12", 6, 4);
   const item = (id: string, kind: PlanItem["kind"], label = "Unbranded Discovery") => ({ id, kind, label }) as PlanItem;
-  assert.equal(latestRunTip(item("finding:unbranded_discovery", "finding"), latest, new Map()), "Latest run (Nov 12): 4 of 6");
+  // Unbranded Discovery counts the problem (answers the brand did not lead), as its row's one count does.
+  assert.equal(latestRunTip(item("finding:unbranded_discovery", "finding"), latest, new Map()), "Latest run (Nov 12): 2 of 6");
   const rivals = new Map([["signal:rival:electric", "Gibson"]]);
   assert.equal(latestRunTip(item("signal:rival:electric", "signal"), latest, rivals), "Latest run (Nov 12): 2 of 6");
   assert.equal(latestRunTip(item("finding:buy_box", "finding"), latest, new Map()), null, "an ecommerce row has no AI run");
   const plan = withLatestRunTips([item("finding:unbranded_discovery", "finding"), item("finding:buy_box", "finding")], latest, []);
-  assert.deepEqual(plan.map((row) => row.tip ?? null), ["Latest run (Nov 12): 4 of 6", null]);
+  assert.deepEqual(plan.map((row) => row.tip ?? null), ["Latest run (Nov 12): 2 of 6", null]);
   assert.equal(withLatestRunTips(plan, null, [])[0]!.tip, plan[0]!.tip);
 });
 

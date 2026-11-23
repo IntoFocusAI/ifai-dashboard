@@ -11,7 +11,7 @@ import { useBuyBoxCauseSplit } from "@/components/v3/live/useWithheldListings";
 import { planWithAplus } from "@/lib/fender-canvas/action-items-aplus-row";
 import { fixRowFigure, planWithBuyBoxCauses } from "@/lib/fender-canvas/action-items-buybox-rows";
 import { phaseWindow } from "@/lib/fender-canvas/roadmap-dates";
-import { PLAN_PHASES, phaseLabel, type PlanItem } from "@/lib/fender-canvas/roadmap-plan";
+import { PLAN_PHASES, phaseLabel, planFigure, type PlanItem } from "@/lib/fender-canvas/roadmap-plan";
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
 
 export const FIX_TABLE_ID = "action-items-fixes";
@@ -28,7 +28,9 @@ const COLUMNS: RetailColumn[] = [
 
 const WRAP = ["finding", "phase", "evidence"] as const;
 
+/** The Finding column sorts by the one count's share of its own base, the figure it shows. */
 function shareOf(item: PlanItem): number | null {
+  if (item.count) return item.count.base > 0 ? item.count.affected / item.count.base : null;
   const match = /^([\d,]+) of ([\d,]+)/.exec(item.ratio ?? "");
   if (!match) return null;
   const denominator = Number(match[2]!.replace(/,/g, ""));
@@ -85,14 +87,23 @@ export function ActionItemsFixTable({ plan: basePlan, today }: { plan: readonly 
       <tbody data-fix-table="">
         {sorted.rows.map((item) => (
           <tr key={item.id} data-fix-row={item.id} data-fix-kind={item.kind}>
-            <td className="money" data-fix-rank="">
-              {item.rank}
+            <td className="money" data-fix-rank="" data-fix-reason={item.reason} data-fix-title={item.title}>
+              {/* Why the item ranks here: its rank inputs in one line (central ranking, 23 Nov 2026). */}
+              <span
+                className="ifai-term"
+                data-ifai-tooltip-title={`Rank ${item.rank}`}
+                data-ifai-tooltip-desc={item.reason}
+                tabIndex={0}
+                aria-label={`Rank ${item.rank}: ${item.reason}`}
+              >
+                {item.rank}
+              </span>
             </td>
             <td>
               <PlanAction item={item} />
             </td>
             <td data-fix-finding="">
-              <div className="plan-cell-label">{item.label}</div>
+              <div className="plan-cell-label">{planFigure(item).label}</div>
               {item.siteType ? <div className="plan-cell-sub">{item.siteType}</div> : null}
               <PlanFigure item={item} />
             </td>

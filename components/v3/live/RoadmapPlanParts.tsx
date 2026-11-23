@@ -11,14 +11,16 @@ import { brandName } from "@/lib/brand-copy";
 import { dataStatusColor, dataStatusFromNode } from "@/lib/canvas-sdk/data-status";
 import { BRIEFING_LOADING } from "@/lib/fender-canvas/briefing-retail-lead";
 import { targetAnswers } from "@/lib/fender-canvas/roadmap-actuation";
-import type { PlanItem } from "@/lib/fender-canvas/roadmap-plan";
+import { planFigure, type PlanItem } from "@/lib/fender-canvas/roadmap-plan";
 
 /** Cited pages listed under a source action (21e). */
 const PAGE_LIMIT = 10;
 
 /** The figure in its status color for a finding, plain for an action, then N of M. */
 export function PlanFigure({ item }: { item: PlanItem }) {
-  const status = item.ratio ? dataStatusFromNode(item.tone) : null;
+  // The one count (priority-rank.ts), so the figure shows the N the rank reason shows.
+  const { percent, ratio } = planFigure(item);
+  const status = ratio ? dataStatusFromNode(item.tone) : null;
   return (
     <span>
       <span
@@ -26,21 +28,21 @@ export function PlanFigure({ item }: { item: PlanItem }) {
         data-fix-percent=""
         style={{
           whiteSpace: "nowrap",
-          color: status ? dataStatusColor(status) : item.ratio ? "var(--text-main)" : "var(--text-muted)",
+          color: status ? dataStatusColor(status) : ratio ? "var(--text-main)" : "var(--text-muted)",
         }}
       >
         <PartialFigureMark partial={item.partial} testId={`plan-${item.id}`}>
-          {item.loading ? BRIEFING_LOADING : item.percent}
+          {item.loading ? BRIEFING_LOADING : percent}
         </PartialFigureMark>
       </span>
-      {item.ratio ? (
+      {ratio ? (
         <span
           {...(item.tip ? figureTipAttrs(item.label, item.tip, `plan-latest-${item.id}`) : {})}
           className={item.tip ? "plan-cell-ratio ifai-term" : "plan-cell-ratio"}
           data-fix-ratio=""
           data-fix-latest={item.tip ?? undefined}
         >
-          {item.ratio}
+          {ratio}
         </span>
       ) : null}
     </span>
