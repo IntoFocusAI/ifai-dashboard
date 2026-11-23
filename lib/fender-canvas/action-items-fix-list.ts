@@ -8,13 +8,13 @@ import type { ClientEstimates } from "@/lib/estimates/live-inputs";
 import { PHASE_1_LINES } from "@/lib/estimates/rollup";
 import type { EstimateLineId, EstimateRange, EstimateResult } from "@/lib/estimates/types";
 import type { BriefingFinding, BriefingFindingId } from "@/lib/fender-canvas/briefing-retail-lead";
-import { compareRankInputs, type Effort, type RankInputs } from "@/lib/fender-canvas/priority-rank";
+import { compareRankInputs, withCommonReach, type Effort, type RankInputs } from "@/lib/fender-canvas/priority-rank";
 import { MONTHS_PER_YEAR } from "@/lib/estimates/monthly";
 
 export const FIX_LIST_TITLE = "Fixes in priority order";
 
 export const FIX_LIST_PRIORITY_RULE =
-  "One ranking for every list: Priorities, this table, the Roadmap, the deck, and the map. First by how much of its own base each gap touches: listings affected of the listings counted, or answers affected of the answers counted, compared in whole percentage points. Ties go to the larger monthly analyst estimate, then to the quicker fix (a listing or offer fix, then catalog and site content, then an outreach program). Items with no single count follow the counted ones. Watch lines and findings on track follow the items that need action. Unbranded Discovery is the result every fix moves, so it is tracked last rather than ranked.";
+  "One ranking for every list: Priorities, this table, the Roadmap, the deck, and the map. First by reach: the share of all resolved AI answers, or of all monitored listings, each gap touches, compared in whole percentage points. Ties go to the larger monthly analyst estimate, then to the quicker fix (a listing or offer fix, then catalog and site content, then an outreach program). Items with no answer or listing count follow the counted ones. Watch lines and findings on track follow the items that need action. Unbranded Discovery is the result every fix moves, so it is tracked last rather than ranked.";
 
 /** The A+ content row id (action-items-aplus-row.ts builds the row). */
 export const APLUS_ROW_ID = "estimate:aplus";
@@ -172,26 +172,26 @@ function affectedShare({ finding, stored }: FixListInput): number | null {
   return HIGHER_IS_BETTER.has(finding.id) ? 1 - share : share;
 }
 
-/** The findings in the central order (priority-rank.ts). Ties keep the briefing order. */
+/** The findings in the central order (priority-rank.ts), each on the common base. Ties keep the briefing order. */
 export function rankFixList(
   inputs: readonly FixListInput[],
   est: ClientEstimates | null = null,
   estimates: Partial<Record<BriefingFindingId, string>> = {},
 ): FixListRow[] {
-  return inputs
-    .map((input, order) => {
-      const status = statusOf(input);
-      const row = {
-        ...input,
-        rank: 0,
-        inputs: findingRankInputs(input, status, est),
-        status,
-        statusLabel: STATUS[status].label,
-        affectedShare: affectedShare(input),
-        estimate: estimates[input.finding.id] ?? null,
-      };
-      return { row, order };
-    })
+  const rows = inputs.map((input) => {
+    const status = statusOf(input);
+    return {
+      ...input,
+      rank: 0,
+      inputs: findingRankInputs(input, status, est),
+      status,
+      statusLabel: STATUS[status].label,
+      affectedShare: affectedShare(input),
+      estimate: estimates[input.finding.id] ?? null,
+    };
+  });
+  return withCommonReach(rows)
+    .map((row, order) => ({ row, order }))
     .sort((a, b) => compareRankInputs(a.row.inputs, b.row.inputs) || a.order - b.order)
     .map(({ row }, index) => ({ ...row, rank: index + 1 }));
 }

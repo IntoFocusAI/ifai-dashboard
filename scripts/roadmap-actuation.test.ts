@@ -249,13 +249,14 @@ test("the Confirm items have no count, so they follow every counted item that ne
   assert.deepEqual(plan.map((item) => item.rank), plan.map((_, i) => i + 1));
 });
 
-test("an activity item counts the verified links short of its target; confirm and renew have no count", () => {
+test("an activity item counts the verified links short of its target; links have no common base, so it follows like confirm and renew", () => {
   const basis: ClientBasis = { programs: [inPlace("P1", addDays(ASOF, -80))], items: { E2: 5, E3: 0 } };
   const plan = buildPlan({ findings: [], signals: [], sources: [], actuation: actuationActions({ basis, asOf: ASOF }) });
-  assert.deepEqual(plan.map((item) => item.id), ["actuation:E2:activity", "actuation:P1:renew", "actuation:P2:confirm"]);
-  const activity = plan[0]!;
+  assert.deepEqual(plan.map((item) => item.id), ["actuation:P1:renew", "actuation:P2:confirm", "actuation:E2:activity"]);
+  const activity = plan.find((item) => item.id === "actuation:E2:activity")!;
   assert.equal(activity.inputs.unit, "links");
   assert.equal(activity.inputs.affected, activity.inputs.base! - 5);
+  assert.equal(activity.share, null);
 });
 
 test("the plan read takes the records from the bundle and the targets from the date-pill window", () => {

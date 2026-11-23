@@ -114,8 +114,8 @@ test("A+ row wording is singular for one listing and takes the place the central
   assert.equal(item.action, "Add A+ content to 1 listing.");
   assert.deepEqual([item.inputs.affected, item.inputs.base, item.inputs.unit], [1, 1, "listings"]);
   const plan = planWithAplus(base, est);
-  // A+ at 1 of 1 estimated listing (100%), then 60%, then 5%, then the row with no count.
-  assert.deepEqual(plan.map((entry) => entry.id), [APLUS_ROW_ID, "signal:missing_specs", "finding:buy_box", "own:pages"]);
+  // On the common base (100 monitored listings): 60%, then 5%, then A+ at 1 listing (1%), then the row with no count.
+  assert.deepEqual(plan.map((entry) => entry.id), ["signal:missing_specs", "finding:buy_box", APLUS_ROW_ID, "own:pages"]);
   assert.deepEqual(plan.map((entry) => entry.rank), [1, 2, 3, 4]);
   assert.equal(planWithAplus(base, null), base);
 });

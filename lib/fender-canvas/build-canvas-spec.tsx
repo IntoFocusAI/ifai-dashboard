@@ -18,7 +18,7 @@ import type { CanvasSpecWithViews } from "@/lib/canvas-sdk/minimal-view-types";
 import { aiMetrics } from "@/lib/ai-search/canvas-surfaces";
 import type { AiSearchRead } from "@/lib/ai-search/types";
 import type { FindabilityRead } from "@/lib/findability/copy";
-import { buildLiveCommandCenter } from "@/lib/fender-canvas/command-center-from-live";
+import { buildLiveCommandCenter, priorityItems } from "@/lib/fender-canvas/command-center-from-live";
 import { specPageCounts } from "@/lib/fender-canvas/machine-readability";
 import { buildHubSlots } from "@/lib/fender-canvas/hub-slots";
 import { headlineSentence, headlineSurface } from "@/lib/fender-canvas/portfolio-retail-display";
@@ -136,7 +136,8 @@ export function buildFenderCanvasSpec(
       missingSpecPages: specPageCounts(bundle?.specPages)?.missingSpecBlock ?? null,
       phaseOneValue: metrics.phaseOneLift.value,
       phaseOneDetail: metrics.phaseOneLift.detail,
-      commandItems: commandCenter.items,
+      // Every ranked item, not only the ten Priorities shows, so each card keeps its bubble's best rank.
+      commandItems: options.plan?.length ? priorityItems(options.plan) : commandCenter.items,
     }),
     brand: {
       name: "IntoFocus AI Consensus Control",

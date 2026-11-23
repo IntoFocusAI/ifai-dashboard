@@ -5,13 +5,16 @@ import { test } from "node:test";
 import { deckFixes } from "../lib/deck/deck-model.ts";
 import type { DeckInput } from "../lib/deck/deck-types.ts";
 import type { BriefingFinding, BriefingFindingId } from "../lib/fender-canvas/briefing-retail-lead.ts";
-import { buildLiveCommandCenter, inPriorities, priorityId } from "../lib/fender-canvas/command-center-from-live.ts";
+import { buildLiveCommandCenter, inPriorities, PRIORITIES_CAP, priorityId, priorityItems } from "../lib/fender-canvas/command-center-from-live.ts";
+import { bulletsPlanItem, BULLETS_ROW_ID } from "../lib/fender-canvas/action-items-bullets-row.ts";
+import { groupQuestions, type FocusAction } from "../lib/fender-canvas/roadmap-focus.ts";
 import { buildHubSlots } from "../lib/fender-canvas/hub-slots.ts";
 import {
   compareRankInputs,
   placeByRank,
   rankPriorities,
   rankReason,
+  commonReach,
   rankShare,
   sharePoints,
   type RankInputs,
@@ -34,7 +37,7 @@ function ranked(rows: Array<[string, Partial<RankInputs>]>): string[] {
   return rankPriorities(rows.map(([id, extra]) => ({ id, inputs: inputs(extra) }))).map((row) => row.id);
 }
 
-test("normalization: answers and listings compare as shares of their own base, never as raw counts", () => {
+test("reach: answers and listings compare as shares of a common base, never as raw counts", () => {
   // 600 answers of 4,000 (15%) against 30 listings of 100 (30%): the listings gap leads despite the smaller count.
   assert.deepEqual(
     ranked([
@@ -46,21 +49,48 @@ test("normalization: answers and listings compare as shares of their own base, n
   assert.equal(rankShare({ affected: 30, base: 100 }), 0.3);
   assert.equal(rankShare({ affected: 3, base: 0 }), null, "an empty base has no share");
   assert.equal(rankShare({ affected: null, base: 100 }), null);
+  assert.equal(rankShare({ affected: 30, base: 100, reach: 1000 }), 0.03, "the common base replaces the own base");
+});
+
+test("reach: a single question with a small base cannot outrank a fix touching thousands", () => {
+  // 112 of 112 answers is 100% of its own base, but 112 of 5,000 resolved AI answers on the common base.
+  const rows = rankPriorities(
+    [
+      { id: "question", inputs: inputs({ affected: 112, base: 112, unit: "answers" }) },
+      { id: "rival", inputs: inputs({ affected: 611, base: 4978, unit: "answers" }) },
+      { id: "pages", inputs: inputs({ affected: 997, base: 1090, unit: "listings" }) },
+    ],
+    { answers: 5000, listings: 1170 },
+  );
+  assert.deepEqual(rows.map((row) => row.id), ["pages", "rival", "question"]);
+  assert.equal(rows[2]!.reason, "Touches 112 of 5,000 resolved AI answers (2.2%). Effort M, catalog and site content.");
+  assert.equal(rows[0]!.reason, "Touches 997 of 1,170 monitored listings (85.2%). Effort M, catalog and site content.");
+  // Without a read total, the common base is the largest own base of the unit.
+  assert.deepEqual(commonReach([{ inputs: inputs({ affected: 1, base: 112, unit: "answers" }) }, { inputs: inputs({ affected: 1, base: 4978, unit: "answers" }) }]), { answers: 4978, listings: null });
+  // Links have no common base, so a links item follows every counted item.
+  assert.deepEqual(
+    ranked([
+      ["links", { affected: 10, base: 10, unit: "links", effort: "S" }],
+      ["small", { affected: 1, base: 100, unit: "listings", effort: "L" }],
+    ]),
+    ["small", "links"],
+  );
 });
 
 test("tie-break: same whole point, then larger monthly dollars, then the quicker fix, then input order", () => {
   assert.equal(sharePoints(0.052), 5);
   assert.equal(sharePoints(0.0449), 4);
+  // Every item on the same common base (1,000), so only rules 1 to 3 order them.
   assert.deepEqual(
     ranked([
       ["slow", { affected: 52, base: 1000, unit: "listings", effort: "L" }],
       ["quick", { affected: 50, base: 1000, unit: "answers", effort: "S" }],
-      ["dollars", { affected: 5, base: 100, unit: "listings", effort: "L", monthly: 1200 }],
-      ["more-dollars", { affected: 5, base: 100, unit: "listings", effort: "L", monthly: 4000 }],
-      ["bigger", { affected: 6, base: 100, unit: "listings", effort: "L" }],
-      ["same-as-quick", { affected: 5, base: 100, unit: "answers", effort: "S" }],
+      ["dollars", { affected: 30, base: 1000, unit: "listings", effort: "L", monthly: 1200 }],
+      ["more-dollars", { affected: 30, base: 1000, unit: "listings", effort: "L", monthly: 4000 }],
+      ["bigger", { affected: 40, base: 1000, unit: "listings", effort: "L" }],
+      ["same-as-quick", { affected: 46, base: 1000, unit: "answers", effort: "S" }],
     ]),
-    ["bigger", "more-dollars", "dollars", "quick", "same-as-quick", "slow"],
+    ["quick", "same-as-quick", "slow", "bigger", "more-dollars", "dollars"],
   );
 });
 
@@ -81,7 +111,7 @@ test("tiers: no count follows the counted items; watch, on track, and the outcom
 test("each item carries its rank inputs and one plain reason, in brand voice", () => {
   const [row] = rankPriorities([{ id: "a", inputs: inputs({ affected: 524, base: 1080, unit: "listings", monthly: 12345, effort: "M" }) }]);
   assert.equal(row!.rank, 1);
-  assert.equal(row!.reason, "Touches 524 of 1,080 listings (48.5%). $12.3K a month, analyst estimate. Effort M, catalog and site content.");
+  assert.equal(row!.reason, "Touches 524 of 1,080 monitored listings (48.5%). $12.3K a month, analyst estimate. Effort M, catalog and site content.");
   assert.equal(rankReason(inputs({ effort: "S" })), "Has no single answer or listing count, so it follows the counted items. Effort S, a listing or offer fix.");
   for (const line of [row!.reason, rankReason(inputs({ tier: "outcome" })), rankReason(inputs({ tier: "watch" }))]) {
     assert.doesNotMatch(line, /n't|—/);
@@ -154,19 +184,20 @@ function livePlan(): PlanItem[] {
 test("one list drives every view: Priorities, Urgent Interventions, deck, map cards, Briefing first move, Roadmap", () => {
   const plan = livePlan();
   const top = plan.slice(0, 5).map((item) => item.id);
+  // Common bases: 1,170 monitored listings, 4,978 resolved AI answers (the largest own bases here).
   assert.deepEqual(top, [
     "finding:exact_official_product",
     "signal:missing_specs",
     "signal:out_of_stock",
+    "signal:rival:acoustics",
     "finding:map_leakage",
-    "finding:splintered_bundles",
   ]);
   // Priorities (the command center) and the Briefing's first move.
   const priorities = buildLiveCommandCenter({} as CanvasBundle, { phase: "loading" }, { phase: "loading" }, plan).items;
   assert.deepEqual(priorities.slice(0, 5).map((item) => item.id), top.map(priorityId));
   assert.equal(firstMove(plan)?.id, top[0]);
   assert.equal(priorities[0]!.id, priorityId(firstMove(plan)!.id));
-  assert.match(priorities[0]!.why, /^Touches 959 of 1,041 listings/);
+  assert.match(priorities[0]!.why, /^Touches 959 of 1,170 monitored listings/);
   // Urgent Interventions: the table shows the plan, with the Buy Box row split in place, same ranks.
   const split = { withheld: 60, price: 50, other: 10, priceAsins: new Set<string>(), otherAsins: new Set<string>() };
   const table = planWithBuyBoxCauses(plan, split);
@@ -247,4 +278,111 @@ test("every ranked item carries a task title, and the Briefing can read the list
   assert.deepEqual(priorities.slice(0, 3).map((item) => item.title), top.map((item) => item.actionTitle));
   const deck = deckFixes({ brandSite: brandSite(), plan } as unknown as DeckInput);
   assert.deepEqual(deck.slice(0, 3).map((fix) => fix.action), top.map((item) => item.actionTitle));
+});
+
+function question(slug: string, wins: number, resolved: number, gap: number): FocusAction {
+  return {
+    id: `focus:question:${slug}`,
+    focus: "question",
+    tier: "priority",
+    label: `"${slug}"`,
+    numerator: wins,
+    denominator: resolved,
+    fact: "f",
+    action: `Word the ${brandSite()} product pages to answer this question.`,
+    open: { spokeId: "aeo", tab: "Run Details" },
+    evidence: null,
+    categories: ["electric"],
+    siteType: null,
+    pages: [],
+    trend: null,
+    gap,
+    partial: null,
+  };
+}
+
+function crowdedPlan(): PlanItem[] {
+  const questions = groupQuestions([
+    question("best-amp", 0, 112, 40),
+    question("best-pedal", 2, 90, 38),
+    question("best-strat", 5, 120, 36),
+    question("best-tele", 6, 100, 34),
+    question("best-bass", 8, 80, 30),
+  ]);
+  return buildPlan({
+    findings: [
+      finding("buy_box", "danger", 60, 1170),
+      finding("map_leakage", "danger", 121, 633),
+      finding("splintered_bundles", "warning", 75, 451),
+      finding("exact_official_product", "danger", 82, 1041),
+      finding("unbranded_discovery", "danger", 300, 1000),
+    ],
+    signals: [
+      signal("signal:out_of_stock", "ecommerce", 400, 1170, "ecommerce"),
+      signal("signal:missing_specs", "ecommerce", 524, 1080, "specs"),
+      signal("signal:rival:acoustics", "answers", 611, 4978, "competitors"),
+      signal("signal:rival:bass", "answers", 300, 4978, "competitors"),
+      signal("signal:rival:amps", "answers", 200, 4978, "competitors"),
+      signal("signal:fact_contradictions", "answers", 4, 2301, "aeo"),
+    ],
+    sources: [],
+    focus: questions,
+    extra: [bulletsPlanItem({ listings: 900, fullBullets: 600, short: 300, pct: 66.7 })!],
+    reach: { answers: 5000, listings: 1170 },
+  });
+}
+
+test("repeated actions: the weakest questions with one action are one item that lists them", () => {
+  const plan = crowdedPlan();
+  const questions = plan.filter((item) => item.id.startsWith("focus:question"));
+  assert.equal(questions.length, 1, "five questions with the same action are one item");
+  const group = questions[0]!;
+  assert.equal(group.id, "focus:questions:priority");
+  assert.equal(group.title, `Word the ${brandSite()} product pages to answer these questions`);
+  assert.equal(group.label, "The 5 weakest questions");
+  assert.deepEqual(group.members!.map((member) => member.ratio), ["0 of 112", "2 of 90", "5 of 120", "6 of 100", "8 of 80"]);
+  assert.match(group.fact, /"best-amp" \(0 of 112\), "best-pedal" \(2 of 90\),/);
+  // Reach: the answers each question is short of the best, added, out of all 5,000 resolved AI answers.
+  assert.equal(group.inputs.affected, 45 + 34 + 43 + 34 + 24);
+  assert.equal(group.inputs.reach, 5000);
+  assert.ok(group.rank > plan.find((item) => item.id === "finding:exact_official_product")!.rank);
+  // One question alone keeps its own id and wording.
+  const single = groupQuestions([question("best-amp", 0, 112, 40)]);
+  assert.deepEqual(single.map((item) => item.id), ["focus:question:best-amp"]);
+});
+
+test("Priorities shows the first 10 of the central order, and slide 9 its first five distinct actions", () => {
+  const plan = crowdedPlan();
+  const priorities = buildLiveCommandCenter({} as CanvasBundle, { phase: "loading" }, { phase: "loading" }, plan).items;
+  assert.equal(PRIORITIES_CAP, 10);
+  assert.ok(plan.filter(inPriorities).length > PRIORITIES_CAP, "the fixture has more than ten actions");
+  assert.equal(priorities.length, PRIORITIES_CAP);
+  assert.deepEqual(priorities.map((item) => item.title), plan.filter(inPriorities).slice(0, 10).map((item) => item.title));
+  // The map cards read every ranked item, so a card past ten keeps its rank.
+  assert.equal(priorityItems(plan).length, plan.filter(inPriorities).length);
+  const deck = deckFixes({ brandSite: brandSite(), plan } as unknown as DeckInput);
+  assert.equal(deck.length, 5);
+  assert.equal(new Set(deck.map((fix) => fix.action)).size, 5, "five distinct actions");
+  assert.deepEqual(deck.map((fix) => fix.action), priorities.slice(0, 5).map((item) => item.title));
+  assert.deepEqual(deck.map((fix) => fix.rank), [1, 2, 3, 4, 5]);
+  // The top item is never a single question on a small base.
+  assert.doesNotMatch(plan[0]!.id, /^focus:question/);
+});
+
+test("the Amazon bullets item is one ranked candidate on the monitored listings", () => {
+  const plan = crowdedPlan();
+  const bullets = plan.find((item) => item.id === BULLETS_ROW_ID)!;
+  assert.equal(bullets.title, "Fill all five bullets on each Amazon listing");
+  assert.equal(bullets.ratio, "300 of 900");
+  assert.equal(bullets.reason, "Touches 300 of 1,170 monitored listings (25.6%). Effort M, catalog and site content.");
+  assert.equal(gapKindOf(BULLETS_ROW_ID), "amazon_bullets");
+  assert.equal(bulletsPlanItem({ listings: 900, fullBullets: 900, short: 0, pct: 100 }), null, "no item when every listing has five bullets");
+  assert.equal(bulletsPlanItem(null), null);
+});
+
+test("Roadmap counts carry thousands separators", () => {
+  for (const file of ["lib/fender-canvas/roadmap-plan.ts", "lib/fender-canvas/roadmap-focus.ts", "lib/fender-canvas/roadmap-plan-read.ts"]) {
+    const source = read(file);
+    assert.doesNotMatch(source, /\$\{(unread|rows\.length|stored\.length|needs|priorAnswers|now\.read\.answersWithCitation|page\.answers)\}/, file);
+  }
 });

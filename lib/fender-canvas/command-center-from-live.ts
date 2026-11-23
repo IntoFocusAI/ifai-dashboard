@@ -71,15 +71,20 @@ export function inPriorities(item: PlanItem): boolean {
   return item.inputs.tier === "action" && (item.needsAction || item.noReading);
 }
 
-/** One Priorities card from a plan item: the task, why it ranks where it does, and the finding behind it. */
+/**
+ * One Priorities card from a plan item: the task, why it ranks where it does, and the finding
+ * behind it. A grouped item lists its members after its figure.
+ */
 export function priorityFromPlan(item: PlanItem): PriorityItem {
   const figure = item.ratio ? markPartial(item.ratio, item.partial) : null;
   const kept = KEPT_IDS[item.id];
+  const lead = figure ? `${item.label}: ${figure}` : item.label;
+  const members = item.members?.length ? `. ${item.members.map((member) => `${member.label} (${member.ratio})`).join("; ")}` : "";
   return {
     id: priorityId(item.id),
     title: item.title,
     why: item.reason,
-    impact: figure ? `${item.label}: ${figure}` : item.label,
+    impact: `${lead}${members}`,
     severity: item.tone === "danger" ? "critical" : item.tone === "warning" ? "high" : "moderate",
     spokeId: item.open.spokeId,
     subTab: item.open.tab,
@@ -88,7 +93,19 @@ export function priorityFromPlan(item: PlanItem): PriorityItem {
 }
 
 export const PRIORITIES_DESC =
-  "Every fix in one order: the share of answers or listings each gap touches, then the monthly analyst estimate, then the quicker fix. Action Items, the Roadmap, the deck, and the map read the same order.";
+  "Every fix in one order: the share of all resolved AI answers or all monitored listings each gap touches, then the monthly analyst estimate, then the quicker fix. Action Items, the Roadmap, the deck, and the map read the same order.";
+
+/** Priorities lists the first 10 items of the central order (Brian Magazu, 23 Nov 2026 fix round). */
+export const PRIORITIES_CAP = 10;
+
+/**
+ * Every plan item that needs action, in the central order, as Priorities cards. Its positions
+ * are the plan's ranks, so the map cards read their rank from it. Priorities shows the first
+ * PRIORITIES_CAP; the deck's fix slide shows the first five with a stored reading.
+ */
+export function priorityItems(plan: readonly PlanItem[]): PriorityItem[] {
+  return plan.filter(inPriorities).map(priorityFromPlan);
+}
 
 /**
  * Command center copy from the canvas reads. With the plan (the one central ranking), the queue is
@@ -123,7 +140,7 @@ export function buildLiveCommandCenter(
     setAsideClientKey: activeSetAsideClientKey(),
   };
   if (plan?.length) {
-    return { ...base, desc: PRIORITIES_DESC, items: plan.filter(inPriorities).map(priorityFromPlan) };
+    return { ...base, desc: PRIORITIES_DESC, items: priorityItems(plan).slice(0, PRIORITIES_CAP) };
   }
   return {
     ...base,

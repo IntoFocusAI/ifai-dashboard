@@ -4,25 +4,33 @@
  * fix slide, the map's action cards, the Briefing's first move, and Roadmap > 30-60-90 Days.
  *
  * The rule, approved:
- *   1. Estimated effect on AI answers: the share of its own base the gap touches (answers
- *      affected of the answers counted, listings affected of the listings counted). Answers and
- *      listings are never compared as raw counts.
+ *   1. Reach in AI answers: the share of a common base the gap touches. An item that counts
+ *      answers is measured against all resolved AI answers; an item that counts listings against
+ *      all monitored listings (Brian Magazu, 23 Nov 2026 fix round: never its own base, so a
+ *      question with 112 answers cannot outrank a fix touching thousands).
  *   2. Ties broken by the monthly analyst-estimate dollars already on the item (no new formula).
  *   3. Then by effort: quicker fixes first.
  *
- * Approved 23 Nov 2026 and built as final: rule 1 uses each item's own base, and at 6 or more
- * Roadmap items no column holds more than half. Proposed for approval (PR body): shares compared in whole
- * percentage points; items with no count after every counted item; watch lines, on-track
- * findings and the outcome (Unbranded Discovery) after the items that need action; effort from
- * the work type decision 21g already assigns; the dependency list; and the phase placement.
+ * Decided 23 Nov 2026 and built as final: rule 1 on the common base; at 6 or more Roadmap items
+ * no column holds more than half; items with no answer or listing count (the Actuation confirm
+ * and renew items among them) follow every counted item. Proposed for approval (PR body): shares
+ * compared in whole percentage points; watch lines, on-track findings and the outcome (Unbranded
+ * Discovery) after the items that need action; effort from the work type decision 21g already
+ * assigns; the dependency list; and the phase placement.
  *
  * Pure: no reads, no client names.
  */
 
 import { formatInt, formatMoneyShort, formatPct } from "@/lib/fender-canvas/format";
 
-/** What an item's count counts. Each is compared only as a share of its own base. */
+/** What an item's count counts. Answers and listings each have a common base; links have none. */
 export type RankUnit = "answers" | "listings" | "links";
+
+/** The units rule 1 measures, each against its common base. */
+export type ReachUnit = Extract<RankUnit, "answers" | "listings">;
+
+/** The common base per unit: all resolved AI answers, all monitored listings. */
+export type ReachTotals = Partial<Record<ReachUnit, number | null>>;
 
 /** S = a listing or offer fix, M = catalog and site content, L = an outreach program (21g's work types). */
 export type Effort = "S" | "M" | "L";
@@ -37,9 +45,15 @@ export type RankTier = "action" | "watch" | "on_track" | "outcome";
 export type RankInputs = {
   /** Answers, listings, or links the gap touches. Null when the item has no single count. */
   affected: number | null;
-  /** The population that count is out of. */
+  /** The population that count is out of, as the item's own figure shows it. */
   base: number | null;
   unit: RankUnit | null;
+  /**
+   * The common base rule 1 measures against: all resolved AI answers for an answers item, all
+   * monitored listings for a listings item. Null for a unit with no common base. rankPriorities
+   * sets it; when it is absent, rankShare falls back to the own base.
+   */
+  reach?: number | null;
   /** Monthly analyst estimate (the line's yearly mid divided by 12), USD. Null when no line covers the item. */
   monthly: number | null;
   effort: Effort;
@@ -66,10 +80,40 @@ export const EFFORT_LABEL: Record<Effort, string> = {
 const TIER_ORDER: Record<RankTier, number> = { action: 0, watch: 1, on_track: 2, outcome: 3 };
 const EFFORT_ORDER: Record<Effort, number> = { S: 0, M: 1, L: 2 };
 
-export function rankShare(inputs: Pick<RankInputs, "affected" | "base">): number | null {
-  const { affected, base } = inputs;
+export function rankShare(inputs: Pick<RankInputs, "affected" | "base" | "reach">): number | null {
+  const { affected } = inputs;
+  const base = inputs.reach === undefined ? inputs.base : inputs.reach;
   if (affected == null || base == null || base <= 0 || affected < 0) return null;
   return Math.min(1, affected / base);
+}
+
+function isReachUnit(unit: RankUnit | null): unit is ReachUnit {
+  return unit === "answers" || unit === "listings";
+}
+
+/**
+ * The common base per unit: the largest of the read's total (all resolved AI answers, all
+ * monitored listings), any common base an item already carries, and every item's own base, so
+ * no item touches more than its common base.
+ */
+export function commonReach(items: readonly { inputs: RankInputs }[], totals: ReachTotals = {}): Record<ReachUnit, number | null> {
+  const reach: Record<ReachUnit, number | null> = { answers: totals.answers ?? null, listings: totals.listings ?? null };
+  for (const { inputs } of items) {
+    if (!isReachUnit(inputs.unit)) continue;
+    for (const value of [inputs.base, inputs.reach]) {
+      if (value != null && value > 0) reach[inputs.unit] = Math.max(reach[inputs.unit] ?? 0, value);
+    }
+  }
+  return reach;
+}
+
+/** Each item with its common base set (null for a unit with none, such as verified links). */
+export function withCommonReach<T extends { inputs: RankInputs }>(items: readonly T[], totals: ReachTotals = {}): T[] {
+  const reach = commonReach(items, totals);
+  return items.map((item) => ({
+    ...item,
+    inputs: { ...item.inputs, reach: isReachUnit(item.inputs.unit) ? reach[item.inputs.unit] : null },
+  }));
 }
 
 /** Rule 1 compares whole percentage points, so items a point apart or less tie and go to rule 2. */
@@ -101,7 +145,13 @@ const UNIT_WORD: Record<RankUnit, [string, string]> = {
   links: ["verified link", "verified links"],
 };
 
-/** "Touches 524 of 1,080 listings (48.5%). $12.3K a month, analyst estimate. Effort M, catalog and site content." */
+/** The common base's words, when rule 1 measured against it. */
+const REACH_WORD: Record<ReachUnit, [string, string]> = {
+  answers: ["resolved AI answer", "resolved AI answers"],
+  listings: ["monitored listing", "monitored listings"],
+};
+
+/** "Touches 524 of 1,170 monitored listings (44.8%). $12.3K a month, analyst estimate. Effort M, catalog and site content." */
 export function rankReason(inputs: RankInputs): string {
   const parts: string[] = [];
   if (inputs.tier === "outcome") parts.push("The result every fix moves, tracked rather than ranked.");
@@ -109,8 +159,10 @@ export function rankReason(inputs: RankInputs): string {
   else if (inputs.tier === "watch") parts.push("A watch line, so it follows the items that need action.");
   const share = rankShare(inputs);
   if (share != null && inputs.unit) {
-    const word = UNIT_WORD[inputs.unit][inputs.base === 1 ? 0 : 1];
-    parts.push(`Touches ${formatInt(inputs.affected)} of ${formatInt(inputs.base)} ${word} (${formatPct(100 * share)}).`);
+    const common = inputs.reach != null && isReachUnit(inputs.unit);
+    const base = common ? inputs.reach : inputs.base;
+    const word = (common ? REACH_WORD[inputs.unit as ReachUnit] : UNIT_WORD[inputs.unit])[base === 1 ? 0 : 1];
+    parts.push(`Touches ${formatInt(inputs.affected)} of ${formatInt(base)} ${word} (${formatPct(100 * share)}).`);
   } else if (inputs.tier === "action") {
     parts.push("Has no single answer or listing count, so it follows the counted items.");
   }
@@ -120,11 +172,12 @@ export function rankReason(inputs: RankInputs): string {
 }
 
 /**
- * The one ordered list: sorted by tier, then rules 1 to 3, ties keeping input order. Ranks run 1
- * to N over every item; each item keeps its fields and gains rank, share, and reason.
+ * The one ordered list: each item's common base set, then sorted by tier, then rules 1 to 3, ties
+ * keeping input order. Ranks run 1 to N over every item; each item keeps its fields and gains
+ * rank, share, and reason.
  */
-export function rankPriorities<T extends { inputs: RankInputs }>(items: readonly T[]): Array<T & RankFields> {
-  return items
+export function rankPriorities<T extends { inputs: RankInputs }>(items: readonly T[], totals: ReachTotals = {}): Array<T & RankFields> {
+  return withCommonReach(items, totals)
     .map((item, order) => ({ item, order }))
     .sort((a, b) => compareRankInputs(a.item.inputs, b.item.inputs) || a.order - b.order)
     .map(({ item }, index) => ({

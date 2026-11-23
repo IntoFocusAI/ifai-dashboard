@@ -14,6 +14,10 @@ import type { StockLossRead } from "@/lib/fender-canvas/minimal-metric-kit";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
 import { ownedAnswersFromAi } from "@/lib/fender-canvas/actuation-e1";
 import { planWithAplus } from "@/lib/fender-canvas/action-items-aplus-row";
+import { bulletsFromBundle } from "@/lib/fender-canvas/action-items-bullets-row";
+import { tallyCommercial } from "@/lib/ai-search/run-metrics";
+import { formatInt } from "@/lib/fender-canvas/format";
+import type { ReachTotals } from "@/lib/fender-canvas/priority-rank";
 import { isoDay } from "@/lib/fender-canvas/actuation-score";
 import { actuationActions, suggestedTargets, targetAnswers, withOwnedAnswersGap } from "@/lib/fender-canvas/roadmap-actuation";
 import { phaseWindow } from "@/lib/fender-canvas/roadmap-dates";
@@ -143,6 +147,17 @@ export type RoadmapPlanInput = {
  * rebuilt on every read, so actions whose trigger clears drop off and new ones enter. Each AI row
  * names the newest run's count in its tooltip. The staff focus narrows it to one category.
  */
+/**
+ * Rule 1's common bases: all resolved AI answers in the date-pill read, and all monitored
+ * listings (the retail population the Buy Box reading counts). The rank takes the larger of each
+ * and every item's own base.
+ */
+export function reachTotals(retail: RetailCanvasRead, ai: AiSearchRead): ReachTotals {
+  const answers = ai.phase === "ready" ? tallyCommercial(ai.snapshot.calls).resolved : null;
+  const listings = retail.phase === "ready" ? (retail.snapshot.suppressedListings.detail?.population ?? null) : null;
+  return { answers: answers || null, listings: listings || null };
+}
+
 export function assembleRoadmapPlan(input: RoadmapPlanInput): RoadmapPlanRead {
   const { retail, bundle, findability, ai, aiStale, stock, sources, windows, focus } = input;
   const { findings } = briefingFindingsLead(retail, findability, ai, { aiStale });
@@ -169,6 +184,8 @@ export function assembleRoadmapPlan(input: RoadmapPlanInput): RoadmapPlanRead {
     focus: focused.actions,
     actuation,
     estimates,
+    reach: reachTotals(retail, ai),
+    extra: [bulletsFromBundle(bundle)].filter((item) => item != null),
   });
   // The A+ row joins the one ranking here, so Priorities, the map, and the deck see it too.
   const plan = withLatestRunTips(planWithAplus(built, estimates),sources.phase === "ready" ? (sources.snapshots[0] ?? null) : null, signals);
@@ -201,6 +218,6 @@ export function fixListCells(item: PlanItem, today: Date): string[] {
     item.statusLabel,
     joined(phaseLabel(item.phase), item.phase ? phaseWindow(item.phase, today).label : null),
     `${item.open.tab} tab`,
-    item.pages.map((page) => `${page.url} (${page.answers} ${page.answers === 1 ? "answer" : "answers"})`).join("; "),
+    item.pages.map((page) => `${page.url} (${formatInt(page.answers)} ${page.answers === 1 ? "answer" : "answers"})`).join("; "),
   ];
 }

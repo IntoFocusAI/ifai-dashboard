@@ -38,7 +38,26 @@ export type OwnPageFactor = {
   /** Null when the figure has no reading, so it is not judged. */
   tone: Tone | null;
   open: { spokeId: string; tab: string };
+  /**
+   * Listings the factor falls short on, for the central rank: listings without the item, or, for
+   * an average, the listings' worth of empty fields (listings × the missing share). Null without a reading.
+   */
+  affected: number | null;
+  /** The listings the factor reads. */
+  base: number | null;
 };
+
+/** Listings short on a share (base − has), or null without a reading. */
+function shortOf(has: number | null | undefined, base: number | null | undefined): Pick<OwnPageFactor, "affected" | "base"> {
+  return has != null && base != null && base > 0 ? { affected: Math.max(0, base - has), base } : { affected: null, base: null };
+}
+
+/** An average's listings' worth of empty fields: round(listings × (100 − average) / 100). */
+function shortOfAverage(pct: number | null | undefined, base: number | null | undefined): Pick<OwnPageFactor, "affected" | "base"> {
+  return pct != null && !Number.isNaN(pct) && base != null && base > 0
+    ? { affected: Math.max(0, Math.round((base * (100 - pct)) / 100)), base }
+    : { affected: null, base: null };
+}
 
 export type OwnPageAction = {
   id: "own:pages" | "own:wording";
@@ -55,6 +74,8 @@ export type OwnPageAction = {
   share: number;
   /** The wording row's count: shopping answers with sources that cite the brand's site, of all of them. */
   cited?: { answers: number; total: number };
+  /** The urgent row's worst factor count, for the central rank (listings). */
+  worst?: { affected: number; base: number } | null;
 };
 
 export type OwnPagesRead = {
@@ -82,9 +103,26 @@ export function ownPageFactors(bundle: CanvasBundle): OwnPageFactor[] {
   const machine = machineReadabilityHeroes(bundle.specPages ?? null)[0]!;
   const amazon = amazonCompletenessHero(m);
   const aplus = listingContentHeroes(bundle.listingContent ?? null)[1]!;
+  const listingContent = bundle.listingContent ?? null;
   return [
-    { id: "page_found", label: found.label, percent: found.percent, ratio: found.ratio, tone: found.ratio ? found.tone : null, open: SPECS },
-    { id: "completeness", label: complete.label, percent: complete.percent, ratio: complete.ratio, tone: complete.tone, open: SPECS },
+    {
+      id: "page_found",
+      label: found.label,
+      percent: found.percent,
+      ratio: found.ratio,
+      tone: found.ratio ? found.tone : null,
+      open: SPECS,
+      ...(found.ratio ? shortOf(m.spec_fender_found, m.spec_checked) : shortOf(null, null)),
+    },
+    {
+      id: "completeness",
+      label: complete.label,
+      percent: complete.percent,
+      ratio: complete.ratio,
+      tone: complete.tone,
+      open: SPECS,
+      ...shortOfAverage(m.spec_avg_fender_pct, m.spec_fender_found),
+    },
     {
       id: "machine_specs",
       label: machine.label,
@@ -92,6 +130,8 @@ export function ownPageFactors(bundle: CanvasBundle): OwnPageFactor[] {
       ratio: machine.ratio,
       tone: machine.denominator != null ? colorTone(machine.color) : null,
       open: SPECS,
+      affected: machine.denominator != null ? machine.numerator : null,
+      base: machine.denominator,
     },
     {
       id: "amazon_completeness",
@@ -100,6 +140,7 @@ export function ownPageFactors(bundle: CanvasBundle): OwnPageFactor[] {
       ratio: amazon.ratio,
       tone: amazon.tone,
       open: { spokeId: "specs", tab: "Amazon Specs" },
+      ...shortOfAverage(m.spec_avg_amazon_pct, m.spec_checked),
     },
     {
       id: "aplus",
@@ -108,6 +149,7 @@ export function ownPageFactors(bundle: CanvasBundle): OwnPageFactor[] {
       ratio: aplus.ratio,
       tone: aplus.denominator != null ? colorTone(aplus.color) : null,
       open: { spokeId: "specs", tab: "Amazon A+ Matrix" },
+      ...(listingContent ? shortOf(aplus.numerator, aplus.denominator) : shortOf(null, null)),
     },
   ];
 }
@@ -158,6 +200,7 @@ export function ownPagesAction(bundle: CanvasBundle | null, snapshot: AiSearchSn
         action: `Work through the product pages and listings ${brandName()} controls until each of these reads Good, starting with ${phrase(worst)}.`,
         open: worst.open,
         share: 1,
+        worst: worst.affected != null && worst.base != null ? { affected: worst.affected, base: worst.base } : null,
       },
     };
   }

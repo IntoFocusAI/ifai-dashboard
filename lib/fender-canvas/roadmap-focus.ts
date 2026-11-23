@@ -17,11 +17,12 @@ import type { EvidenceFocus } from "@/lib/ai-search/evidence-focus";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
 import { brandSite, leadBrand } from "@/lib/brand-copy";
 import { activeClient } from "@/lib/client/active-client";
-import { formatPct, formatRatio } from "@/lib/fender-canvas/format";
+import { formatInt, formatPct, formatRatio } from "@/lib/fender-canvas/format";
 import type { PartialFigure } from "@/lib/fender-canvas/canvas-reads";
 import {
   answersOf,
   citedPages,
+  joinList,
   runShares,
   shareIn,
   siteType,
@@ -93,7 +94,12 @@ export type FocusAction = {
   /** Points behind the best comparable, or a site's change in share relative to its earlier share (percent). */
   gap: number;
   partial: PartialFigure | null;
+  /** A grouped item's questions, each with its own count and gap (groupQuestions). */
+  members?: FocusMember[];
 };
+
+/** One question inside a grouped item. */
+export type FocusMember = { id: string; label: string; numerator: number; denominator: number; gap: number };
 
 /** Why an item was not acted on, for the hand-back and the page's data attributes. */
 export type HeldItem = { id: string; label: string; guardrail: "gap" | "data"; detail: string };
@@ -279,7 +285,7 @@ export function movingSites(current: AiSearchSnapshot | null, previous: AiSearch
       id: "focus:site",
       label: "Cited sites rising or falling",
       guardrail: "data",
-      detail: `${now.read.answersWithCitation} shopping answers with sources in the last 30 days and ${priorAnswers} in the 30 days before`,
+      detail: `${formatInt(now.read.answersWithCitation)} shopping answers with sources in the last 30 days and ${formatInt(priorAnswers)} in the 30 days before`,
     };
     return { actions: [], held: [held] };
   }
@@ -327,7 +333,64 @@ export function movingSites(current: AiSearchSnapshot | null, previous: AiSearch
   return { actions, held: [] };
 }
 
-/** Every 21d focus item for the two windows, in plan order: engine, questions, then sites. */
+/**
+ * Repeated actions become one item (Brian Magazu, 23 Nov 2026 fix round): the weakest questions
+ * that share an action (the same tier) join one item that lists the questions inside it. A tier
+ * with one question keeps it as is.
+ */
+export function groupQuestions(actions: readonly FocusAction[]): FocusAction[] {
+  const out: FocusAction[] = [];
+  const placed = new Set<FocusTier>();
+  for (const action of actions) {
+    if (action.focus !== "question") {
+      out.push(action);
+      continue;
+    }
+    const same = actions.filter((other) => other.focus === "question" && other.tier === action.tier);
+    if (same.length < 2) {
+      out.push(action);
+      continue;
+    }
+    if (placed.has(action.tier)) continue;
+    placed.add(action.tier);
+    out.push(questionGroup(same));
+  }
+  return out;
+}
+
+function questionGroup(questions: readonly FocusAction[]): FocusAction {
+  const first = questions[0]!;
+  const priority = first.tier === "priority";
+  const numerator = questions.reduce((sum, item) => sum + item.numerator, 0);
+  const denominator = questions.reduce((sum, item) => sum + item.denominator, 0);
+  const n = formatInt(questions.length);
+  const categories = [...new Set(questions.flatMap((item) => item.categories))];
+  const listed = joinList(questions.map((item) => `${item.label} (${formatRatio(item.numerator, item.denominator)})`));
+  return {
+    ...first,
+    id: `focus:questions:${first.tier}`,
+    label: priority ? `The ${n} weakest questions` : `${n} questions to watch`,
+    numerator,
+    denominator,
+    fact: `${leadBrand()} is named most in ${formatRatio(numerator, denominator)} resolved answers to these ${n} questions: ${listed}.`,
+    action: priority ? `Word the ${brandSite()} product pages to answer these questions.` : "Watch these questions.",
+    evidence:
+      categories.length === 1
+        ? { field: "role", value: "unbranded_discovery/resolved", category: categories[0]! }
+        : { field: "role", value: "unbranded_discovery/resolved" },
+    categories,
+    gap: Math.max(...questions.map((item) => item.gap)),
+    members: questions.map((item) => ({
+      id: item.id,
+      label: item.label,
+      numerator: item.numerator,
+      denominator: item.denominator,
+      gap: item.gap,
+    })),
+  };
+}
+
+/** Every 21d focus item for the two windows, in plan order: engine, questions (grouped), then sites. */
 export function focusActions(input: { windows: FocusWindows | null; focus?: PlanFocus }): FocusRead {
   if (!input.windows) return { actions: [], held: [] };
   const focus = input.focus ?? BRAND_FOCUS;
@@ -336,5 +399,5 @@ export function focusActions(input: { windows: FocusWindows | null; focus?: Plan
   const reads: FocusRead[] = [];
   if (current) reads.push(weakestEngine(current), weakestQuestions(current));
   reads.push(movingSites(current, previous));
-  return { actions: reads.flatMap((read) => read.actions), held: reads.flatMap((read) => read.held) };
+  return { actions: groupQuestions(reads.flatMap((read) => read.actions)), held: reads.flatMap((read) => read.held) };
 }

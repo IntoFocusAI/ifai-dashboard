@@ -1,7 +1,8 @@
 /**
  * The plan Action Items and the Roadmap share (decision 21, FDD S-02, N-01, N-04), in the one
- * central order (priority-rank.ts, Brian Magazu, 23 Nov 2026): first by the share of its own base
- * each gap touches, then by monthly analyst-estimate dollars, then by effort. Priorities, the
+ * central order (priority-rank.ts, Brian Magazu, 23 Nov 2026): first by reach, the share of all
+ * resolved AI answers or all monitored listings each gap touches, then by monthly
+ * analyst-estimate dollars, then by effort. Priorities, the
  * deck's fix slide, the map's action cards, and the Briefing's first move read the same list.
  * Roadmap columns follow the rank and each item's prerequisites (placeByRank), not the item type;
  * 21g's work types now set the effort only. The plan is rebuilt from each read and dated from
@@ -22,12 +23,13 @@ import {
 } from "@/lib/fender-canvas/action-items-fix-list";
 import type { BriefingFinding } from "@/lib/fender-canvas/briefing-retail-lead";
 import type { PartialFigure } from "@/lib/fender-canvas/canvas-reads";
-import { formatPct, formatRatio } from "@/lib/fender-canvas/format";
+import { formatInt, formatPct, formatRatio } from "@/lib/fender-canvas/format";
 import {
   placeByRank,
   rankPriorities,
   type Effort,
   type RankInputs,
+  type ReachTotals,
 } from "@/lib/fender-canvas/priority-rank";
 import {
   SITE_TYPE_LABELS,
@@ -137,6 +139,8 @@ export type PlanItem = {
   reason: string;
   /** The item as a task ("Publish one brand-site page for each exact product"), never a finding label. */
   title: string;
+  /** A grouped item's members (the questions that share its action), each with its own figure. */
+  members?: Array<{ id: string; label: string; ratio: string }>;
 };
 
 /** An item before rankPlan gives it a rank, a share, a reason, a task title, and a column. */
@@ -267,16 +271,18 @@ function sourceItem(source: SourceAction): UnrankedPlanItem {
 }
 
 /**
- * The brand's own pages. The urgent row joins up to five factors, each over its own base, so it
- * has no single count. The wording row counts the answers short of 21c's 30% target.
+ * The brand's own pages. The urgent row ranks by its worst factor (Brian Magazu, 23 Nov 2026 fix
+ * round): the listings that factor falls short on. The wording row counts the answers short of
+ * 21c's 30% target.
  */
 function ownPageInputs(own: OwnPageAction): RankInputs {
   const counted = own.id === "own:wording" && own.cited ? own.cited : null;
   const short = counted ? Math.max(0, Math.ceil(OWN_SITE_CITED_THRESHOLD * counted.total) - counted.answers) : null;
+  const worst = own.id === "own:pages" ? (own.worst ?? null) : null;
   return {
-    affected: short,
-    base: counted ? counted.total : null,
-    unit: counted ? "answers" : null,
+    affected: worst ? worst.affected : short,
+    base: worst ? worst.base : counted ? counted.total : null,
+    unit: worst ? "listings" : counted ? "answers" : null,
     monthly: null,
     effort: effortOf(own.phase),
     dependsOn: prerequisitesOf(own.id),
@@ -308,14 +314,23 @@ function ownPageItem(own: OwnPageAction): UnrankedPlanItem {
   };
 }
 
+/** Answers short of the best comparable: the gap in points times the resolved answers. */
+function shortOfBest(item: { gap: number; denominator: number }): number {
+  return Math.round((item.gap / 100) * item.denominator);
+}
+
 /**
  * A weakest engine or question counts the answers it is short of the best comparable (its gap in
- * points times its resolved answers), out of its own resolved answers (approved 23 Nov 2026:
- * each item's own base). A moving site counts the answers that cite it.
+ * points times its resolved answers); a group of questions adds its questions' counts. A moving
+ * site counts the answers that cite it. Rule 1 measures each against all resolved AI answers.
  */
 function focusInputs(focus: FocusAction): RankInputs {
   const site = focus.focus === "site";
-  const affected = site ? focus.numerator : Math.round((focus.gap / 100) * focus.denominator);
+  const affected = site
+    ? focus.numerator
+    : focus.members
+      ? focus.members.reduce((sum, member) => sum + shortOfBest(member), 0)
+      : shortOfBest(focus);
   return {
     affected: focus.denominator > 0 ? affected : null,
     base: focus.denominator > 0 ? focus.denominator : null,
@@ -348,6 +363,9 @@ function focusItem(focus: FocusAction): UnrankedPlanItem {
     evidence: focus.evidence,
     categories: focus.categories,
     inputs: focusInputs(focus),
+    ...(focus.members
+      ? { members: focus.members.map((member) => ({ id: member.id, label: member.label, ratio: formatRatio(member.numerator, member.denominator) })) }
+      : {}),
   };
 }
 
@@ -410,6 +428,10 @@ export type PlanInput = {
   actuation?: readonly ActuationAction[];
   /** The analyst estimates, for rule 2's monthly dollars. Null while they read. */
   estimates?: ClientEstimates | null;
+  /** Rule 1's common bases from the reads: all resolved AI answers, all monitored listings. */
+  reach?: ReachTotals;
+  /** Other ranked candidates built from the reads (the Amazon bullets item). */
+  extra?: readonly UnrankedPlanItem[];
 };
 
 /**
@@ -437,8 +459,8 @@ export function onRoadmap(item: Pick<PlanItem, "needsAction" | "noReading" | "in
  * The one ordered list: every item ranked by priority-rank's rule, then placed in a Roadmap
  * column by rank and prerequisites. Items the Roadmap does not show have no column.
  */
-export function rankPlan(items: readonly (UnrankedPlanItem | PlanItem)[]): PlanItem[] {
-  const ranked = rankPriorities(items.map((item) => ({ ...item, rank: 0, phase: null })));
+export function rankPlan(items: readonly (UnrankedPlanItem | PlanItem)[], reach: ReachTotals = {}): PlanItem[] {
+  const ranked = rankPriorities(items.map((item) => ({ ...item, rank: 0, phase: null })), reach);
   const columns = placeByRank(ranked.filter(onRoadmap));
   return ranked.map((item) => {
     const column = columns.get(item.id);
@@ -461,7 +483,8 @@ export function buildPlan(input: PlanInput): PlanItem[] {
     }),
     ...rest.map(focusItem),
     ...(input.actuation ?? []).map(actuationItem),
-  ]);
+    ...(input.extra ?? []),
+  ], input.reach);
 }
 
 /** The first move: the top of the central list, or null when nothing needs action. */
@@ -492,7 +515,7 @@ export function emptyPlanLine(plan: readonly PlanItem[]): string | null {
   if (plan.some((item) => item.needsAction || item.loading)) return null;
   const unread = plan.filter((item) => item.noReading).length;
   if (unread > 0) {
-    return `No finding with a stored reading needs action. ${unread} of ${plan.filter((item) => item.kind === "finding").length} readings are not stored.`;
+    return `No finding with a stored reading needs action. ${formatInt(unread)} of ${formatInt(plan.filter((item) => item.kind === "finding").length)} readings are not stored.`;
   }
   return "Nothing needs action now. Every current finding is on track, and no other action meets its threshold.";
 }
@@ -533,10 +556,10 @@ export function planFindingsFigure(findings: readonly BriefingFinding[]): PlanFi
   const partial: PartialFigure | null = unread
     ? {
         reason: "coverage",
-        missing: `${unread} of ${rows.length} current findings have no stored reading, so they are left out of this count.`,
-        coverage: `${stored.length} of ${rows.length} findings`,
+        missing: `${formatInt(unread)} of ${formatInt(rows.length)} current findings have no stored reading, so they are left out of this count.`,
+        coverage: `${formatInt(stored.length)} of ${formatInt(rows.length)} findings`,
         source: "Summary Briefing findings",
       }
     : null;
-  return { phase: "ready", needs, stored: stored.length, total: rows.length, value: `${needs} of ${stored.length}`, partial };
+  return { phase: "ready", needs, stored: stored.length, total: rows.length, value: formatRatio(needs, stored.length), partial };
 }
