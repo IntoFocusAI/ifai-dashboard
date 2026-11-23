@@ -21,6 +21,7 @@ import {
   type SourceRunsRead,
 } from "@/lib/fender-canvas/roadmap-plan-read";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
+import type { FindabilityRead } from "@/lib/findability/copy";
 
 export type { RoadmapPlanRead, SourceRunsRead };
 
@@ -109,10 +110,17 @@ function useSourceRuns(current: AiSearchRead): SourceRunsRead {
  * IntoFocus staff set per client (staffFocus) narrows the plan to one category; the default is
  * the whole brand. The server download builds the same plan with assembleRoadmapPlan.
  */
-export function useRoadmapPlan(retail: RetailCanvasRead, bundle: CanvasBundle | null, focus: PlanFocus = staffFocus()): RoadmapPlanRead {
+export function useRoadmapPlan(
+  retail: RetailCanvasRead,
+  bundle: CanvasBundle | null,
+  focus: PlanFocus = staffFocus(),
+  /** The map builds the plan above the findability provider, so it passes its read. */
+  findabilityRead?: FindabilityRead,
+): RoadmapPlanRead {
   const ai = useSummaryAiRead();
   const aiStale = useSummaryAiStale(ai);
-  const findability = useFindability();
+  const contextFindability = useFindability();
+  const findability = findabilityRead ?? contextFindability;
   const stock = useStockLossRead();
   const sources = useSourceRuns(useRunWithApi(useNewestWindowRun()));
   const windows = useFocusWindows();

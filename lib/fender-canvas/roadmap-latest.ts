@@ -31,7 +31,8 @@ function rivalCount(latest: AiSearchSnapshot, key: string, brand: string): Count
 export function latestRunCount(item: PlanItem, latest: AiSearchSnapshot, rivals: ReadonlyMap<string, string>): Count {
   if (item.id === "finding:unbranded_discovery") {
     const tally = summarizeRun(latest).roles.unbranded;
-    return tally.resolved > 0 ? { x: tally.fenderWins, y: tally.resolved } : null;
+    // The row counts the problem (answers the brand did not lead), so the latest run does too.
+    return tally.resolved > 0 ? { x: tally.resolved - tally.fenderWins, y: tally.resolved } : null;
   }
   if (item.id === "signal:fact_contradictions") {
     const { coverage } = driftRead(latest.calls, latest.probes);

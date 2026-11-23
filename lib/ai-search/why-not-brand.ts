@@ -1,3 +1,4 @@
+import { formatInt } from "@/lib/fender-canvas/format";
 import { classifySource, isValidCitationUrl, type SourceClass } from "@/lib/ai-search/citations";
 import { brandName, leadBrand } from "@/lib/brand-copy";
 import { brandMention } from "@/lib/ai-search/brand-words";
@@ -67,8 +68,8 @@ function summarize(winner: string | null, mentioned: boolean | null, pages: WhyN
     pages.length === 1
       ? `Its one cited page ${owned === 1 ? "is" : "is not"} a ${brand} page.`
       : owned === 0
-        ? `None of its ${pages.length} cited pages is a ${brand} page.`
-        : `${owned} of its ${plural(pages.length, "cited page", "cited pages")} ${owned === 1 ? `is a ${brand} page` : `are ${brand} pages`}.`;
+        ? `None of its ${formatInt(pages.length)} cited pages is a ${brand} page.`
+        : `${formatInt(owned)} of its ${plural(pages.length, "cited page", "cited pages")} ${owned === 1 ? `is a ${brand} page` : `are ${brand} pages`}.`;
   const rival = winnerSite > 0 ? ` ${winnerSite} ${winnerSite === 1 ? "is" : "are"} on ${winner}'s own site.` : "";
   return `${named}${mention} ${cited}${rival}`;
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { formatInt } from "@/lib/fender-canvas/format";
 import { ModelName } from "@/components/v3/live/ai-search/ModelName";
 import { useState } from "react";
 import { clientColumn, ResizableTable } from "@/components/v3/live/ResizableTable";
@@ -55,7 +56,7 @@ export function CitationEvidenceTable({
     <div className="content-box ai-citation-evidence" style={{ marginTop: 12 }}>
       <div className="content-box-title">
         <span>Cited links: {label}</span>
-        <span className="tag-badge tag-neutral" data-ai-citation-count>{rows.length} links</span>
+        <span className="tag-badge tag-neutral" data-ai-citation-count>{formatInt(rows.length)} links</span>
       </div>
       {onClear ? (
         <button type="button" className="segmented-btn" onClick={onClear} style={{ marginBottom: 6 }}>
@@ -103,7 +104,7 @@ export function CitationEvidenceTable({
       ) : null}
       {sorted.rows.length > limit ? (
         <button type="button" className="segmented-btn" style={{ marginTop: 6 }} onClick={() => setLimit((n) => n + PAGE)}>
-          Show {Math.min(PAGE, sorted.rows.length - limit)} more of {sorted.rows.length - limit}
+          Show {formatInt(Math.min(PAGE, sorted.rows.length - limit))} more of {formatInt(sorted.rows.length - limit)}
         </button>
       ) : null}
     </div>

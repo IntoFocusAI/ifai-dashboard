@@ -18,7 +18,7 @@ import type { CanvasSpecWithViews } from "@/lib/canvas-sdk/minimal-view-types";
 import { aiMetrics } from "@/lib/ai-search/canvas-surfaces";
 import type { AiSearchRead } from "@/lib/ai-search/types";
 import type { FindabilityRead } from "@/lib/findability/copy";
-import { buildLiveCommandCenter } from "@/lib/fender-canvas/command-center-from-live";
+import { buildLiveCommandCenter, priorityItems } from "@/lib/fender-canvas/command-center-from-live";
 import { specPageCounts } from "@/lib/fender-canvas/machine-readability";
 import { buildHubSlots } from "@/lib/fender-canvas/hub-slots";
 import { headlineSentence, headlineSurface } from "@/lib/fender-canvas/portfolio-retail-display";
@@ -34,6 +34,7 @@ import { enterprisePotentialEstimate, phaseOneLiftEstimate } from "@/lib/fender-
 import { bindBrandTokens } from "@/lib/fender-canvas/spoke-narrative";
 import { bindCopy } from "@/lib/fender-canvas/template-vars";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
+import type { PlanItem } from "@/lib/fender-canvas/roadmap-plan";
 
 /** Documentation version shown beside the product name in the canvas header. */
 export const DOCUMENTATION_VERSION = "30.10";
@@ -64,6 +65,8 @@ export type BuildCanvasSpecOptions = {
   authorizedPartners?: readonly string[] | null;
   stockLoss?: StockLossRead;
   amazonFieldTotals?: AmazonFieldTotals | null;
+  /** The one central ranking (the Action Items plan). Priorities and the map action cards read it. */
+  plan?: readonly PlanItem[] | null;
 };
 
 /** Static fallback when Supabase is unavailable on first paint. */
@@ -94,7 +97,7 @@ export function buildFenderCanvasSpec(
 
   const ai = metrics.overallAiWinRate;
   const headline = headlineSurface(retail);
-  const commandCenter = bundle ? buildLiveCommandCenter(bundle, retail, aiSearch) : {
+  const commandCenter = bundle ? buildLiveCommandCenter(bundle, retail, aiSearch, options.plan ?? null) : {
         ...fenderCommandCenter,
         // The offline fallback reads the set-asides and owner chips of the brand on screen.
         storageKey: clientStorageKey(fenderCommandCenter.storageKey ?? "ifai:fender:command-center"),
@@ -133,7 +136,8 @@ export function buildFenderCanvasSpec(
       missingSpecPages: specPageCounts(bundle?.specPages)?.missingSpecBlock ?? null,
       phaseOneValue: metrics.phaseOneLift.value,
       phaseOneDetail: metrics.phaseOneLift.detail,
-      commandItems: commandCenter.items,
+      // Every ranked item, not only the ten Priorities shows, so each card keeps its bubble's best rank.
+      commandItems: options.plan?.length ? priorityItems(options.plan) : commandCenter.items,
     }),
     brand: {
       name: "IntoFocus AI Consensus Control",

@@ -120,7 +120,10 @@ export function FixesBody({ slide }: { slide: DeckSlide }) {
           <li key={fix.rank} className="deck-fix">
             <span className="deck-fix-rank">{fix.rank}</span>
             <span className="deck-fix-action">{fix.action}</span>
-            <span className="deck-fix-ratio">{fix.ratio}</span>
+            <span className="deck-fix-ratio" data-deck-fix-ratio="">
+              {fix.ratio}
+              {fix.figureLabel ? <span className="deck-fix-what">{fix.figureLabel}</span> : null}
+            </span>
             {fix.status ? <StatusMark status={fix.status} word={fix.statusWord} /> : <span />}
           </li>
         ))}

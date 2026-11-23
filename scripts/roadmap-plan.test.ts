@@ -142,7 +142,8 @@ test("other signals: rival-led categories and fact-check contradictions come fro
   assert.deepEqual(review!.reviews!.map((a) => [a.answerFocus, a.quote, a.claim, a.sourceUrl]), [["1", "Said 12 inch radius.", "Radius is 9.5 inches.", "https://example.com/p"]]);
   const reviewItem = buildPlan({ findings: LIVE, signals: [review!], sources: [] }).find((item) => item.id === review!.id)!;
   assert.equal(reviewItem.statusLabel, RECOMMENDED_LABEL);
-  assert.equal(reviewItem.phase, "days_31_60");
+  // 1 of 60 resolved AI answers ranks it fifth of five; it waits on the official pages and Days 31 to 60 is full.
+  assert.equal(reviewItem.phase, "days_61_90");
   assert.equal(reviewItem.reviews?.length, 1);
   const stock = signalActions({
     retail: { phase: "loading" },
@@ -153,7 +154,7 @@ test("other signals: rival-led categories and fact-check contradictions come fro
   assert.equal(stock[0]!.fact, "2 of 8 listings were out of stock at least one day in the last 12 months.");
 });
 
-test("the five findings keep their order; ecommerce signals follow; answer actions rank by share", () => {
+test("one ranking: share of the common base, ties to dollars then effort; columns by rank and prerequisite", () => {
   const plan = buildPlan({
     findings: LIVE,
     signals: [
@@ -162,28 +163,36 @@ test("the five findings keep their order; ecommerce signals follow; answer actio
     ],
     sources: sourceActions([run("r3", 3), run("r2", 2), run("r1", 0)]),
   });
+  // Common bases: 1,088 monitored listings, 60 resolved AI answers. 959 listings without an exact
+  // page (88%), 121 (11%), 75 (7%), then the Buy Box (57, 5%) and the site (3 of 60 answers, 5%)
+  // tie at 5 points with no dollars: the quicker fix (S) goes first. Then the fact check (1 of 60,
+  // 2%) and out of stock (2 of 1,088, 0%).
   assert.deepEqual(plan.map((item) => item.id), [
     "finding:exact_official_product",
     "finding:map_leakage",
     "finding:splintered_bundles",
     "finding:buy_box",
-    "finding:unbranded_discovery",
+    "source:guitarworld.com",
+    "signal:fact_contradictions",
     "signal:out_of_stock",
+    "finding:unbranded_discovery",
+  ]);
+  assert.deepEqual(plan.map((item) => item.rank), [1, 2, 3, 4, 5, 6, 7, 8]);
+  assert.match(plan[0]!.reason, /^Touches 959 of 1,088 monitored listings \(88\.1%\)\. Medium effort, catalog and site content\.$/);
+  // Seven items on the Roadmap: a third each (3, 3, 1), best rank first. The fact check waits on
+  // the official pages (Days 1 to 30) and fits in Days 31 to 60.
+  assert.deepEqual(phaseItems(plan, "days_1_30").map((item) => item.id), [
+    "finding:exact_official_product",
+    "finding:map_leakage",
+    "finding:splintered_bundles",
+  ]);
+  assert.deepEqual(phaseItems(plan, "days_31_60").map((item) => item.id), [
+    "finding:buy_box",
     "source:guitarworld.com",
     "signal:fact_contradictions",
   ]);
-  assert.deepEqual(plan.map((item) => item.rank), [1, 2, 3, 4, 5, 6, 7, 8]);
-  assert.deepEqual(phaseItems(plan, "days_1_30").map((item) => item.id), [
-    "finding:map_leakage",
-    "finding:splintered_bundles",
-    "finding:buy_box",
-    "signal:out_of_stock",
-  ]);
-  assert.deepEqual(phaseItems(plan, "days_31_60").map((item) => item.id), [
-    "finding:exact_official_product",
-    "signal:fact_contradictions",
-  ]);
-  assert.deepEqual(phaseItems(plan, "days_61_90").map((item) => item.id), ["source:guitarworld.com"]);
+  assert.deepEqual(phaseItems(plan, "days_61_90").map((item) => item.id), ["signal:out_of_stock"]);
+  assert.equal(plan.at(-1)!.phase, null, "Unbranded Discovery, the outcome, has no column");
   assert.deepEqual(PLAN_PHASES.map((phase) => phase.label), ["Days 1 to 30", "Days 31 to 60", "Days 61 to 90"]);
   assert.equal(emptyPlanLine(plan), null);
 });

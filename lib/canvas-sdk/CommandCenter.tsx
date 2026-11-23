@@ -206,7 +206,6 @@ export function CommandCenter({ spec, onOpenItem }: Props) {
             </header>
 
             <div className="cc-why">
-              <span className="cc-why-label">Why it is at the top of the list</span>
               <p>{item.why}</p>
             </div>
 

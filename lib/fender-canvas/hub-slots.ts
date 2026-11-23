@@ -21,8 +21,12 @@ export type HubSlotInput = {
   missingSpecPages: number | null;
   phaseOneValue: string;
   phaseOneDetail: string;
+  /** Priorities' queue, in the one central order: position 1 is the first move. */
   commandItems: PriorityItem[];
 };
+
+/** A queue item with its place in the central order (1 = do this first). */
+type RankedItem = { item: PriorityItem; rank: number };
 
 const ROLE_LABEL: Record<HubSlotRole, string> = {
   gap: "Performance gap",
@@ -57,16 +61,22 @@ function slot(input: Omit<HubSlot, "statusWord">): HubSlot {
   return { ...input, statusWord: statusWord(input.tone) };
 }
 
-function actionSlot(item: PriorityItem | undefined, figure: string, fallback: HubSlot): HubSlot {
-  if (!item) return fallback;
+/**
+ * A bubble's action card: the bubble's best-ranked item in the central order, with its rank as
+ * the figure, so the card, Priorities, and Action Items name the same item at the same number.
+ * An item with no grade (Recommended) reads neutral, never green.
+ */
+function actionSlot(ranked: RankedItem | undefined, fallback: HubSlot): HubSlot {
+  if (!ranked) return fallback;
+  const { item, rank } = ranked;
   const tone: NodeStatus =
-    item.severity === "critical" ? "danger" : item.severity === "high" ? "warning" : "success";
+    item.severity === "critical" ? "danger" : item.severity === "high" ? "warning" : "neutral";
   return slot({
     role: "action",
-    figure,
+    figure: `#${rank}`,
     label: item.title,
     detail: item.why,
-    note: "Opens the evidence for this action.",
+    note: `Rank ${rank} on Action Items. Opens the evidence for this action.`,
     tone,
     chart: null,
     spokeId: item.spokeId ?? fallback.spokeId,
@@ -74,8 +84,15 @@ function actionSlot(item: PriorityItem | undefined, figure: string, fallback: Hu
   });
 }
 
-function firstFor(items: PriorityItem[], spokeId: string): PriorityItem | undefined {
-  return items.find((item) => item.spokeId === spokeId);
+/** The bubble's best-ranked item, with its rank. */
+function firstFor(items: PriorityItem[], spokeId: string): RankedItem | undefined {
+  const index = items.findIndex((item) => item.spokeId === spokeId);
+  return index >= 0 ? { item: items[index]!, rank: index + 1 } : undefined;
+}
+
+/** The first move: position 1 of the central order. */
+export function firstMove(items: PriorityItem[]): RankedItem | undefined {
+  return items[0] ? { item: items[0], rank: 1 } : undefined;
 }
 
 function retailPair(reading: SuppressedSlotRead): [HubSlot, HubSlot] {
@@ -209,8 +226,8 @@ function rateSlot(
     label,
     detail:
       role === "gap"
-        ? `${brandName()} led ${wins} of ${resolved} (${pct(wins, resolved)}). This gap is the other ${missed}.`
-        : `${brandName()} led ${wins} of ${resolved} resolved answers.`,
+        ? `${brandName()} led ${formatInt(wins)} of ${formatInt(resolved)} (${pct(wins, resolved)}). This gap is the other ${formatInt(missed)}.`
+        : `${brandName()} led ${formatInt(wins)} of ${formatInt(resolved)} resolved answers.`,
     note,
     tone,
     chart: share(
@@ -411,10 +428,13 @@ function competitorPair(ai: AiSearchRead): [HubSlot, HubSlot] {
   return [gap, opportunity];
 }
 
+/** The first-paint queue's spec item; the central list names its own items. */
+const SPEC_BLOCK_ITEM_ID = "schema-coverage";
+
 function specAction(input: HubSlotInput, fallback: HubSlot): HubSlot {
-  const item = firstFor(input.commandItems, "specs");
-  const figure = input.missingSpecPages == null ? "Open" : formatInt(input.missingSpecPages);
-  const fromQueue = actionSlot(item, figure, fallback);
+  const ranked = firstFor(input.commandItems, "specs");
+  if (ranked && ranked.item.id !== SPEC_BLOCK_ITEM_ID) return actionSlot(ranked, fallback);
+  const fromQueue = actionSlot(ranked, fallback);
   return {
     ...fromQueue,
     label: input.missingSpecPages == null ? fromQueue.label : `${brandSite()} pages with no spec block`,
@@ -422,6 +442,7 @@ function specAction(input: HubSlotInput, fallback: HubSlot): HubSlot {
       input.missingSpecPages == null
         ? fromQueue.detail
         : `${formatInt(input.missingSpecPages)} ${brandSite()} product pages carry no machine-readable specs.`,
+    figure: input.missingSpecPages == null ? "Open" : formatInt(input.missingSpecPages),
     note: "Opens Brand-Site Specs.",
     chart: null,
     subTab: "Brand-Site Specs",
@@ -442,11 +463,8 @@ function aiBubbleAction(input: HubSlotInput, aiGap: HubSlot): HubSlot {
     spokeId: "aeo",
     subTab: "Run Summary",
   });
-  const item = firstFor(input.commandItems, "aeo");
-  if (item) {
-    const confirmed = input.ai.phase === "ready" ? summarizeRun(input.ai.snapshot).drift.totalConfirmed : 0;
-    return actionSlot(item, confirmed > 0 ? formatInt(confirmed) : "Open", fallback);
-  }
+  const ranked = firstFor(input.commandItems, "aeo");
+  if (ranked) return actionSlot(ranked, fallback);
   const missed = aiGap.chart?.part;
   if (missed == null) return fallback;
   return slot({
@@ -483,9 +501,9 @@ export function buildHubSlots(input: HubSlotInput): Record<string, HubSlotFeed> 
     spokeId: "suggestions",
     subTab: "Urgent Interventions",
   });
-  const retailAction = actionSlot(firstFor(input.commandItems, "ecommerce") ?? input.commandItems[0], retailGap.figure, openAction);
+  const retailAction = actionSlot(firstFor(input.commandItems, "ecommerce") ?? firstMove(input.commandItems), openAction);
   const aiAction = aiBubbleAction(input, aiGap);
-  const radarAction = actionSlot(firstFor(input.commandItems, "competitors"), "Open", {
+  const radarAction = actionSlot(firstFor(input.commandItems, "competitors"), {
     ...openAction,
     spokeId: "competitors",
     subTab: "Category Battlecards",
