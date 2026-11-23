@@ -4,7 +4,7 @@ import { readFile } from "node:fs/promises";
 /* Worker 24.4, AI Search Visibility final form, on the live read for both clients:
    the Ledlenser window (defect), N of M catalog products on every engine choice (A-05),
    the decided names on the map (X-18), downloads that follow the date pill (X-10, X-33),
-   and the prompt change history (A-08, with the read function mocked). */
+   and the view-only Prompts list for every client with staff-only Build prompts (decisions 89, 99). */
 
 const CLIENTS = ["fender", "ledlenser"] as const;
 type Client = (typeof CLIENTS)[number];
@@ -42,7 +42,7 @@ for (const client of CLIENTS) {
       // Each rate carries its status as color, mark, and word.
       await expect(page.locator("[data-ai-role='unbranded_discovery'] [data-status]")).toHaveText(/^(Poor|Fair|Good)$/);
       // Qualifiers that say what a figure is not live in tooltips.
-      for (const gone of ["not inside unbranded discovery", "Not in either rate above", "not counted as wins"]) {
+      for (const gone of ["not inside Unbranded Discovery", "Not in either rate above", "not counted as wins"]) {
         await expect(page.locator(".drilldown-body")).not.toContainText(gone);
       }
     });
@@ -73,17 +73,18 @@ for (const client of CLIENTS) {
       await expect(page.locator("[data-ai-fact-fixed-only]")).toHaveCount(0);
 
       const all = await figure.textContent();
-      const total = all!.split(" of ")[1];
-      if (client === "fender") {
-        // Fender has API engines. They ask the fixed questions only, so the lead reads 0 of M there.
-        await page.locator("[data-ai-engine-choice='search']").click();
-        await expect(figure).toHaveText(all!);
-        await page.locator("[data-ai-engine-choice='api']").click();
-        await expect(figure).toHaveText(`0 of ${total}`);
-        await expect(tip).toHaveAttribute("data-ifai-tooltip-desc", /^No engine in this engine choice asks the rotating catalog questions/);
-      } else {
-        await expect(page.locator("[data-ai-engine-switch='unavailable']")).toBeVisible();
-      }
+      // Both clients have API engines (decision 89). Their API runs ask no catalog question, so
+      // API only reads Not available* with the reason in its tooltip (decision 90).
+      await expect(page.locator("[data-ai-engine-switch='unavailable']")).toHaveCount(0);
+      await page.locator("[data-ai-engine-choice='search']").click();
+      await expect(figure).toHaveText(all!);
+      await page.locator("[data-ai-engine-choice='api']").click();
+      await expect(page.locator("[data-ai-catalog-lead='not-asked']")).toBeVisible({ timeout: 60_000 });
+      await expect(figure).toHaveText("Not available*");
+      await expect(tip).toHaveAttribute(
+        "data-ifai-tooltip-desc",
+        /^No engine in this engine choice was asked a catalog question in this selection, so there is no count to show\./,
+      );
     });
 
     test("the map uses the decided names and the radar label stays inside its bubble at 1280", async ({ page }) => {
@@ -109,13 +110,14 @@ for (const client of CLIENTS) {
       await page.goto(url(client, "spoke=competitors"));
       const label = page.locator("[data-graph-node-id='spoke-competitors'] .node-hero-label");
       await expect(label).toHaveText(/^\S.*leads\s?\S/, { timeout: 120_000 });
-      const bubble = ((await label.textContent()) ?? "").replace(/\s+/g, " ");
+      // The bubble adds "(rival share)" after the decided wording, since its figure is the rival's share.
+      const bubble = ((await label.textContent()) ?? "").replace(/\s+/g, " ").replace(/\s?\(rival\s?share\)$/, "");
       await page.goto(url(client, "spoke=competitors&tab=category-battlecards"));
       const body = page.locator(".drilldown-body");
-      await expect(body).toContainText("Top rival:", { timeout: 120_000 });
-      const first = ((await body.innerText()).match(/Behind\s*\n\s*Top rival: ([^\n]+)/) ?? [])[1];
-      expect(first, "a Behind category with a top rival").toBeTruthy();
-      expect(bubble.replace(/\s/g, "")).toContain(`${first!.trim().replace(/\s/g, "")}leads`);
+      const behind = body.locator("[data-ai-on-track-status='behind'] [data-ai-battle-leader]").first();
+      await expect(behind).toHaveText(/\S leads \S/, { timeout: 120_000 });
+      // The first Behind card reads exactly what the bubble reads: "Taylor leads Acoustics".
+      expect(((await behind.textContent()) ?? "").replace(/\s/g, "")).toBe(bubble.replace(/\s/g, ""));
     });
 
     test("Run Summary and Run Details download what they show for the date pill's selection", async ({ page }) => {
@@ -133,7 +135,7 @@ for (const client of CLIENTS) {
       expect(lines[1]).toMatch(/^Sort,/);
       expect(lines[2]).toMatch(/^As of,".+ UTC"$/);
       expect(lines[3]).toMatch(/^Population,"?[\d,]+ calls from \d+ runs? in this selection\."?$/);
-      expect(lines[4]).toBe("Engine,Model,Unbranded discovery,Branded consideration,No leader,Errors");
+      expect(lines[4]).toBe("Engine,Model,Unbranded Discovery,Branded Consideration,No leader,Errors");
       expect(lines.length - 5).toBe(shown);
       expect(lines[5].startsWith(`${firstEngine},`)).toBe(true);
       if (firstRate) expect(lines[5]).toContain(firstRate);
@@ -156,79 +158,151 @@ for (const client of CLIENTS) {
   });
 }
 
-const EDITS = [
-  {
-    id: "6c0e1b2a-4d5f-4a6b-8c7d-111111111111",
-    edited_at: "2026-11-04T13:27:19.699Z",
-    action: "edit",
-    prompt_key: "p01",
-    before: { prompt_text: "Best electric guitar under $900", category: "electrics" },
-    after: { prompt_text: "Best electric guitar under $900 for versatile tones", category: "electrics" },
-  },
-  {
-    id: "6c0e1b2a-4d5f-4a6b-8c7d-222222222222",
-    edited_at: "2026-10-27T18:40:00.000Z",
-    action: "add",
-    prompt_key: "p01",
-    before: null,
-    after: { prompt_text: "Best electric guitar under $900", category: "electrics", prompt_kind: "commercial", active: true },
-  },
+
+/* Decisions 89 and 99 (Workers 27.10, 27.12): every client gets the same view-only Prompts list
+   (search, N of M, CSV) and no client edits questions. Build prompts is for IntoFocus staff only.
+   Ledlenser's list reads ledlenser.canvas_ai_prompts, mocked here until the view is applied. */
+const LEDLENSER_PROMPTS = [
+  { prompt_key: "l01", prompt_text: "Best rechargeable headlamp for backpacking and hiking", category: "headlamps", prompt_kind: "commercial", active: true, created_at: "2026-11-04T15:59:37Z", updated_at: null },
+  { prompt_key: "l08", prompt_text: "Best rechargeable EDC flashlight under $100", category: "flashlights", prompt_kind: "commercial", active: true, created_at: "2026-11-04T15:59:37Z", updated_at: null },
+  { prompt_key: "l12", prompt_text: "Ledlenser P7R vs Olight Warrior 3S flashlight", category: "flashlights", prompt_kind: "commercial", active: true, created_at: "2026-11-04T15:59:37Z", updated_at: null },
+  { prompt_key: "l30", prompt_text: "Rotating catalog fact check slot A: question per run in ledlenser.ai_probe_plan", category: "hallucinations", prompt_kind: "probe", active: true, created_at: "2026-11-04T15:59:37Z", updated_at: null },
 ];
 
-test.describe("Prompts change history (A-08)", () => {
+const PROMPTS_BUTTON = /^Prompts$/;
+
+/** The header's staff check (as in sites-to-review.spec.ts). Unmocked it asks the dev server, whose e2e session is not staff. */
+async function answerStaff(page: Page) {
+  await page.route("**/dashboard/sites-to-review/staff", (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ staff: true }) }),
+  );
+}
+
+/** No add, edit, remove, restore, history, or Build prompts link on the Prompts screen. */
+async function expectViewOnly(page: Page) {
+  const dialog = page.locator(".pe-dialog");
+  await expect(dialog.locator("textarea")).toHaveCount(0);
+  await expect(dialog.locator(".pe-add, .pe-item-actions, .pe-edit")).toHaveCount(0);
+  await expect(dialog.getByRole("button", { name: /^(Edit|Remove) / })).toHaveCount(0);
+  await expect(dialog.getByRole("button", { name: /Add prompt|Restore prompt|Save prompt/ })).toHaveCount(0);
+  await expect(dialog.locator("[data-pe-builder-link]")).toHaveCount(0);
+  await expect(dialog.locator("[data-prompt-history-toggle], [data-prompt-history], [data-prompt-history-status]")).toHaveCount(0);
+  await expect(dialog.locator('[data-prompt-search] input[type="search"]')).toBeVisible();
+  await expect(dialog.locator('[data-table-download="prompts"]')).toBeEnabled();
+}
+
+test.describe("Prompts for every client (decisions 89 and 99)", () => {
   test.beforeEach(async ({ page }) => guest(page));
 
-  test("each prompt opens its stored changes once the read function exists", async ({ page }) => {
+  for (const client of CLIENTS) {
+    test(`a client user has Prompts and no Build prompts (${client})`, async ({ page }) => {
+      await page.goto(url(client, ""));
+      await expect(page.locator(".graph-node").first()).toBeVisible({ timeout: 60_000 });
+      await expect(page.locator(".hdr-btn", { hasText: PROMPTS_BUTTON })).toBeVisible();
+      await expect(page.locator(".hdr-btn", { hasText: "Build prompts" })).toHaveCount(0);
+    });
+
+    test(`staff see Build prompts; the page still checks the session (${client})`, async ({ page }) => {
+      await answerStaff(page);
+      await page.goto(url(client, ""));
+      const link = page.locator(".hdr-btn", { hasText: "Build prompts" });
+      await expect(link).toBeVisible({ timeout: 60_000 });
+      await expect(page.locator(".hdr-btn", { hasText: PROMPTS_BUTTON })).toBeVisible();
+      await link.click();
+      await expect(page).toHaveURL(client === "fender" ? /\/dashboard\/battery-builder$/ : /\/dashboard\/battery-builder\?client=ledlenser/);
+      // The e2e server session is not staff, so the page shows the staff message, as Sites to review does.
+      await expect(page.locator("[data-staff-only]")).toContainText("This page is for IntoFocus staff.");
+    });
+
+    test(`a forwarded Build prompts link shows the staff message (${client})`, async ({ page }) => {
+      await page.goto(`/dashboard/battery-builder${client === "fender" ? "" : `?client=${client}`}`);
+      const notice = page.locator("[data-staff-only]");
+      await expect(notice).toContainText("This page is for IntoFocus staff.");
+      await expect(notice.locator("h1")).toHaveText("Build prompts");
+      await expect(page.locator(".bb-card, .bb-page")).toHaveCount(0);
+      await expect(notice.getByRole("link", { name: "Back to dashboard" })).toHaveAttribute(
+        "href",
+        client === "fender" ? "/dashboard" : `/dashboard?client=${client}`,
+      );
+    });
+  }
+
+  test("Fender's Prompts list is view-only, searchable, and never reads the change log", async ({ page }) => {
     test.setTimeout(120_000);
-    await page.route("**/rest/v1/rpc/ai_prompt_edits_list*", (route) =>
-      route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(EDITS) }),
-    );
-    await page.goto("/dashboard");
-    await page.locator(".hdr-btn", { hasText: "Prompts" }).click();
-    const toggle = page.locator("[data-prompt-history-toggle='p01']");
-    await expect(toggle).toHaveText("Show history · 2 changes", { timeout: 60_000 });
-    await expect(page.locator("[data-prompt-history-toggle='p02']")).toHaveText("Show history · No changes");
-    await expect(page.locator("[data-prompt-history-status]")).toHaveCount(0);
-    await toggle.click();
-    const history = page.locator("[data-prompt-history='p01']");
-    await expect(history).toContainText("A run keeps the questions it asked. A later edit does not change that run.");
-    const rows = history.locator('[data-table-id="prompt-history"] tbody tr');
-    await expect(rows).toHaveCount(2);
-    await expect(rows.first()).toContainText("Nov 4, 2026, 1:27 PM UTC");
-    await expect(rows.first()).toContainText("Edited");
-    await expect(rows.first()).toContainText("Best electric guitar under $900 for versatile tones");
-    await expect(rows.nth(1)).toContainText("Added");
-    await expect(history.locator('[data-table-search="prompt-history"]')).toBeVisible();
-    await expect(history.locator('[data-table-download="prompt-history"]')).toBeVisible();
-    await expect(toggle).toHaveText("Hide history · 2 changes");
+    let historyRead = false;
+    await page.route("**/rest/v1/rpc/ai_prompt_edits_list*", (route) => {
+      historyRead = true;
+      return route.continue();
+    });
+    await page.goto(url("fender", ""));
+    await page.locator(".hdr-btn", { hasText: PROMPTS_BUTTON }).click();
+    await expect(page.locator(".pe-item").first()).toBeVisible({ timeout: 60_000 });
+    await expect(page.locator("[data-prompt-search-count]")).toHaveText(/^[\d,]+ of [\d,]+ prompts$/);
+    await expectViewOnly(page);
+    const fact = page.locator(".pe-item", { hasText: "Rotating catalog fact check, slot A" });
+    await expect(fact).toContainText("Rotating catalog fact check, slot A: a different catalog product each run");
+    await expect(page.locator(".pe-dialog")).not.toContainText("fmic_ai_probe_plan");
+    expect(historyRead).toBe(false);
   });
 
-  test("until the read function is applied the screen says so once, and shows no history rows", async ({ page }) => {
+  test("Ledlenser's Prompts lists its own battery, searchable, view-only", async ({ page }) => {
     test.setTimeout(120_000);
-    await page.route("**/rest/v1/rpc/ai_prompt_edits_list*", (route) =>
+    await page.route("**/rest/v1/canvas_ai_prompts*", (route) =>
+      route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(LEDLENSER_PROMPTS) }),
+    );
+    let fenderListRead = false;
+    await page.route("**/rest/v1/rpc/ai_prompts_list*", (route) => {
+      fenderListRead = true;
+      return route.continue();
+    });
+    await page.goto(url("ledlenser", ""));
+    await page.locator(".hdr-btn", { hasText: PROMPTS_BUTTON }).click();
+    const items = page.locator(".pe-item");
+    await expect(items).toHaveCount(4, { timeout: 60_000 });
+    await expect(items.first()).toContainText("Best rechargeable headlamp for backpacking and hiking");
+    await expect(items.nth(3)).toContainText("Fact check");
+    await expect(items.nth(3)).toContainText("Rotating catalog fact check, slot A: a different catalog product each run");
+    await expect(items.nth(3)).not.toContainText("ai_probe_plan");
+    await expect(page.locator("[data-prompt-search-count]")).toHaveText("4 of 4 prompts");
+    await expect(page.locator(".pe-sub").first()).toContainText("4 active.");
+    await page.locator('[data-prompt-search] input[type="search"]').fill("flashlight");
+    await expect(page.locator("[data-prompt-search-count]")).toHaveText("2 of 4 prompts");
+    await expectViewOnly(page);
+    expect(fenderListRead).toBe(false);
+  });
+
+  test("when Ledlenser's view cannot be read its Prompts screen says so", async ({ page }) => {
+    test.setTimeout(120_000);
+    await page.route("**/rest/v1/canvas_ai_prompts*", (route) =>
       route.fulfill({
         status: 404,
         contentType: "application/json",
-        body: JSON.stringify({
-          code: "PGRST202",
-          message: "Could not find the function public.ai_prompt_edits_list(p_prompt_key) in the schema cache",
-        }),
+        body: JSON.stringify({ code: "42P01", message: 'relation "ledlenser.canvas_ai_prompts" does not exist' }),
       }),
     );
-    await page.goto("/dashboard");
-    await page.locator(".hdr-btn", { hasText: "Prompts" }).click();
-    const notice = page.locator("[data-prompt-history-status='missing']");
-    await expect(notice).toHaveText("Change history: Not available*", { timeout: 60_000 });
-    await expect(notice.locator(".ifai-term")).toHaveAttribute("data-ifai-tooltip-desc", /not applied to the database yet/);
-    await expect(notice.locator(".ifai-term")).not.toHaveAttribute("title", /.*/);
-    await expect(page.locator(".pe-item").first()).toBeVisible();
-    await expect(page.locator("[data-prompt-history-toggle]")).toHaveCount(0);
-    await expect(page.locator("[data-prompt-history]")).toHaveCount(0);
+    await page.goto(url("ledlenser", ""));
+    await page.locator(".hdr-btn", { hasText: PROMPTS_BUTTON }).click();
+    await expect(page.locator(".pe-banner-error")).toHaveText("The prompt list could not be read.", { timeout: 60_000 });
+    await expect(page.locator(".pe-item")).toHaveCount(0);
   });
 
-  test("Ledlenser has no prompt editor, so its prompt list stays read-only", async ({ page }) => {
-    await page.goto("/dashboard?client=ledlenser");
-    await expect(page.locator(".graph-node").first()).toBeVisible({ timeout: 60_000 });
-    await expect(page.locator(".hdr-btn", { hasText: "Prompts" })).toHaveCount(0);
+  test("Ledlenser's prompt CSV holds its own battery once the view is applied (live)", async ({ page }) => {
+    test.setTimeout(120_000);
+    const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+    test.skip(!base || !key, "No Supabase URL or key in this environment.");
+    const probe = await page.request.get(`${base}/rest/v1/canvas_ai_prompts?select=prompt_key&limit=1`, {
+      headers: { apikey: key!, Authorization: `Bearer ${key}`, "Accept-Profile": "ledlenser" },
+    });
+    test.skip(!probe.ok(), "ledlenser.canvas_ai_prompts is not applied yet.");
+    await page.goto(url("ledlenser", ""));
+    await page.locator(".hdr-btn", { hasText: PROMPTS_BUTTON }).click();
+    await expect(page.locator(".pe-item").first()).toBeVisible({ timeout: 60_000 });
+    const asked = Number(await page.locator("[data-prompt-search-count]").getAttribute("data-prompt-search-count"));
+    const lines = await downloadLines(page, "prompts");
+    expect(lines[4]).toBe("Prompt key,Category,Kind,Prompt,Status");
+    const keys = lines.slice(5).map((line) => line.split(",")[0]);
+    expect(keys.every((k) => /^l\d+$/.test(k))).toBe(true);
+    expect(keys.length).toBeGreaterThanOrEqual(asked);
   });
 });

@@ -27,7 +27,7 @@ export type CanvasNode = {
    * A single big status-colored number in place of the stacked stat pills. Use when a
    * bubble has one scored headline value instead of several short facts to list.
    */
-  heroValue?: { value: string; label: string; explainer?: boolean };
+  heroValue?: { value: string; label: string; explainer?: boolean; tone?: "good" };
   /**
    * Why the hero figure carries the partial asterisk (X-25): what is missing, the coverage, the
    * source, the last check, and the effect. Set even on a bubble that shows no hover box, so a
@@ -177,6 +177,8 @@ export type HubSlotChart = {
   total: number;
   partLabel: string;
   restLabel: string;
+  /** Plural noun for the total, shown as "of {total} {unit}". Defaults to "listings". */
+  unit?: string;
 };
 
 export type HubSlot = {
@@ -255,6 +257,8 @@ export type CanvasSpec = {
   commandCenter?: CommandCenterSpec;
   /** Renders a "Prompts" header button (left of Priorities) that opens this content in a dialog. */
   promptsEditor?: (close: () => void) => ReactNode;
+  /** Page for building new prompts from shopper details. Renders a "Build prompts" header button next to Prompts, for IntoFocus staff only. */
+  promptBuilderHref?: string;
   /** Jargon -> plain-language definition, shown on hover in the panel copy. */
   glossary?: Record<string, string>;
   filters?: CanvasFilter[];

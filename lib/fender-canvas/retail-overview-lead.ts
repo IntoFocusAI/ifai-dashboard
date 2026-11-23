@@ -7,6 +7,7 @@
 import type { PieDiscData } from "@/lib/ai-search/citation-pies";
 import type { NodeStatus } from "@/lib/canvas-sdk/types";
 import type { PartialFigure } from "@/lib/fender-canvas/canvas-reads";
+import { amazonSpecTone } from "@/lib/fender-canvas/amazon-spec-bands";
 import { formatInt, formatPct, formatRatio } from "@/lib/fender-canvas/format";
 import {
   bundlePopulationTip,
@@ -82,9 +83,7 @@ function toneForShare(
  * Not toneForShare: any missing field would paint red there; Brand Registry lift is the complete share.
  */
 function toneForSpecComplete(completePct: number): Exclude<NodeStatus, "neutral"> {
-  if (completePct >= 98) return "success";
-  if (completePct >= 95) return "warning";
-  return "danger";
+  return amazonSpecTone(completePct);
 }
 
 function sharePie(
@@ -110,7 +109,7 @@ function sharePie(
   };
 }
 
-/** Buy Box withheld / current Buy Box readings. Monitored catalog is not the denominator. */
+/** Buy Box Withheld / current Buy Box readings. Monitored catalog is not the denominator. */
 export function buyBoxHero(snapshot: PortfolioRetailSnapshot): RetailOverviewHeroModel {
   const reading = snapshot.suppressedListings;
   const counts = reading.detail?.counts ?? null;
@@ -128,7 +127,7 @@ export function buyBoxHero(snapshot: PortfolioRetailSnapshot): RetailOverviewHer
     ratio: ready ? formatRatio(numerator, denominator) : null,
     color: TONE_COLOR[tone],
     tone,
-    pie: ready ? sharePie("retail-buy-box", label, "Buy Box withheld", numerator!, denominator!) : null,
+    pie: ready ? sharePie("retail-buy-box", label, "Buy Box Withheld", numerator!, denominator!) : null,
     tip: ready ? `${formatInt(numerator)} of ${formatInt(denominator)} current Buy Box readings.` : null,
     explainer: ready
       ? "The Buy Box is withheld, so there is no one-click offer."
@@ -177,7 +176,7 @@ export function averageGapTip(snapshot: PortfolioRetailSnapshot): string | null 
 export function mapHero(snapshot: PortfolioRetailSnapshot): RetailOverviewHeroModel {
   const reading = snapshot.mapLeakage;
   const detail = reading.detail;
-  const label = "MAP leakage";
+  const label = "MAP Leakage";
   const numerator = reading.issueCount;
   const denominator = detail != null && detail.decided > 0 ? detail.decided : null;
   const tone = toneForShare(numerator, denominator, reading);
@@ -223,7 +222,7 @@ export function catalogHero(snapshot: PortfolioRetailSnapshot): RetailOverviewHe
     color: TONE_COLOR[tone],
     tone,
     pie: ready
-      ? sharePie("retail-catalog", label, "Unnested bundle", numerator!, denominator!)
+      ? sharePie("retail-catalog", label, "Splintered listing", numerator!, denominator!)
       : null,
     tip: ready ? bundlePopulationTip(reading) : null,
     explainer: ready
@@ -244,7 +243,7 @@ function specCompletePie(complete: number, missing: number, checked: number): Pi
   if (slices.length === 0) return null;
   return {
     id: "catalog-spec",
-    title: "Specs complete",
+    title: "Specs Complete",
     total: checked,
     totalLabel: "checked listings",
     slices,
@@ -267,7 +266,7 @@ export function specHero(snapshot: PortfolioRetailSnapshot): RetailOverviewHeroM
   return {
     id: "amazon_spec_gaps",
     tab: "Amazon Specs",
-    label: "Specs complete",
+    label: "Specs Complete",
     percent: ready ? formatPct(completePct) : "Not available*",
     ratio: ready ? formatRatio(complete, checked) : null,
     color: TONE_COLOR[tone],

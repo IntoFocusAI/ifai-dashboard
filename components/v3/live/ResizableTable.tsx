@@ -14,7 +14,7 @@ import {
   withHeaderFloors,
   type ColumnWidthSpec,
 } from "@/lib/fender-canvas/retail-column-layout";
-import { measureColumnOneLineMins } from "@/lib/fender-canvas/table-column-measure";
+import { measureColumnOneLineMins, measureColumnWordMins } from "@/lib/fender-canvas/table-column-measure";
 import {
   ariaSortValue,
   tableScrollClass,
@@ -229,7 +229,8 @@ export function ResizableTable({
   const tableRef = useRef<HTMLTableElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
-  const [contentMins, setContentMins] = useState<Record<string, number>>({});
+  const [contentMins, setContentMins] = useState({ line: {} as Record<string, number>, word: {} as Record<string, number> });
+  // line: one-line floors for short cells. word: floors a too-wide row may wrap down to.
   const [manual, setManual] = useState(false);
   const fillId = pickFillColumnId(columns, fillColumnId);
   const wrapIds = wrapColumnIds ?? [];
@@ -256,9 +257,9 @@ export function ResizableTable({
     const columnIds = signature.split("|").map((part) => part.split(":")[0]).filter(Boolean);
     const skipIds = [fillId, ...wrapIds.filter(Boolean)];
     const run = () => {
-      const next = measureColumnOneLineMins(table, columnIds, skipIds);
+      const next = { line: measureColumnOneLineMins(table, columnIds, skipIds), word: measureColumnWordMins(table, columnIds) };
       setContentMins((current) => {
-        const same = columnIds.every((id) => (current[id] ?? 0) === (next[id] ?? 0));
+        const same = columnIds.every((id) => (["line", "word"] as const).every((k) => (current[k][id] ?? 0) === (next[k][id] ?? 0)));
         return same ? current : next;
       });
     };
@@ -276,7 +277,7 @@ export function ResizableTable({
     ? mergeColumnWidths(floored, widths)
     : fitResizableColumnWidths(floored, containerWidth, {
         fillColumnId: fillId,
-        contentMins,
+        contentMins: contentMins.line, wordMins: contentMins.word,
       });
   const displayRef = useRef(displayWidths);
   displayRef.current = displayWidths;

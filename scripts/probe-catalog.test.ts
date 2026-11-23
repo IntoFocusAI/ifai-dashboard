@@ -15,6 +15,7 @@ import {
   catalogProductsPie,
   catalogProductsSubline,
   catalogProductsTip,
+  catalogProductsNotAskedTip,
   catalogProductsUnavailableTip,
   factCheckMethodLine,
   factCheckPendingNote,
@@ -483,7 +484,7 @@ test("the tab leads with N of M catalog products checked, with the cycle and the
   assert.match(factCheckPendingNote({ ...coverage, answersWithoutFact: 2, questionsWithoutFact: [TELE.asin] }) ?? "", /^1 product has/);
 });
 
-test("every engine choice leads with the catalog products; a choice with no asking engine reads 0 of M (decision 13)", () => {
+test("every engine choice leads with the catalog products; a choice whose engines were asked no catalog question reads Not available* (decisions 13, 90)", () => {
   const coverage = [coverageRow({ models_in_scope: 181 }), coverageRow({ engine: "gemini", models_in_scope: 181 })];
   const apiProbe = probe({ ...EMPTY_CATALOG, audit_run_id: "api-1", sim_id: 90, prompt_key: "p33", engine: "openai_api" });
   const apiCall = { id: "api-call", audit_run_id: "api-1", sim_id: 90, engine: "openai_api", prompt_kind: "probe", prompt_key: "p33", call_status: "answered" };
@@ -503,15 +504,22 @@ test("every engine choice leads with the catalog products; a choice with no aski
     assert.equal(catalogProductsFigure(lead), "3 of 181");
     assert.deepEqual(lead.shownEngines, ["chatgpt", "gemini"]);
   }
+  // Decision 90: the API engines here were asked no catalog question, so 0 of 181 reads Not available*.
   const apiLead = catalogProductsLead(api);
-  assert.ok(apiLead && apiLead.phase === "ready");
-  assert.equal(catalogProductsFigure(apiLead), "0 of 181");
-  assert.deepEqual(apiLead.askingEngines, ["chatgpt", "gemini"]);
-  assert.deepEqual(apiLead.shownEngines, []);
-  assert.match(
-    catalogProductsTip(apiLead, rotationSummary([3])),
-    /^No engine in this engine choice asks the rotating catalog questions, so this figure reads 0\. Only ChatGPT and Gemini ask the rotating catalog questions\./,
+  assert.deepEqual(apiLead, { phase: "not-asked", inScope: 181, askingEngines: ["chatgpt", "gemini"] });
+  assert.ok(apiLead && apiLead.phase === "not-asked");
+  assert.equal(
+    catalogProductsNotAskedTip(apiLead),
+    "No engine in this engine choice was asked a catalog question in this selection, so there is no count to show. Only ChatGPT and Gemini ask the rotating catalog questions. 181 catalog products are in scope in this run.",
   );
+  // Computed from the data, never by engine kind: an API run that asks catalog questions shows its real count.
+  const askedProbe = probe({ ...rotationShape()[0], audit_run_id: "api-1", sim_id: 91, engine: "openai_api" });
+  const askedCall = { ...apiCall, id: "api-call-2", sim_id: 91, prompt_key: askedProbe.prompt_key };
+  const asked: AiSearchSnapshot = { ...merged, probes: [...merged.probes, askedProbe], calls: [...calls, askedCall] as AiSearchSnapshot["calls"] };
+  const askedLead = catalogProductsLead(filterSnapshotByEngineGroup(asked, "api")!);
+  assert.ok(askedLead && askedLead.phase === "ready");
+  assert.equal(catalogProductsFigure(askedLead), "1 of 181");
+  assert.deepEqual(askedLead.shownEngines, ["openai_api"]);
   // The coverage read failed: M is unknown, so the lead is Not available* and still names the engines.
   const failed = catalogProductsLead(snapshot(rotationShape(), null));
   assert.deepEqual(failed, { phase: "unavailable", askingEngines: ["chatgpt", "gemini"] });

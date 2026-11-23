@@ -44,7 +44,7 @@ export type WindowRunCount = {
   id: string;
   day: string | null;
   source: "battery" | "api";
-  /** Resolved unbranded discovery answers the run adds, and the questions it answered. */
+  /** Resolved Unbranded Discovery answers the run adds, and the questions it answered. */
   resolved: number;
   questions: number;
 };

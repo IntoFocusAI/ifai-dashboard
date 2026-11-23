@@ -19,11 +19,6 @@ import {
   scoreTargetLabel,
 } from "../lib/fender-canvas/consensus-score-display.ts";
 import { consensusScore, type CommerceInputs, type FoundationInputs } from "../lib/fender-canvas/consensus-scores.ts";
-import {
-  divisionCellText,
-  divisionPopulation,
-  divisionRowModels,
-} from "../lib/fender-canvas/division-rows.ts";
 import { isExportTable } from "../lib/export/tables.ts";
 
 function read(path: string): string {
@@ -52,8 +47,9 @@ test("H-07: each score reads against target 70 as whole points", () => {
   assert.equal(CONSENSUS_SCORE_TARGET, 70);
   assert.equal(scoreFigure(41.4), "41");
   assert.equal(scoreFigure(null), "Not available");
-  assert.equal(scoreTargetLabel(), "vs target 70");
-  assert.equal(scoreAgainstTarget(41.4), "41 vs target 70");
+  // Worker 29.10 (Brian, 18 Nov 2026): the score reads out of 100, with "Target 70" below it.
+  assert.equal(scoreTargetLabel(), "Target 70");
+  assert.equal(scoreAgainstTarget(41.4), "41/100, target 70");
   assert.equal(scoreAgainstTarget(null), null);
 });
 
@@ -79,7 +75,7 @@ test("X-25: AI Consensus and a pillar that leave out inputs carry the partial re
 
   const overall = consensusPartial(consensus);
   assert.ok(overall);
-  assert.match(overall.missing, /AI Actuation is left out of AI Consensus: it has no owner, evidence, or dated records yet/);
+  assert.match(overall.missing, /AI Actuation is left out of AI Consensus: its records did not load/);
   assert.equal(overall.coverage, "2 of 3 pillars");
   assert.doesNotMatch(partialFigureTip(overall), /—|n't/);
 });
@@ -137,25 +133,8 @@ test("decision 7: Summary AI figures read the map's population, not the date-pil
   assert.match(lead, /authorizedPartners/, "the Briefing score uses the same partners as Performance");
 });
 
-test("X-33 / X-10: the division table sorts every column, searches, and downloads CSV", () => {
-  const table = read("components/v3/live/FenderDivisionsTable.tsx");
-  assert.match(table, /<ResizableTable/);
-  assert.match(table, /useClientTableSort\(/);
-  assert.equal((table.match(/sort: "(text|number)"/g) ?? []).length, 4);
-  assert.ok(isExportTable("catalog-divisions"));
-  assert.match(read("lib/export/load-table.ts"), /"catalog-divisions": loadDivisionsSource/);
-
-  const rows = divisionRowModels(
-    [
-      { division: "Solid Body", monitored_skus: 4, buybox_pct: null, schema_sync_pct: null, splinter_bundles: 1, primary_threat: null, strategic_action: null },
-      { division: "Pegs", monitored_skus: null, buybox_pct: null, schema_sync_pct: null, splinter_bundles: null, primary_threat: null, strategic_action: null },
-    ],
-    { "solid body": { listings: 3, knownHolder: 2, amazonHolds: 1 } },
-  );
-  assert.equal(rows[0].bundles.share, 25);
-  assert.equal(rows[0].buyBox.share, 50);
-  assert.equal(rows[1].bundles.share, null);
-  assert.equal(divisionCellText(rows[0].bundles), "25.0% (1 of 4 SKUs)");
-  assert.equal(divisionCellText(rows[1].bundles), "Not available*");
-  assert.match(divisionPopulation(rows), /^2 catalog divisions in the division read/);
+test("decision 94: the division table and its CSV are gone for every client", () => {
+  assert.equal(isExportTable("catalog-divisions"), false);
+  assert.doesNotMatch(read("lib/export/load-table.ts"), /catalog-divisions|loadDivisionsSource/);
+  assert.doesNotMatch(read("components/v3/build-live-spokes.tsx"), /FenderDivisionsTable|readFallbackTab/);
 });

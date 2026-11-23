@@ -1,4 +1,4 @@
-import { existsSync } from "node:fs";
+import { existsSync, statSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
@@ -6,9 +6,13 @@ const root = fileURLToPath(new URL("..", import.meta.url));
 
 function fileForAlias(specifier) {
   const base = path.join(root, specifier.slice(2));
-  if (existsSync(base)) return pathToFileURL(base).href;
+  if (existsSync(base) && statSync(base).isFile()) return pathToFileURL(base).href;
   for (const ext of [".ts", ".tsx", ".js", ".mjs"]) {
     if (existsSync(`${base}${ext}`)) return pathToFileURL(`${base}${ext}`).href;
+  }
+  // A folder import ("@/lib/client") resolves to its index file, as the bundler does.
+  for (const ext of [".ts", ".tsx"]) {
+    if (existsSync(path.join(base, `index${ext}`))) return pathToFileURL(path.join(base, `index${ext}`)).href;
   }
   return null;
 }

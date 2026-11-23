@@ -59,6 +59,27 @@ test("Amazon Specs judges each product type against its list and names the field
   await expect(page.locator("[data-amazon-specs-lead]")).not.toContainText(/placeholder/i);
 });
 
+test("Amazon Specs reads Not available* for product types with no approved list (decision 100)", async ({ page }) => {
+  await mockCanvasRead(page);
+  const rows = SPEC_ROWS.map((row) => ({ ...row, category: "Flashlights", amazon_spec_values: { color: "Black" } }));
+  const types = SPEC_ROWS.map((row, index) => ({
+    asin: String(row.asin),
+    product_type: index < 2 ? "ELECTRIC_LIGHT" : index < 3 ? "ELECTRIC_LANTERN" : "FLASHLIGHT",
+  }));
+  await page.route("**/rest/v1/canvas_spec_readiness**", (route) => route.fulfill(fulfill(rows)));
+  await page.route("**/rest/v1/canvas_amazon_product_types**", (route) => route.fulfill(fulfill(types)));
+  await openAmazonSpecs(page);
+
+  const noList = page.locator("[data-amazon-specs-required-list='no-list']");
+  await expect(noList).toContainText("work and utility lights (2 listings); lanterns (1 listing): Not available*");
+  await expect(noList.locator("[data-figure-tip='amazon-specs-no-list']")).toHaveAttribute(
+    "data-ifai-tooltip-desc",
+    /no approved required field list for work and utility lights and lanterns yet/,
+  );
+  await expect(page.locator("[data-amazon-specs-product-type='FLASHLIGHT']")).toHaveCount(1);
+  await expect(page.locator("[data-amazon-specs-product-type='ELECTRIC_LIGHT']")).toHaveCount(0);
+});
+
 test("Amazon Specs keeps the interim rule when product types cannot be read", async ({ page }) => {
   await mockCanvasRead(page);
   await page.route("**/rest/v1/canvas_amazon_product_types**", (route) =>

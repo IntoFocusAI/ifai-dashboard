@@ -8,13 +8,14 @@ import {
 } from "@/lib/ai-search/run-metrics";
 import type { AiCallRow } from "@/lib/ai-search/types";
 import { leadBrand } from "@/lib/brand-copy";
+import { formatInt } from "@/lib/fender-canvas/format";
 
-/** Unbranded discovery rows only (commercial buying prompts that name no brand). */
+/** Unbranded Discovery rows only (commercial buying prompts that name no brand). */
 export function isUnbrandedDiscovery(row: AiCallRow): boolean {
   return isCommercial(row) && questionRole(row) === "unbranded_discovery";
 }
 
-/** Answered unbranded discovery rows with a clear leader. Probes, errors, and unresolved rows are out. */
+/** Answered Unbranded Discovery rows with a clear leader. Probes, errors, and unresolved rows are out. */
 export function resolvedUnbrandedDiscovery(rows: AiCallRow[]): AiCallRow[] {
   return rows.filter((row) => {
     if (!isUnbrandedDiscovery(row)) return false;
@@ -26,7 +27,7 @@ export function resolvedUnbrandedDiscovery(rows: AiCallRow[]): AiCallRow[] {
 export type CompetitorTally = {
   brand: string;
   wins: number;
-  /** Resolved unbranded discovery answers in the whole run, the denominator for `wins`. */
+  /** Resolved Unbranded Discovery answers in the whole run, the denominator for `wins`. */
   resolved: number;
   byCategory: Array<{ category: string; wins: number; resolved: number }>;
   byEngine: Array<{ engine: string; wins: number; resolved: number }>;
@@ -75,7 +76,7 @@ export type CategoryBattle = {
   leaders: Array<{ brand: string; wins: number }>;
 };
 
-/** Per unbranded discovery category: who out-mentions Fender/Squier, and how often. */
+/** Per Unbranded Discovery category: who out-mentions Fender/Squier, and how often. */
 export function categoryBattles(rows: AiCallRow[]): CategoryBattle[] {
   const byCategory = new Map<string, AiCallRow[]>();
   for (const row of rows.filter(isUnbrandedDiscovery)) {
@@ -106,7 +107,7 @@ export function categoryBattles(rows: AiCallRow[]): CategoryBattle[] {
     .sort((a, b) => b.competitorWins - a.competitorWins || a.category.localeCompare(b.category));
 }
 
-/** The category where competitors lead the most resolved unbranded discovery answers, if any lead at all. */
+/** The category where competitors lead the most resolved Unbranded Discovery answers, if any lead at all. */
 export function largestCompetitorGap(rows: AiCallRow[]): CategoryBattle | null {
   const top = categoryBattles(rows)[0];
   return top && top.competitorWins > 0 ? top : null;
@@ -120,7 +121,7 @@ export function joinBrands(brands: string[]): string {
 
 export function battleSentence(battle: CategoryBattle): string {
   const names = joinBrands(battle.leaders.map((leader) => leader.brand));
-  return `${names} out-mention ${leadBrand()} in ${battle.competitorWins} of ${battle.resolved} resolved unbranded discovery ${categoryLabel(battle.category).toLowerCase()} answers`;
+  return `${names} out-mention ${leadBrand()} in ${formatInt(battle.competitorWins)} of ${formatInt(battle.resolved)} resolved Unbranded Discovery ${categoryLabel(battle.category).toLowerCase()} answers`;
 }
 
 export function engineSpread(rows: AiCallRow[]): string {

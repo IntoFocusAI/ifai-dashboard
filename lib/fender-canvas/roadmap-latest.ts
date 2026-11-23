@@ -6,7 +6,7 @@
 import { categoryLeads } from "@/lib/ai-search/category-on-track";
 import { runDay } from "@/lib/ai-search/default-window";
 import { driftRead } from "@/lib/ai-search/drift";
-import { categoryRoleTallies, headlineCompetitorWins } from "@/lib/ai-search/question-role";
+import { discoveryCategoryRoleTallies, headlineCompetitorWins } from "@/lib/ai-search/question-role";
 import { shortRunDay } from "@/lib/ai-search/stale";
 import { summarizeRun } from "@/lib/ai-search/summary";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
@@ -19,7 +19,7 @@ type Count = { x: number; y: number } | null;
 
 function rivalCount(latest: AiSearchSnapshot, key: string, brand: string): Count {
   const calls = latest.calls;
-  const leads = categoryLeads(categoryRoleTallies(calls), calls);
+  const leads = categoryLeads(discoveryCategoryRoleTallies(calls), calls);
   const resolved = leads.reduce((sum, lead) => sum + lead.resolved, 0);
   if (resolved <= 0) return null;
   const inCategory = calls.filter((row) => (row.category ?? "") === key);

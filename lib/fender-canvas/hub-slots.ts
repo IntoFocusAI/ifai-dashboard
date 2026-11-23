@@ -1,10 +1,11 @@
 import type { HubSlot, HubSlotChart, HubSlotFeed, HubSlotRole, NodeStatus, PriorityItem } from "@/lib/canvas-sdk/types";
 import { strongestCategory } from "@/lib/ai-search/canvas-surfaces";
 import { categoryBattles } from "@/lib/ai-search/competitors";
-import { pct, summarizeRun } from "@/lib/ai-search/summary";
+import { BRANDED_RATE_BANDS, pct, summarizeRun, UNBRANDED_RATE_BANDS } from "@/lib/ai-search/summary";
 import type { AiSearchRead } from "@/lib/ai-search/types";
 import { categoryLabel } from "@/lib/ai-search/run-metrics";
 import { findabilityWidgetCopy, type FindabilityRead } from "@/lib/findability/copy";
+import { EXACT_PAGE_SHARE_BANDS, outcomeSharePct } from "@/lib/findability/lead";
 import { countFindability } from "@/lib/findability/outcomes";
 import { formatInt } from "@/lib/fender-canvas/format";
 import type { SuppressionDetail } from "@/lib/fender-canvas/portfolio-retail";
@@ -40,10 +41,16 @@ function statusWord(tone: NodeStatus): string {
   return "Recorded";
 }
 
-function share(part: number, total: number, partLabel: string, restLabel: string): HubSlotChart | null {
+function share(
+  part: number,
+  total: number,
+  partLabel: string,
+  restLabel: string,
+  unit?: string,
+): HubSlotChart | null {
   if (!Number.isInteger(part) || !Number.isInteger(total)) return null;
   if (total <= 0 || part < 0 || part > total) return null;
-  return { part, total, partLabel, restLabel };
+  return unit ? { part, total, partLabel, restLabel, unit } : { part, total, partLabel, restLabel };
 }
 
 function slot(input: Omit<HubSlot, "statusWord">): HubSlot {
@@ -211,6 +218,7 @@ function rateSlot(
       resolved,
       role === "gap" ? `${brandName()} did not lead` : `${brandName()} led`,
       role === "gap" ? `${brandName()} led` : `${brandName()} did not lead`,
+      "answers",
     ),
     spokeId,
     subTab,
@@ -237,28 +245,43 @@ function aiPair(ai: AiSearchRead): [HubSlot, HubSlot] {
         spokeId: "aeo",
         subTab: "Run Summary",
       });
-    return [make("gap", `Unbranded answers ${brandName()} did not lead`), make("opportunity", "Branded consideration")];
+    return [make("gap", `Unbranded answers ${brandName()} did not lead`), make("opportunity", "Branded Consideration")];
   }
   const summary = summarizeRun(ai.snapshot);
   const note = `Published run · ${summary.completedAt}`;
+  // Each card takes its tone from its own role's wins share: the gap card from the unbranded bands, Branded Consideration from the branded bands.
+  const bandToneFor = (wins: number, resolved: number, bands: { redBelow: number; greenAbove: number }): NodeStatus | null => {
+    if (resolved <= 0) return null;
+    const pct = (100 * wins) / resolved;
+    return pct < bands.redBelow ? "danger" : pct > bands.greenAbove ? "success" : "warning";
+  };
+  const withBand = (card: HubSlot, tone: NodeStatus | null): HubSlot =>
+    tone && card.tone !== "neutral" ? { ...card, tone } : card;
+  const { unbranded, branded } = summary.roles;
   return [
-    rateSlot(
-      "gap",
-      `Unbranded answers ${brandName()} did not lead`,
-      summary.roles.unbranded.fenderWins,
-      summary.roles.unbranded.resolved,
-      note,
-      "aeo",
-      "Run Summary",
+    withBand(
+      rateSlot(
+        "gap",
+        `Unbranded answers ${brandName()} did not lead`,
+        unbranded.fenderWins,
+        unbranded.resolved,
+        note,
+        "aeo",
+        "Run Summary",
+      ),
+      bandToneFor(unbranded.fenderWins, unbranded.resolved, UNBRANDED_RATE_BANDS),
     ),
-    rateSlot(
-      "opportunity",
-      "Branded consideration",
-      summary.roles.branded.fenderWins,
-      summary.roles.branded.resolved,
-      note,
-      "aeo",
-      "Run Summary",
+    withBand(
+      rateSlot(
+        "opportunity",
+        "Branded Consideration",
+        branded.fenderWins,
+        branded.resolved,
+        note,
+        "aeo",
+        "Run Summary",
+      ),
+      bandToneFor(branded.fenderWins, branded.resolved, BRANDED_RATE_BANDS),
     ),
   ];
 }
@@ -280,7 +303,7 @@ function findabilityPair(read: FindabilityRead): [HubSlot, HubSlot] {
         chart: null,
         ...base,
       });
-    return [make("gap", "Listings without an exact official page"), make("opportunity", "Exact official product pages")];
+    return [make("gap", "Listings not matched to an exact official page"), make("opportunity", "Listings matched to an exact official page")];
   }
   const counts = countFindability(read.rows);
   if (counts.total === 0) {
@@ -295,29 +318,36 @@ function findabilityPair(read: FindabilityRead): [HubSlot, HubSlot] {
         chart: null,
         ...base,
       });
-    return [make("gap", "Listings without an exact official page"), make("opportunity", "Exact official product pages")];
+    return [make("gap", "Listings not matched to an exact official page"), make("opportunity", "Listings matched to an exact official page")];
   }
   const exact = counts.exact_official_product;
   const other = counts.total - exact;
+  const sharePct = outcomeSharePct(counts, "exact_official_product") ?? 0;
+  const tone: NodeStatus =
+    sharePct < EXACT_PAGE_SHARE_BANDS.redBelow
+      ? "danger"
+      : sharePct > EXACT_PAGE_SHARE_BANDS.greenAbove
+        ? "success"
+        : "warning";
   return [
     slot({
       role: "gap",
       figure: formatInt(other),
-      label: "Listings without an exact official page",
+      label: "Listings not matched to an exact official page",
       detail: `${formatInt(other)} of ${formatInt(counts.total)} listings in the official-page read`,
       note: "A family page is not an exact product page.",
-      tone: other > 0 ? "warning" : "success",
-      chart: share(other, counts.total, "Not an exact page", "Exact official page"),
+      tone,
+      chart: share(other, counts.total, "Not matched", "Matched"),
       ...base,
     }),
     slot({
       role: "opportunity",
       figure: formatInt(exact),
-      label: "Exact official product pages",
+      label: "Listings matched to an exact official page",
       detail: findabilityWidgetCopy(read).detail,
       note: "Official-page read. A family page is not an exact page.",
-      tone: exact > 0 ? "success" : "warning",
-      chart: share(exact, counts.total, "Exact official page", "Other outcomes"),
+      tone,
+      chart: share(exact, counts.total, "Matched", "Not matched"),
       ...base,
     }),
   ];
@@ -332,7 +362,7 @@ function competitorPair(ai: AiSearchRead): [HubSlot, HubSlot] {
     ];
   }
   const summary = summarizeRun(ai.snapshot);
-  const note = `Published run · ${summary.completedAt}. Unbranded discovery only.`;
+  const note = `Published run · ${summary.completedAt}. Unbranded Discovery only.`;
   const battles = categoryBattles(ai.snapshot.calls);
   const gapBattle = summary.largestGap;
   const lead = strongestCategory(battles);
@@ -432,34 +462,6 @@ function aiBubbleAction(input: HubSlotInput, aiGap: HubSlot): HubSlot {
   });
 }
 
-function estimateOpportunity(input: HubSlotInput): HubSlot {
-  return slot({
-    role: "opportunity",
-    figure: input.phaseOneValue,
-    label: "Recoverable Revenue",
-    detail: input.phaseOneDetail,
-    note: "Analyst estimate.",
-    tone: "success",
-    chart: null,
-    spokeId: "suggestions",
-    subTab: "Revenue Estimates",
-  });
-}
-
-function exampleGap(): HubSlot {
-  return slot({
-    role: "gap",
-    figure: "Example",
-    label: "No live gap on this bubble",
-    detail: "Strategy Roadmap is a visual example until a live plan is stored.",
-    note: "Not a live reading.",
-    tone: "neutral",
-    chart: null,
-    spokeId: "roadmap",
-    subTab: "30-60-90 Day Milestones",
-  });
-}
-
 function feed(bubbleId: string, title: string, slots: [HubSlot, HubSlot, HubSlot]): HubSlotFeed {
   return { bubbleId, title, slots };
 }
@@ -488,48 +490,13 @@ export function buildHubSlots(input: HubSlotInput): Record<string, HubSlotFeed> 
     spokeId: "competitors",
     subTab: "Category Battlecards",
     label: "Open Category Battlecards",
-    detail: "Unbranded discovery only.",
-  });
-  const queueAction = actionSlot(input.commandItems[0], "Open", openAction);
-  const secondAction = actionSlot(input.commandItems[1], "Next", queueAction);
-  const roadmapAction = actionSlot(undefined, "Open", {
-    ...openAction,
-    spokeId: "roadmap",
-    subTab: "30-60-90 Day Milestones",
-    label: "30-60-90 Day Milestones",
-    detail: "The phases are a plan, not a measured result.",
-    note: "Not a live reading.",
+    detail: "Unbranded Discovery only.",
   });
 
   return {
-    hub: feed("hub", "Summary", [retailGap, aiLead, queueAction]),
     "spoke-retail": feed("spoke-retail", "Catalog Health", [retailGap, retailOutside, retailAction]),
     "spoke-aeo": feed("spoke-aeo", "AI Search Visibility", [aiGap, aiLead, aiAction]),
     "spoke-specs": feed("spoke-specs", "AI Readiness", [pagesGap, exactPages, specAction(input, openAction)]),
     "spoke-competitors": feed("spoke-competitors", "Competitive Radar", [categoryGap, categoryLead, radarAction]),
-    "spoke-fixes": feed("spoke-fixes", "Action Items", [
-      {
-        ...queueAction,
-        role: "gap",
-        note: "Dollar figures are analyst estimates.",
-      },
-      estimateOpportunity(input),
-      secondAction,
-    ]),
-    "spoke-roadmap": feed("spoke-roadmap", "Strategy Roadmap", [
-      exampleGap(),
-      slot({
-        role: "opportunity",
-        figure: "3 phases",
-        label: "90-day plan",
-        detail: "MAP, catalog nesting, and estimated lift.",
-        note: "The phases are a plan, not a measured result.",
-        tone: "neutral",
-        chart: null,
-        spokeId: "roadmap",
-        subTab: "30-60-90 Day Milestones",
-      }),
-      { ...roadmapAction, role: "action" },
-    ]),
   };
 }

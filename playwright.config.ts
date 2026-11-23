@@ -1,4 +1,5 @@
 import { defineConfig, devices } from "@playwright/test";
+import { productionNotice, resolveDbTarget, resolveWorkers } from "./e2e/db-target";
 
 const PORT = Number(process.env.E2E_PORT ?? 3111);
 const BASE_URL = process.env.E2E_BASE_URL ?? `http://localhost:${PORT}`;
@@ -12,12 +13,22 @@ const BASE_URL = process.env.E2E_BASE_URL ?? `http://localhost:${PORT}`;
    `npx playwright install --with-deps chromium`. */
 const channel = process.env.E2E_BROWSER === "chromium" ? undefined : "chrome";
 
+/* Database target (see e2e/db-target.ts and README "Tests"). E2E_SUPABASE_URL and
+   E2E_SUPABASE_ANON_KEY point the spawned dev server at a database copy; unset, it reads
+   production through `.env.local`. While on production, run one suite at a time:
+   workers default to 2 (E2E_WORKERS overrides). The notice prints once, from the main
+   process, not from each worker. */
+const dbTarget = resolveDbTarget(process.env);
+const notice = productionNotice(dbTarget);
+if (notice && !process.env.TEST_WORKER_INDEX) console.warn(notice);
+const overridesDb = Object.keys(dbTarget.serverEnv).length > 0;
+
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 2 : undefined,
+  workers: resolveWorkers(process.env),
   reporter: process.env.CI ? [["github"], ["html", { open: "never" }]] : [["list"]],
   timeout: 45_000,
   expect: { timeout: 10_000 },
@@ -34,6 +45,21 @@ export default defineConfig({
   projects: [
     {
       name: "chrome",
+      grepInvert: /@parity-/,
+      use: { ...devices["Desktop Chrome"], channel, viewport: { width: 1280, height: 720 } },
+    },
+    /* Client parity (parity chunk C8): collect every client's screens, then compare them. Run with
+       `--project=parity-compare`, which runs the collect project first. Expected to fail until the
+       parity rounds land; see docs/client-parity-gaps.md. */
+    {
+      name: "parity-collect",
+      grep: /@parity-collect/,
+      use: { ...devices["Desktop Chrome"], channel, viewport: { width: 1280, height: 720 } },
+    },
+    {
+      name: "parity-compare",
+      grep: /@parity-compare/,
+      dependencies: ["parity-collect"],
       use: { ...devices["Desktop Chrome"], channel, viewport: { width: 1280, height: 720 } },
     },
     {
@@ -48,8 +74,11 @@ export default defineConfig({
     : {
         command: `npm run dev -- --port ${PORT}`,
         url: BASE_URL,
-        reuseExistingServer: !process.env.CI,
-        env: { E2E_AUTH_BYPASS: "1" },
+        /* A server already on the port could be reading a different database, so a
+           run pointed at a copy always spawns its own and fails if the port is taken.
+           Choose a free E2E_PORT. */
+        reuseExistingServer: !process.env.CI && !overridesDb,
+        env: { E2E_AUTH_BYPASS: "1", ...dbTarget.serverEnv },
         timeout: 120_000,
         stdout: "ignore",
         stderr: "pipe",

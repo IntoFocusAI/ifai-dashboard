@@ -32,7 +32,7 @@
 - **Desired:** On Balanced, remove those widgets. Hover/focus a main bubble fills three slots: largest performance gap, largest defensible opportunity, highest-priority action — large figure, short label, target, compact chart. Red never alone.
 - **User value:** The hub answers without opening every bubble.
 - **Acceptance:** Slots use live data, denominator, freshness, and evidence trail.
-- **Evidence:** Live on production main d9911c9, approved 26 Oct 2026 (workers 9.4 and 10.3). Status stays TARGET until the slots are confirmed as the largest gap, the largest opportunity, and the highest-priority action. Worker 20.3 (pull request 110) added a target, N of M, a last-checked date, an evidence link, and a one-line rule to each slot. Brian Magazu did not approve the picks on 3 Nov 2026; the pull request stays open for rework.
+- **Evidence:** Live on production main d9911c9, approved 26 Oct 2026 (workers 9.4 and 10.3). Status stays TARGET until the slots are confirmed as the largest gap, the largest opportunity, and the highest-priority action. Worker 20.3 (pull request 110) added a target, N of M, a last-checked date, an evidence link, and a one-line rule to each slot. Brian Magazu did not approve the picks on 3 Nov 2026. PR 110 closed 17 Nov 2026; the panels are rebuilt after the parity build (X-35) to decision 109: a status mark beside the figure instead of a word line, no repeated numbers, no "Opens" line, run time in a panel tooltip, and no vertical scroll on a small laptop screen.
 - **Open decision:** None.
 
 **X-23 CURRENT** · Launch
@@ -181,7 +181,7 @@ Approved by Brian Magazu on 9 Nov 2026. Worker 23.1, pull request 148 (main c856
 
 None.
 
-**X-34 REFINE** · Launch
+**X-34 CURRENT** · Launch
 
 **Status source:** Explicit (Brian Magazu, 9 Nov 2026), IntoFocus AI Brand Book V2
 
@@ -203,11 +203,33 @@ Client surfaces use only brand book colors. Every status color carries a mark an
 
 **Evidence**
 
-Approved by Brian Magazu on 9 Nov 2026. Worker 23.1, pull request 148 (main c8561cb): the brand palette in dark and light themes, one ice-blue accent, Oxblood, Champagne, and Pine with a mark and a word (StatusMark), status colors off buttons, links, tabs, the version badge, and channel chips, and a flat map. REFINE until view pies and charts use the chart tokens and every status figure uses StatusMark. Worker 24.3 (PR 152, main ca22e8a) and worker 24.4 (PR 151, main f1df1f5): Catalog Health and AI Search follow the chart and status rules; other views to follow.
+Approved by Brian Magazu on 9 Nov 2026. Worker 23.1, pull request 148 (main c8561cb): the brand palette in dark and light themes, one ice-blue accent, Oxblood, Champagne, and Pine with a mark and a word (StatusMark), status colors off buttons, links, tabs, the version badge, and channel chips, and a flat map. REFINE until view pies and charts use the chart tokens and every status figure uses StatusMark. Worker 24.3 (PR 152, main ca22e8a) and worker 24.4 (PR 151, main f1df1f5): Catalog Health and AI Search follow the chart and status rules; other views to follow. Worker 27.13 (PR 208, main 97e006e), approved 17 Nov 2026: every status figure on every tab, the minimal view and the deck carries a mark and a word for Fender and Ledlenser; `npm run lint:status` and `e2e/status-marks.spec.ts` enforce brand colors and marks.
 
 **Open decision**
 
 None. Status words are Poor, Fair, and Good where a figure has no word of its own; the FDD's own words stay where they exist.
+
+**X-35 TARGET** · Launch
+
+**Status source:** Explicit (Brian Magazu, 17 Nov 2026, decisions 105 and 106)
+
+- **Current:** Fender and Ledlenser views differ in 42 places (docs/client-parity-audit.md): hand-written per-client content, code that branches on the client name with Ledlenser as the fallback, and data only one client has. The client list is fixed in code.
+- **Desired:** Every client gets the same views from one template. Client differences come only from a client settings record (repo file now, database table with X-16) and the client's own data. No client inherits another client's sites, fields, wording or categories. A missing input shows the same layout with Not available*.
+- **User value:** A new client's dashboard is ready in hours, and every client sees the same product.
+- **Acceptance:** Adding a client takes a settings record and a logo, with no code change. An automated test loads a made-up third client (for example a fishing-rod brand) and fails if any guitar or flashlight wording, site or data appears, or if any view's layout differs from the other clients'.
+- **Evidence:** Audit by worker 28.8 (PR 217, main 5cb722d).
+- **Open decision:** None.
+
+**X-36 TARGET** · Launch
+
+**Status source:** Explicit (Brian Magazu, 17 Nov 2026, decision 110)
+
+- **Current:** Several tabs (Amazon Specs and Amazon A+ Matrix at least) put one or two hero cards on a row with empty space beside them and push notes and tables below, so a small laptop screen needs a long scroll to reach the content.
+- **Desired:** One layout rule for every tab: hero cards line up from the top left, notes fill the space beside them, and the main table starts within the first screen at 1280 by 720.
+- **User value:** People see what they came for without scrolling past blank space.
+- **Acceptance:** At 1280 by 720, on every tab for every client, no hero row leaves more than a third of its width empty, and each tab's main table or chart starts above the fold. Screenshots of every tab for Fender and Ledlenser in the pull request.
+- **Evidence:** Brian Magazu's screenshots of Amazon Specs and Amazon A+ Matrix, 17 Nov 2026.
+- **Open decision:** None.
 
 **X-07 CURRENT** · Launch
 
@@ -217,7 +239,7 @@ None. Status words are Poor, Fair, and Good where a figure has no word of its ow
 - **Desired:** Keep. Never native title on definition marks.
 - **User value:** Jargon is explainable without a glossary page.
 - **Acceptance:** MAP and similar terms use data-ifai-tooltip-\* attributes.
-- **Evidence:** Verified Oct 20 (Figure 2).
+- **Evidence:** Verified Oct 20 (Figure 2). PR 197 (main 9905642), approved 16 Nov 2026: map, bubbles and satellites in brand colors with StatusMark glyphs; ice blue only on hover and selection; glow removed.
 - **Open decision:** None.
 
 **X-08 CURRENT** · Launch
@@ -277,7 +299,7 @@ None. Status words are Poor, Fair, and Good where a figure has no word of its ow
 - **Evidence:** Checked-page links desktop-verified 22 Oct 2026 on preview PR 45, commit 931cc3f, Worker 8.6, and approved by Brian Magazu. Formula trails remain blocked by R-06.
 - **Open decision:** None.
 
-**X-25 REFINE** · Launch
+**X-25 CURRENT** · Launch
 
 **Status source:** Explicit meeting
 
@@ -285,7 +307,7 @@ None. Status words are Poor, Fair, and Good where a figure has no word of its ow
 - **Desired:** Partial figure → asterisk + tooltip (missing inputs, coverage, source, last check, effect). Absent inputs → “Not available\*”.
 - **User value:** Incomplete data cannot pose as full intelligence.
 - **Acceptance:** No silent mix of actual and modeled amounts.
-- **Evidence:** Approved by Brian Magazu on 9 Nov 2026. Worker 23.1, pull request 148 (main c8561cb): a shared partial-figure helper and asterisk tooltip naming what is missing, the coverage, the source, the last check, and the effect; a map figure whose read failed reads Not available\* and names the read. REFINE until the stale-data trigger is built on the decided schedules and the views use the helper. Worker 24.4, pull request 151 (main f1df1f5): AI Search applies the stale-data limit of 6 days (AI_SEARCH_STALE_AFTER_DAYS in lib/ai-search/stale.ts). It is not yet on the map bubbles or Minimal. Workers 25.15, 25.18, 25.20, pull request 177 (main fa70cd6), approved 11 Nov 2026: the asterisk counts stale rows against Watson's recheck intervals on retail, Out of Stock, specs, A+, AI Readiness, map bubbles, Minimal, and Briefing; tooltips are one lead line plus the last check and stay inside the screen. Pull request 184, applied to production 11 Nov 2026 (migration 20261111222745): canvas_retail_listings has catalog_checked_at and canvas_listing_sales_loss_v2 has keepa_checked_at, for Fender and Ledlenser (decisions 68 and 73). Stays REFINE until the Splintered Listings and Out of Stock asterisks read them (worker 26.4).
+- **Evidence:** Approved by Brian Magazu on 9 Nov 2026. Worker 23.1, pull request 148 (main c8561cb): a shared partial-figure helper and asterisk tooltip naming what is missing, the coverage, the source, the last check, and the effect; a map figure whose read failed reads Not available\* and names the read. REFINE until the stale-data trigger is built on the decided schedules and the views use the helper. Worker 24.4, pull request 151 (main f1df1f5): AI Search applies the stale-data limit of 6 days (AI_SEARCH_STALE_AFTER_DAYS in lib/ai-search/stale.ts). It is not yet on the map bubbles or Minimal. Workers 25.15, 25.18, 25.20, pull request 177 (main fa70cd6), approved 11 Nov 2026: the asterisk counts stale rows against Watson's recheck intervals on retail, Out of Stock, specs, A+, AI Readiness, map bubbles, Minimal, and Briefing; tooltips are one lead line plus the last check and stay inside the screen. Pull request 184, applied to production 11 Nov 2026 (migration 20261111222745): canvas_retail_listings has catalog_checked_at and canvas_listing_sales_loss_v2 has keepa_checked_at, for Fender and Ledlenser (decisions 68 and 73). Stays REFINE until the Splintered Listings and Out of Stock asterisks read them (worker 26.4). PR 194 (main 2347c6a), approved 16 Nov 2026: Splintered Listings and Out of Stock use the per-row check times from PR 184. Open: the Summary division table, to be removed (decision 94). The Summary division table was removed in PR 203 (main 4c6c0a6, decision 94), which closes the last open item.
 - **Open decision:** None. Decided by Brian Magazu on 9 Nov 2026: a figure gets an asterisk when a filter narrows it, it covers part of its population, an input read failed, or its data is older than twice its normal check schedule. Normal schedules, for now: AI Search every 2 to 3 days; Buy Box, Keepa, and MAP prices daily; spec and Findability checks weekly.
 
 **X-12 CURRENT** · Launch
@@ -342,7 +364,7 @@ None. Status words are Poor, Fair, and Good where a figure has no word of its ow
 - **Desired:** Tenant partition before the first real client.
 - **User value:** Client data stays isolated.
 - **Acceptance:** No cross-tenant rows in browser-selectable views. Shared reference data (for example site-type labels) holds only facts about the public site, never anything drawn from another client's answers, listings or prompts. Every per-client list, count and export, staff screens included, filters to that client's own data. An automated test loads each client and checks that no other client's domains, ASINs or prompts appear (added by Brian Magazu, 12 Nov 2026, decision 84).
-- **Evidence:** Verified single brand. On 4 Nov 2026 Brian Magazu confirmed Fender and Ledlenser are beta dashboards on real catalogs, not clients yet, so separation waits for the first real client and the dashboards stay open without a login.
+- **Evidence:** Verified single brand. On 4 Nov 2026 Brian Magazu confirmed Fender and Ledlenser are beta dashboards on real catalogs, not clients yet, so separation waits for the first real client and the dashboards stay open without a login. Hold lifted by Brian Magazu on 17 Nov 2026 (decision 105); Watson is building logins and separation, with shared tables and a client column.
 - **Open decision:** None.
 
 **X-17 CURRENT** · Launch
@@ -356,7 +378,7 @@ None. Status words are Poor, Fair, and Good where a figure has no word of its ow
 - **Evidence:** Verified absent on opened tabs Oct 20.
 - **Open decision:** None.
 
-**X-18 REFINE** · Launch
+**X-18 CURRENT** · Launch
 
 **Status source:** Explicit
 
@@ -364,7 +386,7 @@ None. Status words are Poor, Fair, and Good where a figure has no word of its ow
 - **Desired:** Canonical phrases designated by Brian are not paraphrased by assistants.
 - **User value:** The room hears one name.
 - **Acceptance:** Rename pass follows Brian’s confirmed list; unclear headings get self-explanatory names.
-- **Evidence:** Approved by Brian Magazu on 9 Nov 2026. Worker 23.1, pull request 148 (main c8561cb): the map reads Splintered Listings, the Roadmap bubble and breadcrumb read Roadmap, and its tab reads 30-60-90 Days. REFINE until each view's panels use the decided names. Worker 24.3 (PR 152, main ca22e8a) and worker 24.4 (PR 151, main f1df1f5): Catalog Health and AI Search panel names follow the decided list; other views to follow.
+- **Evidence:** Approved by Brian Magazu on 9 Nov 2026. Worker 23.1, pull request 148 (main c8561cb): the map reads Splintered Listings, the Roadmap bubble and breadcrumb read Roadmap, and its tab reads 30-60-90 Days. REFINE until each view's panels use the decided names. Worker 24.3 (PR 152, main ca22e8a) and worker 24.4 (PR 151, main f1df1f5): Catalog Health and AI Search panel names follow the decided list; other views to follow. Workers 27.13, 28.4, 28.7 (PR 208, main 97e006e), approved 17 Nov 2026 (decisions 102, 104): canonical figure names in exact title case on every tile, table and CSV header, tooltip and the deck, for Fender and Ledlenser; unclear headings renamed.
 - **Open decision:** None. Decided by Brian Magazu on 9 Nov 2026: Unbranded SOV becomes Unbranded Discovery; Splintered bundles becomes Splintered Listings everywhere, since splintering may apply to more than bundles for other clients; the MAP tab becomes MAP Leakage; Brand Consideration becomes Branded Consideration; the roadmap is Roadmap and its tab is 30-60-90 Days; a radar label reads like Yamaha leads Acoustics. Nothing else is renamed. Client copy follows the brand book voice: no contractions, emojis, or em dashes; buttons are a verb plus an object.
 
 **X-19 CURRENT** · Launch

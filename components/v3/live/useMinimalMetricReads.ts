@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   resolveAmazonFieldTotals,
   sumAmazonFieldTotals,
@@ -40,7 +40,9 @@ export function useStockLossRead(): StockLossRead {
  * the Amazon Specs tab takes over the spec rows, read with only the columns it needs.
  */
 export function useAmazonFieldTotals(m: CanvasMetricsRow | null): AmazonFieldTotals | null {
-  const stored = m ? resolveAmazonFieldTotals(m, null) : null;
+  // Memoized: a fresh object each render changed the canvas spec's inputs, so every re-render
+  // (each tour step, each hover) rebuilt the whole spec, about a second of main-thread work.
+  const stored = useMemo(() => (m ? resolveAmazonFieldTotals(m, null) : null), [m]);
   const needRows = m != null && stored == null;
   const [fromRows, setFromRows] = useState<AmazonFieldTotals | null>(null);
 

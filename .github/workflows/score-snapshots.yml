@@ -1,0 +1,61 @@
+name: Weekly score save
+
+# Decision 94: save each client's AI Consensus, Foundation, Commerce, and Actuation scores once a
+# week, for the "Scores over time" chart on Summary -> Performance. The scores are computed with the
+# dashboard's own code (scripts/save-score-snapshots.ts) and written through
+# public.canvas_score_snapshot_save.
+#
+# Mondays 18:17 UTC: 10:17 Pacific in standard time, 11:17 in daylight time.
+# Run it now from the Actions tab with "Run workflow".
+
+on:
+  schedule:
+    - cron: "17 18 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: score-snapshots
+  cancel-in-progress: false
+
+jobs:
+  save:
+    name: Save this week's scores
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      SCORE_SNAPSHOT_DB_URL: ${{ secrets.SCORE_SNAPSHOT_DB_URL }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+    steps:
+      - name: Check the database secret
+        id: secret
+        run: |
+          if [ -z "$SCORE_SNAPSHOT_DB_URL" ]; then
+            echo "SCORE_SNAPSHOT_DB_URL is not set, so no scores were saved this week. Add the repository secret to turn the weekly save on."
+            echo "::notice title=Weekly score save skipped::SCORE_SNAPSHOT_DB_URL is not set. No scores were saved."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v4
+        if: steps.secret.outputs.ready == 'true'
+      - uses: actions/setup-node@v4
+        if: steps.secret.outputs.ready == 'true'
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Install psql
+        if: steps.secret.outputs.ready == 'true'
+        run: command -v psql >/dev/null || (sudo apt-get update -q && sudo apt-get install -y -q postgresql-client)
+      - run: npm ci
+        if: steps.secret.outputs.ready == 'true'
+      - name: Compute and save the scores
+        if: steps.secret.outputs.ready == 'true'
+        run: >-
+          node --experimental-strip-types
+          --import ./scripts/register-alias.mjs
+          --import ./scripts/register-ts-extensions.mjs
+          scripts/save-score-snapshots.ts

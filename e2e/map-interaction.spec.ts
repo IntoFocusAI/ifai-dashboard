@@ -31,9 +31,26 @@ function frames(page: Page) {
   return page.evaluate(() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))));
 }
 
+/** A point over no bubble at this viewport, where the pointer waits between bubbles. */
+async function parkingSpot(page: Page) {
+  return page.evaluate(() => {
+    const { innerWidth: w, innerHeight: h } = window;
+    const candidates = [[640, 700], [w * 0.5, h - 12], [12, h - 12], [w - 12, h - 12], [12, 12], [w * 0.5, 12]];
+    for (const [x, y] of candidates) {
+      const hit = document.elementFromPoint(x, y);
+      if (hit && !hit.closest("[data-graph-node-id]")) return { x, y };
+    }
+    throw new Error("no point on the map is clear of bubbles");
+  });
+}
+
+// Only the four data bubbles open side cards.
+const CARD_BUBBLES = ["spoke-retail", "spoke-aeo", "spoke-specs", "spoke-competitors"];
+
 test.describe("map hover", () => {
   test("pointing at a bubble opens its signal slots in the same frame", { tag: "@1440" }, async ({ canvas, page }) => {
-    await page.mouse.move(640, 700);
+    const park = await parkingSpot(page);
+    await page.mouse.move(park.x, park.y);
     // In the frame the pointer enters a bubble, record which slots are already on screen.
     await page.evaluate(() => {
       const w = window as unknown as { __arrivals: { id: string; source: string | null }[] };
@@ -55,12 +72,16 @@ test.describe("map hover", () => {
     for (const id of MAIN_BUBBLES) {
       const at = await center(canvas, id);
       await page.mouse.move(at.x, at.y);
-      await page.mouse.move(640, 700);
+      await page.mouse.move(park.x, park.y);
       await page.waitForTimeout(450); // past the hover rest, so the next bubble is where it was measured
     }
     const arrivals = await page.evaluate(() => (window as unknown as { __arrivals: { id: string; source: string | null }[] }).__arrivals);
     expect(arrivals.map((arrival) => arrival.id)).toEqual(MAIN_BUBBLES);
     for (const [index, arrival] of arrivals.entries()) {
+      if (!CARD_BUBBLES.includes(arrival.id)) {
+        expect(arrival.source, `${arrival.id} should show no cards`).toBeNull();
+        continue;
+      }
       expect(arrival.source, `${arrival.id} had no slots in its first frame`).not.toBeNull();
       if (index > 0) expect(arrival.source, `${arrival.id} still showed the last bubble's slots`).not.toBe(arrivals[index - 1].source);
     }
@@ -221,7 +242,7 @@ test.describe.skip("custom cursor", () => {
   });
 
   test("only one cursor shows, and the reticle stacks above every overlay", async ({ canvas, page }) => {
-    const points = [await center(canvas, "hub"), await center(canvas, "spoke-retail"), { x: 1100, y: 20 }];
+    const points = [await center(canvas, "spoke-retail"), await center(canvas, "spoke-aeo"), { x: 1100, y: 20 }];
     await page.mouse.move(points[0].x, points[0].y);
     await expect(page.locator("[data-hub-slots]")).toBeVisible();
     const slot = (await page.locator(".hub-slot").first().boundingBox())!;

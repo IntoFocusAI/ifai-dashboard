@@ -1,10 +1,10 @@
-import { loadPrompts, type EditablePrompt } from "@/lib/ai-search/prompt-editor";
-import { activeClient } from "@/lib/client/active-client";
+import type { EditablePrompt } from "@/lib/ai-search/prompt-editor";
 import { PROMPTS_EXPORT_TABLE } from "@/lib/export/tables";
 import type { ExportRow, SourceRead } from "@/lib/export/types";
 import { READ_NOT_AVAILABLE } from "@/lib/fender-canvas/canvas-reads";
 import { formatCheckedAt } from "@/lib/fender-canvas/featured-offer-copy";
 import { formatInt } from "@/lib/fender-canvas/format";
+import { loadPromptList, promptDisplayText } from "@/lib/prompts/prompt-list";
 
 export { PROMPTS_EXPORT_TABLE };
 
@@ -16,7 +16,7 @@ export function promptCells(prompt: EditablePrompt): string[] {
     prompt.prompt_key,
     prompt.category,
     prompt.prompt_kind === "probe" ? "Fact check" : "Shopping",
-    prompt.prompt_text,
+    promptDisplayText(prompt.prompt_text),
     prompt.active ? "Asked" : "Removed",
   ];
 }
@@ -27,11 +27,13 @@ export function promptRows(prompts: readonly EditablePrompt[]): ExportRow[] {
   return ordered.map((prompt) => ({ key: prompt.prompt_key, cells: promptCells(prompt) }));
 }
 
-/** Download CSV for the prompt list, read again with public.ai_prompts_list (X-10). */
+/**
+ * Download CSV for the prompt list, read again for the brand on screen (X-10, decision 89): Fender
+ * through public.ai_prompts_list, every other client from its own canvas_ai_prompts view.
+ */
 export async function loadPromptsSource(): Promise<SourceRead> {
-  if (!activeClient().promptsEditable) return { ok: false, message: "This brand has no editable prompt list." };
   try {
-    const { prompts } = await loadPrompts();
+    const { prompts } = await loadPromptList();
     const asked = prompts.filter((p) => p.active).length;
     const removed = prompts.length - asked;
     const newest = prompts

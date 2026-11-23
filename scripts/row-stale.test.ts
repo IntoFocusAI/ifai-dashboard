@@ -27,8 +27,8 @@ test("a row is stale after twice its recheck interval, not at it", () => {
   assert.ok(read(2.1, 1));
   assert.equal(read(4, 2), null);
   assert.ok(read(4.1, 2));
-  assert.equal(read(6, RECHECK_DAYS.musiciansFriend), null);
-  assert.ok(read(34, RECHECK_DAYS.musiciansFriend));
+  assert.equal(read(6, 3), null);
+  assert.ok(read(34, 3));
   assert.equal(read(14, RECHECK_DAYS.weekly), null);
   assert.ok(read(15, RECHECK_DAYS.weekly));
 });
@@ -88,7 +88,7 @@ test("Buy Box and suppression: featured_offer_checked_at, stale after 2 days", (
   assert.equal(reading.stale?.missing, "1 of 2 listings has no Buy Box check in 2 days");
 });
 
-test("MAP leakage: Amazon 1 day, Walmart 1 day for Fender and 2 days for Ledlenser, Musician's Friend 3 days", () => {
+test("MAP Leakage: Amazon 1 day, Walmart 1 day for Fender and 2 days for Ledlenser, Musician's Friend 3 days", () => {
   const row = (wmtAge: number) => ({
     asin: "A",
     map_price: 100,
@@ -128,15 +128,15 @@ test("channel lines carry a per-channel note from each channel's own listings", 
     assert.equal(stale.Amazon, null);
     assert.equal(stale.Walmart, null);
     assert.equal(stale["Musician's Friend"]?.missing, "1 of 2 listings has no Musician's Friend price check in 6 days");
-    assert.match(channelReadingNote("Musician's Friend", { walmartMissing: 0, channelStale: stale }) ?? "", /^1 of 2 listings has no Musician's Friend price check in 6 days\./);
-    assert.equal(channelReadingNote("Amazon", { walmartMissing: 0, channelStale: stale }), null);
+    assert.match(channelReadingNote("Musician's Friend", { channelStale: stale }) ?? "", /^1 of 2 listings has no Musician's Friend price check in 6 days\./);
+    assert.equal(channelReadingNote("Amazon", { channelStale: stale }), null);
   } finally {
     resetActiveClientForTests(null);
   }
 });
 
-test("Splintered Listings for sale now: each live bundle's featured_offer_checked_at, stale after 2 days", () => {
-  const bundle = (asin: string, state: string | null, at: string | null) => ({
+test("Splintered Listings: each live bundle's catalog_checked_at and featured_offer_checked_at, stale after 2 days", () => {
+  const bundle = (asin: string, state: string | null, at: string | null, catalogAt: string | null = ago(0.5)) => ({
     asin,
     model_name: asin,
     title: asin,
@@ -146,12 +146,27 @@ test("Splintered Listings for sale now: each live bundle's featured_offer_checke
     is_bundle: true,
     featured_offer_state: state,
     featured_offer_checked_at: at,
+    catalog_checked_at: catalogAt,
   });
   const reading = unnestedBundlesFinding(
-    [bundle("A", "present", ago(0.1)), bundle("B", "withheld", ago(5)), bundle("C", "no_active_offer", ago(60))],
+    [bundle("A", "present", ago(0.1)), bundle("B", "withheld", ago(5)), bundle("C", "no_active_offer", ago(60), ago(60))],
     { now: NOW },
   );
   assert.equal(reading.stale?.missing, "1 of 2 listings has no Buy Box check in 2 days", "a bundle that is not for sale is not in the population");
+
+  const catalog = unnestedBundlesFinding(
+    [bundle("A", "present", ago(0.1), ago(1.9)), bundle("B", "present", ago(0.1), ago(3)), bundle("C", "present", ago(0.1), null)],
+    { now: NOW },
+  );
+  assert.equal(catalog.stale?.missing, "2 of 3 listings have no catalog check in 2 days", "a bundle with no stored catalog time is stale");
+  assert.equal(catalog.stale?.source, "canvas_retail_listings");
+  assert.equal(catalog.stale?.lastCheck, ago(1.9));
+
+  const both = unnestedBundlesFinding([bundle("A", "present", ago(3), ago(3)), bundle("B", "present", ago(0.1), ago(0.1))], { now: NOW });
+  assert.equal(both.stale?.missing, "1 of 2 listings has no catalog check in 2 days\n1 of 2 listings has no Buy Box check in 2 days");
+
+  const current = unnestedBundlesFinding([bundle("A", "present", ago(0.1), ago(1))], { now: NOW });
+  assert.equal(current.stale ?? null, null);
 });
 
 test("Amazon specs: each checked listing's spec_readiness.checked_at, stale after 14 days", () => {
@@ -161,7 +176,13 @@ test("Amazon specs: each checked listing's spec_readiness.checked_at, stale afte
   assert.equal(amazonSpecGapsFinding([spec("A", true, ago(14))], { now: NOW }).stale ?? null, null);
 });
 
-function stockRow(asin: string, source: "smartscout" | "brand_reported", snapshot: string | null, through: string | null): StockLossRow {
+function stockRow(
+  asin: string,
+  source: "smartscout" | "brand_reported",
+  snapshot: string | null,
+  through: string | null,
+  keepaCheckedAt: string | null = through ? `${through}T01:00:00Z` : null,
+): StockLossRow {
   return {
     asin,
     title: asin,
@@ -172,6 +193,7 @@ function stockRow(asin: string, source: "smartscout" | "brand_reported", snapsho
     smartscout_monthly_revenue: null,
     smartscout_ttm_revenue: null,
     history_through: through,
+    keepa_checked_at: keepaCheckedAt,
     in_stock_days_30: null,
     oos_days_30: 1,
     oos_days_90: 2,
@@ -190,7 +212,7 @@ function stockRow(asin: string, source: "smartscout" | "brand_reported", snapsho
   };
 }
 
-test("Out of Stock: SmartScout snapshot 7 days (stale after 14), Keepa history 1 day (stale after 2)", () => {
+test("Out of Stock: SmartScout snapshot 7 days (stale after 14), Keepa load 1 day (stale after 2)", () => {
   const rows = [
     stockRow("A", "smartscout", "2026-11-10", "2026-11-11"),
     stockRow("B", "smartscout", "2026-10-20", "2026-11-11"),
@@ -204,4 +226,14 @@ test("Out of Stock: SmartScout snapshot 7 days (stale after 14), Keepa history 1
   assert.equal(lostSalesPartial(current, sumLostSales(current, 365), NOW), null);
   const brand = [stockRow("A", "brand_reported", null, "2026-11-11")];
   assert.equal(lostSalesStale(brand, 365, NOW), null, "a brand-reported source has no SmartScout snapshot to age");
+});
+
+test("Out of Stock: the Keepa age is keepa_checked_at, not the last history day", () => {
+  const loadedOld = [stockRow("A", "brand_reported", null, "2026-11-11", "2026-11-08T01:00:00Z")];
+  assert.match(lostSalesStale(loadedOld, 365, NOW)?.missing ?? "", /^1 of 1 listing has no Keepa update in 2 days$/);
+  assert.equal(lostSalesStale(loadedOld, 365, NOW)?.lastCheck, "2026-11-08T01:00:00.000Z");
+  const loadedNow = [stockRow("A", "brand_reported", null, "2026-11-05", "2026-11-11T01:00:00Z")];
+  assert.equal(lostSalesStale(loadedNow, 365, NOW), null, "a recent load with an older last history day is not stale");
+  const never = [stockRow("A", "brand_reported", null, "2026-11-11", null)];
+  assert.match(lostSalesStale(never, 365, NOW)?.missing ?? "", /no Keepa update in 2 days/, "no stored load time counts as stale");
 });

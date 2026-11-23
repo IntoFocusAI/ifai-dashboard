@@ -35,7 +35,7 @@ export const CLASSIFIED_STATES: readonly FeaturedOfferState[] = [
 
 export const FEATURED_OFFER_STATE_LABELS = {
   present: "Buy Box present",
-  withheld: "Buy Box withheld",
+  withheld: "Buy Box Withheld",
   no_active_offer: "No active offer",
   check_failed: "Check failed",
   not_checked: "Not checked",

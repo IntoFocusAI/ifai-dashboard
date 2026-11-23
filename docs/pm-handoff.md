@@ -24,8 +24,10 @@ greater than the PM number in State. Your workers are that number .1, .2,
    - Add one row per worker to `docs/fdd/changelog.md` (date, change, reason,
      reference).
    - Bump the version on the first line of `docs/fdd/README.md` and
-     `docs/tdd/README.md` to the last approved worker label, and update
-     the TDD where the build changed it.
+     `docs/tdd/README.md` to the last approved worker label, and set
+     `DOCUMENTATION_VERSION` in `lib/fender-canvas/build-canvas-spec.tsx`
+     to the same label (it is the header badge; X-26). Update the TDD
+     where the build changed it.
    - Run `python3 scripts/fdd-register.py` and commit the register with the
      rows.
    Workers may propose these edits in their own pull request body; the PM
@@ -33,7 +35,9 @@ greater than the PM number in State. Your workers are that number .1, .2,
 2. **Plan and build.** Send the Phase 0 plan in one message. Wait for "go
    ahead." Then brief and run workers as described below.
 3. **Hand off.** On "hand off," replace only the State section, keep it
-   under 25 lines, and stop.
+   under 40 lines, and stop. Link, don't repeat: a plan that lives in its
+   own doc gets one line and the doc's path. Every queue item names where
+   to start (a PR, file or doc) and, if blocked, why and on whom.
 
 Preserve every DECISION and LATER row unless Brian changes it. The header
 title follows FDD X-26. X-20 stays TARGET.
@@ -96,8 +100,7 @@ Brian reviews a view only in its final intended form.
 1. Completion map. Run `python3 scripts/fdd-register.py --open`. Give each
    open row one class, grouped by view. BUILD: buildable now. DECISION: needs
    Brian. BLOCKED: needs data, the collector, Brian Watson, Ryan, or auth;
-   name the owner and what is missing. HELD: his held list, PR 110 (X-22),
-   and the dollar formulas.
+   name the owner and what is missing. HELD: his held list.
 2. Decisions. Every DECISION row, and any rule the FDD does not give that a
    build would need. For each, say what he decides, what the screen shows
    under the recommendation and the alternative, and why.
@@ -161,31 +164,44 @@ The brand book, `docs/brand/IntoFocus_AI_Brand_Book_V2.pdf`, is a standard
 below the FDD. Where the two conflict, ask Brian.
 
 Held, until he says otherwise: A-06, A-02, R-06, R-11, A-04, A-07, N-07,
-LATER rows, and the dollar formulas. X-15, X-16, and R-19 are held until
-the rest of the launch build is complete (decision 46).
+LATER rows. Dollar formulas are unparked (decision 111; see AGENTS.md). R-19 is held until the rest of the
+launch build is complete (decision 46). X-15 and X-16 are released
+(decision 105; Watson is building them). Brian owns all on-screen wording
+(decision 108). Every client gets the same views from one template; no
+code may branch on a client name (X-35, decision 105).
 
 ## State
 
-Replace this whole section on handoff. Keep it under 25 lines. The FDD wins
-if this block is stale.
+Replace this whole section on handoff. Keep it under 40 lines. The FDD wins.
 
-- PM26 handed off 12 Nov 2026; next is PM27. Docs at 26.10. Launch CURRENT:
-  69 of 94 (A-11 added). Decisions 74 to 88 are PM26's.
-- Finish in order: 26.13 (fast window reads, draft PR into 190's branch; its
-  migration is approved: dry-run rolled back, apply, record on the PR); then
-  190 (window everywhere; merge only once AI figures load in about 5 s); 191
-  (score cards); a fix round on 189 (Sites to review, decisions 84, 85).
-- Queue: 26.15 Citation Ecosystem filters (decision 86); 26.6 map colors, red
-  "Amazon specs complete" (bands 98/95), radar "X leads Y", retire "Other
-  retailers" read (82), split CanvasShell/GraphPrimitives; 26.4 asterisks (PR
-  184 merged; review Ledlenser AI figures); weekly Amazon page scrape (74);
-  SC-03 spec (77, 78; Consensus weights become 40/40/20, scores shift).
-- Brian: review docs/d05-field-lists.md; R-15 after Watson; R-19; "Need help?"
-  routing; held rows (leadership doc claude.ai/artifact/TXZ217nzUhNQFiuJyJEAUm,
-  its comments reach PM26 only). Up to $3,000 next week if Marc approves;
-  report at $1,000 and $2,000.
-- Watson: PR 42; AI-Search slowness and Perplexity failures; cause of the 11
-  Nov outage (database upgraded 12 Nov); PR 110 wording; R-09; R-10; X-29;
-  X-15/X-16. Amazon SP-API via Apexti (Ryan) pending since 15 Oct.
-- Browser tests: at most 2 parallel browsers per worker. Workers confirm the
-  Netlify preview builds before handing back. Unsubscribe auto-subscribed PRs.
+- PM29 handed off 18 Nov 2026; next is PM30. Docs and header badge 29.28. Launch
+  CURRENT 76 of 102. Decisions 115 to 124 are PM29's. Up to 5 workers (decision 124).
+- Brian presents to Fender's former CMO and Ledlenser USA's owners on 19 Nov; no
+  building that morning, Watson paused. Freeze held from 4 pm 18 Nov.
+- Merged 18 Nov: 234 benchmarks + register; 235/236 estimate inputs, generated
+  Briefing/Opportunity (H-09 CURRENT); 239 dollars on Action Items and tabs; 242 MAP
+  N of carried; 243 Actuation items; 245 Buy Box by cause; 246 AI lines 8-9 (light
+  E5); 250/252 demo-sweep fixes. Close-out in this handoff PR.
+- Map vs tabs (worker 29.29, 18 Nov): no mismatch on main; map and tabs share
+  useMapAiSearch. FDD A-02 text ("published run plus API run") is stale; map's
+  Branded Consideration lacks the tab's stale asterisk (93.8% vs 93.8%*). Both minor.
+- Queue, in order:
+  1. After the demo: Brian's feedback from the two meetings.
+  2. Demo sweep leftovers: one "fix first" order across Priorities, Action Items,
+     Roadmap and deck (item 5); active offers 1,004/1,005/1,006; missing specs 524 vs
+     519; separators on fact-check and map hover. Report:
+     docs/demo-readiness.md (18 Nov sweep).
+  3. Roadmap gap audit recs 4 to 8 (docs/roadmap-gap-audit.md); decision 123.
+  4. "No MAP" client setting (decision 122) and remaining lint:clients hits; C9 runbook.
+  5. Full E5 (lines 10, 11, source split, Roadmap dollars; Fable for allocation),
+     E6 onboarding inputs, E7 value achieved (additive migration).
+  6. D-12 miscategorized listings (Brian's strings-as-guitar example), S-05, X-22
+     hover panels (with Minimal /100), X-36 residual.
+- Action Items CSV (server route) lacks the Buy Box cause rows, A+ row and dollars.
+- Ledlenser: Unbranded Discovery now reads 31.6% (426 of 1,348) vs 3.8% in the
+  proposal; likely a larger question set; confirm with Watson.
+- Watson: Walmart drop-off and bundle search (decision 122); D-05 field lists;
+  X-15/X-16 logins; staff sign-in (blocks recording Actuation programs).
+- Slack: DM Watson from Brian's account, italics, signed "sent by Claude for Brian"
+  (U0BUPGZ3ADN). Leadership doc TXZ217nzUhNQFiuJyJEAUm: Claude Doc, PM-owned.
+- At most 2 browsers per worker e2e run. Unsubscribe auto-subscribed worker PRs.

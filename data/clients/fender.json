@@ -1,0 +1,70 @@
+{
+  "client_key": "fender",
+  "is_default": true,
+  "set_aside_key": "fmic",
+  "display_name": "Fender",
+  "legal_name": "Fender Musical Instruments Corporation",
+  "data_schema": "public",
+  "column_naming": "fender",
+  "logo_src": "/image.png",
+  "lead_brand_label": "Fender/Squier",
+  "lead_brand_phrase": "Fender or Squier",
+  "brand_name_terms": ["fender", "squier"],
+  "product_line_terms": ["stratocaster", "telecaster", "acoustasonic", "jaguar", "mustang", "precision bass", "jazz bass", "affinity"],
+  "portfolio_brands": ["Fender", "Squier", "Jackson", "EVH", "Gretsch"],
+  "owned_domains": ["fender.com", "fmicassets.com", "squier.com", "gretschguitars.com", "jacksonguitars.com", "charvel.com", "evhgear.com"],
+  "brand_site_label": "fender.com",
+  "regional_site_rule": false,
+  "seller_type": "partner_led",
+  "brand_seller_ids": [],
+  "default_authorized_partners": ["Austin Bazaar", "GearTree"],
+  "amazon_brand_names": ["Fender", "Squier"],
+  "product_types": ["GUITARS"],
+  "vertical": "music_instruments",
+  "competitors": [
+    { "name": "Yamaha", "terms": ["yamaha"], "domains": ["yamaha.com"] },
+    { "name": "Gibson", "terms": ["gibson", "les paul"], "domains": ["gibson.com"] },
+    { "name": "Epiphone", "terms": ["epiphone"], "domains": ["epiphone.com"] },
+    { "name": "Taylor", "terms": ["taylor"], "domains": ["taylorguitars.com"] },
+    { "name": "PRS", "terms": ["prs"], "domains": ["prsguitars.com"] },
+    { "name": "Ibanez", "terms": ["ibanez"], "domains": ["ibanez.com"] },
+    { "name": "Sire", "terms": ["sire"], "domains": ["sire-usa.com"] },
+    { "name": "Boss", "terms": ["boss", "katana"], "domains": ["boss.info"] },
+    { "name": "Positive Grid", "terms": ["spark"], "domains": ["positivegrid.com"] },
+    { "name": "Martin", "terms": [], "domains": ["martinguitar.com"] },
+    { "name": "Schecter", "terms": [], "domains": ["schecterguitars.com"] }
+  ],
+  "retailers": [
+    { "key": "walmart", "name": "Walmart", "recheck_days": 1 },
+    { "key": "musiciansfriend", "name": "Musician's Friend", "recheck_days": 3 }
+  ],
+  "data_sources": {
+    "ai_search": true,
+    "ai_api": true,
+    "amazon_offers": true,
+    "keepa_history": true,
+    "walmart": true,
+    "musiciansfriend": true,
+    "amazon_specs": true,
+    "amazon_sales": true,
+    "brand_site": true,
+    "brand_sheet": false
+  },
+  "collector_version_pin": "v11",
+  "prompts_editable": true,
+  "roadmap_focus_category": null,
+  "revenue_inputs": {
+    "annual_sales_usd": 1000000000,
+    "basis": "public_placeholder",
+    "source_title": "Fortune, Fender CEO interview",
+    "source_url": "https://fortune.com/2022/10/21/guitar-industry-fender-ceo-credits-diversity-players-pandemic-revival/",
+    "source_date": "21 Oct 2022",
+    "scope": "about $1B a year, global, all channels"
+  },
+  "catalog_rotation_rule": "about 90 catalog models per run, each asked once per engine, all 180 in-scope guitar and bass models every 2 runs, plus anchors p17 and p33",
+  "amazon_rank_category": "Musical Instruments",
+  "category_short_labels": {
+    "Electric Guitar Kits": "Kits",
+    "Hollow & Semi-Hollow Body": "Hollow"
+  }
+}

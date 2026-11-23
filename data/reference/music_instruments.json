@@ -1,0 +1,62 @@
+{
+  "vertical": "music_instruments",
+  "about": "Music instrument sites by kind, and each instrument brand's own website with the brand it belongs to. Facts about the public site only.",
+  "site_classes": {
+    "retailer": [
+      "sweetwater.com",
+      "guitarcenter.com",
+      "musiciansfriend.com",
+      "zzounds.com",
+      "thomann.de",
+      "thomannmusic.com",
+      "andertons.co.uk",
+      "guitarguitar.co.uk",
+      "reverb.com",
+      "samash.com",
+      "gear4music.com",
+      "americanmusical.com",
+      "pmtonline.co.uk"
+    ],
+    "editorial": [
+      "guitarworld.com",
+      "musicradar.com",
+      "premierguitar.com",
+      "guitarplayer.com",
+      "guitar.com",
+      "guitarinteractivemagazine.com",
+      "acousticguitar.com",
+      "bassplayer.com",
+      "bassmagazine.com",
+      "rollingstone.com"
+    ],
+    "community": [
+      "talkbass.com",
+      "thegearpage.net",
+      "tdpri.com",
+      "ultimate-guitar.com"
+    ],
+    "video": [],
+    "reference": [
+      "equipboard.com"
+    ]
+  },
+  "brand_sites": {
+    "fender.com": "Fender",
+    "squier.com": "Squier",
+    "yamaha.com": "Yamaha",
+    "gibson.com": "Gibson",
+    "epiphone.com": "Epiphone",
+    "taylorguitars.com": "Taylor",
+    "prsguitars.com": "PRS",
+    "ibanez.com": "Ibanez",
+    "sire-usa.com": "Sire",
+    "boss.info": "Boss",
+    "positivegrid.com": "Positive Grid",
+    "martinguitar.com": "Martin",
+    "schecterguitars.com": "Schecter",
+    "gretschguitars.com": "Gretsch",
+    "jacksonguitars.com": "Jackson",
+    "charvel.com": "Charvel",
+    "evhgear.com": "EVH"
+  }
+}

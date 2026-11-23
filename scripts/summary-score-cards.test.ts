@@ -43,7 +43,8 @@ test("the four score cards carry their titles and plain tooltips", () => {
     actuation: "AI Actuation Score",
   });
   assert.equal(SCORE_CARD_TIPS.consensus, CONSENSUS_EXPLAINER_BODY);
-  assert.match(SCORE_CARD_TIPS.actuation, /^AI Actuation is not included yet because [^.]+\.$/);
+  assert.match(SCORE_CARD_TIPS.actuation, /^AI Actuation measures the work that earns the brand citations in AI answers/);
+  assert.doesNotMatch(SCORE_CARD_TIPS.actuation, /not included|Awaiting confirmation/i);
   for (const tip of Object.values(SCORE_CARD_TIPS)) {
     const sentences = tip.split(/\.\s+/).filter(Boolean);
     assert.ok(sentences.length <= 4, tip);
@@ -55,7 +56,7 @@ test("the four score cards carry their titles and plain tooltips", () => {
   }
 });
 
-test("the weight breakdown adds up to the computed AI Consensus", () => {
+test("the weight breakdown adds up to the computed AI Consensus while an Actuation read is missing", () => {
   const consensus = consensusScore(FOUNDATION, COMMERCE);
   const rows = consensusWeightRows(consensus);
   assert.deepEqual(
@@ -64,7 +65,7 @@ test("the weight breakdown adds up to the computed AI Consensus", () => {
   );
   const [foundation, commerce, actuation] = rows;
 
-  // Weights are the ones consensusScore assigned: 40 and 40 rescaled to 50 each while Actuation is out.
+  // Weights are the ones consensusScore assigned: 40 and 40 rescaled to 50 each while Actuation did not load.
   assert.equal(foundation.weight, consensus.foundation.weight);
   assert.equal(commerce.weight, consensus.commerce.weight);
   assert.equal(foundation.weight, 50);
@@ -107,15 +108,17 @@ test("Performance has no side panel and the Consensus card opens its weights lik
   assert.match(view, /data-ifai-tooltip-desc=\{tip\}/);
   assert.doesNotMatch(view, /(?<![\w-])title=\{|(?<![\w-])title="/, "custom tooltips only");
 
-  for (const id of ["consensus", "foundation", "commerce"]) {
+  for (const id of ["consensus", "foundation", "commerce", "actuation"]) {
     assert.match(band, new RegExp(`titleTip=\\{SCORE_CARD_TIPS\\.${id}\\}`));
-    assert.match(band, new RegExp(`onToggle=\\{\\(\\) => toggle\\("${id}"\\)\\}`));
+    assert.match(band, new RegExp(`\\(\\) => toggle\\("${id}"\\)`));
   }
-  assert.match(band, /<ActuationHeroCard pillar=\{consensus\.actuation\} wide \/>/);
+  assert.doesNotMatch(band, /ActuationHeroCard|Not included/);
+  assert.match(band, /<ActuationFactorBars score=\{consensus\.actuation\.actuation\} id=\{COMPONENTS_ID\} \/>/);
   assert.match(band, /open === "consensus" \? <ConsensusWeightBreakdown consensus=\{consensus\} id=\{COMPONENTS_ID\} \/>/);
 
   assert.match(breakdown, /consensusWeightRows\(consensus\)/);
-  assert.match(breakdown, /Not included/);
+  assert.doesNotMatch(breakdown, /Not included/);
+  assert.match(breakdown, /Not available/);
   assert.match(breakdown, /StatusMark/);
   assert.ok(view.split("\n").length <= 400);
   assert.ok(breakdown.split("\n").length <= 400);

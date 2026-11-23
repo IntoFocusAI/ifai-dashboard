@@ -1,7 +1,14 @@
 import { callOutcome, cleanPrompt, type CallOutcome } from "@/lib/ai-search/run-metrics";
 import type { AiCallRow, AiCitationRow } from "@/lib/ai-search/types";
-import { activeClient } from "@/lib/client/active-client";
-import { brandOwned, isFenderClient } from "@/lib/brand-copy";
+import { activeClientSettings } from "@/lib/client/active-client";
+import { brandOwned } from "@/lib/brand-copy";
+import {
+  matchesDomain,
+  REFERENCE_SITE_CLASSES,
+  referenceBrandSites,
+  referenceDomains,
+  verticalReference,
+} from "@/lib/ai-search/reference-sites";
 import { storedSourceClass } from "@/lib/ai-search/site-types";
 import { memoByRead } from "@/lib/ai-search/read-memo";
 
@@ -91,7 +98,10 @@ export const SOURCE_CLASS_LABELS: Record<SourceClass, string> = {
   video: "Video",
   reference: "Reference and manuals",
   competitor_brand: "Competitor brand site",
-  other: "Other sites",
+  /** A vertical with no reference list cannot tell its other sites apart, so the bucket reads Not available*. */
+  get other() {
+    return verticalReference(activeClientSettings().vertical) ? "Other sites" : "Not available*";
+  },
 };
 
 export const SOURCE_CLASS_ORDER: SourceClass[] = [
@@ -105,133 +115,46 @@ export const SOURCE_CLASS_ORDER: SourceClass[] = [
   "other",
 ];
 
-/** FMIC's brand sites. Other clients use their own brand-site domains. */
-export const FMIC_OWNED_DOMAINS = ["fender.com", "fmicassets.com", "squier.com", "gretschguitars.com", "jacksonguitars.com", "charvel.com", "evhgear.com"];
-
-/** Brand-owned domains for the active client. The class keeps its fender_owned key. */
+/** Brand-owned domains for the active client (owned_domains in its settings). The class keeps its fender_owned key. */
 export function ownedDomains(): string[] {
-  return isFenderClient() ? FMIC_OWNED_DOMAINS : activeClient().brandSiteDomains;
+  return activeClientSettings().owned_domains;
+}
+
+/** Regional copies of the brand's own sites: ledlenser.co.uk, ledlenser.com.au, media.ledlenser.com. */
+function isRegionalOwnedSite(domain: string): boolean {
+  const stems = ownedDomains().map((root) => root.split(".")[0]!.replace(/[^a-z0-9-]/g, ""));
+  return stems.some((stem) => new RegExp(`(^|\\.)${stem}\\.[a-z]{2,3}(\\.[a-z]{2})?$`).test(domain));
 }
 
 /**
- * A brand-owned site, including the brand's regional sites for brand-led clients
- * (ledlenser.co.uk, ledlenser.com.au, media.ledlenser.com).
+ * A brand-owned site: one of the client's owned_domains or a subdomain of one, plus the brand's
+ * regional sites when the settings turn regional_site_rule on.
  */
 export function isOwnedDomain(domain: string): boolean {
   const d = domain.toLowerCase();
   if (ownedDomains().some((root) => matchesDomain(d, root))) return true;
-  if (isFenderClient()) return false;
-  const stems = activeClient().brandSiteDomains.map((root) => root.split(".")[0]!.replace(/[^a-z0-9-]/g, ""));
-  return stems.some((stem) => new RegExp(`(^|\\.)${stem}\\.[a-z]{2,3}(\\.[a-z]{2})?$`).test(d));
+  return activeClientSettings().regional_site_rule && isRegionalOwnedSite(d);
 }
 
-export const FENDER_CLASS_DOMAINS: Array<[SourceClass, string[]]> = [
-  [
-    "retailer",
-    [
-      "amazon.com", "amazon.co.uk", "amazon.ca", "sweetwater.com", "guitarcenter.com", "musiciansfriend.com",
-      "zzounds.com", "thomann.de", "thomannmusic.com", "andertons.co.uk", "guitarguitar.co.uk", "reverb.com",
-      "walmart.com", "bestbuy.com", "samash.com", "gear4music.com", "americanmusical.com", "pmtonline.co.uk",
-    ],
-  ],
-  [
-    "editorial",
-    [
-      "guitarworld.com", "musicradar.com", "premierguitar.com", "guitarplayer.com", "guitar.com",
-      "guitarinteractivemagazine.com", "acousticguitar.com", "bassplayer.com", "bassmagazine.com", "nytimes.com",
-      "wirecutter.com", "rollingstone.com",
-    ],
-  ],
-  ["community", ["reddit.com", "talkbass.com", "thegearpage.net", "tdpri.com", "quora.com", "ultimate-guitar.com"]],
-  ["video", ["youtube.com", "youtu.be", "vimeo.com", "tiktok.com"]],
-  ["reference", ["wikipedia.org", "manualslib.com", "manuals.plus", "equipboard.com"]],
-  [
-    "competitor_brand",
-    [
-      "yamaha.com", "gibson.com", "epiphone.com", "taylorguitars.com", "prsguitars.com", "ibanez.com",
-      "sire-usa.com", "boss.info", "positivegrid.com", "martinguitar.com", "schecterguitars.com",
-    ],
-  ],
-];
-
-/** Lighting brands' own websites and the brand each belongs to (Ledlenser's competitor set first). */
-export const LIGHTING_BRAND_SITES: Array<[string, string]> = [
-  ["petzl.com", "Petzl"],
-  ["blackdiamondequipment.com", "Black Diamond"],
-  ["fenixlighting.com", "Fenix"],
-  ["fenixlight.com", "Fenix"],
-  ["fenix-store.com", "Fenix"],
-  ["nitecore.com", "Nitecore"],
-  ["nitecorestore.com", "Nitecore"],
-  ["olight.com", "Olight"],
-  ["olightstore.com", "Olight"],
-  ["streamlight.com", "Streamlight"],
-  ["coastportland.com", "Coast"],
-  ["kleintools.com", "Klein Tools"],
-  ["milwaukeetool.com", "Milwaukee"],
-  ["acgbrands.com", "Nebo"],
-  ["nebotools.com", "Nebo"],
-  ["wubenlight.com", "Wuben"],
-  ["luxpro.com", "LuxPro"],
-  ["lupinelights.com", "Lupine"],
-  ["silvasweden.com", "Silva"],
-  ["varta-ag.com", "Varta"],
-  ["princetontec.com", "Princeton Tec"],
-  ["bioliteenergy.com", "BioLite"],
-  ["goalzero.com", "Goal Zero"],
-  ["energizer.com", "Energizer"],
-  ["maglite.com", "Maglite"],
-  ["surefire.com", "SureFire"],
-  ["acebeam.com", "Acebeam"],
-  ["armytek.com", "Armytek"],
-  ["thrunite.com", "ThruNite"],
-  ["sofirnlight.com", "Sofirn"],
-  ["zebralight.com", "Zebralight"],
-  ["dewalt.com", "DeWalt"],
-];
-
-export const LIGHTING_CLASS_DOMAINS: Array<[SourceClass, string[]]> = [
-  [
-    "retailer",
-    [
-      "amazon.com", "amazon.co.uk", "amazon.ca", "amazon.de", "amazon.com.au", "amazon.com.be", "walmart.com",
-      "homedepot.com", "lowes.com", "acehardware.com", "target.com", "bestbuy.com", "rei.com", "basspro.com",
-      "cabelas.com", "dickssportinggoods.com", "backcountry.com", "moosejaw.com", "zappos.com", "govx.com",
-      "screwfix.com", "toolstation.com", "knivesandtools.com", "flashlightworld.com", "batteryjunction.com",
-      "torchdirect.co.uk", "klium.com", "misterworker.com", "rs-online.com", "distrelec.com", "tendsupplies.com",
-      "valostore.com", "brightlightled.shop", "adventurekit.com.au", "eliteoutdoorgear.com.au", "lightertorch.com",
-      "campcrewlight.store", "clipandcarry.us", "ultralightoutdoorgear.co.uk", "zweibruder.co.uk", "ebay.com",
-    ],
-  ],
-  [
-    "editorial",
-    [
-      "1lumen.com", "zeroair.org", "zakreviews.com", "flashlightratings.com", "cleverhiker.com",
-      "switchbacktravel.com", "treelinereview.com", "outdoorgearlab.com", "gearjunkie.com", "backpacker.com",
-      "outdoorlife.com", "fieldandstream.com", "mensjournal.com", "t3.com", "techradar.com", "popularmechanics.com",
-      "bobvila.com", "nytimes.com", "wirecutter.com", "cnn.com", "livescience.com", "runnersworld.com",
-      "trailrunmag.com", "irunfar.com", "trailruntemple.com", "edc4me.com", "beamandbezel.com", "dailycarrylab.com",
-      "lumenandledger.com", "thegreatoutdoorsmag.com", "terraintechgear.com", "pewpewtactical.com",
-      "the-gadgeteer.com", "momgoescamping.com", "campingguidance.com", "outdoortechlab.com", "kitauthority.com",
-      "ovrmag.com", "findswetrust.com", "itechguides.com", "nurserypicks.com",
-    ],
-  ],
-  [
-    "community",
-    ["reddit.com", "budgetlightforum.com", "candlepowerforums.com", "quora.com", "trustpilot.com", "productreview.com.au"],
-  ],
-  ["video", ["youtube.com", "youtu.be", "vimeo.com", "tiktok.com"]],
-  ["reference", ["wikipedia.org", "manualslib.com", "manuals.plus", "device.report", "productsafety.gov.au"]],
-  ["competitor_brand", LIGHTING_BRAND_SITES.map(([domain]) => domain)],
-];
-
-/** Source-class domain lists for the brand on screen: music retail for Fender, lighting otherwise. */
-function classDomains(): Array<[SourceClass, string[]]> {
-  return isFenderClient() ? FENDER_CLASS_DOMAINS : LIGHTING_CLASS_DOMAINS;
+/** Competitor brand websites: the client's competitors' domains, then the vertical's brand websites. */
+export function competitorSiteDomains(): string[] {
+  const settings = activeClientSettings();
+  const domains = settings.competitors.flatMap((competitor) => competitor.domains);
+  for (const [domain] of referenceBrandSites(settings.vertical)) if (!domains.includes(domain)) domains.push(domain);
+  return domains;
 }
 
-function matchesDomain(domain: string, root: string) {
-  return domain === root || domain.endsWith(`.${root}`);
+/**
+ * Source-class domain lists for the brand on screen: the shared sites plus the lists for the
+ * client's vertical (data/reference/), then competitor brand websites. A vertical with no list
+ * reads only the shared sites and the client's own settings, never another vertical's list.
+ */
+export function classDomains(): Array<[SourceClass, string[]]> {
+  const vertical = activeClientSettings().vertical;
+  return [
+    ...REFERENCE_SITE_CLASSES.map((kind): [SourceClass, string[]] => [kind, referenceDomains(vertical, kind)]),
+    ["competitor_brand", competitorSiteDomains()],
+  ];
 }
 
 /**

@@ -35,6 +35,7 @@ function listing(asin: string, category: string, status: string, seller: string 
     buybox_status: status,
     featured_offer_state: status === "No Active Offer" ? "no_active_offer" : "present",
     featured_offer_checked_at: FRESH_AT,
+    catalog_checked_at: FRESH_AT,
   };
 }
 
@@ -54,6 +55,7 @@ function bundleRow(asin: string, parent: string | null, state: string | null): R
     buybox_status: state === "no_active_offer" ? "No Active Offer" : "3P Confirmed",
     featured_offer_state: state,
     featured_offer_checked_at: FRESH_AT,
+    catalog_checked_at: FRESH_AT,
   };
 }
 
@@ -174,8 +176,16 @@ function retailRows(url: URL): Row[] {
     return sorted;
   }
   if (select === "asin") {
-    if (url.searchParams.get("wmt_price") === "gt.0") return MAP_ROWS.filter((row) => Number(row.wmt_price) > 0);
-    return MAP_ROWS;
+    // Carried-listing counts (worker 29.16). Walmart carries the two priced rows plus one matched
+    // listing with no price read; Amazon carries every row.
+    const carriedByWalmart = (url.searchParams.get("or") ?? "").includes("wmt_url.like");
+    let rows = carriedByWalmart
+      ? [...MAP_ROWS.filter((row) => Number(row.wmt_price) > 0), { asin: "B00MAP0099", wmt_price: null }]
+      : MAP_ROWS;
+    for (const column of ["wmt_price", "offer_price", "mf_price"]) {
+      if (url.searchParams.get(column) === "gt.0") rows = rows.filter((row) => Number(row[column]) > 0);
+    }
+    return rows;
   }
   return [];
 }

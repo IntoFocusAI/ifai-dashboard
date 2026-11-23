@@ -1,9 +1,7 @@
 import { loadActionItemsSource } from "@/lib/export/action-items-export";
 import { loadAiTableSource, type AiExportTableId } from "@/lib/export/ai-export";
-import { loadDivisionsSource } from "@/lib/export/divisions-export";
 import { loadExploreListingsSource } from "@/lib/export/explore-listings-export";
 import { loadMapSource } from "@/lib/export/map-export";
-import { loadPromptHistorySource } from "@/lib/export/prompt-history-export";
 import { loadPromptsSource } from "@/lib/export/prompts-export";
 import {
   loadBrandSitePagesSource,
@@ -38,7 +36,6 @@ const LOADERS: Record<FixedExportTableId, Loader> = {
   "brand-site-page-found": loadPageFoundSource,
   "aplus-matrix-listings": loadListingContentSource,
   "suppressed-listings": loadSuppressedSource,
-  "catalog-divisions": loadDivisionsSource,
   "explore-listings": loadExploreListingsSource,
   "ai-run-engines": ai("ai-run-engines"),
   "ai-run-categories": ai("ai-run-categories"),
@@ -54,7 +51,6 @@ const LOADERS: Record<FixedExportTableId, Loader> = {
   "competitor-wins": ai("competitor-wins"),
   "engine-comparison": ai("engine-comparison"),
   "engine-category": ai("engine-category"),
-  "prompt-history": loadPromptHistorySource,
   "findability-listings": loadFindabilitySource,
   "action-items-fixes": loadActionItemsSource,
   "prompts": loadPromptsSource,

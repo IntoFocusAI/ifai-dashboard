@@ -1,4 +1,13 @@
 import type { ReactNode } from "react";
+import { StatusMark } from "@/components/v3/live/StatusMark";
+import type { DataStatus } from "@/lib/canvas-sdk/data-status";
+
+/** A status tone always shows its mark and word beside the color (X-34). */
+const TONE_STATUS: Record<"danger" | "warning" | "success", DataStatus> = {
+  danger: "bad",
+  warning: "okay",
+  success: "good",
+};
 
 type Tone = "danger" | "warning" | "success" | "info" | "neutral" | "queued";
 
@@ -34,6 +43,7 @@ export function MetricCard({
       <div className={`metric-card-val${toneClass ? ` ${toneClass}` : ""}`}>
         {value}
       </div>
+      {tone && tone !== "accent" ? <StatusMark status={TONE_STATUS[tone]} /> : null}
       {sub ? <span className="metric-card-sub">{sub}</span> : null}
     </div>
   );
@@ -87,11 +97,13 @@ export function ActionCard({
         ? "action-card info"
         : "action-card";
   const style = tone === "success" ? { borderLeftColor: "var(--success-green)" } : undefined;
+  const status = tone === "critical" ? TONE_STATUS.danger : tone === "success" ? TONE_STATUS.success : null;
 
   return (
     <div className={className} style={style}>
       <div className="action-head">
         <span>{title}</span>
+        {status ? <StatusMark status={status} /> : null}
         {extra}
       </div>
       {details ? <div className="action-details">{details}</div> : null}

@@ -7,6 +7,7 @@ import {
   SATELLITE_HERO_TEXT,
   bubbleTextMin,
   fitMainHero,
+  heroMarkWidth,
   isCompactHeroValue,
   satelliteHeroLayout,
 } from "../lib/canvas-sdk/hero-fit.ts";
@@ -168,4 +169,33 @@ test("the hover slide clears the slots without pushing other bubbles under them"
   assert.ok(right.dx <= 18);
   const hub = hoverSlide({ minX: 520, minY: 250, maxX: 700, maxY: 450 }, mains, room);
   assert.equal(hub.dx, Math.round((302 + 1175) / 2 - 610));
+});
+
+test("a status-colored figure makes room for its mark, and marked satellites still clear each other", () => {
+  for (const hero of Object.values(HEROES)) {
+    const plain = satelliteHeroLayout(hero.title, hero.value, hero.label);
+    const marked = satelliteHeroLayout(hero.title, hero.value, hero.label, true);
+    assert.ok(marked.radius >= plain.radius, `${hero.title} mark shrank the circle`);
+    const value = marked.rows.find((row) => row.kind === "value");
+    if (value) {
+      const half = (value.text.length * value.size * 0.6 + heroMarkWidth(value.size)) / 2;
+      assert.ok(Math.hypot(half, value.baseline) <= marked.radius, `${hero.title} figure and mark cross the ring`);
+    }
+  }
+  const aeo = primarySpokeLayouts().find((spoke) => spoke.id === "spoke-aeo")!;
+  const startY = -aeo.r * 0.56 + 20 + 15 + 2 * 23 + 5;
+  const plainMain = fitMainHero("61.2%", "Unbranded Discovery", aeo.r, startY);
+  const markedMain = fitMainHero("61.2%", "Unbranded Discovery", aeo.r, startY, BUBBLE_TEXT_MIN, false, true);
+  assert.ok(markedMain.valueSize <= plainMain.valueSize && markedMain.valueSize >= 20, `marked value ${markedMain.valueSize}`);
+
+  const marked = spec();
+  marked.nodes = marked.nodes!.map((item) => (SATELLITES.includes(item.id as SatelliteId) ? { ...item, status: "danger" } : item));
+  const { groups } = fittedSatelliteClusters(marked);
+  const circles = [...marked.nodes!.filter((item) => !SATELLITES.includes(item.id as SatelliteId)), ...groups.flatMap((group) => group.nodes)];
+  for (let i = 0; i < circles.length; i += 1) {
+    for (let j = i + 1; j < circles.length; j += 1) {
+      const gap = Math.hypot(circles[i].x - circles[j].x, circles[i].y - circles[j].y) - circles[i].r - circles[j].r;
+      assert.ok(gap >= 12, `${circles[i].id} and ${circles[j].id} are ${gap.toFixed(1)} apart`);
+    }
+  }
 });

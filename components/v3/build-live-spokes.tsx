@@ -10,9 +10,10 @@ import { CompetitorsSpokeDescription } from "@/components/v3/live/ai-search/Comp
 import { RunHistoryControl } from "@/components/v3/live/ai-search/RunHistoryControl";
 import { RunSummaryPanel } from "@/components/v3/live/ai-search/RunSummaryPanel";
 import { SimulationsExplorer } from "@/components/v3/live/ai-search/SimulationsExplorer";
+import { BriefingAiLead } from "@/components/v3/live/BriefingAiLead";
 import { BriefingRetailHero } from "@/components/v3/live/BriefingRetailHero";
+import { OpportunityEstimates } from "@/components/v3/live/estimates/OpportunityEstimates";
 import { ConsensusScoresPanel } from "@/components/v3/live/ConsensusScoresPanel";
-import { FenderDivisionsTable } from "@/components/v3/live/FenderDivisionsTable";
 import { MapChannelPanel } from "@/components/v3/live/MapChannelPanel";
 import { RetailOverview } from "@/components/v3/live/RetailOverview";
 import { ActionItemsPanel } from "@/components/v3/live/ActionItemsPanel";
@@ -23,7 +24,6 @@ import { CatalogReadinessSpec } from "@/components/v3/live/CatalogReadinessSpec"
 import { FindabilityPanel } from "@/components/v3/live/findability/FindabilityPanel";
 import { AplusMatrixPanel } from "@/components/v3/live/AplusMatrixPanel";
 import { MachineReadabilityPanel } from "@/components/v3/live/MachineReadabilityPanel";
-import { readFallbackTab } from "@/components/v3/read-fallbacks";
 import type { SpokeDefinition, SpokeId } from "@/components/v3/spoke-data-types";
 import { spokeData } from "@/components/v3/spoke-data";
 import { aiSpokeDesc, competitorsSpokeDesc } from "@/lib/ai-search/canvas-surfaces";
@@ -37,8 +37,8 @@ import {
 } from "@/lib/fender-canvas/portfolio-retail-display";
 import { MUSICIANS_FRIEND_FRESHNESS_JOB } from "@/lib/fender-canvas/map-reading-status";
 import { retailTemplateVars } from "@/lib/fender-canvas/retail-copy";
-import { bindNarrativeSpoke, clientNarrative } from "@/lib/fender-canvas/spoke-narrative";
-import { bindCopy, buildTemplateVars } from "@/lib/fender-canvas/template-vars";
+import { bindNarrativeSpoke } from "@/lib/fender-canvas/spoke-narrative";
+import { buildTemplateVars } from "@/lib/fender-canvas/template-vars";
 
 function htmlBlock(html: string) {
   return <div dangerouslySetInnerHTML={{ __html: html }} />;
@@ -50,24 +50,19 @@ type TabOverride = (
   retail: RetailCanvasRead,
 ) => ReactNode | null;
 
-const HUB_BRIEFING_HTML = clientNarrative().spokes.hub.tabTemplates[0];
-
 const TAB_OVERRIDES: Partial<
   Record<SpokeId, Partial<Record<number, TabOverride>>>
 > = {
   hub: {
-    0: (bundle, vars, retail) => (
+    // Briefing, Opportunity and Revenue Estimates: generated from each client's settings and data (H-09).
+    0: (bundle, _vars, retail) => (
       <>
         <BriefingRetailHero bundle={bundle} read={retail} />
-        {htmlBlock(bindCopy(HUB_BRIEFING_HTML, vars))}
+        <BriefingAiLead bundle={bundle} />
       </>
     ),
-    1: (bundle, _vars, retail) => (
-      <>
-        <ConsensusScoresPanel bundle={bundle} retail={retail} />
-        <FenderDivisionsTable divisions={bundle.divisions} />
-      </>
-    ),
+    1: (bundle, _vars, retail) => <ConsensusScoresPanel bundle={bundle} retail={retail} />,
+    2: (bundle) => <OpportunityEstimates read={bundle.estimates} />,
   },
   ecommerce: {
     0: (bundle, _vars, retail) => <RetailOverview read={retail} freshness={bundle.fresh} />,
@@ -121,6 +116,7 @@ const TAB_OVERRIDES: Partial<
   // Action Items and the Roadmap read the same plan on the map's AI population (decision 7).
   suggestions: {
     0: (bundle, _vars, retail) => <ActionItemsPanel read={retail} bundle={bundle} />,
+    1: (bundle) => <OpportunityEstimates read={bundle.estimates} />,
   },
   roadmap: {
     0: (bundle, _vars, retail) => <RoadmapFindingsPanel read={retail} bundle={bundle} />,
@@ -143,7 +139,7 @@ function wrapSpoke(
     ...(id === "ecommerce"
       ? {
           title: "Catalog Health",
-          desc: "Suppressed Buy Boxes, MAP leakage, unnested bundles, and out-of-stock days, and how those catalog and retail issues change what AI search can recommend.",
+          desc: "Suppressed Buy Boxes, MAP Leakage, Splintered Listings, and out-of-stock days, and how those catalog and retail issues change what AI search can recommend.",
           tabs: [...RETAIL_PANEL_TABS],
           newTabs: [STOCK_LOSS_TAB],
         }
@@ -166,8 +162,7 @@ function wrapSpoke(
     // The Roadmap opens on its owner sentence and plan; no retail-headline preface.
     ...(id === "roadmap" ? { desc: "" } : {}),
     render: (tabIdx) => {
-      const custom =
-        readFallbackTab(id, tabIdx, bundle, retail) ?? overrides[tabIdx]?.(bundle, vars, retail);
+      const custom = overrides[tabIdx]?.(bundle, vars, retail);
       if (custom) return custom;
       const content = bound.render(tabIdx);
       if (typeof content === "string") return htmlBlock(content);

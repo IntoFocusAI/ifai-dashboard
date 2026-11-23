@@ -136,7 +136,7 @@ test("each stored state reads back as itself, and an unwritten state is not chec
   assert.equal(featuredOfferState(row({ featured_offer_state: "something_else" })), "not_checked");
 
   assert.equal(FEATURED_OFFER_STATE_LABELS.present, "Buy Box present");
-  assert.equal(FEATURED_OFFER_STATE_LABELS.withheld, "Buy Box withheld");
+  assert.equal(FEATURED_OFFER_STATE_LABELS.withheld, "Buy Box Withheld");
   assert.equal(FEATURED_OFFER_STATE_LABELS.no_active_offer, "No active offer");
   assert.equal(FEATURED_OFFER_STATE_LABELS.check_failed, "Check failed");
   assert.equal(FEATURED_OFFER_STATE_LABELS.not_checked, "Not checked");
@@ -315,7 +315,7 @@ test("coverage keeps failures and unchecked rows in the denominator", () => {
   assert.match(benchmark, /2 of 4/);
   // Let the data speak: the sentence states what was found. What an unpublished benchmark
   // is not lives in the tooltip on its count.
-  assert.match(benchmark, /did not publish a benchmark for the other 2\.$/);
+  assert.match(benchmark, /did not publish a reference price for the other 2\.$/);
   assert.doesNotMatch(benchmark, /not a failed check/);
   assert.match(BENCHMARK_UNPUBLISHED_TIP, /not a failed check and not a price of zero/);
   assert.deepEqual(benchmarkCoverageParts(counts).figure, "the other 2");
@@ -323,11 +323,11 @@ test("coverage keeps failures and unchecked rows in the denominator", () => {
 
   const confirmed = confirmedSuppressionSentence(counts);
   assert.match(confirmed, /2 listings have a confirmed withheld Buy Box/);
-  assert.match(confirmed, /1 of those is priced above Amazon's outside price/);
+  assert.match(confirmed, /1 of those is priced above Amazon's reference price/);
   assert.match(confirmed, /withheld without a confirmed price cause/);
 
   // A withheld listing with no benchmark is present, so the plain label leads.
-  assert.equal(featuredOfferHeadlineLabel(counts), "Buy Box withheld");
+  assert.equal(featuredOfferHeadlineLabel(counts), "Buy Box Withheld");
   assert.equal(featuredOfferHeadlineCount(counts), 2);
   assert.equal(firstPassIncomplete(counts), true);
 });
@@ -336,7 +336,7 @@ test("the stronger label applies only when every withheld listing has a benchmar
   const counts = countFeaturedOffer([B0D8G43XJP, B07N28P3W9], NOW);
   assert.equal(counts.withheldWithoutBenchmark, 0);
   assert.equal(counts.confirmedHighPrice, 1);
-  assert.equal(featuredOfferHeadlineLabel(counts), "Buy Box withheld above Amazon's outside price");
+  assert.equal(featuredOfferHeadlineLabel(counts), "Buy Box Withheld above Amazon's reference price");
   assert.equal(featuredOfferHeadlineCount(counts), 1);
   assert.equal(firstPassIncomplete(counts), false);
 });

@@ -1,12 +1,11 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { beginnerSovLine } from "../lib/fender-canvas/beginner-sov.ts";
 import { buildLiveCommandCenter } from "../lib/fender-canvas/command-center-from-live.ts";
 import { buildLiveNodes } from "../lib/fender-canvas/nodes-from-live.ts";
 import { groupHallucinationCauses } from "../lib/fender-canvas/hallucination-causes.ts";
 import { buildLiveMetrics } from "../lib/fender-canvas/metrics-from-live.ts";
 import { activeOfferClarity } from "../lib/fender-canvas/offer-clarity.ts";
-import { MAP_PRICES_NOT_STORED } from "../lib/fender-canvas/portfolio-retail.ts";
+import { mapPricesNotStored } from "../lib/fender-canvas/portfolio-retail.ts";
 import { headlineSentence, headlineSurface } from "../lib/fender-canvas/portfolio-retail-display.ts";
 import { bundleReadLine, mapReadLine } from "../lib/fender-canvas/retail-copy.ts";
 import { buildLiveTourSteps } from "../lib/fender-canvas/tour-from-live.ts";
@@ -96,11 +95,6 @@ function bundle(): CanvasBundle {
     fresh: [],
   };
 }
-
-test("beginner share of voice uses the stored competitor percents", () => {
-  const line = beginnerSovLine(bundle().sov);
-  assert.equal(line, "Yamaha 66.7% vs Fender/Squier 33.3%");
-});
 
 function retailReady(): RetailCanvasRead {
   return {
@@ -205,7 +199,7 @@ test("command center MAP item repeats the MAP tab's partial reading", () => {
   const retail = retailReady();
   if (retail.phase !== "ready") throw new Error("expected a ready retail read");
   const missingMessage =
-    "MAP leakage is stored for 3 of 4 listings. 12 stored listings are below MAP. 1 listing has a price and no stored MAP comparison, so it is missing from this count and is not counted as zero. This is not a final count.";
+    "MAP Leakage is stored for 3 of 4 listings. 12 stored listings are below MAP. 1 listing has a price and no stored MAP comparison, so it is missing from this count and is not counted as zero. This is not a final count.";
   retail.snapshot.mapLeakage = {
     status: "incomplete",
     issueCount: 12,
@@ -258,12 +252,12 @@ test("missing MAP prices do not become a below-MAP count or an average gap", () 
   retail.snapshot.mapLeakage = {
     status: "unavailable",
     issueCount: null,
-    missingMessage: MAP_PRICES_NOT_STORED,
+    missingMessage: mapPricesNotStored(),
     detail: null,
   };
   const mapItem = buildLiveCommandCenter(bundle(), retail).items.find((row) => row.id === "map-leakage");
   const itemText = [mapItem?.title, mapItem?.why, mapItem?.impact].filter(Boolean).join(" ");
-  assert.equal(mapItem?.title, MAP_PRICES_NOT_STORED);
+  assert.equal(mapItem?.title, mapPricesNotStored());
   assert.match(itemText, /Fender MAP prices have not been stored/);
   assert.doesNotMatch(itemText, /below MAP|average gap|\$|\d/);
 
@@ -287,8 +281,8 @@ test("missing MAP prices do not become a below-MAP count or an average gap", () 
 
   const drift = buildLiveMetrics(bundle(), retail).amazonMapDrift;
   assert.equal(drift.value, "Not stored");
-  assert.equal(drift.detail, MAP_PRICES_NOT_STORED);
-  assert.equal(mapReadLine(retail), MAP_PRICES_NOT_STORED);
+  assert.equal(drift.detail, mapPricesNotStored());
+  assert.equal(mapReadLine(retail), mapPricesNotStored());
 });
 
 test("the guided tour uses the same retail headline as the ticker", () => {

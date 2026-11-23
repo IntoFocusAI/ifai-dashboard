@@ -60,7 +60,7 @@ function RetailHeroCard({ hero }: { hero: RetailOverviewHeroModel }) {
 
 /**
  * Retail Overview share heroes in one row. Optional leading slot (AI Commerce)
- * sits in the same band as Buy Box withheld, MAP leakage, and Catalog Governance.
+ * sits in the same band as Buy Box Withheld, MAP Leakage, and Catalog Governance.
  */
 export function RetailOverviewLead({
   read,

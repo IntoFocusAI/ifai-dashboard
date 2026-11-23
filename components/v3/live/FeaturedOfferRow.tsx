@@ -7,6 +7,7 @@ import type { RetailColumn } from "@/components/v3/live/ResizableTable";
 import { ListingName } from "@/components/v3/live/RetailOverviewFigure";
 import { StatusMark } from "@/components/v3/live/StatusMark";
 import { formatUsd } from "@/lib/fender-canvas/format";
+import { lowerPricesElsewhere, type WithheldCauseRow } from "@/lib/fender-canvas/buy-box-cause";
 import {
   aboveBenchmarkDollars,
   benchmarkDollars,
@@ -38,8 +39,8 @@ export const SUPPRESSED_LISTINGS_TABLE_COLUMNS: RetailColumn[] = [
   },
   {
     id: "benchmark",
-    name: "Competitive External Price",
-    label: "Competitive External Price",
+    name: "Amazon's reference price",
+    label: "Amazon's reference price",
     width: 124,
     minWidth: 108,
     className: "money",
@@ -47,15 +48,52 @@ export const SUPPRESSED_LISTINGS_TABLE_COLUMNS: RetailColumn[] = [
   },
   {
     id: "gap",
-    name: "Above benchmark",
-    label: "Above benchmark",
+    name: "Above Amazon's reference price",
+    label: "Above Amazon's reference price",
     width: 136,
     minWidth: 120,
     className: "money",
     sort: "number",
   },
+  {
+    id: "lower",
+    name: "Lower price elsewhere",
+    label: "Lower price elsewhere",
+    width: 150,
+    minWidth: 128,
+    sort: "number",
+  },
   { id: "checked", name: "Checked", label: "Checked", width: 124, minWidth: 108, sort: "date" },
 ];
+
+/** Any withheld listing: the stored Walmart and Musician's Friend prices below its offer. */
+function LowerPriceCell({ row }: { row: WithheldCauseRow }) {
+  const prices = lowerPricesElsewhere(row);
+  if (prices.length === 0) {
+    return (
+      <td data-lower-price="none">
+        <span className="fo-note">None on file</span>
+      </td>
+    );
+  }
+  return (
+    <td data-lower-price={prices.length}>
+      {prices.map((p) => (
+        <div key={p.channel} data-lower-price-channel={p.channel}>
+          {p.url ? (
+            <a className="listing-link" href={p.url} target="_blank" rel="noopener noreferrer">
+              {p.channel} {formatUsd(p.price)}
+            </a>
+          ) : (
+            <>
+              {p.channel} {formatUsd(p.price)}
+            </>
+          )}
+        </div>
+      ))}
+    </td>
+  );
+}
 
 export const SUPPRESSED_LISTINGS_TABLE_COLUMN_COUNT = SUPPRESSED_LISTINGS_TABLE_COLUMNS.length;
 
@@ -124,6 +162,7 @@ export function FeaturedOfferTableRow({
           </span>
         )}
       </td>
+      <LowerPriceCell row={row} />
       <td>{checkedAt ?? <span className="fo-note">Never</span>}</td>
       {trailing}
     </tr>

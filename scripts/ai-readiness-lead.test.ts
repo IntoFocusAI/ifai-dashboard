@@ -3,8 +3,8 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { test } from "node:test";
+import { AMAZON_SPEC_BANDS, amazonSpecTone } from "@/lib/fender-canvas/amazon-spec-bands";
 import {
-  AMAZON_COMPLETENESS_BANDS,
   FENDER_COMPLETENESS_BANDS,
   PAGE_FOUND_BANDS,
   amazonCompletenessHero,
@@ -144,9 +144,22 @@ test("Amazon Specs keeps Amazon completeness and does not invent listings at 100
   const filled = amazon.pie.slices.find((slice) => slice.key === "matched");
   assert.ok(filled);
   assert.equal(filled.count, 91.6);
-  assert.equal(AMAZON_COMPLETENESS_BANDS.dangerBelow, 85);
-  assert.equal(AMAZON_COMPLETENESS_BANDS.warnBelow, 92);
-  assert.equal(amazon.color, "var(--warning-amber)");
+  // 91.6% is under 95%: Poor under the shared Specs Complete bands (X-03).
+  assert.equal(amazon.tone, "danger");
+  assert.equal(amazon.color, "var(--danger-red)");
+});
+
+test("Amazon attribute completeness takes the Catalog Governance Specs Complete bands", () => {
+  assert.deepEqual(AMAZON_SPEC_BANDS, { goodAtOrAbove: 98, fairAtOrAbove: 95 });
+  for (const [pct, tone] of [[90.2, "danger"], [94.99, "danger"], [95, "warning"], [97.99, "warning"], [98, "success"], [100, "success"]] as const) {
+    assert.equal(amazonSpecTone(pct), tone, `${pct}`);
+    assert.equal(amazonCompletenessHero(metrics({ spec_avg_amazon_pct: pct })).tone, tone, `hero ${pct}`);
+  }
+  const lead = readFileSync(join(process.cwd(), "lib/fender-canvas/ai-readiness-lead.ts"), "utf8");
+  const governance = readFileSync(join(process.cwd(), "lib/fender-canvas/retail-overview-lead.ts"), "utf8");
+  assert.doesNotMatch(lead, /\b(85|92)\b.*Amazon|AMAZON_COMPLETENESS_BANDS/);
+  assert.match(lead, /amazonSpecTone\(pct\)/);
+  assert.match(governance, /amazonSpecTone\(completePct\)/);
 });
 
 test("Amazon completeness share uses stored field totals, not avg times listing count", () => {

@@ -10,7 +10,8 @@ import {
 import { competitorTallies, type CompetitorTally } from "@/lib/ai-search/competitors";
 import {
   ROLE_LABELS,
-  categoryRoleTallies,
+  discoveryCategories,
+  discoveryCategoryRoleTallies,
   engineResultRoleTallies,
   headlineAside,
   headlineCompetitorWins,
@@ -80,7 +81,7 @@ function engineCalls(calls: AiCallRow[], engine: string): AiCallRow[] {
   return calls.filter((row) => (row.engine ?? "").toLowerCase() === engine);
 }
 
-/** Each other brand an engine named most on unbranded discovery, with its count, most first. */
+/** Each other brand an engine named most on Unbranded Discovery, with its count, most first. */
 export function engineCompetitorLeads(calls: AiCallRow[], engine: string): Array<{ brand: string; wins: number }> {
   return headlineCompetitorWins(engineCalls(calls, engine));
 }
@@ -118,9 +119,9 @@ export function engineComparisonTable(snapshot: AiSearchSnapshot, single: boolea
 
 // ---- Engine Comparison: brand leads by engine and category (one row per engine)
 
-/** Commercial categories in the selection, A to Z by key. */
-export function commercialCategories(calls: AiCallRow[]): string[] {
-  return [...new Set(calls.filter((row) => row.prompt_kind === "commercial").map((row) => row.category ?? ""))].sort();
+/** Battlecard categories in the selection (decision 93: only those with Unbranded Discovery questions), A to Z by key. */
+export function battlecardCategories(calls: AiCallRow[]): string[] {
+  return discoveryCategories(calls);
 }
 
 export type EngineCategoryCell = {
@@ -169,7 +170,7 @@ function engineCategoryText(cell: EngineCategoryCell, max: { unbranded: number; 
 
 export function engineCategoryTable(snapshot: AiSearchSnapshot, single: boolean): AiTableBuild {
   const engines = engineResultRoleTallies(snapshot.calls).map((engine) => engine.key);
-  const categories = commercialCategories(snapshot.calls);
+  const categories = battlecardCategories(snapshot.calls);
   const max = engineCategoryLargest(snapshot.calls, engines, categories);
   return {
     header: ["Engine", ...categories.map(categoryLabel)],
@@ -204,7 +205,7 @@ export function topCompetitorCell(top: { brand: string; wins: number } | undefin
 
 /** Categories the chips leave on screen, competitor leads most first. */
 export function battlecardRows(calls: AiCallRow[], lead: LeadFilter): RoleGroupTally[] {
-  const groups = categoryRoleTallies(calls);
+  const groups = discoveryCategoryRoleTallies(calls);
   const status = new Map(categoryLeads(groups, calls).map((row) => [row.key, row.status]));
   return groups
     .filter((group) => leadMatches(status.get(group.key) ?? "not_available", lead))
@@ -229,7 +230,7 @@ export function parseBattlecardFilter(value: unknown): BattlecardFilter {
 
 export function battlecardTable(snapshot: AiSearchSnapshot, filter: BattlecardFilter, single: boolean): AiTableBuild {
   const calls = callsForEngine(snapshot.calls, filter.engine);
-  const groups = categoryRoleTallies(calls);
+  const groups = discoveryCategoryRoleTallies(calls);
   const leads = new Map(categoryLeads(groups, calls).map((lead) => [lead.key, lead]));
   const unbranded = largest(groups, "unbranded_discovery");
   const branded = largest(groups, "branded_consideration");

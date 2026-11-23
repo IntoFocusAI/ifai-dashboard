@@ -96,7 +96,7 @@ function metrics(over: Partial<CanvasMetricsRow>): CanvasMetricsRow {
     spec_fender_found: 99,
     spec_fender_found_pct: 99,
     spec_avg_fender_pct: 99,
-    spec_avg_amazon_pct: 95,
+    spec_avg_amazon_pct: 98,
     spec_missing_additional_property: 0,
     ...over,
   } as CanvasMetricsRow;
@@ -165,10 +165,10 @@ test("21c: a red factor puts the own-page action in Days 1 to 30, worst first", 
 });
 
 test("21c: only yellow factors put the own-page action in Days 31 to 60", () => {
-  const own = ownPagesAction(bundle({ spec_avg_amazon_pct: 90 }, 4), null);
+  const own = ownPagesAction(bundle({ spec_avg_amazon_pct: 96 }, 4), null);
   assert.equal(own.action?.phase, "days_31_60");
   assert.match(own.action!.fact, /^Found pages missing machine-readable specs reads 4\.0% \(Fair\) and Amazon/, "a sentence opens with a capital");
-  assert.match(own.action!.fact, /Amazon attribute completeness reads 90\.0% \(Fair\)/);
+  assert.match(own.action!.fact, /Amazon attribute completeness reads 96\.0% \(Fair\)/);
 });
 
 test("21c: all green and the brand site cited under 30% gives the Days 61 to 90 wording action; 30% or more gives none", () => {
@@ -196,7 +196,7 @@ test("21d weakest engine: a gap of 10 points or more is a Days 31 to 60 priority
   const { actions, held } = weakestEngine(snapshot(calls));
   assert.equal(held.length, 0);
   assert.equal(actions[0]!.tier, "priority");
-  assert.equal(actions[0]!.fact, "Fender/Squier is named most in 10 of 40 resolved unbranded discovery answers on Gemini, the lowest of the engines checked.");
+  assert.equal(actions[0]!.fact, "Fender/Squier is named most in 10 of 40 resolved Unbranded Discovery answers on Gemini, the lowest of the engines checked.");
   assert.equal(actions[0]!.action, "Review the Gemini answers that name another brand most, and the sources they cite.");
   const plan = buildPlan({ findings: [], signals: [], sources: [], focus: actions });
   assert.equal(plan[0]!.phase, "days_31_60");
@@ -213,7 +213,7 @@ test("21d weakest engine: under 10 points is a Days 61 to 90 watch line; five en
   const { actions } = weakestEngine(snapshot(calls));
   assert.equal(actions.length, 1);
   assert.equal(actions[0]!.evidence?.engine, "grok");
-  assert.match(actions[0]!.fact, /1 of 100 resolved unbranded discovery answers on /);
+  assert.match(actions[0]!.fact, /1 of 100 resolved Unbranded Discovery answers on /);
   const plan = buildPlan({ findings: [], signals: [], sources: [], focus: actions });
   assert.equal(plan[0]!.phase, "days_61_90");
   assert.equal(plan[0]!.statusLabel, "Watch");
@@ -381,7 +381,7 @@ test("rolling 90 days: each refresh dates the phases from today", () => {
 });
 
 test("rolling plan: an action whose trigger clears drops off, a new one enters", () => {
-  const before = buildPlan({ findings: [], signals: [], sources: [], ownPages: ownPagesAction(bundle({ spec_avg_amazon_pct: 90 }), null).action });
+  const before = buildPlan({ findings: [], signals: [], sources: [], ownPages: ownPagesAction(bundle({ spec_avg_amazon_pct: 96 }), null).action });
   assert.deepEqual(before.map((item) => item.id), ["own:pages"]);
   const engine = weakestEngine(snapshot([...answers("chatgpt", "best electric guitar", 30, 40), ...answers("gemini", "best electric guitar", 10, 40)])).actions;
   const after = buildPlan({ findings: [], signals: [], sources: [], ownPages: ownPagesAction(bundle({}), citedRun(40, { "fender.com": 20 })).action, focus: engine });
@@ -397,7 +397,7 @@ test("client focus: the model narrows to one category and keeps brand-wide items
   const run = snapshot(calls);
   assert.deepEqual(focusOptions(run).map((o) => o.key), ["acoustics", "bass", "electric"]);
   const brand = focusActions({ windows: { current: run, previous: null }, focus: BRAND_FOCUS });
-  const plan = buildPlan({ findings: [], signals: [], sources: [], ownPages: ownPagesAction(bundle({ spec_avg_amazon_pct: 90 }), null).action, focus: brand.actions });
+  const plan = buildPlan({ findings: [], signals: [], sources: [], ownPages: ownPagesAction(bundle({ spec_avg_amazon_pct: 96 }), null).action, focus: brand.actions });
   assert.deepEqual(focusPlan(plan, BRAND_FOCUS).map((item) => item.id), plan.map((item) => item.id));
   const bass = focusPlan(plan, { kind: "category", key: "bass" });
   assert.deepEqual(bass.map((item) => item.id), ["own:pages", "focus:question:best-bass-guitar"]);
@@ -421,5 +421,7 @@ test("client focus is staff-set per client in configuration; the default is the 
   assert.equal(staffFocus(), BRAND_FOCUS, "both clients default to the whole brand");
   assert.deepEqual(staffFocus("acoustics"), { kind: "category", key: "acoustics" });
   assert.equal(staffFocus("acoustics"), staffFocus("acoustics"), "one object per category");
-  assert.match(read("lib/client/active-client.ts"), /roadmapFocusCategory: null,[\s\S]*roadmapFocusCategory: null,/);
+  for (const client of ["fender", "ledlenser"]) {
+    assert.match(read(`data/clients/${client}.json`), /"roadmap_focus_category": null,/, client);
+  }
 });

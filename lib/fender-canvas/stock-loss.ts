@@ -14,6 +14,24 @@ import type { PartialFigure } from "@/lib/fender-canvas/canvas-reads";
 import { formatInt } from "@/lib/fender-canvas/format";
 import { combineStale, mergePartial, RECHECK_DAYS, rowsStale } from "@/lib/fender-canvas/row-stale";
 import { getCanvasSupabase } from "../supabase/canvas-client";
+import { brandName } from "@/lib/brand-copy";
+import { activeClientSettings } from "@/lib/client/active-client";
+
+/**
+ * The yearly line the Out of Stock tab shows beside its missed-sales hero (E4, decision 112): line 1,
+ * brand-level after the brand-loss share, from the shared estimate read (lib/estimates).
+ */
+export const STOCK_LOSS_ESTIMATE_LINE = "out_of_stock" as const;
+
+/**
+ * Who ran out, for the Out of Stock analyst-estimate tooltip. Keyed on the seller type in the client
+ * settings (P-15): a partner-led brand sells through dealers.
+ */
+export function stockOutSellerTip(): string {
+  return activeClientSettings().seller_type === "partner_led"
+    ? `${brandName()} sells through dealers, so the data shows that a listing ran out but not whether ${brandName()} or the dealer did.`
+    : "The data shows that a listing ran out, not which seller ran out.";
+}
 
 export type RevenueSource = "brand_reported" | "smartscout";
 
@@ -33,6 +51,8 @@ export type StockLossRow = {
   smartscout_monthly_revenue: number | null;
   smartscout_ttm_revenue: number | null;
   history_through: string | null;
+  /** The newest Keepa daily-history load for the listing. Per-row stale rule, X-25. */
+  keepa_checked_at?: string | null;
   in_stock_days_30: number | null;
   oos_days_30: number | null;
   oos_days_90: number | null;
@@ -75,7 +95,7 @@ export const REVENUE_SOURCE_LABELS: Record<RevenueSource, string> = {
 };
 
 export const STOCK_LOSS_COLUMNS =
-  "asin,title,featured_offer_state,offline_now,current_oos_days,smartscout_snapshot_date,smartscout_monthly_revenue,smartscout_ttm_revenue,history_through,in_stock_days_30,oos_days_30,oos_days_90,observed_days_365,in_stock_days_365,oos_days_365,no_buy_box_days_365,revenue_source,baseline_method,in_stock_days_used,baseline_daily_revenue,est_lost_revenue_oos_30,est_lost_revenue_oos_90,est_lost_revenue_oos_365,awaiting_inputs_reason";
+  "asin,title,featured_offer_state,offline_now,current_oos_days,smartscout_snapshot_date,smartscout_monthly_revenue,smartscout_ttm_revenue,history_through,keepa_checked_at,in_stock_days_30,oos_days_30,oos_days_90,observed_days_365,in_stock_days_365,oos_days_365,no_buy_box_days_365,revenue_source,baseline_method,in_stock_days_used,baseline_daily_revenue,est_lost_revenue_oos_30,est_lost_revenue_oos_90,est_lost_revenue_oos_365,awaiting_inputs_reason";
 
 const SALES_LOSS_VIEW = "canvas_listing_sales_loss_v2";
 const OFFER_STATE_VIEW = "canvas_listing_offer_state_v2";
@@ -334,7 +354,7 @@ export function formatDay(day: string | null | undefined): string | null {
 
 /**
  * X-25 per-row stale reading for the lost-sales totals. Each listing in a total has its own
- * Keepa history (history_through, rechecked daily) and, when SmartScout supplies its sales, its
+ * Keepa load (keepa_checked_at, rechecked daily) and, when SmartScout supplies its sales, its
  * own SmartScout snapshot (smartscout_snapshot_date, rechecked every 7 days).
  */
 export function lostSalesStale(
@@ -350,7 +370,7 @@ export function lostSalesStale(
         label: "Keepa",
         stale: rowsStale(
           estimated,
-          (row) => row.history_through,
+          (row) => row.keepa_checked_at,
           { intervalDays: RECHECK_DAYS.keepa, check: "Keepa update", source: "canvas_listing_sales_loss_v2", figure: "missed-sales totals" },
           now,
         ),

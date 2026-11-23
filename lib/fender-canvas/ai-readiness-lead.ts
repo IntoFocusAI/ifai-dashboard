@@ -1,12 +1,13 @@
 /**
  * AI Readiness tab heroes: share figures already on the old Metric/Result summary.
  * SKUs checked is the shared denominator, not its own pie.
- * Amazon completeness keeps the existing 85 / 92 tone bands from metrics-from-live.
+ * Amazon completeness takes the Catalog Governance Specs Complete bands (amazon-spec-bands).
  */
 
 import type { PieDiscData } from "@/lib/ai-search/citation-pies";
 import { brandSite } from "@/lib/brand-copy";
 import type { NodeStatus } from "@/lib/canvas-sdk/types";
+import { amazonSpecTone } from "@/lib/fender-canvas/amazon-spec-bands";
 import { metricsRowFailure, READ_NOT_AVAILABLE, readFailureTip } from "@/lib/fender-canvas/canvas-reads";
 import { formatInt, formatPct, formatRatio, pendingLabel } from "@/lib/fender-canvas/format";
 import { MISSING_FIELD_SHARE_UNAVAILABLE } from "@/lib/fender-canvas/spec-missing-fields";
@@ -89,8 +90,6 @@ export function presentAmazonCompletenessFieldShare(
   return { kind: "share", label: `${ratio} (${percent})`, ratio, percent };
 }
 
-/** Same bands as metrics-from-live toneFromPct(spec_avg_amazon_pct, 85, 92). */
-export const AMAZON_COMPLETENESS_BANDS = { dangerBelow: 85, warnBelow: 92 } as const;
 
 /**
  * fender.com page found share. Under 85 red; 85 through 95 yellow; above 95 green.
@@ -133,9 +132,7 @@ export type AiReadinessHeroModel = {
 
 function amazonCompletenessTone(pct: number | null): Exclude<NodeStatus, "neutral"> | null {
   if (pct == null || Number.isNaN(pct)) return null;
-  if (pct < AMAZON_COMPLETENESS_BANDS.dangerBelow) return "danger";
-  if (pct < AMAZON_COMPLETENESS_BANDS.warnBelow) return "warning";
-  return "success";
+  return amazonSpecTone(pct);
 }
 
 /** Inclusive yellow band between redBelow and greenAbove. */
@@ -250,25 +247,29 @@ function failedReadHero(hero: AiReadinessHeroModel, m: CanvasMetricsRow): AiRead
   };
 }
 
-export const PAGE_FOUND_LABEL = `${brandSite()} page found`;
+/* Brand copy below is built per call, never at import: a server export sets the client per request. */
+export function pageFoundLabel(): string {
+  return `${brandSite()} page found`;
+}
 
 /** Said once wherever the fender.com product check and Findability can disagree. */
-export const FENDER_CHECK_DIFFERS =
-  `This is the ${brandSite()} product check; the Findability tab runs its own official-page check, so the two can differ.`;
+export function brandCheckDiffers(): string {
+  return `This is the ${brandSite()} product check; the Findability tab runs its own official-page check, so the two can differ.`;
+}
 
 /** The definition with "Last checked …" after it, when the check time is known. */
 function checkedDefinition(what: string, checkedAt: string | null | undefined, after?: string): string {
   return [what, lastCheckedSentence(checkedAt ?? null), after].filter(Boolean).join(" ");
 }
 
-const PAGE_FOUND_WHAT =
-  `Checked SKUs with a matching ${brandSite()} product page, out of every SKU the ${brandSite()} product check covered.`;
-
-export function pageFoundDefinition(checkedAt?: string | null): string {
-  return checkedDefinition(PAGE_FOUND_WHAT, checkedAt, FENDER_CHECK_DIFFERS);
+function pageFoundWhat(): string {
+  return `Checked SKUs with a matching ${brandSite()} product page, out of every SKU the ${brandSite()} product check covered.`;
 }
 
-export const PAGE_FOUND_DEFINITION = pageFoundDefinition(null);
+/** With no check time, this is the plain definition (no "Last checked"). */
+export function pageFoundDefinition(checkedAt?: string | null): string {
+  return checkedDefinition(pageFoundWhat(), checkedAt, brandCheckDiffers());
+}
 
 export function pageFoundHero(m: CanvasMetricsRow, checkedAt: string | null = null): AiReadinessHeroModel {
   const checked = m.spec_checked;
@@ -277,7 +278,7 @@ export function pageFoundHero(m: CanvasMetricsRow, checkedAt: string | null = nu
   const ready = checked != null && checked > 0 && found != null && pct != null;
   return failedReadHero({
     id: "page_found",
-    label: PAGE_FOUND_LABEL,
+    label: pageFoundLabel(),
     definition: pageFoundDefinition(checkedAt),
     percent: ready ? formatPct(pct) : pendingLabel(),
     ratio: ready ? formatRatio(found, checked) : null,

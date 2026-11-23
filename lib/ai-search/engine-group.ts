@@ -61,22 +61,22 @@ export function isRotatingFactCheck(
 }
 
 /**
- * The battery run's fixed questions: the question keys its search engines were asked, rotating
- * fact checks left out. An API run counts beside that run only when it matched at least as many.
+ * The battery run's shopping questions: the shopping question keys its search engines were
+ * asked. Fact checks sit out, fixed and rotating: Fender's API job asks the fixed fact checks
+ * and Ledlenser's does not. An API run counts beside that run only when it matched at least as
+ * many questions.
  */
-export function fixedQuestionCount(snapshot: Pick<AiSearchSnapshot, "calls" | "probes">): number {
-  const rotating = new Set(snapshot.probes.filter(isRotatingFactCheck).map(callKey));
+export function shoppingQuestionCount(snapshot: Pick<AiSearchSnapshot, "calls">): number {
   const keys = new Set<string>();
   for (const row of snapshot.calls) {
-    if (isApiEngine(row.engine) || !row.prompt_key) continue;
-    if (row.prompt_kind === "probe" && (rotating.has(callKey(row)) || isRotatingFactCheck(row))) continue;
+    if (isApiEngine(row.engine) || !row.prompt_key || row.prompt_kind === "probe") continue;
     keys.add(row.prompt_key.trim().toLowerCase());
   }
   return keys.size;
 }
 
 export const API_QUESTION_RULE =
-  "An API run counts only when it asked at least as many questions as the search run's fixed questions, so a short test run is left out.";
+  "An API run counts only when it asked at least as many questions as the search run's shopping questions, so a short test run is left out.";
 
 /** Repeats of each API question per engine that count: the question set × 3 repeats (Brian Magazu). */
 export const API_REPEAT_CAP = 3;
@@ -194,7 +194,7 @@ export function citationPopulation(snapshot: AiSearchSnapshot, apiInWindow = fal
 }
 
 /** Run counts recounted from the calls the switch kept. Expected and missing are not known for a subset. */
-function withCallCounts(snapshot: AiSearchSnapshot, calls: readonly AiCallRow[]): AiSearchSnapshot["run"] {
+export function withCallCounts(snapshot: AiSearchSnapshot, calls: readonly AiCallRow[]): AiSearchSnapshot["run"] {
   const answered = calls.filter((row) => row.call_status === "answered").length;
   const errors = calls.filter((row) => row.call_status === "error" || row.outcome === "error").length;
   return {

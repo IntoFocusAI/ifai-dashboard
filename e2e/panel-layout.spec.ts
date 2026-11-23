@@ -92,7 +92,7 @@ test.describe("panel layout", () => {
   });
 
   test("panel content never scrolls sideways", { tag: "@1440" }, async ({ canvas, page }) => {
-    await canvas.openPriority("Buy Box withheld");
+    await canvas.openPriority("Buy Box Withheld");
     const tabs = await page.locator(".drilldown-tab-btn").count();
     for (let i = 0; i < tabs; i += 1) {
       await page.locator(".drilldown-tab-btn").nth(i).click();

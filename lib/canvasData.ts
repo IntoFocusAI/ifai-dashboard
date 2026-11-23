@@ -8,7 +8,8 @@ import {
   type BundleReadKey,
   type CanvasReadResult,
 } from "@/lib/fender-canvas/canvas-reads";
-import { FEATURED_OFFER_COLUMNS } from "@/lib/fender-canvas/featured-offer";
+import { loadActuationBasis } from "@/lib/fender-canvas/actuation-basis-read";
+import { WITHHELD_CAUSE_COLUMNS } from "@/lib/fender-canvas/buy-box-cause";
 import { loadListingContent, type ListingContentClient } from "@/lib/fender-canvas/listing-content";
 import { loadSpecPages, type SpecPageClient } from "@/lib/fender-canvas/machine-readability";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
@@ -27,6 +28,8 @@ export async function loadCanvas(
   const listingContent = Promise.allSettled([
     limit(loadListingContent(supabase as unknown as ListingContentClient)),
   ]);
+  // SC-03: the Actuation basis rides with the bundle so every Consensus figure reads the same one.
+  const actuation = limit(loadActuationBasis()).catch(() => null);
   const queries: Record<BundleReadKey, PromiseLike<CanvasReadResult>> = {
     m: supabase.from("canvas_metrics").select("*").single(),
     cats: supabase.from("canvas_ai_category").select("*").order("fender_win_pct"),
@@ -47,8 +50,11 @@ export async function loadCanvas(
   const reads = Object.fromEntries(
     BUNDLE_READ_KEYS.map((key, index) => [key, settled[index]]),
   ) as Record<BundleReadKey, PromiseSettledResult<CanvasReadResult>>;
-  const [[specPagesRead], [listingContentRead]] = await Promise.all([specPages, listingContent]);
-  return assembleCanvasBundle(reads, { specPages: specPagesRead, listingContent: listingContentRead });
+  const [[specPagesRead], [listingContentRead], actuationRead] = await Promise.all([specPages, listingContent, actuation]);
+  return {
+    ...assembleCanvasBundle(reads, { specPages: specPagesRead, listingContent: listingContentRead }),
+    actuation: actuationRead,
+  };
 }
 
 export function listingsQuery(
@@ -68,29 +74,31 @@ export function listingsQuery(
   return q;
 }
 
+/** A retailer the MAP channel lines count carried listings for. */
+export type RetailCarryChannel = "amazon" | "walmart" | "musiciansfriend";
+
 /**
  * Head count of the retail listing read.
- * `storedWalmartPrice` keeps rows whose Walmart price is greater than zero.
- * A null or non-positive price is not in that count.
+ * No options: every listing in the read.
+ * `carriedBy` keeps the listings that retailer carries: Walmart has a stored page URL or a price
+ * above zero; Musician's Friend has a price above zero (no page is stored); every listing is an
+ * Amazon listing.
+ * `priced` keeps rows whose price at that retailer is greater than zero. A null or non-positive
+ * price is not in that count.
  */
-export function retailListingHeadCountQuery(options?: { storedWalmartPrice?: boolean }) {
+export function retailListingHeadCountQuery(options?: {
+  carriedBy?: RetailCarryChannel;
+  priced?: RetailCarryChannel;
+}) {
   const supabase = getCanvasSupabase();
   let query = supabase
     .from("canvas_retail_listings")
     .select("asin", { count: "exact", head: true });
-  if (options?.storedWalmartPrice) query = query.gt("wmt_price", 0);
+  const priceColumn = { amazon: "offer_price", walmart: "wmt_price", musiciansfriend: "mf_price" } as const;
+  if (options?.carriedBy === "walmart") query = query.or("wmt_price.gt.0,wmt_url.like.http%");
+  else if (options?.carriedBy === "musiciansfriend") query = query.gt("mf_price", 0);
+  if (options?.priced) query = query.gt(priceColumn[options.priced], 0);
   return query;
-}
-
-/** Other retailers' stored prices. One row per listing per channel. */
-export function listingChannelPricesQuery(page = 0, size = 1000) {
-  const supabase = getCanvasSupabase();
-  return supabase
-    .from("canvas_listing_channel_price")
-    .select("asin,channel,price,url,checked_at")
-    .order("channel")
-    .order("asin")
-    .range(page * size, page * size + size - 1);
 }
 
 /**
@@ -111,13 +119,14 @@ export async function featuredOfferColumnProbe(): Promise<{
 /**
  * Every listing whose current Featured Offer state is withheld. Confirmed high-price
  * suppression is the subset the reading can compare against Amazon's outside price,
- * and the table marks it. A withheld listing with no benchmark still belongs here.
+ * and the table marks it. A withheld listing with no benchmark still belongs here. The stored cause
+ * and the stored outside prices ride along for the cause split (buy-box-cause.ts).
  */
 export function suppressedListingsQuery(page = 0, size = 1000) {
   const supabase = getCanvasSupabase();
   return supabase
     .from("canvas_retail_listings")
-    .select(FEATURED_OFFER_COLUMNS, { count: "exact" })
+    .select(WITHHELD_CAUSE_COLUMNS, { count: "exact" })
     .eq("featured_offer_state", "withheld")
     .order("asin")
     .range(page * size, page * size + size - 1);

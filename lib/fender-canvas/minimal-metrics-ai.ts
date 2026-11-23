@@ -3,12 +3,13 @@
 import { competitorLeadPie } from "@/lib/ai-search/competitor-wins-lead";
 import { factCheckAccuracyPie, factCheckAccuracyPieTip } from "@/lib/ai-search/fact-check-copy";
 import {
-  categoryRoleTallies,
+  discoveryCategoryRoleTallies,
   engineResultRoleTallies,
+  questionRole,
   sumRoleTallies,
   type HeadlineRole,
 } from "@/lib/ai-search/question-role";
-import { PROMPT_BATTERY } from "@/lib/ai-search/prompt-battery";
+import { clientBattery } from "@/lib/ai-search/prompt-battery";
 import { categoryLabel, engineLabel, isSmallSample } from "@/lib/ai-search/run-metrics";
 import { BRANDED_RATE_BANDS, SMALL_SAMPLE_LABEL, UNBRANDED_RATE_BANDS, type AiRunSummary } from "@/lib/ai-search/summary";
 import { formatInt } from "@/lib/fender-canvas/format";
@@ -29,20 +30,20 @@ import {
   type MinimalFigure,
   type MinimalListItem,
 } from "@/lib/fender-canvas/minimal-metric-kit";
-import { brandName, isFenderClient, leadBrand } from "@/lib/brand-copy";
+import { brandName, leadBrand } from "@/lib/brand-copy";
 
 const ROLE = {
   unbranded_discovery: {
     title: "Unbranded Discovery",
-    label: `${brandName()} leads in unbranded discovery`,
-    noun: "resolved unbranded discovery answers",
+    label: `${brandName()} leads in Unbranded Discovery`,
+    noun: "resolved Unbranded Discovery answers",
     bands: UNBRANDED_RATE_BANDS,
     pick: (s: AiRunSummary) => s.roles.unbranded,
   },
   branded_consideration: {
     title: "Branded Consideration",
-    label: `${brandName()} leads in branded consideration`,
-    noun: "resolved branded consideration answers",
+    label: `${brandName()} leads in Branded Consideration`,
+    noun: "resolved Branded Consideration answers",
     bands: BRANDED_RATE_BANDS,
     pick: (s: AiRunSummary) => s.roles.branded,
   },
@@ -99,16 +100,25 @@ function rivalLead(summary: AiRunSummary | null) {
   }
   const top = summary?.topCompetitor;
   if (top && top.resolved > 0) {
-    return { brand: top.brand, wins: top.wins, resolved: top.resolved, scope: "resolved unbranded discovery answers", where: "unbranded discovery" };
+    return { brand: top.brand, wins: top.wins, resolved: top.resolved, scope: "resolved Unbranded Discovery answers", where: "Unbranded Discovery" };
   }
   return null;
 }
 
-/** The battery's question categories, in the order it asks them. */
-const BATTERY_CATEGORIES = [...new Set(PROMPT_BATTERY.filter((prompt) => prompt.kind === "commercial").map((prompt) => prompt.category))];
+/**
+ * The client's battery categories that hold Unbranded Discovery questions (decision 93), in the
+ * order it asks them. Each question's role is read the same way as in the run's answers.
+ */
+function batteryCategories(): string[] {
+  const discovery = clientBattery().filter(
+    (prompt) => prompt.kind === "commercial" && questionRole({ prompt_kind: prompt.kind, prompt: prompt.text }) === "unbranded_discovery",
+  );
+  return [...new Set(discovery.map((prompt) => prompt.category))];
+}
 
+/** Battlecard categories in the selected period: only those with Unbranded Discovery questions (decision 93). */
 function categoryRows(ctx: MinimalContext) {
-  return cached(ctx, "category-role-tallies", () => (ctx.ai.phase === "ready" ? categoryRoleTallies(ctx.ai.snapshot.calls) : []));
+  return cached(ctx, "category-role-tallies", () => (ctx.ai.phase === "ready" ? discoveryCategoryRoleTallies(ctx.ai.snapshot.calls) : []));
 }
 
 function categoryId(category: string): string {
@@ -127,9 +137,9 @@ export function categoryUnbrandedFigure(ctx: MinimalContext, category: string): 
     const figure = rateFigure(
       tally,
       UNBRANDED_RATE_BANDS,
-      `resolved ${name} unbranded discovery answers`,
+      `resolved ${name} Unbranded Discovery answers`,
       null,
-      `The selected period has no resolved ${name} unbranded discovery answers.`,
+      `The selected period has no resolved ${name} Unbranded Discovery answers.`,
     );
     const largest = Math.max(0, ...all.map((item) => item.roles.unbranded_discovery.resolved));
     if (!figure.ratio || !isSmallSample(tally.resolved, largest)) return figure;
@@ -142,17 +152,16 @@ function categoryUnbrandedEntry(category: string): MinimalEntry {
     id: categoryId(category),
     spokeId: "competitors",
     tab: "Category Battlecards",
-    label: `${categoryLabel(category)}: ${brandName()} leads in unbranded discovery`,
+    label: `${categoryLabel(category)}: ${brandName()} leads in Unbranded Discovery`,
     read: (ctx) => categoryUnbrandedFigure(ctx, category),
   };
 }
 
-/** Every battery category, then any other category the selected period holds. */
+/** Every battery category of the client, then any other battlecard category the selected period holds. */
 const CATEGORY_UNBRANDED: MinimalEntryFamily = {
   family: "battlecards-category-unbranded",
   entries: (ctx) => {
-    // The stored battery is Fender's (p01..p37). Other clients list the categories their run stored.
-    const battery = isFenderClient() ? BATTERY_CATEGORIES : [];
+    const battery = batteryCategories();
     const extra = categoryRows(ctx)
       .map((row) => row.key)
       .filter((key) => !battery.includes(key));
@@ -265,7 +274,7 @@ export const COMPETITIVE_ENTRIES: MinimalListItem[] = [
       aiReading(ctx, (s) => {
         const resolved = s.roles.unbranded.resolved;
         const pie = competitorLeadPie(s.competitorWins, resolved);
-        const tip = pie ? `${s.competitorWins} competitor led. ${resolved - s.competitorWins} ${leadBrand()} led. Total ${resolved} resolved unbranded discovery answers.` : null;
+        const tip = pie ? `${s.competitorWins} competitor led. ${resolved - s.competitorWins} ${leadBrand()} led. Total ${resolved} resolved Unbranded Discovery answers.` : null;
         return counted(resolved > 0 ? `${formatInt(s.competitorWins)} of ${formatInt(resolved)}` : null, ROLE.unbranded_discovery.noun, pie, tip, "This run has no resolved unbranded answers.");
       }),
   }),

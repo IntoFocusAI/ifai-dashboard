@@ -1,8 +1,8 @@
 import type { CanvasMetric, CanvasNode, NodeStatus, PriorityItem } from "@/lib/canvas-sdk/types";
 import { citationEvidence, groupCitations } from "@/lib/ai-search/citations";
+import { factCheckReviewAnswers, factCheckReviewTitle } from "@/lib/ai-search/drift";
 import {
   battleSentence,
-  categoryBattles,
   joinBrands,
   type CategoryBattle,
 } from "@/lib/ai-search/competitors";
@@ -27,7 +27,18 @@ import type { AiSearchRead } from "@/lib/ai-search/types";
 import { radarBubbleLead } from "@/lib/ai-search/radar-bubble";
 import { selectionLine } from "@/lib/ai-search/displayed-read";
 import { isWindowHistoryKind } from "@/lib/ai-search/window-display";
+import {
+  formatGapPts,
+  periodCategoryLeads,
+  standingCounts,
+  standingHeadline,
+  strongestCategoryStanding,
+  weakestCategoryStanding,
+  type CategoryStandingResult,
+} from "@/lib/ai-search/category-standing";
+import { READ_NOT_AVAILABLE } from "@/lib/fender-canvas/canvas-reads";
 import { brandName, leadBrand } from "@/lib/brand-copy";
+import { formatInt, formatRatio } from "@/lib/fender-canvas/format";
 
 /** Engines with resolved unbranded answers, weakest Fender-lead share first (same order as Engine Comparison). */
 function unbrandedEnginesWeakestFirst(engines: readonly RoleGroupTally[]): RoleGroupTally[] {
@@ -152,7 +163,7 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
       satDrift: satelliteStateFace(read, "Fact Checks", AI_TABS.drift, "Accuracy"),
       spokeCompetitors: pending("Competitive Radar", RADAR_TABS.battlecards, true),
       satGap: satelliteStateFace(read, "Competitor Wins", RADAR_TABS.wins, ""),
-      satLead: satelliteStateFace(read, "Engine Comparison", RADAR_TABS.engines, "Unbranded discovery"),
+      satLead: satelliteStateFace(read, "Engine Comparison", RADAR_TABS.engines, "Unbranded Discovery"),
     };
   }
 
@@ -211,8 +222,8 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
       status: brandedHero.status,
       title: "Run Details",
       stats: [
-        `Unbranded ${s.roles.unbranded.fenderWins} of ${s.roles.unbranded.resolved}`,
-        `Branded ${s.roles.branded.fenderWins} of ${s.roles.branded.resolved}`,
+        `Unbranded ${formatInt(s.roles.unbranded.fenderWins)} of ${formatInt(s.roles.unbranded.resolved)}`,
+        `Branded ${formatInt(s.roles.branded.fenderWins)} of ${formatInt(s.roles.branded.resolved)}`,
       ],
       heroValue: brandedHero.heroValue,
       meta: `Completed ${s.completedAt}`,
@@ -223,7 +234,7 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
       status: citationsHero.status,
       title: "Citations",
       stats: [
-        `${citations.answersWithCitation} of ${citations.answered} answers cited sources`,
+        `${formatInt(citations.answersWithCitation)} of ${formatInt(citations.answered)} answers cited sources`,
         `${brandName()}-owned ${pct(citations.fenderOwnedRows, citations.rows)} of links`,
       ],
       heroValue: citationsHero.heroValue,
@@ -242,7 +253,7 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
     },
     spokeCompetitors: {
       // Category Battlecards: lead with the largest category gap when rivals lead there,
-      // else the top competitor share across unbranded discovery.
+      // else the top competitor share across Unbranded Discovery.
       status: s.competitorWins > 0 ? "warning" : "success",
       title: "Competitive Radar",
       stats: [],
@@ -252,7 +263,8 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
         if (lead?.topRival && lead.resolved > 0) {
           return {
             value: pct(lead.topRival.wins, lead.resolved),
-            label: rivalLeadsLabel(lead.topRival.brand, lead.key),
+            // The figure is the rival's share, so the label says so after the decided "Taylor leads Acoustics" wording.
+            label: `${rivalLeadsLabel(lead.topRival.brand, lead.key)} (rival share)`,
           };
         }
         if (s.topCompetitor) {
@@ -261,9 +273,9 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
             label: `${s.topCompetitor.brand} wins`,
           };
         }
-        return { value: "No competitor wins", label: "Unbranded discovery" };
+        return { value: "No competitor wins", label: "Unbranded Discovery" };
       })(),
-      meta: `${s.competitorWins} competitor wins · unbranded discovery`,
+      meta: `${s.competitorWins} competitor wins · Unbranded Discovery`,
       subTab: RADAR_TABS.battlecards,
       tooltip: { ...EMPTY_TOOLTIP },
     },
@@ -277,13 +289,13 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
       title: "Competitor Wins",
       stats:
         s.roles.unbranded.resolved > 0
-          ? [`${s.competitorWins} of ${s.roles.unbranded.resolved} resolved`]
+          ? [`${formatInt(s.competitorWins)} of ${formatInt(s.roles.unbranded.resolved)} resolved`]
           : ["No resolved answers"],
       heroValue:
         s.roles.unbranded.resolved > 0
           ? { value: pct(s.competitorWins, s.roles.unbranded.resolved), label: "" }
           : { value: "No resolved answers", label: "" },
-      meta: "Unbranded discovery",
+      meta: "Unbranded Discovery",
       subTab: RADAR_TABS.wins,
       tooltip: { ...EMPTY_TOOLTIP },
     },
@@ -300,7 +312,7 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
         return {
           status: engineHero.status,
           title: "Engine Comparison",
-          stats: [`${tally.fenderWins} of ${tally.resolved} ${brandName()} leads`],
+          stats: [`${formatInt(tally.fenderWins)} of ${formatInt(tally.resolved)} ${brandName()} leads`],
           heroValue: engineHero.heroValue,
           meta: `Weakest ${brandName()} lead first`,
           subTab: RADAR_TABS.engines,
@@ -310,7 +322,7 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
       const overall = heroPctFace(
         ratePct(s.roles.unbranded.fenderWins, s.roles.unbranded.resolved),
         pct(s.roles.unbranded.fenderWins, s.roles.unbranded.resolved),
-        "Unbranded discovery",
+        "Unbranded Discovery",
         UNBRANDED_RATE_BANDS.redBelow,
         UNBRANDED_RATE_BANDS.greenAbove,
       );
@@ -319,13 +331,13 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
         title: "Engine Comparison",
         stats:
           s.roles.unbranded.resolved > 0
-            ? [`${s.roles.unbranded.fenderWins} of ${s.roles.unbranded.resolved} resolved`]
+            ? [`${formatInt(s.roles.unbranded.fenderWins)} of ${formatInt(s.roles.unbranded.resolved)} resolved`]
             : ["No resolved answers"],
         heroValue:
           s.roles.unbranded.resolved > 0
             ? overall.heroValue
-            : { value: "No resolved answers", label: "Unbranded discovery" },
-        meta: "Unbranded discovery",
+            : { value: "No resolved answers", label: "Unbranded Discovery" },
+        meta: "Unbranded Discovery",
         subTab: RADAR_TABS.engines,
         tooltip: { ...EMPTY_TOOLTIP },
       };
@@ -382,12 +394,12 @@ export function aiSpokeHeaderChips(read: AiSearchRead, options: AiSpokeHeaderChi
     { id: "errors", label: "Provider errors", value: errorLine(s), tone: s.errorEngines.length ? "warning" : "neutral" },
     {
       id: "unbranded",
-      label: "Unbranded discovery",
+      label: "Unbranded Discovery",
       value: resolvedPhrase(s.roles.unbranded),
     },
     {
       id: "branded",
-      label: "Branded consideration",
+      label: "Branded Consideration",
       value: resolvedPhrase(s.roles.branded),
     },
     {
@@ -426,7 +438,7 @@ export function competitorsSpokeLead(read: AiSearchRead): { figure: string; expl
   return {
     figure: competitorWinsFigure(s.competitorWins, s.roles.unbranded.resolved),
     explainer:
-      `Which brands AI engines name over ${leadBrand()} on unbranded discovery prompts. Branded consideration, product fact checks, provider errors, and answers with no clear leader are left out.`,
+      `Which brands AI engines name over ${leadBrand()} on Unbranded Discovery prompts. Branded Consideration, product fact checks, provider errors, and answers with no clear leader are left out.`,
   };
 }
 
@@ -440,19 +452,6 @@ export function aiPriorityItems(read: AiSearchRead): PriorityItem[] {
   if (read.phase !== "ready") return [];
   const s = summarizeRun(read.snapshot);
   const items: PriorityItem[] = [];
-
-  if (s.drift.totalConfirmed > 0) {
-    items.push({
-      id: "ai-confirmed-contradiction",
-      title: `${s.drift.totalConfirmed} AI answers contradict a verified ${brandName()} fact`,
-      why: `In the published run, ${s.drift.totalConfirmed} of ${s.drift.totalChecked} checked answers stated something an official ${brandName()} page contradicts. The Product Fact Checks tab shows each question, the verified fact, its ${brandName()} source page, and the answer.`,
-      impact: "A shopper who reads a wrong spec may buy the wrong product or return it.",
-      severity: "critical",
-      spokeId: "aeo",
-      subTab: AI_TABS.drift,
-      defaultOwner: "client",
-    });
-  }
 
   const gap = s.largestGap;
   if (gap) {
@@ -471,11 +470,25 @@ export function aiPriorityItems(read: AiSearchRead): PriorityItem[] {
     items.push({
       id: "ai-competitor-gap",
       title: battleSentence(gap),
-      why: `In the published run, ${engines} named ${joinBrands(gap.leaders.map((l) => l.brand))} more often than ${leadBrand()} in ${gap.competitorWins} of ${gap.resolved} resolved unbranded discovery ${gap.category} answers.${domains.length ? ` Those answers cited ${domains.join(", ")}.` : ""} Start with those pages: check how they describe ${brandName()}'s ${gap.category} line against the brand they favor.`,
+      why: `In the published run, ${engines} named ${joinBrands(gap.leaders.map((l) => l.brand))} more often than ${leadBrand()} in ${formatInt(gap.competitorWins)} of ${formatInt(gap.resolved)} resolved Unbranded Discovery ${gap.category} answers.${domains.length ? ` Those answers cited ${domains.join(", ")}.` : ""} Start with those pages: check how they describe ${brandName()}'s ${gap.category} line against the brand they favor.`,
       impact: `The Competitor Wins tab lists each of the ${gap.competitorWins} answers with its engine, model, and cited pages.`,
       severity: "high",
       spokeId: "competitors",
       subTab: "Competitor Wins",
+      defaultOwner: "client",
+    });
+  }
+
+  // Checker verdicts are unreviewed, so they are raised as a review task, never as a Critical finding.
+  const review = factCheckReviewAnswers(s.drift.probes);
+  if (review.length > 0) {
+    items.push({
+      id: "ai-fact-check-review",
+      title: factCheckReviewTitle(review.length),
+      why: `The automatic fact check flagged ${formatRatio(review.length, s.drift.coverage.answersChecked)} checked answers. The Product Fact Checks tab shows each flagged answer's words next to the ${brandName()} fact and its source page.`,
+      severity: "moderate",
+      spokeId: "aeo",
+      subTab: AI_TABS.drift,
       defaultOwner: "client",
     });
   }
@@ -514,49 +527,76 @@ const pendingMetric = (read: AiSearchRead) =>
 
 export type AiMetricKey =
   | "overallAiWinRate"
-  | "beginnerAiWinRate"
   | "resolvedSimulations"
   | "confirmedHallucinations"
-  | "beginnerSovGap"
+  | "weakestCategoryGap"
   | "strongestCategorySov";
+
+type CategoryMetricKey = "weakestCategoryGap" | "strongestCategorySov";
+
+function categoryMetricBase(key: CategoryMetricKey) {
+  return key === "weakestCategoryGap"
+    ? { id: "weakest-category-gap", spokeId: "competitors", label: "Weakest category: gap to top rival", subTab: RADAR_TABS.battlecards }
+    : { id: "strongest-category-sov", spokeId: "competitors", label: `Strongest category for ${brandName()}`, subTab: RADAR_TABS.battlecards };
+}
+
+function standingMetric(key: CategoryMetricKey, result: CategoryStandingResult, tone: NodeStatus): CanvasMetric {
+  const base = { ...categoryMetricBase(key), provenance: "live" as const };
+  if (!result.standing) return { ...base, value: READ_NOT_AVAILABLE, detail: result.missing, tone: "warning" };
+  const { standing } = result;
+  return {
+    ...base,
+    value: `${standing.margin >= 0 ? "+" : "-"}${formatGapPts(standing.marginPts)}`,
+    detail: `${standingHeadline(standing)}. ${standingCounts(standing)}.`,
+    tone,
+  };
+}
+
+/**
+ * The strongest and weakest question category in the date-pill read (decisions 83 and 106). The
+ * categories are the client's own, so a client without a category never shows a figure for it.
+ */
+export function categoryStandingMetrics(read: AiSearchRead): Record<CategoryMetricKey, CanvasMetric> {
+  if (read.phase !== "ready") {
+    const pending = { ...pendingMetric(read), tone: "neutral" as const, provenance: "live" as const };
+    return {
+      weakestCategoryGap: { ...categoryMetricBase("weakestCategoryGap"), ...pending },
+      strongestCategorySov: { ...categoryMetricBase("strongestCategorySov"), ...pending },
+    };
+  }
+  const leads = periodCategoryLeads(read.snapshot.calls);
+  return {
+    weakestCategoryGap: standingMetric("weakestCategoryGap", weakestCategoryStanding(leads), "danger"),
+    strongestCategorySov: standingMetric("strongestCategorySov", strongestCategoryStanding(leads), "success"),
+  };
+}
 
 /** AI Search widget values. Ids stay stable so saved widget choices survive. */
 export function aiMetrics(read: AiSearchRead): Record<AiMetricKey, CanvasMetric> {
   const base = {
-    overallAiWinRate: { id: "overall-ai-win-rate", spokeId: "aeo", label: "Unbranded discovery", subTab: AI_TABS.summary },
-    beginnerAiWinRate: { id: "beginner-ai-win-rate", spokeId: "aeo", label: "Beginner AI Win Rate", subTab: AI_TABS.simulations },
+    overallAiWinRate: { id: "overall-ai-win-rate", spokeId: "aeo", label: "Unbranded Discovery", subTab: AI_TABS.summary },
     resolvedSimulations: { id: "resolved-simulations", spokeId: "aeo", label: "Answered AI Calls", subTab: AI_TABS.summary },
     confirmedHallucinations: { id: "confirmed-hallucinations", spokeId: "aeo", label: "Product Fact Checks", subTab: AI_TABS.drift },
-    beginnerSovGap: { id: "beginner-sov-gap", spokeId: "competitors", label: "Beginner Category SOV Gap", subTab: RADAR_TABS.battlecards },
-    strongestCategorySov: { id: "strongest-category-sov", spokeId: "competitors", label: "Strongest Category SOV", subTab: RADAR_TABS.battlecards },
   } as const;
+  const categories = categoryStandingMetrics(read);
 
   if (read.phase !== "ready") {
     const p = pendingMetric(read);
-    return Object.fromEntries(
+    const pending = Object.fromEntries(
       Object.entries(base).map(([key, m]) => [key, { ...m, ...p, tone: "neutral", provenance: "live" }]),
-    ) as Record<AiMetricKey, CanvasMetric>;
+    ) as Record<keyof typeof base, CanvasMetric>;
+    return { ...pending, ...categories };
   }
 
   const s = summarizeRun(read.snapshot);
-  const beginner = s.categories.find((row) => row.key === "beginner");
-  const beginnerBattle = categoryBattles(read.snapshot.calls).find((b) => b.category === "beginner");
-  const rival = beginnerBattle?.leaders[0];
-  const strongest = strongestCategory(categoryBattles(read.snapshot.calls));
   const live = { provenance: "live" as const };
 
   return {
     overallAiWinRate: {
       ...base.overallAiWinRate, ...live,
       value: s.roles.unbranded.resolved > 0 ? pct(s.roles.unbranded.fenderWins, s.roles.unbranded.resolved) : "No resolved answers",
-      detail: `Unbranded ${resolvedPhrase(s.roles.unbranded)}. Branded consideration ${resolvedPhrase(s.roles.branded)}.`,
+      detail: `Unbranded ${resolvedPhrase(s.roles.unbranded)}. Branded Consideration ${resolvedPhrase(s.roles.branded)}.`,
       tone: s.roles.unbranded.resolved ? (s.roles.unbranded.fenderWins / s.roles.unbranded.resolved >= 0.75 ? "success" : "warning") : "neutral",
-    },
-    beginnerAiWinRate: {
-      ...base.beginnerAiWinRate, ...live,
-      value: beginner ? pct(beginner.fenderWins, beginner.resolved) : "No beginner prompts",
-      detail: beginner ? `${beginner.fenderWins} of ${beginner.resolved} resolved beginner answers` : "Not in this run",
-      tone: "neutral",
     },
     resolvedSimulations: {
       ...base.resolvedSimulations, ...live,
@@ -570,22 +610,7 @@ export function aiMetrics(read: AiSearchRead): Record<AiMetricKey, CanvasMetric>
       detail: factCheckShortLine(s.drift.coverage),
       tone: s.drift.totalConfirmed > 0 ? "danger" : "success",
     },
-    beginnerSovGap: {
-      ...base.beginnerSovGap, ...live,
-      value: beginnerBattle && beginnerBattle.resolved
-        ? `${(((beginnerBattle.fenderWins - (rival?.wins ?? 0)) * 100) / beginnerBattle.resolved).toFixed(1)} pts`
-        : "No beginner prompts",
-      detail: beginnerBattle
-        ? `${leadBrand()} ${beginnerBattle.fenderWins} vs ${rival ? `${rival.brand} ${rival.wins}` : "no rival"} of ${beginnerBattle.resolved} resolved`
-        : "Not in this run",
-      tone: "neutral",
-    },
-    strongestCategorySov: {
-      ...base.strongestCategorySov, ...live,
-      value: strongest ? pct(strongest.fenderWins, strongest.resolved) : "No resolved answers",
-      detail: strongest ? `${categoryLabel(strongest.category)} · ${strongest.fenderWins} of ${strongest.resolved} resolved` : "Not in this run",
-      tone: "success",
-    },
+    ...categories,
   };
 }
 
@@ -607,10 +632,10 @@ export function aiTourLines(read: AiSearchRead): AiTourLines {
     ],
     competitors: [
       s.topCompetitor
-        ? `${s.topCompetitor.brand} named most in ${s.topCompetitor.wins} of ${s.topCompetitor.resolved} resolved unbranded discovery answers`
-        : "No competitor named most in a resolved unbranded discovery answer",
+        ? `${s.topCompetitor.brand} named most in ${formatInt(s.topCompetitor.wins)} of ${formatInt(s.topCompetitor.resolved)} resolved Unbranded Discovery answers`
+        : "No competitor named most in a resolved Unbranded Discovery answer",
       s.largestGap ? battleSentence(s.largestGap) : "No category gap in this run",
-      "Unbranded discovery answers only",
+      "Unbranded Discovery answers only",
     ],
     roadmap: lead,
   };

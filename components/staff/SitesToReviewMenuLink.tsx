@@ -4,24 +4,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ListChecks } from "lucide-react";
 import { SITES_TO_REVIEW_PATH } from "@/lib/ai-search/site-review";
+import { isStaffViewer } from "@/components/staff/staff-check";
 import { activeClientKey, clientHref } from "@/lib/client/active-client";
-
-const STAFF_CHECK_PATH = `${SITES_TO_REVIEW_PATH}/staff`;
-
-let staffCheck: Promise<boolean> | null = null;
-
-/**
- * Asks the server once per page load whether the signed-in user is IntoFocus staff (the same
- * session check the page makes). Any failure reads as not staff. This only hides the link; the
- * page, its CSV, and the save each check staff again on the server.
- */
-function isStaffViewer(): Promise<boolean> {
-  staffCheck ??= fetch(STAFF_CHECK_PATH, { cache: "no-store" })
-    .then((response) => (response.ok ? response.json() : null))
-    .then((body: { staff?: unknown } | null) => body?.staff === true)
-    .catch(() => false);
-  return staffCheck;
-}
 
 /** The user-menu link to the staff Sites to review list. Renders nothing for anyone else. */
 export function SitesToReviewMenuLink({ lightTheme = false }: { lightTheme?: boolean }) {

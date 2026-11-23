@@ -11,17 +11,28 @@ import {
   headlineSurface,
   type RetailCanvasRead,
 } from "@/lib/fender-canvas/portfolio-retail-display";
-import { MAP_PRICES_NOT_STORED } from "@/lib/fender-canvas/portfolio-retail";
+import { mapPricesNotStored } from "@/lib/fender-canvas/portfolio-retail";
 import { mapReadLine } from "@/lib/fender-canvas/retail-copy";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
-import { brandName, brandSite, isFenderClient } from "@/lib/brand-copy";
+import { brandName, brandSite } from "@/lib/brand-copy";
+import { activeClientSettings } from "@/lib/client/active-client";
+import { specBlockPhrase } from "@/lib/findability/placeholder-spec-fields";
 
-const MAP_CHANNEL_WHY = isFenderClient()
-  ? "Open the MAP Leakage tab for the current below-MAP listings. Amazon, Walmart, and Musician's Friend appear only when this read stored a price for that channel. Any other retailer appears only when a stored price exists for that channel."
-  : "Open the MAP Leakage tab for the current below-MAP listings. A retailer appears only when this read stored a price for that channel.";
+/** "Amazon, Walmart, and Musician's Friend": Amazon plus the retailers in the client's settings (P-13). */
+function mapChannelNames(): string {
+  const names = ["Amazon", ...activeClientSettings().retailers.map((retailer) => retailer.name)];
+  if (names.length <= 2) return names.join(" and ");
+  return `${names.slice(0, -1).join(", ")}, and ${names[names.length - 1]}`;
+}
 
-const MAP_PRICES_NOT_STORED_WHY =
-  `${brandName()} MAP prices have not been stored. ${isFenderClient() ? "Amazon, Walmart, and Musician's Friend prices" : "Retail prices"} still show when a price is stored for that channel. A missing price stays blank.`;
+/* Read per call, never at import (P-13), so a server export reads the request's client. */
+export function mapChannelWhy(): string {
+  return `Open the MAP Leakage tab for the current below-MAP listings. ${mapChannelNames()} appear only when this read stored a price for that channel. Any other retailer appears only when a stored price exists for that channel.`;
+}
+
+export function mapPricesNotStoredWhy(): string {
+  return `${brandName()} MAP prices have not been stored. ${mapChannelNames()} prices still show when a price is stored for that channel. A missing price stays blank.`;
+}
 
 /** The MAP tab shows this sentence while the reading is unfinished or missing. */
 function mapMissingSentence(retail: RetailCanvasRead): string | null {
@@ -32,11 +43,11 @@ function mapMissingSentence(retail: RetailCanvasRead): string | null {
 }
 
 function mapPriority(retail: RetailCanvasRead): { title: string; why: string } {
-  if (retail.phase === "ready" && retail.snapshot.mapLeakage.missingMessage === MAP_PRICES_NOT_STORED) {
-    return { title: MAP_PRICES_NOT_STORED, why: MAP_PRICES_NOT_STORED_WHY };
+  if (retail.phase === "ready" && retail.snapshot.mapLeakage.missingMessage === mapPricesNotStored()) {
+    return { title: mapPricesNotStored(), why: mapPricesNotStoredWhy() };
   }
   const title = mapReadLine(retail).replace(/\.$/, "");
-  return { title, why: mapMissingSentence(retail) ?? MAP_CHANNEL_WHY };
+  return { title, why: mapMissingSentence(retail) ?? mapChannelWhy() };
 }
 
 /** Command center copy from the canvas reads. Unsourced counts are omitted. */
@@ -82,7 +93,7 @@ export function buildLiveCommandCenter(
         id: "schema-coverage",
         title: `${brandSite()} pages are missing machine-readable specs`,
         why: schemaPages
-          ? `${formatInt(schemaPages.missingSpecBlock)} of ${formatInt(schemaPages.pages)} ${brandSite()} product pages have no spec block, so AI engines cannot read ${isFenderClient() ? "neck, pickup, and hardware specs" : "detailed specs"} there as product data.`
+          ? `${formatInt(schemaPages.missingSpecBlock)} of ${formatInt(schemaPages.pages)} ${brandSite()} product pages have no spec block, so AI engines cannot read ${specBlockPhrase()} there as product data.`
           : `The ${brandSite()} page read could not be loaded.`,
         severity: "high",
         spokeId: "specs",

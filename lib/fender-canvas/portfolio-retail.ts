@@ -13,7 +13,6 @@ import {
   type BuyBoxSellerCensus,
   type ControlledBuyBoxDetail,
 } from "./consensus-scores";
-import { catalogDivisionCensus, type DivisionCensus } from "./division-census";
 import {
   countFeaturedOffer,
   FEATURED_OFFER_COLUMNS,
@@ -28,9 +27,10 @@ import {
   featuredOfferHeadlineLabel,
   firstPassIncomplete,
 } from "./featured-offer-copy";
-import { brandName, isFenderClient } from "@/lib/brand-copy";
+import { brandName } from "@/lib/brand-copy";
+import { activeClientSettings } from "@/lib/client/active-client";
 import type { PartialFigure } from "./canvas-reads";
-import { combineStale, RECHECK_DAYS, rowsStale } from "./row-stale";
+import { combineStale, RECHECK_DAYS, retailerRecheckDays, rowsStale } from "./row-stale";
 
 export type RetailReadingStatus =
   | "available_with_issues"
@@ -86,10 +86,13 @@ export type RetailHeadline = {
   reading: RetailReading<unknown>;
 };
 
-const MAP_UNAVAILABLE = "MAP leakage has not been stored.";
+const MAP_UNAVAILABLE = "MAP Leakage has not been stored.";
 
 /** Shown when the retail read has rows and none of them store a MAP price. */
-export const MAP_PRICES_NOT_STORED = `${brandName()} MAP prices have not been stored.`;
+export function mapPricesNotStored(): string {
+  return `${brandName()} MAP prices have not been stored.`;
+}
+
 const BUNDLE_UNAVAILABLE = "Catalog bundle parent ASINs have not been stored.";
 const BUNDLE_OFFER_UNAVAILABLE = "Live offer readings have not been stored for bundle listings.";
 const SPEC_UNAVAILABLE = "Amazon spec-field readings have not been stored.";
@@ -100,7 +103,7 @@ export const RETAIL_MAP_LEAKAGE_COLUMNS =
   "asin,map_price,offer_price,amz_leakage,wmt_leakage,mf_leakage,featured_offer_checked_at,wmt_checked_at,mf_checked_at";
 
 export const RETAIL_CATALOG_GOVERNANCE_COLUMNS =
-  "asin,model_name,title,bundle_name,parent_asin,product_url,is_bundle,category,buybox_seller_name,buybox_seller_id,buybox_status,featured_offer_state,featured_offer_checked_at";
+  "asin,model_name,title,bundle_name,parent_asin,product_url,is_bundle,category,buybox_seller_name,buybox_seller_id,buybox_status,featured_offer_state,featured_offer_checked_at,catalog_checked_at";
 
 export const RETAIL_AMAZON_SPEC_COLUMNS =
   "asin,title,amazon_checked,amazon_missing_fields,checked_at";
@@ -296,7 +299,7 @@ function mapLeakageReading(
     return {
       status: "unavailable",
       issueCount: null,
-      missingMessage: MAP_PRICES_NOT_STORED,
+      missingMessage: mapPricesNotStored(),
       detail: null,
     };
   }
@@ -348,7 +351,7 @@ function mapLeakageReading(
     return {
       status: "incomplete",
       issueCount: violations.length,
-      missingMessage: `MAP leakage is stored for ${countLabel(decided)} of ${countLabel(population)} listings. ${known}${gaps}${stopped} This is not a final count.`,
+      missingMessage: `MAP Leakage is stored for ${countLabel(decided)} of ${countLabel(population)} listings. ${known}${gaps}${stopped} This is not a final count.`,
       detail,
     };
   }
@@ -381,6 +384,8 @@ export type CatalogBundleRow = {
   featured_offer_state?: string | null;
   /** When the Featured Offer state was observed. Per-row stale rule, X-25. */
   featured_offer_checked_at?: string | null;
+  /** When the catalog pass last read the bundle flag and parent ASIN. Per-row stale rule, X-25. */
+  catalog_checked_at?: string | null;
 };
 
 /** Short label for the bundle population every bundle figure counts (R-13). */
@@ -445,14 +450,14 @@ export function catalogBundleSellerIdLabel(
   return id ? shortCell(id) : null;
 }
 
-/** Compact product-line label for a catalog-governance bundle row. */
+/**
+ * Compact product-line label for a catalog-governance bundle row: the client's
+ * category_short_labels setting when it names the stored category (P-16), else the stored label.
+ */
 export function catalogBundleLineLabel(category: string | null | undefined): string {
   const value = text(category);
   if (!value) return "Unknown";
-  if (value === "Solid Body") return "Solid Body";
-  if (value === "Electric Guitar Kits") return "Kits";
-  if (value === "Hollow & Semi-Hollow Body") return "Hollow";
-  return shortCell(value);
+  return activeClientSettings().category_short_labels[value] ?? shortCell(value);
 }
 
 export type UnnestedBundleDetail = {
@@ -575,7 +580,7 @@ function unnestedBundlesReading(
     return {
       status: "incomplete",
       issueCount: 0,
-      missingMessage: `The catalog read stores ${countLabel(catalogBundles)} bundle listings. This retail read did not include them, so zero unnested bundles is not a final result.`,
+      missingMessage: `The catalog read stores ${countLabel(catalogBundles)} bundle listings. This retail read did not include them, so zero Splintered Listings is not a final result.`,
       detail,
     };
   }
@@ -583,7 +588,7 @@ function unnestedBundlesReading(
   if (options?.truncated) {
     const known =
       opportunities.length === 0
-        ? "No unnested bundle is confirmed in the included listings."
+        ? "No splintered listing is confirmed in the included listings."
         : `${countLabel(opportunities.length)} of the included ${LIVE_OFFER_BUNDLES} ${opportunities.length === 1 ? "has" : "have"} no usable parent ASIN.`;
     return {
       status: "incomplete",
@@ -705,7 +710,7 @@ export function suppressedListingsFinding(
 }
 
 /**
- * MAP leakage: Amazon prices carry featured_offer_checked_at (daily), Walmart wmt_checked_at
+ * MAP Leakage: Amazon prices carry featured_offer_checked_at (daily), Walmart wmt_checked_at
  * (daily for Fender, every 2 days for Ledlenser), Musician's Friend mf_checked_at (every 3 days).
  * Each channel counts the listings that have a stored comparison on it.
  */
@@ -726,34 +731,41 @@ export function mapLeakageFinding(
     label: string,
     leakage: (row: MapLeakageRow) => unknown,
     at: (row: MapLeakageRow) => string | null | undefined,
-    intervalDays: number,
+    intervalDays: number | null,
   ) => ({
     label,
-    stale: rowsStale(
-      rows.filter((row) => finite(leakage(row)) != null),
-      at,
-      { intervalDays, check: `${label} price check`, source: "canvas_retail_listings", figure: "MAP figures" },
-      options?.now,
-    ),
+    // A retailer the client does not check (no recheck days in its settings) reads no stale line.
+    stale:
+      intervalDays == null
+        ? null
+        : rowsStale(
+            rows.filter((row) => finite(leakage(row)) != null),
+            at,
+            { intervalDays, check: `${label} price check`, source: "canvas_retail_listings", figure: "MAP figures" },
+            options?.now,
+          ),
   });
   return withStale(
     reading,
     combineStale(
       [
         channel("Amazon", (row) => row.amz_leakage, (row) => row.featured_offer_checked_at, RECHECK_DAYS.buyBox),
+        channel("Walmart", (row) => row.wmt_leakage, (row) => row.wmt_checked_at, retailerRecheckDays("walmart")),
         channel(
-          "Walmart",
-          (row) => row.wmt_leakage,
-          (row) => row.wmt_checked_at,
-          isFenderClient() ? RECHECK_DAYS.walmartFender : RECHECK_DAYS.walmartLedlenser,
+          "Musician's Friend",
+          (row) => row.mf_leakage,
+          (row) => row.mf_checked_at,
+          retailerRecheckDays("musiciansfriend"),
         ),
-        channel("Musician's Friend", (row) => row.mf_leakage, (row) => row.mf_checked_at, RECHECK_DAYS.musiciansFriend),
       ],
     ),
   );
 }
 
-/** Splintered Listings "for sale now": each live bundle's own featured_offer_checked_at, daily. */
+/**
+ * Splintered Listings: each live bundle's own catalog_checked_at (bundle flag and parent ASIN)
+ * and featured_offer_checked_at ("for sale now"), both daily.
+ */
 export function unnestedBundlesFinding(
   rows: CatalogBundleRow[] | null,
   options?: { truncated?: boolean; catalogBundleCount?: number | null | CanvasReadFailure; now?: number },
@@ -761,14 +773,21 @@ export function unnestedBundlesFinding(
   const reading = unnestedBundlesReading(rows, options);
   if (rows == null) return reading;
   const live = rows.filter((row) => row.is_bundle === true && text(row.asin) && hasLiveOffer(row));
-  return withStale(
-    reading,
-    rowsStale(
+  const check = (label: string, at: (row: CatalogBundleRow) => string | null | undefined, intervalDays: number) => ({
+    label,
+    stale: rowsStale(
       live,
-      (row) => row.featured_offer_checked_at,
-      { intervalDays: RECHECK_DAYS.buyBox, check: "Buy Box check", source: "canvas_retail_listings", figure: "bundle figures" },
+      at,
+      { intervalDays, check: `${label} check`, source: "canvas_retail_listings", figure: "Splintered Listings figures" },
       options?.now,
     ),
+  });
+  return withStale(
+    reading,
+    combineStale([
+      check("catalog", (row) => row.catalog_checked_at, RECHECK_DAYS.catalog),
+      check("Buy Box", (row) => row.featured_offer_checked_at, RECHECK_DAYS.buyBox),
+    ]),
   );
 }
 
@@ -890,8 +909,6 @@ export type PortfolioRetailSnapshot = PortfolioRetailFindings & {
   mapRead?: { rows: MapLeakageRow[]; truncated: boolean } | null;
   /** True when the MAP set-aside read failed, so no approved exception could be left out. */
   mapApprovedExceptionsFailed?: boolean;
-  /** Buy Box holders per division from the catalog read. Null when that read failed. Optional on fixtures. */
-  divisionCensus?: DivisionCensus | null;
 };
 
 export async function loadPortfolioRetailSnapshot(
@@ -928,6 +945,5 @@ export async function loadPortfolioRetailSnapshot(
     ...findings,
     headline: selectRetailHeadline(findings),
     mapRead: mapRows.ok ? { rows: mapRows.rows, truncated: mapRows.truncated } : null,
-    divisionCensus: catalogDivisionCensus(catalogRows),
   };
 }

@@ -12,8 +12,6 @@ export const EXPORT_TABLE_IDS = [
   "brand-site-page-found",
   "aplus-matrix-listings",
   "suppressed-listings",
-  // Summary Performance: the catalog division table (read on the server like the screen).
-  "catalog-divisions",
   // AI Search Visibility: read on the server for the date pill and engine switch the screen shows.
   "ai-run-engines",
   "ai-run-categories",
@@ -30,7 +28,6 @@ export const EXPORT_TABLE_IDS = [
   "competitor-wins",
   "engine-comparison",
   "engine-category",
-  "prompt-history",
   "explore-listings",
   // Catalog Health: the Findability listings of the outcome on screen.
   "findability-listings",
@@ -69,9 +66,14 @@ export function exportHref(tableId: string, clientKey: string): string {
   return clientKey === "fender" ? base : `${base}?client=${encodeURIComponent(clientKey)}`;
 }
 
+/** A saved file named for the figure where the table id keeps an older internal name (X-18). */
+const EXPORT_FILE_STEM: Partial<Record<string, string>> = {
+  "catalog-bundles": "splintered-listings",
+};
+
 /** File name the browser saves: "map-listings-2026-11-09.csv". */
 export function exportFileName(tableId: string, now = new Date()): string {
-  return `${tableId}-${now.toISOString().slice(0, 10)}.csv`;
+  return `${EXPORT_FILE_STEM[tableId] ?? tableId}-${now.toISOString().slice(0, 10)}.csv`;
 }
 
 /** The prompt list in the prompts editor, which is not a ResizableTable. */

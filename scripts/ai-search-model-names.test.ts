@@ -2,7 +2,15 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { applyExplorerFilter, DEFAULT_FILTER } from "../lib/ai-search/explorer-filter.ts";
-import { cleanModelName, engineTallies, modelLabel } from "../lib/ai-search/run-metrics.ts";
+import {
+  cleanModelName,
+  distinctModelLabels,
+  engineTallies,
+  enginesAndModels,
+  modelKey,
+  modelLabel,
+  modelNamer,
+} from "../lib/ai-search/run-metrics.ts";
 import type { AiCallRow } from "../lib/ai-search/types.ts";
 
 /* Gemini's stored model name sometimes carries a no-break space or a left-to-right mark
@@ -38,8 +46,8 @@ test("invisible characters in a model name are normalized for display", () => {
   assert.equal(modelLabel("‎3.5 Flash-Lite"), "3.5 Flash-Lite");
   assert.equal(modelLabel("3.5‎ Flash-Lite"), "3.5 Flash-Lite");
   assert.equal(modelLabel("  3.5 ​ Flash-Lite﻿ "), "3.5 Flash-Lite");
-  assert.equal(modelLabel("‎"), "not recorded");
-  assert.equal(modelLabel(null), "not recorded");
+  assert.equal(modelLabel("‎"), "Not available*");
+  assert.equal(modelLabel(null), "Not available*");
   assert.equal(cleanModelName(" "), "");
 });
 
@@ -61,4 +69,30 @@ test("the model filter matches every stored spelling of the model it shows", () 
     matched.map((row) => row.id),
     ["1", "2"],
   );
+});
+
+/* Worker 27.9: Gemini stored one model as "3.5 Flash Lite", "3.5 Flash-Lite" and
+   "3.5 Flash‑Lite" (U+2011). One model, shown once, in one spelling. Stored data is not changed. */
+test("spellings that differ by case, hyphen or space show as one model", () => {
+  assert.equal(cleanModelName("3.5 Flash‑Lite"), "3.5 Flash-Lite");
+  assert.equal(modelKey("3.5 Flash Lite"), modelKey("3.5 flash‑lite"));
+  assert.equal(modelKey("gemini_3.5-flash  lite"), "gemini 3.5 flash lite");
+  assert.notEqual(modelKey("Flash-Lite"), modelKey("3.5 Flash-Lite"));
+  assert.deepEqual(distinctModelLabels(["3.5 Flash Lite", "3.5 Flash-Lite", "3.5 Flash‑Lite", "Flash-Lite"]), [
+    "3.5 Flash-Lite",
+    "Flash-Lite",
+  ]);
+  assert.deepEqual(distinctModelLabels(["3.5 Flash‑Lite", "3.5 Flash Lite"]), ["3.5 Flash-Lite"]);
+  assert.deepEqual(distinctModelLabels([null, "turbo"]), ["Not available*", "turbo"]);
+  const name = modelNamer(["3.5 Flash Lite", "3.5 Flash-Lite"]);
+  assert.equal(name("3.5 FLASH LITE"), "3.5 Flash-Lite");
+  assert.equal(name(null), "Not available*");
+});
+
+test("an engine row and the model filter list one Gemini model once", () => {
+  const rows = [call("1", "3.5 Flash Lite"), call("2", "3.5 Flash-Lite"), call("3", "3.5 Flash‑Lite")];
+  assert.deepEqual(engineTallies(rows)[0].models, ["3.5 Flash-Lite"]);
+  assert.deepEqual(enginesAndModels(rows)[0].models, ["3.5 Flash-Lite"]);
+  const matched = applyExplorerFilter(rows, { ...DEFAULT_FILTER, scope: "all", model: "3.5 Flash-Lite" });
+  assert.deepEqual(matched.map((row) => row.id), ["1", "2", "3"]);
 });

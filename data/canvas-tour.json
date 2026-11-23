@@ -1,0 +1,104 @@
+[
+  {
+    "nodeId": "hub",
+    "targetX": 800,
+    "targetY": 500,
+    "radius": 185,
+    "title": "Brand Overview",
+    "subtitle": "{brand}'s health across the catalog divisions",
+    "category": "BRAND CORE",
+    "displays": [
+      "Retail health uses the same headline as the ticker",
+      "AI win rate and the weakest category load with the simulation read"
+    ],
+    "value": "One page tying Amazon listing problems and AI recommendations to revenue."
+  },
+  {
+    "nodeId": "ecommerce",
+    "targetX": 1160,
+    "targetY": 320,
+    "radius": 125,
+    "title": "Catalog Health",
+    "subtitle": "Buy Box, MAP, and catalog nesting",
+    "category": "RETAIL HEALTH",
+    "displays": [
+      "Suppressed Buy Boxes, MAP Leakage, and unnested bundles",
+      "A partial reading keeps its count and says what is still missing"
+    ],
+    "value": "These catalog and retail issues change what an assistant can recommend and what a shopper can buy."
+  },
+  {
+    "nodeId": "aeo",
+    "targetX": 440,
+    "targetY": 320,
+    "radius": 125,
+    "title": "AI Search Visibility",
+    "subtitle": "What ChatGPT, Perplexity, and Gemini say about {brand}",
+    "category": "AI SEARCH VISIBILITY",
+    "displays": [
+      "Simulation calls load with the latest battery",
+      "{lead_brand} win rate uses resolved answers from that read",
+      "Flagged answers and stored root causes are on the hallucination tab"
+    ],
+    "value": "See why AI assistants leave {brand} out of recommendations and exactly what to change."
+  },
+  {
+    "nodeId": "specs",
+    "targetX": 440,
+    "targetY": 680,
+    "radius": 120,
+    "title": "Product Readiness",
+    "subtitle": "Can AI and Amazon read your specs correctly?",
+    "category": "AI READINESS",
+    "displays": [
+      "additionalProperty coverage loads with the spec read",
+      "Official-page outcomes stay separate and load with the findability read",
+      "Missing-field rows for found {brand_site} pages are listed on Brand-Site Specs"
+    ],
+    "value": "Make {brand_site} the source AI trusts for specs, with fewer wrong answers and fewer returns."
+  },
+  {
+    "nodeId": "competitors",
+    "targetX": 1160,
+    "targetY": 680,
+    "radius": 120,
+    "title": "Competitors",
+    "subtitle": "Where rivals beat {brand}, and why",
+    "category": "COMPETITORS",
+    "displays": [
+      "Beginner share of voice loads from the competitor table",
+      "Category leaders load from that same read",
+      "Tracked on Amazon, Sweetwater, Reverb, and Walmart"
+    ],
+    "value": "Get ready-made playbooks for shoppers deciding between {brand} and a rival."
+  },
+  {
+    "nodeId": "suggestions",
+    "targetX": 800,
+    "targetY": 180,
+    "radius": 115,
+    "title": "Action Items & ROI",
+    "subtitle": "Action items, with revenue labeled as estimates",
+    "category": "OPPORTUNITY",
+    "displays": [
+      "Revenue figures on this spoke are estimates",
+      "Phase 1: {phase_one_lift}",
+      "Enterprise: {enterprise_potential}"
+    ],
+    "value": "See what each Action Item is worth, so you know where to start."
+  },
+  {
+    "nodeId": "roadmap",
+    "targetX": 800,
+    "targetY": 820,
+    "radius": 115,
+    "title": "Roadmap",
+    "subtitle": "What happens at 30, 60, and 90 days",
+    "category": "ROADMAP",
+    "displays": [
+      "The retail headline matches the ticker",
+      "AI win rate loads with the simulation read"
+    ],
+    "value": "Follow a 90-day plan from the current retail headline."
+  }
+]

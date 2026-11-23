@@ -21,7 +21,7 @@ export const SCORE_CARD_TIPS: Record<ScoreCardId, string> = {
   commerce:
     "AI Commerce measures how well the brand's Amazon listings are controlled: who holds the Buy Box, whether listings are suppressed or splintered, and whether any listing has a current MAP violation.",
   actuation:
-    "AI Actuation is not included yet because no response to cited community sources or outreach to cited publications has an owner, evidence, and a dated record.",
+    "AI Actuation measures the work that earns the brand citations in AI answers: two programs IntoFocus verified in the last 90 days (up to 40 points), and results (at least 60 points), the share of unbranded shopping answers citing the brand's own pages plus verified community responses and placements. A program that is not in place earns 0.",
 };
 
 /** One row of the AI Consensus weight breakdown. Weight and contribution are null when left out. */
@@ -37,7 +37,7 @@ export type ConsensusWeightRow = {
 /**
  * SC-04: each pillar's score, its weight in AI Consensus, and the points it adds. The weights
  * are the ones consensusScore() assigned (pillar.weight), so the contributions add up to the
- * Consensus score. A pillar left out (AI Actuation today) has no weight and no contribution.
+ * Consensus score. A pillar left out (its inputs did not load) has no weight and no contribution.
  */
 export function consensusWeightRows(consensus: ConsensusScore): ConsensusWeightRow[] {
   return [consensus.foundation, consensus.commerce, consensus.actuation].map((pillar) => {

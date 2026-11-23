@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useImperativeHandle, useLayoutEffect, useRef, useState, type Ref } from "react";
+import { StatusGlyph } from "@/components/v3/live/StatusMark";
+import { dataStatusColor } from "@/lib/canvas-sdk/data-status";
 import { sameTooltipContent, type TooltipContent } from "@/lib/canvas-sdk/tooltip-content";
 
 /** The anchor element's box in viewport pixels. Definitions use it to flip and clamp. */
@@ -122,7 +124,21 @@ export function NodeTooltip({ ref }: { ref: Ref<NodeTooltipHandle> }) {
       className={`node-tooltip${content?.anchor === "column-right" ? " node-tooltip-column" : ""}${content?.anchor === "definition" ? " node-tooltip-definition" : ""}${content?.example ? " node-tooltip-example" : ""}${visible ? " visible" : ""}`}
     >
       {content?.title ? <div style={{ fontWeight: 600, marginBottom: 2 }}>{content.title}</div> : null}
-      {content?.desc ? (
+      {content?.rows?.length ? (
+        <div className="node-tooltip-desc node-tooltip-rows" style={{ color: "var(--text-muted)", fontSize: 11 }}>
+          {content.rows.map((row, index) => (
+            <div
+              key={`${row.text}-${index}`}
+              className={`node-tooltip-row${row.bad ? " data-status-bad" : ""}`}
+              data-status={row.bad ? "bad" : undefined}
+              style={row.bad ? { color: dataStatusColor("bad") } : undefined}
+            >
+              {row.bad ? <StatusGlyph status="bad" /> : null}
+              <span>{row.text}</span>
+            </div>
+          ))}
+        </div>
+      ) : content?.desc ? (
         <div className="node-tooltip-desc" style={{ color: "var(--text-muted)", fontSize: 11 }}>
           {content.desc}
         </div>

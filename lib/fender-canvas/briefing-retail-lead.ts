@@ -24,6 +24,7 @@ import type { CanvasBundle } from "@/lib/fender-canvas/types";
 import {
   buyBoxHero,
   catalogHero,
+  heroFigureTone,
   mapHero,
   type RetailOverviewHeroModel,
 } from "@/lib/fender-canvas/retail-overview-lead";
@@ -39,6 +40,7 @@ import {
 } from "@/lib/findability/lead";
 import { countFindability } from "@/lib/findability/outcomes";
 import { leadBrand } from "@/lib/brand-copy";
+import { MONTHLY_POTENTIAL_TITLE } from "@/lib/estimates/monthly";
 
 export const BRIEFING_COUNT_MISSING = "Not available*";
 
@@ -48,12 +50,8 @@ export const BRIEFING_LOADING = "Loading";
 /** X-18: one name for this figure everywhere (the map, Briefing, and the Roadmap card). */
 export const SPLINTERED_LISTINGS_LABEL = "Splintered Listings";
 
-/**
- * Searched PortfolioRetailSnapshot detail/counts and CanvasMetricsRow once.
- * No stored field is clearly monthly potential lost brand revenue.
- */
-export const BRIEFING_LOST_REVENUE_LABEL = "Monthly potential lost brand revenue";
-export const BRIEFING_LOST_REVENUE_FIGURE = BRIEFING_COUNT_MISSING;
+/** The card beside Buy Box: Phase 1 divided by 12 (lib/estimates/monthly.ts), read from the shared estimate. */
+export const BRIEFING_LOST_REVENUE_LABEL = MONTHLY_POTENTIAL_TITLE;
 
 export type BriefingFindingId =
   | "buy_box"
@@ -88,15 +86,8 @@ export type BriefingAiOptions = {
   aiStale?: PartialFigure | null;
 };
 
-export type BriefingLostRevenuePlaceholder = {
-  label: string;
-  figure: string;
-  explainer: string;
-};
-
 export type BriefingFindingsLead = {
   findings: BriefingFinding[];
-  lostRevenue: BriefingLostRevenuePlaceholder;
 };
 
 const TONE_COLOR: Record<Exclude<NodeStatus, "neutral">, string> = {
@@ -166,7 +157,7 @@ function retailFindings(read: RetailCanvasRead): BriefingFinding[] {
         "buy_box",
         "ecommerce",
         RETAIL_FINDING_LABELS.suppressed_listings,
-        "Buy Box withheld",
+        "Buy Box Withheld",
         why("Buy Box reading not stored."),
         loading,
       ),
@@ -174,7 +165,7 @@ function retailFindings(read: RetailCanvasRead): BriefingFinding[] {
         "map_leakage",
         "ecommerce",
         RETAIL_FINDING_LABELS.map_leakage,
-        "MAP leakage",
+        "MAP Leakage",
         why("MAP reading not stored."),
         loading,
       ),
@@ -198,7 +189,7 @@ function retailFindings(read: RetailCanvasRead): BriefingFinding[] {
     fromRetailHero(
       "buy_box",
       buyBox,
-      "Buy Box withheld",
+      "Buy Box Withheld",
       buyBox.numerator != null && buyBox.denominator != null
         ? "The Buy Box is withheld, so there is no one-click offer."
         : buyBox.explainer,
@@ -206,7 +197,7 @@ function retailFindings(read: RetailCanvasRead): BriefingFinding[] {
     fromRetailHero(
       "map_leakage",
       map,
-      "MAP leakage",
+      "MAP Leakage",
       map.numerator != null && map.denominator != null ? "Priced below MAP." : map.explainer,
     ),
     fromRetailHero(
@@ -274,7 +265,7 @@ function unbrandedPie(fenderWins: number, resolved: number): PieDiscData | null 
     id: "briefing-unbranded",
     title: "Unbranded Discovery",
     total: resolved,
-    totalLabel: "resolved unbranded discovery answers",
+    totalLabel: "resolved Unbranded Discovery answers",
     slices: [
       { key: "fender", label: `${leadBrand()} leads`, count: fenderWins },
       { key: "rest", label: "Rest of resolved answers", count: rest },
@@ -282,7 +273,7 @@ function unbrandedPie(fenderWins: number, resolved: number): PieDiscData | null 
   };
 }
 
-const AI_READ_FAILED =
+export const AI_READ_FAILED =
   "The AI Search runs in the selected period did not load, so this figure is left out rather than shown as zero.";
 
 function unbrandedFinding(read: AiSearchRead, options: BriefingAiOptions): BriefingFinding {
@@ -320,11 +311,11 @@ function unbrandedFinding(read: AiSearchRead, options: BriefingAiOptions): Brief
     tone,
     pie: ready ? unbrandedPie(tally.fenderWins, tally.resolved) : null,
     tip: ready
-      ? `${formatInt(tally.fenderWins)} of ${formatInt(tally.resolved)} resolved unbranded discovery answers.`
+      ? `${formatInt(tally.fenderWins)} of ${formatInt(tally.resolved)} resolved Unbranded Discovery answers.`
       : null,
     explainer: ready
       ? `${leadBrand()} named most on unbranded shopping questions.`
-      : "No resolved unbranded discovery answers in this window.",
+      : "No resolved Unbranded Discovery answers in this window.",
     numerator: ready ? tally.fenderWins : null,
     denominator: ready ? tally.resolved : null,
     partial: ready ? (options.aiStale ?? null) : null,
@@ -348,17 +339,8 @@ export function activeOffersLine(bundle: CanvasBundle): string {
   return `<span class="ifai-term" data-ifai-tooltip-title="${READ_NOT_AVAILABLE}" data-ifai-tooltip-desc="${desc}" data-read-unavailable="${CANVAS_READS.m.source}" tabindex="0" aria-label="${READ_NOT_AVAILABLE}: ${desc}">${READ_NOT_AVAILABLE}</span>`;
 }
 
-export function briefingLostRevenuePlaceholder(): BriefingLostRevenuePlaceholder {
-  return {
-    label: BRIEFING_LOST_REVENUE_LABEL,
-    figure: BRIEFING_LOST_REVENUE_FIGURE,
-    explainer: "Not stored in this reading yet.",
-  };
-}
-
 /**
- * Five executive findings for Summary Briefing, plus the lost-revenue placeholder
- * that sits beside Buy Box (not a sixth finding).
+ * Five executive findings for Summary Briefing. The monthly lost-revenue card beside Buy Box is not one.
  */
 export function briefingFindingsLead(
   retail: RetailCanvasRead,
@@ -369,6 +351,23 @@ export function briefingFindingsLead(
   const [buyBox, map, bundles] = retailFindings(retail);
   return {
     findings: [buyBox, map, bundles, findabilityFinding(findability), unbrandedFinding(ai, options)],
-    lostRevenue: briefingLostRevenuePlaceholder(),
   };
+}
+
+/** Briefing card order by result: Poor, then Fair, then Good, then Not available* (and Loading). */
+const RESULT_RANK: Record<Exclude<NodeStatus, "neutral">, number> = { danger: 0, warning: 1, success: 2 };
+
+/**
+ * The Briefing findings ordered by each client's live result, worst first: Poor, Fair, Good, then
+ * Not available*. A tie keeps the order briefingFindingsLead gives.
+ */
+export function orderBriefingFindings(findings: readonly BriefingFinding[]): BriefingFinding[] {
+  const rank = (finding: BriefingFinding) => {
+    const tone = finding.loading ? null : heroFigureTone(finding);
+    return tone ? RESULT_RANK[tone] : 3;
+  };
+  return findings
+    .map((finding, index) => ({ finding, index, rank: rank(finding) }))
+    .sort((a, b) => a.rank - b.rank || a.index - b.index)
+    .map(({ finding }) => finding);
 }
