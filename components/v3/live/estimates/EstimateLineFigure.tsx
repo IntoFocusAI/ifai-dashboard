@@ -79,7 +79,7 @@ export function MidButton({ line, range, className }: { line: EstimateResult; ra
 export function Placeholder({ read, figure }: { read: ClientEstimatesRead; figure: LineListingsEstimate | null }) {
   if (read.phase === "loading") return <span data-estimate-loading="">{BRIEFING_LOADING}</span>;
   if (read.phase === "error") return <NotAvailable desc={ESTIMATES_READ_FAILED} testId="estimate-read-failed" />;
-  if (figure?.status === "not_available") return <NotAvailable desc={NOT_AVAILABLE_LISTINGS_TIP} testId="estimate-no-sales-figure" />;
+  if (figure?.status === "not_available") return <NotAvailable desc={figure.tip ?? NOT_AVAILABLE_LISTINGS_TIP} testId="estimate-no-sales-figure" />;
   return null;
 }
 

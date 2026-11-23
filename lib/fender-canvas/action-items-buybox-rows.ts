@@ -11,7 +11,7 @@
  * template for every client.
  */
 
-import { buyBoxForPeriod } from "@/lib/estimates/buy-box";
+import { buyBoxForPeriod, buyBoxHasSales, buyBoxKnownMid, buyBoxUnknownText } from "@/lib/estimates/buy-box";
 import type { ClientEstimates } from "@/lib/estimates/live-inputs";
 import { DEFAULT_PERIOD_DAYS } from "@/lib/estimates/period";
 import type { EstimateResult } from "@/lib/estimates/types";
@@ -107,18 +107,24 @@ export function buyBoxCauseLine(
   return result;
 }
 
-/** A Buy Box line as a fix-list figure: its range, its listings, and how many have a sales rate. */
+/**
+ * A Buy Box line as a fix-list figure: its range, its listings, and how many have a sales rate. When
+ * no priced listing has sales the figure is not known, so it reads Not available* with how many
+ * could be priced and why the rest could not, never $0 (Brian Magazu, 23 Nov 2026).
+ */
 export function buyBoxRowEstimate(line: EstimateResult): LineListingsEstimate {
   const listings = line.trail.coverage.total;
   const priced = listings - line.trail.coverage.notAvailable;
+  const known = buyBoxHasSales(line);
   return {
     lineId: "buy_box",
     line,
-    range: line.range,
+    range: known ? line.range : null,
     listings,
     priced,
-    status: listings === 0 ? "none" : priced === 0 ? "not_available" : "estimated",
+    status: listings === 0 ? "none" : known ? "estimated" : "not_available",
     inPhase1: true,
+    ...(listings > 0 && !known ? { tip: buyBoxUnknownText(line) } : {}),
   };
 }
 
@@ -174,8 +180,8 @@ export function buyBoxCauseItems(
     const listings = counts[group];
     // Each row's one count is its own listings, so its figure and its rank reason show one N. The
     // row keeps the Buy Box row's rank. Its monthly dollar is its own part of the Buy Box figure
-    // over 30 days (R-06); the earlier-days row has none.
-    const own = est ? { monthly: group === "earlier" ? null : (buyBoxCauseLine(est, group, split).range?.mid ?? null) } : {};
+    // over 30 days (R-06), or none when it is not known; the earlier-days row has none.
+    const own = est ? { monthly: group === "earlier" ? null : buyBoxKnownMid(buyBoxCauseLine(est, group, split)) } : {};
     const inputs = { ...base.inputs, affected: listings, base: total, ...own };
     return {
       ...base,

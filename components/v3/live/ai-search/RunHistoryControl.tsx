@@ -17,7 +17,7 @@ import {
 } from "@/lib/ai-search/api-runs";
 import { API_QUESTION_RULE, API_REPEAT_RULE, shoppingQuestionCount } from "@/lib/ai-search/engine-group";
 import { formatDay, utcDay, type HistoryRunSummary } from "@/lib/ai-search/history-eligibility";
-import { LAST_30_DAYS_LABEL } from "@/lib/ai-search/default-window";
+import { defaultWindowLabel, LAST_30_DAYS_LABEL } from "@/lib/ai-search/default-window";
 import { batteryGaps } from "@/lib/ai-search/prompt-battery";
 import {
   citationStorageCaution,
@@ -126,10 +126,17 @@ function RunDetail({ run }: { run: HistoryRunSummary }) {
   );
 }
 
-export function RunHistoryControl() {
+/**
+ * The shared date pill. `runs` (the AI views) offers runs and date ranges. `dates` (Catalog Health and
+ * Action Items, whose figures count days, not runs) offers date ranges only: Last 30 days, a Date
+ * range, or All time. A run chosen on an AI view counts as its 30 days there and reads as the
+ * default window.
+ */
+export function RunHistoryControl({ mode = "runs" }: { mode?: "runs" | "dates" } = {}) {
   const history = useAiHistory();
+  const datesOnly = mode === "dates";
   const [open, setOpen] = useState(false);
-  const [pickingRange, setPickingRange] = useState(false);
+  const [pickingRange, setPickingRange] = useState(datesOnly);
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [rangeStart, setRangeStart] = useState<string | null>(null);
   const [rangeEnd, setRangeEnd] = useState<string | null>(null);
@@ -202,7 +209,9 @@ export function RunHistoryControl() {
     setSelectedDay(day);
   }
 
-  const chosen = selectedDay
+  const runPicked = history.mode.kind === "run" || history.mode.kind === "legacy";
+  const label = datesOnly && runPicked ? defaultWindowLabel(history.windowEnd) : history.controlLabel;
+  const chosen = selectedDay && !datesOnly
     ? visible.filter((run) => utcDay(run.published_at ?? run.completed_at) === selectedDay)
     : [];
   const chosenRun = chosen.find((run) => run.audit_run_id === pickedId) ?? (chosen.length === 1 ? chosen[0] : null);
@@ -216,9 +225,10 @@ export function RunHistoryControl() {
         aria-expanded={open}
         aria-haspopup="dialog"
         data-ai-history-trigger
+        data-ai-history-pill-mode={mode}
         onClick={() => setOpen((value) => !value)}
       >
-        {history.controlLabel} ▾
+        {label} ▾
       </button>
       {open ? (
         <div
@@ -229,9 +239,9 @@ export function RunHistoryControl() {
           aria-labelledby={titleId}
           data-ai-history-dialog
         >
-          <h3 id={titleId}>Choose a run</h3>
+          <h3 id={titleId}>{datesOnly ? "Choose dates" : "Choose a run"}</h3>
           <div className="ai-history-dialog-body">
-          {history.source === "fixture" ? (
+          {history.source === "fixture" && !datesOnly ? (
             <p className="ai-history-note" data-ai-history-fixture>
               {STORED_RUN_COPY_LABEL} The default is the last 30 days of published review runs. The map stays on the live published run.
             </p>
@@ -239,12 +249,14 @@ export function RunHistoryControl() {
           <div className="ai-history-quick" role="group" aria-label="Quick choices">
             <button
               type="button"
-              aria-pressed={history.mode.kind === "month"}
+              aria-pressed={history.mode.kind === "month" || (datesOnly && runPicked)}
               data-ai-history-last-30-days
               onClick={() => { history.viewMonth(); setOpen(false); }}
             >
               {LAST_30_DAYS_LABEL}
             </button>
+            {datesOnly ? null : (
+            <>
             <button
               type="button"
               disabled={history.current.phase !== "ready"}
@@ -265,10 +277,12 @@ export function RunHistoryControl() {
             >
               Previous run
             </button>
-            <button type="button" aria-pressed={pickingRange} onClick={() => setPickingRange(true)}>
+            </>
+            )}
+            <button type="button" aria-pressed={datesOnly ? history.mode.kind === "range" : pickingRange} onClick={() => setPickingRange(true)}>
               Date range
             </button>
-            <button type="button" onClick={() => { history.viewAll(); setOpen(false); }}>All time</button>
+            <button type="button" aria-pressed={datesOnly ? history.mode.kind === "all" : undefined} onClick={() => { history.viewAll(); setOpen(false); }}>All time</button>
           </div>
           {history.catalog.phase === "loading" ? <p className="ai-history-note">Loading runs.</p> : null}
           {history.catalog.phase === "error" ? (
@@ -320,9 +334,9 @@ export function RunHistoryControl() {
                   setOpen(false);
                 }}
               >
-                View trends
+                {datesOnly ? "View dates" : "View trends"}
               </button>
-            ) : (
+            ) : datesOnly ? null : (
               <button
                 type="button"
                 disabled={!chosenRun}

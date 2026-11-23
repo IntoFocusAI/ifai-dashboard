@@ -143,11 +143,12 @@ function wrapSpoke(
           tabs: [...RETAIL_PANEL_TABS],
           newTabs: [STOCK_LOSS_TAB],
           // R-07: the Buy Box dollar counts the days in the shared date pill, so the pill sits here too.
-          headerAccessory: <RunHistoryControl />,
+          // Retail counts days, not runs: the pill offers date ranges only.
+          headerAccessory: <RunHistoryControl mode="dates" />,
         }
       : {}),
-    // Action Items' Buy Box dollar follows the same pill (R-07).
-    ...(id === "suggestions" ? { headerAccessory: <RunHistoryControl /> } : {}),
+    // Action Items' Buy Box dollar follows the same pill (R-07), date ranges only.
+    ...(id === "suggestions" ? { headerAccessory: <RunHistoryControl mode="dates" /> } : {}),
     ...(id === "aeo"
       ? {
           desc: aiSpokeDesc(ai),
