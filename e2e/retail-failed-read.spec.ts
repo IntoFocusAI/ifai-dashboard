@@ -2,8 +2,8 @@ import { expect, test } from "@playwright/test";
 import { openCatalogHealthCanvas } from "./catalog-health-mock";
 
 /* Worker 21.4 / FDD X-13: with canvas_metrics answering 500, the Summary Briefing retail
-   lead names that read. The Active offers line (built from canvas_metrics) reads
-   Not available* with the read in its custom tooltip. The Buy Box, MAP and bundle figures
+   lead names that read. The Active offers line left the Briefing (Worker 31.1, decision 128),
+   so the bundle tooltip carries the failed read. The Buy Box, MAP and bundle figures
    come from canvas_retail_listings and keep their values; the bundle tooltip names the
    missing catalog total. Every other read answers from e2e/catalog-health-mock.ts. */
 
@@ -21,11 +21,9 @@ test("Briefing retail lead on a failed canvas_metrics read", async ({ page }) =>
   const findings = page.locator("[data-briefing-findings]");
   await expect(findings).toBeVisible({ timeout: 60_000 });
 
+  // Worker 31.1 (decision 128): the Active offers line left the Briefing.
   const body = page.locator(".drilldown-body");
-  const offers = body.locator('.ifai-term[data-read-unavailable="canvas_metrics"]');
-  await expect(offers).toHaveText("Not available*");
-  await expect(offers).toHaveAttribute("data-ifai-tooltip-desc", /^The catalog metrics read \(canvas_metrics\) did not load/);
-  await expect(offers).not.toHaveAttribute("title", /.+/);
+  await expect(body).not.toContainText("Active offers");
   await expect(body).not.toContainText("The offer split is not stored");
   await expect(body).not.toContainText("Pending data");
 
@@ -36,7 +34,7 @@ test("Briefing retail lead on a failed canvas_metrics read", async ({ page }) =>
 
   await expect(async () => {
     await page.mouse.move(0, 0);
-    await offers.hover();
+    await bundleTip.hover();
     await expect(page.locator(".node-tooltip-definition")).toBeVisible({ timeout: 1_000 });
   }).toPass();
   await expect(page.locator(".node-tooltip-definition")).toContainText("(canvas_metrics) did not load");

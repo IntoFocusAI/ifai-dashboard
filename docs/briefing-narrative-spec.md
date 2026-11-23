@@ -100,7 +100,7 @@ If no gap is Poor or Fair: *{brand}'s listings on those pages are in good shape.
 ## Tests
 
 One unit test per row of each table (state → sentence), the missing-data row for every
-block, the two-gap selection order, and a Ledlenser fixture that proves no client name is
+block, the three-gap selection order (decision 128), and a Ledlenser fixture that proves no client name is
 in the code. A snapshot test guards the Fender and Ledlenser outputs so wording changes
 are deliberate.
 
