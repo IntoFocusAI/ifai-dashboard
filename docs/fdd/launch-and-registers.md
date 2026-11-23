@@ -12,7 +12,7 @@
 
 | **Not ready to claim** | **Why** |
 |---|---|
-| AI Actuation | Not included. There is no owner, evidence, or dated record yet (SC-03 TARGET). |
+| AI Actuation | Scored (SC-03 CURRENT). Planned work and earned placements count only once IntoFocus staff record them with owner, evidence and dates; until then only owned answers (E1) earn points. |
 | 80% suppression dollars | Formula and revenue source order approved; not deployed (R-06). |
 | Catalog Health, Summary, Opportunity, and Run Details labels | Desktop-verified on the 7.4 build (PR 43). Not on the published site until that branch deploys. |
 | Done-Together / Need help? | Approved; not in build (N-07). |
@@ -76,7 +76,7 @@ Feature IDs are shared with the Technical Design Document. Verification reflects
 | H-06 / H-07 | CURRENT / REFINE | Summary IA | H-06 Summary desktop-verified. H-07 score layout is on Performance and stays REFINE until the scores are shown against a target and AI Actuation is included. |
 | R-01 | CURRENT | Catalog Health rename | Catalog Health and Partner-led desktop-verified on the 7.4 build. |
 | R-06 | TARGET | Revenue inputs + 80% trail | Not deployed |
-| SC-01, SC-02, SC-04 | CURRENT | Coverage + components | Pull request 92, main 65e2c79. Placeholder inputs are marked. SC-03 stays TARGET. |
+| SC-01, SC-02, SC-04 | CURRENT | Coverage + components | Pull request 92, main 65e2c79. Placeholder inputs are marked. SC-03 CURRENT from 23 Nov 2026 (staff sign-in live, PR 265). |
 | R-18 | CURRENT | Partner-led authorized sellers | Live. PR 99, commits 957f768, 0a413cb, and 13d021f, main aa6f29c. |
 | R-19 | TARGET | R-18 browser control | Not built. Direction recorded 2 Nov 2026. |
 | N-07 | TARGET | Contract ownership model | Not deployed |
