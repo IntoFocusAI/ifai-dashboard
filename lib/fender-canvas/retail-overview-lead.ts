@@ -17,6 +17,7 @@ import {
   type RetailFindingId,
 } from "@/lib/fender-canvas/portfolio-retail";
 import { readingLabel } from "@/lib/fender-canvas/portfolio-retail-display";
+import { monitoredListingsTotal } from "@/lib/fender-canvas/monitored-listings";
 import { approvedExceptionsSentence } from "@/lib/fender-canvas/map-approved-exceptions";
 
 const TONE_COLOR: Record<Exclude<NodeStatus, "neutral">, string> = {
@@ -70,13 +71,6 @@ export function heroFigureColor(
  * 0 is Good (success). Every client and check uses this one constant.
  */
 export const RETAIL_POOR_SHARE = 0.05;
-
-/** All monitored listings for the client: the one common base the three checks are graded on. */
-export function monitoredListingsTotal(snapshot: PortfolioRetailSnapshot): number | null {
-  const candidates = [snapshot.suppressedListings.detail?.counts.population, snapshot.mapLeakage.detail?.population];
-  for (const value of candidates) if (value != null && value > 0) return value;
-  return null;
-}
 
 /** The band in one plain sentence, for the hero's tooltip. Null when the base is unknown. */
 export function retailBandSentence(monitored: number | null): string | null {
