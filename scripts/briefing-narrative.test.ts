@@ -9,6 +9,8 @@ import { test } from "node:test";
 import {
   answerBlock,
   blockText,
+  BRANDED_TRUST_BANDS,
+  brandedTrustBand,
   briefingNarrative,
   firstMoveBlock,
   gapSentence,
@@ -83,6 +85,33 @@ test("Block 1: both high", () => {
   assert.match(answer([80, 100], [95, 100]), /Shoppers who ask about Acme directly get confirmed 95\.0% of the time\. Discovery and trust are both in good shape\.$/);
 });
 
+test("Block 1: branded trust bands are explicit constants", () => {
+  assert.deepEqual({ ...BRANDED_TRUST_BANDS }, { lowAtOrBelow: 70, highAbove: 90 });
+});
+
+test("Block 1: branded 69.9, 70, 70.1, 90, 90.1 fall in the stated bands", () => {
+  assert.equal(brandedTrustBand(69.9), "low");
+  assert.equal(brandedTrustBand(70), "low");
+  assert.equal(brandedTrustBand(70.1), "room");
+  assert.equal(brandedTrustBand(90), "room");
+  assert.equal(brandedTrustBand(90.1), "high");
+});
+
+test("Block 1: branded above 70 and at or below 90 reads room to build trust, for any unbranded state", () => {
+  for (const [wins, pct] of [[701, "70.1%"], [900, "90.0%"]] as const) {
+    for (const u of [[80, 100], [50, 100], [20, 100]] as [number, number][]) {
+      assert.match(answer(u, [wins, 1000]), new RegExp(`Shoppers who already ask about Acme get confirmed ${pct.replace(".", "\\.")} of the time: room to build trust\\.$`));
+    }
+  }
+});
+
+test("Block 1: branded 69.9 and 70 keep the low states; 90.1 keeps the high state", () => {
+  assert.match(answer([50, 100], [699, 1000]), /Both need work\.$/);
+  assert.match(answer([50, 100], [700, 1000]), /Both need work\.$/);
+  assert.match(answer([80, 100], [699, 1000]), /The gap is trust, not discovery\.$/);
+  assert.match(answer([50, 100], [901, 1000]), /The gap is being found, not being trusted\.$/);
+});
+
 test("Block 1: no branded answers leaves the second sentence out", () => {
   assert.equal(answer([80, 100], [0, 0]), "When a shopper asks an AI assistant what to buy, Acme is usually the answer: 8 times in 10.");
 });
@@ -118,18 +147,18 @@ test("Block 2: no cited links and no gap readings leave only the lead", () => {
 test("Block 2: each gap reads in plain words and ends with why it changes what assistants recommend", () => {
   const say = (g: GapReading) => sentenceText(gapSentence(g, "Acme", "acme.com"));
   assert.equal(say(gap("exact_pages", 999, 1091)), "9 in 10 Amazon listings have no matching page on acme.com, so assistants describe those products from retailer and rival pages instead of Acme's.");
-  assert.equal(say(gap("missing_specs", 1524, 3080)), "1,524 listings are missing the specs assistants compare, so assistants cannot match them to shoppers' questions.");
-  assert.equal(say(gap("buy_box", 60, 1173)), "60 listings are not showing Acme's price at the moment of purchase, so the page assistants cite sends shoppers elsewhere.");
+  assert.equal(say(gap("missing_specs", 1524, 3080)), "1,524 listings are missing the specs assistants compare, so assistants struggle to match them to shoppers' questions.");
+  assert.equal(say(gap("buy_box", 60, 1173)), "60 listings are not showing Acme's price at the moment of purchase, so assistants rarely point shoppers to them, and the sales and reviews they would earn often go to a competitor.");
   assert.equal(say(gap("splintered", 38, 330)), "38 bundles split their reviews across separate listings, so assistants see fewer reviews behind each one and recommend it less.");
-  assert.equal(say(gap("map_leakage", 187, 633)), "187 offers are advertised below the agreed floor price, so assistants can repeat a price below the one Acme sets.");
+  assert.equal(say(gap("map_leakage", 187, 633)), "187 offers are advertised below the agreed floor price, so assistants can repeat a price below the one Acme sets, and the discounting erodes Acme's revenue.");
 });
 
 test("Block 2: a gap of one reads singular", () => {
   const say = (g: GapReading) => sentenceText(gapSentence(g, "Acme", "acme.com"));
-  assert.equal(say(gap("missing_specs", 1, 10)), "1 listing is missing the specs assistants compare, so assistants cannot match it to shoppers' questions.");
-  assert.equal(say(gap("buy_box", 1, 10)), "1 listing is not showing Acme's price at the moment of purchase, so the page assistants cite sends shoppers elsewhere.");
+  assert.equal(say(gap("missing_specs", 1, 10)), "1 listing is missing the specs assistants compare, so assistants struggle to match it to shoppers' questions.");
+  assert.equal(say(gap("buy_box", 1, 10)), "1 listing is not showing Acme's price at the moment of purchase, so assistants rarely point shoppers to it, and the sales and reviews it would earn often go to a competitor.");
   assert.equal(say(gap("splintered", 1, 10)), "1 bundle splits its reviews across separate listings, so assistants see fewer reviews behind it and recommend it less.");
-  assert.equal(say(gap("map_leakage", 1, 10)), "1 offer is advertised below the agreed floor price, so assistants can repeat a price below the one Acme sets.");
+  assert.equal(say(gap("map_leakage", 1, 10)), "1 offer is advertised below the agreed floor price, so assistants can repeat a price below the one Acme sets, and the discounting erodes Acme's revenue.");
 });
 
 test("Block 2: no gap Poor or Fair reads good shape", () => {
@@ -235,7 +264,7 @@ test("snapshot: Fender", () => {
   const text = briefingNarrative(FENDER, { low: 55_700, mid: 102_000, high: 158_000 }, "Publish one fender.com page per exact product").map(blockText);
   assert.deepEqual(text, [
     "When a shopper asks an AI assistant what to buy, Fender is the answer 6 times in 10. The other 4 times, a rival is named first. Shoppers who already ask about Fender get confirmed 93.8% of the time. The gap is being found, not being trusted.",
-    "Assistants decide by reading product pages, retailer listings and reviews. For Fender, 1 page in 6 they read is Fender's own. 9 in 10 Amazon listings have no matching page on fender.com, so assistants describe those products from retailer and rival pages instead of Fender's. 524 listings are missing the specs assistants compare, so assistants cannot match them to shoppers' questions. 187 offers are advertised below the agreed floor price, so assistants can repeat a price below the one Fender sets.",
+    "Assistants decide by reading product pages, retailer listings and reviews. For Fender, 1 page in 6 they read is Fender's own. 9 in 10 Amazon listings have no matching page on fender.com, so assistants describe those products from retailer and rival pages instead of Fender's. 524 listings are missing the specs assistants compare, so assistants struggle to match them to shoppers' questions. 187 offers are advertised below the agreed floor price, so assistants can repeat a price below the one Fender sets, and the discounting erodes Fender's revenue.",
     "Fixing those listings is worth about $102K a month, an analyst estimate (range $55.7K to $158K) from the Amazon sales those listings already make.",
     "The first move: Publish one fender.com page per exact product.",
   ]);
@@ -245,7 +274,7 @@ test("snapshot: Ledlenser", () => {
   const text = briefingNarrative(LEDLENSER, null, null).map(blockText);
   assert.deepEqual(text, [
     "When a shopper asks an AI assistant what to buy, Ledlenser is rarely the answer: 2 times in 10. A rival is named first the rest of the time. Shoppers who ask about Ledlenser directly get confirmed 63.1% of the time, and unbranded shoppers hear a rival first. Both need work.",
-    "Assistants decide by reading product pages, retailer listings and reviews. Almost none of the pages they read (3.8%) are Ledlenser's own. 9 in 10 Amazon listings have no matching page on ledlenserusa.com, so assistants describe those products from retailer and rival pages instead of Ledlenser's. 5 bundles split their reviews across separate listings, so assistants see fewer reviews behind each one and recommend it less. 12 listings are missing the specs assistants compare, so assistants cannot match them to shoppers' questions.",
+    "Assistants decide by reading product pages, retailer listings and reviews. Almost none of the pages they read (3.8%) are Ledlenser's own. 9 in 10 Amazon listings have no matching page on ledlenserusa.com, so assistants describe those products from retailer and rival pages instead of Ledlenser's. 5 bundles split their reviews across separate listings, so assistants see fewer reviews behind each one and recommend it less. 12 listings are missing the specs assistants compare, so assistants struggle to match them to shoppers' questions.",
     "A dollar estimate is not available yet.",
     "No open action; the queue is clear.",
   ]);

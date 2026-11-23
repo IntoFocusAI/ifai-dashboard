@@ -33,7 +33,7 @@ import { specHero } from "@/lib/fender-canvas/retail-overview-lead";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
 
 const BLOCK_STYLE = { margin: "0 0 8px", lineHeight: 1.5 } as const;
-const NO_AI_ANSWERS_TIP = "No resolved Unbranded Discovery answers in the date-pill window.";
+const NO_AI_ANSWERS_TIP = "No AI answers to unbranded questions in this date range.";
 
 /** The monthly figure inside the sentence; it opens the estimate's inputs, sources and formula. */
 function MonthlyFigure({ text, result }: { text: string; result: EstimateResult }) {

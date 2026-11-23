@@ -5,7 +5,7 @@
  * Brand and site come in as inputs, so no sentence branches on a client (X-35).
  */
 
-import { UNBRANDED_RATE_BANDS, BRANDED_RATE_BANDS } from "@/lib/ai-search/summary";
+import { UNBRANDED_RATE_BANDS } from "@/lib/ai-search/summary";
 import type { BriefingFinding } from "@/lib/fender-canvas/briefing-retail-lead";
 import { formatInt, formatMoneyShort, formatMoneySpan, formatPct } from "@/lib/fender-canvas/format";
 import type { RetailOverviewHeroModel } from "@/lib/fender-canvas/retail-overview-lead";
@@ -76,11 +76,25 @@ export const TERM_TIPS: Record<NarrativeTerm, { title: string; desc: (brand: str
  */
 export const GAP_CLAUSES: Record<GapId, (brand: string, one: boolean) => string> = {
   exact_pages: (brand) => `so assistants describe those products from retailer and rival pages instead of ${brand}'s`,
-  missing_specs: (_brand, one) => `so assistants cannot match ${one ? "it" : "them"} to shoppers' questions`,
-  buy_box: () => "so the page assistants cite sends shoppers elsewhere",
+  missing_specs: (_brand, one) => `so assistants struggle to match ${one ? "it" : "them"} to shoppers' questions`,
+  buy_box: (_brand, one) =>
+    `so assistants rarely point shoppers to ${one ? "it" : "them"}, and the sales and reviews ${one ? "it" : "they"} would earn often go to a competitor`,
   splintered: (_brand, one) => `so assistants see fewer reviews behind ${one ? "it" : "each one"} and recommend it less`,
-  map_leakage: (brand) => `so assistants can repeat a price below the one ${brand} sets`,
+  map_leakage: (brand) => `so assistants can repeat a price below the one ${brand} sets, and the discounting erodes ${brand}'s revenue`,
 };
+
+/**
+ * Branded share bands for the trust sentence (Brian, 23 Nov): at or below 70 is the low state,
+ * above 70 and at or below 90 is "room to build trust", above 90 is the high state.
+ */
+export const BRANDED_TRUST_BANDS = { lowAtOrBelow: 70, highAbove: 90 } as const;
+export type BrandedTrustBand = "low" | "room" | "high";
+
+export function brandedTrustBand(share: number): BrandedTrustBand {
+  if (share > BRANDED_TRUST_BANDS.highAbove) return "high";
+  if (share > BRANDED_TRUST_BANDS.lowAtOrBelow) return "room";
+  return "low";
+}
 
 const share = (count: RoleCount) => (100 * count.wins) / count.resolved;
 
@@ -113,7 +127,11 @@ function brandedSentence(brand: string, u: number, branded: RoleCount | null): N
   if (!branded || branded.resolved <= 0) return null;
   const b = share(branded);
   const pct = `${formatPct(b)} of the time`;
-  const highBranded = b > BRANDED_RATE_BANDS.greenAbove;
+  const band = brandedTrustBand(b);
+  if (band === "room") {
+    return ["Shoppers who already ", { text: `ask about ${brand}`, term: "branded" }, ` get confirmed ${pct}: room to build trust.`];
+  }
+  const highBranded = band === "high";
   const highUnbranded = u > UNBRANDED_RATE_BANDS.greenAbove;
   if (highBranded && !highUnbranded) {
     return ["Shoppers who already ", { text: `ask about ${brand}`, term: "branded" }, ` get confirmed ${pct}. The gap is being found, not being trusted.`];
