@@ -102,7 +102,7 @@ const RANKED_KIND_CLAUSES: Record<string, (brand: string, one: boolean, model: S
   buy_box: GAP_CLAUSES.buy_box,
   missing_specs: GAP_CLAUSES.missing_specs,
   unbranded_discovery: (brand) => `so assistants name a rival before ${brand} when shoppers ask what to buy`,
-  out_of_stock: (_brand, one) => `so assistants stop recommending ${one ? "it" : "them"}, and the sales go to a competitor's listing`,
+  out_of_stock: (_brand, one) => `so assistants stop recommending ${one ? "it" : "them"}, and the sales often go to a competitor's listing`,
   fact_contradictions: (brand) => `so assistants give shoppers conflicting facts about ${brand}'s products`,
   rival: (brand) => `so assistants keep naming that rival ahead of ${brand}`,
   aplus: () => "so assistants have less product detail to read and compare",

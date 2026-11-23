@@ -272,6 +272,7 @@ test("Block 4: the first move ends with its AI consequence, the MAP clause by se
   assert.match(move("Win back the Buy Box", "buy_box"), /, so assistants rarely point shoppers to them, and the sales and reviews they would earn often go to a competitor\.$/);
   assert.match(move("Fill the missing Amazon spec fields", "missing_specs"), /, so assistants struggle to match them to shoppers' questions\.$/);
   assert.match(move("Merge the splintered bundles", "splintered_bundles"), /, so assistants see fewer reviews behind each one and recommend it less\.$/);
+  assert.match(move("Restock the out-of-stock listings", "out_of_stock"), /, so assistants stop recommending them, and the sales often go to a competitor's listing\.$/);
   assert.doesNotMatch(move("Restock the out-of-stock listings", "out_of_stock"), /^The first move: Restock the out-of-stock listings\.$/);
 });
 

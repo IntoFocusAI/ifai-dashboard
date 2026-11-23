@@ -87,6 +87,17 @@ If no gap is Poor or Fair: *{brand}'s listings on those pages are in good shape.
 
 **The first move:** {top action title}, {AI consequence clause}. → Action Items. The clause is chosen by the item's ranked kind (`RANKED_KIND_CLAUSES` in `briefing-narrative.ts`, one per `GAP_KINDS` entry; a test fails when a kind has none). If the queue is empty: *No open action; the queue is clear.*
 
+Clauses for the kinds that are not Block 2 gaps (approved by Brian Magazu, 23 Nov; a claim that sales or reviews go to a competitor always says "often"):
+
+| Ranked kind | Clause |
+|---|---|
+| unbranded_discovery | so assistants name a rival before {brand} when shoppers ask what to buy |
+| out_of_stock | so assistants stop recommending it/them, and the sales often go to a competitor's listing |
+| fact_contradictions | so assistants give shoppers conflicting facts about {brand}'s products |
+| rival | so assistants keep naming that rival ahead of {brand} |
+| aplus, amazon_bullets | so assistants have less product detail to read and compare |
+| source | so assistants keep relying on pages {brand} does not control |
+
 ## Tooltips (plain phrase on screen, term in the tooltip)
 
 | On screen | Tooltip title | Tooltip text |
