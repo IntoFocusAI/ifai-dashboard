@@ -22,6 +22,7 @@ import {
 import { formatPct, formatRatio } from "@/lib/fender-canvas/format";
 import { listingContentHeroes } from "@/lib/fender-canvas/listing-content";
 import { machineReadabilityHeroes } from "@/lib/fender-canvas/machine-readability";
+import type { Effort } from "@/lib/fender-canvas/priority-rank";
 import { joinList, runShares } from "@/lib/fender-canvas/roadmap-sources";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
 
@@ -40,14 +41,51 @@ export type OwnPageFactor = {
   open: { spokeId: string; tab: string };
   /**
    * Listings the factor falls short on, for the central rank: listings without the item, or, for
-   * an average, the listings' worth of empty fields (listings × the missing share). Null without a reading.
+   * an average, the listings with empty fields (listings × the missing share). Null without a reading.
    */
   affected: number | null;
   /** The listings the factor reads. */
   base: number | null;
   /** What `affected` counts, as the problem: "Listings without a fender.com page". */
   short: string;
+  /** The short action title when the own-pages item works on this factor (fix round 3). */
+  task: string;
+  /** The effort and kind of that work (fix round 3: from the factor, never the phase). */
+  effort: Effort;
 };
+
+/**
+ * Each factor's effort (Brian Magazu, 23 Nov 2026 fix round 3). Every factor is page or listing
+ * content the brand publishes: catalog and site content, Medium.
+ */
+export const FACTOR_EFFORT: Readonly<Record<OwnPageFactor["id"], Effort>> = {
+  page_found: "M",
+  completeness: "M",
+  machine_specs: "M",
+  amazon_completeness: "M",
+  aplus: "M",
+};
+
+/** Each factor's short action title, from the client settings (site, brand), never a client name. */
+export function factorTask(id: OwnPageFactor["id"]): string {
+  switch (id) {
+    case "page_found":
+      return `Publish ${brandSite()} pages for listings without one`;
+    case "completeness":
+      return `Fill the empty spec fields on ${brandSite()} product pages`;
+    case "machine_specs":
+      return `Make ${brandSite()} specs machine-readable`;
+    case "amazon_completeness":
+      return `Fill the empty spec fields on ${brandName()} Amazon listings`;
+    case "aplus":
+      return `Add A+ content to ${brandName()} Amazon listings without it`;
+  }
+}
+
+/** The factor's task and effort, set once for every factor. */
+function work(id: OwnPageFactor["id"]): Pick<OwnPageFactor, "task" | "effort"> {
+  return { task: factorTask(id), effort: FACTOR_EFFORT[id] };
+}
 
 /**
  * The ranked item that already fixes a factor, by plan item id (Brian Magazu, 23 Nov 2026 fix
@@ -95,6 +133,8 @@ export type OwnPageAction = {
   worst?: { affected: number; base: number; short: string } | null;
   /** The urgent row's factors below Good, worst first, so the plan can skip one another item fixes. */
   below?: OwnPageFactor[];
+  /** The urgent row's effort: the worst factor's (fix round 3). The wording row's comes from its phase. */
+  effort?: Effort;
 };
 
 export type OwnPagesRead = {
@@ -133,6 +173,7 @@ export function ownPageFactors(bundle: CanvasBundle): OwnPageFactor[] {
       open: SPECS,
       ...(found.ratio ? shortOf(m.spec_fender_found, m.spec_checked) : shortOf(null, null)),
       short: `Listings without a ${brandSite()} page`,
+      ...work("page_found"),
     },
     {
       id: "completeness",
@@ -142,7 +183,8 @@ export function ownPageFactors(bundle: CanvasBundle): OwnPageFactor[] {
       tone: complete.tone,
       open: SPECS,
       ...shortOfAverage(m.spec_avg_fender_pct, m.spec_fender_found),
-      short: `Listings' worth of empty ${brandSite()} spec fields`,
+      short: `Listings with empty ${brandSite()} spec fields`,
+      ...work("completeness"),
     },
     {
       id: "machine_specs",
@@ -154,6 +196,7 @@ export function ownPageFactors(bundle: CanvasBundle): OwnPageFactor[] {
       affected: machine.denominator != null ? machine.numerator : null,
       base: machine.denominator,
       short: machine.label,
+      ...work("machine_specs"),
     },
     {
       id: "amazon_completeness",
@@ -163,7 +206,8 @@ export function ownPageFactors(bundle: CanvasBundle): OwnPageFactor[] {
       tone: amazon.tone,
       open: { spokeId: "specs", tab: "Amazon Specs" },
       ...shortOfAverage(m.spec_avg_amazon_pct, m.spec_checked),
-      short: "Listings' worth of empty Amazon spec fields",
+      short: "Listings with empty Amazon spec fields",
+      ...work("amazon_completeness"),
     },
     {
       id: "aplus",
@@ -174,6 +218,7 @@ export function ownPageFactors(bundle: CanvasBundle): OwnPageFactor[] {
       open: { spokeId: "specs", tab: "Amazon A+ Matrix" },
       ...(listingContent ? shortOf(aplus.numerator, aplus.denominator) : shortOf(null, null)),
       short: "Listings without A+ content",
+      ...work("aplus"),
     },
   ];
 }
@@ -224,11 +269,12 @@ export function urgentOwnPagesAction(factors: readonly OwnPageFactor[]): OwnPage
     ratio: worst.ratio,
     tone: worst.tone,
     fact: sentence(`${joinList(below.map((factor) => `${phrase(factor)} reads ${factor.percent} (${word(factor.tone!)})`))}.`),
-    action: `Work through the product pages and listings ${brandName()} controls until each of these reads Good, starting with ${phrase(worst)}.`,
+    action: `${worst.task}.`,
     open: worst.open,
     share: 1,
     worst: worst.affected != null && worst.base != null ? { affected: worst.affected, base: worst.base, short: worst.short } : null,
     below,
+    effort: worst.effort,
   };
 }
 

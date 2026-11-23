@@ -158,10 +158,9 @@ test("21c: a red factor puts the own-page action in Days 1 to 30, worst first", 
   assert.equal(own.action?.percent, "80.0%");
   assert.match(own.action!.fact, /^fender\.com page found reads 80\.0% \(Poor\) and A\+ content reads 96\.0% \(Fair\)\.$/);
   assert.equal(own.action!.label, "Fender pages and listings: fender.com page found");
-  assert.equal(
-    own.action!.action,
-    "Work through the product pages and listings Fender controls until each of these reads Good, starting with fender.com page found.",
-  );
+  // Fix round 3: a short action title from the factor it works on, and that factor's effort.
+  assert.equal(own.action!.action, "Publish fender.com pages for listings without one.");
+  assert.equal(own.action!.effort, "M");
   assert.equal(own.action?.open.tab, "Brand-Site Specs");
 });
 
@@ -417,8 +416,9 @@ test("client focus: the model narrows to one category and keeps brand-wide items
   assert.deepEqual(group.members!.map((member) => member.label), ['"best acoustic guitar"', '"best bass guitar"']);
   assert.match(group.fact, /resolved answers to these 2 questions: "best acoustic guitar" \(8 of 40\) and "best bass guitar" \(10 of 40\)\.$/);
   const bass = focusPlan(plan, { kind: "category", key: "bass" });
-  // Own pages carry a grade (below Good), so they lead the ungraded question group.
-  assert.deepEqual(bass.map((item) => item.id), ["own:pages", "focus:questions:priority"]);
+  // Own pages are At risk but touch 4 of 100 listings, under the 5% floor (fix round 3), so they
+  // rank with the question group by reach: 18 of 120 answers (15%) leads.
+  assert.deepEqual(bass.map((item) => item.id), ["focus:questions:priority", "own:pages"]);
   assert.deepEqual(bass.map((item) => item.rank), [1, 2]);
   // On screen the focus narrows the read first, so a bass focus has one bass question, not a group.
   const bassOnly = focusActions({ windows: { current: run, previous: null }, focus: { kind: "category", key: "bass" } });

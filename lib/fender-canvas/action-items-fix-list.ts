@@ -9,13 +9,19 @@ import { PHASE_1_LINES } from "@/lib/estimates/rollup";
 import type { EstimateLineId, EstimateRange, EstimateResult } from "@/lib/estimates/types";
 import type { BriefingFinding, BriefingFindingId } from "@/lib/fender-canvas/briefing-retail-lead";
 import { brandName } from "@/lib/brand-copy";
-import { rankPriorities, severityOf, type Effort, type ItemCount, type RankInputs } from "@/lib/fender-canvas/priority-rank";
+import {
+  rankPriorities,
+  severityOf,
+  SEVERITY_FLOOR_SENTENCE,
+  type Effort,
+  type ItemCount,
+  type RankInputs,
+} from "@/lib/fender-canvas/priority-rank";
 import { MONTHS_PER_YEAR } from "@/lib/estimates/monthly";
 
 export const FIX_LIST_TITLE = "Fixes in priority order";
 
-export const FIX_LIST_PRIORITY_RULE =
-  "One ranking for every list: Priorities, this table, the Roadmap, the deck, and the map. Critical items come first, then At risk, then the rest. Within each, first by reach: the share of all resolved AI answers, or of all monitored listings, each gap touches, compared in whole percentage points. Ties go to the larger monthly analyst estimate, then to the quicker fix (a listing or offer fix, then catalog and site content, then an outreach program). Items with no answer or listing count follow the counted ones. Watch lines and findings on track follow the items that need action. Unbranded Discovery is the result every fix moves, so it is tracked last rather than ranked.";
+export const FIX_LIST_PRIORITY_RULE = `One ranking for every list: Priorities, this table, the Roadmap, the deck, and the map. Critical items come first, then At risk, then the rest. ${SEVERITY_FLOOR_SENTENCE} Within each, first by reach: the share of all resolved AI answers, or of all monitored listings, each gap touches, compared in whole percentage points. Ties go to the larger monthly analyst estimate, then to the smaller effort (small: a listing or offer fix; medium: catalog and site content; large: an outreach program). Items with no answer or listing count, such as verified links, follow the counted ones. Watch lines and findings on track follow the items that need action. Unbranded Discovery is the result every fix moves, so it is tracked last rather than ranked.`;
 
 /** The A+ content row id (action-items-aplus-row.ts builds the row). */
 export const APLUS_ROW_ID = "estimate:aplus";

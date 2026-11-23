@@ -16,8 +16,13 @@ import {
   rankReason,
   commonReach,
   rankShare,
+  rankSeverity,
   sharePoints,
   countRatio,
+  effortPhrase,
+  SEVERITY_FLOOR,
+  SEVERITY_FLOOR_LABEL,
+  SEVERITY_FLOOR_SENTENCE,
   type RankInputs,
 } from "../lib/fender-canvas/priority-rank.ts";
 import { planWithBuyBoxCauses } from "../lib/fender-canvas/action-items-buybox-rows.ts";
@@ -64,8 +69,8 @@ test("reach: a single question with a small base cannot outrank a fix touching t
     { answers: 5000, listings: 1170 },
   );
   assert.deepEqual(rows.map((row) => row.id), ["pages", "rival", "question"]);
-  assert.equal(rows[2]!.reason, "Touches 112 of 5,000 resolved AI answers (2.2%). Effort M, catalog and site content.");
-  assert.equal(rows[0]!.reason, "Touches 997 of 1,170 monitored listings (85.2%). Effort M, catalog and site content.");
+  assert.equal(rows[2]!.reason, "Touches 112 of 5,000 resolved AI answers (2.2%). Medium effort, catalog and site content.");
+  assert.equal(rows[0]!.reason, "Touches 997 of 1,170 monitored listings (85.2%). Medium effort, catalog and site content.");
   // Without a read total, the common base is the largest own base of the unit.
   assert.deepEqual(commonReach([{ inputs: inputs({ affected: 1, base: 112, unit: "answers" }) }, { inputs: inputs({ affected: 1, base: 4978, unit: "answers" }) }]), { answers: 4978, listings: null });
   // Links have no common base, so a links item follows every counted item.
@@ -109,11 +114,69 @@ test("tiers: no count follows the counted items; watch, on track, and the outcom
   assert.ok(compareRankInputs(inputs({ affected: 1, base: 2 }), inputs({ affected: 1, base: 2 })) === 0);
 });
 
+test("severity floor: a Critical or At risk item leads only at 5% of its common base or more (fix round 3)", () => {
+  assert.equal(SEVERITY_FLOOR, 0.05);
+  assert.equal(SEVERITY_FLOOR_LABEL, "5%");
+  // An ungraded item on 30% of 1,000 monitored listings, and a graded one at 4.9%, 5.0% and 5.1%.
+  for (const severity of ["critical", "at_risk"] as const) {
+    const order = (affected: number) =>
+      rankPriorities(
+        [
+          { id: "ungraded", inputs: inputs({ affected: 300, base: 1000, unit: "listings" }) },
+          { id: "graded", inputs: inputs({ affected, base: 1000, unit: "listings", severity }) },
+        ],
+        { listings: 1000 },
+      ).map((row) => row.id);
+    assert.deepEqual(order(49), ["ungraded", "graded"], `${severity} at 4.9% ranks with the rest by reach`);
+    assert.deepEqual(order(50), ["graded", "ungraded"], `${severity} at 5.0% leads`);
+    assert.deepEqual(order(51), ["graded", "ungraded"], `${severity} at 5.1% leads`);
+    assert.equal(rankSeverity({ severity, affected: 49, base: 1000, reach: 1000 }), "moderate");
+    assert.equal(rankSeverity({ severity, affected: 50, base: 1000, reach: 1000 }), severity);
+    assert.equal(rankSeverity({ severity, affected: 51, base: 1000, reach: 1000 }), severity);
+  }
+  // The floor reads the common base, never the own base: 49 of 50 is 98% of its own base but 4.9% of 1,000.
+  assert.equal(rankSeverity({ severity: "critical", affected: 49, base: 50, reach: 1000 }), "moderate");
+  // Answers measure against all resolved AI answers: 98 of 2,000 is 4.9%, 100 of 2,000 is 5.0%.
+  assert.equal(rankSeverity({ severity: "critical", affected: 98, base: 2000, reach: 2000 }), "moderate");
+  assert.equal(rankSeverity({ severity: "critical", affected: 100, base: 2000, reach: 2000 }), "critical");
+  // No count, or no common base (verified links): the item cannot meet the floor.
+  assert.equal(rankSeverity({ severity: "critical", affected: null, base: null }), "moderate");
+  assert.equal(rankSeverity({ severity: "at_risk", affected: 3, base: 10, reach: null }), "moderate");
+  // Under the floor, a Critical item still outranks a lower one only by reach, dollars, then effort.
+  assert.deepEqual(
+    ranked([
+      ["critical-small", { affected: 40, base: 1000, unit: "listings", severity: "critical", effort: "L" }],
+      ["ungraded-same", { affected: 40, base: 1000, unit: "listings", effort: "S" }],
+    ]),
+    ["ungraded-same", "critical-small"],
+  );
+  // The tag is kept: the item's own severity is not changed by the order.
+  const [, row] = rankPriorities([
+    { id: "u", inputs: inputs({ affected: 300, base: 1000, unit: "listings" }) },
+    { id: "c", inputs: inputs({ affected: 10, base: 1000, unit: "listings", severity: "critical" }) },
+  ]);
+  assert.equal(row!.inputs.severity, "critical");
+  assert.match(SEVERITY_FLOOR_SENTENCE, /^A Critical or At risk item that touches under 5% of all monitored listings, or of all resolved AI answers, ranks with the rest and keeps its tag\.$/);
+});
+
+test("effort reads in words, never as a bare letter (fix round 3)", () => {
+  assert.equal(effortPhrase("S"), "Small effort, a listing or offer fix");
+  assert.equal(effortPhrase("M"), "Medium effort, catalog and site content");
+  assert.equal(effortPhrase("L"), "Large effort, an outreach program");
+  for (const effort of ["S", "M", "L"] as const) {
+    for (const tier of ["action", "watch", "on_track", "outcome"] as const) {
+      const line = rankReason(inputs({ effort, tier, affected: 10, base: 100, unit: "listings", severity: "critical" }));
+      assert.doesNotMatch(line, /\bEffort [SML]\b/);
+      assert.doesNotMatch(line, /so it (leads|follows)|no common base/i, "the reason is the data line only");
+    }
+  }
+});
+
 test("each item carries its rank inputs and one plain reason, in brand voice", () => {
   const [row] = rankPriorities([{ id: "a", inputs: inputs({ affected: 524, base: 1080, unit: "listings", monthly: 12345, effort: "M" }) }]);
   assert.equal(row!.rank, 1);
-  assert.equal(row!.reason, "Touches 524 of 1,080 monitored listings (48.5%). $12.3K a month, analyst estimate. Effort M, catalog and site content.");
-  assert.equal(rankReason(inputs({ effort: "S" })), "Has no single answer or listing count, so it follows the counted items. Effort S, a listing or offer fix.");
+  assert.equal(row!.reason, "Touches 524 of 1,080 monitored listings (48.5%). $12.3K a month, analyst estimate. Medium effort, catalog and site content.");
+  assert.equal(rankReason(inputs({ effort: "S" })), "Small effort, a listing or offer fix.");
   for (const line of [row!.reason, rankReason(inputs({ tier: "outcome" })), rankReason(inputs({ tier: "watch" }))]) {
     assert.doesNotMatch(line, /n't|—/);
   }
@@ -199,7 +262,7 @@ test("one list drives every view: Priorities, Urgent Interventions, deck, map ca
   assert.deepEqual(priorities.slice(0, 5).map((item) => item.id), top.map(priorityId));
   assert.equal(firstMove(plan)?.id, top[0]);
   assert.equal(priorities[0]!.id, priorityId(firstMove(plan)!.id));
-  assert.match(priorities[0]!.why, /^Critical, so it leads the items that need action\. Touches 959 of 1,170 monitored listings/);
+  assert.match(priorities[0]!.why, /^Touches 959 of 1,170 monitored listings/);
   assert.equal(priorities[0]!.severity, "critical");
   // Urgent Interventions: the table shows the plan, with the Buy Box row split in place, same ranks.
   const split = { withheld: 60, price: 50, other: 10, priceAsins: new Set<string>(), otherAsins: new Set<string>() };
@@ -383,7 +446,7 @@ test("the Amazon bullets item is one ranked candidate on the monitored listings"
   const bullets = plan.find((item) => item.id === BULLETS_ROW_ID)!;
   assert.equal(bullets.title, "Fill all five bullets on each Amazon listing");
   assert.equal(bullets.ratio, "300 of 900");
-  assert.equal(bullets.reason, "Touches 300 of 1,170 monitored listings (25.6%). Effort M, catalog and site content.");
+  assert.equal(bullets.reason, "Touches 300 of 1,170 monitored listings (25.6%). Medium effort, catalog and site content.");
   assert.equal(gapKindOf(BULLETS_ROW_ID), "amazon_bullets");
   assert.equal(bulletsPlanItem({ listings: 900, fullBullets: 900, short: 0, pct: 100 }), null, "no item when every listing has five bullets");
   assert.equal(bulletsPlanItem(null), null);

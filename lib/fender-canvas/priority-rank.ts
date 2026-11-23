@@ -6,7 +6,9 @@
  * The rule, approved:
  *   0. Severity first (Brian Magazu, 23 Nov 2026 fix round 2): Critical, then At risk, then
  *      every ungraded item (Recommended, No reading), then lower (Watch, On track). SEVERITY_ORDER
- *      is the one order; severityOf maps every severity word the dashboard uses onto it.
+ *      is the one order; severityOf maps every severity word the dashboard uses onto it. A
+ *      Critical or At risk item leads only when its count is at least SEVERITY_FLOOR of its common
+ *      base (fix round 3); under it, the item ranks with the ungraded items and keeps its tag.
  *   1. Reach in AI answers: the share of a common base the gap touches. An item that counts
  *      answers is measured against all resolved AI answers; an item that counts listings against
  *      all monitored listings (Brian Magazu, 23 Nov 2026 fix round: never its own base, so a
@@ -37,6 +39,20 @@ export type ReachTotals = Partial<Record<ReachUnit, number | null>>;
 
 /** S = a listing or offer fix, M = catalog and site content, L = an outreach program (21g's work types). */
 export type Effort = "S" | "M" | "L";
+
+/**
+ * The severity floor (Brian Magazu, 23 Nov 2026 fix round 3): a Critical or At risk item ranks in
+ * its severity tier only when its count is at least this share of its common base (all monitored
+ * listings, or all resolved AI answers). Under it, the item ranks with everything else by reach,
+ * then monthly dollars, then effort, and keeps its severity tag.
+ */
+export const SEVERITY_FLOOR = 0.05;
+
+/** The floor as the screens state it: "5%". */
+export const SEVERITY_FLOOR_LABEL = `${Math.round(100 * SEVERITY_FLOOR)}%`;
+
+/** The floor in one plain sentence, for the Priorities description and the Action Items rule tooltip. */
+export const SEVERITY_FLOOR_SENTENCE = `A Critical or At risk item that touches under ${SEVERITY_FLOOR_LABEL} of all monitored listings, or of all resolved AI answers, ranks with the rest and keeps its tag.`;
 
 /**
  * action = needs action now (or has no stored reading yet), ranked by rules 1 to 3.
@@ -152,6 +168,14 @@ export const EFFORT_LABEL: Record<Effort, string> = {
   L: "an outreach program",
 };
 
+/** The effort in words (fix round 3): never the bare letter on screen or in a CSV. */
+export const EFFORT_WORD: Record<Effort, string> = { S: "Small effort", M: "Medium effort", L: "Large effort" };
+
+/** "Medium effort, catalog and site content". */
+export function effortPhrase(effort: Effort): string {
+  return `${EFFORT_WORD[effort]}, ${EFFORT_LABEL[effort]}`;
+}
+
 const TIER_ORDER: Record<RankTier, number> = { action: 0, watch: 1, on_track: 2, outcome: 3 };
 const EFFORT_ORDER: Record<Effort, number> = { S: 0, M: 1, L: 2 };
 
@@ -204,11 +228,23 @@ function descending(a: number | null, b: number | null): number {
   return b - a;
 }
 
+/**
+ * The severity the order uses: the item's own, except that a Critical or At risk item whose count
+ * is under SEVERITY_FLOOR of its common base (or that has no count on one) ranks as moderate,
+ * with everything else. The item's tag still shows its own severity.
+ */
+export function rankSeverity(inputs: Pick<RankInputs, "severity" | "affected" | "base" | "reach">): Severity {
+  const severity = inputs.severity ?? "moderate";
+  if (severity !== "critical" && severity !== "at_risk") return severity;
+  const share = rankShare(inputs);
+  return share != null && share >= SEVERITY_FLOOR ? severity : "moderate";
+}
+
 /** Negative when `a` ranks before `b`. Equal inputs return 0, so callers keep their input order. */
 export function compareRankInputs(a: RankInputs, b: RankInputs): number {
   return (
     TIER_ORDER[a.tier] - TIER_ORDER[b.tier] ||
-    SEVERITY_ORDER[a.severity ?? "moderate"] - SEVERITY_ORDER[b.severity ?? "moderate"] ||
+    SEVERITY_ORDER[rankSeverity(a)] - SEVERITY_ORDER[rankSeverity(b)] ||
     descending(sharePoints(rankShare(a)), sharePoints(rankShare(b))) ||
     descending(a.monthly, b.monthly) ||
     EFFORT_ORDER[a.effort] - EFFORT_ORDER[b.effort]
@@ -262,23 +298,17 @@ export function countReach(count: ItemCount): string {
   return `Touches ${formatInt(count.affected)} of ${formatInt(base)} ${word} (${formatPct(100 * share)}).`;
 }
 
-/** "Touches 524 of 1,170 monitored listings (44.8%). $12.3K a month, analyst estimate. Effort M, catalog and site content." */
+/**
+ * The item's data line, and nothing else (Brian Magazu, 23 Nov 2026 fix round 3: the severity tag
+ * and the panel description already say why it sits where it does): "Touches 524 of 1,170
+ * monitored listings (44.8%). $12.3K a month, analyst estimate. Medium effort, catalog and site content."
+ */
 export function rankReason(inputs: RankInputs): string {
   const parts: string[] = [];
-  if (inputs.tier === "outcome") parts.push("The result every fix moves, tracked rather than ranked.");
-  else if (inputs.tier === "on_track") parts.push("On track, so it follows the items that need action.");
-  else if (inputs.tier === "watch") parts.push("A watch line, so it follows the items that need action.");
-  else if (inputs.severity === "critical") parts.push("Critical, so it leads the items that need action.");
-  else if (inputs.severity === "at_risk") parts.push("At risk, so it follows the Critical items.");
   const count = itemCount(inputs, "");
-  if (count) {
-    parts.push(countReach(count));
-    if (inputs.tier === "action" && rankShare(inputs) == null) parts.push("This count has no common base, so it follows the counted items.");
-  } else if (inputs.tier === "action") {
-    parts.push("Has no single answer or listing count, so it follows the counted items.");
-  }
+  if (count) parts.push(countReach(count));
   if (inputs.monthly != null) parts.push(`${formatMoneyShort(inputs.monthly)} a month, analyst estimate.`);
-  parts.push(`Effort ${inputs.effort}, ${EFFORT_LABEL[inputs.effort]}.`);
+  parts.push(`${effortPhrase(inputs.effort)}.`);
   return parts.join(" ");
 }
 

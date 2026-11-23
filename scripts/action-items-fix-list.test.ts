@@ -87,8 +87,8 @@ test("a finding with no reading follows the counted ones, and a finding on track
 test("the priority rule names the one central order (Brian Magazu, 23 Nov 2026)", () => {
   assert.equal(FIX_LIST_TITLE, "Fixes in priority order");
   assert.match(FIX_LIST_PRIORITY_RULE, /One ranking for every list: Priorities, this table, the Roadmap, the deck, and the map/);
-  assert.match(FIX_LIST_PRIORITY_RULE, /Critical items come first, then At risk, then the rest\. Within each, first by reach: the share of all resolved AI answers, or of all monitored listings, each gap touches, compared in whole percentage points/);
-  assert.match(FIX_LIST_PRIORITY_RULE, /Ties go to the larger monthly analyst estimate, then to the quicker fix/);
+  assert.match(FIX_LIST_PRIORITY_RULE, /Critical items come first, then At risk, then the rest\. A Critical or At risk item that touches under 5% of all monitored listings, or of all resolved AI answers, ranks with the rest and keeps its tag\. Within each, first by reach: the share of all resolved AI answers, or of all monitored listings, each gap touches, compared in whole percentage points/);
+  assert.match(FIX_LIST_PRIORITY_RULE, /Ties go to the larger monthly analyst estimate, then to the smaller effort \(small: a listing or offer fix; medium: catalog and site content; large: an outreach program\)/);
   assert.match(FIX_LIST_PRIORITY_RULE, /Unbranded Discovery is the result every fix moves/);
   assert.doesNotMatch(FIX_LIST_PRIORITY_RULE, /\u2014|n't/);
 });

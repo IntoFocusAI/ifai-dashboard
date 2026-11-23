@@ -308,7 +308,8 @@ function ownPageInputs(own: OwnPageAction): RankInputs {
     unit: worst ? "listings" : counted ? "answers" : null,
     ...(counts ? { counts } : {}),
     monthly: null,
-    effort: effortOf(own.phase),
+    // Fix round 3: the urgent row's effort is the factor it works on, not its phase.
+    effort: own.effort ?? effortOf(own.phase),
     dependsOn: prerequisitesOf(own.id),
     tier: "action",
   };

@@ -5,6 +5,7 @@
 // every surface (Priorities, the rank reason, deck slide 9, Action Items, the CSV) shows the same N.
 // The kinds come from GAP_KINDS in the code, so a new kind fails here until it carries the count.
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { deckFixes } from "../lib/deck/deck-model.ts";
 import type { DeckInput } from "../lib/deck/deck-types.ts";
@@ -13,9 +14,10 @@ import { aplusPlanItem } from "../lib/fender-canvas/action-items-aplus-row.ts";
 import { planWithBuyBoxCauses } from "../lib/fender-canvas/action-items-buybox-rows.ts";
 import { bulletsPlanItem } from "../lib/fender-canvas/action-items-bullets-row.ts";
 import type { BriefingFinding, BriefingFindingId } from "../lib/fender-canvas/briefing-retail-lead.ts";
-import { buildLiveCommandCenter, firstMoveLine, priorityFromPlan, priorityItems } from "../lib/fender-canvas/command-center-from-live.ts";
+import { buildLiveCommandCenter, firstMoveLine, PRIORITIES_DESC, priorityFromPlan, priorityItems } from "../lib/fender-canvas/command-center-from-live.ts";
+import { FIX_LIST_PRIORITY_RULE } from "../lib/fender-canvas/action-items-fix-list.ts";
 import { GAP_KINDS, gapKindOf } from "../lib/fender-canvas/priority-list.ts";
-import { countFigure, countRatio, SEVERITY_ORDER, severityOf, type Severity } from "../lib/fender-canvas/priority-rank.ts";
+import { countFigure, countRatio, rankSeverity, SEVERITY_FLOOR, SEVERITY_ORDER, severityOf, type Severity } from "../lib/fender-canvas/priority-rank.ts";
 import type { ActuationAction } from "../lib/fender-canvas/roadmap-actuation.ts";
 import type { FocusAction } from "../lib/fender-canvas/roadmap-focus.ts";
 import { FACTOR_COVERED_BY, urgentOwnPagesAction, type OwnPageAction, type OwnPageFactor } from "../lib/fender-canvas/roadmap-own-pages.ts";
@@ -86,7 +88,19 @@ function focus(id: string, kind: FocusAction["focus"], tier: FocusAction["tier"]
 }
 
 function factor(id: OwnPageFactor["id"], tone: OwnPageFactor["tone"], affected: number, base: number): OwnPageFactor {
-  return { id, label: `Factor ${id}`, percent: "50.0%", ratio: `${base - affected} of ${base}`, tone, open: { spokeId: "specs", tab: "Tab" }, affected, base, short: `Short on ${id}` };
+  return {
+    id,
+    label: `Factor ${id}`,
+    percent: "50.0%",
+    ratio: `${base - affected} of ${base}`,
+    tone,
+    open: { spokeId: "specs", tab: "Tab" },
+    affected,
+    base,
+    short: `Short on ${id}`,
+    task: `Work on ${id}`,
+    effort: "M",
+  };
 }
 
 function actuation(id: string, rule: ActuationAction["rule"], counts?: { count: number; target: number }): ActuationAction {
@@ -277,32 +291,43 @@ test("severity: one order for every word the dashboard uses; Critical first, the
   assert.ok(SEVERITY_ORDER.critical < SEVERITY_ORDER.at_risk && SEVERITY_ORDER.at_risk < SEVERITY_ORDER.moderate && SEVERITY_ORDER.moderate < SEVERITY_ORDER.low);
   const plan = buildPlan(syntheticInput(urgentOwnPagesAction(OWN_FACTORS)));
   const listed = plan.filter(inPriorities);
-  const levels = listed.map((item) => SEVERITY_ORDER[item.inputs.severity!]);
-  assert.deepEqual(levels, [...levels].sort((a, b) => a - b), "no item outranks one more severe");
-  // The Buy Box (Critical, 4% of listings) leads every ungraded item, even the bullets row on 30%.
+  const levels = listed.map((item) => SEVERITY_ORDER[rankSeverity(item.inputs)]);
+  assert.deepEqual(levels, [...levels].sort((a, b) => a - b), "no item outranks one more severe at or over the floor");
   const rank = (id: string) => plan.find((item) => item.id === id)!.rank;
-  assert.ok(rank("finding:buy_box") < rank("signal:amazon_bullets"));
-  assert.ok(rank("finding:map_leakage") < rank("signal:rival:category-a"));
+  assert.ok(rank("finding:map_leakage") < rank("signal:rival:category-a"), "At risk on 12% leads the ungraded items");
+  // Fix round 3: the Buy Box (Critical, 4% of listings) is under the 5% floor, so it ranks with
+  // the rest by reach: the bullets row on 30% now comes first. It keeps its Critical tag.
+  assert.ok(rank("signal:amazon_bullets") < rank("finding:buy_box"));
+  assert.ok(rank("finding:splintered_bundles") > rank("signal:out_of_stock"), "At risk on 3% follows out of stock on 7%");
+  assert.equal(plan.find((item) => item.id === "finding:buy_box")!.inputs.severity, "critical");
   // Within a level: reach, then dollars, then effort.
-  assert.ok(rank("finding:exact_official_product") < rank("finding:buy_box"), "Critical: 79% before 4%");
-  // Priorities shows the same words.
+  assert.ok(rank("finding:exact_official_product") < rank("finding:map_leakage"), "Critical 79% before At risk 12%");
+  // The leading tier holds only items at or over the floor, and they come first.
+  const leading = listed.filter((item) => rankSeverity(item.inputs) !== "moderate" && rankSeverity(item.inputs) !== "low");
+  assert.deepEqual(leading.map((item) => item.id), listed.slice(0, leading.length).map((item) => item.id));
+  for (const item of leading) assert.ok(item.share! >= SEVERITY_FLOOR, item.id);
+  // Priorities shows each item's own severity word.
   const cards = priorityItems(plan);
   assert.equal(cards[0]!.severity, "critical");
-  assert.ok(cards.findIndex((card) => card.severity === "high") > cards.findLastIndex((card) => card.severity === "critical"));
+  assert.equal(cards.find((card) => card.id === "buybox-suppression")!.severity, "critical");
 });
 
 test("no duplicate fixes: the own-pages item skips factors another ranked item fixes", () => {
   const plan = buildPlan(syntheticInput(urgentOwnPagesAction(OWN_FACTORS)));
   const own = plan.find((item) => item.id === "own:pages")!;
   // Page found (exact pages), Amazon completeness (missing specs) and A+ (the A+ row) are covered;
-  // machine specs and completeness remain, both At risk, so the first of them leads.
-  assert.match(own.action, /starting with Factor completeness\.$/);
+  // machine specs and completeness remain, both At risk, so the first of them leads. Its title is
+  // that factor's short task, and its effort is that factor's (fix round 3).
+  assert.equal(own.action, "Work on completeness.");
+  assert.equal(own.title, "Work on completeness");
+  assert.equal(own.inputs.effort, "M");
+  assert.match(own.reason, /Medium effort, catalog and site content\.$/);
   assert.doesNotMatch(own.fact, /page_found|amazon_completeness|Factor aplus/);
   assert.equal(own.count!.label, "Short on completeness");
   assert.equal(own.count!.affected, 120);
   // A factor returns when the item covering it leaves the list.
   const withoutExact = rankPlan(plan.filter((item) => item.id !== "finding:exact_official_product"));
-  assert.match(withoutExact.find((item) => item.id === "own:pages")!.action, /starting with Factor page_found\.$/);
+  assert.equal(withoutExact.find((item) => item.id === "own:pages")!.action, "Work on page_found.");
   // With every factor covered, the item drops.
   const covered = OWN_FACTORS.filter((item) => FACTOR_COVERED_BY[item.id] != null);
   const only = buildPlan(syntheticInput(urgentOwnPagesAction(covered)));
@@ -319,4 +344,32 @@ test("the opening summary and the first move are central #1", () => {
   assert.equal(priorityItems(plan)[0]!.title, first.title);
   assert.ok(cc.summary!.startsWith(firstMoveLine(plan)!));
   assert.equal(firstMoveLine(plan), `First move: ${first.title}. ${countFigure(first.count!)}.`);
+});
+
+test("let the data speak: no reason heading, no severity opener, no effort letter in any rendered text (fix round 3)", () => {
+  const items = everyItem();
+  const plan = buildPlan(syntheticInput(urgentOwnPagesAction(OWN_FACTORS)));
+  const cc = buildLiveCommandCenter({} as CanvasBundle, { phase: "loading" }, { phase: "loading" }, plan);
+  const deck = deckFixes({ brandSite: "site.example", plan } as unknown as DeckInput);
+  const texts: string[] = [
+    PRIORITIES_DESC,
+    FIX_LIST_PRIORITY_RULE,
+    cc.summary ?? "",
+    ...cc.items.flatMap((card) => [card.title, card.why, card.impact ?? ""]),
+    ...items.flatMap((item) => {
+      const card = priorityFromPlan(item);
+      return [item.reason, item.title, item.action, item.fact, card.why, card.impact ?? "", ...fixListCells(item, new Date(2026, 10, 23))];
+    }),
+    ...deck.flatMap((fix) => [fix.action, fix.ratio, fix.figureLabel ?? "", fix.statusWord]),
+  ];
+  for (const text of texts) {
+    assert.doesNotMatch(text, /\bEffort [SML]\b/, text);
+    assert.doesNotMatch(text, /so it (leads|follows)|why it is at the top|no common base, so/i, text);
+  }
+  // Each reason is its data line only: an optional reach sentence, optional dollars, then effort in words.
+  for (const item of items) {
+    assert.match(item.reason, /^(Touches [\d,]+ of [\d,]+ [a-zA-Z ]+ \([\d.]+%\)\. )?(\$[\d.,]+[KM]? a month, analyst estimate\. )?(Small|Medium|Large) effort, [a-z ]+\.$/, item.id);
+  }
+  // The Priorities card has no reason heading.
+  assert.doesNotMatch(readFileSync(new URL("../lib/canvas-sdk/CommandCenter.tsx", import.meta.url), "utf8"), /Why it is at the top/i);
 });

@@ -5,7 +5,7 @@ import { aiCommandSummary, aiPriorityItems } from "@/lib/ai-search/canvas-surfac
 import type { AiSearchRead } from "@/lib/ai-search/types";
 import { markPartial } from "@/lib/fender-canvas/canvas-reads";
 import { formatInt } from "@/lib/fender-canvas/format";
-import { countFigure, severityOf, type Severity } from "@/lib/fender-canvas/priority-rank";
+import { countFigure, severityOf, SEVERITY_FLOOR_SENTENCE, type Severity } from "@/lib/fender-canvas/priority-rank";
 import { emptyPlanLine, firstMove, inPriorities, type PlanItem } from "@/lib/fender-canvas/roadmap-plan";
 import { bulletCounts } from "@/lib/fender-canvas/listing-content";
 import { specPageCounts } from "@/lib/fender-canvas/machine-readability";
@@ -107,8 +107,7 @@ export function priorityFromPlan(item: PlanItem): PriorityItem {
   };
 }
 
-export const PRIORITIES_DESC =
-  "Every fix in one order: Critical items first, then At risk, then the rest. Within each, the share of all resolved AI answers or all monitored listings each gap touches, then the monthly analyst estimate, then the quicker fix. Action Items, the Roadmap, the deck, and the map read the same order.";
+export const PRIORITIES_DESC = `Every fix in one order: Critical items first, then At risk, then the rest. ${SEVERITY_FLOOR_SENTENCE} Within each, the share of all resolved AI answers or all monitored listings each gap touches, then the monthly analyst estimate, then the smaller effort. Action Items, the Roadmap, the deck, and the map read the same order.`;
 
 /** Priorities lists the first 10 items of the central order (Brian Magazu, 23 Nov 2026 fix round). */
 export const PRIORITIES_CAP = 10;

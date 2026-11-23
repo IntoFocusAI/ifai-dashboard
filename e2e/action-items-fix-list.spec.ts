@@ -48,7 +48,8 @@ test.describe("Action Items opens on the prioritized fix list", () => {
     expect(ranks[0]).toBe(1);
     expect([...ranks].sort((a, b) => a - b)).toEqual(ranks);
     for (const reason of await all.evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-fix-reason") ?? ""))) {
-      expect(reason).toMatch(/Effort [SML], /);
+      expect(reason).toMatch(/(Small|Medium|Large) effort, /);
+      expect(reason).not.toMatch(/Effort [SML]\b|so it (leads|follows)/);
     }
 
     // The AI finding reads the map's population, which can arrive after the retail rows.
