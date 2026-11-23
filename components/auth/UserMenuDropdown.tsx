@@ -7,9 +7,10 @@ import type { CanvasUserMenu } from "@/lib/canvas-sdk/types";
 import { ProfileSettingsModal } from "@/components/auth/ProfileSettingsModal";
 import { ActuationRecordsMenuLink } from "@/components/staff/ActuationRecordsMenuLink";
 import { SitesToReviewMenuLink } from "@/components/staff/SitesToReviewMenuLink";
-import { Building2, Check, ChevronDown, LogOut, Moon, Settings, Shield, Sun, User } from "lucide-react";
+import { Building2, Check, ChevronDown, LogOut, Moon, Settings, Shield, Sun, User, Users } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { MANAGE_USERS_PATH } from "@/lib/auth/manage-users-path";
 import "./user-menu.css";
 
 type Props = CanvasUserMenu & {
@@ -36,6 +37,7 @@ export function UserMenuDropdown({
   roleLabel,
   organizations = [],
   activeOrganizationId,
+  canManageUsers = false,
   variant,
   lightTheme = false,
   onThemeToggle,
@@ -179,6 +181,18 @@ export function UserMenuDropdown({
             <Shield size={14} aria-hidden />
             <span>Security</span>
           </Link>
+
+          {canManageUsers ? (
+            <Link
+              href={lightTheme ? `${MANAGE_USERS_PATH}?theme=light` : MANAGE_USERS_PATH}
+              role="menuitem"
+              className="user-menu-item user-menu-item-link"
+              data-manage-users-link=""
+            >
+              <Users size={14} aria-hidden />
+              <span>Manage users</span>
+            </Link>
+          ) : null}
 
           <SitesToReviewMenuLink lightTheme={lightTheme} />
           <ActuationRecordsMenuLink lightTheme={lightTheme} />

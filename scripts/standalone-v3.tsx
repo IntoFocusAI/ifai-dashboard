@@ -1,40 +1,8 @@
-import { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { DashboardAuthView } from "../components/dashboard/DashboardAuthView";
-import { FenderBrandCanvas } from "../components/v3/FenderBrandCanvas";
-import {
-  DASHBOARD_LOGIN_REQUIRED,
-  GUEST_DASHBOARD_COOKIE,
-} from "../lib/auth/guest-dashboard.constants";
+import { HomeCanvasStatic } from "../components/v3/HomeCanvasStatic";
 
-function readGuestAccess(): boolean {
-  try {
-    return localStorage.getItem(GUEST_DASHBOARD_COOKIE) === "1";
-  } catch {
-    return false;
-  }
-}
-
-function StandaloneFenderApp() {
-  const [guest, setGuest] = useState(false);
-  const [ready, setReady] = useState(false);
-
-  useEffect(() => {
-    setGuest(readGuestAccess());
-    setReady(true);
-    const onGuest = () => setGuest(true);
-    window.addEventListener("ifai-guest-dashboard", onGuest);
-    return () => window.removeEventListener("ifai-guest-dashboard", onGuest);
-  }, []);
-
-  if (DASHBOARD_LOGIN_REQUIRED && !ready) return null;
-
-  if (!DASHBOARD_LOGIN_REQUIRED || guest) {
-    return <FenderBrandCanvas />;
-  }
-
-  return <DashboardAuthView mode="login" />;
-}
-
+/* Offline single-file build of the canvas. It has no login: the Skip Login guest path was
+   removed when the live dashboard made login required (23 Nov 2026). Its reads use the
+   publishable key, so once the database requires a signed-in user it shows no client data. */
 const root = document.getElementById("root");
-if (root) createRoot(root).render(<StandaloneFenderApp />);
+if (root) createRoot(root).render(<HomeCanvasStatic />);

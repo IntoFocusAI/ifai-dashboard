@@ -5,10 +5,13 @@ import { DashboardIomShell } from "@/components/dashboard/DashboardIomShell";
 import type { CanvasUserMenu } from "@/lib/canvas-sdk/types";
 
 type Props = CanvasUserMenu & {
+  title?: string;
   hint: string;
 };
 
+/** Signed-in page with only the user menu and one short message (for example, no brand access yet). */
 export function DashboardOrgPlaceholder({
+  title = "Choose an organization",
   hint,
   email,
   displayName,
@@ -43,7 +46,7 @@ export function DashboardOrgPlaceholder({
           </div>
         </header>
         <div className="dashboard-org-empty">
-          <p className="dashboard-org-empty-title">Choose an organization</p>
+          <p className="dashboard-org-empty-title">{title}</p>
           <p className="dashboard-org-empty-desc">{hint}</p>
         </div>
       </div>

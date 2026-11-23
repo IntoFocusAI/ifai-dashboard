@@ -30,7 +30,6 @@ const build = spawnSync(
     "--minify",
     "--alias:@=.",
     "--alias:@/app/auth/actions=./scripts/standalone-shims/auth-actions.ts",
-    "--alias:@/app/auth/guest-actions=./scripts/standalone-shims/guest-actions.ts",
     "--alias:@/app/auth/organization-actions=./scripts/standalone-shims/organization-actions.ts",
     "--alias:@/app/settings/profile/actions=./scripts/standalone-shims/profile-actions.ts",
     "--alias:next/navigation=./scripts/standalone-shims/next-navigation.ts",
