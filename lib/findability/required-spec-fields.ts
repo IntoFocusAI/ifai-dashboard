@@ -42,6 +42,19 @@ export type CategoryRequiredList = {
   fields: FieldFill[];
 };
 
+/**
+ * The D-05 spec check (Fender db3c834c v14, Ledlenser 74cb4763 v5) nests its product type list
+ * result under this key of amazon_spec_values. It is not a spec field, so no list counts it.
+ */
+export const D05_SPEC_KEY = "d05";
+
+/** The spec field ids the Amazon check recorded on a row, without the D-05 nested result. */
+export function specValueFields(row: RequiredSpecSourceRow): string[] {
+  const values = row.amazon_spec_values;
+  if (!values || typeof values !== "object") return [];
+  return Object.keys(values).filter((field) => field !== D05_SPEC_KEY);
+}
+
 function filledValue(value: unknown): boolean {
   if (value == null) return false;
   if (typeof value === "string") return value.trim().length > 0;
@@ -53,7 +66,7 @@ function filledFields(row: RequiredSpecSourceRow): string[] {
   const values = row.amazon_spec_values;
   if (!values || typeof values !== "object") return [];
   return Object.entries(values)
-    .filter(([, value]) => filledValue(value))
+    .filter(([field, value]) => field !== D05_SPEC_KEY && filledValue(value))
     .map(([field]) => field);
 }
 
@@ -90,7 +103,7 @@ export function requiredSpecListsByCategory(
       clientFilled.set(field, (clientFilled.get(field) ?? 0) + 1);
     }
     for (const field of missingFields(row)) universe.add(field);
-    for (const field of Object.keys(row.amazon_spec_values ?? {})) universe.add(field);
+    for (const field of specValueFields(row)) universe.add(field);
     const name = categoryOf(row);
     const entry = byCategory.get(name) ?? { listings: 0, filled: new Map<string, number>() };
     entry.listings += 1;

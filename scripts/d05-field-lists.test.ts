@@ -16,8 +16,10 @@ import {
   productTypeCoveragePartial,
   productTypeListingLabel,
   productTypeRequiredTooltip,
+  recordedSpecFields,
   requiredFieldsByProductType,
 } from "../lib/findability/product-type-required-fields.ts";
+import { requiredSpecListsByCategory } from "../lib/findability/required-spec-fields.ts";
 
 const root = new URL("..", import.meta.url).pathname;
 const read = (path: string) => readFileSync(join(root, path), "utf8");
@@ -120,6 +122,18 @@ test("a required field the check does not record is named unchecked, never missi
   assert.equal(partial.reason, "coverage");
   assert.equal(partial.coverage, "3 of 17 required fields");
   assert.match(partial.missing, /does not record 14 of the 17 required fields for guitars, so they are not judged: Back material \(competitors 100\.0%\)/);
+});
+
+test("the D-05 spec check's nested d05 result is not counted as a spec field", () => {
+  const d05 = { product_type: "GUITARS", list_source: "table", expected: 17, found: 1, missing: ["back_material"], fields: { color: "Red" } };
+  const withD05 = { ...row("A1", ["color"], ["scale_length"]), amazon_spec_values: { color: "x", d05 } };
+  assert.deepEqual([...recordedSpecFields([withD05])].sort(), ["color", "scale_length"]);
+  const types = productTypeMap([{ asin: "A1", product_type: "GUITARS" }]);
+  const guitars = requiredFieldsByProductType([withD05], types).coverage[0];
+  assert.deepEqual(guitars.checked.map((field) => field.field), ["color", "scale_length"]);
+  // The interim top-10 rule for listings without a list does not list d05 either.
+  const lists = requiredSpecListsByCategory([withD05]);
+  assert.deepEqual(lists[0].fields.map((fill) => fill.field), ["color"]);
 });
 
 test("brightness and max lumens count as one field, filled when either is", () => {
