@@ -63,12 +63,18 @@ and to every worker.
     copies an existing pattern.
   Always name the model when starting a subagent; a subagent without one
   inherits the PM's.
-- **Parallel workers.** Run up to 3 workers at once on one seat when their
+- **Parallel workers.** Run up to 5 workers at once on one seat (Brian, 23 Nov;
+  be careful running several Fable workers together) when their
   files do not overlap (the worker briefs list each view's files) and no
   worker needs another's unmerged change. Shared files (lib/ai-search reads,
   canvas-reads.ts, ResizableTable, StatusMark) belong to one worker per
   batch; others wait or ask the PM. Work that touches the database or Brian
-  Watson's open pull requests runs alone. More than 3 only when Brian asks.
+  Watson's open pull requests runs alone. More than 5 only when Brian asks.
+- **Batch proposals.** Every proposed batch names each worker's number, model
+  (with a one-line reason) and estimated cost in API-equivalent dollars, and
+  waits for Brian's "go ahead".
+- **Review requests.** Always give the preview link, where to click, and what
+  to look for, for both clients.
 - **Budget.** Report usage in every review request: the seat's 5-hour window
   percentage and the cost per view so far. Pause new workers and report to
   Brian when the window passes 80%, or when one view passes $80. Let running
