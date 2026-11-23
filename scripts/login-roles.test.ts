@@ -74,6 +74,11 @@ test("no membership, an org with no client file, or a suspended row means no acc
   // Suspended staff are not staff; intofocus_admin on a client org (the old e2e shape) is not staff either.
   assert.equal(accessFromMemberships([member("platform", "intofocus_admin", "suspended")], KNOWN).kind, "none");
   assert.equal(accessFromMemberships([member("fender", "intofocus_admin")], KNOWN).kind, "none");
+  // An inactive org gives its members nothing, as command.my_clients() does (PR #263).
+  const inactive = { ...member("fender", "org_viewer"), organization: { ...ORGS.fender, isActive: false } };
+  assert.equal(accessFromMemberships([inactive], KNOWN).kind, "none");
+  // Staff still see every client.
+  assert.equal(accessFromMemberships([...staff, inactive], KNOWN).kind, "staff");
 });
 
 test("someone in two client orgs gets both, in switcher order", () => {

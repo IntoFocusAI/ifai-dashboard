@@ -25,7 +25,7 @@ export type ClientAccess =
   | { kind: "staff"; clients: AllowedClient[] }
   | { kind: "member"; clients: AllowedClient[] };
 
-/** One row of command.my_clients(). */
+/** One row of command.my_clients() (PR #263). role is text there, not the enum. */
 export type MyClientsRow = {
   client_key: string;
   organization_id: string | null;
@@ -79,7 +79,7 @@ export function accessFromMemberships(
     );
   }
   const rows = active
-    .filter((m) => !m.organization.isPlatformOrg && m.role !== "intofocus_admin")
+    .filter((m) => !m.organization.isPlatformOrg && m.organization.isActive !== false && m.role !== "intofocus_admin")
     .map((m) => ({
       clientKey: m.organization.slug,
       organizationId: m.organization.id,
@@ -96,7 +96,9 @@ export function accessFromRpcRows(
   known: readonly KnownClient[],
 ): ClientAccess {
   const names = new Map(known.map((c) => [c.clientKey, c.displayName]));
+  const roles: readonly string[] = ["intofocus_admin", "org_admin", "org_viewer"];
   const clients = rows
+    .filter((r) => roles.includes(r.role))
     .filter((r) => isStaff || r.role !== "intofocus_admin")
     .map((r) => ({
       clientKey: r.client_key,

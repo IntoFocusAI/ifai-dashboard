@@ -29,6 +29,7 @@ type OrganizationRow = {
   name: string;
   slug: string;
   is_platform_org: boolean;
+  is_active?: boolean | null;
 };
 
 type MembershipRow = {
@@ -76,6 +77,7 @@ function mapMembership(row: MembershipRow): CommandMembership | null {
       name: org.name,
       slug: org.slug,
       isPlatformOrg: org.is_platform_org,
+      isActive: org.is_active !== false,
     },
   };
 }
@@ -148,7 +150,7 @@ export async function getCommandSession(): Promise<CommandSession | null> {
     .schema("command")
     .from("organization_memberships")
     .select(
-      "id, role, status, organizations ( id, name, slug, is_platform_org )",
+      "id, role, status, organizations ( id, name, slug, is_platform_org, is_active )",
     )
     .eq("user_id", userId)
     .eq("status", "active");
