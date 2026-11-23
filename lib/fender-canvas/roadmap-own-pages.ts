@@ -67,10 +67,15 @@ export const FACTOR_EFFORT: Readonly<Record<OwnPageFactor["id"], Effort>> = {
   aplus: "M",
 };
 
+/** A field named for the gap must be missing on at least this share of the pages that miss anything. */
+export const NAMED_FIELD_SHARE = 0.9;
+
 /**
- * What the brand-site completeness gap is made of, from the stored page read: the found pages that
- * miss at least one field, out of all found pages, and the one field they all miss when it is one.
- * Null without a page read.
+ * What the brand-site completeness gap is made of, from the stored page read. Without a named
+ * field, `pages` is the found pages that miss at least one field. When one field accounts for the
+ * gap (missing on at least NAMED_FIELD_SHARE of those pages), it is named and `pages` is the
+ * pages missing that field, so the label and N agree. `base` is all found pages. Null without a
+ * page read.
  */
 export type CompletenessGap = { pages: number; base: number; field: string | null };
 
@@ -78,8 +83,11 @@ export function completenessGap(specPages: SpecPageSummary | null | undefined): 
   const pages = specPages?.pages ?? [];
   if (pages.length === 0) return null;
   const gap = pages.filter((page) => page.missingFields.length > 0);
-  const fields = new Set(gap.flatMap((page) => page.missingFields));
-  return { pages: gap.length, base: pages.length, field: fields.size === 1 ? [...fields][0]! : null };
+  const missing = new Map<string, number>();
+  for (const page of gap) for (const field of new Set(page.missingFields)) missing.set(field, (missing.get(field) ?? 0) + 1);
+  const [top, count] = [...missing.entries()].sort((x, y) => y[1] - x[1] || (x[0] === SPEC_BLOCK_FIELD ? -1 : 1))[0] ?? [null, 0];
+  if (top && count >= NAMED_FIELD_SHARE * gap.length) return { pages: count, base: pages.length, field: top };
+  return { pages: gap.length, base: pages.length, field: null };
 }
 
 /** The completeness count's label: names the one missing field when one accounts for the gap. */
