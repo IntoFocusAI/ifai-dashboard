@@ -88,16 +88,19 @@ test("the join keeps the sales view's listings and adds none from the other view
   assert.deepEqual(joined.map((l) => l.asin), ["A1"]);
 });
 
-test("Phase 1 from the views matches the proposal's section 5", () => {
-  rangeIs(fender.est.phase1, [603107, 1050952, 1549516]);
-  rangeIs(ledlenser.est.phase1, [10997, 17101, 23150]);
+test("Phase 1 from the views matches the proposal's section 5, less the retired Buy Box line", () => {
+  // The proposal's [603,107, 1,050,952, 1,549,516] less its backward line 2 (R-06, 23 Nov 2026).
+  rangeIs(fender.est.phase1, [551015, 939822, 1401051]);
+  rangeIs(ledlenser.est.phase1, [10554, 16157, 21888]);
   assert.deepEqual(fender.est.phase1.parts?.map((p) => p.lineId), ["out_of_stock", "buy_box", "splintered", "missing_specs", "aplus"]);
 });
 
 test("each line from the views matches the proposal's section 1", () => {
   rangeIs(fender.est.outOfStock, [367760, 490347, 551640]);
   rangeIs(ledlenser.est.outOfStock, [8899, 11866, 13349]);
-  near(fender.est.buyBox.range?.mid, 111000, 1000, "Fender Buy Box mid");
+  // The 17 Nov read stored no Buy Box state: no listing is withheld in it, so line 2 prices none.
+  assert.equal(fender.est.buyBox.range, null);
+  assert.equal(fender.est.buyBox.trail.coverage.total, 0);
   near(fender.est.missingSpecs.range?.mid, 328000, 1000, "Fender specs mid");
   near(fender.est.aplus.range?.mid, 66000, 1000, "Fender A+ mid");
 });

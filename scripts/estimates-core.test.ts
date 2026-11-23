@@ -6,7 +6,8 @@
 // scripts/estimates-sales-coverage.test.ts.
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { estimateBuyBox, estimateOutOfStock } from "../lib/estimates/availability.ts";
+import { estimateOutOfStock } from "../lib/estimates/availability.ts";
+import { estimateBuyBox } from "../lib/estimates/buy-box.ts";
 import {
   ALL_BENCHMARKS,
   APLUS_LIFT,
@@ -61,20 +62,19 @@ test("line 1, out of stock, reproduces the proposal", () => {
   assert.equal(fender.outOfStock.trail.confidence, "high");
 });
 
-test("line 2, Buy Box, reproduces the proposal", () => {
-  rangeIs(fender.buyBox, [52093, 111131, 148465]);
-  near(touched(fender.buyBox), 347285, 1, "Fender sales on no-Buy-Box days");
-  assert.equal(fender.buyBox.trail.coverage.measured, 462);
-  assert.equal(fender.buyBox.trail.coverage.total, 745);
-  // Days on every covered listing: 3,138 on listings with sales plus days on measured, no-sales listings (decision 113).
-  assert.equal(fender.buyBox.trail.inputs.find((i) => i.key === "no_buy_box_days")?.value, 11043);
-
-  rangeIs(ledlenser.buyBox, [443, 945, 1262]);
-  near(touched(ledlenser.buyBox), 2952, 1, "Ledlenser sales on no-Buy-Box days");
-  assert.equal(ledlenser.buyBox.trail.coverage.measured, 36);
-  assert.equal(ledlenser.buyBox.trail.coverage.total, 122);
-  assert.equal(ledlenser.buyBox.trail.inputs.find((i) => i.key === "no_buy_box_days")?.value, 843);
-  assert.equal(fender.buyBox.trail.confidence, "medium");
+test("line 2, Buy Box: the proposal's backward figure is retired (R-06, 23 Nov 2026)", () => {
+  // The 17 Nov read stored no Buy Box state, so no listing is withheld in it: line 2 prices no
+  // listing and reads Not available*, never $0. Its old figure ($52K to $148K for Fender, priced on
+  // days without a Buy Box in the last 12 months) is gone from the line and from Phase 1.
+  for (const r of [fender.buyBox, ledlenser.buyBox]) {
+    assert.equal(r.status, "not_available");
+    assert.equal(r.range, null);
+    assert.equal(r.trail.coverage.total, 0);
+    assert.equal(r.trail.confidence, "medium");
+    assert.ok(!r.trail.inputs.some((i) => i.key === "no_buy_box_days"), "no 12-month no-Buy-Box days input");
+    assert.ok(!r.trail.benchmarks.some((b) => b.id === "brand_loss_share"), "the brand-loss share no longer applies");
+  }
+  assert.ok(fender.phase1.trail.notes.some((n) => n.includes("Buy Box withheld")), "Phase 1 names the line it leaves out");
 });
 
 test("line 3, MAP leakage, reproduces the proposal and stays outside the total", () => {
@@ -148,15 +148,17 @@ test("line 7, A+ content, reproduces the proposal", () => {
   assert.equal(fender.aplus.trail.confidence, "medium");
 });
 
-test("A, near-term upside (Phase 1), reproduces the proposal", () => {
-  rangeIs(fender.phase1, [603107, 1050952, 1549516], 2);
-  rangeIs(ledlenser.phase1, [10997, 17101, 23150], 2);
+test("A, near-term upside (Phase 1), reproduces the proposal less its retired Buy Box line", () => {
+  // The proposal's Phase 1 ($603,107 / $1,050,952 / $1,549,516 for Fender) less its line 2, which
+  // R-06 replaced on 23 Nov 2026 and which the 17 Nov read cannot price (no Buy Box state stored).
+  rangeIs(fender.phase1, [551015, 939822, 1401051], 2);
+  rangeIs(ledlenser.phase1, [10554, 16157, 21888], 2);
   assert.deepEqual(fender.phase1.parts?.map((p) => p.lineId), ["out_of_stock", "buy_box", "splintered", "missing_specs", "aplus"]);
-  // Share of measured Amazon sales (mid): 5.1% and 14.0%.
+  // Share of measured Amazon sales (mid): 4.5% and 13.2%.
   near(fender.catalog.measuredAnnualSales, 20695240, 1, "Fender measured sales");
   near(ledlenser.catalog.measuredAnnualSales, 122373, 1, "Ledlenser measured sales");
-  assert.equal(((fender.phase1.range!.mid / fender.catalog.measuredAnnualSales) * 100).toFixed(1), "5.1");
-  assert.equal(((ledlenser.phase1.range!.mid / ledlenser.catalog.measuredAnnualSales) * 100).toFixed(1), "14.0");
+  assert.equal(((fender.phase1.range!.mid / fender.catalog.measuredAnnualSales) * 100).toFixed(1), "4.5");
+  assert.equal(((ledlenser.phase1.range!.mid / ledlenser.catalog.measuredAnnualSales) * 100).toFixed(1), "13.2");
   // Ledlenser's splintered line is Not available* and is named, not added as $0.
   assert.ok(ledlenser.phase1.trail.notes.some((n) => n.includes("Splintered listings")));
 });
@@ -164,13 +166,14 @@ test("A, near-term upside (Phase 1), reproduces the proposal", () => {
 test("B, measured total, reproduces the proposal from its AI lines", () => {
   // Lines 8 and 9 are built in chunk E5; their proposal values are inputs here.
   const f = rollupMeasuredTotal(fender.phase1, { unbranded: { low: 11255, mid: 90040, high: 337649 }, branded: null, retailerShare: 0.231 }, fender.catalog);
-  rangeIs(f, [611762, 1120193, 1809168], 2);
+  // The proposal's [611,762, 1,120,193, 1,809,168] less the retired line 2.
+  rangeIs(f, [559670, 1009063, 1660703], 2);
   const l = rollupMeasuredTotal(
     ledlenser.phase1,
     { unbranded: { low: 306, mid: 2447, high: 9178 }, branded: { low: 71, mid: 567, high: 2125 }, retailerShare: 0.103 },
     ledlenser.catalog,
   );
-  rangeIs(l, [11335, 19805, 33289], 2);
+  rangeIs(l, [10892, 18861, 32027], 2);
 });
 
 /** True when a figure rounds to the proposal's printed one: "$11.9K" allows 11,850 to 11,950. */
@@ -186,12 +189,12 @@ function printsAs(actual: number | undefined, printed: string): boolean {
 test("section 1 table, as printed for Brian", () => {
   const rows: Array<[string, EstimateResult, EstimateResult, [string, string, string], [string, string, string] | null]> = [
     ["1 Out of stock", fender.outOfStock, ledlenser.outOfStock, ["$368K", "$490K", "$552K"], ["$8.9K", "$11.9K", "$13.3K"]],
-    ["2 Buy Box", fender.buyBox, ledlenser.buyBox, ["$52K", "$111K", "$148K"], ["$443", "$945", "$1,262"]],
     ["3 MAP leakage", fender.mapLeakage, ledlenser.mapLeakage, ["$26K", "$39K", "$52K"], ["$23K", "$35K", "$47K"]],
     ["4 Splintered", fender.splintered, ledlenser.splintered, ["$18K", "$55K", "$90K"], null],
     ["5 Missing specs", fender.missingSpecs, ledlenser.missingSpecs, ["$126K", "$328K", "$653K"], ["$1.6K", "$4.2K", "$8.3K"]],
     ["7 A+ content", fender.aplus, ledlenser.aplus, ["$39K", "$66K", "$107K"], ["$70", "$119", "$193"]],
-    ["A Phase 1", fender.phase1, ledlenser.phase1, ["$0.60M", "$1.05M", "$1.55M"], ["$11.0K", "$17.1K", "$23.2K"]],
+    // Less the retired line 2 (the proposal printed $0.60M / $1.05M / $1.55M and $11.0K / $17.1K / $23.2K).
+    ["A Phase 1", fender.phase1, ledlenser.phase1, ["$0.55M", "$0.94M", "$1.40M"], ["$10.6K", "$16.2K", "$21.9K"]],
   ];
   for (const [name, f, l, fExpected, lExpected] of rows) {
     (["low", "mid", "high"] as const).forEach((level, i) => {
@@ -219,20 +222,20 @@ test("out of stock: sales per in-stock day x out-of-stock days x brand-loss shar
   assert.equal(v.trail.listings[0].touchedSales, 1004.4);
 });
 
-test("Buy Box: sales per in-stock day x no-Buy-Box days x 50/80/95% x 30/40/45%", () => {
-  const r = estimateBuyBox([listing({ baselineDailyRevenue: 100, noBuyBoxDays365: 10 })]);
-  // 1000 x .5 x .3 = 150, x .8 x .4 = 320, x .95 x .45 = 427.5
-  near(r.range?.low, 150, 0.5, "low");
-  near(r.range?.mid, 320, 0.5, "mid");
-  near(r.range?.high, 427.5, 0.5, "high");
+test("Buy Box (R-06): sales per Buy Box day x 365 days x 70/80/90%, for a year in Phase 1", () => {
+  // $600 in the last 30 days over 20 Buy Box days = $30 a day; x 365 = $10,950.
+  const r = estimateBuyBox([listing({ buyBoxWithheld: true, smartscoutMonthlyRevenue: 600, inStockDays30: 25, noBuyBoxDays30: 5 })]);
+  assert.deepEqual(r.range, { low: 7665, mid: 8760, high: 9855 });
   assert.equal(BUY_BOX_LOST_SHARE.mid, 0.8);
   assert.equal(BRAND_LOSS_SHARE.mid, 0.4);
+  assert.ok(!r.trail.benchmarks.includes(BRAND_LOSS_SHARE), "no brand-loss share on the Buy Box");
 });
 
-test("one day, one cause: a day is out of stock or without a Buy Box, never both", () => {
+test("one day, one cause: the out-of-stock line prices past days, the Buy Box line only today's withheld listings", () => {
   const l = listing({ baselineDailyRevenue: 100, oosDays365: 10, noBuyBoxDays365: 5, inStockDays365: 355 });
   assert.equal(estimateOutOfStock([l]).trail.listings[0].touchedSales, 1000);
-  assert.equal(estimateBuyBox([l]).trail.listings[0].touchedSales, 500);
+  // Not withheld today: past days without a Buy Box are not priced any more.
+  assert.equal(estimateBuyBox([l]).trail.coverage.total, 0);
 });
 
 test("MAP: gap x monthly units x 12 x 50/75/100%, only below MAP", () => {
@@ -358,7 +361,8 @@ test("benchmarks: every value has a range, a credibility note and unverified sou
     if (s.url !== null) assert.match(s.url, /^https:\/\//, `${s.id} url`);
   }
   assert.deepEqual([BRAND_LOSS_SHARE.low, BRAND_LOSS_SHARE.mid, BRAND_LOSS_SHARE.high], [0.3, 0.4, 0.45]);
-  assert.deepEqual([BUY_BOX_LOST_SHARE.low, BUY_BOX_LOST_SHARE.mid, BUY_BOX_LOST_SHARE.high], [0.5, 0.8, 0.95]);
+  // Brian Magazu, 23 Nov 2026 (R-06): 70% to 90%, mid 80%.
+  assert.deepEqual([BUY_BOX_LOST_SHARE.low, BUY_BOX_LOST_SHARE.mid, BUY_BOX_LOST_SHARE.high], [0.7, 0.8, 0.9]);
   assert.deepEqual([MAP_VOLUME_KEPT.low, MAP_VOLUME_KEPT.mid, MAP_VOLUME_KEPT.high], [0.5, 0.75, 1]);
   assert.deepEqual([SPLINTERED_LIFT.low, SPLINTERED_LIFT.mid, SPLINTERED_LIFT.high], [0.05, 0.15, 0.3]);
   assert.deepEqual([APLUS_LIFT.low, APLUS_LIFT.mid, APLUS_LIFT.high], [0.03, 0.05, 0.08]);

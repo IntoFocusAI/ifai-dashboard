@@ -85,16 +85,17 @@ test("targets, gap and retailer share follow the proposal's rules", () => {
   assert.equal(retailerShareOf({ total: 0, retailer: 0 }), null);
 });
 
-test("Enterprise Potential adds the AI part less the retailer share: Fender about $12M on the $1B placeholder", () => {
+test("Enterprise Potential adds the AI part less the retailer share: Fender about $11.1M on the $1B placeholder", () => {
   const est = measured("fender");
   const lines = estimateAiLines(FENDER_AI, est.catalog);
   const withAi = estimateEnterprise(est.phase1, est.catalog, est.revenue ?? null, null, { rates: lines.rates, retailerShare: lines.retailerShare });
   const listing = est.enterprise.range!;
   const aiPart = withAi.trail.inputs.find((i) => i.key === "ai_part")?.value as number;
-  // AI part: 0.435% of $1B x (1 - 23.1%), about $3.3M; listing part about $8.7M.
+  // AI part: 0.435% of $1B x (1 - 23.1%), about $3.3M; listing part about $7.8M (the proposal's
+  // $8.7M less the backward Buy Box line R-06 retired on 23 Nov 2026).
   near(aiPart, 3.35e6, 0.05e6, "Fender AI part mid");
   near(withAi.range!.mid, listing.mid + aiPart, 1, "Fender Enterprise mid");
-  near(withAi.range!.mid, 12.0e6, 0.1e6, "Fender Enterprise mid, proposal $12.0M");
+  near(withAi.range!.mid, 11.1e6, 0.1e6, "Fender Enterprise mid, proposal $12.0M less the retired Buy Box line");
   assert.ok(!withAi.trail.notes.includes(ENTERPRISE_AI_MISSING_NOTE));
   assert.ok(est.enterprise.trail.notes.includes(ENTERPRISE_AI_MISSING_NOTE));
   // Never added to Phase 1.

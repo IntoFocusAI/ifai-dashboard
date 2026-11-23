@@ -3,7 +3,9 @@
  * (roadmap-plan.ts) appends the decision 21 actions after them and renders the table in React.
  */
 
+import { buyBoxForPeriod, buyBoxKnownMid } from "@/lib/estimates/buy-box";
 import { add, ZERO } from "@/lib/estimates/line";
+import { DEFAULT_PERIOD_DAYS } from "@/lib/estimates/period";
 import type { ClientEstimates } from "@/lib/estimates/live-inputs";
 import { PHASE_1_LINES } from "@/lib/estimates/rollup";
 import type { EstimateLineId, EstimateRange, EstimateResult } from "@/lib/estimates/types";
@@ -56,6 +58,8 @@ export type LineListingsEstimate = {
   status: "estimated" | "not_available" | "none";
   /** True when the line adds to Phase 1. */
   inPhase1: boolean;
+  /** The Not available* tooltip, when the line has its own (the Buy Box figure with no sales). */
+  tip?: string;
 };
 
 /**
@@ -99,9 +103,14 @@ export function fixRowEstimate(itemId: string, est: ClientEstimates): LineListin
   return lineId ? lineFromListings(est, lineId) : null;
 }
 
-/** Rule 2: the row's estimate line, its yearly mid divided by 12. Null when no line covers the row or it has no range. */
+/**
+ * Rule 2: the row's estimate line, its yearly mid divided by 12. The Buy Box row reads the one Buy
+ * Box figure over 30 days, R-06's monthly opportunity, or null when no priced listing has sales. Null
+ * when no line covers the row or it has no range.
+ */
 export function fixRowMonthly(itemId: string, est: ClientEstimates | null): number | null {
   if (!est) return null;
+  if (FIX_ROW_LINES[itemId] === "buy_box") return buyBoxKnownMid(buyBoxForPeriod(est, DEFAULT_PERIOD_DAYS));
   const figure = fixRowEstimate(itemId, est);
   return figure?.range ? figure.range.mid / MONTHS_PER_YEAR : null;
 }

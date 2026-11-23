@@ -9,7 +9,8 @@
 //      since not every line lands low at once.
 
 import { RANK_CURVE_METHOD_SOURCES } from "./benchmarks";
-import { estimateBuyBox, estimateOutOfStock } from "./availability";
+import { estimateOutOfStock } from "./availability";
+import { estimateBuyBox } from "./buy-box";
 import { estimateContent } from "./content";
 import { add, roundRange, uniqueSources, ZERO } from "./line";
 import { estimateMapLeakage } from "./map-annual";

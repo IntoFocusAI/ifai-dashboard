@@ -6,6 +6,7 @@ import { useAiExportScope } from "@/components/v3/live/ai-search/useAiExport";
 import { PlanAction, PlanEvidence, PlanFigure, PlanStatus } from "@/components/v3/live/RoadmapPlanParts";
 import { FixRowEstimate } from "@/components/v3/live/estimates/EstimateLineFigure";
 import { useClientEstimates } from "@/components/v3/live/estimates/useClientEstimates";
+import { useEstimatePeriodDays } from "@/components/v3/live/estimates/useEstimatePeriod";
 import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
 import { useBuyBoxCauseSplit } from "@/components/v3/live/useWithheldListings";
 import { planWithAplus } from "@/lib/fender-canvas/action-items-aplus-row";
@@ -48,6 +49,8 @@ export function ActionItemsFixTable({ plan: basePlan, today }: { plan: readonly 
   const estimates = useClientEstimates();
   // Buy Box withheld splits by its stored cause once the withheld listings are read.
   const split = useBuyBoxCauseSplit();
+  // The Buy Box dollar counts the days in the date pill (R-07).
+  const periodDays = useEstimatePeriodDays();
   // A+ content gets its own row once the estimates show weak or missing A+ (line 7).
   const plan = useMemo(() => {
     const est = estimates.phase === "ready" ? estimates.estimates : null;
@@ -58,7 +61,7 @@ export function ActionItemsFixTable({ plan: basePlan, today }: { plan: readonly 
     if (columnId === "action") return `${item.kind === "finding" || !item.fact ? "" : `${item.fact} `}${item.action}`;
     if (columnId === "finding") return shareOf(item);
     if (columnId === "estimate") {
-      const figure = estimates.phase === "ready" ? fixRowFigure(item.id, estimates.estimates, split) : null;
+      const figure = estimates.phase === "ready" ? fixRowFigure(item.id, estimates.estimates, split, periodDays) : null;
       return figure?.range ? figure.range.mid : null;
     }
     if (columnId === "status") return item.statusLabel;
@@ -68,7 +71,7 @@ export function ActionItemsFixTable({ plan: basePlan, today }: { plan: readonly 
     }
     if (columnId === "evidence") return item.open.tab;
     return null;
-  }, [estimates, split]);
+  }, [estimates, periodDays, split]);
   const sorted = useClientTableSort(plan, COLUMNS, sortValue, rowKey);
   // The date pill and engine switch, so the download reads the window the screen reads.
   const exportScope = useAiExportScope() ?? undefined;

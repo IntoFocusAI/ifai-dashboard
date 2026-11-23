@@ -2,6 +2,13 @@
 
 import { Fragment } from "react";
 import { BuyBoxCauseCard } from "@/components/v3/live/BuyBoxCauseCard";
+import {
+  BUY_BOX_ESTIMATE_COLUMN,
+  BuyBoxEstimateCard,
+  BuyBoxListingCell,
+  buyBoxListingMid,
+  useBuyBoxPeriodLine,
+} from "@/components/v3/live/estimates/BuyBoxEstimate";
 import { DefinedTerm } from "@/components/v3/live/DefinedTerm";
 import { useWithheldListings } from "@/components/v3/live/useWithheldListings";
 import {
@@ -46,7 +53,12 @@ import { buyBoxHero, heroFigureColor, heroFigureTone } from "@/lib/fender-canvas
 import type { CanvasFreshnessRow } from "@/lib/fender-canvas/types";
 
 
-const TABLE_COLUMNS = [...SUPPRESSED_LISTINGS_TABLE_COLUMNS, SET_ASIDE_SORT_COLUMN];
+// The outside-price column wraps a little sooner here, so the estimate column fits at 1280 wide.
+const TABLE_COLUMNS = [
+  ...SUPPRESSED_LISTINGS_TABLE_COLUMNS.map((column) => (column.id === "lower" ? { ...column, width: 128, minWidth: 104 } : column)),
+  BUY_BOX_ESTIMATE_COLUMN,
+  SET_ASIDE_SORT_COLUMN,
+];
 
 const TOP_ROW_STYLE = {
   display: "flex",
@@ -224,16 +236,20 @@ export function SuppressedListingsPanel({
   const state = useWithheldListings();
   const rows = typeof state === "object" ? state.rows : null;
   const setAsides = useCheckSetAsides(SET_ASIDE_CHECKS.buyboxSuppression, "Suppressed Listings");
-  const sorted = useClientTableSort(rows ?? [], TABLE_COLUMNS, (row, columnId) =>
-    columnId === SET_ASIDE_COLUMN_ID
-      ? setAsideSortValue(setAsides, typeof row.asin === "string" ? row.asin : "")
-      : suppressedSortValue(row, columnId),
-  );
+  // R-06 and R-07: the one Buy Box dollar, over the date pill's days.
+  const period = useBuyBoxPeriodLine();
+  const sorted = useClientTableSort(rows ?? [], TABLE_COLUMNS, (row, columnId) => {
+    const asin = typeof row.asin === "string" ? row.asin : "";
+    if (columnId === SET_ASIDE_COLUMN_ID) return setAsideSortValue(setAsides, asin);
+    if (columnId === BUY_BOX_ESTIMATE_COLUMN.id) return buyBoxListingMid(period, asin);
+    return suppressedSortValue(row, columnId);
+  });
 
   return (
     <div className="suppressed-listings retail-surface">
       <div data-suppressed-listings-top="" style={TOP_ROW_STYLE}>
         <SuppressedListingsLead read={read} />
+        <BuyBoxEstimateCard period={period} />
         {rows ? <BuyBoxCauseCard rows={rows} /> : null}
         <SuppressedListingsNotes read={read} freshness={freshness} />
       </div>
@@ -270,7 +286,12 @@ export function SuppressedListingsPanel({
                     <Fragment key={asin}>
                       <FeaturedOfferTableRow
                         row={row}
-                        trailing={<SetAsideCell ctl={setAsides} entityKey={asin} canSetAside={valid} />}
+                        trailing={
+                          <>
+                            <BuyBoxListingCell period={period} asin={asin} />
+                            <SetAsideCell ctl={setAsides} entityKey={asin} canSetAside={valid} />
+                          </>
+                        }
                       />
                       <SetAsideFormRow
                         ctl={setAsides}

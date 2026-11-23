@@ -2,17 +2,22 @@
  * Action Items fix list: the Buy Box row split into three (roadmap gap audit recommendation 3, and
  * Brian Magazu's 18 Nov 2026 wording). One row for today's withheld listings priced above Amazon's
  * reference price, one for today's withheld listings with another or an unknown cause, and one for
- * every other line-2 listing: those that lost the Buy Box on earlier days. Each row's dollar is
- * line 2's part for exactly its own listings, so the three rows add up to line 2 and the fix list
- * still adds up to Phase 1. One template for every client.
+ * the listings that lost the Buy Box on earlier days and have it back today.
+ *
+ * The dollar is the one Buy Box figure (R-06 and R-07, Brian Magazu, 23 Nov 2026): forward-looking,
+ * for today's withheld listings, over the days in the date pill. Each withheld row carries its part
+ * for exactly its own listings, so the two add up to the Suppressed Listings figure. The earlier-days
+ * row keeps its count and has no dollar: the backward-looking figure it carried is retired. One
+ * template for every client.
  */
 
-import { estimateBuyBox } from "@/lib/estimates/availability";
+import { buyBoxForPeriod, buyBoxHasSales, buyBoxKnownMid, buyBoxUnknownText } from "@/lib/estimates/buy-box";
 import type { ClientEstimates } from "@/lib/estimates/live-inputs";
+import { DEFAULT_PERIOD_DAYS } from "@/lib/estimates/period";
 import type { EstimateResult } from "@/lib/estimates/types";
 import {
   fixRowEstimate,
-  lineFromListings,
+  FIX_ROW_LINES,
   type LineListingsEstimate,
 } from "@/lib/fender-canvas/action-items-fix-list";
 import {
@@ -41,19 +46,14 @@ const GROUPS: readonly BuyBoxRowGroup[] = ["price", "other", "earlier"];
 /** Finding column label for the earlier-days row (the two withheld causes use BUY_BOX_CAUSE_LABELS). */
 export const BUY_BOX_EARLIER_LABEL = "Lost the Buy Box earlier this year";
 
-const TRAIL_TITLES: Record<BuyBoxRowGroup, string> = {
+const TRAIL_TITLES: Record<Exclude<BuyBoxRowGroup, "earlier">, string> = {
   price: "Buy Box withheld, priced above Amazon's reference price",
   other: "Buy Box withheld, other or unknown cause",
-  earlier: "Buy Box lost earlier this year",
 };
 
-const TRAIL_MEANS: Record<BuyBoxRowGroup, string> = {
-  price:
-    "The brand's Amazon sales lost in a year on days when a listing had stock and no Buy Box, for the listings withheld today and priced above Amazon's reference price.",
-  other:
-    "The brand's Amazon sales lost in a year on days when a listing had stock and no Buy Box, for the listings withheld today for another or an unknown cause.",
-  earlier:
-    "The brand's Amazon sales lost in a year on days when a listing had stock and no Buy Box, for the listings not withheld today that lost the Buy Box on earlier days in the last 12 months.",
+const TRAIL_SCOPE: Record<Exclude<BuyBoxRowGroup, "earlier">, string> = {
+  price: "Only the listings withheld today and priced above Amazon's reference price.",
+  other: "Only the listings withheld today for another or an unknown cause.",
 };
 
 /** "Watch 686 listings that lost the Buy Box earlier this year." */
@@ -73,10 +73,18 @@ function keeper(group: BuyBoxRowGroup, split: BuyBoxCauseSplit): (asin: string) 
   return (asin) => !split.priceAsins.has(asin) && !split.otherAsins.has(asin);
 }
 
-const lineCache = new WeakMap<ClientEstimates, WeakMap<BuyBoxCauseSplit, Partial<Record<BuyBoxRowGroup, EstimateResult>>>>();
+const lineCache = new WeakMap<ClientEstimates, WeakMap<BuyBoxCauseSplit, Map<string, EstimateResult>>>();
 
-/** Line 2 run on the row's listings only, so the trail lists exactly the row's listings and inputs. */
-export function buyBoxCauseLine(est: ClientEstimates, group: BuyBoxRowGroup, split: BuyBoxCauseSplit): EstimateResult {
+/**
+ * The Buy Box figure over `periodDays` for one withheld cause row's listings only, so the trail
+ * counts exactly the row's listings and inputs.
+ */
+export function buyBoxCauseLine(
+  est: ClientEstimates,
+  group: Exclude<BuyBoxRowGroup, "earlier">,
+  split: BuyBoxCauseSplit,
+  periodDays: number = DEFAULT_PERIOD_DAYS,
+): EstimateResult {
   let bySplit = lineCache.get(est);
   if (!bySplit) {
     bySplit = new WeakMap();
@@ -84,31 +92,58 @@ export function buyBoxCauseLine(est: ClientEstimates, group: BuyBoxRowGroup, spl
   }
   let lines = bySplit.get(split);
   if (!lines) {
-    lines = {};
+    lines = new Map();
     bySplit.set(split, lines);
   }
-  const cached = lines[group];
+  const key = `${group}:${periodDays}`;
+  const cached = lines.get(key);
   if (cached) return cached;
-  const keep = keeper(group, split);
-  const line = estimateBuyBox(
-    est.inputs.filter((listing) => keep(listing.asin)),
-    est.ctx,
-  );
-  const result = { ...line, trail: { ...line.trail, title: TRAIL_TITLES[group], means: TRAIL_MEANS[group] } };
-  lines[group] = result;
+  const line = buyBoxForPeriod(est, periodDays, keeper(group, split));
+  const result = {
+    ...line,
+    trail: { ...line.trail, title: TRAIL_TITLES[group], notes: [TRAIL_SCOPE[group], ...line.trail.notes] },
+  };
+  lines.set(key, result);
   return result;
 }
 
-/** The dollar on any fix-list row: a Buy Box row reads its part of line 2, every other row its line. */
+/**
+ * A Buy Box line as a fix-list figure: its range, its listings, and how many have a sales rate. When
+ * no priced listing has sales the figure is not known, so it reads Not available* with how many
+ * could be priced and why the rest could not, never $0 (Brian Magazu, 23 Nov 2026).
+ */
+export function buyBoxRowEstimate(line: EstimateResult): LineListingsEstimate {
+  const listings = line.trail.coverage.total;
+  const priced = listings - line.trail.coverage.notAvailable;
+  const known = buyBoxHasSales(line);
+  return {
+    lineId: "buy_box",
+    line,
+    range: known ? line.range : null,
+    listings,
+    priced,
+    status: listings === 0 ? "none" : known ? "estimated" : "not_available",
+    inPhase1: true,
+    ...(listings > 0 && !known ? { tip: buyBoxUnknownText(line) } : {}),
+  };
+}
+
+/**
+ * The dollar on any fix-list row. A Buy Box row reads the one Buy Box figure over the date pill's
+ * days: the whole figure, or a withheld cause row's part. The earlier-days row has no dollar. Every
+ * other row reads its yearly line.
+ */
 export function fixRowFigure(
   itemId: string,
   est: ClientEstimates,
   split: BuyBoxCauseSplit | null,
+  periodDays: number = DEFAULT_PERIOD_DAYS,
 ): LineListingsEstimate | null {
   const group = buyBoxCauseOf(itemId);
-  if (!group || !split) return fixRowEstimate(itemId, est);
-  const figure = lineFromListings(est, "buy_box", keeper(group, split));
-  return figure ? { ...figure, line: buyBoxCauseLine(est, group, split) } : null;
+  if (group === "earlier") return null;
+  if (group && split) return buyBoxRowEstimate(buyBoxCauseLine(est, group, split, periodDays));
+  if (FIX_ROW_LINES[itemId] === "buy_box") return buyBoxRowEstimate(buyBoxForPeriod(est, periodDays));
+  return fixRowEstimate(itemId, est);
 }
 
 function denominatorOf(ratio: string | null): number | null {
@@ -117,11 +152,13 @@ function denominatorOf(ratio: string | null): number | null {
   return Number.isFinite(n) && n > 0 ? n : null;
 }
 
-/** Line-2 listings that are not withheld today: they lost the Buy Box on earlier days. */
+/** Listings not withheld today that had days with stock and no Buy Box in the last 12 months. */
 export function earlierBuyBoxListings(est: ClientEstimates | null, split: BuyBoxCauseSplit): number {
   if (!est) return 0;
-  return lineFromListings(est, "buy_box", keeper("earlier", split))?.listings ?? 0;
+  const keep = keeper("earlier", split);
+  return est.inputs.filter((l) => (l.noBuyBoxDays365 ?? 0) > 0 && keep(l.asin)).length;
 }
+
 
 /**
  * The Buy Box rows from the Buy Box row, each with its count of the same population: today's two
@@ -142,8 +179,10 @@ export function buyBoxCauseItems(
   return GROUPS.filter((group) => counts[group] > 0).map((group) => {
     const listings = counts[group];
     // Each row's one count is its own listings, so its figure and its rank reason show one N. The
-    // row keeps the Buy Box row's rank.
-    const inputs = { ...base.inputs, affected: listings, base: total };
+    // row keeps the Buy Box row's rank. Its monthly dollar is its own part of the Buy Box figure
+    // over 30 days (R-06), or none when it is not known; the earlier-days row has none.
+    const own = est ? { monthly: group === "earlier" ? null : buyBoxKnownMid(buyBoxCauseLine(est, group, split)) } : {};
+    const inputs = { ...base.inputs, affected: listings, base: total, ...own };
     return {
       ...base,
       inputs,

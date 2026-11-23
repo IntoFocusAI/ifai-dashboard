@@ -595,7 +595,8 @@ test("Phase 1 stays an analyst estimate and nothing mentions fees", () => {
   const { nodes, slots } = build(retailReady(), aiReady(), findability, { b });
   const phaseOne = slots.find((slot) => slot.id === "spoke-fixes");
   assert.ok(phaseOne);
-  assert.match(phaseOneLiftEstimate(b), /^\+\$1\.05M\*? est\.$/);
+  // Phase 1 less the retired backward Buy Box line (R-06, 23 Nov 2026): $940K on the 17 Nov read.
+  assert.match(phaseOneLiftEstimate(b), /^\+\$940K\*? est\.$/);
   assert.deepEqual(nodeById(nodes, "spoke-fixes").heroValue, { value: phaseOneLiftEstimate(b), label: "Phase 1 lift", tone: "good" });
   assert.equal(phaseOne.value, phaseOneLiftEstimate(b));
   assert.equal(slotById(slots, "enterprise-potential").value, enterprisePotentialEstimate(b));

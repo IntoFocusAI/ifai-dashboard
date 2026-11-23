@@ -86,8 +86,17 @@ export function rankCurvePoints(listings: EstimateListingInput[]): RankCurvePoin
 
 type Estimated = { source: SalesSource; unitsPer30InStockDays: EstimateRange; detail: ResolvedSales["detail"] };
 
+export type EstimatedSalesOptions = {
+  /**
+   * The Buy Box figure only (Brian Magazu, 23 Nov 2026, overriding decision 113 there): a SmartScout
+   * record whose 12-month revenue is blank (null) is unknown, not $0, so the listing may be estimated
+   * from its sales rank like a listing SmartScout does not track. A real 0 stays a measured $0.
+   */
+  blankSmartscoutIsUnknown?: boolean;
+};
+
 /** Steps 3 and 4: units per 30 in-stock days from Keepa, else from the rank curve. */
-function estimatedUnits(l: EstimateListingInput, ctx: SalesContext): Estimated | null {
+function estimatedUnits(l: EstimateListingInput, ctx: SalesContext, opts: EstimatedSalesOptions = {}): Estimated | null {
   if (ctx.salesSources === "measured_only" || !pos(l.price)) return null;
   if (pos(l.keepaMonthlySold)) {
     const m = KEEPA_MONTHLY_SOLD_MULTIPLIER;
@@ -100,7 +109,8 @@ function estimatedUnits(l: EstimateListingInput, ctx: SalesContext): Estimated |
       detail: { keepaMonthlySold: l.keepaMonthlySold, inStockDays30Used: days, price: l.price },
     };
   }
-  const tracked = l.smartscoutHasRecord || pos(l.brandReportedAnnualSales);
+  const smartscoutTracked = opts.blankSmartscoutIsUnknown ? Boolean(l.smartscoutHasRecord) && typeof l.smartscoutTtmRevenue === "number" : l.smartscoutHasRecord;
+  const tracked = smartscoutTracked || pos(l.brandReportedAnnualSales);
   if (tracked || !pos(l.salesRank) || !l.rankCategory) return null;
   const curve = (ctx.rankCurves ?? RANK_CURVES)[l.rankCategory];
   if (!curve) return null;
@@ -117,6 +127,25 @@ function estimatedUnits(l: EstimateListingInput, ctx: SalesContext): Estimated |
       price: l.price,
     },
   };
+}
+
+/** An estimated sales figure per in-stock day (steps 3 and 4), with the inputs behind it. */
+export type EstimatedSales = {
+  source: "keepa_monthly_sold" | "sales_rank_curve";
+  perInStockDay: EstimateRange;
+  unitsPer30InStockDays: EstimateRange;
+  detail: ResolvedSales["detail"];
+};
+
+/**
+ * Steps 3 and 4 alone: what a listing sells per in-stock day, estimated from Amazon's
+ * bought-in-past-month figure (Keepa) or from tracked listings with a similar sales rank. The same
+ * estimate resolveListingSales gives the other lines; null when neither applies or there is no price.
+ */
+export function estimatedSalesPerInStockDay(l: EstimateListingInput, ctx: SalesContext = {}, opts: EstimatedSalesOptions = {}): EstimatedSales | null {
+  const est = estimatedUnits(l, ctx, opts);
+  if (!est || !pos(l.price) || (est.source !== "keepa_monthly_sold" && est.source !== "sales_rank_curve")) return null;
+  return { source: est.source, perInStockDay: scale(est.unitsPer30InStockDays, l.price / 30), unitsPer30InStockDays: est.unitsPer30InStockDays, detail: est.detail };
 }
 
 /** Resolves one listing's sales figures, each from the first source that has it. */

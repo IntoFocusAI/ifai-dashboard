@@ -1,10 +1,11 @@
-// Lines 1 and 2: sales the brand loses on days a listing could not be bought normally.
+// Line 1: sales the brand loses on days a listing had no new unit for sale.
 //
 // Overlap rule 1 (one day, one cause): Keepa counts a day as out of stock (no new offer) or as
-// without a Buy Box (an offer, no Buy Box), never both, so the two lines never price the same day.
-// Overlap rule 4: these lines price days with no sale; the content lines lift sales that did happen.
+// without a Buy Box (an offer, no Buy Box), never both. Line 2, the Buy Box, is forward-looking
+// from today's withheld listings (R-06, lib/estimates/buy-box.ts) and prices no past day.
+// Overlap rule 4: this line prices days with no sale; the content lines lift sales that did happen.
 
-import { BRAND_LOSS_SHARE, BUY_BOX_LOST_SHARE, RANK_CURVE_METHOD_SOURCES } from "./benchmarks";
+import { BRAND_LOSS_SHARE, RANK_CURVE_METHOD_SOURCES } from "./benchmarks";
 import { assembleLine, times, type LinePiece } from "./line";
 import { resolveListingSales, type SalesContext } from "./sales-coverage";
 import type { EstimateListingInput, EstimateRange, EstimateResult } from "./types";
@@ -55,54 +56,6 @@ export function estimateOutOfStock(listings: EstimateListingInput[], ctx: SalesC
       notes: [
         "Some shoppers buy another of the brand's listings or buy the product elsewhere, and the brand keeps that sale. The figure counts only the shopper who switches brand or does not buy.",
         "If the pattern of the last 12 months holds, this is next year's figure too.",
-      ],
-      countsInTotal: true,
-    },
-    pieces,
-    RANK_CURVE_METHOD_SOURCES,
-    ctx.dataAsOf ?? null,
-  );
-}
-
-/**
- * Line 2, Buy Box lost on any day in the last 12 months. For each listing: sales per in-stock day x days with stock
- * and no Buy Box in the last 12 months x the share lost without a Buy Box x the brand-loss share.
- */
-export function estimateBuyBox(listings: EstimateListingInput[], ctx: SalesContext = {}): EstimateResult {
-  const pieces: LinePiece[] = [];
-  for (const l of listings) {
-    if (!pos(l.noBuyBoxDays365)) continue;
-    const sales = resolveListingSales(l, ctx);
-    const rate = sales.perInStockDay;
-    const touched = rate ? times(rate.range, l.noBuyBoxDays365) : null;
-    pieces.push({
-      listing: l,
-      quantity: rate,
-      annual: sales.annual,
-      reportedNoSales: sales.reportedNoSales,
-      touched,
-      range: touched ? times(times(touched, BUY_BOX_LOST_SHARE), BRAND_LOSS_SHARE) : null,
-      detail: { noBuyBoxDays365: l.noBuyBoxDays365, salesPerInStockDay: rate ? rate.range.mid : null, ...sales.detail },
-    });
-  }
-  return assembleLine(
-    {
-      lineId: "buy_box",
-      title: "Buy Box lost on any day in the last 12 months",
-      means: "The brand's Amazon sales lost in a year on days when a listing had stock but Amazon showed no Buy Box.",
-      formula:
-        "For each listing: sales per in-stock day x days with stock and no Buy Box in the last 12 months x the share of sales lost without a Buy Box x the share of missed sales the brand loses. Then add the listings.",
-      inputs: [
-        { key: "sales_per_in_stock_day", label: "Sales per in-stock day", value: "per listing", unit: "text", kind: "collected", source: "canvas_listing_sales_loss_v2.baseline_daily_revenue" },
-        { key: "no_buy_box_days", label: "Days with stock and no Buy Box, last 12 months", value: pieces.reduce((s, p) => s + (p.range ? (p.listing.noBuyBoxDays365 ?? 0) : 0), 0), unit: "days", kind: "collected", source: "canvas_listing_sales_loss_v2.no_buy_box_days_365" },
-      ],
-      benchmarks: [BUY_BOX_LOST_SHARE, BRAND_LOSS_SHARE],
-      confidence: "medium",
-      confidenceReason: "The days are measured. The share of sales lost without a Buy Box is an assumption with one good study behind its direction.",
-      mostImprovedBy: "Our own measurement: each listing's sales on days with and without a Buy Box, to replace the 80%.",
-      notes: [
-        "The monthly R-06 figure on a listing's row is the same money seen from today. It is never added to this line.",
-        "Sales per in-stock day counts days without a Buy Box as in-stock days, so it runs a little low for a listing that often has no Buy Box, and so does this figure.",
       ],
       countsInTotal: true,
     },

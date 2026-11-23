@@ -212,6 +212,8 @@ export type EstimateListingInput = {
   smartscoutTtmRevenue?: number | null;
   /** canvas_listing_sales_loss_v2.smartscout_monthly_units */
   smartscoutMonthlyUnits?: number | null;
+  /** canvas_listing_sales_loss_v2.smartscout_monthly_revenue: SmartScout sales, last 30 days, USD (R-06). */
+  smartscoutMonthlyRevenue?: number | null;
   /** canvas_listing_sales_loss_v2.baseline_daily_revenue: SmartScout sales per Keepa in-stock day. */
   baselineDailyRevenue?: number | null;
   /** canvas_listing_sales_loss_v2.est_lost_revenue_oos_365: sales per in-stock day x out-of-stock days (R-17). */
@@ -232,7 +234,12 @@ export type EstimateListingInput = {
   inStockDays30?: number | null;
   oosDays365?: number | null;
   noBuyBoxDays365?: number | null;
+  /** Days in the last 30 with a new offer and no Buy Box (canvas_listing_sales_loss_v2.no_buy_box_days_30). */
+  noBuyBoxDays30?: number | null;
   observedDays365?: number | null;
+
+  /** True when Amazon withholds the listing's Buy Box today (canvas_retail_listings.featured_offer_state = 'withheld'). */
+  buyBoxWithheld?: boolean | null;
 
   // MAP. canvas_retail_listings.amz_leakage: Amazon price minus MAP, negative when below MAP.
   amzLeakage?: number | null;
