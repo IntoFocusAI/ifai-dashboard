@@ -137,6 +137,8 @@ begin
       if not pg_temp.fill(r.rel) then missing := missing || r.rel::text; end if;
     end if;
   end loop;
+  -- A general domain label (no client), readable by any signed-in user.
+  perform pg_temp.fill('public.site_type_classifications', '{"client_key": null}');
   if array_length(missing, 1) > 0 then
     raise notice 'fixture: tables without rows: %', missing;
   end if;

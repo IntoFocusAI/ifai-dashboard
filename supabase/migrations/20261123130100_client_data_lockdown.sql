@@ -21,6 +21,8 @@
 -- command.client_organizations.set_aside_key (private.can_read_set_aside_client):
 --   read by the dashboard: issue_set_asides, set_aside_clients, canvas_score_snapshots,
 --     site_type_classifications, site_type_overrides;
+--   site_type_classifications rows with client_key null are general domain labels: readable by
+--     any signed-in user (anon still reads nothing); rows with a client_key stay with that client;
 --   staff only (read through their staff functions, no SELECT grant): actuation_programs,
 --     actuation_items, actuation_expiry_reminders_sent.
 -- Registries the client views join (same for every client): set_aside_checks, set_aside_reasons,
@@ -110,7 +112,10 @@ begin
       ('public.issue_set_asides', '(private.can_read_set_aside_client(client_key))', true),
       ('public.set_aside_clients', '(private.can_read_set_aside_client(client_key))', true),
       ('public.canvas_score_snapshots', '(private.can_read_set_aside_client(client_key))', true),
-      ('public.site_type_classifications', '(private.can_read_set_aside_client(client_key))', true),
+      -- Rows without a client_key are general domain labels shared by every client (Brian
+      -- Watson, 2026-11-23): any signed-in user reads them. Client rows stay with their client.
+      ('public.site_type_classifications',
+       '((client_key is null) or command.is_intofocus_admin() or private.can_read_set_aside_client(client_key))', true),
       ('public.site_type_overrides', '(private.can_read_set_aside_client(client_key))', true),
       ('public.actuation_programs', '(private.can_read_set_aside_client(client_key))', false),
       ('public.actuation_items', '(private.can_read_set_aside_client(client_key))', false),

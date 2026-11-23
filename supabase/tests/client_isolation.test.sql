@@ -84,6 +84,19 @@ select c.oid::regclass as rel, c.relkind,
 from base b join pg_class c on c.oid = b.oid
 group by c.oid;
 
+-- Relations whose rows with client_key null are shared with every signed-in user:
+-- public.site_type_classifications (general domain labels) and the views over it.
+create temporary table shared_null as
+with recursive dep as (
+  select 'public.site_type_classifications'::regclass::oid as oid
+  union
+  select rw.ev_class from pg_depend d join pg_rewrite rw on rw.oid = d.objid
+  join dep on dep.oid = d.refobjid
+  where d.classid = 'pg_rewrite'::regclass and d.refclassid = 'pg_class'::regclass
+    and rw.ev_class <> d.refobjid
+)
+select oid::regclass as rel from dep;
+
 -- Row filter for one account's rows.
 create function pg_temp.rows_of(p_org text, p_key_col text) returns text language sql as $$
   select case p_key_col
@@ -153,6 +166,9 @@ begin
       foreach who in array array['a_admin', 'a_member', 'a_removed', 'b_admin', 'staff', 'no_account'] loop
         want := pg_temp.reads(who, p_mode);
         allowed := 'false';
+        if s.key_col = 'client_key' and s.rel in (select rel from pg_temp.shared_null) then
+          allowed := 'client_key is null';
+        end if;
         foreach org in array want loop
           allowed := allowed || ' or ' || pg_temp.rows_of(org, s.key_col);
         end loop;
@@ -218,6 +234,27 @@ do $$ begin
      or pg_temp.query_as('a_member', $q$select count(*) from public.canvas_score_snapshots where client_key = 'fmic'$q$) = '0'
      or pg_temp.query_as('staff', 'select count(distinct client_key) from public.canvas_score_snapshots') <> '2' then
     raise exception 'canvas_score_snapshots isolation';
+  end if;
+end $$;
+
+-- site_type_classifications: general labels (client_key null) for every signed-in user, client
+-- rows only for that client and staff, nothing for anon.
+do $$ begin
+  if (select count(*) from public.site_type_classifications where client_key is null) = 0 then
+    raise exception 'fixture: no general site type labels';
+  end if;
+  if pg_temp.query_as('anon', 'select count(*) from public.site_type_classifications') is not null then
+    raise exception 'anon reads site_type_classifications';
+  end if;
+  if pg_temp.query_as('no_account', 'select count(*) from public.site_type_classifications where client_key is null')
+       <> (select count(*)::text from public.site_type_classifications where client_key is null)
+     or pg_temp.query_as('no_account', 'select count(*) from public.site_type_classifications where client_key is not null') <> '0'
+     or pg_temp.query_as('a_member', $q$select count(*) from public.site_type_classifications where client_key = 'ledlenser'$q$) <> '0'
+     or pg_temp.query_as('a_member', $q$select count(*) from public.site_type_classifications where client_key = 'fmic'$q$) = '0'
+     or pg_temp.query_as('a_member', 'select count(*) from public.site_type_classifications where client_key is null') = '0'
+     or pg_temp.query_as('staff', 'select count(*) from public.site_type_classifications')
+          <> (select count(*)::text from public.site_type_classifications) then
+    raise exception 'site_type_classifications general-label rule';
   end if;
 end $$;
 
