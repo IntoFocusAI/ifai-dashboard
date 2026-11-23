@@ -336,6 +336,8 @@ function ownPageItem(own: OwnPageAction): UnrankedPlanItem {
     evidence: own.id === "own:wording" ? { field: "class", value: "fender_owned" } : null,
     categories: [],
     inputs: ownPageInputs(own),
+    // The same gap in distinct pages, as the figure's tooltip (worker 32.18).
+    tip: own.tip ?? null,
     ...(own.below ? { ownFactors: own.below } : {}),
   };
 }

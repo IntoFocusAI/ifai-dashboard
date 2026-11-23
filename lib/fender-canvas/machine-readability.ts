@@ -66,9 +66,17 @@ export type SpecPage = {
 /** One checked row of the spec read: its listing and its own check time (X-25). */
 export type SpecCheckedRow = { asin: string; checkedAt: string | null };
 
+/** One listing with a found page, and the fields its own stored read found missing. */
+export type SpecFoundListing = { asin: string; missingFields: string[] };
+
 export type SpecPageSummary = {
   /** Every checked listing (fender_found stored as true or false), with its own check time. Optional on fixtures. */
   checkedRows?: SpecCheckedRow[];
+  /**
+   * Every listing with a found page and its own stored read's missing fields (one row per listing,
+   * the rows canvas_metrics counts), so a page gap can be counted in listings. Optional on fixtures.
+   */
+  foundListings?: SpecFoundListing[];
   pages: SpecPage[];
   withSpecBlock: number;
   withAllBasics: number;
@@ -141,8 +149,13 @@ export function buildSpecPages(rows: readonly SpecPageSourceRow[]): SpecPageSumm
 
   pages.sort((a, b) => b.asins.length - a.asins.length || a.url.localeCompare(b.url));
 
+  const foundListings: SpecFoundListing[] = rows
+    .filter((row) => row.fender_found === true && row.fender_url)
+    .map((row) => ({ asin: row.asin, missingFields: splitFields(row.fender_missing_fields) }));
+
   return {
     checkedRows,
+    foundListings,
     pages,
     withSpecBlock: pages.filter((page) => page.hasSpecBlock).length,
     withAllBasics: pages.filter((page) => page.missingBasics.length === 0).length,
