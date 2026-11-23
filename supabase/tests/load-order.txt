@@ -13,5 +13,6 @@ supabase/migrations/20261123120100_org_lead_membership_limits.sql
 supabase/migrations/20261123130000_client_access_helpers.sql
 supabase/migrations/20261123130100_client_data_lockdown.sql
 supabase/migrations/20261123130200_client_read_functions.sql
+supabase/migrations/20261123170000_r10_retailer_rows.sql
 # Rows (as owner, after the migrations)
 supabase/tests/fixtures/90_test_accounts.sql
