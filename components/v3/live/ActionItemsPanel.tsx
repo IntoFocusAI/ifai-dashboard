@@ -8,6 +8,7 @@ import { FIX_LIST_PRIORITY_RULE, FIX_LIST_TITLE } from "@/lib/fender-canvas/acti
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
 import { emptyPlanLine } from "@/lib/fender-canvas/roadmap-plan";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
+import { LoadingMark } from "@/components/v3/live/LoadingMark";
 
 /**
  * Action Items · Urgent Interventions (N-01, N-04): the five current findings in priority order,
@@ -15,7 +16,7 @@ import type { CanvasBundle } from "@/lib/fender-canvas/types";
  * says so in one plain line above the table.
  */
 export function ActionItemsPanel({ read, bundle }: { read: RetailCanvasRead; bundle: CanvasBundle | null }) {
-  const { plan, sources } = useRoadmapPlan(read, bundle);
+  const { plan, sources, settled } = useRoadmapPlan(read, bundle);
   const [today] = useState(() => new Date());
   const empty = sources.phase === "ready" ? emptyPlanLine(plan) : null;
 
@@ -37,10 +38,10 @@ export function ActionItemsPanel({ read, bundle }: { read: RetailCanvasRead; bun
           {empty}
         </p>
       ) : null}
-      <ActionItemsFixTable plan={plan} today={today} />
+      {settled ? <ActionItemsFixTable plan={plan} today={today} /> : null}
       {sources.phase === "loading" ? (
         <p className="plan-note" data-fix-sources-loading="">
-          Loading the source actions and the last 30 days of AI Search answers.
+          <LoadingMark label="Loading the source actions and the last 30 days of AI Search answers" />
         </p>
       ) : null}
     </div>

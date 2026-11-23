@@ -9,6 +9,7 @@ import { useAuthorizedSellers } from "@/lib/fender-canvas/authorized-sellers-sto
 import { consensusFromLive } from "@/lib/fender-canvas/consensus-scores-from-live";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
+import { LoadingMark } from "@/components/v3/live/LoadingMark";
 
 /**
  * Summary → Performance: the score cards, then the saved weekly scores over time (decision 94).
@@ -27,7 +28,7 @@ export function ConsensusScoresPanel({
   const authorizedPartners = authorizedPartnersFromSave(saved);
 
   if (retail.phase === "loading" || findability.phase === "loading" || ai.phase === "loading") {
-    return <p className="retail-missing">Loading AI Consensus scores…</p>;
+    return <p className="retail-missing"><LoadingMark label="Loading AI Consensus scores" /></p>;
   }
 
   const consensus = consensusFromLive({

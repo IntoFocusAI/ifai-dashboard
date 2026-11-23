@@ -20,6 +20,7 @@ import { commerceInputsFromLive } from "@/lib/fender-canvas/consensus-scores-fro
 import { commerceScore, type PillarScore } from "@/lib/fender-canvas/consensus-scores";
 import { formatRatio } from "@/lib/fender-canvas/format";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
+import { LoadingMark } from "@/components/v3/live/LoadingMark";
 
 /**
  * The AI Commerce card in the Retail Overview hero row. Same layout as its three siblings:
@@ -111,7 +112,7 @@ export function CommerceConsensusPanel({ read }: { read: RetailCanvasRead }) {
   const authorizedPartners = authorizedPartnersFromSave(saved);
 
   if (read.phase === "loading") {
-    return <p className="retail-missing">Loading AI Commerce score…</p>;
+    return <p className="retail-missing"><LoadingMark label="Loading AI Commerce score" /></p>;
   }
   if (read.phase === "error") {
     return <p className="retail-missing">The AI Commerce score could not be loaded.</p>;

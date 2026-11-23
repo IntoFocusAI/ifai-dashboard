@@ -18,6 +18,7 @@ import {
   type MapExposureSummary,
 } from "@/lib/fender-canvas/map-exposure";
 import { mergePartial } from "@/lib/fender-canvas/row-stale";
+import { LoadingMark } from "@/components/v3/live/LoadingMark";
 
 export type MapExposureState =
   | { phase: "loading" }
@@ -83,7 +84,7 @@ export function MapExposureCard({
         <EstimateTag desc={tip} />
       </div>
       {state.phase === "loading" ? (
-        <p className="retail-missing">Loading the unit estimates…</p>
+        <p className="retail-missing"><LoadingMark label="Loading the unit estimates" /></p>
       ) : null}
       {state.phase === "failed" ? (
         <span className="ai-lead-figure map-exposure-figure" data-map-exposure-value="">

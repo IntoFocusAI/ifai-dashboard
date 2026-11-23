@@ -6,6 +6,7 @@ import { useDeckModel } from "@/components/v3/live/deck/useDeckModel";
 import type { DeckModel } from "@/lib/deck/deck-types";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
+import { LoadingMark } from "@/components/v3/live/LoadingMark";
 
 /** Slides are laid out on this stage and scaled to the screen, so nothing reflows or overflows. */
 export const STAGE = { width: 1600, height: 900 } as const;
@@ -154,7 +155,7 @@ export function DeckOverlay({
   if (load.phase === "loading") {
     return (
       <div className="deck-root" data-deck="" data-deck-loading="">
-        <p className="deck-loading">Loading the deck from the current reads.</p>
+        <p className="deck-loading"><LoadingMark label="Loading the deck from the current reads" /></p>
         <button type="button" className="deck-control deck-loading-close" onClick={onClose}>
           Close
         </button>

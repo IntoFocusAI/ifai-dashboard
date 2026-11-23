@@ -16,6 +16,7 @@ import {
 } from "@/lib/set-aside/set-aside";
 import { ArrowRight, Building2, Check, PauseCircle, Sparkles, Undo2 } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
+import { CommandCenterLoading } from "@/lib/canvas-sdk/CommandCenterLoading";
 import { StatusGlyph, StatusMark } from "@/components/v3/live/StatusMark";
 
 /** Severity in the brand status colors, each with its mark and word (X-34). Moderate stays plain. */
@@ -134,6 +135,8 @@ export function CommandCenter({ spec, onOpenItem }: Props) {
   const statusSummary = serverSetAside
     ? `${doneCount} done · ${setAsideCount} set aside`
     : `${counts.cleared} cleared`;
+
+  if (spec.loading) return <CommandCenterLoading />;
 
   return (
     <div className="command-center">

@@ -10,6 +10,7 @@ import {
   type RetailOverviewHeroModel,
 } from "@/lib/fender-canvas/retail-overview-lead";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
+import { LoadingMark } from "@/components/v3/live/LoadingMark";
 
 /**
  * One compact Retail Overview hero: label, share %, N of M, pie, short explainer.
@@ -70,7 +71,7 @@ export function RetailOverviewLead({
   leading?: ReactNode;
 }) {
   if (read.phase === "loading") {
-    return <p className="retail-missing">Loading the retail reading…</p>;
+    return <p className="retail-missing"><LoadingMark label="Loading the retail reading" /></p>;
   }
   if (read.phase === "error") {
     return <p className="retail-missing">The retail read could not be loaded.</p>;

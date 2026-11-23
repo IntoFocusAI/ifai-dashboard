@@ -22,6 +22,7 @@ import {
   type StockLossRow,
 } from "@/lib/fender-canvas/stock-loss";
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
+import { LoadingMark } from "@/components/v3/live/LoadingMark";
 
 const NO_ACTIVE_OFFER_TIP = "The retail read found no active offer on this listing.";
 
@@ -157,7 +158,7 @@ export function StockLossPanel() {
 
   return (
     <div className="stock-loss retail-surface">
-      {state === "loading" ? <p className="retail-missing">Loading the stock history…</p> : null}
+      {state === "loading" ? <p className="retail-missing"><LoadingMark label="Loading the stock history" /></p> : null}
       {state === "unavailable" ? (
         <p className="retail-missing">The stock history could not be loaded.</p>
       ) : null}

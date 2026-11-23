@@ -129,6 +129,8 @@ export type CommandCenterSpec = {
   /** AI-written standing summary shown above the queue. */
   summary?: string;
   items: PriorityItem[];
+  /** True while a read the ranking needs is loading: the queue shows a loading indicator, never a partial order. */
+  loading?: boolean;
   /** Open the command center instead of a spoke on first paint. */
   openByDefault?: boolean;
   /** localStorage key for owner chips (and done state when `setAsideClientKey` is unset). */

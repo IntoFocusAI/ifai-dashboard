@@ -15,6 +15,7 @@ import {
   heroFigureTone,
   specHero,
 } from "@/lib/fender-canvas/retail-overview-lead";
+import { LoadingMark } from "@/components/v3/live/LoadingMark";
 
 /** One name for the figure everywhere (X-18): splintering may cover more than bundles. */
 const SPLINTERED_LISTINGS_LABEL = "Splintered Listings";
@@ -211,7 +212,7 @@ export function CatalogGovernancePanel({ read }: { read: RetailCanvasRead }) {
   }
 
   if (read.phase === "loading") {
-    return <p className="retail-missing">Loading the retail reading…</p>;
+    return <p className="retail-missing"><LoadingMark label="Loading the retail reading" /></p>;
   }
   if (read.phase === "error") {
     return <p className="retail-missing">The retail read could not be loaded.</p>;

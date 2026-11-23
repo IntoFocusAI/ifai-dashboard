@@ -1,5 +1,6 @@
 "use client";
 
+import { LoadingMark } from "@/components/v3/live/LoadingMark";
 import { PlanAction, PlanEvidence, PlanFigure, PlanStatus } from "@/components/v3/live/RoadmapPlanParts";
 import { planFigure, type PlanItem, type PLAN_PHASES } from "@/lib/fender-canvas/roadmap-plan";
 
@@ -47,7 +48,7 @@ export function RoadmapPhase({ phase, dates, items, pending }: { phase: Phase; d
         </ol>
       ) : (
         <p className="plan-note" data-roadmap-phase-empty="">
-          {pending ? "Loading the actions for this phase." : "No action in this phase in this reading."}
+          {pending ? <LoadingMark label="Loading the actions for this phase" /> : "No action in this phase in this reading."}
         </p>
       )}
     </section>

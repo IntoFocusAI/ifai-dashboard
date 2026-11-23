@@ -28,6 +28,7 @@ import {
 } from "@/lib/fender-canvas/spec-missing-fields";
 import type { AmazonSpecCheckRow } from "@/lib/findability/last-checked";
 import { SET_ASIDE_CHECKS } from "@/lib/set-aside/keys";
+import { LoadingMark } from "@/components/v3/live/LoadingMark";
 
 const SPEC_COLUMNS = [
   clientColumn("asin", "ASIN", "text", 118, 100, "asin-col"),
@@ -289,7 +290,7 @@ function CatalogSpecReadiness({ read }: { read: AmazonSpecRowsRead }) {
           <tbody>
               {loading && rows.length === 0 ? (
                 <tr>
-                  <td colSpan={SPEC_TABLE_COLUMNS.length}>Loading…</td>
+                  <td colSpan={SPEC_TABLE_COLUMNS.length}><LoadingMark label="Loading" /></td>
                 </tr>
               ) : null}
               {!loading && rows.length === 0 ? (

@@ -7,6 +7,7 @@ import type { EditablePrompt, PromptEditorStatus } from "@/lib/ai-search/prompt-
 import { loadPromptList, promptDisplayText } from "@/lib/prompts/prompt-list";
 import { X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { LoadingMark } from "@/components/v3/live/LoadingMark";
 
 type Props = { onClose: () => void };
 
@@ -96,7 +97,7 @@ export function PromptsEditor({ onClose }: Props) {
         ) : null}
 
         <div className="pe-body">
-          {loading ? <p className="pe-empty">Loading prompts…</p> : null}
+          {loading ? <p className="pe-empty"><LoadingMark label="Loading prompts" /></p> : null}
 
           <PromptSearchBar
             query={search.query}

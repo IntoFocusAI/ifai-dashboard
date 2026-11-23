@@ -21,6 +21,7 @@ import {
 import { exploreListingSortValue } from "@/lib/fender-canvas/listing-table-sort";
 import { MAP_LISTING_COLUMN_WIDTH } from "@/lib/fender-canvas/retail-column-layout";
 import type { CanvasRetailListingRow } from "@/lib/fender-canvas/types";
+import { LoadingMark } from "@/components/v3/live/LoadingMark";
 
 /** The filter in plain words, written into the download. Null with no filter. */
 function filterLabel(filter: Filter): string | null {
@@ -186,7 +187,7 @@ export function FenderListingsTable() {
         <tbody>
           {loading && rows.length === 0 ? (
             <tr>
-              <td colSpan={columns.length}>Loading listings…</td>
+              <td colSpan={columns.length}><LoadingMark label="Loading listings" /></td>
             </tr>
           ) : null}
           {!loading && !error && rows.length === 0 ? (

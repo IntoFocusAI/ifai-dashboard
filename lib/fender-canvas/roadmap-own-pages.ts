@@ -21,7 +21,7 @@ import {
 } from "@/lib/fender-canvas/ai-readiness-lead";
 import { formatPct, formatRatio } from "@/lib/fender-canvas/format";
 import { listingContentHeroes } from "@/lib/fender-canvas/listing-content";
-import { machineReadabilityHeroes } from "@/lib/fender-canvas/machine-readability";
+import { machineReadabilityHeroes, SPEC_BLOCK_FIELD, plainSpecFieldName, type SpecPageSummary } from "@/lib/fender-canvas/machine-readability";
 import type { Effort } from "@/lib/fender-canvas/priority-rank";
 import { joinList, runShares } from "@/lib/fender-canvas/roadmap-sources";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
@@ -40,8 +40,9 @@ export type OwnPageFactor = {
   tone: Tone | null;
   open: { spokeId: string; tab: string };
   /**
-   * Listings the factor falls short on, for the central rank: listings without the item, or, for
-   * an average, the listings with empty fields (listings × the missing share). Null without a reading.
+   * What the factor falls short on, for the central rank: listings without the item, or, for
+   * completeness, the found pages that miss at least one field (a count of pages, never an
+   * estimate from an average). Null without a reading.
    */
   affected: number | null;
   /** The listings the factor reads. */
@@ -66,12 +67,35 @@ export const FACTOR_EFFORT: Readonly<Record<OwnPageFactor["id"], Effort>> = {
   aplus: "M",
 };
 
+/**
+ * What the brand-site completeness gap is made of, from the stored page read: the found pages that
+ * miss at least one field, out of all found pages, and the one field they all miss when it is one.
+ * Null without a page read.
+ */
+export type CompletenessGap = { pages: number; base: number; field: string | null };
+
+export function completenessGap(specPages: SpecPageSummary | null | undefined): CompletenessGap | null {
+  const pages = specPages?.pages ?? [];
+  if (pages.length === 0) return null;
+  const gap = pages.filter((page) => page.missingFields.length > 0);
+  const fields = new Set(gap.flatMap((page) => page.missingFields));
+  return { pages: gap.length, base: pages.length, field: fields.size === 1 ? [...fields][0]! : null };
+}
+
+/** The completeness count's label: names the one missing field when one accounts for the gap. */
+export function completenessShort(gap: CompletenessGap | null): string {
+  if (gap?.field === SPEC_BLOCK_FIELD) return `${brandSite()} pages without machine-readable specs`;
+  if (gap?.field) return `${brandSite()} pages missing ${plainSpecFieldName(gap.field)}`;
+  return `${brandSite()} pages with empty spec fields`;
+}
+
 /** Each factor's short action title, from the client settings (site, brand), never a client name. */
-export function factorTask(id: OwnPageFactor["id"]): string {
+export function factorTask(id: OwnPageFactor["id"], gap?: CompletenessGap | null): string {
   switch (id) {
     case "page_found":
       return `Publish ${brandSite()} pages for listings without one`;
     case "completeness":
+      if (gap?.field === SPEC_BLOCK_FIELD) return `Add machine-readable specs to ${brandSite()} product pages`;
       return `Fill the empty spec fields on ${brandSite()} product pages`;
     case "machine_specs":
       return `Make ${brandSite()} specs machine-readable`;
@@ -83,8 +107,8 @@ export function factorTask(id: OwnPageFactor["id"]): string {
 }
 
 /** The factor's task and effort, set once for every factor. */
-function work(id: OwnPageFactor["id"]): Pick<OwnPageFactor, "task" | "effort"> {
-  return { task: factorTask(id), effort: FACTOR_EFFORT[id] };
+function work(id: OwnPageFactor["id"], gap?: CompletenessGap | null): Pick<OwnPageFactor, "task" | "effort"> {
+  return { task: factorTask(id, gap), effort: FACTOR_EFFORT[id] };
 }
 
 /**
@@ -107,7 +131,7 @@ function shortOf(has: number | null | undefined, base: number | null | undefined
   return has != null && base != null && base > 0 ? { affected: Math.max(0, base - has), base } : { affected: null, base: null };
 }
 
-/** An average's listings' worth of empty fields: round(listings × (100 − average) / 100). */
+/** An average's listings' worth of empty fields: round(listings × (100 − average) / 100), for the Amazon factor. */
 function shortOfAverage(pct: number | null | undefined, base: number | null | undefined): Pick<OwnPageFactor, "affected" | "base"> {
   return pct != null && !Number.isNaN(pct) && base != null && base > 0
     ? { affected: Math.max(0, Math.round((base * (100 - pct)) / 100)), base }
@@ -163,6 +187,7 @@ export function ownPageFactors(bundle: CanvasBundle): OwnPageFactor[] {
   const amazon = amazonCompletenessHero(m);
   const aplus = listingContentHeroes(bundle.listingContent ?? null)[1]!;
   const listingContent = bundle.listingContent ?? null;
+  const gap = completenessGap(bundle.specPages);
   return [
     {
       id: "page_found",
@@ -182,9 +207,10 @@ export function ownPageFactors(bundle: CanvasBundle): OwnPageFactor[] {
       ratio: complete.ratio,
       tone: complete.tone,
       open: SPECS,
-      ...shortOfAverage(m.spec_avg_fender_pct, m.spec_fender_found),
-      short: `Listings with empty ${brandSite()} spec fields`,
-      ...work("completeness"),
+      affected: gap ? gap.pages : null,
+      base: gap ? gap.base : null,
+      short: completenessShort(gap),
+      ...work("completeness", gap),
     },
     {
       id: "machine_specs",

@@ -20,10 +20,14 @@ import {
   type RoadmapPlanRead,
   type SourceRunsRead,
 } from "@/lib/fender-canvas/roadmap-plan-read";
+import { PLAN_PENDING, planSettled } from "@/lib/fender-canvas/plan-settled";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
 import type { FindabilityRead } from "@/lib/findability/copy";
 
 export type { RoadmapPlanRead, SourceRunsRead };
+
+/** The plan read, plus whether every read it ranks has settled. Until then the list is PLAN_PENDING. */
+export type SettledRoadmapPlan = RoadmapPlanRead & { settled: boolean };
 
 const LOADING: AiSearchRead = { phase: "loading" };
 
@@ -116,7 +120,7 @@ export function useRoadmapPlan(
   focus: PlanFocus = staffFocus(),
   /** The map builds the plan above the findability provider, so it passes its read. */
   findabilityRead?: FindabilityRead,
-): RoadmapPlanRead {
+): SettledRoadmapPlan {
   const ai = useSummaryAiRead();
   const aiStale = useSummaryAiStale(ai);
   const contextFindability = useFindability();
@@ -125,8 +129,13 @@ export function useRoadmapPlan(
   const sources = useSourceRuns(useRunWithApi(useNewestWindowRun()));
   const windows = useFocusWindows();
 
-  return useMemo(
-    () => assembleRoadmapPlan({ retail, bundle, findability, ai, aiStale, stock, sources, windows, focus }),
-    [ai, aiStale, bundle, findability, focus, retail, sources, stock, windows],
-  );
+  return useMemo(() => {
+    // No ranking until every source it ranks has loaded: a partial ranking shows a different #1
+    // for a few seconds, then settles. A failed read counts as settled and keeps its handling.
+    if (!planSettled({ retail, bundle, findability, ai, stock, sources, windows })) {
+      const read = assembleRoadmapPlan({ retail, bundle, findability, ai, aiStale, stock, sources, windows, focus });
+      return { ...read, plan: PLAN_PENDING, sources: { phase: "loading" as const }, settled: false };
+    }
+    return { ...assembleRoadmapPlan({ retail, bundle, findability, ai, aiStale, stock, sources, windows, focus }), settled: true };
+  }, [ai, aiStale, bundle, findability, focus, retail, sources, stock, windows]);
 }

@@ -37,6 +37,7 @@ import { averageGapTip, heroFigureColor, heroFigureTone, mapHero } from "@/lib/f
 import type { CanvasFreshnessRow } from "@/lib/fender-canvas/types";
 import { SET_ASIDE_CHECKS, activeSetAsideClientKey } from "@/lib/set-aside/keys";
 import { useSetAsides } from "@/lib/set-aside/set-aside";
+import { LoadingMark } from "@/components/v3/live/LoadingMark";
 
 const PAGE_SIZE = 1000;
 
@@ -155,7 +156,7 @@ function MapNotes({
   channelStale: ChannelStale;
 }) {
   if (read.phase === "loading") {
-    return <p className="retail-missing">Loading the retail reading…</p>;
+    return <p className="retail-missing"><LoadingMark label="Loading the retail reading" /></p>;
   }
   if (read.phase === "error") {
     return <p className="retail-missing">The retail read could not be loaded.</p>;
@@ -315,7 +316,7 @@ export function MapChannelPanel({
       />
       <div className="content-box" style={{ marginTop: 12 }} data-map-listings="">
         {failed ? <p className="retail-missing">Below-MAP rows are not available.</p> : null}
-        {!failed && (!rows || !unitsSettled) ? <p className="retail-missing">Loading MAP rows…</p> : null}
+        {!failed && (!rows || !unitsSettled) ? <p className="retail-missing"><LoadingMark label="Loading MAP rows" /></p> : null}
         {!failed && tableRows && model && unitsSettled ? (
           <MapListingsTable
             rows={tableRows}

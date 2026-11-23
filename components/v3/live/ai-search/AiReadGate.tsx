@@ -12,6 +12,7 @@ import { LAST_30_DAYS_LABEL } from "@/lib/ai-search/default-window";
 import { errorLine, runStateLabel, summarizeRun } from "@/lib/ai-search/summary";
 import type { AiSearchRead, AiSearchSnapshot } from "@/lib/ai-search/types";
 import { isWindowHistoryKind } from "@/lib/ai-search/window-display";
+import { LoadingMark } from "@/components/v3/live/LoadingMark";
 
 export const mutedText = { fontSize: 12, color: "var(--text-muted)", lineHeight: 1.45 } as const;
 
@@ -135,7 +136,7 @@ function GateBody({
   }
   if (historical && (history.selected.phase === "loading" || history.selected.phase === "idle")) {
     return (
-      <Notice heading="Loading the historical run" tone="loading">
+      <Notice heading={<LoadingMark label="Loading the historical run" />} tone="loading">
         Reading the calls stored for that run. No rate is shown until they load.
       </Notice>
     );
@@ -146,13 +147,13 @@ function GateBody({
       (history.mode.kind === "month" || history.mode.kind === "range" || history.mode.kind === "all");
     if (windowed) {
       return (
-        <Notice heading="Loading the stored review runs" tone="loading">
+        <Notice heading={<LoadingMark label="Loading the stored review runs" />} tone="loading">
           The stored review runs in this selection are loading. No rate is shown until they load.
         </Notice>
       );
     }
     return (
-      <Notice heading="Loading the published AI run" tone="loading">
+      <Notice heading={<LoadingMark label="Loading the published AI run" />} tone="loading">
         Reading the published AI run. Figures appear when it loads.
       </Notice>
     );
