@@ -1,6 +1,7 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { activeClientSettings } from "@/lib/client/active-client";
 import { aliasingFetch } from "@/lib/client/column-aliases";
+import { viewerAccessToken } from "@/lib/supabase/viewer-token";
 
 let publicClient: SupabaseClient | null = null;
 /** One client per brand schema, so a server process serving two brands never reuses another's. */
@@ -27,7 +28,8 @@ function env() {
 export function getPublicCanvasSupabase(): SupabaseClient {
   if (publicClient) return publicClient;
   const { url, key } = env();
-  publicClient = createClient(url, key, { auth: { persistSession: false } });
+  // accessToken sends the signed-in viewer's token, so row-level security knows who reads.
+  publicClient = createClient(url, key, { accessToken: viewerAccessToken });
   return publicClient;
 }
 
@@ -44,7 +46,7 @@ export function getCanvasSupabase(): SupabaseClient {
   if (cached) return cached;
   const { url, key } = env();
   const client = createClient(url, key, {
-    auth: { persistSession: false },
+    accessToken: viewerAccessToken,
     db: { schema },
     ...(naming === "neutral" ? { global: { fetch: aliasingFetch() } } : {}),
   }) as unknown as SupabaseClient;

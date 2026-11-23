@@ -3,6 +3,8 @@ import {
   resolveActiveOrganization,
   roleForOrganization,
 } from "@/lib/command/active-organization";
+import { isStaffMembership } from "@/lib/auth/client-access";
+import { listClients } from "@/lib/client/active-client";
 import { COMMAND_ROLE_LABELS } from "@/lib/command/constants";
 import { signedAvatarUrl } from "@/lib/command/avatar";
 import type {
@@ -27,6 +29,7 @@ type OrganizationRow = {
   name: string;
   slug: string;
   is_platform_org: boolean;
+  is_active?: boolean | null;
 };
 
 type MembershipRow = {
@@ -74,17 +77,27 @@ function mapMembership(row: MembershipRow): CommandMembership | null {
       name: org.name,
       slug: org.slug,
       isPlatformOrg: org.is_platform_org,
+      isActive: org.is_active !== false,
     },
   };
 }
 
-function e2eFenderSession(): CommandSession {
-  const organization = {
-    id: "e2e-fender",
-    name: "Fender",
-    slug: "fender",
-    isPlatformOrg: false,
-  };
+/**
+ * The Playwright session (E2E_AUTH_BYPASS, never in production): an Org User on every client in
+ * data/clients, so the suite can open each brand. Not staff, so staff pages show their notice.
+ */
+function e2eSession(): CommandSession {
+  const memberships: CommandMembership[] = listClients().map((client) => ({
+    id: `e2e-membership-${client.client_key}`,
+    role: "org_viewer",
+    status: "active",
+    organization: {
+      id: `e2e-${client.client_key}`,
+      name: client.display_name,
+      slug: client.client_key,
+      isPlatformOrg: false,
+    },
+  }));
   return {
     userId: "e2e-user",
     email: "e2e@intofocus.ai",
@@ -94,28 +107,21 @@ function e2eFenderSession(): CommandSession {
       avatarPath: null,
       settings: {},
     },
-    memberships: [
-      {
-        id: "e2e-membership",
-        role: "intofocus_admin",
-        status: "active",
-        organization,
-      },
-    ],
-    primaryOrganization: organization,
-    primaryRole: "intofocus_admin",
+    memberships,
+    primaryOrganization: memberships[0]?.organization ?? null,
+    primaryRole: "org_viewer",
     isIntoFocusAdmin: false,
     avatarSignedUrl: null,
   };
 }
 
+/** True only for the Playwright dev server. Production never honors it. */
+export function e2eAuthBypass(): boolean {
+  return process.env.E2E_AUTH_BYPASS === "1" && process.env.NODE_ENV !== "production";
+}
+
 export async function getCommandSession(): Promise<CommandSession | null> {
-  if (
-    process.env.E2E_AUTH_BYPASS === "1" &&
-    process.env.NODE_ENV !== "production"
-  ) {
-    return e2eFenderSession();
-  }
+  if (e2eAuthBypass()) return e2eSession();
 
   const [userId, email] = await Promise.all([getAuthUserId(), getUserEmail()]);
   if (!userId || !email) return null;
@@ -144,7 +150,7 @@ export async function getCommandSession(): Promise<CommandSession | null> {
     .schema("command")
     .from("organization_memberships")
     .select(
-      "id, role, status, organizations ( id, name, slug, is_platform_org )",
+      "id, role, status, organizations ( id, name, slug, is_platform_org, is_active )",
     )
     .eq("user_id", userId)
     .eq("status", "active");
@@ -157,9 +163,7 @@ export async function getCommandSession(): Promise<CommandSession | null> {
       .filter((row): row is CommandMembership => row !== null) ?? [];
 
   const primary = pickPrimaryMembership(memberships);
-  const isIntoFocusAdmin = memberships.some(
-    (m) => m.role === "intofocus_admin" && m.organization.isPlatformOrg,
-  );
+  const isIntoFocusAdmin = isStaffMembership(memberships);
   const avatarSignedUrl = await signedAvatarUrl(profile.avatarPath);
 
   return {

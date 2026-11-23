@@ -17,9 +17,24 @@ export function ConfirmPageClient() {
       const code = params.get("code");
       const next = safeNextPath(params.get("next"), window.location.origin);
 
-      if (tokenHash && type) {
+      // An invite sent with the default Supabase email template returns the session in the
+      // URL hash (#access_token=…&refresh_token=…) instead of a token_hash or code.
+      const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+      const accessToken = hash.get("access_token");
+      const refreshToken = hash.get("refresh_token");
+
+      if (accessToken && refreshToken) {
+        const { error } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        });
+        if (!error) {
+          router.replace(next);
+          return;
+        }
+      } else if (tokenHash && type) {
         const { error } = await supabase.auth.verifyOtp({
-          type: type as "email",
+          type: type as "email" | "invite" | "recovery" | "magiclink" | "signup",
           token_hash: tokenHash,
         });
         if (!error) {

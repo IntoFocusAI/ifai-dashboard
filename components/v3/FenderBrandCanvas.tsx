@@ -20,6 +20,7 @@ import { useAuthorizedSellers } from "@/lib/fender-canvas/authorized-sellers-sto
 import { buildFenderCanvasSpec } from "@/lib/fender-canvas/build-canvas-spec";
 import { IntelligenceCanvas } from "@/lib/canvas-sdk";
 import type { CanvasUserMenu } from "@/lib/canvas-sdk/types";
+import type { SwitcherClient } from "@/lib/auth/client-access";
 import type { AiSearchRead } from "@/lib/ai-search/types";
 import type { FindabilityRead } from "@/lib/findability/copy";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
@@ -68,9 +69,11 @@ function FenderBrandCanvasBody({
   retail,
   aiSearch,
   findability,
+  switcherClients,
 }: {
   userMenu?: CanvasUserMenu;
   viewerId?: string;
+  switcherClients?: SwitcherClient[];
   bundle: CanvasBundle | null;
   loading: boolean;
   stale: boolean;
@@ -112,7 +115,7 @@ function FenderBrandCanvasBody({
       metricStorageSuffix: viewerStorageScope(viewerId),
       headerSlot: (
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-          <ClientSwitcher />
+          <ClientSwitcher clients={switcherClients ?? []} />
           <DataFreshnessBar fresh={bundle.fresh} stale={stale} />
         </div>
       ),
@@ -125,7 +128,7 @@ function FenderBrandCanvasBody({
         aeo: { ...built.spokes.aeo, desc: panelDescription },
       },
     };
-  }, [amazonFieldTotals, authorizedPartners, bundle, findability, mapAiSearch, panelDescription, plan, retail, stale, stockLoss, userMenu, viewerId]);
+  }, [amazonFieldTotals, authorizedPartners, bundle, findability, mapAiSearch, panelDescription, plan, retail, stale, stockLoss, switcherClients, userMenu, viewerId]);
 
   if (loading && !spec) return <CanvasLoadingShell />;
   if (!spec) {
@@ -148,9 +151,12 @@ function FenderBrandCanvasBody({
 export function FenderBrandCanvas({
   userMenu,
   viewerId,
+  switcherClients,
 }: {
   userMenu?: CanvasUserMenu;
   viewerId?: string;
+  /** Brands the viewer may switch to. Fewer than two hides the switcher. */
+  switcherClients?: SwitcherClient[];
 }) {
   const { bundle, loading, stale, error } = useFenderCanvasData();
   const retail = usePortfolioRetailSnapshot();
@@ -186,6 +192,7 @@ export function FenderBrandCanvas({
       <FenderBrandCanvasBody
         userMenu={userMenu}
         viewerId={viewerId}
+        switcherClients={switcherClients}
         bundle={bundle}
         loading={loading}
         stale={stale}

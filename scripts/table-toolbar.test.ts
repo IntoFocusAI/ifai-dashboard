@@ -153,7 +153,9 @@ test("the export route is POST only, client-scoped, and stashed from the static 
   const route = readFileSync(new URL("../app/(canvas)/dashboard/export/[table]/route.ts", import.meta.url), "utf8");
   assert.match(route, /export async function POST/);
   assert.doesNotMatch(route, /export async function GET/);
-  assert.match(route, /runWithClient\(client/);
+  // The brand comes from the login's allowed clients, never straight from ?client= (login lockdown).
+  assert.match(route, /loadClientAccess\(session\)/);
+  assert.match(route, /runWithClient\(choice\.clientKey/);
   const stash = readFileSync(new URL("./prepare-static-export.mjs", import.meta.url), "utf8");
   assert.match(stash, /"app\/\(canvas\)\/dashboard\/export"/);
 });
