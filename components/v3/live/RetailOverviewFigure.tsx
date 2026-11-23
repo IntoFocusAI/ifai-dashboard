@@ -1,5 +1,6 @@
 "use client";
 
+import { formatInt } from "@/lib/fender-canvas/format";
 import "@/components/v3/live/catalog-health.css";
 import { StatusMark } from "@/components/v3/live/StatusMark";
 import type { PieDiscData } from "@/lib/ai-search/citation-pies";
@@ -35,8 +36,8 @@ export function RetailShareDisc({
   /** Custom tooltip text. Defaults to the slice counts. */
   tip?: string | null;
 }) {
-  const label = pie.slices.map((slice) => `${slice.count} ${slice.label}`).join(". ");
-  const description = tip ?? `${pie.title}. ${label}. Total ${pie.total} ${pie.totalLabel}.`;
+  const label = pie.slices.map((slice) => `${formatInt(slice.count)} ${slice.label}`).join(". ");
+  const description = tip ?? `${pie.title}. ${label}. Total ${formatInt(pie.total)} ${pie.totalLabel}.`;
   return (
     <div
       className={`${DISC_CLASS} citation-chart-tip ifai-term`}

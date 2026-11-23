@@ -243,7 +243,7 @@ export function rateLeadPie(id: string, title: string, wins: number, resolved: n
 }
 
 export function rateTip(wins: number, resolved: number): string {
-  return `${wins} ${leadBrand()} leads. ${resolved - wins} rest of resolved answers. Total ${resolved} resolved answers.`;
+  return `${formatInt(wins)} ${leadBrand()} leads. ${formatInt(resolved - wins)} rest of resolved answers. Total ${formatInt(resolved)} resolved answers.`;
 }
 
 /** A Fender-lead rate. The pie is the one the tab draws, or null when the tab draws none. */

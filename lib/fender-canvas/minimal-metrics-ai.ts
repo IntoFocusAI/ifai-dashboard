@@ -274,7 +274,7 @@ export const COMPETITIVE_ENTRIES: MinimalListItem[] = [
       aiReading(ctx, (s) => {
         const resolved = s.roles.unbranded.resolved;
         const pie = competitorLeadPie(s.competitorWins, resolved);
-        const tip = pie ? `${s.competitorWins} competitor led. ${resolved - s.competitorWins} ${leadBrand()} led. Total ${resolved} resolved Unbranded Discovery answers.` : null;
+        const tip = pie ? `${formatInt(s.competitorWins)} competitor led. ${formatInt(resolved - s.competitorWins)} ${leadBrand()} led. Total ${formatInt(resolved)} resolved Unbranded Discovery answers.` : null;
         return counted(resolved > 0 ? `${formatInt(s.competitorWins)} of ${formatInt(resolved)}` : null, ROLE.unbranded_discovery.noun, pie, tip, "This run has no resolved unbranded answers.");
       }),
   }),

@@ -175,12 +175,12 @@ function Ecosystem({
               <summary>How these counts work</summary>
               <ul style={{ ...mutedText, paddingLeft: 16, margin: "8px 0 0" }}>
                 <li>
-                  Answers and links are separate counts. {read.answersWithCitation} {scopeNoun} produced{" "}
-                  {read.rows.length} links, so one answer can cite several pages.
+                  Answers and links are separate counts. {formatInt(read.answersWithCitation)} {scopeNoun} produced{" "}
+                  {formatInt(read.rows.length)} links, so one answer can cite several pages.
                 </li>
                 <li>
-                  {brandOwned()} links appear in {fenderAnswers} of those answers. The other{" "}
-                  {read.rows.length - fender.length} links point to sites {brandName()} does not control.
+                  {brandOwned()} links appear in {formatInt(fenderAnswers)} of those answers. The other{" "}
+                  {formatInt(read.rows.length - fender.length)} links point to sites {brandName()} does not control.
                 </li>
                 {read.duplicates + read.invalid > 0 ? (
                   <li>
@@ -244,8 +244,8 @@ function Ecosystem({
                   <td>
                     {formatInt(g.cited)} of {formatInt(g.answered)}
                   </td>
-                  <td>{engineLinks.get(g.key)?.rows ?? 0}</td>
-                  <td>{engineLinks.get(g.key)?.fenderOwnedRows ?? 0}</td>
+                  <td>{formatInt(engineLinks.get(g.key)?.rows ?? 0)}</td>
+                  <td>{formatInt(engineLinks.get(g.key)?.fenderOwnedRows ?? 0)}</td>
                 </tr>
               )}
             />
@@ -277,8 +277,8 @@ function Ecosystem({
                     <td>
                       {formatInt(g.cited)} of {formatInt(g.answered)}
                     </td>
-                    <td>{categoryLinks.get(g.key)?.rows ?? 0}</td>
-                    <td>{categoryLinks.get(g.key)?.fenderOwnedRows ?? 0}</td>
+                    <td>{formatInt(categoryLinks.get(g.key)?.rows ?? 0)}</td>
+                    <td>{formatInt(categoryLinks.get(g.key)?.fenderOwnedRows ?? 0)}</td>
                   </tr>
                 )}
               />
@@ -299,8 +299,8 @@ function Ecosystem({
 
       {!caution && citationUrlsLoaded && read.rows.length > 0 ? (
         <p style={{ ...mutedText, marginTop: 10 }} data-citation-reconcile>
-          Cited links by source totals {read.rows.length}. {brandOwned()} and other links totals{" "}
-          {read.rows.length}.
+          Cited links by source totals {formatInt(read.rows.length)}. {brandOwned()} and other links totals{" "}
+          {formatInt(read.rows.length)}.
         </p>
       ) : null}
     </>

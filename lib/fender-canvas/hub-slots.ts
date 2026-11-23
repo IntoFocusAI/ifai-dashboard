@@ -226,8 +226,8 @@ function rateSlot(
     label,
     detail:
       role === "gap"
-        ? `${brandName()} led ${wins} of ${resolved} (${pct(wins, resolved)}). This gap is the other ${missed}.`
-        : `${brandName()} led ${wins} of ${resolved} resolved answers.`,
+        ? `${brandName()} led ${formatInt(wins)} of ${formatInt(resolved)} (${pct(wins, resolved)}). This gap is the other ${formatInt(missed)}.`
+        : `${brandName()} led ${formatInt(wins)} of ${formatInt(resolved)} resolved answers.`,
     note,
     tone,
     chart: share(

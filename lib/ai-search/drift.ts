@@ -1,3 +1,4 @@
+import { formatInt } from "@/lib/fender-canvas/format";
 import { amazonDiffers, catalogClaim, isCatalogProbe } from "@/lib/ai-search/probe-catalog";
 import { cleanPrompt, engineLabel, isCommercial, isConfirmedHallucination } from "@/lib/ai-search/run-metrics";
 import type { AiCallRow, AiProbeRow } from "@/lib/ai-search/types";
@@ -99,7 +100,7 @@ export function factCheckReviewAnswers(probes: readonly ProbeEvidence[]): FactCh
 export function factCheckReviewTitle(count: number): string {
   return count === 1
     ? "Review 1 AI answer that may contradict your product facts."
-    : `Review ${count} AI answers that may contradict your product facts.`;
+    : `Review ${formatInt(count)} AI answers that may contradict your product facts.`;
 }
 
 /**
