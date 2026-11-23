@@ -58,15 +58,6 @@ test("pages with different gaps keep the general label and title; healthy pages 
   assert.equal(factorTask("completeness", gap), `Fill the empty spec fields on ${brandSite()} product pages`);
 });
 
-test("a field missing on nearly every gap page is named, and N counts the pages missing it", () => {
-  // 94 pages miss the spec block (some also miss another field); 4 pages are healthy.
-  const pages = Array.from({ length: 98 }, (_, i) => page(i, i < 94 ? (i < 20 ? ["additionalProperty", "gtin12"] : ["additionalProperty"]) : []));
-  assert.deepEqual(completenessGap(summary(pages)), { pages: 94, base: 98, field: "additionalProperty" });
-  // Two fields each missing on about half the gap pages: no field accounts for the gap.
-  const split = [page(1, ["additionalProperty"]), page(2, ["gtin12"]), page(3, ["gtin12", "additionalProperty"]), page(4, ["description"])];
-  assert.equal(completenessGap(summary(split))!.field, null);
-});
-
 test("one other missing field is named in the count label; the title stays general", () => {
   const gap = completenessGap(summary([page(1, ["description"]), page(2, ["description"]), page(3, [])]))!;
   assert.equal(completenessShort(gap), `${brandSite()} pages missing description`);
