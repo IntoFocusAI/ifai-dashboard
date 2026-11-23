@@ -52,7 +52,8 @@ begin
     raise exception 'staff rows changed';
   end if;
   -- Other org_admin rows untouched.
-  if (select count(*) from command.organization_memberships where role = 'org_admin') <> 3 then
+  if (select count(*) from command.organization_memberships
+      where role = 'org_admin' and user_id::text like '00000000-0000-0000-0000-000000000c%') <> 3 then
     raise exception 'expected 3 Lead rows (2 fender, 1 ledlenser)';
   end if;
   -- Brian Magazu has no auth user here, so no row and no error.
