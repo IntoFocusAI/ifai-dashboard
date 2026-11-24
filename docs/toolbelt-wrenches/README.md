@@ -67,3 +67,12 @@ earlier on 23 Nov; and site_type_classifier_21a (a2bdfbe5), whose task (5566cef8
 says never to retry it. To add the guard to another wrench, prepend the block, fill `__CR` (`self` =
 wrench id, `servers` = its requiredMcpServers, `stepMs` = the calling step's timeout), and rename its
 `run(` to `__runMain(`.
+
+## Rollback copies and shared source (23 Nov 2026, R-15 decision (a))
+
+- `buybox_seller_harvester.js`: the live code of `fender_buybox_seller_harvester` v7 (Fender workspace) and
+  `ledlenser_buybox_seller_harvester` v2 (Ledlenser workspace). The two saves differ only in `DEFAULT_CLIENT`.
+  Change this file and re-save both.
+- `fender_buybox_seller_harvester.v6.js`, `ledlenser_buybox_seller_harvester.v1.js`: the versions before, kept
+  for rollback (re-save with `wrench_update`). Delete them once v7 / v2 have run cleanly for a week.
+- `r15_price_match_search.v8.js`: R-15 search before the marketplace condition check (Fender workspace 558a63f3 v8 = Ledlenser 1a08597d v2). Active now: Fender v10, Ledlenser v3. To roll back, re-save this file (without its 3-line header) as a new version in each workspace.

@@ -21,7 +21,7 @@ Former name: Brand Portfolio. Approved rename: Summary.
 - **Desired:** Rename to Summary.
 - **User value:** The room uses one name.
 - **Acceptance:** No client-visible Brand Portfolio string.
-- **Evidence:** Desktop-verified 21 Oct 2026 on local production build commit 1fdbfc0 (PR 43). Published GitHub Pages still serves main cfd45de until that branch deploys. No client-visible Brand Portfolio on that build.
+- **Evidence:** Desktop-verified 21 Oct 2026 on local production build commit 1fdbfc0 (PR 43). No client-visible Brand Portfolio on that build.
 - **Open decision:** None.
 
 **H-07 CURRENT** · Launch
@@ -54,7 +54,7 @@ Former name: Brand Portfolio. Approved rename: Summary.
 - **Desired:** Rename unclear heading Commercial Sizing → Opportunity. Keep estimate labels until formula trails exist. Score/opportunity frameworks below are TARGET.
 - **User value:** Upside is named clearly.
 - **Acceptance:** No client string says Commercial Sizing.
-- **Evidence:** Desktop-verified 21 Oct 2026 on local production build commit 1fdbfc0 (PR 43). Published GitHub Pages still serves main cfd45de until that branch deploys. Commercial Sizing is not a tab title. Score frameworks in section 7 stay TARGET.
+- **Evidence:** Desktop-verified 21 Oct 2026 on local production build commit 1fdbfc0 (PR 43). Commercial Sizing is not a tab title. Score frameworks in section 7 stay TARGET.
 - **Open decision:** None.
 
 **H-02 CURRENT** · Launch

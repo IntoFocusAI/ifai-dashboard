@@ -10,6 +10,7 @@ import {
   RetailStatusMark,
   wrapColumnIdsAfterFirst,
 } from "@/components/v3/live/RetailOverviewFigure";
+import { PriceMatchesSection } from "@/components/v3/live/PriceMatchesSection";
 import { ResizableTable } from "@/components/v3/live/ResizableTable";
 import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
 import {
@@ -287,6 +288,7 @@ export function SuppressedListingsPanel({
         ) : null}
         <SetAsideHistory ctl={setAsides} />
       </div>
+      {rows ? <PriceMatchesSection rows={rows} /> : null}
     </div>
   );
 }
