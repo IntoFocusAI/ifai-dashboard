@@ -205,7 +205,7 @@ export function openText(source: string, inc: ParsedIncident): string {
 }
 
 export function resolvedParentText(source: string, inc: ParsedIncident, resolvedAtIso: string): string {
-  return `✅ RESOLVED · *${slackEscape(source)}* · ${link(inc)} · lasted ${
+  return `✅ *RESOLVED* · *${slackEscape(source)}* · ${link(inc)} · lasted ${
     formatDuration(inc.openedAt, resolvedAtIso)
   }`;
 }
@@ -213,12 +213,13 @@ export function resolvedParentText(source: string, inc: ParsedIncident, resolved
 export function updateText(u: ParsedUpdate): string {
   let body = u.body;
   if (body.length > MAX_BODY) body = body.slice(0, MAX_BODY) + "…";
-  const status = u.status ? `_${slackEscape(capitalize(u.status))}_ · ` : "";
-  return `${status}${formatEt(u.at)}${body ? ` · ${slackEscape(body)}` : ""}`;
+  // "*Status* · time" on the first line, the provider's text on its own line below.
+  const status = u.status ? `*${slackEscape(capitalize(u.status))}* · ` : "";
+  return `${status}${formatEt(u.at)}${body ? `\n${slackEscape(body)}` : ""}`;
 }
 
 export function resolvedReplyText(resolvedAtIso: string): string {
-  return `✅ Resolved · ${formatEt(resolvedAtIso)}`;
+  return `✅ *Resolved* · ${formatEt(resolvedAtIso)}`;
 }
 
 export function reopenedReplyText(): string {

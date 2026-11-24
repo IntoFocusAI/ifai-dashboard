@@ -177,11 +177,11 @@ Deno.test("slack text", () => {
 
   assertEquals(
     resolvedParentText("GitHub", inc, inc.resolvedAt!),
-    "✅ RESOLVED · *GitHub* · <https://stspg.io/pvjz2g01trc7|Disruption with some GitHub services> · lasted 1h 11m",
+    "✅ *RESOLVED* · *GitHub* · <https://stspg.io/pvjz2g01trc7|Disruption with some GitHub services> · lasted 1h 11m",
   );
   assertEquals(
     updateText(inc.updates[1]),
-    "_Monitoring_ · Nov 19, 1:05 PM EST · The degradation has been mitigated. We are monitoring to ensure stability.",
+    "*Monitoring* · Nov 19, 1:05 PM EST\nThe degradation has been mitigated. We are monitoring to ensure stability.",
   );
   assertEquals(slackEscape("a <b> & c"), "a &lt;b&gt; &amp; c");
   const long = updateText({ id: "x", status: "identified", body: "y".repeat(5000), at: inc.openedAt });
