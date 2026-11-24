@@ -1,5 +1,6 @@
 "use client";
 
+import { formatInt } from "@/lib/fender-canvas/format";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { useAiHistory } from "@/components/v3/live/ai-search/AiHistoryContext";
 import { READ_ERROR_TITLE } from "@/components/v3/live/ai-search/AiReadGate";
@@ -89,7 +90,7 @@ function PairedApiRun({ runId, day }: { runId: string; day: string | null }) {
 
 function RunDetail({ run }: { run: HistoryRunSummary }) {
   const day = utcDay(run.published_at ?? run.completed_at);
-  const answered = run.answered_calls == null ? "Not recorded" : `${run.answered_calls} answered`;
+  const answered = run.answered_calls == null ? "Not recorded" : `${formatInt(run.answered_calls)} answered`;
   const expected = run.expected_calls == null ? null : `${run.expected_calls} expected`;
   const scoring = scoringLabel(run);
   const caution = citationStorageCaution(run.audit_run_id);

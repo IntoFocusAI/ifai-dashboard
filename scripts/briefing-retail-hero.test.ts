@@ -334,7 +334,7 @@ test("hub Briefing puts consensus in the findings row, then the essay", () => {
   assert.match(spokes, /BriefingRetailHero/);
   assert.match(
     spokes,
-    /0:\s*\([^)]*\)\s*=>\s*\(\s*<>\s*<BriefingRetailHero[\s\S]*?<BriefingAiLead bundle=\{bundle\} \/>/,
+    /0:\s*\([^)]*\)\s*=>\s*\(\s*<>\s*<BriefingRetailHero[\s\S]*?<BriefingAiLead bundle=\{bundle\} retail=\{retail\} commandItems=\{commandItems\} \/>/,
     "findings row, then the lead section",
   );
   assert.doesNotMatch(spokes, /BriefingConsensusLead|briefing-consensus-lead/);
@@ -382,8 +382,9 @@ test("hub Briefing puts consensus in the findings row, then the essay", () => {
   // H-09: the Briefing is generated; no hand-written template and no Portfolio at a glance.
   assert.equal(briefingHtml, "");
   const aiLead = read("components/v3/live/BriefingAiLead.tsx");
-  assert.match(aiLead, /headlineLine\(summary\)/);
-  assert.match(aiLead, /selling model on Amazon/);
+  // Worker 31.1: "What this means for {brand}" (decisions 128, 129); scripts/briefing-narrative.test.ts.
+  assert.match(aiLead, /What this means for \{brand\}/);
+  assert.match(aiLead, /sellingModelLine\(/);
   assert.doesNotMatch(aiLead, /Portfolio at a glance/);
   assert.doesNotMatch(hero, /\u2014/);
   assert.doesNotMatch(lead, /\u2014/);

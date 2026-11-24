@@ -8,13 +8,13 @@ import type { DataStatus } from "@/lib/canvas-sdk/data-status";
 import { pct } from "@/lib/ai-search/summary";
 import { brandName, brandSite } from "@/lib/brand-copy";
 
-const FACT = (n: number) => `${n} ${brandName()} product fact${n === 1 ? "" : "s"}`;
-const ANSWER = (n: number) => `${n} answer${n === 1 ? "" : "s"}`;
+const FACT = (n: number) => `${formatInt(n)} ${brandName()} product fact${n === 1 ? "" : "s"}`;
+const ANSWER = (n: number) => `${formatInt(n)} answer${n === 1 ? "" : "s"}`;
 const CALL = (n: number) => `${n} fact-check call${n === 1 ? "" : "s"}`;
 
 /** "1 contradiction", "2 contradictions". */
 export function contradictionCount(n: number): string {
-  return `${n} contradiction${n === 1 ? "" : "s"}`;
+  return `${formatInt(n)} contradiction${n === 1 ? "" : "s"}`;
 }
 
 /** Same bands as the Fact Checks satellite: red below 95, green above 98, yellow on the closed interval. */
@@ -53,7 +53,7 @@ export function factCheckAccuracyLead(c: FactCheckCoverage): {
     matched,
     checked: c.answersChecked,
     contradictions: c.contradictions,
-    population: `${matched} of ${c.answersChecked} answers matched.`,
+    population: `${formatInt(matched)} of ${formatInt(c.answersChecked)} answers matched.`,
     tone,
     ratePct,
   };
@@ -107,7 +107,7 @@ export function factCheckHeadline(c: FactCheckCoverage, windowed = false): strin
   const result =
     c.contradictions === 0
       ? `No contradictions were found in ${ANSWER(c.answersChecked)}.`
-      : `${c.contradictions} of ${c.answersChecked} answers contradicted the verified fact.`;
+      : `${formatInt(c.contradictions)} of ${formatInt(c.answersChecked)} answers contradicted the verified fact.`;
   return `${scope} ${result}`;
 }
 
@@ -225,14 +225,14 @@ export function factCheckMethodLine(c: FactCheckCoverage, windowed = false): Fac
   const unit = windowed ? "selection" : "run";
   const n = c.questionsSent;
   const one = n === 1;
-  const named = `Each fact-check question names one ${brandName()} product, and the question set names ${n}. IntoFocus sends ${one ? "it" : "them"} to every engine on purpose.`;
-  const compared = `${c.factsChecked} of ${n} ${c.factsChecked === 1 ? "was" : "were"} compared with a fact verified on an official ${brandName()} page in this ${unit}.`;
+  const named = `Each fact-check question names one ${brandName()} product, and the question set names ${formatInt(n)}. IntoFocus sends ${one ? "it" : "them"} to every engine on purpose.`;
+  const compared = `${formatInt(c.factsChecked)} of ${formatInt(n)} ${c.factsChecked === 1 ? "was" : "were"} compared with a fact verified on an official ${brandName()} page in this ${unit}.`;
   const picked = one
     ? `How this product was picked, and what part of ${brandName()}'s catalog it stands for, is not recorded, so this result covers this product only.`
-    : `How these products were picked, and what part of ${brandName()}'s catalog they stand for, is not recorded, so this result covers these ${n} products only.`;
+    : `How these products were picked, and what part of ${brandName()}'s catalog they stand for, is not recorded, so this result covers these ${formatInt(n)} products only.`;
   return {
-    products: `${n} product${one ? "" : "s"} checked`,
-    verified: `${c.factsChecked} with a verified fact`,
+    products: `${formatInt(n)} product${one ? "" : "s"} checked`,
+    verified: `${formatInt(c.factsChecked)} with a verified fact`,
     tip: `${named} ${compared} ${picked}`,
   };
 }

@@ -202,7 +202,7 @@ test("citation copy separates answers from links and avoids causal claims", () =
   assert.match(notes, /Answers and links are separate counts/);
   assert.match(
     notes,
-    /\{read\.answersWithCitation\} \{scopeNoun\} produced \{read\.rows\.length\} links, so one answer can cite several pages/,
+    /\{formatInt\(read\.answersWithCitation\)\} \{scopeNoun\} produced \{formatInt\(read\.rows\.length\)\} links, so one answer can cite several pages/
   );
   assert.match(notes, /does not measure whether the page caused the recommendation/);
   assert.match(notes, /a citation is not an endorsement/);

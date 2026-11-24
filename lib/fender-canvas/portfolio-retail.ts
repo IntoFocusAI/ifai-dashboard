@@ -66,6 +66,9 @@ function withStale<T>(reading: RetailReading<T>, stale: PartialFigure | null): R
 
 export type RetailFindingId = "suppressed_listings" | "map_leakage" | "unnested_bundles";
 
+/** X-18: the splintered-listings card's one title everywhere (Catalog Health card, map, Briefing, deck). The tab stays Catalog Governance. */
+export const SPLINTERED_LISTINGS_LABEL = "Splintered Listings";
+
 export const RETAIL_FINDING_LABELS = {
   suppressed_listings: "Suppressed Listings",
   map_leakage: "MAP Leakage",

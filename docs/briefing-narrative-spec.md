@@ -29,7 +29,7 @@ line stays in the box, one line, without naming sellers (decision 128).
 | Branded wins / resolved | `summarizeRun(ai).roles.branded` | 3,012 of 3,211 (93.8%) |
 | Owned cited links / all cited links | `citationOwnedLinksLead` | 6,404 of 36,289 (17.6%) |
 | Exact official pages / listings | `countFindability` | 92 of 1,091 (8.4%) |
-| Listings missing Amazon specs | estimate line `missingSpecs` coverage | 519 |
+| Listings missing Amazon specs | `specHero(retail.snapshot)` (listings missing at least one field; same count as Action Items `signal:missing_specs`) | 524 |
 | Buy Box withheld / listings | retail read | 60 of 1,173 (5.1%) |
 | Splintered bundles / bundles | retail read | 38 of 330 (11.5%) |
 | MAP leakage offers / offers | retail read | 187 of 633 (29.5%) |
@@ -54,8 +54,9 @@ Second sentence, from the branded share:
 
 | Branded state | Sentence |
 | --- | --- |
-| Branded above 90 and unbranded below 65 | Shoppers who already ask about {brand} get confirmed {B}% of the time. The gap is being found, not being trusted. |
+| Branded 90 or above and unbranded not above 65 | Shoppers who already ask about {brand} get confirmed {B}% of the time. The gap is being found; once found, {brand} is trusted. |
 | Branded below 70 and unbranded above 65 | {brand} is found, but shoppers who ask about it directly get confirmed only {B}% of the time. The gap is trust, not discovery. |
+| Branded 70 up to but not including 90 (any unbranded state) | Shoppers who already ask about {brand} get confirmed {B}% of the time: room to build trust. |
 | Both low | Shoppers who ask about {brand} directly get confirmed {B}% of the time, and unbranded shoppers hear a rival first. Both need work. |
 | Both high | Shoppers who ask about {brand} directly get confirmed {B}% of the time. Discovery and trust are both in good shape. |
 
@@ -68,10 +69,10 @@ Then the three largest listing gaps, chosen by the same severity order the Prior
 | Gap | Plain sentence (status Poor or Fair only) |
 | --- | --- |
 | Exact official pages | {X} in 10 Amazon listings have no matching page on {site}. |
-| Missing specs | {M} listings are missing the specs assistants compare. |
-| Buy Box withheld | {M} listings are not showing {brand}'s price at the moment of purchase. |
+| Missing specs | {M} listings are missing the specs assistants compare, so assistants struggle to match them to shoppers' questions. |
+| Buy Box withheld | {M} listings are not showing {brand}'s price at the moment of purchase, so assistants rarely point shoppers to them, and the sales and reviews they would earn often go to a competitor. |
 | Splintered bundles | {M} bundles split their reviews across separate listings. |
-| MAP leakage | {M} offers are advertised below the agreed floor price. |
+| MAP leakage | {M} offers are advertised below the agreed floor price, so assistants can repeat a price below the one {brand} sets, and the discounting erodes {brand}'s retail value (partner-led) or revenue (brand-led), by the client's `seller_type`. |
 
 If no gap is Poor or Fair: *{brand}'s listings on those pages are in good shape.*
 
@@ -84,7 +85,18 @@ If no gap is Poor or Fair: *{brand}'s listings on those pages are in good shape.
 
 ### Block 4: the first move
 
-**The first move:** {top action title}. → Action Items. If the queue is empty: *No open action; the queue is clear.*
+**The first move:** {top action title}, {AI consequence clause}. → Action Items. The clause is chosen by the item's ranked kind (`RANKED_KIND_CLAUSES` in `briefing-narrative.ts`, one per `GAP_KINDS` entry; a test fails when a kind has none). If the queue is empty: *No open action; the queue is clear.*
+
+Clauses for the kinds that are not Block 2 gaps (approved by Brian Magazu, 23 Nov; a claim that sales or reviews go to a competitor always says "often"):
+
+| Ranked kind | Clause |
+|---|---|
+| unbranded_discovery | so assistants name a rival before {brand} when shoppers ask what to buy |
+| out_of_stock | so assistants stop recommending it/them, and the sales often go to a competitor's listing |
+| fact_contradictions | so assistants give shoppers conflicting facts about {brand}'s products |
+| rival | so assistants keep naming that rival ahead of {brand} |
+| aplus, amazon_bullets | so assistants have less product detail to read and compare |
+| source | so assistants keep relying on pages {brand} does not control |
 
 ## Tooltips (plain phrase on screen, term in the tooltip)
 
@@ -100,7 +112,7 @@ If no gap is Poor or Fair: *{brand}'s listings on those pages are in good shape.
 ## Tests
 
 One unit test per row of each table (state → sentence), the missing-data row for every
-block, the two-gap selection order, and a Ledlenser fixture that proves no client name is
+block, the three-gap selection order (decision 128), and a Ledlenser fixture that proves no client name is
 in the code. A snapshot test guards the Fender and Ledlenser outputs so wording changes
 are deliberate.
 
@@ -116,7 +128,7 @@ are deliberate.
 2. Block 1 keeps the "N times in 10" line beside the hero card's figure. A little duplication is fine when the paragraph derives it from the values and phrases it plainly.
 3. Block 2 names **three** gaps.
 4. The selling-model line stays in the box, one line, and never lists sellers: *Partner-led: authorized sellers are meant to hold the Buy Box.* / *Brand-led: {brand}'s own seller accounts are meant to hold the Buy Box.*
-5. **Amazon rule (decision 129).** The narrative must not be Amazon-centric. Any Amazon gap it names must say why that gap changes what AI assistants recommend, in the same sentence or the next; it may not simply restate a figure the brand already gets from a SmartScout-type subscription. Block 2's gap sentences therefore each carry an AI consequence, e.g. "{M} listings are missing the specs assistants compare, so assistants cannot match them to shoppers' questions" and "{M} listings are not showing {brand}'s price at the moment of purchase, so the page assistants cite sends shoppers elsewhere." The worker proposes the consequence clause per gap in the PR body for approval.
+5. **Amazon rule (decision 129).** The narrative must not be Amazon-centric. Any Amazon gap it names must say why that gap changes what AI assistants recommend, in the same sentence or the next; it may not simply restate a figure the brand already gets from a SmartScout-type subscription. Block 2's gap sentences therefore each carry an AI consequence, e.g. "{M} listings are missing the specs assistants compare, so assistants struggle to match them to shoppers' questions" and "{M} listings are not showing {brand}'s price at the moment of purchase, so assistants rarely point shoppers to them, and the sales and reviews they would earn often go to a competitor." The worker proposes the consequence clause per gap in the PR body for approval.
 
 ## Build plan
 

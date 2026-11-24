@@ -139,6 +139,23 @@ begin
   end loop;
   -- A general domain label (no client), readable by any signed-in user.
   perform pg_temp.fill('public.site_type_classifications', '{"client_key": null}');
+  -- R-10: ledlenser_private holds one table (the rest are views); fill it with a valid row.
+  if to_regclass('ledlenser_private.retail_price_observations') is not null
+     and not pg_temp.fill('ledlenser_private.retail_price_observations',
+       '{"asin": "L000000001", "retailer": "walmart", "observed_at": "2026-11-20 00:00:00+00", "status": "priced", "item_cents": "1999", "source": "backfill"}') then
+    missing := missing || 'ledlenser_private.retail_price_observations'::text;
+  end if;
+  -- R-15: Ledlenser price-match searches and kept matches, one valid row each.
+  if to_regclass('ledlenser_private.price_match_checks') is not null then
+    if not pg_temp.fill('ledlenser_private.price_match_checks',
+         '{"id": "1", "asin": "L000000001", "benchmark_cents": "1999", "provider": "test", "query_type": "title", "status": "searched"}') then
+      missing := missing || 'ledlenser_private.price_match_checks'::text;
+    end if;
+    if not pg_temp.fill('ledlenser_private.price_match_results',
+         '{"check_id": "1", "observation_id": "1", "match_kind": "item", "verdict": "same", "verdict_by": "test"}') then
+      missing := missing || 'ledlenser_private.price_match_results'::text;
+    end if;
+  end if;
   if array_length(missing, 1) > 0 then
     raise notice 'fixture: tables without rows: %', missing;
   end if;

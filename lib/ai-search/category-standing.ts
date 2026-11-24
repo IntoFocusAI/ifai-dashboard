@@ -1,3 +1,4 @@
+import { formatInt } from "@/lib/fender-canvas/format";
 import { categoryLeads, rivalLeadsCategory, type CategoryLead } from "@/lib/ai-search/category-on-track";
 import { discoveryCategoryRoleTallies } from "@/lib/ai-search/question-role";
 import { MIN_COMPARABLE_RESOLVED } from "@/lib/ai-search/run-metrics";
@@ -95,7 +96,7 @@ export function standingHeadline(item: CategoryStanding): string {
 /** The counts under the headline, on the category's resolved Unbranded Discovery answers. */
 export function standingCounts(item: CategoryStanding): string {
   const { lead } = item;
-  const scope = `of ${lead.resolved} resolved ${lead.label} Unbranded Discovery answers`;
+  const scope = `of ${formatInt(lead.resolved)} resolved ${lead.label} Unbranded Discovery answers`;
   return lead.topRival
     ? `${leadBrand()} ${lead.fenderLeads} vs ${lead.topRival.brand} ${lead.topRival.wins} ${scope}`
     : `${leadBrand()} ${lead.fenderLeads} ${scope}. No other brand led one.`;

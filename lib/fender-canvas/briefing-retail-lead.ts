@@ -29,7 +29,7 @@ import {
   type RetailOverviewHeroModel,
 } from "@/lib/fender-canvas/retail-overview-lead";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
-import { RETAIL_FINDING_LABELS } from "@/lib/fender-canvas/portfolio-retail";
+import { RETAIL_FINDING_LABELS, SPLINTERED_LISTINGS_LABEL } from "@/lib/fender-canvas/portfolio-retail";
 import type { FindabilityRead } from "@/lib/findability/copy";
 import {
   exactPageLeadPie,
@@ -48,7 +48,7 @@ export const BRIEFING_COUNT_MISSING = "Not available*";
 export const BRIEFING_LOADING = "Loading";
 
 /** X-18: one name for this figure everywhere (the map, Briefing, and the Roadmap card). */
-export const SPLINTERED_LISTINGS_LABEL = "Splintered Listings";
+export { SPLINTERED_LISTINGS_LABEL };
 
 /** The card beside Buy Box: Phase 1 divided by 12 (lib/estimates/monthly.ts), read from the shared estimate. */
 export const BRIEFING_LOST_REVENUE_LABEL = MONTHLY_POTENTIAL_TITLE;
