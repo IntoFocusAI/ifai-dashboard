@@ -76,8 +76,11 @@ pg_cron calls the function every minute (job `status_alerts_poll`). State is in 
 6. **Test.** In the test channel, wait for a live incident, or replay one:
 
    ```sql
-   -- forget one recent, resolved incident so the next poll treats it as new
-   delete from ops.status_incidents where source = 'github' and incident_id = '<id>';
+   -- mark one recent, resolved incident as never posted, so the next poll posts all of it.
+   -- (Deleting the row doesn't work: an incident first seen already resolved is recorded quietly.)
+   update ops.status_incidents set slack_ts = null, post_claimed_at = null, resolved_posted = false
+    where source = 'github' and incident_id = '<id>';
+   delete from ops.status_updates where source = 'github' and incident_id = '<id>';
    ```
 
    The next minute posts the top message, its updates in a thread, `✅ Resolved`, and the edit.
