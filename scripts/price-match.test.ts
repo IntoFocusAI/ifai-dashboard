@@ -107,6 +107,31 @@ test("R-15 listings: same matches listed, near misses dropped, unsure kept apart
   assert.deepEqual(priceMatchCounts(listings), { matched: 1, total: 3 });
 });
 
+test("R-15 marketplaces: confirmed-new offers show marketplace and seller; each seller is its own entry", () => {
+  const scope = priceMatchScope([withheld("B000000001", 71499), withheld("B000000002", 71499)]);
+  const reverb = { retailer: "reverb", retailer_name: "Reverb", domain: "reverb.com" };
+  const listings = priceMatchesByListing(
+    scope,
+    [check("B000000001", 71499), check("B000000002", 71499)],
+    [
+      match("B000000001", { ...reverb, seller: "Mountain Music", url: "https://reverb.com/item/1" }),
+      match("B000000001", { ...reverb, seller: "Northland Music Center", url: "https://reverb.com/item/2" }),
+      // Rows written before the condition check name only the marketplace: never shown.
+      match("B000000001", { ...reverb, seller: "Reverb.com", url: "https://reverb.com/item/3" }),
+      match("B000000002", { retailer: null, retailer_name: null, domain: "ebay.com", seller: "eBay" }),
+      match("B000000002", { retailer: null, retailer_name: null, domain: "reverb.com", seller: "Gelb Music" }),
+    ],
+  );
+  assert.deepEqual(listings[0].same.map((o) => o.store), ["Reverb · Mountain Music", "Reverb · Northland Music Center"]);
+  assert.deepEqual(
+    listings[1].same.map((o) => o.store),
+    ["Reverb · Gelb Music"],
+    "a client without Reverb on its list still labels it by marketplace; an unconfirmed eBay row is dropped",
+  );
+  assert.equal(priceMatch.marketplaceFor("www.ebay.com"), "eBay");
+  assert.equal(priceMatch.marketplaceFor("musiciansfriend.com"), null);
+});
+
 test("R-15 stale: a benchmark that changed after the search is flagged and not counted", () => {
   const scope = priceMatchScope([withheld("B000000001", 69999)]);
   const [l] = priceMatchesByListing(scope, [check("B000000001", 71499)], [match("B000000001")]);

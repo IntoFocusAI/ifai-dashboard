@@ -137,8 +137,38 @@ export function exactMatchKind(
   return null;
 }
 
-/** The store a match is shown under: the retailer's name when it is on the list, else its domain. */
+/**
+ * Marketplaces where many sellers list (Brian Magazu, 23 Nov 2026). An offer there counts only when
+ * the marketplace's own condition field says new; the search job checks that and stores the
+ * marketplace seller's name. The screen labels it "Reverb · <seller>". Not client-specific: a
+ * marketplace is the same for every client, unlike a client's retailer list.
+ */
+const MARKETPLACES: readonly { domain: string; name: string }[] = [
+  { domain: "ebay.com", name: "eBay" },
+  { domain: "reverb.com", name: "Reverb" },
+];
+
+export function marketplaceFor(domain: string | null | undefined): string | null {
+  const host = (domain ?? "").trim().toLowerCase();
+  if (!host) return null;
+  return MARKETPLACES.find((m) => host === m.domain || host.endsWith(`.${m.domain}`))?.name ?? null;
+}
+
+/** The seller's own name on a marketplace, or null when only the marketplace itself is named. */
+function marketplaceSeller(marketplace: string, seller: string | null | undefined): string | null {
+  const s = seller?.trim() ?? "";
+  const bare = s.toLowerCase().replace(/\.com$/, "");
+  return s && bare !== marketplace.toLowerCase() ? s : null;
+}
+
+/**
+ * The store a match is shown under: the retailer's name when it is on the list, else its domain.
+ * A marketplace offer shows the marketplace and the seller: "Reverb · Mountain Music".
+ */
 export function storeLabel(row: Pick<PriceMatchRow, "retailer_name" | "domain" | "seller">): string {
+  const marketplace = marketplaceFor(row.domain);
+  const seller = marketplace ? marketplaceSeller(marketplace, row.seller) : null;
+  if (marketplace && seller) return `${row.retailer_name?.trim() || marketplace} · ${seller}`;
   return row.retailer_name?.trim() || row.domain?.trim() || row.seller?.trim() || "Unknown store";
 }
 
@@ -148,6 +178,10 @@ function toOffer(row: PriceMatchRow, benchmark: number): PriceMatchOffer | null 
   const kind = exactMatchKind(benchmark, item, shipping);
   const verdict = row.verdict === "same" || row.verdict === "unsure" ? row.verdict : null;
   if (!kind || !verdict || item == null) return null;
+  // A marketplace offer without its seller's name was not confirmed new by the marketplace's
+  // condition field (the search stores the seller only after that check), so it never shows.
+  const marketplace = marketplaceFor(row.domain);
+  if (marketplace && !marketplaceSeller(marketplace, row.seller)) return null;
   return {
     store: storeLabel(row),
     domain: row.domain ?? null,
@@ -161,11 +195,14 @@ function toOffer(row: PriceMatchRow, benchmark: number): PriceMatchOffer | null 
   };
 }
 
-/** One entry per store: the same store listed twice (two Reverb sellers, say) counts once. */
+/**
+ * One entry per store: the same store listed twice counts once. On a marketplace each seller is its
+ * own store (two Reverb sellers at the price are two entries).
+ */
 function byStore(offers: PriceMatchOffer[]): PriceMatchOffer[] {
   const seen = new Map<string, PriceMatchOffer>();
   for (const offer of offers) {
-    const key = (offer.domain ?? offer.store).toLowerCase();
+    const key = (marketplaceFor(offer.domain) ? offer.store : (offer.domain ?? offer.store)).toLowerCase();
     const prior = seen.get(key);
     if (!prior || (prior.kind === "item" && offer.kind === "landed")) seen.set(key, offer);
   }
