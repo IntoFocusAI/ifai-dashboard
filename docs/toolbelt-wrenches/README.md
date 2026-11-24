@@ -41,8 +41,29 @@ re-saving a file with `wrench_update` (scriptContent = the file, setActive true)
 | Ledlenser | ledlenser_omnichannel_audit_sync | 0b870a0d | v2 → v3 |
 | Ledlenser | ledlenser_catalog_harvester | c9086050 | v2 → v3 |
 
+Second pass, same day: wrenches run by Toolbelt scheduled tasks (all in the Fender workspace; the
+Ledlenser workspace has no scheduled tasks). For prompt tasks the assistant calls `wrench_execute`
+with the task's timeout; `stepMs` is that timeout (per action for the battery).
+
+| Workspace | Wrench | ID | Old → new | Task / timeout |
+|---|---|---|---|---|
+| Fender | fender_map_checker_musiciansfriend | a4c64ed0 | v19 → v20 | f75da59f prompt, 240 s |
+| Fender | fender_retail_buybox_map_audit | 1ecc6b76 | v16 → v17 | 37afeb74 wrench, 420 s |
+| Fender | fender_spec_readiness_audit | db3c834c | v13 → v15 (v14 is the inactive D-05 draft) | 72287fdd wrench, 420 s |
+| Fender | fender_dashboard_metrics_sync | 964a76a0 | v6 → v7 | 7d61cb86 wrench, 120 s |
+| Fender | fender_omnichannel_audit_sync | 5be13583 | v15 → v16 | fe89922a wrench, 600 s |
+| Fender | fender_keepa_history_harvester | 3eb4e871 | v2 → v3 | f8306707 wrench, 330 s |
+| Fender | fender_ai_subchat_collector | 63f7c160 | v13 → v14 | 2451bb7a wrench, 600 s |
+| Fender | fender_ai_simulation_battery_v11 | 34d68651 | v18 → v19 | battery start/worker prompts, 120 s (chunk 540 s) |
+| Fender | fender_keepa_content_enrich | 5310a0c4 | v2 → v3 | 5b3e8ab7 prompt, 330 s |
+| Fender | fender_smartscout_snapshot | 46730735 | v3 → v4 | 5c1eabf2 prompt, 280 s |
+| Fender | fmic_sandbox_drift_check | 75859a8f | v9 → v10 | 3 drift-check prompts, 180 s |
+| Fender | fmic_ai_prompts_sync | 98d15382 | v1 → v2 | bae7ec4b prompt, 120 s |
+| Fender | fmic_dual_write_replay | d24cb6e6 | v3 → v4 | bae7ec4b prompt, 180 s |
+| Fender | fender_ai_battery_stall_alert | a7e26aad | v1 → v2 | 3c289d5a prompt, 120 s |
+
 Not changed: R-15 search (558a63f3, 1a08597d) and Buy Box harvesters (892063d0, cd9cb626), updated
-earlier on 23 Nov, and wrenches run by Toolbelt scheduled tasks rather than workflows (for example the
-MF checker a4c64ed0 and Walmart checker 1ecc6b76). To add the guard to one later, prepend the block,
-fill `__CR` (`self` = wrench id, `servers` = its requiredMcpServers, `stepMs` = the calling step's
-timeout), and rename its `run(` to `__runMain(`.
+earlier on 23 Nov; and site_type_classifier_21a (a2bdfbe5), whose task (5566cef8, approved by Brian M)
+says never to retry it. To add the guard to another wrench, prepend the block, fill `__CR` (`self` =
+wrench id, `servers` = its requiredMcpServers, `stepMs` = the calling step's timeout), and rename its
+`run(` to `__runMain(`.
