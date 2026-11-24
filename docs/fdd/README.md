@@ -76,7 +76,7 @@ Primary path: Balanced hub → bubble → evidence → Action Items. Viewing ord
 
 # 4. Current dashboard overview
 
-Verified structure (21 Oct 2026 desktop pass on the local production build of cursor/terminology-batch-8c53, commit 1fdbfc0): hub map with six spokes; center node Summary; retail spoke Catalog Health with seller type Partner-led; Summary tabs Briefing, Performance, and Opportunity; AI tab Run Details; primary retail copy Buy Box. Interactive ROI is still present and empty. The product title is still “IntoFocus AEO Consensus Control” (X-26). Published GitHub Pages still serves main cfd45de until this branch deploys. Live counts below are the 21 Oct Supabase read.
+Verified structure (21 Oct 2026 desktop pass on the local production build of cursor/terminology-batch-8c53, commit 1fdbfc0): hub map with six spokes; center node Summary; retail spoke Catalog Health with seller type Partner-led; Summary tabs Briefing, Performance, and Opportunity; AI tab Run Details; primary retail copy Buy Box. Interactive ROI is still present and empty. The product title is still “IntoFocus AEO Consensus Control” (X-26). Live counts below are the 21 Oct Supabase read.
 
 ![Current dashboard overview](media/image1.jpg)
 

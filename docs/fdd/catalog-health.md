@@ -10,7 +10,7 @@ Former name: Portfolio Retail / Retail Portfolio. Approved rename: Catalog Healt
 - **Desired:** Rename to Catalog Health. Overview shows seller type (Fender: Partner-led).
 - **User value:** The name matches the work.
 - **Acceptance:** No client-visible Portfolio Retail or Retail Portfolio string.
-- **Evidence:** Desktop-verified 21 Oct 2026 on local production build commit 1fdbfc0 (PR 43). Published GitHub Pages still serves main cfd45de until that branch deploys. No client-visible Portfolio Retail or Retail Portfolio on that build. How seller models are drawn remains R-02.
+- **Evidence:** Desktop-verified 21 Oct 2026 on local production build commit 1fdbfc0 (PR 43). No client-visible Portfolio Retail or Retail Portfolio on that build. How seller models are drawn remains R-02.
 - **Open decision:** None.
 
 **R-02 CURRENT** · Launch
