@@ -81,6 +81,8 @@ pg_cron calls the function every minute (job `status_alerts_poll`). State is in 
    update ops.status_incidents set slack_ts = null, post_claimed_at = null, resolved_posted = false
     where source = 'github' and incident_id = '<id>';
    delete from ops.status_updates where source = 'github' and incident_id = '<id>';
+   -- and forget the page's ETag, or an unchanged page is skipped (304) without reading it
+   update ops.status_feeds set etag = null, last_modified = null where key = 'github';
    ```
 
    The next minute posts the top message, its updates in a thread, `✅ Resolved`, and the edit.
