@@ -21,6 +21,9 @@ import { formatSetAsideDate, outcomeLabel, useSetAsides, type SetAsideRow } from
 
 /** The note under each check's history: what a Done or set-aside does to the figures. */
 export function setAsideHint(checkKey: string): string {
+  if (checkKey === SET_ASIDE_CHECKS.priceMatch) {
+    return "An ignored listing leaves the price-match list and its count. Reopen it to bring it back.";
+  }
   if (checkKey === SET_ASIDE_CHECKS.mapPricing) {
     return "Done and set-aside rows stay in the table. A listing set aside as an approved exception is left out of the MAP figures above until it is reopened. Every other row stays in them until the data stops flagging it.";
   }

@@ -14,4 +14,6 @@ export const SET_ASIDE_CHECKS = {
   buyboxSuppression: "buybox_suppression",
   mapPricing: "map_pricing",
   outOfStock: "out_of_stock",
+  /** R-15: ignore a listing's price match when the brand keeps the Amazon price. */
+  priceMatch: "price_match",
 } as const;
