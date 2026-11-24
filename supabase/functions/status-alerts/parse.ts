@@ -50,7 +50,8 @@ export function parseStatuspage(json: Json, pageBaseUrl: string): ParsedIncident
         .map((u: Json) => ({
           id: u.id,
           status: String(u.status ?? "").toLowerCase(),
-          body: String(u.body ?? "").trim(),
+          // Statuspage bodies can carry <br /> and other simple HTML.
+          body: htmlToText(String(u.body ?? "")),
           at: toIso(u.display_at) ?? toIso(u.created_at) ?? new Date(0).toISOString(),
         }))
         .sort((a: ParsedUpdate, b: ParsedUpdate) => a.at.localeCompare(b.at));

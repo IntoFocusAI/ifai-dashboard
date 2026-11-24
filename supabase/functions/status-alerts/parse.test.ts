@@ -127,6 +127,17 @@ Deno.test("statuspage: OpenAI shape (no shortlink) builds its own link", () => {
   assertEquals(inc.updates.length, 1);
 });
 
+Deno.test("statuspage: <br /> in update bodies becomes line breaks", () => {
+  const [inc] = parseStatuspage({
+    incidents: [{
+      id: "a", name: "t", status: "monitoring", created_at: "2026-11-19T17:06:26Z",
+      incident_updates: [{ id: "u", status: "monitoring", created_at: "2026-11-19T17:43:44Z",
+        body: "We fixed the bug.<br /><br />Sessions &amp; cookies renew as usual." }],
+    }],
+  }, "https://www.githubstatus.com");
+  assertEquals(inc.updates[0].body, "We fixed the bug.\n\nSessions & cookies renew as usual.");
+});
+
 Deno.test("statuspage: tolerates junk", () => {
   assertEquals(parseStatuspage({}, "https://x"), []);
   assertEquals(parseStatuspage({ incidents: [null, { name: "no id" }] }, "https://x"), []);
