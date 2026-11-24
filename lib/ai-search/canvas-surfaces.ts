@@ -213,7 +213,7 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
         s.roles.unbranded.resolved > 0
           ? unbrandedHero.heroValue
           : { value: "No resolved answers", label: UNBRANDED_DISCOVERY_LABEL },
-      meta: `${state} run · ${run.answered ?? "?"} of ${run.expected ?? "?"} answered`,
+      meta: `${state} run · ${run.answered == null ? "?" : formatInt(run.answered)} of ${run.expected == null ? "?" : formatInt(run.expected)} answered`,
       subTab: AI_TABS.summary,
       // The hero value above is the whole explanation. Open Run Summary for the engine and run detail.
       tooltip: { ...EMPTY_TOOLTIP },
@@ -238,7 +238,7 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
         `${brandName()}-owned ${pct(citations.fenderOwnedRows, citations.rows)} of links`,
       ],
       heroValue: citationsHero.heroValue,
-      meta: `${citations.rows} cited links · ${citations.domains} domains`,
+      meta: `${formatInt(citations.rows)} cited links · ${formatInt(citations.domains)} domains`,
       subTab: AI_TABS.citations,
       tooltip: { ...EMPTY_TOOLTIP },
     },
@@ -386,7 +386,7 @@ export function aiSpokeHeaderChips(read: AiSearchRead, options: AiSpokeHeaderChi
       {
         id: "answered",
         label: "Answered",
-        value: `${s.completeness.answered ?? "?"} of ${s.completeness.expected ?? "?"}`,
+        value: `${s.completeness.answered == null ? "?" : formatInt(s.completeness.answered)} of ${s.completeness.expected == null ? "?" : formatInt(s.completeness.expected)}`,
       },
     );
   }
@@ -417,7 +417,7 @@ export function aiSpokeFullDesc(read: AiSearchRead): string {
   if (read.phase === "error") return `The published AI run did not load: ${read.message}`;
   if (read.phase === "no-run") return "No AI run has been published yet, so no AI Search figure is shown.";
   const s = summarizeRun(read.snapshot);
-  return `${runStateLabel(s.completeness.state)} published run, completed ${s.completedAt}: ${s.completeness.answered} of ${s.completeness.expected} calls answered, ${errorLine(s)}. ${headlineLine(s)} ${factCheckHeadline(s.drift.coverage)}`;
+  return `${runStateLabel(s.completeness.state)} published run, completed ${s.completedAt}: ${formatInt(s.completeness.answered)} of ${formatInt(s.completeness.expected)} calls answered, ${errorLine(s)}. ${headlineLine(s)} ${factCheckHeadline(s.drift.coverage)}`;
 }
 
 /** One sentence for the command center summary. Silent until the run loads. */
@@ -471,7 +471,7 @@ export function aiPriorityItems(read: AiSearchRead): PriorityItem[] {
       id: "ai-competitor-gap",
       title: battleSentence(gap),
       why: `In the published run, ${engines} named ${joinBrands(gap.leaders.map((l) => l.brand))} more often than ${leadBrand()} in ${formatInt(gap.competitorWins)} of ${formatInt(gap.resolved)} resolved Unbranded Discovery ${gap.category} answers.${domains.length ? ` Those answers cited ${domains.join(", ")}.` : ""} Start with those pages: check how they describe ${brandName()}'s ${gap.category} line against the brand they favor.`,
-      impact: `The Competitor Wins tab lists each of the ${gap.competitorWins} answers with its engine, model, and cited pages.`,
+      impact: `The Competitor Wins tab lists each of the ${formatInt(gap.competitorWins)} answers with its engine, model, and cited pages.`,
       severity: "high",
       spokeId: "competitors",
       subTab: "Competitor Wins",
@@ -600,7 +600,7 @@ export function aiMetrics(read: AiSearchRead): Record<AiMetricKey, CanvasMetric>
     },
     resolvedSimulations: {
       ...base.resolvedSimulations, ...live,
-      value: `${s.completeness.answered} / ${s.completeness.expected}`,
+      value: `${formatInt(s.completeness.answered)} / ${formatInt(s.completeness.expected)}`,
       detail: `${runStateLabel(s.completeness.state)} run · ${errorLine(s)}`,
       tone: s.completeness.isPartial ? "warning" : "success",
     },
@@ -626,7 +626,7 @@ export function aiTourLines(read: AiSearchRead): AiTourLines {
   return {
     hub: lead,
     aeo: [
-      `${runStateLabel(s.completeness.state)} run: ${s.completeness.answered} of ${s.completeness.expected} calls answered, completed ${s.completedAt}`,
+      `${runStateLabel(s.completeness.state)} run: ${formatInt(s.completeness.answered)} of ${formatInt(s.completeness.expected)} calls answered, completed ${s.completedAt}`,
       lead,
       `${factsCheckedLine(s.drift.coverage)} against official ${brandName()} pages: ${factCheckShortLine(s.drift.coverage).toLowerCase()}`,
     ],

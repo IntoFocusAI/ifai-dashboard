@@ -10,6 +10,7 @@ import type { DataStatus } from "@/lib/canvas-sdk/data-status";
 import type { PartialFigure } from "@/lib/fender-canvas/canvas-reads";
 import type { SpecPageSummary } from "@/lib/fender-canvas/machine-readability";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
+import type { PlanItem } from "@/lib/fender-canvas/roadmap-plan";
 import type { StockLossRow } from "@/lib/fender-canvas/stock-loss";
 import type { FindabilityRead } from "@/lib/findability/copy";
 
@@ -48,6 +49,8 @@ export type DeckFix = {
   rank: number;
   action: string;
   ratio: string;
+  /** What the ratio counts, as the problem (the item's one count label); null for an item with no count. */
+  figureLabel: string | null;
   status: DataStatus | null;
   statusWord: string;
 };
@@ -116,6 +119,8 @@ export type DeckInput = {
   /** Hand-entered analyst estimates; null when the client has none. */
   phaseOneLift: string | null;
   enterprisePotential: string | null;
+  /** The one central ranking (the Action Items plan); slide s9 lists its first five fixes. */
+  plan?: readonly PlanItem[] | null;
 };
 
 export const SOURCES = {

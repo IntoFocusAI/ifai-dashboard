@@ -63,12 +63,18 @@ and to every worker.
     copies an existing pattern.
   Always name the model when starting a subagent; a subagent without one
   inherits the PM's.
-- **Parallel workers.** Run up to 3 workers at once on one seat when their
+- **Parallel workers.** Run up to 5 workers at once on one seat (Brian, 23 Nov;
+  be careful running several Fable workers together) when their
   files do not overlap (the worker briefs list each view's files) and no
   worker needs another's unmerged change. Shared files (lib/ai-search reads,
   canvas-reads.ts, ResizableTable, StatusMark) belong to one worker per
   batch; others wait or ask the PM. Work that touches the database or Brian
-  Watson's open pull requests runs alone. More than 3 only when Brian asks.
+  Watson's open pull requests runs alone. More than 5 only when Brian asks.
+- **Batch proposals.** Every proposed batch names each worker's number, model
+  (with a one-line reason) and estimated cost in API-equivalent dollars, and
+  waits for Brian's "go ahead".
+- **Review requests.** Always give the preview link, where to click, and what
+  to look for, for both clients.
 - **Budget.** Report usage in every review request: the seat's 5-hour window
   percentage and the cost per view so far. Pause new workers and report to
   Brian when the window passes 80%, or when one view passes $80. Let running
@@ -209,6 +215,15 @@ Replace this whole section on handoff. Keep it under 40 lines. The FDD wins.
   tour step 4); 19 Nov leftovers (deck/Summary dollars green, Action Items CSV rows); X-36 layout
   (alone, last); X-11 audit; D-12 needs a rule spec; then gap-audit recs 4-8, "No MAP" setting,
   E5-E7. Brian's 19 Nov meeting feedback still pending (top of queue when it arrives).
+- BEFORE LAUNCH (Brian, 23 Nov, PM32): revisit the out-of-stock dollar estimates with Brian. Many
+  rows read $0; e.g. B0F8J9ZH6F shows a 12-month value but $0 for 30 and 90 days. He expects the
+  formula does not match his intent. Start: Action Items → Out of stock tab, lib/estimates, then
+  propose the corrected formula to Brian (dollar formulas ship only after his approval).
+- Review requests always give the preview link, where to click, and what to look for (Brian, 23 Nov).
+- LATER (Brian, 23 Nov): the all-channel sales base. Estimates use the whole-company placeholders
+  ($1B Fender, $75M Ledlenser) though the tracked catalogs are narrower (Fender/Squier electric and
+  related gear; Ledlenser's US distributor catalog) and the data is US Amazon only. Keep them until
+  Brian picks a better plan; Enterprise Potential has the same issue. See PR 285, item 2 base.
 - Not buildable: X-29 (Ryan/Watson review), SC-03 (Watson sign-in, Marc webhook), D-02/D-09
   (collector), R-07 (after R-06).
   Blocked: X-15, X-16, X-35, R-10, R-15, A-02, D-05. Held: A-06, R-11, A-04, N-07; R-19 to launch.

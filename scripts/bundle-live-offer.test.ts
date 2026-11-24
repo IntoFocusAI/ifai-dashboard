@@ -126,7 +126,8 @@ test("every bundle surface shows the same N of M with the live-offer label and t
   const bubble = catalogBubble(snap.unnestedBundles);
   assert.equal(bubble.stats[0], `3 of 6 ${LIVE_OFFER_BUNDLES}`);
   assert.equal(bubble.heroValue?.value, hero.percent);
-  assert.equal(bubble.tooltip.desc, hero.tip);
+  assert.equal(bubble.tooltip.desc, bundlePopulationTip(snap.unnestedBundles));
+  assert.ok(hero.tip?.startsWith(bubble.tooltip.desc));
 
   const entry = RETAIL_ENTRIES.find((candidate) => candidate.id === "sat-asin");
   assert.ok(entry);

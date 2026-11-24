@@ -137,7 +137,7 @@ function splitOf(price: string[], other: string[]): BuyBoxCauseSplit {
   return { withheld: price.length + other.length, price: price.length, other: other.length, priceAsins: new Set(price), otherAsins: new Set(other) };
 }
 
-test("the Buy Box row becomes two cause rows in its place, ranks renumbered", () => {
+test("the Buy Box row becomes two cause rows in its place, each keeping its rank", () => {
   const plan = [item("finding:map_leakage", 1), item(BUY_BOX_ROW_ID, 2), item("signal:out_of_stock", 3, { kind: "signal" })];
   const split = splitOf(
     Array.from({ length: 51 }, (_, i) => `P${i}`),
@@ -145,7 +145,7 @@ test("the Buy Box row becomes two cause rows in its place, ranks renumbered", ()
   );
   const next = planWithBuyBoxCauses(plan, split);
   assert.deepEqual(next.map((i) => i.id), ["finding:map_leakage", BUY_BOX_CAUSE_ROW_IDS.price, BUY_BOX_CAUSE_ROW_IDS.other, "signal:out_of_stock"]);
-  assert.deepEqual(next.map((i) => i.rank), [1, 2, 3, 4]);
+  assert.deepEqual(next.map((i) => i.rank), [1, 2, 2, 3]);
   const [price, other] = [next[1]!, next[2]!];
   assert.equal(price.ratio, "51 of 1,076");
   assert.equal(other.ratio, "9 of 1,076");

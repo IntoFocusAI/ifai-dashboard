@@ -38,8 +38,8 @@ export function CitationPieDisc({
   /** Custom tooltip. Same chrome as definition terms, without a native title. */
   tip?: string;
 }) {
-  const label = pie.slices.map((slice) => `${slice.count} ${slice.label}`).join(". ");
-  const description = tip ?? `${pie.title}. ${label}. Total ${pie.total} ${pie.totalLabel}.`;
+  const label = pie.slices.map((slice) => `${formatInt(slice.count)} ${slice.label}`).join(". ");
+  const description = tip ?? `${pie.title}. ${label}. Total ${formatInt(pie.total)} ${pie.totalLabel}.`;
   return (
     <div
       className={`${sizeClass} citation-chart-tip ifai-term`}
@@ -71,7 +71,7 @@ export function CitationPieLegend({ pie }: { pie: PieDiscData }) {
         >
           <span className="citation-pie-swatch" style={{ background: colors[index] }} />
           <span>
-            {slice.label}: {slice.count}
+            {slice.label}: {formatInt(slice.count)}
           </span>
         </li>
       ))}

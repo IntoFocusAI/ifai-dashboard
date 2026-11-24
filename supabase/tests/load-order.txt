@@ -15,6 +15,7 @@ supabase/migrations/20261123130100_client_data_lockdown.sql
 supabase/migrations/20261123130200_client_read_functions.sql
 supabase/migrations/20261123170000_r10_retailer_rows.sql
 supabase/migrations/20261123190000_r15_price_matches.sql
+supabase/migrations/20261123210000_withheld_offer_seller.sql
 supabase/migrations/20261123220000_fender_guitar_center_retailer.sql
 # Rows (as owner, after the migrations)
 supabase/tests/fixtures/90_test_accounts.sql

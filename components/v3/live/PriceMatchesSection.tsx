@@ -22,6 +22,7 @@ import {
   type ListingPriceMatches,
 } from "@/lib/fender-canvas/price-match";
 import { SET_ASIDE_CHECKS } from "@/lib/set-aside/keys";
+import { withOfferSellers, withheldOfferSellers } from "@/lib/fender-canvas/withheld-offer-seller";
 
 /* R-15: price matches for withheld listings with a benchmark (Catalog Health -> Suppressed
    listings). Ignore uses the existing set-aside functions on the price_match check: an ignored
@@ -122,7 +123,8 @@ export function PriceMatchesSection({ rows }: { rows: readonly WithheldCauseRow[
   const client = activeClient();
   const listings = useMemo(() => {
     if (typeof read !== "object") return null;
-    return withoutIgnored(priceMatchesByListing(priceMatchScope(rows), read.checks, read.matches), ignore.active);
+    const scope = withOfferSellers(priceMatchScope(rows), withheldOfferSellers(read.sellers));
+    return withoutIgnored(priceMatchesByListing(scope, read.checks, read.matches), ignore.active);
   }, [read, rows, ignore.active]);
 
   if (read === "loading") return <p className="retail-missing">Loading price matches…</p>;

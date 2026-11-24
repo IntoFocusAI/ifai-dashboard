@@ -10,6 +10,8 @@ import { ClientSwitcher } from "@/components/v3/live/ClientSwitcher";
 import { DataFreshnessBar } from "@/components/v3/live/DataFreshnessBar";
 import { useAmazonFieldTotals, useStockLossRead } from "@/components/v3/live/useMinimalMetricReads";
 import { usePortfolioRetailSnapshot } from "@/components/v3/live/usePortfolioRetailSnapshot";
+import { useRoadmapPlan } from "@/components/v3/live/RoadmapPlanData";
+import { staffFocus } from "@/lib/fender-canvas/roadmap-focus";
 import { useFenderCanvasData } from "@/components/v3/use-fender-canvas-data";
 import { aiSpokeDesc } from "@/lib/ai-search/canvas-surfaces";
 import { historySpokeDescription } from "@/lib/ai-search/history-mode";
@@ -96,6 +98,8 @@ function FenderBrandCanvasBody({
   const authorizedPartners = authorizedPartnersFromSave(savedSellers);
   const stockLoss = useStockLossRead();
   const amazonFieldTotals = useAmazonFieldTotals(bundle?.m ?? null);
+  // The one central ranking (Brian Magazu, 23 Nov 2026): Priorities and the map cards read the plan Action Items shows.
+  const { plan } = useRoadmapPlan(retail, bundle, staffFocus(), findability);
   const spec = useMemo(() => {
     if (!bundle) return null;
     const built = buildFenderCanvasSpec(bundle, {
@@ -107,6 +111,7 @@ function FenderBrandCanvasBody({
       authorizedPartners,
       stockLoss,
       amazonFieldTotals,
+      plan,
       metricStorageSuffix: viewerStorageScope(viewerId),
       headerSlot: (
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
@@ -123,7 +128,7 @@ function FenderBrandCanvasBody({
         aeo: { ...built.spokes.aeo, desc: panelDescription },
       },
     };
-  }, [amazonFieldTotals, authorizedPartners, bundle, findability, mapAiSearch, panelDescription, retail, stale, stockLoss, switcherClients, userMenu, viewerId]);
+  }, [amazonFieldTotals, authorizedPartners, bundle, findability, mapAiSearch, panelDescription, plan, retail, stale, stockLoss, switcherClients, userMenu, viewerId]);
 
   if (loading && !spec) return <CanvasLoadingShell />;
   if (!spec) {
