@@ -68,8 +68,10 @@ export type PriceMatchScopeRow = {
   asin: string;
   label: string;
   benchmarkCents: number;
-  /** The seller Amazon observed on the withheld offer, when the read stored one. */
+  /** The seller(s) holding the withheld offer, when the read stored one (see withheld-offer-seller.ts). */
   offerSeller: string | null;
+  /** How many sellers hold it (tied at the lowest landed price). Absent means one. */
+  offerSellerCount?: number;
 };
 
 export type PriceMatchOffer = {
@@ -239,13 +241,16 @@ export function matchSummary(listing: ListingPriceMatches, brandDomains: readonl
  * Brand-led: the brand prices its own Amazon offer. Partner-led: the brand cannot reprice; it asks
  * the authorized seller(s) holding the offer to price at the benchmark.
  */
-export function priceMatchNextStep(model: SellingModel, listing: Pick<ListingPriceMatches, "benchmarkCents" | "offerSeller">): string {
+export function priceMatchNextStep(
+  model: SellingModel,
+  listing: Pick<ListingPriceMatches, "benchmarkCents" | "offerSeller" | "offerSellerCount">,
+): string {
   const price = dollars(listing.benchmarkCents);
   if (model === "Brand-led") return `Price the Amazon offer at the benchmark, ${price}.`;
   const seller = listing.offerSeller?.trim();
-  return seller
-    ? `Ask ${seller}, the authorized seller holding this Amazon offer, to price it at the benchmark, ${price}.`
-    : `Ask the authorized seller(s) holding this Amazon offer to price it at the benchmark, ${price}.`;
+  if (!seller) return `Ask the authorized seller(s) holding this Amazon offer to price it at the benchmark, ${price}.`;
+  const who = (listing.offerSellerCount ?? 1) > 1 ? "the authorized sellers holding" : "the authorized seller holding";
+  return `Ask ${seller}, ${who} this Amazon offer, to price it at the benchmark, ${price}.`;
 }
 
 /** What the Price match cell says when there is no same-product match to list. */
