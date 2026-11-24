@@ -8,12 +8,19 @@ Posts vendor status incidents to Slack #status-alerts as one bot ("Status Bot"):
   `✅ RESOLVED · *GitHub* · title · lasted 1h 12m`
 - if the provider reopens it, a reply says so and the top message goes back to 🔴
 
-Not dashboard code. Feeds: Cloudflare, Claude, GitHub, Cursor, OpenAI (Statuspage-style
+Not dashboard code. Feeds: Cloudflare, Claude, GitHub, Cursor, Supabase, Netlify, OpenAI (Statuspage-style
 `/api/v2/incidents.json`) and xAI (`status.x.ai/feed.xml`). The list lives in `ops.status_feeds`;
 set `enabled = false` to mute one, or insert a row to add a Statuspage-style page.
 
 pg_cron calls the function every minute (job `status_alerts_poll`). State is in the `ops` schema
 (migration `supabase/migrations/20261124120000_ops_status_alerts.sql`).
+
+## Logos
+
+Each feed's `icon_url` (migration `20261124130000_ops_status_alerts_logos.sql`) points at
+`status-logos/<key>.png` in a public Storage bucket. Posts then show as "<Provider> Status" with that
+logo. This needs the Slack scope `chat:write.customize` (add it under OAuth & Permissions, then
+reinstall the app). To change a logo, upload a new file with the same name.
 
 ## How it avoids double posts and missed updates
 
@@ -41,7 +48,7 @@ pg_cron calls the function every minute (job `status_alerts_poll`). State is in 
        "background_color": "#1f2937"
      },
      "features": { "bot_user": { "display_name": "Status Bot", "always_online": true } },
-     "oauth_config": { "scopes": { "bot": ["chat:write", "chat:write.public"] } },
+     "oauth_config": { "scopes": { "bot": ["chat:write", "chat:write.public", "chat:write.customize"] } },
      "settings": { "org_deploy_enabled": false, "socket_mode_enabled": false, "token_rotation_enabled": false }
    }
    ```

@@ -35,6 +35,7 @@ interface FeedRow {
   etag: string | null;
   last_modified: string | null;
   seeded: boolean;
+  icon_url: string | null;
 }
 
 interface IncidentRow {
@@ -76,8 +77,13 @@ async function slack(method: string, payload: Record<string, unknown>): Promise<
   return { ts: json.ts };
 }
 
-const post = (text: string, threadTs?: string) =>
-  slack("chat.postMessage", { channel: env("SLACK_CHANNEL_ID"), text, thread_ts: threadTs });
+// With an icon, posts show as "<Provider> Status" with that provider's logo (needs the
+// chat:write.customize scope; without it Slack ignores these fields and uses the app's own icon).
+const identity = (feed: FeedRow) =>
+  feed.icon_url ? { username: `${feed.display_name} Status`, icon_url: feed.icon_url } : {};
+
+const post = (feed: FeedRow, text: string, threadTs?: string) =>
+  slack("chat.postMessage", { channel: env("SLACK_CHANNEL_ID"), text, thread_ts: threadTs, ...identity(feed) });
 
 const edit = (ts: string, text: string) => slack("chat.update", { channel: env("SLACK_CHANNEL_ID"), ts, text });
 
@@ -104,7 +110,7 @@ type Sql = ReturnType<typeof postgres>;
 /** Post the top-level message for an incident row we hold the claim on. */
 async function postParent(sql: Sql, feed: FeedRow, rowId: number, inc: ParsedIncident, counts: Counts) {
   try {
-    const { ts } = await post(openText(feed.display_name, inc));
+    const { ts } = await post(feed, openText(feed.display_name, inc));
     await sql`update ops.status_incidents set slack_ts = ${ts} where id = ${rowId}`;
     counts.incidents_posted++;
     return ts;
@@ -180,7 +186,7 @@ async function handleIncident(sql: Sql, feed: FeedRow, inc: ParsedIncident, coun
       update ops.status_incidents set resolved_posted = false where id = ${row.id} and resolved_posted
       returning id`;
     if (won) {
-      await post(reopenedReplyText(), parentTs);
+      await post(feed, reopenedReplyText(), parentTs);
       await edit(parentTs, openText(feed.display_name, inc));
     }
   }
@@ -193,7 +199,7 @@ async function handleIncident(sql: Sql, feed: FeedRow, inc: ParsedIncident, coun
       returning id`;
     if (!claimed) continue;
     try {
-      const { ts } = await post(updateText(u), parentTs);
+      const { ts } = await post(feed, updateText(u), parentTs);
       await sql`update ops.status_updates set slack_reply_ts = ${ts} where id = ${claimed.id}`;
       counts.updates_posted++;
     } catch (e) {
@@ -209,7 +215,7 @@ async function handleIncident(sql: Sql, feed: FeedRow, inc: ParsedIncident, coun
     if (won) {
       const resolvedAt = inc.resolvedAt ?? inc.updates.at(-1)?.at ?? new Date().toISOString();
       try {
-        await post(resolvedReplyText(resolvedAt), parentTs);
+        await post(feed, resolvedReplyText(resolvedAt), parentTs);
         await edit(parentTs, resolvedParentText(feed.display_name, inc, resolvedAt));
         counts.resolved_posted++;
       } catch (e) {
@@ -263,7 +269,7 @@ Deno.serve(async (req) => {
 
   try {
     const feeds = await sql<FeedRow[]>`
-      select key, display_name, url, page_url, kind, etag, last_modified, seeded
+      select key, display_name, url, page_url, kind, etag, last_modified, seeded, icon_url
         from ops.status_feeds where enabled order by key`;
 
     for (const feed of feeds) {
