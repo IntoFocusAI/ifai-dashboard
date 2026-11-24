@@ -1,0 +1,8 @@
+{
+  "nodeModulesDir": "none",
+  "compilerOptions": { "lib": ["deno.ns", "deno.window"] },
+  "imports": {
+    "postgres": "npm:postgres@3.4.7",
+    "@std/assert": "jsr:@std/assert@1"
+  }
+}
