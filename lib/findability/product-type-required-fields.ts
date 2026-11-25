@@ -7,7 +7,7 @@ import {
   type AmazonFieldList,
   type AmazonRequiredField,
 } from "@/lib/findability/amazon-field-lists";
-import type { RequiredSpecSourceRow } from "@/lib/findability/required-spec-fields";
+import { specValueFields, type RequiredSpecSourceRow } from "@/lib/findability/required-spec-fields";
 
 /**
  * Amazon Specs required fields by Amazon product type (D-05). The required list is the staff list
@@ -71,7 +71,7 @@ export function recordedSpecFields(rows: readonly RequiredSpecSourceRow[]): Set<
   const fields = new Set<string>();
   for (const row of rows) {
     if (row.amazon_checked === false) continue;
-    for (const field of Object.keys(row.amazon_spec_values ?? {})) fields.add(field);
+    for (const field of specValueFields(row)) fields.add(field);
     for (const field of missingFields(row)) fields.add(field);
   }
   return fields;
